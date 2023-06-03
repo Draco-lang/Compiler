@@ -15,6 +15,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     public override FunctionSymbol? Getter => this.getter ??= this.BuildGetter();
     private FunctionSymbol? getter;
 
+    // NOTE: This can lead to re-asking for the accessor, in case there isn't one
     public override FunctionSymbol? Setter => this.setter ??= this.BuildSetter();
     private FunctionSymbol? setter;
 

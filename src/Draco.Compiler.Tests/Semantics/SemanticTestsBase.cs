@@ -23,16 +23,8 @@ public abstract class SemanticTestsBase
     private protected static Symbol GetMetadataSymbol(Compilation compilation, string? @namespace, params string[] path)
     {
         @namespace ??= string.Empty;
-        var asm = compilation.MetadataAssemblies.Values.Single(a => a.RootNamespace == @namespace);
-        return asm.RootNamespace.Lookup(path.ToImmutableArray()).Single();
-
-        Symbol? Recurse(Symbol parent, string[] path)
-        {
-            if (path.Length == 0) return parent;
-            var sym = parent.Members.Where(x => x.Name == path[0]);
-            if (sym.Any()) return Recurse(sym.First(), path[1..]);
-            return null;
-        }
+        var asm = compilation.MetadataAssemblies.Values.Single(a => a.RootNamespace.Name == @namespace);
+        return asm.RootNamespace.Lookup(path.ToImmutableArray()).First();
     }
 
     private protected static Binder GetDefiningScope(Compilation compilation, Symbol? symbol)

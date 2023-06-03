@@ -102,15 +102,24 @@ internal partial class Binder
     private BoundExpression TypeGlobalExpression(UntypedGlobalExpression global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalExpression(global.Syntax, global.Global);
 
-    private BoundExpression TypeFieldExpression(UntypedFieldExpression field, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundFieldExpression(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
+    private BoundExpression TypeFieldExpression(UntypedFieldExpression field, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var receiver = field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics);
+        return new BoundFieldExpression(field.Syntax, receiver, field.Field);
+    }
 
-    private BoundExpression TypePropertyGetExpression(UntypedPropertyGetExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundPropertyGetExpression(prop.Syntax, prop.Getter, prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics));
+    private BoundExpression TypePropertyGetExpression(UntypedPropertyGetExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var receiver = prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics);
+        return new BoundPropertyGetExpression(prop.Syntax, prop.Getter, receiver);
+    }
 
-    private BoundExpression TypeIndexGetExpression(UntypedIndexGetExpression index, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundIndexGetExpression(index.Syntax, index.Getter.Result, this.TypeExpression(index.Receiver, constraints, diagnostics),
-            index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray());
+    private BoundExpression TypeIndexGetExpression(UntypedIndexGetExpression index, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var receiver = this.TypeExpression(index.Receiver, constraints, diagnostics);
+        var indices = index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray();
+        return new BoundIndexGetExpression(index.Syntax, index.Getter.Result, receiver, indices);
+    }
 
     private BoundExpression TypeFunctionGroupExpression(UntypedFunctionGroupExpression group, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
@@ -360,6 +369,7 @@ internal partial class Binder
                 prop.FullName));
             getter = new NoOverloadFunctionSymbol(args.Length);
         }
-        return new BoundBinaryExpression(syntax, compoundOperator, new BoundCallExpression(null, receiver, getter, args), right, right.TypeRequired);
+        var getterCall = new BoundCallExpression(null, receiver, getter, args);
+        return new BoundBinaryExpression(syntax, compoundOperator, getterCall, right, right.TypeRequired);
     }
 }

@@ -44,7 +44,8 @@ internal partial class Binder
                 field.Field.FullName));
             return new BoundIllegalLvalue(field.Syntax);
         }
-        return new BoundFieldLvalue(field.Syntax, field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics), field.Field);
+        var receiver = field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics);
+        return new BoundFieldLvalue(field.Syntax, receiver, field.Field);
     }
 
     private BoundLvalue TypeMemberLvalue(UntypedMemberLvalue mem, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -72,11 +73,12 @@ internal partial class Binder
         }
         else
         {
-            // NOTE: I'm not sure this can happen
-            // Multiple members can maybe happen, in case there are duplicates, in which case this would be a cascaded
-            // error
-            // TODO: Verify
-            throw new NotImplementedException();
+            // NOTE: This can happen in case of function with more overloads, but without () after the function name. For example builder.Append
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
+                location: mem.Syntax?.Location,
+                formatArgs: members[0].Name));
+            return new BoundUnexpectedLvalue(mem.Syntax);
         }
     }
 }

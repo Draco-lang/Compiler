@@ -11,27 +11,12 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 {
     public override TypeSymbol Type => this.Getter?.ReturnType ?? this.Setter?.Parameters[0].Type ?? throw new InvalidOperationException();
 
-    public override FunctionSymbol? Getter
-    {
-        get
-        {
-            if (this.getterNeedsBuild) this.getter = this.BuildGetter();
-            return this.getter;
-        }
-    }
+    // TODO: This can lead to re-asking for the accessord
+    public override FunctionSymbol? Getter => this.getter ??= this.BuildGetter();
     private FunctionSymbol? getter;
-    private bool getterNeedsBuild = true;
 
-    public override FunctionSymbol? Setter
-    {
-        get
-        {
-            if (this.setterNeedsBuild) this.setter = this.BuildSetter();
-            return this.setter;
-        }
-    }
+    public override FunctionSymbol? Setter => this.setter ??= this.BuildSetter();
     private FunctionSymbol? setter;
-    private bool setterNeedsBuild = true;
 
     public override bool IsStatic => (this.Getter ?? this.Setter)?.IsStatic ?? throw new InvalidOperationException();
 
@@ -66,25 +51,17 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private MetadataPropertyAccessorSymbol? BuildGetter()
     {
-        this.getterNeedsBuild = false;
         var accessors = this.propertyDefinition.GetAccessors();
-        if (!accessors.Getter.IsNil)
-        {
-            var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
-            return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, getter, this);
-        }
-        return null;
+        if (accessors.Getter.IsNil) return null;
+        var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
+        return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, getter, this);
     }
 
     private MetadataPropertyAccessorSymbol? BuildSetter()
     {
-        this.setterNeedsBuild = false;
         var accessors = this.propertyDefinition.GetAccessors();
-        if (!accessors.Setter.IsNil)
-        {
-            var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
-            return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, setter, this);
-        }
-        return null;
+        if (accessors.Setter.IsNil) return null;
+        var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
+        return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, setter, this);
     }
 }

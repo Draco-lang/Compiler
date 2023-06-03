@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<DapModel
+  xmlns="http://draco-lang.com/debug-adapter-protocol/model"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://draco-lang.com/debug-adapter-protocol/model ../../Draco.SourceGeneration/Dap/DapModel.xsd">
+
+  <BuiltinType Name="string" FullName="System.String" />
+  <BuiltinType Name="integer" FullName="System.Int32" />
+  <BuiltinType Name="boolean" FullName="System.Boolean" />
+  <BuiltinType Name="any" FullName="System.Text.Json.JsonElement" />
+  <BuiltinType Name="number" FullName="System.Double" />
+  <BuiltinType Name="LaunchRequestArguments" FullName="Draco.Dap.Model.LaunchRequestArguments" />
+
+</DapModel>

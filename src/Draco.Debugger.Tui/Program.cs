@@ -33,7 +33,7 @@ internal class Program
         };
     }
 
-    private static async Task LaunchCommand(FileInfo program)
+    private static Task LaunchCommand(FileInfo program)
     {
         Application.Init();
         var debuggerWindow = new DebuggerWindow();
@@ -87,6 +87,8 @@ internal class Program
 
         Application.Run(Application.Top);
         Application.Shutdown();
+
+        return Task.CompletedTask;
     }
 
     private static string FindDbgShim()

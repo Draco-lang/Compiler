@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
-using System.Reflection.PortableExecutable;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ClrDebug;
@@ -51,6 +47,11 @@ public sealed class Debugger
     /// A writer to the processes standard input.
     /// </summary>
     public StreamWriter StandardInput => this.ioWorker.StandardInput;
+
+    /// <summary>
+    /// The debuggee has exited.
+    /// </summary>
+    public event EventHandler<int>? OnExited;
 
     /// <summary>
     /// The event that triggers, when a breakpoint is hit.
@@ -275,6 +276,8 @@ public sealed class Debugger
     {
         this.terminateTokenSource.Cancel();
         this.terminatedCompletionSource.SetResult();
+        // TODO: Get exit code properly
+        this.OnExited?.Invoke(sender, 0);
         this.Continue();
     }
 

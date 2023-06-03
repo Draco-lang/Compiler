@@ -8,6 +8,7 @@
   <xs:element name="OneOf" type="OneOfType" />
 
   <xs:complexType name="OneOfType">
+    <xs:attribute name="RootNamespace" type="xs:string" use="required" />
     <xs:attribute name="MaxCases" type="xs:integer" use="required" />
   </xs:complexType>
 

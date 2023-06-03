@@ -71,14 +71,10 @@ namespace Draco.Lsp.Model;
 {{func property(decl, settable)}}
     {{summary(decl.Documentation)}}
     {{obsolete(decl.Deprecated)}}
-    {{if decl.IsExtensionData}}
-        [JsonExtensionData]
-    {{else}}
-        [JsonPropertyName({{string.literal(decl.SerializedName)}})]
-        [JsonIgnore(Condition = JsonIgnoreCondition.{{if decl.OmitIfNull}}WhenWritingDefault{{else}}Never{{end}})]
-        {{if !decl.OmitIfNull}}
-            [JsonRequired]
-        {{end}}
+    [JsonPropertyName({{string.literal(decl.SerializedName)}})]
+    [JsonIgnore(Condition = JsonIgnoreCondition.{{if decl.OmitIfNull}}WhenWritingDefault{{else}}Never{{end}})]
+    {{if !decl.OmitIfNull}}
+        [JsonRequired]
     {{end}}
     {{$use_required_modifier = !decl.OmitIfNull && !decl.Value && settable}}
     public {{if $use_required_modifier}}required{{end}} {{type(decl.Type)}} {{decl.Name}}

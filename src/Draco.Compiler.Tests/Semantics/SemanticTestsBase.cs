@@ -22,7 +22,7 @@ public abstract class SemanticTestsBase
 
     private protected static Symbol GetMetadataSymbol(Compilation compilation, string? @namespace, params string[] path)
     {
-        @namespace = @namespace ?? string.Empty;
+        @namespace ??= string.Empty;
         var asm = compilation.MetadataAssemblies.Values.Single(a => a.RootNamespace == @namespace);
         return asm.RootNamespace.Lookup(path.ToImmutableArray()).Single();
 

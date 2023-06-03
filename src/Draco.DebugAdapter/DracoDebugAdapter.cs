@@ -48,7 +48,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         throw new InvalidOperationException($"Failed to find a runtime containing dbgshim.dll under '{root}'");
     }
 
-    public async Task<LaunchResponse> LaunchAsync(LaunchRequestArguments args)
+    public Task<LaunchResponse> LaunchAsync(LaunchRequestArguments args)
     {
         var toRun = args.LaunchAttributes!["program"].GetString()!;
         if (args.NoDebug == true)
@@ -75,7 +75,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         {
             throw new NotSupportedException("debugging is not yet supported");
         }
-        return new();
+        return Task.FromResult(new LaunchResponse());
     }
 
     public Task<SetBreakpointsResponse> SetBreakpointsAsync(SetBreakpointsArguments args) => throw new NotImplementedException();

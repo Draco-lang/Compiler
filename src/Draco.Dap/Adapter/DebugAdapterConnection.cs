@@ -38,7 +38,7 @@ public sealed class DebugAdapterConnection
     {
         this.transport = transport;
 
-        // We create a dataflow network to handle the processing of messages from the LSP client.
+        // We create a dataflow network to handle the processing of messages from the DAP client.
 
         var scheduler = new ConcurrentExclusiveSchedulerPair();
 
@@ -79,7 +79,7 @@ public sealed class DebugAdapterConnection
             });
 
         // ProcessRequestOrEvent returns a non-null result when a response message needs to be sent back to the client.
-        // We keep only non-null responses and forward them to SerializeToTransport, which will serialize each LspMessage object it consumes to the output stream.
+        // We keep only non-null responses and forward them to SerializeToTransport, which will serialize each DapMessage object it consumes to the output stream.
         var filterNullResponses = new TransformManyBlock<DapMessage?, DapMessage>(
             m => m.HasValue ? new[] { m.Value } : Array.Empty<DapMessage>());
 

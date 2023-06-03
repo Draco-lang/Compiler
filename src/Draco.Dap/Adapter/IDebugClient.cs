@@ -15,11 +15,11 @@ public interface IDebugClient
     public DebugAdapterConnection Connection { get; }
 
     [Event("output", Mutating = true)]
-    public Task SendOutput(OutputEvent args);
+    public Task SendOutputAsync(OutputEvent args);
 
     [Event("exited", Mutating = true)]
-    public Task ProcessExited(ExitedEvent args);
+    public Task ProcessExitedAsync(ExitedEvent args);
 
     [Event("terminated", Mutating = true)]
-    public Task DebuggerTerminated(TerminatedEvent args);
+    public Task DebuggerTerminatedAsync(TerminatedEvent args);
 }

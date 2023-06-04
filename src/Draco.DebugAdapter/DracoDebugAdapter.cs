@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Draco.Dap.Adapter;
+using Draco.Dap.Adapter.Breakpoints;
 using Draco.Dap.Model;
 using Draco.Debugger;
+using Thread = Draco.Dap.Model.Thread;
 
 namespace Draco.DebugAdapter;
 
@@ -51,34 +54,38 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     public Task<LaunchResponse> LaunchAsync(LaunchRequestArguments args)
     {
         var toRun = args.LaunchAttributes!["program"].GetString()!;
-        if (args.NoDebug == true)
-        {
-            this.debugger = this.debuggerHost.StartProcess("dotnet", toRun);
+        // TODO: Consider no-debug
+        this.debugger = this.debuggerHost.StartProcess("dotnet", toRun);
 
-            this.debugger.OnStandardOut += async (_, args) => await this.client.SendOutputAsync(new()
+        this.debugger.OnStandardOut += async (_, args) => await this.client.SendOutputAsync(new()
+        {
+            Category = OutputEvent.OutputCategory.Stdout,
+            Output = args,
+        });
+        this.debugger.OnExited += async (_, a) =>
+        {
+            await this.client.ProcessExitedAsync(new()
             {
-                Category = OutputEvent.OutputCategory.Stdout,
-                Output = args,
+                ExitCode = a,
             });
-            this.debugger.OnExited += async (_, a) =>
-            {
-                await this.client.ProcessExitedAsync(new()
-                {
-                    ExitCode = a,
-                });
-                await this.client.DebuggerTerminatedAsync(new());
-            };
+            await this.client.DebuggerTerminatedAsync(new());
+        };
 
-            this.debugger.OnBreakpoint += (_, a) => this.debugger.Continue();
-        }
-        else
-        {
-            throw new NotSupportedException("debugging is not yet supported");
-        }
+        this.debugger.OnBreakpoint += (_, a) => this.debugger.Continue();
         return Task.FromResult(new LaunchResponse());
     }
 
-    public Task<SetBreakpointsResponse> SetBreakpointsAsync(SetBreakpointsArguments args) => throw new NotImplementedException();
+    public Task<ThreadsResponse> GetThreadsAsync() =>
+        Task.FromResult(new ThreadsResponse()
+        {
+            Threads = Array.Empty<Thread>(),
+        });
+
+    public Task<SetBreakpointsResponse> SetBreakpointsAsync(SetBreakpointsArguments args) =>
+        Task.FromResult(new SetBreakpointsResponse()
+        {
+            Breakpoints = Array.Empty<Breakpoint>(),
+        });
 
     public Task<StepInResponse> StepIntoAsync(StepInArguments args) => throw new NotImplementedException();
     public Task<NextResponse> StepOverAsync(NextArguments args) => throw new NotImplementedException();

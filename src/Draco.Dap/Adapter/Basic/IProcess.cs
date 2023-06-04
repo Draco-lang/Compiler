@@ -4,8 +4,11 @@ using Draco.Dap.Model;
 
 namespace Draco.Dap.Adapter.Basic;
 
-public interface IProcessLifecycle
+public interface IProcess
 {
     [Request("launch", Mutating = true)]
     public Task<LaunchResponse> LaunchAsync(LaunchRequestArguments args);
+
+    [Request("threads")]
+    public Task<ThreadsResponse> GetThreadsAsync();
 }

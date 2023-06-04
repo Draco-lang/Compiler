@@ -25,6 +25,7 @@ internal sealed partial class DracoDebugAdapter : IExceptionBreakpoints
 
     private async Task BreakAt(OnBreakpointEventArgs args)
     {
+        this.currentThread = args.Thread;
         // TODO: Currently we assume that this is only the entry point breakpoint
         var range = this.TranslateSourceRange(args.Range);
         await this.client.UpdateBreakpointAsync(new()

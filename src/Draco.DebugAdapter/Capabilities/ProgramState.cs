@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Dap.Attributes;
@@ -10,22 +11,14 @@ namespace Draco.DebugAdapter;
 
 internal sealed partial class DracoDebugAdapter
 {
+    private Debugger.Thread? currentThread;
+
     [Request("stackTrace")]
     public Task<StackTraceResponse> GetStackTraceAsync(StackTraceArguments args)
     {
         return Task.FromResult(new StackTraceResponse()
         {
-            // TODO: Hardcoded
-            StackFrames = new StackFrame[]
-            {
-                new StackFrame()
-                {
-                    Id = 0,
-                    Column = 0,
-                    Line= 3,
-                    Name = "main",
-                }
-            },
+            StackFrames = this.BuildCallStack(),
         });
     }
 
@@ -40,4 +33,17 @@ internal sealed partial class DracoDebugAdapter
             },
         });
     }
+
+    private IList<StackFrame> BuildCallStack() => this.currentThread is null
+        ? Array.Empty<StackFrame>()
+        : this.currentThread.CallStack.Select(this.TranslateStackFrame).ToList();
+
+    private StackFrame TranslateStackFrame(Debugger.StackFrame frame) => new()
+    {
+        Id = RuntimeHelpers.GetHashCode(frame),
+        Column = 0,
+        Line = 0,
+        Name = frame.Method.Name,
+        Source = this.TranslateSource(frame.Method.SourceFile),
+    };
 }

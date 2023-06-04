@@ -48,8 +48,8 @@ internal sealed partial class DracoDebugAdapter
         {
             var source = new Source()
             {
-                // TODO: Incorrect
-                Path = System.IO.Path.GetFileName(sourceFile.Uri.LocalPath),
+                Name = System.IO.Path.GetFileName(sourceFile.Uri.AbsolutePath),
+                Path = sourceFile.Uri.AbsolutePath,
                 SourceReference = sourceReference,
             };
             this.sources.Add(sourceReference, (source, sourceFile));

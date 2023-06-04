@@ -79,8 +79,6 @@ internal class Program
             debuggerWindow.OnStepOver += (_, _) => currentThread?.StepOver();
             debuggerWindow.OnStepOut += (_, _) => currentThread?.StepOut();
 
-            // Application.Run(debuggerWindow);
-
             await debugger.Terminated;
             Application.Refresh();
         });

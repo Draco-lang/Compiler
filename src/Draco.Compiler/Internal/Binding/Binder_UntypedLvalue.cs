@@ -72,9 +72,9 @@ internal partial class Binder
             // Module member access
             var module = moduleExpr.Module;
             ImmutableArray<Symbol> members;
-            if (syntax.Parent is CallExpressionSyntax) members = module.StaticMembers
+            if (BinderFacts.SyntaxMustNotReferenceTypes(syntax)) members = module.StaticMembers
                 .Where(m => m.Name == memberName)
-                .Where(BinderFacts.IsFunctionSymbol)
+                .Where(BinderFacts.IsNonTypeValueSymbol)
                 .ToImmutableArray();
             else members = module.StaticMembers
                 .Where(m => m.Name == memberName)
@@ -90,9 +90,9 @@ internal partial class Binder
             // Type member access
             var type = typeExpr.Type;
             ImmutableArray<Symbol> members;
-            if (syntax.Parent is CallExpressionSyntax) members = type.StaticMembers
+            if (BinderFacts.SyntaxMustNotReferenceTypes(syntax)) members = type.StaticMembers
                 .Where(m => m.Name == memberName)
-                .Where(BinderFacts.IsFunctionSymbol)
+                .Where(BinderFacts.IsNonTypeValueSymbol)
                 .ToImmutableArray();
             else members = type.StaticMembers
                 .Where(m => m.Name == memberName)

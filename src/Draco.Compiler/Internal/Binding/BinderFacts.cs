@@ -42,15 +42,13 @@ internal static class BinderFacts
     public static bool IsLabelSymbol(Symbol symbol) => symbol
         is LabelSymbol;
 
-    // TODO: how to call this? Its separated from IsValueSymbol because of ctors
-    public static bool IsFunctionSymbol(Symbol symbol) => symbol
-        is LocalSymbol
-        or UntypedLocalSymbol
-        or GlobalSymbol
-        or FieldSymbol
-        or PropertySymbol
-        or FunctionSymbol
-        or ModuleSymbol;
+    /// <summary>
+    /// Checks, if a given symbol can be referenced in a non-type value context.
+    /// </summary>
+    /// <param name="symbol">The symbol to check.</param>
+    /// <returns>True, if <paramref name="symbol"/> can be referenced in a non-type value context.</returns>
+    public static bool IsNonTypeValueSymbol(Symbol symbol) => symbol
+        is not TypeSymbol && IsValueSymbol(symbol);
 
     /// <summary>
     /// Retrieves the first scope defining ancestor of a given syntax node.
@@ -124,4 +122,12 @@ internal static class BinderFacts
         or NameLabelSyntax
         or MemberExpressionSyntax
         or ImportPathSyntax;
+
+    /// <summary>
+    /// Checks, that given syntax node must not reference a type.
+    /// </summary>
+    /// <param name="node">The syntax node to check.</param>
+    /// <returns>True, if <paramref name="node"/> must not reference a type.</returns>
+    public static bool SyntaxMustNotReferenceTypes(SyntaxNode node) =>
+        node.Parent is CallExpressionSyntax || (node.Parent is GenericExpressionSyntax && node.Parent.Parent is CallExpressionSyntax);
 }

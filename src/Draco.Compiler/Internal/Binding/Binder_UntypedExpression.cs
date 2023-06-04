@@ -117,9 +117,9 @@ internal partial class Binder
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        Symbol symbol;
-        if (syntax.Parent is CallExpressionSyntax || (syntax.Parent is GenericExpressionSyntax && syntax.Parent?.Parent is CallExpressionSyntax)) symbol = this.LookupFunctionSymbol(syntax.Name.Text, syntax, diagnostics);
-        else symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        Symbol symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
+            ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
+            : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
@@ -479,9 +479,9 @@ internal partial class Binder
             // Module member access
             var module = moduleExpr.Module;
             ImmutableArray<Symbol> members;
-            if (syntax.Parent is CallExpressionSyntax) members = module.StaticMembers
+            if (BinderFacts.SyntaxMustNotReferenceTypes(syntax)) members = module.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
-                .Where(BinderFacts.IsFunctionSymbol)
+                .Where(BinderFacts.IsNonTypeValueSymbol)
                 .ToImmutableArray();
             else members = module.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
@@ -497,9 +497,9 @@ internal partial class Binder
             // Type member access
             var type = typeExpr.Type;
             ImmutableArray<Symbol> members;
-            if (syntax.Parent is CallExpressionSyntax) members = type.StaticMembers
+            if (BinderFacts.SyntaxMustNotReferenceTypes(syntax)) members = type.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
-                .Where(BinderFacts.IsFunctionSymbol)
+                .Where(BinderFacts.IsNonTypeValueSymbol)
                 .ToImmutableArray();
             else members = type.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)

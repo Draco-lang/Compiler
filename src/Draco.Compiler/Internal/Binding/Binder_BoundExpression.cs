@@ -197,7 +197,6 @@ internal partial class Binder
         var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
         var compoundOperator = assignment.CompoundOperator?.Result;
 
-        // TODO: Compound operators
         // NOTE: This is how we deal with properties and indexers
         if (assignment.Left is UntypedPropertySetLvalue prop)
         {

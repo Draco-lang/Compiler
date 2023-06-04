@@ -16,9 +16,11 @@ internal sealed partial class DracoDebugAdapter
     [Request("stackTrace")]
     public Task<StackTraceResponse> GetStackTraceAsync(StackTraceArguments args)
     {
+        var result = this.BuildCallStack();
         return Task.FromResult(new StackTraceResponse()
         {
-            StackFrames = this.BuildCallStack(),
+            StackFrames = result,
+            TotalFrames = result.Count,
         });
     }
 

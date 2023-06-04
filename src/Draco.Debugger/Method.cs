@@ -138,7 +138,7 @@ public sealed class Method
         if (offset < this.SequencePoints[0].Offset || offset > this.SequencePoints[^1].Offset) return null;
 
         var seqPoint = this.SequencePoints.FirstOrDefault(s => offset == s.Offset);
-        return seqPoint.Document.IsNil
+        return seqPoint.Document.IsNil || seqPoint.IsHidden
             ? null
             : new(
                 startLine: seqPoint.StartLine - 1,

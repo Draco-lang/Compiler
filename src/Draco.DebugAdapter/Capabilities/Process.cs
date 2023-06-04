@@ -40,7 +40,15 @@ internal sealed partial class DracoDebugAdapter
     public Task<ThreadsResponse> GetThreadsAsync() =>
         Task.FromResult(new ThreadsResponse()
         {
-            Threads = Array.Empty<Thread>(),
+            // TODO: Hardcoded
+            Threads = new Thread[]
+            {
+                new()
+                {
+                    Id = 0,
+                    Name = "main",
+                }
+            },
         });
 
     private async Task OnDebuggerExited(int exitCode)

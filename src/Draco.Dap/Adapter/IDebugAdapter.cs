@@ -14,6 +14,7 @@ public interface IDebugAdapter
     , ISource
     , IBreakpoints
     , ISingleStepping
+    , IProgramState
 {
     // NOTE: This is handled by the lifecycle manager, so it's not annotated
     // The lifecycle manager will dynamically register capabilities here,

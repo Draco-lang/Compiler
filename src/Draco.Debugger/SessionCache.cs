@@ -45,18 +45,20 @@ internal sealed class SessionCache
         return cached;
     }
 
-    public Breakpoint GetBreakpoint(CorDebugBreakpoint breakpoint)
+    public Breakpoint GetBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint = false)
     {
         if (!this.breakpoints.TryGetValue(breakpoint.Raw, out var cached))
         {
-            cached = BuildBreakpoint(breakpoint);
+            cached = this.BuildBreakpoint(breakpoint, isEntryPoint);
             this.breakpoints.Add(breakpoint.Raw, cached);
         }
         return cached;
     }
 
-    private static Breakpoint BuildBreakpoint(CorDebugBreakpoint breakpoint) => breakpoint switch
+    private Breakpoint BuildBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint) => breakpoint switch
     {
+        CorDebugFunctionBreakpoint f when isEntryPoint => new EntryPointBreakpoint(this, f),
+        CorDebugFunctionBreakpoint f => new MethodBreakpoint(this, f),
         _ => throw new ArgumentOutOfRangeException(nameof(breakpoint)),
     };
 }

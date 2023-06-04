@@ -63,6 +63,18 @@ public sealed class Method
         this.CorDebugFunction = corDebugFunction;
     }
 
+    internal SourceRange? GetSourceRangeForOffset(int offset)
+    {
+        var seqPoint = this.SequencePoints.FirstOrDefault(s => offset == s.Offset);
+        return seqPoint.Document.IsNil
+            ? null
+            : new(
+                StartLine: seqPoint.StartLine - 1,
+                StartColumn: seqPoint.StartColumn - 1,
+                EndLine: seqPoint.EndLine - 1,
+                EndColumn: seqPoint.EndColumn);
+    }
+
     private MethodDebugInformation BuildDebugInfo() => this.Module.PdbReader
         .GetMethodDebugInformation(this.MethodDefinitionHandle);
 

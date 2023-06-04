@@ -81,7 +81,7 @@ public sealed class Debugger
 
     private readonly SessionCache sessionCache = new();
 
-    private CorDebugBreakpoint? entryPointBreakpoint;
+    private Breakpoint? entryPointBreakpoint;
     private Module? mainModule;
 
     internal Debugger(
@@ -225,29 +225,18 @@ public sealed class Debugger
 
     private void OnBreakpointHandler(object? sender, BreakpointCorDebugManagedCallbackEventArgs args)
     {
-        if (this.entryPointBreakpoint?.Raw == args.Breakpoint.Raw)
+        var breakpoint = this.sessionCache.GetBreakpoint(args.Breakpoint);
+        if (this.entryPointBreakpoint == breakpoint)
         {
             // This was the entry point breakpoint
-            this.entryPointBreakpoint.Activate(false);
+            this.entryPointBreakpoint.CorDebugBreakpoint.Activate(false);
         }
 
-        switch (args.Breakpoint)
+        this.OnBreakpoint?.Invoke(sender, new()
         {
-        case CorDebugFunctionBreakpoint funcBp:
-        {
-            var function = this.sessionCache.GetMethod(funcBp.Function);
-            var range = GetSourceRangeForOffset(function, funcBp.Offset);
-            this.OnBreakpoint?.Invoke(sender, new()
-            {
-                Thread = this.sessionCache.GetThread(args.Thread),
-                Method = function,
-                Range = range,
-            });
-            break;
-        }
-        default:
-            throw new NotImplementedException("unhahdled breakpoint kind");
-        }
+            Thread = this.sessionCache.GetThread(args.Thread),
+            Breakpoint = breakpoint,
+        });
     }
 
     private void OnStepCompleteHandler(object? sender, StepCompleteCorDebugManagedCallbackEventArgs args)
@@ -301,7 +290,9 @@ public sealed class Debugger
         // We do
         var method = corModule.GetFunctionFromToken(MetadataTokens.GetToken(entryPointToken));
         var code = method.ILCode;
-        this.entryPointBreakpoint = code.CreateBreakpoint(0);
+        var corDebugBreakpoint = code.CreateBreakpoint(0);
+        // Cache it
+        this.entryPointBreakpoint = this.sessionCache.GetBreakpoint(corDebugBreakpoint, isEntryPoint: true);
     }
 
     private static SourceRange? GetSourceRangeForOffset(Method function, int offset)

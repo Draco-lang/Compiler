@@ -30,7 +30,7 @@ public abstract class Breakpoint
     /// <summary>
     /// The method the breakpoint belongs to.
     /// </summary>
-    public Method? Method { get; }
+    public virtual Method? Method => null;
 
     /// <summary>
     /// The source file the breakpoint is in.

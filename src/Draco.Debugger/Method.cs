@@ -86,6 +86,40 @@ public sealed class Method
         }
     }
 
+    /// <summary>
+    /// Attempts to place a breakpoint in this method.
+    /// </summary>
+    /// <param name="line">The line to place the breakpoint at.</param>
+    /// <param name="breakpoint">The placed breakpoint, if any.</param>
+    /// <returns>True, if the breakpoint was successfully placed, false otherwise.</returns>
+    public bool TryPlaceBreakpoint(int line, [MaybeNullWhen(false)] out Breakpoint breakpoint)
+    {
+        var offset = this.GetOffsetForLine(line);
+        if (offset is not null)
+        {
+            var corDebugBreakpoint = this.CorDebugFunction.ILCode.CreateBreakpoint(offset.Value);
+            breakpoint = this.SessionCache.GetBreakpoint(corDebugBreakpoint);
+            return true;
+        }
+        else
+        {
+            breakpoint = null;
+            return false;
+        }
+    }
+
+    internal int? GetOffsetForLine(int line)
+    {
+        if (this.SequencePoints.Length == 0) return null;
+        if (line < this.SequencePoints[0].GetStartPosition().Line
+         || line > this.SequencePoints[^1].GetEndPosition().Line) return null;
+
+        var seqPoint = this.SequencePoints.FirstOrDefault(s => s.StartLine == line);
+        return seqPoint.Document.IsNil
+            ? null
+            : seqPoint.Offset;
+    }
+
     internal int? GetOffsetForSourcePosition(SourcePosition position)
     {
         if (this.SequencePoints.Length == 0) return null;
@@ -98,7 +132,7 @@ public sealed class Method
             : seqPoint.Offset;
     }
 
-    internal SourceRange? GetSourceRangeForOffset(int offset)
+    internal SourceRange? GetSourceRangeForIlOffset(int offset)
     {
         if (this.SequencePoints.Length == 0) return null;
         if (offset < this.SequencePoints[0].Offset || offset > this.SequencePoints[^1].Offset) return null;

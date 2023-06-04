@@ -246,7 +246,7 @@ public sealed class Debugger
 
         var offset = ilFrame.IP.pnOffset;
         var function = this.sessionCache.GetMethod(args.Thread.ActiveFrame.Function);
-        var range = function.GetSourceRangeForOffset(offset);
+        var range = function.GetSourceRangeForIlOffset(offset);
 
         this.OnStep?.Invoke(sender, new()
         {

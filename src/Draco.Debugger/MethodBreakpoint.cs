@@ -12,7 +12,7 @@ internal class MethodBreakpoint : Breakpoint
 {
     internal override CorDebugFunctionBreakpoint CorDebugBreakpoint { get; }
     public override Method Method => this.SessionCache.GetMethod(this.CorDebugBreakpoint.Function);
-    public override SourceRange? Range => this.Method.GetSourceRangeForOffset(this.CorDebugBreakpoint.Offset);
+    public override SourceRange? Range => this.Method.GetSourceRangeForIlOffset(this.CorDebugBreakpoint.Offset);
 
     public MethodBreakpoint(SessionCache sessionCache, CorDebugFunctionBreakpoint corDebugBreakpoint)
         : base(sessionCache)

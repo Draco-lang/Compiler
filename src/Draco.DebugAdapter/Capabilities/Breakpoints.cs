@@ -24,17 +24,12 @@ internal sealed partial class DracoDebugAdapter : IExceptionBreakpoints
             foreach (var bp in args.Breakpoints)
             {
                 var position = this.translator.ToDebugger(bp.Line, bp.Column ?? 0);
-                if (source.TryPlaceBreakpoint(position, out var breakpoint))
+                var success = bp.Column is null
+                    ? source.TryPlaceBreakpoint(bp.Line, out var breakpoint)
+                    : source.TryPlaceBreakpoint(this.translator.ToDebugger(bp.Line, bp.Column.Value), out breakpoint);
+                if (success)
                 {
-                    result.Add(new()
-                    {
-                        Verified = true,
-                        Line = breakpoint.Range?.Start.Line,
-                        Column = breakpoint.Range?.Start.Column,
-                        EndLine = breakpoint.Range?.End.Line,
-                        EndColumn = breakpoint.Range?.End.Column,
-                        Source = args.Source,
-                    });
+                    result.Add(this.translator.ToDap(breakpoint!));
                 }
                 else
                 {

@@ -22,6 +22,25 @@ internal sealed class Translator
         this.clientInfo = clientInfo;
     }
 
+    public DapModels.Breakpoint ToDap(DebuggerApi.Breakpoint breakpoint)
+    {
+        var result = new DapModels.Breakpoint()
+        {
+            Verified = true,
+            Source = breakpoint.SourceFile is null ? null : this.ToDap(breakpoint.SourceFile),
+        };
+        if (breakpoint.Range is not null)
+        {
+            var r = breakpoint.Range.Value;
+            var (startLine, startColumn, endLine, endColumn) = this.ToDap(r);
+            result.Line = startLine;
+            result.Column = startColumn;
+            result.EndLine = endLine;
+            result.EndColumn = endColumn;
+        }
+        return result;
+    }
+
     public DapModels.StackFrame ToDap(DebuggerApi.StackFrame frame) => new()
     {
         Id = RuntimeHelpers.GetHashCode(frame),
@@ -54,9 +73,9 @@ internal sealed class Translator
         return (StartLine: sl, StartColumn: sc, EndLine: el, EndColumn: ec);
     }
 
-    private int LineToDap(int line) => line + ((this.clientInfo.LinesStartAt1 ?? false) ? 1 : 0);
-    private int ColumnToDap(int col) => col + ((this.clientInfo.ColumnsStartAt1 ?? false) ? 1 : 0);
+    public int LineToDap(int line) => line + ((this.clientInfo.LinesStartAt1 ?? false) ? 1 : 0);
+    public int ColumnToDap(int col) => col + ((this.clientInfo.ColumnsStartAt1 ?? false) ? 1 : 0);
 
-    private int LineToDebugger(int line) => line - ((this.clientInfo.LinesStartAt1 ?? false) ? 1 : 0);
-    private int ColumnToDebugger(int col) => col - ((this.clientInfo.ColumnsStartAt1 ?? false) ? 1 : 0);
+    public int LineToDebugger(int line) => line - ((this.clientInfo.LinesStartAt1 ?? false) ? 1 : 0);
+    public int ColumnToDebugger(int col) => col - ((this.clientInfo.ColumnsStartAt1 ?? false) ? 1 : 0);
 }

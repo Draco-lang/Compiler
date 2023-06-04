@@ -72,6 +72,23 @@ public sealed class SourceFile
         return false;
     }
 
+    /// <summary>
+    /// Attempts to place a breakpoint in this source file.
+    /// </summary>
+    /// <param name="line">The line to place the breakpoint at.</param>
+    /// <param name="breakpoint">The placed breakpoint, if any.</param>
+    /// <returns>True, if the breakpoint was successfully placed, false otherwise.</returns>
+    public bool TryPlaceBreakpoint(int line, [MaybeNullWhen(false)] out Breakpoint breakpoint)
+    {
+        foreach (var m in this.Methods)
+        {
+            if (m.TryPlaceBreakpoint(line, out breakpoint)) return true;
+        }
+
+        breakpoint = null;
+        return false;
+    }
+
     private string BuildText() => File.ReadAllText(this.Uri.LocalPath);
 
     private ImmutableArray<Method> BuildMethods()

@@ -17,7 +17,7 @@ internal sealed partial class DracoDebugAdapter : IExceptionBreakpoints
     public Task<SetBreakpointsResponse> SetBreakpointsAsync(SetBreakpointsArguments args) =>
         Task.FromResult(new SetBreakpointsResponse()
         {
-            Breakpoints = Array.Empty<Breakpoint>(),
+            Breakpoints = Array.Empty<Dap.Model.Breakpoint>(),
         });
 
     public Task<SetExceptionBreakpointsResponse> SetExceptionBreakpointsAsync(SetExceptionBreakpointsArguments args) =>
@@ -27,18 +27,18 @@ internal sealed partial class DracoDebugAdapter : IExceptionBreakpoints
     {
         this.currentThread = args.Thread;
         // TODO: Currently we assume that this is only the entry point breakpoint
-        var range = this.TranslateSourceRange(args.Range);
+        var range = this.TranslateSourceRange(args.Breakpoint.Range);
         await this.client.UpdateBreakpointAsync(new()
         {
             Reason = BreakpointEvent.BreakpointReason.New,
             Breakpoint = new()
             {
                 Verified = true,
-                Source = this.TranslateSource(args.SourceFile),
-                Line = range?.StartLine,
-                Column = range?.StartColumn,
-                EndLine = range?.EndLine,
-                EndColumn = range?.EndColumn,
+                Source = this.TranslateSource(args.Breakpoint.SourceFile),
+                Line = range?.Start.Line,
+                Column = range?.Start.Column,
+                EndLine = range?.End.Line,
+                EndColumn = range?.End.Column,
             },
         });
         await this.client.OnStoppedAsync(new()

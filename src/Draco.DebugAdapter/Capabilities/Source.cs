@@ -32,13 +32,11 @@ internal sealed partial class DracoDebugAdapter
 
         if (range is null) return null;
         var r = range.Value;
-        return new()
-        {
-            StartLine = TranslateLine(r.StartLine),
-            StartColumn = TranslateColumn(r.StartColumn),
-            EndLine = TranslateLine(r.EndLine),
-            EndColumn = TranslateColumn(r.EndColumn),
-        };
+        return new(
+            startLine: TranslateLine(r.Start.Line),
+            startColumn: TranslateColumn(r.Start.Column),
+            endLine: TranslateLine(r.End.Line),
+            endColumn: TranslateColumn(r.End.Column));
     }
 
     private Source? TranslateSource(SourceFile? sourceFile) => sourceFile is null

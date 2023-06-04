@@ -44,8 +44,8 @@ internal sealed class SourceTextView : TextView
     {
         if (this.highlightedRange is null) return false;
         var r = this.highlightedRange.Value;
-        var rangeStart = (Line: r.StartLine, Column: r.StartColumn);
-        var rangeEnd = (Line: r.EndLine, Column: r.EndColumn);
+        var rangeStart = (Line: r.Start.Line, Column: r.Start.Column);
+        var rangeEnd = (Line: r.End.Line, Column: r.End.Column);
 
         var currentPos = (Line: lineIndex, Column: columnIndex);
 

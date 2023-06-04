@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -40,20 +41,11 @@ internal sealed partial class DracoDebugAdapter
         };
     }
 
-    private Source? TranslateSource(SourceFile? sourceFile)
-    {
-        if (sourceFile is null) return null;
-        var sourceReference = RuntimeHelpers.GetHashCode(sourceFile);
-        if (!this.sources.TryGetValue(sourceReference, out var sourcePair))
+    private Source? TranslateSource(SourceFile? sourceFile) => sourceFile is null
+        ? null
+        : new()
         {
-            var source = new Source()
-            {
-                Name = System.IO.Path.GetFileName(sourceFile.Uri.AbsolutePath),
-                Path = sourceFile.Uri.AbsolutePath,
-                SourceReference = sourceReference,
-            };
-            this.sources.Add(sourceReference, (source, sourceFile));
-        }
-        return sourcePair.Source;
-    }
+            Path = sourceFile.Uri.AbsolutePath,
+            Name = Path.GetFileName(sourceFile.Uri.AbsolutePath),
+        };
 }

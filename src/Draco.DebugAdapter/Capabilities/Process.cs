@@ -27,7 +27,7 @@ internal sealed partial class DracoDebugAdapter
         });
         this.debugger.OnExited += async (_, e) => await this.OnDebuggerExited(e);
 
-        this.debugger.OnBreakpoint += (_, a) => this.debugger.Continue();
+        this.debugger.OnBreakpoint += async (_, a) => await this.BreakAt(a);
         return Task.FromResult(new LaunchResponse());
     }
 

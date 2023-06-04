@@ -27,14 +27,16 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     public void Dispose() { }
 
-    public Task InitializeAsync(InitializeRequestArguments args)
+    public async Task InitializeAsync(InitializeRequestArguments args)
     {
+        await Task.Delay(10000);
+
         this.clientInfo = args;
 
         var dbgShim = FindDbgShim();
         this.debuggerHost = DebuggerHost.Create(dbgShim);
 
-        return Task.CompletedTask;
+        // return Task.CompletedTask;
     }
 
     // TODO: Temporary

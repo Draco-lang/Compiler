@@ -11,6 +11,7 @@ namespace Draco.Dap.Adapter;
 public interface IDebugAdapter
     : IDisposable
     , IProcess
+    , ISource
     , IBreakpoints
     , ISingleStepping
 {

@@ -36,14 +36,5 @@ internal sealed partial class DracoDebugAdapter
 
     private IList<StackFrame> BuildCallStack() => this.currentThread is null
         ? Array.Empty<StackFrame>()
-        : this.currentThread.CallStack.Select(this.TranslateStackFrame).ToList();
-
-    private StackFrame TranslateStackFrame(Debugger.StackFrame frame) => new()
-    {
-        Id = RuntimeHelpers.GetHashCode(frame),
-        Column = 0,
-        Line = 0,
-        Name = frame.Method.Name,
-        Source = this.TranslateSource(frame.Method.SourceFile),
-    };
+        : this.currentThread.CallStack.Select(this.translator.ToDap).ToList();
 }

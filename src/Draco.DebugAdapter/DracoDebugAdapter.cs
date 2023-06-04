@@ -17,6 +17,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     private readonly IDebugClient client;
 
     private InitializeRequestArguments clientInfo = null!;
+    private Translator translator = null!;
     private DebuggerHost debuggerHost = null!;
     private Debugger.Debugger debugger = null!;
 
@@ -27,16 +28,15 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     public void Dispose() { }
 
-    public async Task InitializeAsync(InitializeRequestArguments args)
+    public Task InitializeAsync(InitializeRequestArguments args)
     {
-        await Task.Delay(10000);
-
         this.clientInfo = args;
+        this.translator = new(args);
 
         var dbgShim = FindDbgShim();
         this.debuggerHost = DebuggerHost.Create(dbgShim);
 
-        // return Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     // TODO: Temporary
@@ -61,4 +61,5 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     public Task<StepInResponse> StepIntoAsync(StepInArguments args) => throw new NotImplementedException();
     public Task<NextResponse> StepOverAsync(NextArguments args) => throw new NotImplementedException();
     public Task<StepOutResponse> StepOutAsync(StepOutArguments args) => throw new NotImplementedException();
+    public Task<SourceResponse> GetSourceAsync(SourceArguments args) => throw new NotImplementedException();
 }

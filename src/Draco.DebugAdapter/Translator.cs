@@ -41,18 +41,24 @@ internal sealed class Translator
         return result;
     }
 
-    public DapModels.StackFrame ToDap(DebuggerApi.StackFrame frame) => new()
+    public DapModels.StackFrame ToDap(DebuggerApi.StackFrame frame)
     {
-        Id = RuntimeHelpers.GetHashCode(frame),
-        // TODO
-        Column = 0,
-        // TODO
-        Line = 0,
-        Name = frame.Method.Name,
-        Source = frame.Method.SourceFile is null
-            ? null
-            : this.ToDap(frame.Method.SourceFile),
-    };
+        var (startLine, startColumn, endLine, endColumn) = frame.Range is null
+            ? (0, 0, 0, 0)
+            : this.ToDap(frame.Range.Value);
+        return new()
+        {
+            Id = RuntimeHelpers.GetHashCode(frame),
+            Name = frame.Method.Name,
+            Line = startLine,
+            Column = startColumn,
+            EndLine = endLine,
+            EndColumn = endColumn,
+            Source = frame.Method.SourceFile is null
+                ? null
+                : this.ToDap(frame.Method.SourceFile),
+        };
+    }
 
     public DebuggerApi.SourcePosition ToDebugger(int line, int column) =>
         new(Line: this.LineToDebugger(line), Column: this.ColumnToDebugger(column));

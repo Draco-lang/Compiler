@@ -30,11 +30,21 @@ public sealed class StackFrame
     public ImmutableDictionary<string, object?> Locals => this.locals ??= this.BuildLocals();
     private ImmutableDictionary<string, object?>? locals;
 
+    /// <summary>
+    /// The range the execution is at.
+    /// </summary>
+    public SourceRange? Range => this.range ??= this.BuildRange();
+    private SourceRange? range;
+
     internal StackFrame(SessionCache sessionCache, CorDebugFrame corDebugFrame)
     {
         this.SessionCache = sessionCache;
         this.CorDebugFrame = corDebugFrame;
     }
+
+    private SourceRange? BuildRange() => this.CorDebugFrame is CorDebugILFrame ilFrame
+        ? this.Method.GetSourceRangeForIlOffset(ilFrame.IP.pnOffset)
+        : null;
 
     private ImmutableDictionary<string, object?> BuildLocals()
     {

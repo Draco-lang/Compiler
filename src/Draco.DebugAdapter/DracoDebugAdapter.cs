@@ -57,8 +57,5 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         throw new InvalidOperationException($"Failed to find a runtime containing dbgshim.dll under '{root}'");
     }
 
-    public Task<StepInResponse> StepIntoAsync(StepInArguments args) => throw new NotImplementedException();
-    public Task<NextResponse> StepOverAsync(NextArguments args) => throw new NotImplementedException();
-    public Task<StepOutResponse> StepOutAsync(StepOutArguments args) => throw new NotImplementedException();
     public Task<SourceResponse> GetSourceAsync(SourceArguments args) => throw new NotImplementedException();
 }

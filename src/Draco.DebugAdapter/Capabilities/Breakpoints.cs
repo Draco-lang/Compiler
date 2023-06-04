@@ -46,13 +46,12 @@ internal sealed partial class DracoDebugAdapter : IExceptionBreakpoints
     public Task<SetExceptionBreakpointsResponse> SetExceptionBreakpointsAsync(SetExceptionBreakpointsArguments args) =>
         Task.FromResult(new SetExceptionBreakpointsResponse());
 
-    private async Task BreakAt(OnBreakpointEventArgs args)
+    private async Task BreakAt(Debugger.Thread thread, StoppedEvent.StoppedReason reason)
     {
-        this.currentThread = args.Thread;
-        // TODO: Currently we assume that this is only the entry point breakpoint
+        this.currentThread = thread;
         await this.client.OnStoppedAsync(new()
         {
-            Reason = StoppedEvent.StoppedReason.Entry,
+            Reason = reason,
             AllThreadsStopped = true,
         });
     }

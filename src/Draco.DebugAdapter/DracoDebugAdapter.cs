@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace Draco.DebugAdapter;
 internal sealed partial class DracoDebugAdapter : IDebugAdapter
 {
     private readonly IDebugClient client;
+
     private DebuggerHost debuggerHost = null!;
     private Debugger.Debugger debugger = null!;
 

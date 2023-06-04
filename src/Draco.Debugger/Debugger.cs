@@ -246,7 +246,7 @@ public sealed class Debugger
 
         var offset = ilFrame.IP.pnOffset;
         var function = this.sessionCache.GetMethod(args.Thread.ActiveFrame.Function);
-        var range = GetSourceRangeForOffset(function, offset);
+        var range = function.GetSourceRangeForOffset(offset);
 
         this.OnStep?.Invoke(sender, new()
         {
@@ -293,17 +293,5 @@ public sealed class Debugger
         var corDebugBreakpoint = code.CreateBreakpoint(0);
         // Cache it
         this.entryPointBreakpoint = this.sessionCache.GetBreakpoint(corDebugBreakpoint, isEntryPoint: true);
-    }
-
-    private static SourceRange? GetSourceRangeForOffset(Method function, int offset)
-    {
-        var seqPoint = function.SequencePoints.FirstOrDefault(s => offset == s.Offset);
-        return seqPoint.Document.IsNil
-            ? null
-            : new(
-                StartLine: seqPoint.StartLine - 1,
-                StartColumn: seqPoint.StartColumn - 1,
-                EndLine: seqPoint.EndLine - 1,
-                EndColumn: seqPoint.EndColumn);
     }
 }

@@ -3,12 +3,21 @@ namespace Draco.Debugger;
 /// <summary>
 /// Represents a range of source code.
 /// </summary>
-/// <param name="StartLine">The 0-based start line index.</param>
-/// <param name="StartColumn">The 0-based start column index.</param>
-/// <param name="EndLine">The 0-based end line index (exclusive).</param>
-/// <param name="EndColumn">The 0-based end column index (exclusive).</param>
-public readonly record struct SourceRange(
-    int StartLine,
-    int StartColumn,
-    int EndLine,
-    int EndColumn);
+/// <param name="Start">The inclusive start position.</param>
+/// <param name="End">The exclusive end position.</param>
+public readonly record struct SourceRange(SourcePosition Start, SourcePosition End)
+{
+    public SourceRange(int startLine, int startColumn, int endLine, int endColumn)
+        : this(
+              new SourcePosition(Line: startLine, Column: startColumn),
+              new SourcePosition(Line: endLine, Column: endColumn))
+    {
+    }
+
+    /// <summary>
+    /// Checks if the given position is within this range.
+    /// </summary>
+    /// <param name="position">The position to check.</param>
+    /// <returns>True, if this range contains <paramref name="position"/>.</returns>
+    public bool Contains(SourcePosition position) => this.Start <= position && position < this.End;
+}

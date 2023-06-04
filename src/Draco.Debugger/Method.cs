@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -63,16 +64,53 @@ public sealed class Method
         this.CorDebugFunction = corDebugFunction;
     }
 
+    /// <summary>
+    /// Attempts to place a breakpoint in this method.
+    /// </summary>
+    /// <param name="position">The position to place the breakpoint at.</param>
+    /// <param name="breakpoint">The placed breakpoint, if any.</param>
+    /// <returns>True, if the breakpoint was successfully placed, false otherwise.</returns>
+    public bool TryPlaceBreakpoint(SourcePosition position, [MaybeNullWhen(false)] out Breakpoint breakpoint)
+    {
+        var offset = this.GetOffsetForSourcePosition(position);
+        if (offset is not null)
+        {
+            var corDebugBreakpoint = this.CorDebugFunction.ILCode.CreateBreakpoint(offset.Value);
+            breakpoint = this.SessionCache.GetBreakpoint(corDebugBreakpoint);
+            return true;
+        }
+        else
+        {
+            breakpoint = null;
+            return false;
+        }
+    }
+
+    internal int? GetOffsetForSourcePosition(SourcePosition position)
+    {
+        if (this.SequencePoints.Length == 0) return null;
+        if (position < this.SequencePoints[0].GetStartPosition()
+         || position > this.SequencePoints[^1].GetEndPosition()) return null;
+
+        var seqPoint = this.SequencePoints.FirstOrDefault(s => s.Contains(position));
+        return seqPoint.Document.IsNil
+            ? null
+            : seqPoint.Offset;
+    }
+
     internal SourceRange? GetSourceRangeForOffset(int offset)
     {
+        if (this.SequencePoints.Length == 0) return null;
+        if (offset < this.SequencePoints[0].Offset || offset > this.SequencePoints[^1].Offset) return null;
+
         var seqPoint = this.SequencePoints.FirstOrDefault(s => offset == s.Offset);
         return seqPoint.Document.IsNil
             ? null
             : new(
-                StartLine: seqPoint.StartLine - 1,
-                StartColumn: seqPoint.StartColumn - 1,
-                EndLine: seqPoint.EndLine - 1,
-                EndColumn: seqPoint.EndColumn);
+                startLine: seqPoint.StartLine - 1,
+                startColumn: seqPoint.StartColumn - 1,
+                endLine: seqPoint.EndLine - 1,
+                endColumn: seqPoint.EndColumn);
     }
 
     private MethodDebugInformation BuildDebugInfo() => this.Module.PdbReader

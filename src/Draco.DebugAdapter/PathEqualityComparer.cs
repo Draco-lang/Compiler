@@ -21,6 +21,6 @@ internal sealed class PathEqualityComparer : EqualityComparer<string>
     {
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
-        return Path.GetFullPath(x).Equals(Path.GetFullPath(y));
+        return Path.GetFullPath(x).Equals(Path.GetFullPath(y), StringComparison.InvariantCultureIgnoreCase);
     }
 }

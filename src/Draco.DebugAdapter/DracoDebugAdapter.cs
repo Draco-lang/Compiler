@@ -8,7 +8,6 @@ using Draco.Dap.Adapter;
 using Draco.Dap.Adapter.Breakpoints;
 using Draco.Dap.Model;
 using Draco.Debugger;
-using Thread = Draco.Dap.Model.Thread;
 
 namespace Draco.DebugAdapter;
 

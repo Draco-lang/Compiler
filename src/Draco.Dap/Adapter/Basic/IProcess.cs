@@ -9,6 +9,9 @@ public interface IProcess
     [Request("launch", Mutating = true)]
     public Task<LaunchResponse> LaunchAsync(LaunchRequestArguments args);
 
+    [Request("attach", Mutating = true)]
+    public Task<AttachResponse> AttachAsync(AttachRequestArguments args);
+
     [Request("threads")]
     public Task<ThreadsResponse> GetThreadsAsync();
 }

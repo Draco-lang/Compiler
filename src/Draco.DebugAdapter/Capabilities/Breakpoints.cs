@@ -13,6 +13,12 @@ internal sealed partial class DracoDebugAdapter : IExceptionBreakpoints
 {
     public IList<ExceptionBreakpointsFilter> ExceptionBreakpointsFilters => Array.Empty<ExceptionBreakpointsFilter>();
 
+    public Task<SetBreakpointsResponse> SetBreakpointsAsync(SetBreakpointsArguments args) =>
+        Task.FromResult(new SetBreakpointsResponse()
+        {
+            Breakpoints = Array.Empty<Breakpoint>(),
+        });
+
     public Task<SetExceptionBreakpointsResponse> SetExceptionBreakpointsAsync(SetExceptionBreakpointsArguments args) =>
         Task.FromResult(new SetExceptionBreakpointsResponse());
 }

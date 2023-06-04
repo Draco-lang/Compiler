@@ -16,6 +16,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 {
     private readonly IDebugClient client;
 
+    private InitializeRequestArguments clientInfo = null!;
     private DebuggerHost debuggerHost = null!;
     private Debugger.Debugger debugger = null!;
 
@@ -28,6 +29,8 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     public Task InitializeAsync(InitializeRequestArguments args)
     {
+        this.clientInfo = args;
+
         var dbgShim = FindDbgShim();
         this.debuggerHost = DebuggerHost.Create(dbgShim);
 
@@ -52,42 +55,6 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
         throw new InvalidOperationException($"Failed to find a runtime containing dbgshim.dll under '{root}'");
     }
-
-    public Task<LaunchResponse> LaunchAsync(LaunchRequestArguments args)
-    {
-        var toRun = args.LaunchAttributes!["program"].GetString()!;
-        // TODO: Consider no-debug
-        this.debugger = this.debuggerHost.StartProcess("dotnet", toRun);
-
-        this.debugger.OnStandardOut += async (_, args) => await this.client.SendOutputAsync(new()
-        {
-            Category = OutputEvent.OutputCategory.Stdout,
-            Output = args,
-        });
-        this.debugger.OnExited += async (_, a) =>
-        {
-            await this.client.ProcessExitedAsync(new()
-            {
-                ExitCode = a,
-            });
-            await this.client.DebuggerTerminatedAsync(new());
-        };
-
-        this.debugger.OnBreakpoint += (_, a) => this.debugger.Continue();
-        return Task.FromResult(new LaunchResponse());
-    }
-
-    public Task<ThreadsResponse> GetThreadsAsync() =>
-        Task.FromResult(new ThreadsResponse()
-        {
-            Threads = Array.Empty<Thread>(),
-        });
-
-    public Task<SetBreakpointsResponse> SetBreakpointsAsync(SetBreakpointsArguments args) =>
-        Task.FromResult(new SetBreakpointsResponse()
-        {
-            Breakpoints = Array.Empty<Breakpoint>(),
-        });
 
     public Task<StepInResponse> StepIntoAsync(StepInArguments args) => throw new NotImplementedException();
     public Task<NextResponse> StepOverAsync(NextArguments args) => throw new NotImplementedException();

@@ -32,6 +32,7 @@ public sealed class Debugger
     /// </summary>
     public ImmutableArray<Thread> Threads => this.corDebugProcess.Threads
         .Select(this.sessionCache.GetThread)
+        // NOTE: Currently this is how we filter user threads, might be super unreliable
         .Where(t => t.Name is not null)
         .ToImmutableArray();
 

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata.Ecma335;
+using System.Threading;
 using ClrDebug;
 
 namespace Draco.Debugger;
@@ -9,6 +10,8 @@ namespace Draco.Debugger;
 /// </summary>
 public sealed class StackFrame
 {
+    private static int stackFrameCounter = 0;
+
     /// <summary>
     /// The cache for this object.
     /// </summary>
@@ -20,9 +23,20 @@ public sealed class StackFrame
     internal CorDebugFrame CorDebugFrame { get; }
 
     /// <summary>
+    /// The ID of this stack frame.
+    /// </summary>
+    public int Id { get; } = Interlocked.Increment(ref stackFrameCounter);
+
+    /// <summary>
     /// The method the frame represents.
     /// </summary>
     public Method Method => this.SessionCache.GetMethod(this.CorDebugFrame.Function);
+
+    /// <summary>
+    /// The arguments visible in this frame.
+    /// </summary>
+    public ImmutableDictionary<string, object?> Arguments => this.arguments ??= this.BuildArguments();
+    private ImmutableDictionary<string, object?>? arguments;
 
     /// <summary>
     /// The locals visible in this frame.
@@ -46,16 +60,12 @@ public sealed class StackFrame
         ? this.Method.GetSourceRangeForIlOffset(ilFrame.IP.pnOffset)
         : null;
 
-    private ImmutableDictionary<string, object?> BuildLocals()
+    private ImmutableDictionary<string, object?> BuildArguments()
     {
         if (this.CorDebugFrame is not CorDebugILFrame ilFrame) return ImmutableDictionary<string, object?>.Empty;
 
-        var offset = ilFrame.IP.pnOffset;
-
         var meta = this.Method.Module.CorDebugModule.GetMetaDataInterface();
         var methodParams = meta.MetaDataImport.EnumParams(MetadataTokens.GetToken(this.Method.MethodDefinitionHandle));
-        var pdbReader = this.Method.Module.PdbReader;
-        var localScopes = pdbReader.GetLocalScopes(this.Method.MethodDefinitionHandle);
 
         var result = ImmutableDictionary.CreateBuilder<string, object?>();
 
@@ -66,6 +76,20 @@ public sealed class StackFrame
             var argValue = ilFrame.GetArgument(param.pulSequence - 1);
             result.Add(param.szName, argValue.ToBrowsableObject());
         }
+
+        return result.ToImmutable();
+    }
+
+    private ImmutableDictionary<string, object?> BuildLocals()
+    {
+        if (this.CorDebugFrame is not CorDebugILFrame ilFrame) return ImmutableDictionary<string, object?>.Empty;
+
+        var offset = ilFrame.IP.pnOffset;
+
+        var pdbReader = this.Method.Module.PdbReader;
+        var localScopes = pdbReader.GetLocalScopes(this.Method.MethodDefinitionHandle);
+
+        var result = ImmutableDictionary.CreateBuilder<string, object?>();
 
         // Process locals
         foreach (var scopeHandle in localScopes)

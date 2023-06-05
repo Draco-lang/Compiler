@@ -16,6 +16,7 @@ internal sealed partial class DracoDebugAdapter
     [Request("stackTrace")]
     public Task<StackTraceResponse> GetStackTraceAsync(StackTraceArguments args)
     {
+        this.translator.ClearCache();
         var thread = this.debugger.Threads.FirstOrDefault(t => t.Id == args.ThreadId);
         var result = thread is null
             ? Array.Empty<StackFrame>()
@@ -30,9 +31,7 @@ internal sealed partial class DracoDebugAdapter
     [Request("scopes")]
     public Task<ScopesResponse> GetScopesAsync(ScopesArguments args)
     {
-        var frame = this.debugger.Threads
-            .SelectMany(t => t.CallStack)
-            .FirstOrDefault(c => c.Id == args.FrameId);
+        var frame = this.translator.GetStackFrameById(args.FrameId);
         if (frame is null)
         {
             return Task.FromResult(new ScopesResponse()
@@ -42,17 +41,19 @@ internal sealed partial class DracoDebugAdapter
         }
 
         // We build up exactly two scopes, arguments and locals
+        var argsId = this.translator.CacheValue(frame.Arguments);
         var argumentsScope = new Scope()
         {
             Expensive = false,
             Name = "Arguments",
-            VariablesReference = frame.Id,
+            VariablesReference = argsId,
         };
+        var localsId = this.translator.CacheValue(frame.Locals);
         var localsScope = new Scope()
         {
             Expensive = false,
             Name = "Locals",
-            VariablesReference = int.MaxValue - frame.Id,
+            VariablesReference = localsId,
         };
         return Task.FromResult(new ScopesResponse()
         {
@@ -62,33 +63,7 @@ internal sealed partial class DracoDebugAdapter
 
     public Task<VariablesResponse> GetVariablesAsync(VariablesArguments args)
     {
-        var frame = this.debugger.Threads
-            .SelectMany(t => t.CallStack)
-            .FirstOrDefault(f => f.Id == args.VariablesReference || int.MaxValue - f.Id == args.VariablesReference);
-        if (frame is null)
-        {
-            return Task.FromResult(new VariablesResponse()
-            {
-                Variables = Array.Empty<Variable>(),
-            });
-        }
-
-        IList<Variable> variables;
-        if (frame.Id == args.VariablesReference)
-        {
-            // Arguments
-            variables = frame.Arguments
-                .Select(kv => this.translator.ToDap(kv.Key, kv.Value))
-                .ToList();
-        }
-        else
-        {
-            // Locals
-            variables = frame.Locals
-                .Select(kv => this.translator.ToDap(kv.Key, kv.Value))
-                .ToList();
-        }
-
+        var variables = this.translator.GetVariables(args.VariablesReference);
         return Task.FromResult(new VariablesResponse()
         {
             Variables = variables,

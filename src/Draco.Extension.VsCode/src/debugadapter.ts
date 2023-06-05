@@ -17,9 +17,11 @@ export function activateDebugAdapter(context: vscode.ExtensionContext) {
  */
 class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
     public async provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration[]> {
-        if (folder === undefined) {
+        if (!folder) {
             return [];
         }
+
+        await addTasksJsonIfNecessary(folder.uri.fsPath);
 
         let filesInWorkspaceRoot = await fs.readdir(folder.uri.fsPath);
         let projectFiles = filesInWorkspaceRoot.filter(f => f.endsWith('.dracoproj'));
@@ -37,6 +39,28 @@ class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvid
     public async resolveDebugConfigurationWithSubstitutedVariables(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration> {
         return debugConfiguration;
     }
+}
+
+async function addTasksJsonIfNecessary(workspaceRoot: string): Promise<void> {
+
+}
+
+function generateTasksJson(projectPath: string): any {
+    return {
+        version: '2.0.0',
+        tasks: [
+            {
+                label: 'build',
+                command: 'dotnet',
+                type: 'process',
+                args: [
+                    'build',
+                    path.join('${workspaceFolder}', projectPath),
+                ],
+                problemMatcher: '$msCompile',
+            }
+        ]
+    };
 }
 
 /**

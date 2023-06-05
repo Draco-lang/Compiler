@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import * as fs from "fs/promises";
+import * as path from "path";
 import { DracoDebugAdapterCommandName } from "./settings";
 
 export function activateDebugAdapter(context: vscode.ExtensionContext) {
@@ -15,14 +17,21 @@ export function activateDebugAdapter(context: vscode.ExtensionContext) {
  */
 class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
     public async provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration[]> {
-        return [{
+        if (folder === undefined) {
+            return [];
+        }
+
+        let filesInWorkspaceRoot = await fs.readdir(folder.uri.fsPath);
+        let projectFiles = filesInWorkspaceRoot.filter(f => f.endsWith('.dracoproj'));
+        return projectFiles.map(f => ({
             name: 'Draco: Launch Console App',
             type: 'dracodbg',
             request: 'launch',
             preLaunchTask: 'build',
-            program: 'TODO',
+            // TODO: Hardcoded config and framework
+            program: path.join('${workspaceFolder}', 'bin', 'Debug', `${path.parse(f).name}.dll`),
             stopAtEntry: false
-        }];
+        }));
     }
 
     public async resolveDebugConfigurationWithSubstitutedVariables(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration> {

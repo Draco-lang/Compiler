@@ -3,10 +3,10 @@ import { DracoDebugAdapterCommandName } from "./settings";
 
 export function activateDebugAdapter(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider(
-        'draco',
+        'dracodbg',
         new DracoDebugConfigurationProvider()));
     context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory(
-        'draco',
+        'dracodbg',
         new DebugAdapterDotnetToolFactory()));
 }
 
@@ -17,7 +17,7 @@ class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvid
     public async provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration[]> {
         return [{
             name: 'Draco: Launch Console App',
-            type: 'draco',
+            type: 'dracodbg',
             request: 'launch',
             preLaunchTask: 'build',
             program: 'TODO',

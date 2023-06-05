@@ -102,7 +102,7 @@
     "breakpoints": [{ "language": "draco" }],
     "debuggers": [
       {
-        "type": "draco",
+        "type": "dracodbg",
         "label": "Draco Debug",
         "languages": ["draco"],
 
@@ -130,7 +130,7 @@
             "description": "Launch a Draco Console App with a debugger.",
             "body": {
               "name": "Draco Launch (console)",
-              "type": "draco",
+              "type": "dracodbg",
               "request": "launch",
               "preLaunchTask": "build",
               "program": "^\"\\${workspaceFolder}/bin/Debug/${1:<target-framework>}/${2:<project-name.dll>}\"",

@@ -15,7 +15,14 @@ export function activateDebugAdapter(context: vscode.ExtensionContext) {
  */
 class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
     public async provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration[]> {
-        return [];
+        return [{
+            name: 'Draco: Launch Console App',
+            type: 'draco',
+            request: 'launch',
+            preLaunchTask: 'build',
+            program: 'TODO',
+            stopAtEntry: false
+        }];
     }
 
     public async resolveDebugConfigurationWithSubstitutedVariables(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration> {

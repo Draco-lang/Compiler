@@ -155,7 +155,7 @@ internal sealed class ConstraintSolver
         }
         else
         {
-            var constraint = new AwaitConstraint<TAwaitedResult, TResult>(this, () => awaited.IsResolved, map);
+            var constraint = new AwaitConstraint<TResult>(this, () => awaited.IsResolved, map);
             this.Add(constraint);
             return constraint.Promise;
         }
@@ -169,10 +169,10 @@ internal sealed class ConstraintSolver
     /// <returns>The promise of the type symbol symbol.</returns>
     public IConstraintPromise<TResult> Type<TResult>(TypeSymbol original, Func<IConstraintPromise<TResult>> map)
     {
-        var constraint = new AwaitConstraint<TypeSymbol, IConstraintPromise<TResult>>(this, () => !this.Unwrap(original).IsTypeVariable, map);
+        var constraint = new AwaitConstraint<IConstraintPromise<TResult>>(this, () => !this.Unwrap(original).IsTypeVariable, map);
         this.Add(constraint);
 
-        var await = new AwaitConstraint<IConstraintPromise<IConstraintPromise<TResult>>, TResult>(this,
+        var await = new AwaitConstraint<TResult>(this,
             () => constraint.Promise.IsResolved && constraint.Promise.Result.IsResolved,
             () => constraint.Promise.Result.Result);
         this.Add(await);

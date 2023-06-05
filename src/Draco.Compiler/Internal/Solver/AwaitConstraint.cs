@@ -7,9 +7,8 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// A constraint, that runs when another process has finished.
 /// </summary>
-/// <typeparam name="TAwaitedResult">The result of the awaited process.</typeparam>
 /// <typeparam name="TResult">The result of this constraint.</typeparam>
-internal sealed class AwaitConstraint<TAwaitedResult, TResult> : Constraint<TResult>
+internal sealed class AwaitConstraint<TResult> : Constraint<TResult>
 {
     /// <summary>
     /// When true, we execute <see cref="Map"/>.

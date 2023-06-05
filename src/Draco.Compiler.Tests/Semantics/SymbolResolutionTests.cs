@@ -2514,6 +2514,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public Foo foo = new Foo();
@@ -2535,9 +2538,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = GetMemberSymbol<PropertySymbol>(fooSym.Type, "Item");
+        var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
+        Assert.False(indexSym.IsError);
+        Assert.Same(indexSym, indexDecl);
     }
 
     [Fact]
@@ -2557,6 +2568,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public Foo foo = new Foo();
@@ -2574,9 +2587,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
 
         // Assert
         Assert.Single(diags);
+        Assert.True(fooSym.IsError);
         AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
@@ -2597,6 +2612,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public Foo foo = new Foo();
@@ -2614,9 +2632,17 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = GetMemberSymbol<PropertySymbol>(fooSym.Type, "Item");
+        var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
 
         // Assert
         Assert.Single(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
+        Assert.False(indexSym.IsError);
+        Assert.Same(indexSym, indexDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
@@ -2637,6 +2663,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType { }
@@ -2650,9 +2679,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooypeDecl = GetMetadataSymbol(compilation, null, "FooType");
 
         // Assert
         Assert.Single(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooypeSym.IsError);
+        Assert.Same(fooypeSym, fooypeDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
@@ -2673,6 +2708,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+
         // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType { }
@@ -2686,9 +2723,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
 
         // Assert
         Assert.Single(diags);
+        Assert.True(fooSym.IsError);
         AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
@@ -2709,6 +2748,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), PlusAssign, LiteralExpression(2)))))));
 
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int this[int index]
@@ -2727,9 +2768,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
     }
 
     [Fact]

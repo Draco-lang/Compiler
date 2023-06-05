@@ -15,4 +15,7 @@ public interface IProgramState
 
     [Request("scopes")]
     public Task<ScopesResponse> GetScopesAsync(ScopesArguments args);
+
+    [Request("variables")]
+    public Task<VariablesResponse> GetVariablesAsync(VariablesArguments args);
 }

@@ -22,6 +22,14 @@ internal sealed class Translator
         this.clientInfo = clientInfo;
     }
 
+    public DapModels.Variable ToDap(string name, object? value) => new()
+    {
+        Name = name,
+        Value = value?.ToString() ?? "null",
+        // TODO: For structured variables we want to return an ID > 0
+        VariablesReference = 0,
+    };
+
     public DapModels.Thread ToDap(DebuggerApi.Thread thread) => new()
     {
         Id = thread.Id,

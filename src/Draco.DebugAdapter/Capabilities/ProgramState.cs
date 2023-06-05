@@ -30,7 +30,9 @@ internal sealed partial class DracoDebugAdapter
     [Request("scopes")]
     public Task<ScopesResponse> GetScopesAsync(ScopesArguments args)
     {
-        var frame = this.currentThread?.CallStack.FirstOrDefault(c => c.Id == args.FrameId);
+        var frame = this.debugger.Threads
+            .SelectMany(t => t.CallStack)
+            .FirstOrDefault(c => c.Id == args.FrameId);
         if (frame is null)
         {
             return Task.FromResult(new ScopesResponse()
@@ -55,6 +57,40 @@ internal sealed partial class DracoDebugAdapter
         return Task.FromResult(new ScopesResponse()
         {
             Scopes = new[] { argumentsScope, localsScope },
+        });
+    }
+
+    public Task<VariablesResponse> GetVariablesAsync(VariablesArguments args)
+    {
+        var frame = this.currentThread?.CallStack
+            .FirstOrDefault(f => f.Id == args.VariablesReference || int.MaxValue - f.Id == args.VariablesReference);
+        if (frame is null)
+        {
+            return Task.FromResult(new VariablesResponse()
+            {
+                Variables = Array.Empty<Variable>(),
+            });
+        }
+
+        IList<Variable> variables;
+        if (frame.Id == args.VariablesReference)
+        {
+            // Arguments
+            variables = frame.Arguments
+                .Select(kv => this.translator.ToDap(kv.Key, kv.Value))
+                .ToList();
+        }
+        else
+        {
+            // Locals
+            variables = frame.Locals
+                .Select(kv => this.translator.ToDap(kv.Key, kv.Value))
+                .ToList();
+        }
+
+        return Task.FromResult(new VariablesResponse()
+        {
+            Variables = variables,
         });
     }
 }

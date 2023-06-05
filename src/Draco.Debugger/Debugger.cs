@@ -251,6 +251,9 @@ public sealed class Debugger
 
     private void OnBreakpointHandler(object? sender, BreakpointCorDebugManagedCallbackEventArgs args)
     {
+        // Clear thread caches
+        foreach (var t in this.Threads) t.ClearCache();
+
         var breakpoint = this.sessionCache.GetBreakpoint(args.Breakpoint);
         if (this.entryPointBreakpoint == breakpoint)
         {
@@ -267,6 +270,9 @@ public sealed class Debugger
 
     private void OnStepCompleteHandler(object? sender, StepCompleteCorDebugManagedCallbackEventArgs args)
     {
+        // Clear thread caches
+        foreach (var t in this.Threads) t.ClearCache();
+
         var frame = args.Thread.ActiveFrame;
         if (frame is not CorDebugILFrame ilFrame) return;
 

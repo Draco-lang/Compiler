@@ -32,12 +32,18 @@ public sealed class Thread
     /// <summary>
     /// The current state of the call-stack.
     /// </summary>
-    public ImmutableArray<StackFrame> CallStack => this.BuildCallStack();
+    public ImmutableArray<StackFrame> CallStack => this.callStack ??= this.BuildCallStack();
+    private ImmutableArray<StackFrame>? callStack;
 
     internal Thread(SessionCache sessionCache, CorDebugThread corDebugThread)
     {
         this.SessionCache = sessionCache;
         this.CorDebugThread = corDebugThread;
+    }
+
+    internal void ClearCache()
+    {
+        this.callStack = null;
     }
 
     /// <summary>

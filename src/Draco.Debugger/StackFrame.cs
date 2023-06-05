@@ -10,8 +10,6 @@ namespace Draco.Debugger;
 /// </summary>
 public sealed class StackFrame
 {
-    private static int stackFrameCounter = 0;
-
     /// <summary>
     /// The cache for this object.
     /// </summary>
@@ -21,11 +19,6 @@ public sealed class StackFrame
     /// The internal frame.
     /// </summary>
     internal CorDebugFrame CorDebugFrame { get; }
-
-    /// <summary>
-    /// The ID of this stack frame.
-    /// </summary>
-    public int Id { get; } = Interlocked.Increment(ref stackFrameCounter);
 
     /// <summary>
     /// The method the frame represents.

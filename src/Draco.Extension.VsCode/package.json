@@ -104,6 +104,7 @@
       {
         "type": "draco",
         "label": "Draco Debug",
+        "languages": ["draco"],
 
         "configurationAttributes": {
           "launch": {

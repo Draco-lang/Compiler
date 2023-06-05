@@ -62,7 +62,8 @@ internal sealed partial class DracoDebugAdapter
 
     public Task<VariablesResponse> GetVariablesAsync(VariablesArguments args)
     {
-        var frame = this.currentThread?.CallStack
+        var frame = this.debugger.Threads
+            .SelectMany(t => t.CallStack)
             .FirstOrDefault(f => f.Id == args.VariablesReference || int.MaxValue - f.Id == args.VariablesReference);
         if (frame is null)
         {

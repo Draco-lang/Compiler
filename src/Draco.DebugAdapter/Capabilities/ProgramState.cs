@@ -16,11 +16,14 @@ internal sealed partial class DracoDebugAdapter
     [Request("stackTrace")]
     public Task<StackTraceResponse> GetStackTraceAsync(StackTraceArguments args)
     {
-        var result = this.BuildCallStack();
+        var thread = this.debugger.Threads.FirstOrDefault(t => t.Id == args.ThreadId);
+        var result = thread is null
+            ? Array.Empty<StackFrame>()
+            : thread.CallStack.Select(this.translator.ToDap).ToArray();
         return Task.FromResult(new StackTraceResponse()
         {
             StackFrames = result,
-            TotalFrames = result.Count,
+            TotalFrames = result.Length,
         });
     }
 
@@ -54,8 +57,4 @@ internal sealed partial class DracoDebugAdapter
             Scopes = new[] { argumentsScope, localsScope },
         });
     }
-
-    private IList<StackFrame> BuildCallStack() => this.currentThread is null
-        ? Array.Empty<StackFrame>()
-        : this.currentThread.CallStack.Select(this.translator.ToDap).ToList();
 }

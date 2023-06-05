@@ -32,6 +32,7 @@ public sealed class Debugger
     /// </summary>
     public ImmutableArray<Thread> Threads => this.corDebugProcess.Threads
         .Select(this.sessionCache.GetThread)
+        .Where(t => t.Name is not null)
         .ToImmutableArray();
 
     /// <summary>
@@ -219,17 +220,26 @@ public sealed class Debugger
 
     private void OnNameChangeHandler(object? sender, NameChangeCorDebugManagedCallbackEventArgs args)
     {
-        // Thrack thread name
-        var thread = this.sessionCache.GetThread(args.Thread);
-        var threadHandle = args.Thread.VolatileOSThreadID;
-        var threadName = PlatformUtils.Methods.GetThreadName(threadHandle);
-        thread.Name = threadName;
+        if (args.Thread is not null)
+        {
+            // Track thread name
+            var thread = this.sessionCache.GetThread(args.Thread);
+            var threadHandle = args.Thread.Handle;
+            var threadName = PlatformUtils.Methods.GetThreadName(threadHandle);
+            thread.Name = threadName;
+        }
 
         this.Continue();
     }
 
     private void OnCreateThreadHandler(object? sender, CreateThreadCorDebugManagedCallbackEventArgs args)
     {
+        // Track thread name
+        var thread = this.sessionCache.GetThread(args.Thread);
+        var threadHandle = args.Thread.Handle;
+        var threadName = PlatformUtils.Methods.GetThreadName(threadHandle);
+        thread.Name = threadName;
+
         this.Continue();
     }
 

@@ -19,9 +19,7 @@ internal sealed class Win32PlatformMethods : IPlatformMethods
 
     private const string Kernel32 = "kernel32.dll";
 
-    private static readonly nint INVALID_HANDLE_VALUE = new nint(-1);
-
-    private static readonly uint S_OK = 0;
+    private static readonly nint INVALID_HANDLE_VALUE = new(-1);
 
     [DllImport(Kernel32, SetLastError = true)]
     private static extern nint GetStdHandle(StandardHandleType nStdHandle);
@@ -29,10 +27,10 @@ internal sealed class Win32PlatformMethods : IPlatformMethods
     [DllImport(Kernel32, SetLastError = true)]
     private static extern bool SetStdHandle(StandardHandleType nStdHandle, nint hHandle);
 
-    [DllImport(Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern uint GetThreadDescription(IntPtr hThread, out IntPtr result);
+    [DllImport(Kernel32, SetLastError = true)]
+    private static extern int GetThreadDescription(IntPtr hThread, out IntPtr result);
 
-    [DllImport(Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
+    [DllImport(Kernel32, SetLastError = true)]
     private static extern IntPtr LocalFree(IntPtr hMem);
 
     private static nint ReplaceStdioHandle(StandardHandleType old, nint @new)
@@ -57,7 +55,7 @@ internal sealed class Win32PlatformMethods : IPlatformMethods
     public string? GetThreadName(nint threadId)
     {
         var success = GetThreadDescription(threadId, out var name);
-        if (success != S_OK) throw new InvalidOperationException($"could not retrieve thread name of {threadId}");
+        if (success < 0) throw new InvalidOperationException($"could not retrieve thread name of {threadId}");
 
         var result = Marshal.PtrToStringUni(name);
 

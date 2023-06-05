@@ -25,7 +25,9 @@ internal sealed class Translator
     public DapModels.Thread ToDap(DebuggerApi.Thread thread) => new()
     {
         Id = thread.Id,
-        Name = thread.Name ?? $"thread-{thread.Id}",
+        Name = string.IsNullOrEmpty(thread.Name)
+            ? $"thread-{thread.Id}"
+            : thread.Name,
     };
 
     public DapModels.Breakpoint ToDap(DebuggerApi.Breakpoint breakpoint)

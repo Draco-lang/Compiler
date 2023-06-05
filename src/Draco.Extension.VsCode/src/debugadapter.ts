@@ -14,6 +14,10 @@ export function activateDebugAdapter(context: vscode.ExtensionContext) {
  * Provides debug config based on the project.
  */
 class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
+    public async provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration[]> {
+        return [];
+    }
+
     public async resolveDebugConfigurationWithSubstitutedVariables(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration> {
         return debugConfiguration;
     }

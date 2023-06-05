@@ -2680,14 +2680,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
-        var fooypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
 
         // Assert
         Assert.Single(diags);
         Assert.False(xSym.IsError);
-        Assert.False(fooypeSym.IsError);
-        Assert.Same(fooypeSym, fooypeDecl);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
@@ -2790,6 +2790,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
 
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
                 public class FooType { }
@@ -2804,9 +2806,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
     }
 
     [Fact]
@@ -2824,6 +2830,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(NameExpression("FooType"))))));
 
+        var fooTypeRef = main.FindInChildren<TypeSyntax>(0);
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
                 public class FooType { }
@@ -2838,9 +2846,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef));
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
     }
 
     [Fact]
@@ -2856,6 +2868,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
 
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
                 public class FooType { }
@@ -2870,9 +2884,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
     }
 
     [Fact]
@@ -2891,6 +2909,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
                 public class FooType{
@@ -2907,9 +2927,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
     }
 
     [Fact]
@@ -2928,6 +2952,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
                 public class FooType{
@@ -2944,9 +2970,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
     }
 
     [Fact]
@@ -2967,6 +2997,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
                 public class FooType{
@@ -2983,9 +3016,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
     }
 
     [Fact]
@@ -3006,6 +3045,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
                 public class FooType{
@@ -3022,9 +3064,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
         Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
     }
 
     [Fact]

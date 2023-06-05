@@ -83,6 +83,9 @@ public sealed partial class SemanticModel
         internal override void BindModuleSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.ModuleSymbol module) =>
             this.semanticModel.symbolMap[syntax] = module;
 
+        internal override void BindTypeSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.TypeSymbol type) =>
+            this.semanticModel.symbolMap[syntax] = type;
+
         // Memo logic
 
         private TUntypedNode BindNode<TUntypedNode>(SyntaxNode syntax, Func<TUntypedNode> binder)

@@ -125,8 +125,9 @@ internal abstract partial class Binder
     }
 
     // NOTE: This is a hack, until we find out something nicer
-    // We essentially use this to notify incremental binder that a left-hand side of a module access
+    // We essentially use this to notify incremental binder that a left-hand side of a module or a type access
     // will be erased, won't be present in the bound tree.
     // Once we start modeling module member access without throwing it away, we can get rid of it.
     internal virtual void BindModuleSyntaxToSymbol(SyntaxNode syntax, ModuleSymbol module) { }
+    internal virtual void BindTypeSyntaxToSymbol(SyntaxNode syntax, TypeSymbol type) { }
 }

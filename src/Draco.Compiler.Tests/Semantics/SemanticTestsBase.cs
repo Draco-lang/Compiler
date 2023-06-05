@@ -18,7 +18,7 @@ public abstract class SemanticTestsBase
     }
 
     private protected static TMember GetMemberSymbol<TMember>(Symbol parent, string memberName) where TMember : Symbol =>
-        (TMember)parent.Members.Single(x => x.Name == memberName);
+        parent.Members.OfType<TMember>().Single(x => x.Name == memberName);
 
     private protected static Symbol GetMetadataSymbol(Compilation compilation, string? @namespace, params string[] path)
     {

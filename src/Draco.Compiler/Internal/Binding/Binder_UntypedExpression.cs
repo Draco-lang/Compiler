@@ -653,6 +653,8 @@ internal partial class Binder
             this.BindModuleSyntaxToSymbol(syntax, module);
             return new UntypedModuleExpression(syntax, module);
         case TypeSymbol type:
+            // NOTE: Hack, see the node above this method definition
+            this.BindTypeSyntaxToSymbol(syntax, type);
             return new UntypedTypeExpression(syntax, type);
         case ParameterSymbol param:
             return new UntypedParameterExpression(syntax, param);

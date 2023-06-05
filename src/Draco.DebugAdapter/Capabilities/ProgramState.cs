@@ -27,12 +27,31 @@ internal sealed partial class DracoDebugAdapter
     [Request("scopes")]
     public Task<ScopesResponse> GetScopesAsync(ScopesArguments args)
     {
+        var frame = this.currentThread?.CallStack.FirstOrDefault(c => c.Id == args.FrameId);
+        if (frame is null)
+        {
+            return Task.FromResult(new ScopesResponse()
+            {
+                Scopes = Array.Empty<Scope>(),
+            });
+        }
+
+        // We build up exactly two scopes, arguments and locals
+        var argumentsScope = new Scope()
+        {
+            Expensive = false,
+            Name = "Arguments",
+            VariablesReference = frame.Id,
+        };
+        var localsScope = new Scope()
+        {
+            Expensive = false,
+            Name = "Locals",
+            VariablesReference = int.MaxValue - frame.Id,
+        };
         return Task.FromResult(new ScopesResponse()
         {
-            // TODO: Hardcoded
-            Scopes = new Scope[]
-            {
-            },
+            Scopes = new[] { argumentsScope, localsScope },
         });
     }
 

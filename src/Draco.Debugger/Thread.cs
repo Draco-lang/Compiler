@@ -25,6 +25,11 @@ public sealed class Thread
     public int Id => this.CorDebugThread.Id;
 
     /// <summary>
+    /// The name of this thread.
+    /// </summary>
+    public string? Name { get; internal set; }
+
+    /// <summary>
     /// The current state of the call-stack.
     /// </summary>
     public ImmutableArray<StackFrame> CallStack => this.BuildCallStack();

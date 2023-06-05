@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
@@ -6,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClrDebug;
 using Draco.Debugger.IO;
+using Draco.Debugger.Platform;
 
 namespace Draco.Debugger;
 
@@ -24,6 +26,13 @@ public sealed class Debugger
     /// </summary>
     public Module MainModule => this.mainModule
         ?? throw new InvalidOperationException("the main module has not been loaded yet");
+
+    /// <summary>
+    /// The threads in the debugged process.
+    /// </summary>
+    public ImmutableArray<Thread> Threads => this.corDebugProcess.Threads
+        .Select(this.sessionCache.GetThread)
+        .ToImmutableArray();
 
     /// <summary>
     /// The event that triggers when the process writes to its STDOUT.
@@ -210,6 +219,12 @@ public sealed class Debugger
 
     private void OnNameChangeHandler(object? sender, NameChangeCorDebugManagedCallbackEventArgs args)
     {
+        // Thrack thread name
+        var thread = this.sessionCache.GetThread(args.Thread);
+        var threadHandle = args.Thread.VolatileOSThreadID;
+        var threadName = PlatformUtils.Methods.GetThreadName(threadHandle);
+        thread.Name = threadName;
+
         this.Continue();
     }
 

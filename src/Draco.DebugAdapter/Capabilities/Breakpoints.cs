@@ -53,8 +53,7 @@ internal sealed partial class DracoDebugAdapter : IExceptionBreakpoints
         {
             Reason = reason,
             AllThreadsStopped = true,
-            // TODO: Hardcoded
-            ThreadId = 0,
+            ThreadId = thread.Id,
         });
     }
 }

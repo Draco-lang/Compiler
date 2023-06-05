@@ -28,13 +28,12 @@ internal static class IoUtils
         var stderrLocal = new AnonymousPipeServerStream(PipeDirection.In, HandleInheritability.Inheritable);
         var stderrRemote = new AnonymousPipeClientStream(PipeDirection.Out, stderrLocal.ClientSafePipeHandle);
 
-        var platformIo = PlatformUtils.GetPlatformMethods();
         var pipeHandles = new IoHandles(
             StandardInput: stdinRemote.SafePipeHandle.DangerousGetHandle(),
             StandardOutput: stdoutRemote.SafePipeHandle.DangerousGetHandle(),
             StandardError: stderrRemote.SafePipeHandle.DangerousGetHandle());
 
-        var oldHandles = platformIo.ReplaceStdioHandles(pipeHandles);
+        var oldHandles = PlatformUtils.Methods.ReplaceStdioHandles(pipeHandles);
 
         var processResult = startProcess();
 
@@ -42,7 +41,7 @@ internal static class IoUtils
         stdoutLocal.DisposeLocalCopyOfClientHandle();
         stderrLocal.DisposeLocalCopyOfClientHandle();
 
-        platformIo.ReplaceStdioHandles(oldHandles);
+        PlatformUtils.Methods.ReplaceStdioHandles(oldHandles);
 
         Console.SetIn(new StreamReader(Console.OpenStandardInput()));
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });

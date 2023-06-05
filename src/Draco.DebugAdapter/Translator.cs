@@ -22,6 +22,12 @@ internal sealed class Translator
         this.clientInfo = clientInfo;
     }
 
+    public DapModels.Thread ToDap(DebuggerApi.Thread thread) => new()
+    {
+        Id = thread.Id,
+        Name = thread.Name ?? $"thread-{thread.Id}",
+    };
+
     public DapModels.Breakpoint ToDap(DebuggerApi.Breakpoint breakpoint)
     {
         var result = new DapModels.Breakpoint()
@@ -48,7 +54,7 @@ internal sealed class Translator
             : this.ToDap(frame.Range.Value);
         return new()
         {
-            Id = RuntimeHelpers.GetHashCode(frame),
+            Id = frame.Id,
             Name = frame.Method.Name,
             Line = startLine,
             Column = startColumn,

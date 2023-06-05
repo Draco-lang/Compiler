@@ -9,6 +9,11 @@ namespace Draco.Debugger.Platform;
 internal static class PlatformUtils
 {
     /// <summary>
+    /// The platform methods for the current platform.
+    /// </summary>
+    public static IPlatformMethods Methods { get; } = GetPlatformMethods();
+
+    /// <summary>
     /// Checks if the current OS is a UNIX system.
     /// </summary>
     /// <returns>True, if the current OS is a UNIX system.</returns>
@@ -21,7 +26,7 @@ internal static class PlatformUtils
     /// Retrieves an <see cref="IPlatformMethods"/> implementation for this platform.
     /// </summary>
     /// <returns>The <see cref="IPlatformMethods"/> implementation that is supported on the current platform.</returns>
-    public static IPlatformMethods GetPlatformMethods()
+    private static IPlatformMethods GetPlatformMethods()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return new Win32PlatformMethods();
         if (IsUnixPlatform()) return new UnixPlatformMethods();

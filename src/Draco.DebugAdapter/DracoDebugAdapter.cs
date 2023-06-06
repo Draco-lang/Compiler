@@ -84,7 +84,16 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
             var reason = a.Breakpoint.IsEntryPoint
                 ? StoppedEvent.StoppedReason.Entry
                 : StoppedEvent.StoppedReason.Breakpoint;
-            await this.BreakAt(a.Thread, reason);
+            if (reason == StoppedEvent.StoppedReason.Entry
+             && !args.LaunchAttributes!["stopAtEntry"].GetBoolean())
+            {
+                // This is the entry point but we are not supposed to stop here
+                this.debugger.Continue();
+            }
+            else
+            {
+                await this.BreakAt(a.Thread, reason);
+            }
         };
         this.debugger.OnStep += async (_, a) =>
         {

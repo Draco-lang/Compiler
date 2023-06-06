@@ -119,6 +119,7 @@ public sealed class Method
         if (line < this.SequencePoints[0].GetStartPosition().Line
          || line > this.SequencePoints[^1].GetEndPosition().Line) return null;
 
+        // NOTE: A binary search would be more beneficial
         var seqPoint = this.SequencePoints.FirstOrDefault(s => s.StartLine == line);
         return seqPoint.Document.IsNil
             ? null
@@ -131,6 +132,7 @@ public sealed class Method
         if (position < this.SequencePoints[0].GetStartPosition()
          || position > this.SequencePoints[^1].GetEndPosition()) return null;
 
+        // NOTE: A binary search would be more beneficial
         var seqPoint = this.SequencePoints.FirstOrDefault(s => s.Contains(position));
         return seqPoint.Document.IsNil
             ? null
@@ -142,7 +144,20 @@ public sealed class Method
         if (this.SequencePoints.Length == 0) return null;
         if (offset < this.SequencePoints[0].Offset || offset > this.SequencePoints[^1].Offset) return null;
 
-        var seqPoint = this.SequencePoints.FirstOrDefault(s => offset == s.Offset);
+        // Default to the last one
+        var seqPoint = this.SequencePoints[^1];
+        // NOTE: A binary search would be more beneficial
+        for (var i = 0; i < this.SequencePoints.Length - 1; ++i)
+        {
+            var curr = this.SequencePoints[i];
+            var next = this.SequencePoints[i + 1];
+            if (curr.Offset <= offset && offset < next.Offset)
+            {
+                seqPoint = curr;
+                break;
+            }
+        }
+
         return seqPoint.Document.IsNil || seqPoint.IsHidden
             ? null
             : new(

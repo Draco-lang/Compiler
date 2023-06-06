@@ -75,6 +75,11 @@ public sealed class Debugger
     public event EventHandler<OnStepEventArgs>? OnStep;
 
     /// <summary>
+    /// The event that triggers, when the program is paused.
+    /// </summary>
+    public event EventHandler? OnPause;
+
+    /// <summary>
     /// The event that is triggered on a debugger event logged.
     /// </summary>
     public event EventHandler<string>? OnEventLog;
@@ -105,6 +110,22 @@ public sealed class Debugger
 
         this.InitializeEventHandler(cb);
         ioWorker.Run(this.terminateTokenSource.Token);
+    }
+
+    private void ClearCache()
+    {
+        foreach (var t in this.Threads) t.ClearCache();
+    }
+
+    /// <summary>
+    /// Pauses the execution of the program.
+    /// </summary>
+    public void Pause()
+    {
+        if (this.corDebugProcess.TryStop(0) == HRESULT.S_OK)
+        {
+            this.OnPause?.Invoke(this.corDebugProcess, EventArgs.Empty);
+        }
     }
 
     /// <summary>
@@ -251,8 +272,7 @@ public sealed class Debugger
 
     private void OnBreakpointHandler(object? sender, BreakpointCorDebugManagedCallbackEventArgs args)
     {
-        // Clear thread caches
-        foreach (var t in this.Threads) t.ClearCache();
+        this.ClearCache();
 
         var breakpoint = this.sessionCache.GetBreakpoint(args.Breakpoint);
         if (this.entryPointBreakpoint == breakpoint)
@@ -270,8 +290,7 @@ public sealed class Debugger
 
     private void OnStepCompleteHandler(object? sender, StepCompleteCorDebugManagedCallbackEventArgs args)
     {
-        // Clear thread caches
-        foreach (var t in this.Threads) t.ClearCache();
+        this.ClearCache();
 
         var frame = args.Thread.ActiveFrame;
         if (frame is not CorDebugILFrame ilFrame) return;

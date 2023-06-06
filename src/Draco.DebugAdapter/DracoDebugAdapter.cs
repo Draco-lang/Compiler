@@ -81,11 +81,10 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
         this.debugger.OnBreakpoint += async (_, a) =>
         {
-            await this.BreakAt(
-                a.Thread,
-                a.Breakpoint.IsEntryPoint
-                    ? StoppedEvent.StoppedReason.Entry
-                    : StoppedEvent.StoppedReason.Breakpoint);
+            var reason = a.Breakpoint.IsEntryPoint
+                ? StoppedEvent.StoppedReason.Entry
+                : StoppedEvent.StoppedReason.Breakpoint;
+            await this.BreakAt(a.Thread, reason);
         };
         this.debugger.OnStep += async (_, a) =>
         {
@@ -94,7 +93,11 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
                 a.Thread?.StepOver();
                 return;
             }
-            await this.BreakAt(a.Thread, StoppedEvent.StoppedReason.Pause);
+            await this.BreakAt(a.Thread, StoppedEvent.StoppedReason.Step);
+        };
+        this.debugger.OnPause += async (_, a) =>
+        {
+            await this.BreakAt(null, StoppedEvent.StoppedReason.Pause);
         };
 
         return Task.FromResult(new LaunchResponse());
@@ -138,8 +141,8 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     public Task<PauseResponse> PauseAsync(PauseArguments args)
     {
-        // TODO
-        throw new NotSupportedException("pausing is not yet supported");
+        this.debugger.Pause();
+        return Task.FromResult(new PauseResponse());
     }
 
     public Task<TerminateResponse> TerminateAsync(TerminateArguments args)
@@ -200,12 +203,12 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         });
     }
 
-    private Task BreakAt(Debugger.Thread thread, StoppedEvent.StoppedReason reason) =>
+    private Task BreakAt(Debugger.Thread? thread, StoppedEvent.StoppedReason reason) =>
         this.client.OnStoppedAsync(new()
         {
             Reason = reason,
             AllThreadsStopped = true,
-            ThreadId = thread.Id,
+            ThreadId = thread?.Id,
         });
 
     // State ///////////////////////////////////////////////////////////////////

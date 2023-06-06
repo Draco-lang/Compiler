@@ -124,6 +124,7 @@ public sealed class Debugger
     {
         if (this.corDebugProcess.TryStop(0) == HRESULT.S_OK)
         {
+            this.ClearCache();
             this.OnPause?.Invoke(this.corDebugProcess, EventArgs.Empty);
         }
     }

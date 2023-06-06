@@ -3,6 +3,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import { DracoDebugAdapterCommandName } from "./settings";
 import { PathLike } from "fs";
+import { AssetGenerator } from "./assets";
 
 export function activateDebugAdapter(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider(
@@ -22,70 +23,22 @@ class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvid
             return [];
         }
 
-        await addTasksJsonIfNecessary(folder.uri.fsPath);
+        let generator = new AssetGenerator(folder.uri.fsPath);
 
-        let filesInWorkspaceRoot = await fs.readdir(folder.uri.fsPath);
-        let projectFiles = filesInWorkspaceRoot.filter(f => f.endsWith('.dracoproj'));
-        return projectFiles.map(f => ({
-            name: 'Draco: Launch Console App',
-            type: 'dracodbg',
-            request: 'launch',
-            preLaunchTask: 'build',
-            // TODO: Hardcoded config and framework
-            program: path.join('${workspaceFolder}', 'bin', 'Debug', 'net7.0', `${path.parse(f).name}.dll`),
-            stopAtEntry: false
-        }));
+        await generator.ensureVscodeFolderExists();
+        let projectFiles = await generator.getDracoprojFilePaths();
+
+        let tasksDescription = {
+            version: '2.0.0',
+            tasks: projectFiles.map(generator.getBuildTaskDescriptionForProject),
+        };
+        await fs.writeFile(generator.tasksJsonPath, JSON.stringify(tasksDescription, null, 4));
+
+        return projectFiles.map(generator.getLaunchDescriptionForProject);
     }
 
     public async resolveDebugConfigurationWithSubstitutedVariables(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration> {
         return debugConfiguration;
-    }
-}
-
-async function addTasksJsonIfNecessary(workspaceRoot: string): Promise<void> {
-    // TODO: Extremely naive...
-    // TODO: Logic duplication with settings
-    let vscodePath =  path.join(workspaceRoot, '.vscode');
-    if (!await exists(vscodePath)) {
-        await fs.mkdir(vscodePath);
-    }
-    let tasksJsonPath = path.join(vscodePath, 'tasks.json');
-    if (!await exists(tasksJsonPath)) {
-        let tasksJson = generateTasksJson();
-        await fs.writeFile(tasksJsonPath, JSON.stringify(tasksJson, null, 4));
-    }
-}
-
-function generateTasksJson(): any {
-    return {
-        version: '2.0.0',
-        tasks: [
-            {
-                label: 'build',
-                command: 'dotnet',
-                type: 'process',
-                args: [
-                    'build'
-                    // TODO: Missing project/projects
-                ],
-                problemMatcher: '$msCompile',
-            }
-        ]
-    };
-}
-
-// TODO: Copy-pasta from settings.ts
-/**
- * Checks if the given path exists and is available for writing.
- * @param path The path to check.
- * @returns True, if the path exists and can be written, false otherwise.
- */
-async function exists(path: PathLike): Promise<boolean> {
-    try {
-        await fs.access(path, fs.constants.W_OK);
-        return true;
-    } catch {
-        return false;
     }
 }
 

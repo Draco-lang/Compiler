@@ -53,7 +53,8 @@ export class AssetGenerator {
      * relative to the workspace root.
      */
     public async getDracoprojFilePaths(): Promise<string[]> {
-        let paths = await globAsync(`${this.workspaceRoot}/**/*.dracoproj`);
+        let pattern = path.join(this.workspaceRoot, '**', '*.dracoproj').replace(/\\/g, '/');
+        let paths = await globAsync(pattern);
         return paths.map(p => path.relative(this.workspaceRoot, p));
     }
 
@@ -72,17 +73,6 @@ export class AssetGenerator {
                 project,
             ],
             problemMatcher: '$msCompile',
-        };
-    }
-
-    /**
-     * Retrieves the descriptor for the 'tasks.json' file.
-     */
-    public async getTasksDescription(): Promise<any> {
-        let dracoprojPaths = await this.getDracoprojFilePaths();
-        return {
-            version: '2.0.0',
-            tasks: dracoprojPaths.map(this.getBuildTaskDescriptionForProject),
         };
     }
 

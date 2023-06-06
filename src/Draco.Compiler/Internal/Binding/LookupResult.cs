@@ -108,7 +108,7 @@ internal sealed class LookupResult
             }
             else
             {
-                // TODO: Can this happen?
+                // TODO: This can happen for example in case of generic and non-generic type with the same name, for example ImmutableArray and ImmutableArray<T>
                 throw new NotImplementedException();
             }
         }

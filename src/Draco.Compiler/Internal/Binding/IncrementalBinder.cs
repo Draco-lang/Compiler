@@ -83,8 +83,11 @@ public sealed partial class SemanticModel
         internal override void BindModuleSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.ModuleSymbol module) =>
             this.semanticModel.symbolMap[syntax] = module;
 
-        internal override void BindTypeSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.TypeSymbol type) =>
+        internal override void BindTypeSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.TypeSymbol type)
+        {
             this.semanticModel.symbolMap[syntax] = type;
+            if (syntax.Parent is GenericExpressionSyntax) this.semanticModel.symbolMap[syntax.Parent] = type;
+        }
 
         // Memo logic
 

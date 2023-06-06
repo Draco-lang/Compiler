@@ -142,12 +142,11 @@ public sealed class Issue139Tests
             func 
         }
         """")]
-    // TODO: Add back once we implement indexers
-    // [InlineData(""""
-    //     func main() {
-    //         println[]
-    //     }
-    //     """")]
+    [InlineData(""""
+         func main() {
+             println[]
+         }
+         """")]
     [InlineData(""""
         func main() {
             println("'att't"'"t''ork;");
@@ -185,6 +184,12 @@ public sealed class Issue139Tests
             foo
         }
         func foo() {}
+        """")]
+    [InlineData(""""
+        import System.Collections.Immutable;
+        func main(){
+            ImmutableArray<int32>.Empt|
+        }
         """")]
     [InlineData("public import Foo")]
     [Theory]

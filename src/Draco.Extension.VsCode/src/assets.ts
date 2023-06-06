@@ -1,7 +1,8 @@
-import { PathLike } from "fs";
 import * as fs from "fs/promises";
-import { glob } from "glob";
 import * as path from "path";
+import * as vscode from "vscode";
+import { PathLike } from "fs";
+import { glob } from "glob";
 
 /**
  * Aids in asset generation.
@@ -82,6 +83,24 @@ export class AssetGenerator {
         return {
             version: '2.0.0',
             tasks: dracoprojPaths.map(this.getBuildTaskDescriptionForProject),
+        };
+    }
+
+    /**
+     * Constructs the launch config for a given project.
+     * @param project The projectfile path.
+     * @returns The single launch configuration to be used within 'launch.json'.
+     */
+    public getLaunchDescriptionForProject(project: string): vscode.DebugConfiguration {
+        let dllName = `${path.parse(project).name}.dll`;
+        return {
+            name: 'Draco: Launch Console App',
+            type: 'dracodbg',
+            request: 'launch',
+            preLaunchTask: 'build',
+            // TODO: Hardcoded config and framework
+            program: path.join('${workspaceFolder}', 'bin', 'Debug', 'net7.0', dllName),
+            stopAtEntry: false,
         };
     }
 }

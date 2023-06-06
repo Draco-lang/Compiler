@@ -13,8 +13,6 @@ namespace Draco.DebugAdapter;
 
 internal sealed partial class DracoDebugAdapter : IDebugAdapter
 {
-    public IList<ExceptionBreakpointsFilter> ExceptionBreakpointsFilters => Array.Empty<ExceptionBreakpointsFilter>();
-
     private readonly IDebugClient client;
 
     private InitializeRequestArguments clientInfo = null!;

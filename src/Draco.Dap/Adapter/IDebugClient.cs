@@ -17,11 +17,14 @@ public interface IDebugClient
     [Event("output", Mutating = true)]
     public Task SendOutputAsync(OutputEvent args);
 
+    [Event("process")]
+    public Task ProcessStartedAsync(ProcessEvent args);
+
     [Event("breakpoint")]
     public Task UpdateBreakpointAsync(BreakpointEvent args);
 
     [Event("stopped")]
-    public Task OnStoppedAsync(StoppedEvent args);
+    public Task StoppedAsync(StoppedEvent args);
 
     [Event("exited")]
     public Task ProcessExitedAsync(ExitedEvent args);

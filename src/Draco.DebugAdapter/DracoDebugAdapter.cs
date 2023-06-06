@@ -64,7 +64,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     // Launching ///////////////////////////////////////////////////////////////
 
-    public Task<LaunchResponse> LaunchAsync(LaunchRequestArguments args)
+    public async Task<LaunchResponse> LaunchAsync(LaunchRequestArguments args)
     {
         this.launchArgs = args;
 
@@ -106,11 +106,16 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         };
         this.debugger.OnPause += async (_, a) =>
         {
-            var thread = this.debugger.Threads[0];
+            var thread = this.debugger.MainThread;
             await this.BreakAt(thread, StoppedEvent.StoppedReason.Pause);
         };
 
-        return Task.FromResult(new LaunchResponse());
+        await this.client.ProcessStartedAsync(new()
+        {
+            Name = toRun,
+        });
+
+        return new LaunchResponse();
     }
 
     public Task<AttachResponse> AttachAsync(AttachRequestArguments args)
@@ -218,7 +223,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     }
 
     private Task BreakAt(Debugger.Thread? thread, StoppedEvent.StoppedReason reason) =>
-        this.client.OnStoppedAsync(new()
+        this.client.StoppedAsync(new()
         {
             Reason = reason,
             AllThreadsStopped = true,

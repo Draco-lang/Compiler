@@ -28,6 +28,12 @@ public sealed class Debugger
         ?? throw new InvalidOperationException("the main module has not been loaded yet");
 
     /// <summary>
+    /// The main thread.
+    /// </summary>
+    public Thread MainThread => this.mainThread
+        ?? throw new InvalidOperationException("the main thread has not been started yet");
+
+    /// <summary>
     /// The threads in the debugged process.
     /// </summary>
     public ImmutableArray<Thread> Threads => this.corDebugProcess.Threads
@@ -99,6 +105,7 @@ public sealed class Debugger
 
     private Breakpoint? entryPointBreakpoint;
     private Module? mainModule;
+    private Thread? mainThread;
 
     internal Debugger(
         CorDebugProcess corDebugProcess,
@@ -262,6 +269,9 @@ public sealed class Debugger
         var threadHandle = args.Thread.Handle;
         var threadName = PlatformUtils.Methods.GetThreadName(threadHandle);
         thread.Name = threadName;
+
+        // Set main thread
+        this.mainThread ??= thread;
 
         this.Continue();
     }

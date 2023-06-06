@@ -14,6 +14,9 @@ public interface IDebugClient
     /// </summary>
     public DebugAdapterConnection Connection { get; }
 
+    [Event("initialized")]
+    public Task Initialized();
+
     [Event("output", Mutating = true)]
     public Task SendOutputAsync(OutputEvent args);
 

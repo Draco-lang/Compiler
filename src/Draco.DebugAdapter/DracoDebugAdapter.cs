@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Draco.Dap.Adapter;
-using Draco.Dap.Adapter.Breakpoints;
 using Draco.Dap.Model;
 using Draco.Debugger;
 
@@ -18,10 +17,13 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     private InitializeRequestArguments clientInfo = null!;
     private Translator translator = null!;
     private DebuggerHost debuggerHost = null!;
-    private Debugger.Debugger debugger = null!;
+
+    private Debugger.Debugger? debugger;
 
     private LaunchRequestArguments? launchArgs;
     private AttachRequestArguments? attachArgs;
+
+    private readonly Queue<SetBreakpointsArguments> breakpointRequestQueue = new();
 
     public DracoDebugAdapter(IDebugClient client)
     {
@@ -30,7 +32,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     public void Dispose() { }
 
-    public Task InitializeAsync(InitializeRequestArguments args)
+    public async Task InitializeAsync(InitializeRequestArguments args)
     {
         this.clientInfo = args;
         this.translator = new(args);
@@ -38,7 +40,8 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         var dbgShim = FindDbgShim();
         this.debuggerHost = DebuggerHost.Create(dbgShim);
 
-        return Task.CompletedTask;
+        // Starts the configuration sequence
+        await this.client.Initialized();
     }
 
     // TODO: Temporary
@@ -77,22 +80,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         });
         this.debugger.OnExited += async (_, e) => await this.OnDebuggerExited(e);
 
-        this.debugger.OnBreakpoint += async (_, a) =>
-        {
-            var reason = a.Breakpoint.IsEntryPoint
-                ? StoppedEvent.StoppedReason.Entry
-                : StoppedEvent.StoppedReason.Breakpoint;
-            if (reason == StoppedEvent.StoppedReason.Entry
-             && !args.LaunchAttributes!["stopAtEntry"].GetBoolean())
-            {
-                // This is the entry point but we are not supposed to stop here
-                this.debugger.Continue();
-            }
-            else
-            {
-                await this.BreakAt(a.Thread, reason);
-            }
-        };
+        this.debugger.OnBreakpoint += async (_, a) => await this.OnBreakpoint(a);
         this.debugger.OnStep += async (_, a) =>
         {
             if (a.Range is null)
@@ -116,6 +104,45 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         return new LaunchResponse();
     }
 
+    private async Task OnBreakpoint(OnBreakpointEventArgs args)
+    {
+        var reason = args.Breakpoint.IsEntryPoint
+            ? StoppedEvent.StoppedReason.Entry
+            : StoppedEvent.StoppedReason.Breakpoint;
+        if (reason == StoppedEvent.StoppedReason.Entry)
+        {
+            // Any stashed breakpoints should be set
+            while (this.breakpointRequestQueue.TryDequeue(out var req))
+            {
+                var result = this.SetBreakpointsImpl(req);
+                // Send updates about the breakpoints
+                foreach (var bp in result)
+                {
+                    await this.client.UpdateBreakpointAsync(new()
+                    {
+                        Reason = BreakpointEvent.BreakpointReason.Changed,
+                        Breakpoint = bp,
+                    });
+                }
+            }
+
+            var shouldStopAtEntry = this.launchArgs?.LaunchAttributes!["stopAtEntry"].GetBoolean() ?? false;
+            if (shouldStopAtEntry)
+            {
+                await this.BreakAt(args.Thread, reason);
+            }
+            else
+            {
+                // We should not stop at the entry point
+                this.debugger?.Continue();
+            }
+        }
+        else
+        {
+            await this.BreakAt(args.Thread, reason);
+        }
+    }
+
     public Task<AttachResponse> AttachAsync(AttachRequestArguments args)
     {
         this.attachArgs = args;
@@ -134,7 +161,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     // Execution ///////////////////////////////////////////////////////////////
 
     private Debugger.Thread? GetThreadById(int id) =>
-        this.debugger.Threads.FirstOrDefault(t => t.Id == id);
+        this.debugger?.Threads.FirstOrDefault(t => t.Id == id);
 
     public Task<ContinueResponse> ContinueAsync(ContinueArguments args)
     {
@@ -147,14 +174,14 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         }
         else
         {
-            this.debugger.Continue();
+            this.debugger?.Continue();
         }
         return Task.FromResult(new ContinueResponse());
     }
 
     public Task<PauseResponse> PauseAsync(PauseArguments args)
     {
-        this.debugger.Pause();
+        this.debugger?.Pause();
         return Task.FromResult(new PauseResponse());
     }
 
@@ -189,6 +216,32 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     public Task<SetBreakpointsResponse> SetBreakpointsAsync(SetBreakpointsArguments args)
     {
+        if (this.debugger is null)
+        {
+            // Not running yet, stash
+            this.breakpointRequestQueue.Enqueue(args);
+            return Task.FromResult(new SetBreakpointsResponse()
+            {
+                Breakpoints = args.Breakpoints?
+                    .Select(bp => new Dap.Model.Breakpoint()
+                    {
+                        Verified = false,
+                    })
+                    .ToArray() ?? Array.Empty<Dap.Model.Breakpoint>(),
+            });
+        }
+
+        // Running, we can set it
+        return Task.FromResult(new SetBreakpointsResponse()
+        {
+            Breakpoints = this.SetBreakpointsImpl(args),
+        });
+    }
+
+    private IList<Dap.Model.Breakpoint> SetBreakpointsImpl(SetBreakpointsArguments args)
+    {
+        if (this.debugger is null) throw new InvalidOperationException("cannot set up breakpoints without a running debugger");
+
         var result = new List<Dap.Model.Breakpoint>();
         var source = this.debugger.MainModule.SourceFiles
             .FirstOrDefault(s => PathEqualityComparer.Instance.Equals(s.Uri.AbsolutePath, args.Source.Path));
@@ -214,10 +267,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
                 }
             }
         }
-        return Task.FromResult(new SetBreakpointsResponse()
-        {
-            Breakpoints = result,
-        });
+        return result;
     }
 
     private Task BreakAt(Debugger.Thread? thread, StoppedEvent.StoppedReason reason) =>
@@ -233,9 +283,9 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     public Task<ThreadsResponse> GetThreadsAsync() =>
         Task.FromResult(new ThreadsResponse()
         {
-            Threads = this.debugger.Threads
+            Threads = this.debugger?.Threads
                 .Select(this.translator.ToDap)
-                .ToList(),
+                .ToArray() ?? Array.Empty<Dap.Model.Thread>(),
         });
 
     public Task<StackTraceResponse> GetStackTraceAsync(StackTraceArguments args)

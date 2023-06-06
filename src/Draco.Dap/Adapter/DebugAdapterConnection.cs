@@ -80,7 +80,8 @@ public sealed class DebugAdapterConnection
 
         // ProcessRequestOrEvent returns a non-null result when a response message needs to be sent back to the client.
         // We keep only non-null responses and forward them to SerializeToTransport, which will serialize each DapMessage object it consumes to the output stream.
-        var filterNullResponses = new TransformManyBlock<DapMessage?, DapMessage>(this.FilterMessage);
+        var filterNullResponses = new TransformManyBlock<DapMessage?, DapMessage>(
+            m => m.HasValue ? new[] { m.Value } : Array.Empty<DapMessage>());
 
         this.outgoingMessages = new ActionBlock<DapMessage>(this.SerializeToTransport!);
 
@@ -121,29 +122,6 @@ public sealed class DebugAdapterConnection
         // Complete the transport streams when the dataflow networks are themselves completed.
         this.messageParser.Completion.ContinueWith(t => this.transport.Input.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
         this.outgoingMessages.Completion.ContinueWith(t => this.transport.Output.Complete(t.Exception), TaskContinuationOptions.ExecuteSynchronously);
-    }
-
-    private IEnumerable<DapMessage> FilterMessage(DapMessage? messge)
-    {
-        if (messge is null) return Array.Empty<DapMessage>();
-
-        var m = messge.Value;
-        if (m.Is<ResponseMessage>(out var response) && response.Command == "initialize")
-        {
-            // Initialize response is special, we need to send an initialized event right after
-            // because the standard decided this would be a good idea...
-            var body = new InitializedEvent();
-            var serializedBody = JsonSerializer.SerializeToElement(body, jsonOptions);
-            var initialized = new EventMessage
-            {
-                SequenceNumber = this.NextSeq(),
-                Event = "initialized",
-                Body = serializedBody,
-            };
-            return new[] { m, initialized };
-        }
-
-        return new[] { m };
     }
 
     public void AddRpcMethod(MethodInfo handlerMethod, object? target)

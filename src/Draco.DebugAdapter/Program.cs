@@ -25,6 +25,8 @@ internal static class Program
 {
     internal static async Task Main(string[] args)
     {
+        await Task.Delay(10000);
+
         var stdioFlag = new Option<bool>(name: "--stdio", description: "A flag to set the transportation option to stdio");
 
         var runCommand = new Command("run", "Runs the debug adapter")

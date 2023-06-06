@@ -7,7 +7,6 @@ using DebuggerApi = Draco.Debugger;
 using DapModels = Draco.Dap.Model;
 using System.IO;
 using System.Runtime.CompilerServices;
-using Draco.Debugger;
 using System.Xml.Linq;
 
 namespace Draco.DebugAdapter;
@@ -43,7 +42,7 @@ internal sealed class Translator
 
     public IList<DapModels.Variable> GetVariables(int variablesReference)
     {
-        static bool IsCompound(object? value) => value is ArrayValue or ObjectValue;
+        static bool IsCompound(object? value) => value is DebuggerApi.ArrayValue or DebuggerApi.ObjectValue;
 
         if (!this.valueCache.TryGetValue(variablesReference, out var value)) return Array.Empty<DapModels.Variable>();
 
@@ -126,6 +125,7 @@ internal sealed class Translator
     {
         var result = new DapModels.Breakpoint()
         {
+            Id = RuntimeHelpers.GetHashCode(breakpoint),
             Verified = true,
             Source = breakpoint.SourceFile is null ? null : this.ToDap(breakpoint.SourceFile),
         };

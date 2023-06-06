@@ -97,7 +97,8 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         };
         this.debugger.OnPause += async (_, a) =>
         {
-            await this.BreakAt(null, StoppedEvent.StoppedReason.Pause);
+            var thread = this.debugger.Threads[0];
+            await this.BreakAt(thread, StoppedEvent.StoppedReason.Pause);
         };
 
         return Task.FromResult(new LaunchResponse());

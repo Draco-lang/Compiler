@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -45,8 +46,18 @@ public sealed class SourceFile
     public ImmutableArray<ReadOnlyMemory<char>> Lines => this.lines ??= this.BuildLines();
     private ImmutableArray<ReadOnlyMemory<char>>? lines;
 
+    /// <summary>
+    /// The methods within this source file.
+    /// </summary>
     public ImmutableArray<Method> Methods => this.methods ??= this.BuildMethods();
     private ImmutableArray<Method>? methods;
+
+    /// <summary>
+    /// The breakpoints within this source file.
+    /// </summary>
+    public ImmutableArray<Breakpoint> Breakpoints => this.Methods
+        .SelectMany(m => m.Breakpoints)
+        .ToImmutableArray();
 
     internal SourceFile(Module module, DocumentHandle documentHandle, Uri uri)
     {

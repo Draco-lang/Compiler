@@ -191,6 +191,10 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
             .FirstOrDefault(s => PathEqualityComparer.Instance.Equals(s.Uri.AbsolutePath, args.Source.Path));
         if (args.Breakpoints is not null && source is not null)
         {
+            // Remove old breakpoints
+            foreach (var bp in source.Breakpoints) bp.Remove();
+
+            // Add new breakpoints
             foreach (var bp in args.Breakpoints)
             {
                 var position = this.translator.ToDebugger(bp.Line, bp.Column ?? 0);

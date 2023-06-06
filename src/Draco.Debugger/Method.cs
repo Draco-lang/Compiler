@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -56,9 +57,13 @@ public sealed class Method
     public ImmutableArray<SequencePoint> SequencePoints => this.sequencePoints ??= this.BuildSequencePoints();
     private ImmutableArray<SequencePoint>? sequencePoints;
 
-    internal Method(
-        SessionCache sessionCache,
-        CorDebugFunction corDebugFunction)
+    /// <summary>
+    /// The breakpoints within this method.
+    /// </summary>
+    public ImmutableArray<Breakpoint> Breakpoints => this.MutableBreakpoints.ToImmutableArray();
+    internal HashSet<Breakpoint> MutableBreakpoints = new();
+
+    internal Method(SessionCache sessionCache, CorDebugFunction corDebugFunction)
     {
         this.SessionCache = sessionCache;
         this.CorDebugFunction = corDebugFunction;

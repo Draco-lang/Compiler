@@ -46,4 +46,13 @@ public abstract class Breakpoint
     {
         this.SessionCache = sessionCache;
     }
+
+    /// <summary>
+    /// Removes this breakpoint permanently.
+    /// </summary>
+    public virtual void Remove()
+    {
+        this.CorDebugBreakpoint.Activate(false);
+        this.SessionCache.RemoveBreakpoint(this.CorDebugBreakpoint);
+    }
 }

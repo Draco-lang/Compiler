@@ -278,8 +278,8 @@ public sealed class Debugger
         var breakpoint = this.sessionCache.GetBreakpoint(args.Breakpoint);
         if (this.entryPointBreakpoint == breakpoint)
         {
-            // This was the entry point breakpoint
-            this.entryPointBreakpoint.CorDebugBreakpoint.Activate(false);
+            // This was the entry point breakpoint, remove it
+            this.entryPointBreakpoint.Remove();
         }
 
         this.OnBreakpoint?.Invoke(sender, new()

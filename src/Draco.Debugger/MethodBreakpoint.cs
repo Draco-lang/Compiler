@@ -18,5 +18,12 @@ internal class MethodBreakpoint : Breakpoint
         : base(sessionCache)
     {
         this.CorDebugBreakpoint = corDebugBreakpoint;
+        this.Method.MutableBreakpoints.Add(this);
+    }
+
+    public override void Remove()
+    {
+        this.Method.MutableBreakpoints.Remove(this);
+        base.Remove();
     }
 }

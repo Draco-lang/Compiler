@@ -56,6 +56,8 @@ internal sealed class SessionCache
         return cached;
     }
 
+    public bool RemoveBreakpoint(CorDebugBreakpoint breakpoint) => this.breakpoints.Remove(breakpoint.Raw);
+
     private Breakpoint BuildBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint) => breakpoint switch
     {
         CorDebugFunctionBreakpoint f when isEntryPoint => new EntryPointBreakpoint(this, f),

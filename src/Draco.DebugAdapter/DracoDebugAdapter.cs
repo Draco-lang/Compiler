@@ -117,12 +117,15 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     // Execution ///////////////////////////////////////////////////////////////
 
+    private Debugger.Thread? GetThreadById(int id) =>
+        this.debugger.Threads.FirstOrDefault(t => t.Id == id);
+
     public Task<ContinueResponse> ContinueAsync(ContinueArguments args)
     {
         if (args.SingleThread == true)
         {
             // TODO
-            // var thread = this.debugger.Threads.FirstOrDefault(t => t.Id == args.ThreadId);
+            // var thread = this.GetThreadById(args.ThreadId);
             // thread?.Continue();
             throw new NotSupportedException("continuing a single thread is not yet supported");
         }
@@ -147,21 +150,21 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     public Task<StepInResponse> StepIntoAsync(StepInArguments args)
     {
-        var thread = this.debugger.Threads.FirstOrDefault(t => t.Id == args.ThreadId);
+        var thread = this.GetThreadById(args.ThreadId);
         thread?.StepInto();
         return Task.FromResult(new StepInResponse());
     }
 
     public Task<NextResponse> StepOverAsync(NextArguments args)
     {
-        var thread = this.debugger.Threads.FirstOrDefault(t => t.Id == args.ThreadId);
+        var thread = this.GetThreadById(args.ThreadId);
         thread?.StepOver();
         return Task.FromResult(new NextResponse());
     }
 
     public Task<StepOutResponse> StepOutAsync(StepOutArguments args)
     {
-        var thread = this.debugger.Threads.FirstOrDefault(t => t.Id == args.ThreadId);
+        var thread = this.GetThreadById(args.ThreadId);
         thread?.StepOut();
         return Task.FromResult(new StepOutResponse());
     }
@@ -218,7 +221,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     public Task<StackTraceResponse> GetStackTraceAsync(StackTraceArguments args)
     {
         this.translator.ClearCache();
-        var thread = this.debugger.Threads.FirstOrDefault(t => t.Id == args.ThreadId);
+        var thread = this.GetThreadById(args.ThreadId);
         var result = thread is null
             ? Array.Empty<Dap.Model.StackFrame>()
             : thread.CallStack.Select(this.translator.ToDap).ToArray();

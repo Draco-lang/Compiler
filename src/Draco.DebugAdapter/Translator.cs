@@ -21,6 +21,7 @@ internal sealed class Translator
     private readonly Dictionary<DebuggerApi.StackFrame, DapModels.StackFrame> stackFrameToDap = new();
     private readonly Dictionary<int, DebuggerApi.StackFrame> stackFrameIdToDebugger = new();
     private readonly Dictionary<int, object?> valueCache = new();
+    private readonly Dictionary<DapModels.SourceBreakpoint, int> breakpointIds = new();
 
     public Translator(DapModels.InitializeRequestArguments clientInfo)
     {
@@ -37,6 +38,18 @@ internal sealed class Translator
     {
         var id = RuntimeHelpers.GetHashCode(value);
         this.valueCache[id] = value;
+        return id;
+    }
+
+    public void Forget(DapModels.SourceBreakpoint breakpoint) => this.breakpointIds.Remove(breakpoint);
+
+    public int AllocateId(DapModels.SourceBreakpoint breakpoint)
+    {
+        if (!this.breakpointIds.TryGetValue(breakpoint, out var id))
+        {
+            id = this.breakpointIds.Count;
+            this.breakpointIds.Add(breakpoint, id);
+        }
         return id;
     }
 
@@ -121,12 +134,12 @@ internal sealed class Translator
             : thread.Name,
     };
 
-    public DapModels.Breakpoint ToDap(DebuggerApi.Breakpoint breakpoint)
+    public DapModels.Breakpoint ToDap(DebuggerApi.Breakpoint breakpoint, int? id)
     {
         var result = new DapModels.Breakpoint()
         {
-            Id = RuntimeHelpers.GetHashCode(breakpoint),
             Verified = true,
+            Id = id,
             Source = breakpoint.SourceFile is null ? null : this.ToDap(breakpoint.SourceFile),
         };
         if (breakpoint.Range is not null)

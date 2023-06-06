@@ -112,11 +112,11 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         if (reason == StoppedEvent.StoppedReason.Entry)
         {
             // Any stashed breakpoints should be set
-            while (this.breakpointRequestQueue.TryDequeue(out var req))
+            while (this.breakpointRequestQueue.TryDequeue(out var req) && req.Breakpoints is not null)
             {
                 var result = this.SetBreakpointsImpl(req);
                 // Send updates about the breakpoints
-                foreach (var bp in result)
+                foreach (var (reqBp, bp) in req.Breakpoints.Zip(result))
                 {
                     await this.client.UpdateBreakpointAsync(new()
                     {
@@ -226,6 +226,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
                     .Select(bp => new Dap.Model.Breakpoint()
                     {
                         Verified = false,
+                        Id = this.translator.AllocateId(bp),
                     })
                     .ToArray() ?? Array.Empty<Dap.Model.Breakpoint>(),
             });
@@ -259,11 +260,15 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
                     : source.TryPlaceBreakpoint(this.translator.ToDebugger(bp.Line, bp.Column.Value), out breakpoint);
                 if (success)
                 {
-                    result.Add(this.translator.ToDap(breakpoint!));
+                    result.Add(this.translator.ToDap(breakpoint!, id: this.translator.AllocateId(bp)));
                 }
                 else
                 {
-                    result.Add(new() { Verified = false });
+                    result.Add(new()
+                    {
+                        Verified = false,
+                        Id = this.translator.AllocateId(bp),
+                    });
                 }
             }
         }

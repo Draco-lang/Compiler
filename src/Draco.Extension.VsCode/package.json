@@ -99,16 +99,23 @@
         }
       }
     },
-    "breakpoints": [{ "language": "draco" }],
+    "breakpoints": [
+      {
+        "language": "draco"
+      }
+    ],
     "debuggers": [
       {
         "type": "dracodbg",
         "label": "Draco Debug",
-        "languages": ["draco"],
-
+        "languages": [
+          "draco"
+        ],
         "configurationAttributes": {
           "launch": {
-            "required": ["program"],
+            "required": [
+              "program"
+            ],
             "properties": {
               "program": {
                 "type": "string",
@@ -123,7 +130,6 @@
             }
           }
         },
-
         "configurationSnippets": [
           {
             "label": "Draco: Launch Console App",

@@ -60,7 +60,7 @@ public sealed class DracoCompiler : ToolTask
         }
 
         sb.AppendLine();
-        sb.AppendLine($"--output {this.OutputFile} --root-module {this.ProjectDirectory} --msbuild-diags");
+        sb.AppendLine($"--output {this.OutputFile} --root-module {this.ProjectDirectory} --pdb --msbuild-diags");
 
         foreach (var refefence in this.References)
         {

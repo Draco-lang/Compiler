@@ -21,6 +21,8 @@ internal static class CodeGenerator
         Render("OneOf.sbncs", config, cancellationToken);
     public static string GenerateLspModel(Lsp.CsModel.Model model, CancellationToken cancellationToken) =>
         Render("LspModel.sbncs", model, cancellationToken);
+    public static string GenerateDapModel(Dap.CsModel.Model model, CancellationToken cancellationToken) =>
+        Render("DapModel.sbncs", model, cancellationToken);
     public static string GenerateWellKnownTypes(WellKnownTypes.WellKnownTypes model, CancellationToken cancellationToken) =>
         Render("WellKnownTypes.sbncs", model, cancellationToken);
 

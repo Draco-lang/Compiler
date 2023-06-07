@@ -127,7 +127,6 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
             return (TOneOf?)Activator.CreateInstance(oneOfType, array.Deserialize(tupleVariant, options));
         }
 
-
         // Assume it's an object
         var obj = JsonElement.ParseValue(ref reader);
         // Get the discriminative fields

@@ -162,21 +162,29 @@ internal sealed class ConstraintSolver
     }
 
     /// <summary>
-    /// Adds a type-constraint to the solver.
+    /// Adds a constraint, that waits until a type variable is substituted.
     /// </summary>
     /// <param name="original">The original type, usually a type variable.</param>
     /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
     /// <returns>The promise of the type symbol symbol.</returns>
-    public IConstraintPromise<TResult> Type<TResult>(TypeSymbol original, Func<IConstraintPromise<TResult>> map)
+    public IConstraintPromise<TResult> Substituted<TResult>(TypeSymbol original, Func<IConstraintPromise<TResult>> map)
     {
-        var constraint = new AwaitConstraint<IConstraintPromise<TResult>>(this, () => !this.Unwrap(original).IsTypeVariable, map);
-        this.Add(constraint);
+        if (!original.IsTypeVariable)
+        {
+            var constraintPromise = map();
+            return constraintPromise;
+        }
+        else
+        {
+            var constraint = new AwaitConstraint<IConstraintPromise<TResult>>(this, () => !this.Unwrap(original).IsTypeVariable, map);
+            this.Add(constraint);
 
-        var await = new AwaitConstraint<TResult>(this,
-            () => constraint.Promise.IsResolved && constraint.Promise.Result.IsResolved,
-            () => constraint.Promise.Result.Result);
-        this.Add(await);
-        return await.Promise;
+            var await = new AwaitConstraint<TResult>(this,
+                () => constraint.Promise.IsResolved && constraint.Promise.Result.IsResolved,
+                () => constraint.Promise.Result.Result);
+            this.Add(await);
+            return await.Promise;
+        }
     }
 
     /// <summary>

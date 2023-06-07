@@ -118,7 +118,7 @@ internal partial class Binder
         }
         var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
         var returnType = constraints.AllocateTypeVariable();
-        var promise = constraints.Type(receiver.TypeRequired, () =>
+        var promise = constraints.Substituted(receiver.TypeRequired, () =>
         {
             var indexers = constraints.Unwrap(receiver.TypeRequired).Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Setter).OfType<FunctionSymbol>().ToImmutableArray();
             if (indexers.Length == 0)

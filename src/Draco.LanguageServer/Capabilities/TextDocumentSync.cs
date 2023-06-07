@@ -21,7 +21,6 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
     {
         var uri = param.TextDocument.Uri;
         await this.DeleteDocument(uri);
-        return;
     }
 
     public async Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param, CancellationToken cancellationToken)

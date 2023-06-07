@@ -117,7 +117,7 @@ internal partial class Binder
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        Symbol symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
+        var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
@@ -474,38 +474,23 @@ internal partial class Binder
             // Error, don't cascade
             return new UntypedReferenceErrorExpression(syntax, err.Symbol);
         }
-        else if (left is UntypedModuleExpression moduleExpr)
+        Symbol? typ = left is UntypedModuleExpression moduleExpr
+            ? moduleExpr.Module
+            : left is UntypedTypeExpression typeExpr
+                ? typeExpr.Type
+                : null;
+
+        if (typ is not null)
         {
-            // Module member access
-            var module = moduleExpr.Module;
-            ImmutableArray<Symbol> members;
-            if (BinderFacts.SyntaxMustNotReferenceTypes(syntax)) members = module.StaticMembers
+            Func<Symbol, bool> pred = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
+                ? BinderFacts.IsNonTypeValueSymbol
+                : BinderFacts.IsValueSymbol;
+
+            var members = typ.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
-                .Where(BinderFacts.IsNonTypeValueSymbol)
+                .Where(pred)
                 .ToImmutableArray();
-            else members = module.StaticMembers
-                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
-                .Where(BinderFacts.IsValueSymbol)
-                .ToImmutableArray();
-            // Reuse logic from LookupResult
-            var result = LookupResult.FromResultSet(members);
-            var symbol = result.GetValue(memberName, syntax, diagnostics);
-            return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
-        }
-        else if (left is UntypedTypeExpression typeExpr)
-        {
-            // Type member access
-            var type = typeExpr.Type;
-            ImmutableArray<Symbol> members;
-            if (BinderFacts.SyntaxMustNotReferenceTypes(syntax)) members = type.StaticMembers
-                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
-                .Where(BinderFacts.IsNonTypeValueSymbol)
-                .ToImmutableArray();
-            else members = type.StaticMembers
-                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
-                .Where(BinderFacts.IsValueSymbol)
-                .ToImmutableArray();
-            // Reuse logic from LookupResult
+
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetValue(memberName, syntax, diagnostics);
             return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);

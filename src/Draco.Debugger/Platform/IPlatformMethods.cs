@@ -13,11 +13,4 @@ internal interface IPlatformMethods
     /// <param name="newHandles">The new handles to be used by the process.</param>
     /// <returns>The old IO handles.</returns>
     public IoHandles ReplaceStdioHandles(IoHandles newHandles);
-
-    /// <summary>
-    /// Retrieves the name of a thread.
-    /// </summary>
-    /// <param name="threadId">The thread ID.</param>
-    /// <returns>The name of the thread.</returns>
-    public string? GetThreadName(nint threadId);
 }

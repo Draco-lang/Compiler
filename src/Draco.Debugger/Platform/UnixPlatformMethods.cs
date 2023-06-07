@@ -43,7 +43,4 @@ internal sealed class UnixPlatformMethods : IPlatformMethods
 
         return new IoHandles(oldStdin, oldStdout, oldStderr);
     }
-
-    // TODO
-    public string? GetThreadName(nint threadId) => throw new NotImplementedException();
 }

@@ -26,12 +26,6 @@ internal sealed class Win32PlatformMethods : IPlatformMethods
     [DllImport(Kernel32, SetLastError = true)]
     private static extern bool SetStdHandle(StandardHandleType nStdHandle, nint hHandle);
 
-    [DllImport(Kernel32, SetLastError = true)]
-    private static extern int GetThreadDescription(IntPtr hThread, out IntPtr result);
-
-    [DllImport(Kernel32, SetLastError = true)]
-    private static extern IntPtr LocalFree(IntPtr hMem);
-
     private static nint ReplaceStdioHandle(StandardHandleType old, nint @new)
     {
         var oldCopy = GetStdHandle(old);
@@ -49,18 +43,5 @@ internal sealed class Win32PlatformMethods : IPlatformMethods
         var oldStderr = ReplaceStdioHandle(StandardHandleType.STD_ERROR_HANDLE, newHandles.StandardError);
 
         return new(oldStdin, oldStdout, oldStderr);
-    }
-
-    public string? GetThreadName(nint threadId)
-    {
-        var success = GetThreadDescription(threadId, out var name);
-        if (success < 0) throw new InvalidOperationException($"could not retrieve thread name of {threadId}");
-
-        var result = Marshal.PtrToStringUni(name);
-
-        var freed = LocalFree(name);
-        if (freed != IntPtr.Zero) throw new InvalidOperationException("failed to free memory");
-
-        return result;
     }
 }

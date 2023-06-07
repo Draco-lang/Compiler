@@ -27,7 +27,12 @@ public sealed class Thread
     /// <summary>
     /// The name of this thread.
     /// </summary>
-    public string? Name { get; internal set; }
+    public string? Name
+    {
+        get => this.name ??= this.BuildName();
+        internal set => this.name = value;
+    }
+    private string? name;
 
     /// <summary>
     /// The current state of the call-stack.
@@ -91,6 +96,14 @@ public sealed class Thread
         var stepper = this.BuildCorDebugStepper();
         stepper.StepOut();
         this.CorDebugThread.Process.Continue(false);
+    }
+
+    private string? BuildName()
+    {
+        var threadObject = ValueUtils.ToBrowsableObject(this.CorDebugThread.Object);
+        if (threadObject is not ObjectValue objectValue) return null;
+        if (!objectValue.TryGetValue("_name", out var name)) return null;
+        return name as string;
     }
 
     private ImmutableArray<StackFrame> BuildCallStack()

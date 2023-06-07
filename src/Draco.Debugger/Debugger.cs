@@ -36,11 +36,8 @@ public sealed class Debugger
     /// <summary>
     /// The threads in the debugged process.
     /// </summary>
-    public ImmutableArray<Thread> Threads => this.corDebugProcess.Threads
-        .Select(this.sessionCache.GetThread)
-        // NOTE: Currently this is how we filter user threads, might be super unreliable
-        .Where(t => t.Name is not null)
-        .ToImmutableArray();
+    public ImmutableArray<Thread> Threads => this.threads.ToImmutable();
+    private readonly ImmutableArray<Thread>.Builder threads = ImmutableArray.CreateBuilder<Thread>();
 
     /// <summary>
     /// The event that triggers when the process writes to its STDOUT.
@@ -252,11 +249,9 @@ public sealed class Debugger
     {
         if (args.Thread is not null)
         {
-            // Track thread name
+            // Clear cached name
             var thread = this.sessionCache.GetThread(args.Thread);
-            var threadHandle = args.Thread.Handle;
-            var threadName = PlatformUtils.Methods.GetThreadName(threadHandle);
-            thread.Name = threadName;
+            thread.Name = null;
         }
 
         this.Continue();
@@ -264,20 +259,24 @@ public sealed class Debugger
 
     private void OnCreateThreadHandler(object? sender, CreateThreadCorDebugManagedCallbackEventArgs args)
     {
-        // Track thread name
         var thread = this.sessionCache.GetThread(args.Thread);
-        var threadHandle = args.Thread.Handle;
-        var threadName = PlatformUtils.Methods.GetThreadName(threadHandle);
-        thread.Name = threadName;
+        this.threads.Add(thread);
 
-        // Set main thread
-        this.mainThread ??= thread;
+        // Set main thread, which is guaranteed to be the first created one
+        if (this.mainThread is null)
+        {
+            this.mainThread = thread;
+            this.mainThread.Name = "Main Thread";
+        }
 
         this.Continue();
     }
 
     private void OnExitThreadHandler(object? sender, ExitThreadCorDebugManagedCallbackEventArgs args)
     {
+        var thread = this.sessionCache.GetThread(args.Thread);
+        this.threads.Remove(thread);
+
         this.Continue();
     }
 

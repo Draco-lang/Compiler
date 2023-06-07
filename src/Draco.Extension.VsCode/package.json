@@ -102,6 +102,9 @@
     "breakpoints": [
       {
         "language": "draco"
+      },
+      {
+        "language": "csharp"
       }
     ],
     "debuggers": [
@@ -109,7 +112,8 @@
         "type": "dracodbg",
         "label": "Draco Debug",
         "languages": [
-          "draco"
+          "draco",
+          "csharp"
         ],
         "configurationAttributes": {
           "launch": {

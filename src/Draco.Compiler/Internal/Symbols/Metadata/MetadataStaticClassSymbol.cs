@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A static class read up from metadata that we handle as a module.
 /// </summary>
-internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
+internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol, IMetadataClass
 {
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
@@ -25,6 +25,9 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
     private MetadataAssemblySymbol? assembly;
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+
+    public string? DefaultMemberAttributeName => this.defaultName ??= MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
+    private string? defaultName;
 
     private readonly TypeDefinition typeDefinition;
 
@@ -83,16 +86,13 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
             result.Add(fieldSym);
         }
 
-        var defaultName = MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
-
         // Properties
         foreach (var propHandle in this.typeDefinition.GetProperties())
         {
             var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
-                propertyDefinition: propDef,
-                defaultMemberName: defaultName);
+                propertyDefinition: propDef);
             if (propSym.IsStatic && propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 

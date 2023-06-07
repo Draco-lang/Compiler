@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A type definition read up from metadata.
 /// </summary>
-internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
+internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadataClass
 {
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
@@ -32,6 +32,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
     private MetadataAssemblySymbol? assembly;
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+
+    public string? DefaultMemberAttributeName => this.defaultName ??= MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
+    private string? defaultName;
 
     private readonly TypeDefinition typeDefinition;
 
@@ -115,16 +118,13 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
             result.Add(fieldSym);
         }
 
-        var defaultName = MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
-
         // Properties
         foreach (var propHandle in this.typeDefinition.GetProperties())
         {
             var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
-                propertyDefinition: propDef,
-                defaultMemberName: defaultName);
+                propertyDefinition: propDef);
             if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 

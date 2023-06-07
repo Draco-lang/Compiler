@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -23,8 +24,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     public override Api.Semantics.Visibility Visibility => (this.Getter ?? this.Setter)?.Visibility ?? throw new InvalidOperationException();
 
-    public override bool IsIndexer => this.Name == this.defaultMemberName;
-    private readonly string? defaultMemberName;
+    public override bool IsIndexer => this.Name == ((IMetadataClass)this.ContainingSymbol).DefaultMemberAttributeName;
 
     public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
 
@@ -43,11 +43,10 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private readonly PropertyDefinition propertyDefinition;
 
-    public MetadataPropertySymbol(Symbol containingSymbol, PropertyDefinition propertyDefinition, string? defaultMemberName)
+    public MetadataPropertySymbol(Symbol containingSymbol, PropertyDefinition propertyDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.propertyDefinition = propertyDefinition;
-        this.defaultMemberName = defaultMemberName;
     }
 
     private MetadataPropertyAccessorSymbol? BuildGetter()

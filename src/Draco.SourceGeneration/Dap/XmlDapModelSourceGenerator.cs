@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
 using System.Text.Json;
 using System.Threading;
+using Microsoft.CodeAnalysis;
 
 namespace Draco.SourceGeneration.Dap;
 

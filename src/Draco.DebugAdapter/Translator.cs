@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DebuggerApi = Draco.Debugger;
-using DapModels = Draco.Dap.Model;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Xml.Linq;
+using DapModels = Draco.Dap.Model;
+using DebuggerApi = Draco.Debugger;
 
 namespace Draco.DebugAdapter;
 

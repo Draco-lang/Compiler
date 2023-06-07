@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 using Draco.Debugger.IO;
 
 namespace Draco.Debugger.Platform;

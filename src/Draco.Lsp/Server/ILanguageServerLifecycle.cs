@@ -1,6 +1,6 @@
+using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
-using System.Threading.Tasks;
 
 namespace Draco.Lsp.Server;
 

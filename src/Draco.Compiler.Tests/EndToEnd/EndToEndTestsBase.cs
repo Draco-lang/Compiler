@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using System.Reflection;
-using Draco.Compiler.Api;
-using Draco.Compiler.Internal;
-using Draco.Compiler.Api.Syntax;
 using System.Runtime.Loader;
+using Draco.Compiler.Api;
+using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 

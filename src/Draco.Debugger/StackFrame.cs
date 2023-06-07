@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata.Ecma335;
-using System.Threading;
 using ClrDebug;
 
 namespace Draco.Debugger;

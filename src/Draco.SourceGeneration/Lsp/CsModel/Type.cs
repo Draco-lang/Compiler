@@ -15,7 +15,7 @@ public abstract record class Type
         get
         {
             var name = this.GetType().Name;
-            if (name.EndsWith("Type")) name = name.Substring(0, name.Length - 4);
+            if (name.EndsWith("Type")) name = name[..^4];
             return name;
         }
     }

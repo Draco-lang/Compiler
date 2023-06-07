@@ -323,6 +323,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         {
             Expensive = false,
             Name = "Arguments",
+            PresentationHint = Scope.ScopePresentationHint.Arguments,
             VariablesReference = argsId,
         };
         var localsId = this.translator.CacheValue(frame.Locals);
@@ -330,6 +331,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         {
             Expensive = false,
             Name = "Locals",
+            PresentationHint = Scope.ScopePresentationHint.Locals,
             VariablesReference = localsId,
         };
         return Task.FromResult(new ScopesResponse()

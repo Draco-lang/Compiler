@@ -17,8 +17,12 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         await this.PublishDiagnosticsAsync(uri);
     }
 
-    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken) =>
-        Task.CompletedTask;
+    public async Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken)
+    {
+        var uri = param.TextDocument.Uri;
+        await this.DeleteDocument(uri);
+        return;
+    }
 
     public async Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param, CancellationToken cancellationToken)
     {
@@ -40,6 +44,24 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         this.syntaxTree = SyntaxTree.Parse(newSourceText);
         this.compilation = this.compilation.UpdateSyntaxTree(oldTree, this.syntaxTree);
         this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
+    }
+
+    private async Task DeleteDocument(DocumentUri documentUri)
+    {
+        var uri = documentUri.ToUri();
+        var oldTree = this.compilation.SyntaxTrees
+            .First(tree => tree.SourceText.Path == uri);
+        this.compilation = this.compilation.DeleteSyntaxTree(oldTree);
+        if (this.syntaxTree == oldTree)
+        {
+            this.syntaxTree = SyntaxTree.Create(SyntaxFactory.CompilationUnit());
+            this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
+        }
+        else
+        {
+            this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
+            await this.PublishDiagnosticsAsync(DocumentUri.From(this.syntaxTree.SourceText.Path!));
+        }
     }
 
     private async Task PublishDiagnosticsAsync(DocumentUri uri)

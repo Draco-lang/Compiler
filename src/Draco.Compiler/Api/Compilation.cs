@@ -202,6 +202,37 @@ public sealed class Compilation : IBinderProvider
     }
 
     /// <summary>
+    /// Removes the given <paramref name="oldTree"/>.
+    /// </summary>
+    /// <param name="oldTree">The old <see cref="SyntaxTree"/> to delete.
+    /// <returns>A <see cref="Compilation"/> reflecting the change.</returns>
+    public Compilation DeleteSyntaxTree(SyntaxTree oldTree)
+    {
+        var treeIndex = this.SyntaxTrees.IndexOf(oldTree);
+        if (treeIndex < 0) throw new ArgumentException("the specified tree was not in the compilation", nameof(oldTree));
+        var newTrees = this.SyntaxTrees.Remove(oldTree);
+
+        return new Compilation(
+            syntaxTrees: newTrees,
+            metadataReferences: this.MetadataReferences,
+            rootModulePath: this.RootModulePath,
+            outputPath: this.OutputPath,
+            assemblyName: this.AssemblyName,
+            // Needs to be rebuilt
+            rootModule: null,
+            // We can carry on cached metadata assemblies, they are untouched
+            metadataAssemblies: this.metadataAssemblies,
+            // Needs to be rebuilt
+            sourceModule: null,
+            // Needs to be rebuilt
+            declarationTable: null,
+            // Just a cache
+            wellKnownTypes: this.WellKnownTypes,
+            // TODO: We could definitely carry on info here, invalidating the correct things
+            binderCache: null);
+    }
+
+    /// <summary>
     ///  Retrieves the <see cref="SemanticModel"/> for for a <see cref="SyntaxTree"/> within this compilation.
     /// </summary>
     /// <param name="tree">The syntax tree to get the semantic model for.</param>

@@ -68,6 +68,8 @@ internal static class ValueUtils
             var sb = new StringBuilder(len);
             var result = strValue.Raw.GetString(len, out _, sb);
             if (result != HRESULT.S_OK) throw new InvalidOperationException("failed to read out string");
+            // For some reason the method writes some extra garbage in the buffer, remove it
+            sb.Remove(len, sb.Length - len);
             return sb.ToString();
         }
 

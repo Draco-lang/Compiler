@@ -1546,14 +1546,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo = 0;
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1593,14 +1593,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooNameRef = main.FindInChildren<NameExpressionSyntax>(0);
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo = 0;
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooNameRef = main.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -1640,14 +1640,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int foo = 0;
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1683,13 +1683,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static readonly int foo = 0;
             }
             """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1724,13 +1724,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public const int foo = 0;
             }
             """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1767,13 +1768,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public readonly int foo = 0;
             }
             """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1810,13 +1811,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
-        // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType { }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1855,12 +1855,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
-        // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType { }
             """);
+
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1896,12 +1895,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
-        // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule { }
             """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1936,13 +1934,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
-        // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule { }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -1981,14 +1978,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo { get; set; }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2028,14 +2025,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo { get; set; }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -2075,14 +2072,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int foo { get; set; }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2119,13 +2116,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo { get; }
             }
             """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2160,13 +2158,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo { set { } }
             }
             """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2203,13 +2201,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int foo { get; }
             }
             """);
+
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2246,14 +2244,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int foo { set { } }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2292,13 +2290,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), PlusAssign, LiteralExpression(2)))))));
 
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int foo { get; set; }
             }
             """);
+
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2332,13 +2330,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), PlusAssign, LiteralExpression(2)))))));
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
                 public static int foo { get; set; }
             }
             """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2376,9 +2374,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int this[int index]
@@ -2388,6 +2383,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2425,13 +2423,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
-        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int this[int index] => index * 2;
             }
             """);
+
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -2466,14 +2464,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int this[int index] { set { } }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2514,9 +2512,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public Foo foo = new Foo();
@@ -2529,6 +2524,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2568,8 +2566,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
-        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public Foo foo = new Foo();
@@ -2578,6 +2574,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 public int this[int index] => index * 2;
             }
             """);
+
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -2612,9 +2610,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public Foo foo = new Foo();
@@ -2623,6 +2618,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 public int this[int index] { set { } }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2663,13 +2661,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
-
-        // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType { }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2708,12 +2705,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
-        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
-
-        // Act
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType { }
             """);
+
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -2748,8 +2744,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), PlusAssign, LiteralExpression(2)))))));
 
-        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType{
                 public int this[int index]
@@ -2759,6 +2753,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 }
             }
             """);
+
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2790,13 +2786,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
 
-        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
                 public class FooType { }
             }
             """);
+
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2830,13 +2826,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(NameExpression("FooType"))))));
 
-        var fooTypeRef = main.FindInChildren<TypeSyntax>(0);
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
                 public class FooType { }
             }
             """);
+
+        var fooTypeRef = main.FindInChildren<TypeSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
@@ -2868,13 +2864,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
 
-        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
                 public class FooType { }
             }
             """);
+
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2909,8 +2905,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
-        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
                 public class FooType{
@@ -2918,6 +2912,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 }
             }
             """);
+
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2952,8 +2948,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
-        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
                 public class FooType{
@@ -2961,6 +2955,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 }
             }
             """);
+
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -2997,9 +2993,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public static class ParentType{
                 public class FooType{
@@ -3007,6 +3000,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
         var compilation = Compilation.Create(
@@ -3045,9 +3041,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
-
         var fooRef = CompileCSharpToMetadataRef("""
             public class ParentType{
                 public class FooType{
@@ -3055,6 +3048,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 }
             }
             """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
         var compilation = Compilation.Create(

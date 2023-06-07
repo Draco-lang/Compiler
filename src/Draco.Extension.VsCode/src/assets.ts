@@ -53,8 +53,8 @@ export class AssetGenerator {
      * relative to the workspace root.
      */
     public async getDracoprojFilePaths(): Promise<string[]> {
-        let pattern = path.join(this.workspaceRoot, '**', '*.dracoproj').replace(/\\/g, '/');
-        let paths = await globAsync(pattern);
+        const pattern = path.join(this.workspaceRoot, '**', '*.dracoproj').replace(/\\/g, '/');
+        const paths = await globAsync(pattern);
         return paths.map(p => path.relative(this.workspaceRoot, p));
     }
 
@@ -82,7 +82,7 @@ export class AssetGenerator {
      * @returns The single launch configuration to be used within 'launch.json'.
      */
     public getLaunchDescriptionForProject(project: string): vscode.DebugConfiguration {
-        let dllName = `${path.parse(project).name}.dll`;
+        const dllName = `${path.parse(project).name}.dll`;
         return {
             name: 'Draco: Launch Console App',
             type: 'dracodbg',

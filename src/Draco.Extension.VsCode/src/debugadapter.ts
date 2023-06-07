@@ -23,12 +23,12 @@ class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvid
             return [];
         }
 
-        let generator = new AssetGenerator(folder.uri.fsPath);
+        const generator = new AssetGenerator(folder.uri.fsPath);
 
         await generator.ensureVscodeFolderExists();
-        let projectFiles = await generator.getDracoprojFilePaths();
+        const projectFiles = await generator.getDracoprojFilePaths();
 
-        let tasksDescription = {
+        const tasksDescription = {
             version: '2.0.0',
             tasks: projectFiles.map(generator.getBuildTaskDescriptionForProject),
         };

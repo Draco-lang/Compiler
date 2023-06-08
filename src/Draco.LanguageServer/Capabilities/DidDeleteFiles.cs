@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,14 +11,23 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
 {
     public FileOperationRegistrationOptions FileOperationRegistrationOptions => new()
     {
-        Filters = (IList<FileOperationFilter>)this.DocumentSelector,
+        Filters = new FileOperationFilter[]
+        {
+            new()
+            {
+                Pattern = new()
+                {
+                    Glob = this.DocumentSelector[0].Pattern!
+                }
+            }
+        }
     };
 
     public async Task DidDeleteFilesAsync(DeleteFilesParams param, CancellationToken cancellationToken)
     {
         foreach (var file in param.Files)
         {
-            await this.DeleteDocument(new DocumentUri(file.Uri));
+            await this.DeleteDocument(DocumentUri.From(file.Uri));
         }
     }
 

@@ -36,7 +36,7 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
         var uri = documentUri.ToUri();
         var oldTree = this.compilation.SyntaxTrees
             .First(tree => tree.SourceText.Path == uri);
-        this.compilation = this.compilation.DeleteSyntaxTree(oldTree);
+        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, null);
         if (this.syntaxTree == oldTree)
         {
             this.syntaxTree = SyntaxTree.Create(SyntaxFactory.CompilationUnit());

@@ -165,12 +165,18 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     /// <param name="oldTree">The old <see cref="SyntaxTree"/> to update.
     /// If null, then <paramref name="newTree"/> is considered an addition.</param>
-    /// <param name="newTree">The new <see cref="SyntaxTree"/> to replace with.</param>
+    /// <param name="newTree">The new <see cref="SyntaxTree"/> to replace with.
+    /// If null, than <paramref name="oldTree"/> will be deleted.</param>
     /// <returns>A <see cref="Compilation"/> reflecting the change.</returns>
-    public Compilation UpdateSyntaxTree(SyntaxTree? oldTree, SyntaxTree newTree)
+    public Compilation UpdateSyntaxTree(SyntaxTree? oldTree, SyntaxTree? newTree)
     {
         var newSyntaxTrees = this.SyntaxTrees.ToBuilder();
-        if (oldTree is null)
+        if (newTree is null)
+        {
+            if (oldTree is null) throw new ArgumentOutOfRangeException("either oldTree or newTree must not be null");
+            newSyntaxTrees.Remove(oldTree);
+        }
+        else if (oldTree is null)
         {
             newSyntaxTrees.Add(newTree);
         }
@@ -183,37 +189,6 @@ public sealed class Compilation : IBinderProvider
 
         return new Compilation(
             syntaxTrees: newSyntaxTrees.ToImmutable(),
-            metadataReferences: this.MetadataReferences,
-            rootModulePath: this.RootModulePath,
-            outputPath: this.OutputPath,
-            assemblyName: this.AssemblyName,
-            // Needs to be rebuilt
-            rootModule: null,
-            // We can carry on cached metadata assemblies, they are untouched
-            metadataAssemblies: this.metadataAssemblies,
-            // Needs to be rebuilt
-            sourceModule: null,
-            // Needs to be rebuilt
-            declarationTable: null,
-            // Just a cache
-            wellKnownTypes: this.WellKnownTypes,
-            // TODO: We could definitely carry on info here, invalidating the correct things
-            binderCache: null);
-    }
-
-    /// <summary>
-    /// Removes the given <paramref name="oldTree"/>.
-    /// </summary>
-    /// <param name="oldTree">The old <see cref="SyntaxTree"/> to delete.
-    /// <returns>A <see cref="Compilation"/> reflecting the change.</returns>
-    public Compilation DeleteSyntaxTree(SyntaxTree oldTree)
-    {
-        var treeIndex = this.SyntaxTrees.IndexOf(oldTree);
-        if (treeIndex < 0) throw new ArgumentException("the specified tree was not in the compilation", nameof(oldTree));
-        var newTrees = this.SyntaxTrees.Remove(oldTree);
-
-        return new Compilation(
-            syntaxTrees: newTrees,
             metadataReferences: this.MetadataReferences,
             rootModulePath: this.RootModulePath,
             outputPath: this.OutputPath,

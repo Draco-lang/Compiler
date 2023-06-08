@@ -10,6 +10,6 @@ public interface IDidDeleteFiles
     [RegistrationOptions("workspace/didDeleteFiles")]
     public FileOperationRegistrationOptions FileOperationRegistrationOptions { get; }
 
-    [Request("workspace/didDeleteFiles")]
+    [Notification("workspace/didDeleteFiles")]
     public Task DidDeleteFilesAsync(DeleteFilesParams param, CancellationToken cancellationToken);
 }

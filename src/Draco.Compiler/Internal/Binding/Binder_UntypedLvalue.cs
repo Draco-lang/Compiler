@@ -68,19 +68,18 @@ internal partial class Binder
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
-        Symbol? typ = left is UntypedModuleExpression moduleExpr
-            ? moduleExpr.Module
-            : left is UntypedTypeExpression typeExpr
-                ? typeExpr.Type
-                : null;
 
-        if (typ is not null)
+        Symbol? type = left is UntypedModuleExpression
+            ? (left as UntypedModuleExpression)?.Module
+            : (left as UntypedTypeExpression)?.Type;
+
+        if (type is not null)
         {
             Func<Symbol, bool> pred = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
                 ? BinderFacts.IsNonTypeValueSymbol
                 : BinderFacts.IsValueSymbol;
 
-            var members = typ.StaticMembers
+            var members = type.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(pred)
                 .ToImmutableArray();

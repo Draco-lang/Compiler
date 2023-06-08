@@ -474,19 +474,17 @@ internal partial class Binder
             // Error, don't cascade
             return new UntypedReferenceErrorExpression(syntax, err.Symbol);
         }
-        Symbol? typ = left is UntypedModuleExpression moduleExpr
-            ? moduleExpr.Module
-            : left is UntypedTypeExpression typeExpr
-                ? typeExpr.Type
-                : null;
+        Symbol? type = left is UntypedModuleExpression
+            ? (left as UntypedModuleExpression)?.Module
+            : (left as UntypedTypeExpression)?.Type;
 
-        if (typ is not null)
+        if (type is not null)
         {
             Func<Symbol, bool> pred = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
                 ? BinderFacts.IsNonTypeValueSymbol
                 : BinderFacts.IsValueSymbol;
 
-            var members = typ.StaticMembers
+            var members = type.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(pred)
                 .ToImmutableArray();
@@ -577,7 +575,7 @@ internal partial class Binder
             // We are playing the same game as with call expression
             // A member access has to be delayed to get resolved
 
-            var promise = constraints.Await<ImmutableArray<Symbol>, UntypedExpression>(member.Member, () =>
+            var promise = constraints.Await(member.Member, UntypedExpression () =>
             {
                 var members = member.Member.Result;
                 // Search for all function members with the same number of generic parameters

@@ -474,8 +474,8 @@ internal partial class Binder
             // Error, don't cascade
             return new UntypedReferenceErrorExpression(syntax, err.Symbol);
         }
-        Symbol? type = left is UntypedModuleExpression
-            ? (left as UntypedModuleExpression)?.Module
+        Symbol? type = left is UntypedModuleExpression untypedModule
+            ? untypedModule.Module
             : (left as UntypedTypeExpression)?.Type;
 
         if (type is not null)

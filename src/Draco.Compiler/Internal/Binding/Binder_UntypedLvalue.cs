@@ -69,8 +69,8 @@ internal partial class Binder
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
 
-        Symbol? type = left is UntypedModuleExpression
-            ? (left as UntypedModuleExpression)?.Module
+        Symbol? type = left is UntypedModuleExpression untypedModule
+            ? untypedModule.Module
             : (left as UntypedTypeExpression)?.Type;
 
         if (type is not null)

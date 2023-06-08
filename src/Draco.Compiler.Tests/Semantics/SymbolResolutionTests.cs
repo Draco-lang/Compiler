@@ -1873,11 +1873,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
 
         // Assert
-        Assert.Equal(2, diags.Length);
+        Assert.Single(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
         AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalLvalue);
     }
 
     [Fact]

@@ -54,6 +54,11 @@ internal partial class Binder
         var members = mem.Member.Result;
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
+            // Wrror, don't cascade
+            if (members[0].IsError)
+            {
+                return new BoundIllegalLvalue(mem.Syntax);
+            }
             if (member is FieldSymbol field)
             {
                 if (!field.IsMutable)

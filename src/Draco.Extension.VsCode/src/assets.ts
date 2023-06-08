@@ -26,6 +26,13 @@ export class AssetGenerator {
     }
 
     /**
+     * The 'settings.json' file path of the workspace.
+     */
+    public get settingsJsonPath(): string {
+        return path.join(this.vscodePath, 'settings.json');
+    }
+
+    /**
      * The 'tasks.json' file path of the workspace.
      */
     public get tasksJsonPath(): string {
@@ -117,7 +124,7 @@ async function globAsync(pattern: string): Promise<string[]> {
  * @param path The path to check.
  * @returns True, if the path exists and can be written, false otherwise.
  */
-async function exists(path: PathLike): Promise<boolean> {
+export async function exists(path: PathLike): Promise<boolean> {
     try {
         await fs.access(path, fs.constants.W_OK);
         return true;

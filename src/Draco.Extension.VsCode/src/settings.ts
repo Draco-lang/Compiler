@@ -6,6 +6,7 @@ import { ConfigurationTarget, MessageItem, TextEditor, Uri, window, workspace, W
 import { FatalError } from "./errors";
 import { prompt, PromptKind, PromptResult } from "./prompt";
 import { logError } from "./logging";
+import { AssetGenerator, exists } from "./assets";
 
 /**
  * The language server package name.
@@ -184,8 +185,10 @@ function promptInstallLangserver(message: string): Promise<PromptResult> {
  * @param reason The reason the settings needs to be opened.
  */
 async function askUserToOpenSettings(kind: PromptKind, reason: string): Promise<void> {
+    const workspacePath = getWorkspaceUri().fsPath;
+    const assets = new AssetGenerator(workspacePath);
     const config = workspace.getConfiguration('draco');
-    const settingsUri = await getVscodeFileUri('settings.json');
+    const settingsUri = Uri.file(assets.settingsJsonPath);
     const canPrompt = config.get<boolean>('promptOpenSettings');
 
     // NOTE: Is this how URIs should be compared?
@@ -284,16 +287,6 @@ async function openDocument(uri: Uri): Promise<TextEditor> {
 }
 
 /**
- * Retrieves the URI for a file in the '.vscode' folder.
- * @param fileName The name of the file to get the path of.
- * @return The path to the @see Uri of the file in the '.vscode' folder.
- */
-async function getVscodeFileUri(fileName: string): Promise<Uri> {
-    const workspaceUri = getWorkspaceUri();
-    return Uri.joinPath(workspaceUri, '.vscode', fileName);
-}
-
-/**
  * Retrieves the relevant workspace URI.
  * @returns The @see Uri of the current workspace.
  */
@@ -344,20 +337,6 @@ function executeCommand(command: string): Promise<Execution> {
             exitCode: err?.code || 0,
         }));
     });
-}
-
-/**
- * Checks if the given path exists and is available for writing.
- * @param path The path to check.
- * @returns True, if the path exists and can be written, false otherwise.
- */
-async function exists(path: PathLike): Promise<boolean> {
-    try {
-        await fs.access(path, fs.constants.W_OK);
-        return true;
-    } catch {
-        return false;
-    }
 }
 
 /**

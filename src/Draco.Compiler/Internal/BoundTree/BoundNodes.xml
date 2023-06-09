@@ -171,25 +171,25 @@
   </Node>
 
   <Node Name="BoundPropertyGetExpression" Base="BoundExpression">
-    <Field Name="Getter" Type="FunctionSymbol" />
     <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Getter" Type="FunctionSymbol" />
   </Node>
 
   <Node Name="BoundPropertySetExpression" Base="BoundExpression">
-    <Field Name="Setter" Type="FunctionSymbol" />
     <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Setter" Type="FunctionSymbol" />
     <Field Name="Value" Type="BoundExpression"/>
   </Node>
 
   <Node Name="BoundIndexGetExpression" Base="BoundExpression">
-    <Field Name="Getter" Type="FunctionSymbol" />
     <Field Name="Receiver" Type="BoundExpression"/>
+    <Field Name="Getter" Type="FunctionSymbol" />
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 
   <Node Name="BoundIndexSetExpression" Base="BoundExpression">
-    <Field Name="Setter" Type="FunctionSymbol" />
     <Field Name="Receiver" Type="BoundExpression"/>
+    <Field Name="Setter" Type="FunctionSymbol" />
     <Field Name="Value" Type="BoundExpression"/>
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>

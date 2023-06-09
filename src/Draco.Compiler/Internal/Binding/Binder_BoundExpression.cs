@@ -111,14 +111,14 @@ internal partial class Binder
     private BoundExpression TypePropertyGetExpression(UntypedPropertyGetExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics);
-        return new BoundPropertyGetExpression(prop.Syntax, prop.Getter, receiver);
+        return new BoundPropertyGetExpression(prop.Syntax, receiver, prop.Getter);
     }
 
     private BoundExpression TypeIndexGetExpression(UntypedIndexGetExpression index, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = this.TypeExpression(index.Receiver, constraints, diagnostics);
         var indices = index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray();
-        return new BoundIndexGetExpression(index.Syntax, index.Getter.Result, receiver, indices);
+        return new BoundIndexGetExpression(index.Syntax, receiver, index.Getter.Result, indices);
     }
 
     private BoundExpression TypeFunctionGroupExpression(UntypedFunctionGroupExpression group, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -206,8 +206,8 @@ internal partial class Binder
             }
             return new BoundPropertySetExpression(
                 assignment.Syntax,
-                prop.Setter,
                 prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
+                prop.Setter,
                 compoundOperator is not null
                     ? this.CompoundPropertyExpression(
                         assignment.Syntax,
@@ -228,8 +228,8 @@ internal partial class Binder
             }
             return new BoundIndexSetExpression(
                 assignment.Syntax,
-                index.Setter.Result,
                 this.TypeExpression(index.Receiver, constraints, diagnostics),
+                index.Setter.Result,
                 compoundOperator is not null
                     ? this.CompoundPropertyExpression(assignment.Syntax,
                         this.TypeExpression(index.Receiver, constraints, diagnostics),
@@ -255,8 +255,8 @@ internal partial class Binder
             }
             return new BoundPropertySetExpression(
                 assignment.Syntax,
-                setter!,
                 this.TypeExpression(mem.Accessed, constraints, diagnostics),
+                setter,
                 compoundOperator is not null
                     ? this.CompoundPropertyExpression(
                         assignment.Syntax,
@@ -337,7 +337,7 @@ internal partial class Binder
                         prop.FullName));
                     getter = new NoOverloadFunctionSymbol(0);
                 }
-                return new BoundPropertyGetExpression(mem.Syntax, getter, left);
+                return new BoundPropertyGetExpression(mem.Syntax, left, getter);
             }
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }

@@ -474,17 +474,17 @@ internal partial class Binder
             // Error, don't cascade
             return new UntypedReferenceErrorExpression(syntax, err.Symbol);
         }
-        Symbol? type = left is UntypedModuleExpression untypedModule
+        Symbol? container = left is UntypedModuleExpression untypedModule
             ? untypedModule.Module
             : (left as UntypedTypeExpression)?.Type;
 
-        if (type is not null)
+        if (container is not null)
         {
             Func<Symbol, bool> pred = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
                 ? BinderFacts.IsNonTypeValueSymbol
                 : BinderFacts.IsValueSymbol;
 
-            var members = type.StaticMembers
+            var members = container.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(pred)
                 .ToImmutableArray();
@@ -531,7 +531,7 @@ internal partial class Binder
         promise.ConfigureDiagnostic(diag => diag
             .WithLocation(index.Location));
 
-        return new UntypedIndexGetExpression(index, promise, receiver, args, returnType);
+        return new UntypedIndexGetExpression(index, receiver, promise, args, returnType);
     }
 
     private UntypedExpression BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -657,7 +657,7 @@ internal partial class Binder
                     prop.FullName));
                 getter = new NoOverloadFunctionSymbol(0);
             }
-            return new UntypedPropertyGetExpression(syntax, getter, null);
+            return new UntypedPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
         case OverloadSymbol overload:

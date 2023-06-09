@@ -60,17 +60,17 @@ internal partial class Binder
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
 
-        Symbol? type = left is UntypedModuleExpression untypedModule
+        Symbol? container = left is UntypedModuleExpression untypedModule
             ? untypedModule.Module
             : (left as UntypedTypeExpression)?.Type;
 
-        if (type is not null)
+        if (container is not null)
         {
             Func<Symbol, bool> pred = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
                 ? BinderFacts.IsNonTypeValueSymbol
                 : BinderFacts.IsValueSymbol;
 
-            var members = type.StaticMembers
+            var members = container.StaticMembers
                 .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(pred)
                 .ToImmutableArray();
@@ -127,7 +127,7 @@ internal partial class Binder
         promise.ConfigureDiagnostic(diag => diag
             .WithLocation(index.Location));
 
-        return new UntypedIndexSetLvalue(index, promise, receiver, args, returnType);
+        return new UntypedIndexSetLvalue(index, receiver, promise, args, returnType);
     }
 
     private UntypedLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -146,7 +146,7 @@ internal partial class Binder
                     prop.FullName));
                 setter = new NoOverloadFunctionSymbol(1);
             }
-            return new UntypedPropertySetLvalue(syntax, setter, null);
+            return new UntypedPropertySetLvalue(syntax, null, setter);
         default:
             // NOTE: The error is already reported
             return new UntypedIllegalLvalue(syntax);

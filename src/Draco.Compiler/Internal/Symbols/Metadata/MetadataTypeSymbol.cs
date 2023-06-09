@@ -33,8 +33,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
-    public string? DefaultMemberAttributeName => this.defaultName ??= MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
-    private string? defaultName;
+    public string? DefaultMemberAttributeName => this.defaultMemberAttributeName ??= MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
+    private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;
 

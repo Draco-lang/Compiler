@@ -8,7 +8,7 @@ namespace Draco.Lsp.Server.Workspace;
 public interface IDidDeleteFiles
 {
     [RegistrationOptions("workspace/didDeleteFiles")]
-    public FileOperationRegistrationOptions FileOperationRegistrationOptions { get; }
+    public FileOperationRegistrationOptions DidDeleteFileRegistrationOptions { get; }
 
     [Notification("workspace/didDeleteFiles")]
     public Task DidDeleteFilesAsync(DeleteFilesParams param, CancellationToken cancellationToken);

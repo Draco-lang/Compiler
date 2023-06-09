@@ -9,7 +9,7 @@ namespace Draco.LanguageServer;
 
 internal partial class DracoLanguageServer : IDidDeleteFiles
 {
-    public FileOperationRegistrationOptions FileOperationRegistrationOptions => new()
+    public FileOperationRegistrationOptions DidDeleteFileRegistrationOptions => new()
     {
         Filters = new FileOperationFilter[]
         {

@@ -165,12 +165,18 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     /// <param name="oldTree">The old <see cref="SyntaxTree"/> to update.
     /// If null, then <paramref name="newTree"/> is considered an addition.</param>
-    /// <param name="newTree">The new <see cref="SyntaxTree"/> to replace with.</param>
+    /// <param name="newTree">The new <see cref="SyntaxTree"/> to replace with.
+    /// If null, then <paramref name="oldTree"/> will be deleted.</param>
     /// <returns>A <see cref="Compilation"/> reflecting the change.</returns>
-    public Compilation UpdateSyntaxTree(SyntaxTree? oldTree, SyntaxTree newTree)
+    public Compilation UpdateSyntaxTree(SyntaxTree? oldTree, SyntaxTree? newTree)
     {
         var newSyntaxTrees = this.SyntaxTrees.ToBuilder();
-        if (oldTree is null)
+        if (newTree is null)
+        {
+            if (oldTree is null) throw new ArgumentNullException("either oldTree or newTree must not be null");
+            newSyntaxTrees.Remove(oldTree);
+        }
+        else if (oldTree is null)
         {
             newSyntaxTrees.Add(newTree);
         }

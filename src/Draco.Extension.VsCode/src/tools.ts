@@ -8,6 +8,62 @@ import { exitCode } from "process";
 import { workspace } from "vscode";
 
 /**
+ * The language server package name.
+ */
+const LanguageServerToolName = 'Draco.LanguageServer';
+
+/**
+ * The language server command that can be used to start it up.
+ */
+export const LanguageServerCommandName = 'draco-langserver';
+
+/**
+ * The debug adapter package name.
+ */
+const DebugAdapterToolName = 'Draco.DebugAdapter';
+
+/**
+ * The debug adapter command that can be used to start it up.
+ */
+export const DebugAdapterCommandName = 'draco-debugadapter';
+
+/**
+ * Checks, if the language server tool is installed.
+ * @returns @constant true, if the language server tool is installed, @constant false otherwise.
+ */
+export function isLanguageServerInstalled(): Promise<boolean> {
+    return isDotnetToolAvailable(LanguageServerToolName);
+}
+
+/**
+ * Attempts to install the language server.
+ * @returns @constant true, if the language server tool is installed successfully, @constant false otherwise.
+ */
+export function installLanguageServer(): Promise<boolean> {
+    const config = workspace.getConfiguration('draco');
+    const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
+    return installDotnetTool(LanguageServerToolName, sdkVersion);
+}
+
+/**
+ * Checks, if the debug adapter tool is installed.
+ * @returns @constant true, if the debug adapter tool is installed, @constant false otherwise.
+ */
+export function isDebugAdapterInstalled(): Promise<boolean> {
+    return isDotnetToolAvailable(DebugAdapterToolName);
+}
+
+/**
+ * Attempts to install the debug adapter.
+ * @returns @constant true, if the debug adapter tool is installed successfully, @constant false otherwise.
+ */
+export function installDebugAdapter(): Promise<boolean> {
+    const config = workspace.getConfiguration('draco');
+    const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
+    return installDotnetTool(DebugAdapterToolName, sdkVersion);
+}
+
+/**
  * Checks, if a given .NET tool is installed globally.
  * @param toolName The tool name.
  * @returns @constant true, if a .NET tool with name @param toolName is installed globally,

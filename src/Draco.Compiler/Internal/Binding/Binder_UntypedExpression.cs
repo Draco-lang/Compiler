@@ -605,7 +605,7 @@ internal partial class Binder
                         .ToImmutableArray();
 
                     // Wrap them back up in a member expression
-                    return new UntypedMemberExpression(syntax, member.Accessed, member.MemberType, ConstraintPromise.FromResult(instantiatedFuncs));
+                    return new UntypedMemberExpression(syntax, member.Accessed, member.Type, ConstraintPromise.FromResult(instantiatedFuncs));
                 }
             });
             // NOTE: The generic function itself has no concrete type

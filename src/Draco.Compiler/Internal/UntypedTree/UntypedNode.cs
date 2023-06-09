@@ -44,11 +44,6 @@ internal partial class UntypedUnitExpression
     public override TypeSymbol Type => IntrinsicSymbols.Unit;
 }
 
-internal partial class UntypedMemberExpression
-{
-    public override TypeSymbol? Type => this.MemberType;
-}
-
 internal partial class UntypedGotoExpression
 {
     public override TypeSymbol Type => IntrinsicSymbols.Never;
@@ -150,11 +145,6 @@ internal partial class UntypedFieldLvalue
 internal partial class UntypedPropertySetLvalue
 {
     public override TypeSymbol Type => this.Setter.Parameters[0].Type;
-}
-
-internal partial class UntypedMemberLvalue
-{
-    public override TypeSymbol Type => this.MemberType;
 }
 
 internal partial class UntypedLvalue

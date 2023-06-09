@@ -41,19 +41,10 @@ internal partial class Binder
             return new UntypedLocalLvalue(syntax, local, constraints.GetLocalType(local));
         case GlobalSymbol global:
             return new UntypedGlobalLvalue(syntax, global);
-        case FieldSymbol field:
-            return new UntypedFieldLvalue(syntax, null, field);
-        case PropertySymbol prop:
-            var setter = prop.Setter;
-            if (setter is null)
-            {
-                diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
-                    location: syntax?.Location,
-                    prop.FullName));
-                setter = new NoOverloadFunctionSymbol(1);
-            }
-            return new UntypedPropertySetLvalue(syntax, setter, null);
+        case FieldSymbol:
+            return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
+        case PropertySymbol:
+            return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
         default:
         {
             diagnostics.Add(Diagnostic.Create(

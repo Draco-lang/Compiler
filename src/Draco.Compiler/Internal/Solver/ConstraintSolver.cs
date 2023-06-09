@@ -93,6 +93,7 @@ internal sealed class ConstraintSolver
     /// </summary>
     /// <param name="accessedType">The accessed object type.</param>
     /// <param name="memberName">The accessed member name.</param>
+    /// <param name="memberType">The type of the member.</param>
     /// <returns>The promise of the accessed member symbol.</returns>
     public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName, out TypeSymbol memberType)
     {

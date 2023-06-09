@@ -209,7 +209,8 @@ internal partial class Binder
                 prop.Setter,
                 prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
                 compoundOperator is not null
-                    ? this.CompoundPropertyExpression(assignment.Syntax,
+                    ? this.CompoundPropertyExpression(
+                        assignment.Syntax,
                         prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
                         typedRight,
                         ((IPropertyAccessorSymbol)prop.Setter).Property,
@@ -257,7 +258,8 @@ internal partial class Binder
                 setter!,
                 this.TypeExpression(mem.Accessed, constraints, diagnostics),
                 compoundOperator is not null
-                    ? this.CompoundPropertyExpression(assignment.Syntax,
+                    ? this.CompoundPropertyExpression(
+                        assignment.Syntax,
                         this.TypeExpression(mem.Accessed, constraints, diagnostics),
                         typedRight,
                         pr,

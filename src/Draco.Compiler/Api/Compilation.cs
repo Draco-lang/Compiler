@@ -166,7 +166,7 @@ public sealed class Compilation : IBinderProvider
     /// <param name="oldTree">The old <see cref="SyntaxTree"/> to update.
     /// If null, then <paramref name="newTree"/> is considered an addition.</param>
     /// <param name="newTree">The new <see cref="SyntaxTree"/> to replace with.
-    /// If null, than <paramref name="oldTree"/> will be deleted.</param>
+    /// If null, then <paramref name="oldTree"/> will be deleted.</param>
     /// <returns>A <see cref="Compilation"/> reflecting the change.</returns>
     public Compilation UpdateSyntaxTree(SyntaxTree? oldTree, SyntaxTree? newTree)
     {

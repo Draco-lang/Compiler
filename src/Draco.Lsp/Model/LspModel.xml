@@ -13,5 +13,6 @@
   <BuiltinType Name="unknown" FullName="System.Text.Json.JsonElement" />
   <BuiltinType Name="URI" FullName="System.Uri" />
   <BuiltinType Name="DocumentUri" FullName="Draco.Lsp.Model.DocumentUri" />
+  <BuiltinType Name="FileDelete" FullName="Draco.Lsp.Model.FileDelete" />
 
 </LspModel>

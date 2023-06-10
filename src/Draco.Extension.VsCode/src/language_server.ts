@@ -4,7 +4,7 @@
 
 import * as vscode from "vscode";
 import * as lsp from "vscode-languageclient/node";
-import { LanguageServerToolName } from "./tools";
+import { LanguageServerCommandName, LanguageServerToolName } from "./tools";
 import { interactivelyInitializeLanguageServer } from "./user_flow";
 import { workspace } from "vscode";
 import { PromptKind, PromptResult, prompt } from "./prompt";
@@ -64,7 +64,7 @@ export async function startLanguageServer(): Promise<void> {
 
     // Server options
     let serverOptions: lsp.ServerOptions = {
-        command: `${LanguageServerToolName} run`,
+        command: `${LanguageServerCommandName} run`,
         transport: lsp.TransportKind.stdio,
         options: {
             shell: true,

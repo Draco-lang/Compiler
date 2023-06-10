@@ -10,9 +10,31 @@ export namespace Result {
     export function err<T = any, E extends Error = Error>(err: E): Result<T, E> {
         return new Err(err);
     }
+
+    export function wrap<T, A extends any[]>(fn: (...args: A) => T): (...args: A) => Result<T> {
+        return (...args) => {
+            try {
+                return ok(fn(...args));
+            }
+            catch (e) {
+                return err(e as Error);
+            }
+        }
+    }
+
+    export function wrapAsync<T, A extends any[]>(fn: (...args: A) => Promise<T>): (...args: A) => Promise<Result<T>> {
+        return async (...args) => {
+            try {
+                return ok(await fn(...args));
+            }
+            catch (e) {
+                return err(e as Error);
+            }
+        }
+    }
 }
 
-export type Result<T, E extends Error> = Ok<T, E> | Err<T, E>;
+export type Result<T, E extends Error = Error> = Ok<T, E> | Err<T, E>;
 
 interface Matcher<T, E, U, F> {
     ok: (value: T) => U;
@@ -25,6 +47,7 @@ interface Variant<T, E extends Error> {
 
     unwrap(): T;
     unwrapErr(): E;
+    unwrapOr(value: T): T;
 
     bind<U>(fn: (value: T) => Result<U, E>): Result<U, E>;
     map<U>(fn: (value: T) => U): Result<U, E>;
@@ -39,6 +62,7 @@ class Ok<T, E extends Error> implements Variant<T, E> {
 
     public unwrap(): T { return this.value; }
     public unwrapErr(): E { throw new Error('tried to unwrap the error of an Ok value'); }
+    public unwrapOr(value: T): T { return this.value; }
 
     public bind<U>(fn: (value: T) => Result<U, E>): Result<U, E> {
         return fn(this.value);
@@ -61,6 +85,7 @@ class Err<T, E extends Error> implements Variant<T, E> {
 
     public unwrap(): T { throw new Error('tried to unwrap the value of an Err value'); }
     public unwrapErr(): E { return this.err; }
+    public unwrapOr(value: T): T { return value; }
 
     public bind<U>(fn: (value: T) => Result<U, E>): Result<U, E> {
         return new Err(this.err);

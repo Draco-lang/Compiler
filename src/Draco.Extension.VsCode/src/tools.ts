@@ -6,6 +6,7 @@
 import { spawn } from "child_process";
 import { exitCode } from "process";
 import { workspace } from "vscode";
+import { Result } from "./result";
 
 /**
  * The language server package name.
@@ -29,17 +30,18 @@ export const DebugAdapterCommandName = 'draco-debugadapter';
 
 /**
  * Checks, if the language server tool is installed.
- * @returns @constant true, if the language server tool is installed, @constant false otherwise.
+ * @returns @constant true, if the language server tool is installed, @constant false if not,
+ * an error result if an error happened.
  */
-export function isLanguageServerInstalled(): Promise<boolean> {
+export function isLanguageServerInstalled(): Promise<Result<boolean>> {
     return isDotnetToolAvailable(LanguageServerToolName);
 }
 
 /**
  * Attempts to install the language server.
- * @returns @constant true, if the language server tool is installed successfully, @constant false otherwise.
+ * @returns Ok result, if the language server tool is installed successfully, error otherwise.
  */
-export function installLanguageServer(): Promise<boolean> {
+export function installLanguageServer(): Promise<Result<void>> {
     const config = workspace.getConfiguration('draco');
     const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
     return installDotnetTool(LanguageServerToolName, sdkVersion);
@@ -47,17 +49,18 @@ export function installLanguageServer(): Promise<boolean> {
 
 /**
  * Checks, if the debug adapter tool is installed.
- * @returns @constant true, if the debug adapter tool is installed, @constant false otherwise.
+ * @returns @constant true, if the debug adapter tool is installed, @constant false if not,
+ * an error result if an error happened.
  */
-export function isDebugAdapterInstalled(): Promise<boolean> {
+export function isDebugAdapterInstalled(): Promise<Result<boolean>> {
     return isDotnetToolAvailable(DebugAdapterToolName);
 }
 
 /**
  * Attempts to install the debug adapter.
- * @returns @constant true, if the debug adapter tool is installed successfully, @constant false otherwise.
+ * @returns Ok result, if the debug adapter tool is installed successfully, error otherwise.
  */
-export function installDebugAdapter(): Promise<boolean> {
+export function installDebugAdapter(): Promise<Result<void>> {
     const config = workspace.getConfiguration('draco');
     const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
     return installDotnetTool(DebugAdapterToolName, sdkVersion);
@@ -67,46 +70,36 @@ export function installDebugAdapter(): Promise<boolean> {
  * Checks, if a given .NET tool is installed globally.
  * @param toolName The tool name.
  * @returns @constant true, if a .NET tool with name @param toolName is installed globally,
- * @constant false otherwise.
+ * @constant false if not, an error result if there was an error.
  */
-async function isDotnetToolAvailable(toolName: string): Promise<boolean> {
-    // Retrieve the list of global tools
+async function isDotnetToolAvailable(toolName: string): Promise<Result<boolean>> {
     const dotnet = getDotnetCommand();
-    const globalToolsResult = await executeCommand(dotnet, 'tool', 'list', '--global')
-        .then(result => result.exitCode === 0 ? result.stdout : undefined)
-        .catch(_ => undefined);
-    if (!globalToolsResult) return false;
-
-    // Check, if the output contains the tool name
     const regExp = new RegExp(`\\b${escapeRegExp(toolName.toLowerCase())}\\b`);
-    const toolInstalled = regExp.test(globalToolsResult);
-    return toolInstalled;
+
+    return (await safeExecuteCommand(dotnet, 'tool', 'list', '--global'))
+        .map(ok => ok.stdout)
+        .map(regExp.test);
 }
 
 /**
  * Installs a .NET tool globally.
  * @param toolName The name of the .NET tool.
  * @param version The version filter for the tool.
- * @returns @constant true, if the tool was installed successfully, @constant false otherwise.
+ * @returns Ok, if the dotnet CLI is available, an error result otherwise.
  */
-async function installDotnetTool(toolName: string, version: string): Promise<boolean> {
+async function installDotnetTool(toolName: string, version: string): Promise<Result<void>> {
     const dotnet = getDotnetCommand();
-    const installToolResult = await executeCommand(dotnet, 'tool', 'install', toolName, '--version', version, '--global')
-        .then(result => result.exitCode === 0)
-        .catch(_ => false);
-    return installToolResult;
+    return (await safeExecuteCommand(dotnet, 'tool', 'install', toolName, '--version', version, '--global'))
+        .map(_ => {});
 }
 
 /**
  * Checks, if the dotnet CLI tool is available.
- * @returns @constant true, if the dotnet CLI is available, @constant false otherwise.
+ * @returns Ok, if the dotnet CLI is available, an error result otherwise.
  */
-async function isDotnetCommandAvailable(): Promise<boolean> {
+async function isDotnetCommandAvailable(): Promise<Result<void>> {
     const dotnet = getDotnetCommand();
-    const execResult = await executeCommand(dotnet, '--version')
-        .then(_ => exitCode === 0)
-        .catch(_ => false);
-    return execResult;
+    return (await safeExecuteCommand(dotnet, '--version')).map(_ => {});
 }
 
 /**
@@ -144,6 +137,20 @@ type Execution = {
 };
 
 /**
+ * A wrapper around @see executeCommand that returns a result and only succeeds on 0 exit code.
+ * @param command The command to run.
+ * @param args The command arguments.
+ * @returns The execution result of the command.
+ */
+async function safeExecuteCommand(command: string, ...args: string[]): Promise<Result<Execution>> {
+    const resultExecute = Result.wrapAsync(executeCommand);
+    const result = await resultExecute(command, ...args);
+    return result.bind(ok => ok.exitCode === 0
+        ? Result.ok(ok)
+        : Result.err(new Error(`command ${ok.command} returned with nonzero (${ok.exitCode}) exit-code`)));
+}
+
+/**
  * Executes the given command.
  * @param command The command to run.
  * @param args The command arguments.
@@ -160,7 +167,7 @@ function executeCommand(command: string, ...args: string[]): Promise<Execution> 
         childProcess.stderr.on('data', data => stderr += data.toString());
         childProcess.on('error', error => reject(error));
         childProcess.on('close', exitCode => resolve({
-            command,
+            command: `${command} ${args.join(' ')}`,
             stdout,
             stderr,
             exitCode: exitCode || 0,

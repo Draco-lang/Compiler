@@ -18,7 +18,17 @@ async function interactivelyInitializeDotnetTool(toolName: string, toolDisplayNa
 
     const isInstalled = isInstalledResult.unwrap();
     if (!isInstalled) {
-        // Not installed yet, try to install it
+        // Not installed yet, ask the user
+        const shouldInstall = await promptYesNoDisable(
+            PromptKind.info,
+            `${toolDisplayName} is not installed. Would you like to install it?`,
+            'TODO: Setting');
+        if (shouldInstall != PromptResult.yes) {
+            // Should not install, tool isn't installed
+            return false;
+        }
+
+        // Try to install it
         const installResult = await installDotnetTool(toolName);
         if (installResult.isErr) {
             const errMessage = installResult.unwrapErr().message;

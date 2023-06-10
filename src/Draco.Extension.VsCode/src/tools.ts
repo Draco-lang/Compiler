@@ -60,12 +60,14 @@ export async function isDotnetToolAvailable(toolName: string): Promise<Result<bo
 /**
  * Installs a .NET tool globally.
  * @param toolName The name of the .NET tool.
- * @param version The version filter for the tool.
  * @returns Ok, if the dotnet CLI is available, an error result otherwise.
  */
-export async function installDotnetTool(toolName: string, version: string): Promise<Result<void>> {
+export async function installDotnetTool(toolName: string): Promise<Result<void>> {
+    const config = workspace.getConfiguration('draco');
+    const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
+
     const dotnet = getDotnetCommand();
-    return (await safeExecuteCommand(dotnet, 'tool', 'install', toolName, '--version', version, '--global'))
+    return (await safeExecuteCommand(dotnet, 'tool', 'install', toolName, '--version', sdkVersion, '--global'))
         .map(_ => {});
 }
 
@@ -75,8 +77,11 @@ export async function installDotnetTool(toolName: string, version: string): Prom
  * @returns Ok, if the dotnet CLI is available, an error result otherwise.
  */
 export async function updateDotnetTool(toolName: string): Promise<Result<void>> {
+    const config = workspace.getConfiguration('draco');
+    const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
+
     const dotnet = getDotnetCommand();
-    return (await safeExecuteCommand(dotnet, 'tool', 'update', toolName, '--global'))
+    return (await safeExecuteCommand(dotnet, 'tool', 'update', toolName, '--version', sdkVersion, '--global'))
         .map(_ => {});
 }
 

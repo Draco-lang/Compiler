@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -348,7 +349,14 @@ internal partial class Binder
         return this.TypeExpression(result, constraints, diagnostics);
     }
 
-    private BoundExpression CompoundPropertyExpression(Api.Syntax.SyntaxNode? syntax, BoundExpression? receiver, BoundExpression right, PropertySymbol prop, FunctionSymbol compoundOperator, ImmutableArray<BoundExpression> args, DiagnosticBag diagnostics)
+    private BoundExpression CompoundPropertyExpression(
+        SyntaxNode? syntax,
+        BoundExpression? receiver,
+        BoundExpression right,
+        PropertySymbol prop,
+        FunctionSymbol compoundOperator,
+        ImmutableArray<BoundExpression> args,
+        DiagnosticBag diagnostics)
     {
         var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
         var getterCall = new BoundCallExpression(null, receiver, getter, args);

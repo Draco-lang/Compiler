@@ -121,22 +121,13 @@ internal static class SymbolResolutionErrors
         code: Code(12));
 
     /// <summary>
-    /// Can not assign to a readonly or constant field.
-    /// </summary>
-    public static readonly DiagnosticTemplate CannotAssignToReadonlyOrConstantField = DiagnosticTemplate.Create(
-        title: "can not assign to a readonly or constant field",
-        severity: DiagnosticSeverity.Error,
-        format: "can not assign to the readonly or constant field {0}",
-        code: Code(13));
-
-    /// <summary>
     /// Can not set get only property.
     /// </summary>
     public static readonly DiagnosticTemplate CannotSetGetOnlyProperty = DiagnosticTemplate.Create(
         title: "can not set get-only property",
         severity: DiagnosticSeverity.Error,
         format: "can not set get-only property {0}",
-        code: Code(14));
+        code: Code(13));
 
     /// <summary>
     /// Can not get set only property.
@@ -145,7 +136,7 @@ internal static class SymbolResolutionErrors
         title: "can not get set-only property",
         severity: DiagnosticSeverity.Error,
         format: "can not get set-only property {0}",
-        code: Code(15));
+        code: Code(14));
 
     /// <summary>
     /// No settable indexer was found in type.
@@ -154,7 +145,7 @@ internal static class SymbolResolutionErrors
         title: "no settable indexer was found in type",
         severity: DiagnosticSeverity.Error,
         format: "no settable indexer was found in type {0}",
-        code: Code(16));
+        code: Code(15));
 
     /// <summary>
     /// No gettable indexer was found in type.
@@ -163,5 +154,5 @@ internal static class SymbolResolutionErrors
         title: "no gettable indexer was found in type",
         severity: DiagnosticSeverity.Error,
         format: "no gettable indexer was found in type {0}",
-        code: Code(17));
+        code: Code(16));
 }

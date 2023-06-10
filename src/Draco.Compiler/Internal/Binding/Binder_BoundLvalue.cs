@@ -36,14 +36,6 @@ internal partial class Binder
 
     private BoundLvalue TypeFieldLvalue(UntypedFieldLvalue field, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        if (!field.Field.IsMutable)
-        {
-            diagnostics.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField,
-                location: field.Syntax?.Location,
-                field.Field.FullName));
-            return new BoundIllegalLvalue(field.Syntax);
-        }
         var receiver = field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics);
         return new BoundFieldLvalue(field.Syntax, receiver, field.Field);
     }
@@ -61,14 +53,6 @@ internal partial class Binder
             }
             if (member is FieldSymbol field)
             {
-                if (!field.IsMutable)
-                {
-                    diagnostics.Add(Diagnostic.Create(
-                        template: SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField,
-                        location: mem.Syntax?.Location,
-                        field.FullName));
-                    return new BoundIllegalLvalue(mem.Syntax);
-                }
                 return new BoundFieldLvalue(mem.Syntax, left, field);
             }
             diagnostics.Add(Diagnostic.Create(

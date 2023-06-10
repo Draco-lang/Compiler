@@ -1706,7 +1706,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -1748,7 +1748,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -1791,7 +1791,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotAssignToReadonlyOrConstantField);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]

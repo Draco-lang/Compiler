@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -137,15 +138,11 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldLvalue(syntax, null, field);
         case PropertySymbol prop:
-            var setter = prop.Setter;
-            if (setter is null)
-            {
-                diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
-                    location: syntax?.Location,
-                    prop.FullName));
-                setter = new NoOverloadFunctionSymbol(1);
-            }
+            var setter = this.CreateAccessorSymbol(prop.Setter, 1, () => diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                location: syntax?.Location,
+                prop.FullName)));
+
             return new UntypedPropertySetLvalue(syntax, null, setter);
         default:
             // NOTE: The error is already reported

@@ -244,15 +244,11 @@ internal partial class Binder
 
         else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
         {
-            var setter = pr.Setter;
-            if (setter is null)
-            {
-                diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
-                    location: assignment.Syntax?.Location,
-                    pr.FullName));
-                setter = new NoOverloadFunctionSymbol(1);
-            }
+            var setter = this.CreateAccessorSymbol(pr.Setter, 1, () => diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                location: assignment.Syntax?.Location,
+                pr.FullName)));
+
             return new BoundPropertySetExpression(
                 assignment.Syntax,
                 this.TypeExpression(mem.Accessed, constraints, diagnostics),
@@ -328,15 +324,11 @@ internal partial class Binder
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
             if (member is PropertySymbol prop)
             {
-                var getter = prop.Getter;
-                if (getter is null)
-                {
-                    diagnostics.Add(Diagnostic.Create(
-                        template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
-                        location: mem.Syntax?.Location,
-                        prop.FullName));
-                    getter = new NoOverloadFunctionSymbol(0);
-                }
+                var getter = this.CreateAccessorSymbol(prop.Getter, 0, () => diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
+                    location: mem.Syntax?.Location,
+                    prop.FullName)));
+
                 return new BoundPropertyGetExpression(mem.Syntax, left, getter);
             }
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
@@ -361,15 +353,11 @@ internal partial class Binder
 
     private BoundExpression CompoundPropertyExpression(Api.Syntax.SyntaxNode? syntax, BoundExpression? receiver, BoundExpression right, PropertySymbol prop, FunctionSymbol compoundOperator, ImmutableArray<BoundExpression> args, DiagnosticBag diagnostics)
     {
-        var getter = prop.Getter;
-        if (getter is null)
-        {
-            diagnostics.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
-                location: syntax?.Location,
-                prop.FullName));
-            getter = new NoOverloadFunctionSymbol(args.Length);
-        }
+        var getter = this.CreateAccessorSymbol(prop.Getter, args.Length, () => diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
+            location: syntax?.Location,
+            prop.FullName)));
+
         var getterCall = new BoundCallExpression(null, receiver, getter, args);
         return new BoundBinaryExpression(syntax, compoundOperator, getterCall, right, right.TypeRequired);
     }

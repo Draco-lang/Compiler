@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api;
@@ -7,6 +8,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -65,6 +67,25 @@ internal abstract partial class Binder
     /// <returns>The appropriate binder for the node.</returns>
     protected virtual Binder GetBinder(SyntaxNode node) =>
         this.Compilation.GetBinder(node);
+
+    /// <summary>
+    /// Creates a function symbol from given accessor symbol, if the <paramref name="original"/> symbol is null,
+    /// than the resulting symbol is <see cref="NoOverloadFunctionSymbol"/> and <paramref name="diagnostic"/> is executed.
+    /// </summary>
+    /// <param name="original">The original symbol.</param>
+    /// <param name="numberArgs">The number of arguments this symbol should have</param>
+    /// <param name="diagnostic">Action, that should add diagnostic, is executed only if <paramref name="original"/> is null.</param>
+    /// <returns>The resulting function symbol.</returns>
+    private FunctionSymbol CreateAccessorSymbol(FunctionSymbol? original, int numberArgs, Action diagnostic)
+    {
+        var result = original;
+        if (result is null)
+        {
+            diagnostic();
+            result = new NoOverloadFunctionSymbol(numberArgs);
+        }
+        return result;
+    }
 
     public BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {

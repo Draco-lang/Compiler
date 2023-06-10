@@ -15,9 +15,10 @@ import { PromptKind, PromptResult, prompt } from "./prompt";
 async function interactivelyCheckForDotnet(): Promise<boolean> {
     const checkResult = await isDotnetCommandAvailable();
     if (checkResult.isErr) {
+        const errMessage = checkResult.unwrapErr().message;
         const shouldOpenSettings = await promptYesNoDisable(
             PromptKind.error,
-            'The dotnet command failed. Open settings?',
+            `The dotnet command failed. Open settings?\n${errMessage}`,
             'promptOpenSettings');
         if (shouldOpenSettings != PromptResult.yes) {
             return false;

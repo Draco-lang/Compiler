@@ -237,7 +237,8 @@ internal partial class Binder
                 receiver,
                 index.Setter.Result,
                 compoundOperator is not null
-                    ? this.CompoundPropertyExpression(assignment.Syntax,
+                    ? this.CompoundPropertyExpression(
+                        assignment.Syntax,
                         receiver,
                         typedRight,
                         ((IPropertyAccessorSymbol)index.Setter.Result).Property,

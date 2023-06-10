@@ -4,10 +4,11 @@
  */
 
 import * as fs from "fs/promises";
-import { ConfigurationTarget, window, workspace } from "vscode";
+import { ConfigurationTarget, TextEditor, Uri, window, workspace } from "vscode";
 import { DebugAdapterToolName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, isDotnetCommandAvailable, isDotnetToolAvailable, updateDotnetTool } from "./tools";
 import { PromptKind, PromptResult, prompt } from "./prompt";
 import { AssetGenerator } from "./assets";
+import { updateWithDefaultSettings } from "./settings";
 
 /**
  * Asks the user, if they want to generate assets for the project. If they answer yes, 'tasks.json' and
@@ -68,7 +69,17 @@ export async function interactivelyCheckForDotnet(): Promise<boolean> {
         if (shouldOpenSettings != PromptResult.yes) {
             return false;
         }
-        // TODO: Open settings
+
+        if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
+            // TODO: We assume a singular workspace folder, quite inflexible
+            const workspaceFolder = workspace.workspaceFolders[0].uri.fsPath;
+
+            const assets = new AssetGenerator(workspaceFolder);
+
+            await updateWithDefaultSettings(ConfigurationTarget.Workspace);
+            await openDocument(Uri.file(assets.settingsJsonPath));
+        }
+
         return false;
     }
     // We have dotnet available
@@ -226,4 +237,14 @@ async function promptYesNoDisable(kind: PromptKind, message: string, setting?: s
     }
 
     return result;
+}
+
+/**
+ * Opens a document in the editor.
+ * @param uri The @see Uri of the document to open.
+ * @returns The promise of the opened editor.
+ */
+async function openDocument(uri: Uri): Promise<TextEditor> {
+    const textDocument = await workspace.openTextDocument(uri);
+    return window.showTextDocument(textDocument);
 }

@@ -244,10 +244,7 @@ internal partial class Binder
 
         else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
         {
-            var setter = this.CreateAccessorSymbol(pr.Setter, 1, () => diagnostics.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
-                location: assignment.Syntax?.Location,
-                pr.FullName)));
+            var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);
 
             return new BoundPropertySetExpression(
                 assignment.Syntax,
@@ -324,11 +321,7 @@ internal partial class Binder
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
             if (member is PropertySymbol prop)
             {
-                var getter = this.CreateAccessorSymbol(prop.Getter, 0, () => diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
-                    location: mem.Syntax?.Location,
-                    prop.FullName)));
-
+                var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
                 return new BoundPropertyGetExpression(mem.Syntax, left, getter);
             }
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
@@ -353,11 +346,7 @@ internal partial class Binder
 
     private BoundExpression CompoundPropertyExpression(Api.Syntax.SyntaxNode? syntax, BoundExpression? receiver, BoundExpression right, PropertySymbol prop, FunctionSymbol compoundOperator, ImmutableArray<BoundExpression> args, DiagnosticBag diagnostics)
     {
-        var getter = this.CreateAccessorSymbol(prop.Getter, args.Length, () => diagnostics.Add(Diagnostic.Create(
-            template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
-            location: syntax?.Location,
-            prop.FullName)));
-
+        var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
         var getterCall = new BoundCallExpression(null, receiver, getter, args);
         return new BoundBinaryExpression(syntax, compoundOperator, getterCall, right, right.TypeRequired);
     }

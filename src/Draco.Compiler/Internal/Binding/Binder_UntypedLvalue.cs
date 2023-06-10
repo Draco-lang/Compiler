@@ -138,11 +138,7 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldLvalue(syntax, null, field);
         case PropertySymbol prop:
-            var setter = this.CreateAccessorSymbol(prop.Setter, 1, () => diagnostics.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
-                location: syntax?.Location,
-                prop.FullName)));
-
+            var setter = this.GetSetterSymbol(syntax, prop, diagnostics);
             return new UntypedPropertySetLvalue(syntax, null, setter);
         default:
             // NOTE: The error is already reported

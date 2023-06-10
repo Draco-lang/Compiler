@@ -68,21 +68,30 @@ internal abstract partial class Binder
     protected virtual Binder GetBinder(SyntaxNode node) =>
         this.Compilation.GetBinder(node);
 
-    /// <summary>
-    /// Creates a function symbol from given accessor symbol, if the <paramref name="original"/> symbol is null,
-    /// than the resulting symbol is <see cref="NoOverloadFunctionSymbol"/> and <paramref name="diagnostic"/> is executed.
-    /// </summary>
-    /// <param name="original">The original symbol.</param>
-    /// <param name="numberArgs">The number of arguments this symbol should have</param>
-    /// <param name="diagnostic">Action, that should add diagnostic, is executed only if <paramref name="original"/> is null.</param>
-    /// <returns>The resulting function symbol.</returns>
-    private FunctionSymbol CreateAccessorSymbol(FunctionSymbol? original, int numberArgs, Action diagnostic)
+    private FunctionSymbol GetGetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
     {
-        var result = original;
+        var result = prop.Getter;
         if (result is null)
         {
-            diagnostic();
-            result = new NoOverloadFunctionSymbol(numberArgs);
+            diags.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
+                location: syntax?.Location,
+                prop.FullName));
+            result = new NoOverloadFunctionSymbol(0);
+        }
+        return result;
+    }
+
+    private FunctionSymbol GetSetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    {
+        var result = prop.Setter;
+        if (result is null)
+        {
+            diags.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                location: syntax?.Location,
+                prop.FullName));
+            result = new NoOverloadFunctionSymbol(1);
         }
         return result;
     }

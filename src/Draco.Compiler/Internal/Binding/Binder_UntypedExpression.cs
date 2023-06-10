@@ -648,11 +648,7 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldExpression(syntax, null, field);
         case PropertySymbol prop:
-            var getter = this.CreateAccessorSymbol(prop.Getter, 0, () => diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
-                    location: syntax?.Location,
-                    prop.FullName)));
-
+            var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
             return new UntypedPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));

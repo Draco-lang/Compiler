@@ -271,7 +271,7 @@ internal partial class Binder
             // otherwise this becomes an indirect call
 
             var promisedType = constraints.AllocateTypeVariable();
-            var promise = constraints.Await<ImmutableArray<Symbol>, UntypedExpression>(mem.Member, () =>
+            var promise = constraints.Await(mem.Member, UntypedExpression () =>
             {
                 var members = mem.Member.Result;
                 if (members.All(m => m is FunctionSymbol))

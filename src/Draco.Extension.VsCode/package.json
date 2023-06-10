@@ -72,6 +72,11 @@
           "default": "*",
           "description": "The package version pattern for the Draco SDK to use."
         },
+        "draco.promptGenerateSettings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Offer generating tasks.json and launch.json when opening an unconfigured Draco project."
+        },
         "draco.promptOpenSettings": {
           "type": "boolean",
           "default": true,

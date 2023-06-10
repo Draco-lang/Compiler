@@ -3,9 +3,54 @@
  * Most logic in here should only be querying settings, showing prompts and calling out to other APIs.
  */
 
+import * as fs from "fs/promises";
 import { ConfigurationTarget, window, workspace } from "vscode";
 import { DebugAdapterToolName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, isDotnetCommandAvailable, isDotnetToolAvailable, updateDotnetTool } from "./tools";
 import { PromptKind, PromptResult, prompt } from "./prompt";
+import { AssetGenerator } from "./assets";
+
+/**
+ * Asks the user, if they want to generate assets for the project. If they answer yes, 'tasks.json' and
+ * 'launch.json' are automatically generated.
+ */
+async function promptUserToCreateLaunchAndTasksConfig(): Promise<void> {
+    if (!workspace.workspaceFolders || workspace.workspaceFolders.length == 0) {
+        return;
+    }
+
+    // TODO: We assume a singular workspace folder, quite inflexible
+    const workspaceFolder = workspace.workspaceFolders[0].uri.fsPath;
+
+    const assets = new AssetGenerator(workspaceFolder);
+    if (await assets.vscodeFolderExists()) {
+        // .vscode exists, assume the user already configured it
+        return;
+    }
+
+    const shouldGenerate = await promptYesNoDisable(
+        PromptKind.info,
+        'This workspace is missing files to build and debug Draco programs. Would you like to generate them now?',
+        'promptGenerateSettings');
+    if (shouldGenerate != PromptResult.yes) {
+        return;
+    }
+
+    // We need to generate them
+    await assets.ensureVscodeFolderExists();
+    const projectFiles = await assets.getDracoprojFilePaths();
+
+    const tasksDescription = {
+        version: '2.0.0',
+        tasks: projectFiles.map(assets.getBuildTaskDescriptionForProject),
+    };
+    const launchDescription = {
+        version: '2.0.0',
+        configurations: projectFiles.map(assets.getLaunchDescriptionForProject),
+    };
+
+    await fs.writeFile(assets.tasksJsonPath, JSON.stringify(tasksDescription, null, 4));
+    await fs.writeFile(assets.launchJsonPath, JSON.stringify(launchDescription, null, 4));
+}
 
 /**
  * Checks for the availability of the dotnet command. If not available, the user is prompted if they want to

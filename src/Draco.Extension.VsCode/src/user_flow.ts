@@ -29,7 +29,7 @@ export async function promptUserToCreateLaunchAndTasksConfig() {
     }
 
     const projectFiles = await assets.getDracoprojFilePaths();
-    if (projectFiles.length == 0) {
+    if (projectFiles.length === 0) {
         return;
     }
 

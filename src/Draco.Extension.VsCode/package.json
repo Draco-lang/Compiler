@@ -49,6 +49,24 @@
         "path": "./syntaxes/draco.tmLanguage.json"
       }
     ],
+    "commands": [
+      {
+        "command": "draco.installLanguageServer",
+        "title": "Install Draco Language Server"
+      },
+      {
+        "command": "draco.updateLanguageServer",
+        "title": "Update Draco Language Server"
+      },
+      {
+        "command": "draco.installDebugAdapter",
+        "title": "Install Draco Debug Adapter"
+      },
+      {
+        "command": "draco.updateDebugAdapter",
+        "title": "Update Draco Debug Adapter"
+      }
+    ],
     "configuration": {
       "title": "Draco",
       "properties": {

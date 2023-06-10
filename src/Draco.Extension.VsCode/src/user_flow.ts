@@ -57,7 +57,7 @@ async function promptUserToCreateLaunchAndTasksConfig(): Promise<void> {
  * open their settings.
  * @returns @constant true, if the dotnet command is available, @constant false otherwise.
  */
-async function interactivelyCheckForDotnet(): Promise<boolean> {
+export async function interactivelyCheckForDotnet(): Promise<boolean> {
     const checkResult = await isDotnetCommandAvailable();
     if (checkResult.isErr) {
         const errMessage = checkResult.unwrapErr().message;
@@ -82,7 +82,7 @@ async function interactivelyCheckForDotnet(): Promise<boolean> {
  * @returns @constant true, if the tool is available in some form, even if updating failed for example.
  * @constant false, if the tool is not available in any form.
  */
-function interactivelyInitializeLanguageServer(): Promise<boolean> {
+export function interactivelyInitializeLanguageServer(): Promise<boolean> {
     return interactivelyInitializeDotnetTool({
         toolName: LanguageServerToolName,
         toolDisplayName: 'Language Server',
@@ -98,7 +98,7 @@ function interactivelyInitializeLanguageServer(): Promise<boolean> {
  * @returns @constant true, if the tool is available in some form, even if updating failed for example.
  * @constant false, if the tool is not available in any form.
  */
-function interactivelyInitializeDebugAdapter(): Promise<boolean> {
+export function interactivelyInitializeDebugAdapter(): Promise<boolean> {
     return interactivelyInitializeDotnetTool({
         toolName: DebugAdapterToolName,
         toolDisplayName: 'Debug Adapter',
@@ -111,6 +111,7 @@ function interactivelyInitializeDebugAdapter(): Promise<boolean> {
  * Checks, if the given tool is installed. If not installed, the user is prompted if they want to install
  * it. If installed, it checks for updates. If there are updates available, the user is prompted if they want to
  * update.
+ * @param config The tool configuration.
  * @returns @constant true, if the tool is available in some form, even if updating failed for example.
  * @constant false, if the tool is not available in any form.
  */

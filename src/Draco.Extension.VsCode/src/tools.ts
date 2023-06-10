@@ -16,7 +16,7 @@ const LanguageServerToolName = 'Draco.LanguageServer';
 /**
  * The language server command that can be used to start it up.
  */
-export const LanguageServerCommandName = 'draco-langserver';
+const LanguageServerCommandName = 'draco-langserver';
 
 /**
  * The debug adapter package name.
@@ -26,44 +26,21 @@ const DebugAdapterToolName = 'Draco.DebugAdapter';
 /**
  * The debug adapter command that can be used to start it up.
  */
-export const DebugAdapterCommandName = 'draco-debugadapter';
+const DebugAdapterCommandName = 'draco-debugadapter';
 
 /**
- * Checks, if the language server tool is installed.
- * @returns @constant true, if the language server tool is installed, @constant false if not,
- * an error result if an error happened.
+ * Checks, if a given .NET tool has updates. It works by passing in a 'check-for-updates' flag for the tool,
+ * the tool does the checking by itself. Expects exit code 0 to mean no updates and 1 to mean updates available.
+ * @param toolName The tool name.
+ * @returns @constant true, if a .NET tool with name @param toolName has updates,
+ * @constant false if not, an error result if there was an error.
  */
-export function isLanguageServerInstalled(): Promise<Result<boolean>> {
-    return isDotnetToolAvailable(LanguageServerToolName);
-}
-
-/**
- * Attempts to install the language server.
- * @returns Ok result, if the language server tool is installed successfully, error otherwise.
- */
-export function installLanguageServer(): Promise<Result<void>> {
-    const config = workspace.getConfiguration('draco');
-    const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
-    return installDotnetTool(LanguageServerToolName, sdkVersion);
-}
-
-/**
- * Checks, if the debug adapter tool is installed.
- * @returns @constant true, if the debug adapter tool is installed, @constant false if not,
- * an error result if an error happened.
- */
-export function isDebugAdapterInstalled(): Promise<Result<boolean>> {
-    return isDotnetToolAvailable(DebugAdapterToolName);
-}
-
-/**
- * Attempts to install the debug adapter.
- * @returns Ok result, if the debug adapter tool is installed successfully, error otherwise.
- */
-export function installDebugAdapter(): Promise<Result<void>> {
-    const config = workspace.getConfiguration('draco');
-    const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
-    return installDotnetTool(DebugAdapterToolName, sdkVersion);
+export async function checkForDotnetToolUpdates(toolName: string): Promise<Result<boolean>> {
+    const resultExecute = Result.wrapAsync(executeCommand);
+    return (await resultExecute(toolName, 'check-for-updates'))
+        .bind(ok => ok.exitCode === 0 || ok.exitCode === 1
+            ? Result.ok(ok.exitCode === 1)
+            : Result.err(new Error(`command ${ok.command} returned with nonzero (${ok.exitCode}) exit-code`)));
 }
 
 /**
@@ -72,7 +49,7 @@ export function installDebugAdapter(): Promise<Result<void>> {
  * @returns @constant true, if a .NET tool with name @param toolName is installed globally,
  * @constant false if not, an error result if there was an error.
  */
-async function isDotnetToolAvailable(toolName: string): Promise<Result<boolean>> {
+export async function isDotnetToolAvailable(toolName: string): Promise<Result<boolean>> {
     const dotnet = getDotnetCommand();
     const regExp = new RegExp(`\\b${escapeRegExp(toolName.toLowerCase())}\\b`);
 
@@ -87,9 +64,20 @@ async function isDotnetToolAvailable(toolName: string): Promise<Result<boolean>>
  * @param version The version filter for the tool.
  * @returns Ok, if the dotnet CLI is available, an error result otherwise.
  */
-async function installDotnetTool(toolName: string, version: string): Promise<Result<void>> {
+export async function installDotnetTool(toolName: string, version: string): Promise<Result<void>> {
     const dotnet = getDotnetCommand();
     return (await safeExecuteCommand(dotnet, 'tool', 'install', toolName, '--version', version, '--global'))
+        .map(_ => {});
+}
+
+/**
+ * Updates a .NET tool globally.
+ * @param toolName The name of the .NET tool.
+ * @returns Ok, if the dotnet CLI is available, an error result otherwise.
+ */
+export async function updateDotnetTool(toolName: string): Promise<Result<void>> {
+    const dotnet = getDotnetCommand();
+    return (await safeExecuteCommand(dotnet, 'tool', 'update', toolName, '--global'))
         .map(_ => {});
 }
 
@@ -97,7 +85,7 @@ async function installDotnetTool(toolName: string, version: string): Promise<Res
  * Checks, if the dotnet CLI tool is available.
  * @returns Ok, if the dotnet CLI is available, an error result otherwise.
  */
-async function isDotnetCommandAvailable(): Promise<Result<void>> {
+export async function isDotnetCommandAvailable(): Promise<Result<void>> {
     const dotnet = getDotnetCommand();
     return (await safeExecuteCommand(dotnet, '--version')).map(_ => {});
 }

@@ -3,7 +3,7 @@
  */
 
 import { ExtensionContext, commands, window } from "vscode";
-import { DebugAdapterCommandName, DebugAdapterToolName, LanguageServerCommandName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, updateDotnetTool } from "./tools";
+import { DebugAdapterCommandName, DebugAdapterToolName, LanguageServerCommandName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, isDotnetToolAvailable, updateDotnetTool } from "./tools";
 
 /**
  * Registers the command handlers supported by this extension.
@@ -33,6 +33,21 @@ async function installDotnetToolCommandHandler(config: {
     toolName: string;
     toolDisplayName: string;
 }) {
+    // Check if it's already installed
+    const isInstalledResult = await isDotnetToolAvailable(config.toolName);
+    if (isInstalledResult.isErr) {
+        const errMessage = isInstalledResult.unwrapErr().message;
+        await window.showErrorMessage(`Failed to check for installation of ${config.toolDisplayName}.\n${errMessage}`);
+        return;
+    }
+
+    const isInstalled = isInstalledResult.unwrap();
+    if (isInstalled) {
+        // Just notify
+        await window.showInformationMessage(`${config.toolDisplayName} is already installed.`);
+        return;
+    }
+
     // Try to install it
     const installResult = await installDotnetTool(config.toolName);
     if (installResult.isErr) {

@@ -4,7 +4,6 @@
  */
 
 import { spawn } from "child_process";
-import { exitCode } from "process";
 import { workspace } from "vscode";
 import { Result } from "./result";
 

@@ -13,7 +13,7 @@ import { AssetGenerator } from "./assets";
  * Asks the user, if they want to generate assets for the project. If they answer yes, 'tasks.json' and
  * 'launch.json' are automatically generated.
  */
-async function promptUserToCreateLaunchAndTasksConfig(): Promise<void> {
+async function promptUserToCreateLaunchAndTasksConfig() {
     if (!workspace.workspaceFolders || workspace.workspaceFolders.length == 0) {
         return;
     }

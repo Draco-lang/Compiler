@@ -9,7 +9,7 @@ import { DebugAdapterToolName, LanguageServerToolName, checkForDotnetToolUpdates
  * Registers the command handlers supported by this extension.
  * @param context The extension context.
  */
-export function registerCommands(context: ExtensionContext) {
+export function registerCommandHandlers(context: ExtensionContext) {
     context.subscriptions.push(commands.registerCommand(
         'draco.installLanguageServer',
         () => installDotnetToolCommandHandler({ toolName: LanguageServerToolName, toolDisplayName: 'Language Server' })));
@@ -32,7 +32,7 @@ export function registerCommands(context: ExtensionContext) {
 async function installDotnetToolCommandHandler(config: {
     toolName: string;
     toolDisplayName: string;
-}): Promise<void> {
+}) {
     // Try to install it
     const installResult = await installDotnetTool(config.toolName);
     if (installResult.isErr) {
@@ -51,7 +51,7 @@ async function installDotnetToolCommandHandler(config: {
 async function updateDotnetToolCommandHandler(config: {
     toolName: string;
     toolDisplayName: string;
-}): Promise<void> {
+}) {
     // Check for updates
     const checkForUpdateResult = await checkForDotnetToolUpdates(config.toolName);
     if (checkForUpdateResult.isErr) {

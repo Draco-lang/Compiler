@@ -61,7 +61,7 @@ export class AssetGenerator {
     /**
      * Ensures that the '.vscode' folder exists.
      */
-    public async ensureVscodeFolderExists(): Promise<void> {
+    public async ensureVscodeFolderExists() {
         if (!await exists(this.vscodePath)) {
             await fs.mkdir(this.vscodePath);
         }

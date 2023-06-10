@@ -30,13 +30,13 @@ export const DebugAdapterCommandName = 'draco-debugadapter';
 /**
  * Checks, if a given .NET tool has updates. It works by passing in a 'check-for-updates' flag for the tool,
  * the tool does the checking by itself. Expects exit code 0 to mean no updates and 1 to mean updates available.
- * @param toolName The tool name.
- * @returns @constant true, if a .NET tool with name @param toolName has updates,
+ * @param toolCommand The tool command.
+ * @returns @constant true, if a .NET tool with command @param toolCommand has updates,
  * @constant false if not, an error result if there was an error.
  */
-export async function checkForDotnetToolUpdates(toolName: string): Promise<Result<boolean>> {
+export async function checkForDotnetToolUpdates(toolCommand: string): Promise<Result<boolean>> {
     const resultExecute = Result.wrapAsync(executeCommand);
-    return (await resultExecute(toolName, 'check-for-updates'))
+    return (await resultExecute(toolCommand, 'check-for-updates'))
         .bind(ok => ok.exitCode === 0 || ok.exitCode === 1
             ? Result.ok(ok.exitCode === 1)
             : Result.err(new Error(`command ${ok.command} returned with nonzero (${ok.exitCode}) exit-code`)));
@@ -54,7 +54,7 @@ export async function isDotnetToolAvailable(toolName: string): Promise<Result<bo
 
     return (await safeExecuteCommand(dotnet, 'tool', 'list', '--global'))
         .map(ok => ok.stdout)
-        .map(regExp.test);
+        .map(regExp.test.bind(regExp));
 }
 
 /**

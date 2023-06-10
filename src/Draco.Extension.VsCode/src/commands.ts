@@ -3,7 +3,7 @@
  */
 
 import { ExtensionContext, commands, window } from "vscode";
-import { DebugAdapterToolName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, updateDotnetTool } from "./tools";
+import { DebugAdapterCommandName, DebugAdapterToolName, LanguageServerCommandName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, updateDotnetTool } from "./tools";
 
 /**
  * Registers the command handlers supported by this extension.
@@ -15,14 +15,14 @@ export function registerCommandHandlers(context: ExtensionContext) {
         () => installDotnetToolCommandHandler({ toolName: LanguageServerToolName, toolDisplayName: 'Language Server' })));
     context.subscriptions.push(commands.registerCommand(
         'draco.updateLanguageServer',
-        () => updateDotnetToolCommandHandler({ toolName: LanguageServerToolName, toolDisplayName: 'Language Server' })));
+        () => updateDotnetToolCommandHandler({ toolName: LanguageServerToolName, toolCommand: LanguageServerCommandName, toolDisplayName: 'Language Server' })));
 
     context.subscriptions.push(commands.registerCommand(
         'draco.installDebugAdapter',
         () => installDotnetToolCommandHandler({ toolName: DebugAdapterToolName, toolDisplayName: 'Debug Adapter' })));
     context.subscriptions.push(commands.registerCommand(
         'draco.updateDebugAdapter',
-        () => updateDotnetToolCommandHandler({ toolName: DebugAdapterToolName, toolDisplayName: 'Debug Adapter' })));
+        () => updateDotnetToolCommandHandler({ toolName: DebugAdapterToolName, toolCommand: DebugAdapterCommandName, toolDisplayName: 'Debug Adapter' })));
 }
 
 /**
@@ -50,10 +50,11 @@ async function installDotnetToolCommandHandler(config: {
  */
 async function updateDotnetToolCommandHandler(config: {
     toolName: string;
+    toolCommand: string;
     toolDisplayName: string;
 }) {
     // Check for updates
-    const checkForUpdateResult = await checkForDotnetToolUpdates(config.toolName);
+    const checkForUpdateResult = await checkForDotnetToolUpdates(config.toolCommand);
     if (checkForUpdateResult.isErr) {
         const errMessage = checkForUpdateResult.unwrapErr().message;
         await window.showErrorMessage(`Could not check for updates for ${config.toolDisplayName}.\n${errMessage}`);

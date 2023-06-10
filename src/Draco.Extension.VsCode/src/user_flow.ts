@@ -5,7 +5,7 @@
 
 import * as fs from "fs/promises";
 import { ConfigurationTarget, TextEditor, Uri, window, workspace } from "vscode";
-import { DebugAdapterToolName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, isDotnetCommandAvailable, isDotnetToolAvailable, updateDotnetTool } from "./tools";
+import { DebugAdapterCommandName, DebugAdapterToolName, LanguageServerCommandName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, isDotnetCommandAvailable, isDotnetToolAvailable, updateDotnetTool } from "./tools";
 import { PromptKind, PromptResult, prompt } from "./prompt";
 import { AssetGenerator } from "./assets";
 import { updateWithDefaultSettings } from "./settings";
@@ -14,7 +14,7 @@ import { updateWithDefaultSettings } from "./settings";
  * Asks the user, if they want to generate assets for the project. If they answer yes, 'tasks.json' and
  * 'launch.json' are automatically generated.
  */
-async function promptUserToCreateLaunchAndTasksConfig() {
+export async function promptUserToCreateLaunchAndTasksConfig() {
     if (!workspace.workspaceFolders || workspace.workspaceFolders.length == 0) {
         return;
     }
@@ -28,17 +28,21 @@ async function promptUserToCreateLaunchAndTasksConfig() {
         return;
     }
 
+    const projectFiles = await assets.getDracoprojFilePaths();
+    if (projectFiles.length == 0) {
+        return;
+    }
+
     const shouldGenerate = await promptYesNoDisable(
         PromptKind.info,
         'This workspace is missing files to build and debug Draco programs. Would you like to generate them now?',
         'promptGenerateSettings');
-    if (shouldGenerate != PromptResult.yes) {
+    if (shouldGenerate !== PromptResult.yes) {
         return;
     }
 
     // We need to generate them
     await assets.ensureVscodeFolderExists();
-    const projectFiles = await assets.getDracoprojFilePaths();
 
     const tasksDescription = {
         version: '2.0.0',
@@ -66,7 +70,7 @@ export async function interactivelyCheckForDotnet(): Promise<boolean> {
             PromptKind.error,
             `The dotnet command failed. Open settings?\n${errMessage}`,
             'promptOpenSettings');
-        if (shouldOpenSettings != PromptResult.yes) {
+        if (shouldOpenSettings !== PromptResult.yes) {
             return false;
         }
 
@@ -96,6 +100,7 @@ export async function interactivelyCheckForDotnet(): Promise<boolean> {
 export function interactivelyInitializeLanguageServer(): Promise<boolean> {
     return interactivelyInitializeDotnetTool({
         toolName: LanguageServerToolName,
+        toolCommand: LanguageServerCommandName,
         toolDisplayName: 'Language Server',
         installSetting: 'promptInstallLanguageServer',
         updateSetting: 'promptUpdateLanguageServer',
@@ -112,6 +117,7 @@ export function interactivelyInitializeLanguageServer(): Promise<boolean> {
 export function interactivelyInitializeDebugAdapter(): Promise<boolean> {
     return interactivelyInitializeDotnetTool({
         toolName: DebugAdapterToolName,
+        toolCommand: DebugAdapterCommandName,
         toolDisplayName: 'Debug Adapter',
         installSetting: 'promptInstallDebugAdapter',
         updateSetting: 'promptUpdateDebugAdapter',
@@ -128,6 +134,7 @@ export function interactivelyInitializeDebugAdapter(): Promise<boolean> {
  */
 async function interactivelyInitializeDotnetTool(config: {
     toolName: string;
+    toolCommand: string;
     toolDisplayName: string;
     installSetting: string;
     updateSetting: string;
@@ -147,7 +154,7 @@ async function interactivelyInitializeDotnetTool(config: {
             PromptKind.info,
             `${config.toolDisplayName} is not installed. Would you like to install it?`,
             config.installSetting);
-        if (shouldInstall != PromptResult.yes) {
+        if (shouldInstall !== PromptResult.yes) {
             // Should not install, tool isn't installed
             return false;
         }
@@ -165,7 +172,7 @@ async function interactivelyInitializeDotnetTool(config: {
     }
 
     // Tool is already installed, check for updates
-    const checkForUpdateResult = await checkForDotnetToolUpdates(config.toolName);
+    const checkForUpdateResult = await checkForDotnetToolUpdates(config.toolCommand);
     if (checkForUpdateResult.isErr) {
         const errMessage = checkForUpdateResult.unwrapErr().message;
         await window.showErrorMessage(`Could not check for updates for ${config.toolDisplayName}.\n${errMessage}`);
@@ -183,7 +190,7 @@ async function interactivelyInitializeDotnetTool(config: {
         PromptKind.info,
         `There are updates available for ${config.toolDisplayName}. Would you like to update?`,
         config.updateSetting);
-    if (doUpdateResponse != PromptResult.yes) {
+    if (doUpdateResponse !== PromptResult.yes) {
         // We don't want to update
         return true;
     }

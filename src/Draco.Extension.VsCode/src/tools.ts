@@ -10,22 +10,22 @@ import { Result } from "./result";
 /**
  * The language server package name.
  */
-const LanguageServerToolName = 'Draco.LanguageServer';
+export const LanguageServerToolName = 'Draco.LanguageServer';
 
 /**
  * The language server command that can be used to start it up.
  */
-const LanguageServerCommandName = 'draco-langserver';
+export const LanguageServerCommandName = 'draco-langserver';
 
 /**
  * The debug adapter package name.
  */
-const DebugAdapterToolName = 'Draco.DebugAdapter';
+export const DebugAdapterToolName = 'Draco.DebugAdapter';
 
 /**
  * The debug adapter command that can be used to start it up.
  */
-const DebugAdapterCommandName = 'draco-debugadapter';
+export const DebugAdapterCommandName = 'draco-debugadapter';
 
 /**
  * Checks, if a given .NET tool has updates. It works by passing in a 'check-for-updates' flag for the tool,

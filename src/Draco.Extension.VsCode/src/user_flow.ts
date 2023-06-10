@@ -4,9 +4,14 @@
  */
 
 import { ConfigurationTarget, window, workspace } from "vscode";
-import { checkForDotnetToolUpdates, installDotnetTool, isDotnetCommandAvailable, isDotnetToolAvailable, updateDotnetTool } from "./tools";
+import { DebugAdapterToolName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, isDotnetCommandAvailable, isDotnetToolAvailable, updateDotnetTool } from "./tools";
 import { PromptKind, PromptResult, prompt } from "./prompt";
 
+/**
+ * Checks for the availability of the dotnet command. If not available, the user is prompted if they want to
+ * open their settings.
+ * @returns @constant true, if the dotnet command is available, @constant false otherwise.
+ */
 async function interactivelyCheckForDotnet(): Promise<boolean> {
     const checkResult = await isDotnetCommandAvailable();
     if (checkResult.isErr) {
@@ -24,6 +29,45 @@ async function interactivelyCheckForDotnet(): Promise<boolean> {
     return true;
 }
 
+/**
+ * Checks, if the language server tool is installed. If not installed, the user is prompted if they want to install
+ * it. If installed, it checks for updates. If there are updates available, the user is prompted if they want to
+ * update.
+ * @returns @constant true, if the tool is available in some form, even if updating failed for example.
+ * @constant false, if the tool is not available in any form.
+ */
+function interactivelyInitializeLanguageServer(): Promise<boolean> {
+    return interactivelyInitializeDotnetTool({
+        toolName: LanguageServerToolName,
+        toolDisplayName: 'Language Server',
+        installSetting: 'promptInstallLanguageServer',
+        updateSetting: 'promptUpdateLanguageServer',
+    });
+}
+
+/**
+ * Checks, if the debug adapter tool is installed. If not installed, the user is prompted if they want to install
+ * it. If installed, it checks for updates. If there are updates available, the user is prompted if they want to
+ * update.
+ * @returns @constant true, if the tool is available in some form, even if updating failed for example.
+ * @constant false, if the tool is not available in any form.
+ */
+function interactivelyInitializeDebugAdapter(): Promise<boolean> {
+    return interactivelyInitializeDotnetTool({
+        toolName: DebugAdapterToolName,
+        toolDisplayName: 'Debug Adapter',
+        installSetting: 'promptInstallDebugAdapter',
+        updateSetting: 'promptUpdateDebugAdapter',
+    });
+}
+
+/**
+ * Checks, if the given tool is installed. If not installed, the user is prompted if they want to install
+ * it. If installed, it checks for updates. If there are updates available, the user is prompted if they want to
+ * update.
+ * @returns @constant true, if the tool is available in some form, even if updating failed for example.
+ * @constant false, if the tool is not available in any form.
+ */
 async function interactivelyInitializeDotnetTool(config: {
     toolName: string;
     toolDisplayName: string;

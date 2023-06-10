@@ -204,14 +204,15 @@ internal partial class Binder
             {
                 return new BoundReferenceErrorExpression(prop.Syntax, prop.Setter);
             }
+            var receiver = prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics);
             return new BoundPropertySetExpression(
                 assignment.Syntax,
-                prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
+                receiver,
                 prop.Setter,
                 compoundOperator is not null
                     ? this.CompoundPropertyExpression(
                         assignment.Syntax,
-                        prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics),
+                        receiver,
                         typedRight,
                         ((IPropertyAccessorSymbol)prop.Setter).Property,
                         compoundOperator,
@@ -226,34 +227,37 @@ internal partial class Binder
             {
                 return new BoundReferenceErrorExpression(index.Syntax, index.Setter.Result);
             }
+            var receiver = this.TypeExpression(index.Receiver, constraints, diagnostics);
+            var indices = index.Indices
+                .Select(x => this.TypeExpression(x, constraints, diagnostics))
+                .ToImmutableArray();
             return new BoundIndexSetExpression(
                 assignment.Syntax,
-                this.TypeExpression(index.Receiver, constraints, diagnostics),
+                receiver,
                 index.Setter.Result,
                 compoundOperator is not null
                     ? this.CompoundPropertyExpression(assignment.Syntax,
-                        this.TypeExpression(index.Receiver, constraints, diagnostics),
+                        receiver,
                         typedRight,
                         ((IPropertyAccessorSymbol)index.Setter.Result).Property,
                         compoundOperator,
-                        index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray(),
+                        indices,
                         diagnostics)
                     : typedRight,
-                index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray());
+                indices);
         }
-
         else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
         {
+            var receiver = this.TypeExpression(mem.Accessed, constraints, diagnostics);
             var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);
-
             return new BoundPropertySetExpression(
                 assignment.Syntax,
-                this.TypeExpression(mem.Accessed, constraints, diagnostics),
+                receiver,
                 setter,
                 compoundOperator is not null
                     ? this.CompoundPropertyExpression(
                         assignment.Syntax,
-                        this.TypeExpression(mem.Accessed, constraints, diagnostics),
+                        receiver,
                         typedRight,
                         pr,
                         compoundOperator,

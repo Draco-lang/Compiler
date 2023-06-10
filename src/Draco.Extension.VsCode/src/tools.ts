@@ -64,7 +64,7 @@ export async function isDotnetToolAvailable(toolName: string): Promise<Result<bo
  */
 export async function installDotnetTool(toolName: string): Promise<Result<void>> {
     const config = workspace.getConfiguration('draco');
-    const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
+    const sdkVersion = config.get<string>('sdkVersion') || '*';
 
     const dotnet = getDotnetCommand();
     return (await safeExecuteCommand(dotnet, 'tool', 'install', toolName, '--version', sdkVersion, '--global'))
@@ -78,7 +78,7 @@ export async function installDotnetTool(toolName: string): Promise<Result<void>>
  */
 export async function updateDotnetTool(toolName: string): Promise<Result<void>> {
     const config = workspace.getConfiguration('draco');
-    const sdkVersion = config.get<string>('dracoSdkVersion') || '*';
+    const sdkVersion = config.get<string>('sdkVersion') || '*';
 
     const dotnet = getDotnetCommand();
     return (await safeExecuteCommand(dotnet, 'tool', 'update', toolName, '--version', sdkVersion, '--global'))

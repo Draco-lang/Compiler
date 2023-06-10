@@ -67,7 +67,7 @@
           "default": "dotnet",
           "description": "The command to invoke the dotnet tool."
         },
-        "draco.dracoSdkVersion": {
+        "draco.sdkVersion": {
           "type": "string",
           "default": "*",
           "description": "The package version pattern for the Draco SDK to use."
@@ -77,15 +77,25 @@
           "default": true,
           "description": "In case of a setting error, should the settings file be prompted for opening."
         },
-        "draco.promptInstallDracoLangserver": {
+        "draco.promptInstallLanguageServer": {
           "type": "boolean",
           "default": true,
           "description": "In case the Draco Language Server was not found, should it be prompted for installation."
         },
-        "draco.promptUpdateDracoLangserver": {
+        "draco.promptUpdateLanguageServer": {
           "type": "boolean",
           "default": true,
           "description": "Check for Draco language server updates."
+        },
+        "draco.promptInstallDebugAdapter": {
+          "type": "boolean",
+          "default": true,
+          "description": "In case the Draco debug adapter was not found, should it be prompted for installation."
+        },
+        "draco.promptUpdateDebugAdapter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check for Draco debug adapter updates."
         },
         "draco.inlayHints.parameterNames": {
           "type": "boolean",

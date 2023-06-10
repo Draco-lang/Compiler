@@ -53,7 +53,7 @@ export async function stopLanguageServer() {
 /**
  * Starts the language server.
  */
-export async function startLanguageServer(): Promise<void> {
+export async function startLanguageServer() {
     // If there's a client running already, stop it
     await stopLanguageServer();
 

@@ -1,3 +1,7 @@
+/**
+ * Asset handling.
+ */
+
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -47,9 +51,17 @@ export class AssetGenerator {
     }
 
     /**
+     * Checks, if the '.vscode' folder exists.
+     * @returns @constant true, if it exists, @constant false otherwise.
+     */
+    public vscodeFolderExists(): Promise<boolean> {
+        return exists(this.vscodePath);
+    }
+
+    /**
      * Ensures that the '.vscode' folder exists.
      */
-    public async ensureVscodeFolderExists(): Promise<void> {
+    public async ensureVscodeFolderExists() {
         if (!await exists(this.vscodePath)) {
             await fs.mkdir(this.vscodePath);
         }
@@ -124,7 +136,7 @@ async function globAsync(pattern: string): Promise<string[]> {
  * @param path The path to check.
  * @returns True, if the path exists and can be written, false otherwise.
  */
-export async function exists(path: PathLike): Promise<boolean> {
+async function exists(path: PathLike): Promise<boolean> {
     try {
         await fs.access(path, fs.constants.W_OK);
         return true;

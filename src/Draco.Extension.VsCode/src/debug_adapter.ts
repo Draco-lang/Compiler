@@ -1,11 +1,17 @@
-import * as vscode from "vscode";
-import * as fs from "fs/promises";
-import * as path from "path";
-import { DracoDebugAdapterCommandName } from "./settings";
-import { PathLike } from "fs";
-import { AssetGenerator } from "./assets";
+/**
+ * Handling debug adapter integration.
+ */
 
-export function activateDebugAdapter(context: vscode.ExtensionContext) {
+import * as vscode from "vscode";
+import { AssetGenerator } from "./assets";
+import { DebugAdapterCommandName } from "./tools";
+import { interactivelyInitializeDebugAdapter } from "./user_flow";
+
+/**
+ * Registers the debug adapter handling functionality.
+ * @param context The extension context.
+ */
+export function registerDebugAdapter(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider(
         'dracodbg',
         new DracoDebugConfigurationProvider()));
@@ -24,16 +30,7 @@ class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvid
         }
 
         const generator = new AssetGenerator(folder.uri.fsPath);
-
-        await generator.ensureVscodeFolderExists();
         const projectFiles = await generator.getDracoprojFilePaths();
-
-        const tasksDescription = {
-            version: '2.0.0',
-            tasks: projectFiles.map(generator.getBuildTaskDescriptionForProject),
-        };
-        await fs.writeFile(generator.tasksJsonPath, JSON.stringify(tasksDescription, null, 4));
-
         return projectFiles.map(generator.getLaunchDescriptionForProject);
     }
 
@@ -46,9 +43,14 @@ class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvid
  * Descriptor factory for using the debugger as a dotnet tool.
  */
 class DebugAdapterDotnetToolFactory implements vscode.DebugAdapterDescriptorFactory {
-    createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+    async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
+        // Check, if we can even run the debug adapter
+        if (!await interactivelyInitializeDebugAdapter()) {
+            return null;
+        }
+
         return new vscode.DebugAdapterExecutable(
-            DracoDebugAdapterCommandName,
+            DebugAdapterCommandName,
             ['run', '--stdio'],
             undefined);
     }

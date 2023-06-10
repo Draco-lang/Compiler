@@ -4,15 +4,37 @@
  */
 
 import { ConfigurationTarget, window, workspace } from "vscode";
-import { checkForDotnetToolUpdates, installDotnetTool, isDotnetToolAvailable, updateDotnetTool } from "./tools";
+import { checkForDotnetToolUpdates, installDotnetTool, isDotnetCommandAvailable, isDotnetToolAvailable, updateDotnetTool } from "./tools";
 import { PromptKind, PromptResult, prompt } from "./prompt";
 
-async function interactivelyInitializeDotnetTool(toolName: string, toolDisplayName: string): Promise<boolean> {
+async function interactivelyCheckForDotnet(): Promise<boolean> {
+    const checkResult = await isDotnetCommandAvailable();
+    if (checkResult.isErr) {
+        const shouldOpenSettings = await promptYesNoDisable(
+            PromptKind.error,
+            'The dotnet command failed. Open settings?',
+            'promptOpenSettings');
+        if (shouldOpenSettings != PromptResult.yes) {
+            return false;
+        }
+        // TODO: Open settings
+        return false;
+    }
+    // We have dotnet available
+    return true;
+}
+
+async function interactivelyInitializeDotnetTool(config: {
+    toolName: string;
+    toolDisplayName: string;
+    installSetting: string;
+    updateSetting: string;
+}): Promise<boolean> {
     // Check, if the tool is installed
-    const isInstalledResult = await isDotnetToolAvailable(toolName);
+    const isInstalledResult = await isDotnetToolAvailable(config.toolName);
     if (isInstalledResult.isErr) {
         const errMessage = isInstalledResult.unwrapErr().message;
-        await window.showErrorMessage(`Failed to check for ${toolDisplayName}.\n${errMessage}`);
+        await window.showErrorMessage(`Failed to check for ${config.toolDisplayName}.\n${errMessage}`);
         return false;
     }
 
@@ -21,30 +43,30 @@ async function interactivelyInitializeDotnetTool(toolName: string, toolDisplayNa
         // Not installed yet, ask the user
         const shouldInstall = await promptYesNoDisable(
             PromptKind.info,
-            `${toolDisplayName} is not installed. Would you like to install it?`,
-            'TODO: Setting');
+            `${config.toolDisplayName} is not installed. Would you like to install it?`,
+            config.installSetting);
         if (shouldInstall != PromptResult.yes) {
             // Should not install, tool isn't installed
             return false;
         }
 
         // Try to install it
-        const installResult = await installDotnetTool(toolName);
+        const installResult = await installDotnetTool(config.toolName);
         if (installResult.isErr) {
             const errMessage = installResult.unwrapErr().message;
-            await window.showErrorMessage(`Failed to install ${toolDisplayName}.\n${errMessage}`);
+            await window.showErrorMessage(`Failed to install ${config.toolDisplayName}.\n${errMessage}`);
             return false;
         }
         // We installed successfully
-        await window.showInformationMessage(`${toolDisplayName} installed successfully.`);
+        await window.showInformationMessage(`${config.toolDisplayName} installed successfully.`);
         return true;
     }
 
     // Tool is already installed, check for updates
-    const checkForUpdateResult = await checkForDotnetToolUpdates(toolName);
+    const checkForUpdateResult = await checkForDotnetToolUpdates(config.toolName);
     if (checkForUpdateResult.isErr) {
         const errMessage = checkForUpdateResult.unwrapErr().message;
-        await window.showErrorMessage(`Could not check for updates for ${toolDisplayName}.\n${errMessage}`);
+        await window.showErrorMessage(`Could not check for updates for ${config.toolDisplayName}.\n${errMessage}`);
         // We could not check for updates, but we do have a local install, we can use that
         return true;
     }
@@ -57,24 +79,24 @@ async function interactivelyInitializeDotnetTool(toolName: string, toolDisplayNa
     // There are updates, ask
     const doUpdateResponse = await promptYesNoDisable(
         PromptKind.info,
-        `There are updates available for ${toolDisplayName}. Would you like to update?`,
-        'TODO: SETTING');
+        `There are updates available for ${config.toolDisplayName}. Would you like to update?`,
+        config.updateSetting);
     if (doUpdateResponse != PromptResult.yes) {
         // We don't want to update
         return true;
     }
 
     // We want to update
-    const updateResult = await updateDotnetTool(toolName);
+    const updateResult = await updateDotnetTool(config.toolName);
     if (updateResult.isErr) {
         const errMessage = updateResult.unwrapErr().message;
-        await window.showErrorMessage(`Could not updates ${toolDisplayName}.\n${errMessage}`);
+        await window.showErrorMessage(`Could not updates ${config.toolDisplayName}.\n${errMessage}`);
         // We could not update, but we do have a local install, we can use that
         return true;
     }
 
     // We updated successfully
-    await window.showInformationMessage(`${toolDisplayName} updated successfully.`);
+    await window.showInformationMessage(`${config.toolDisplayName} updated successfully.`);
     return true;
 }
 

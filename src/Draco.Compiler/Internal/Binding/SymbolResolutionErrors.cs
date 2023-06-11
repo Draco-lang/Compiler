@@ -22,13 +22,22 @@ internal static class SymbolResolutionErrors
         code: Code(1));
 
     /// <summary>
+    /// An ambiguous reference.
+    /// </summary>
+    public static readonly DiagnosticTemplate AmbiguousReference = DiagnosticTemplate.Create(
+        title: "ambiguous reference",
+        severity: DiagnosticSeverity.Error,
+        format: "ambiguous reference to {0}",
+        code: Code(2));
+
+    /// <summary>
     /// An illegal reference.
     /// </summary>
     public static readonly DiagnosticTemplate IllegalReference = DiagnosticTemplate.Create(
         title: "illegal reference",
         severity: DiagnosticSeverity.Error,
         format: "illegal reference to symbol {0}",
-        code: Code(2));
+        code: Code(3));
 
     /// <summary>
     /// A shadowing error.
@@ -37,7 +46,7 @@ internal static class SymbolResolutionErrors
         title: "illegal shadowing",
         severity: DiagnosticSeverity.Error,
         format: "symbol {0} illegally shadows symbol with the same name",
-        code: Code(3));
+        code: Code(4));
 
     /// <summary>
     /// Illegal lvalue.
@@ -46,7 +55,7 @@ internal static class SymbolResolutionErrors
         title: "illegal lvalue",
         severity: DiagnosticSeverity.Error,
         format: "illegal expression on the left-hand side of assignment",
-        code: Code(4));
+        code: Code(5));
 
     /// <summary>
     /// A member was not found in a type or module.
@@ -55,7 +64,7 @@ internal static class SymbolResolutionErrors
         title: "member not found",
         severity: DiagnosticSeverity.Error,
         format: "member {0} could not be found in {1}",
-        code: Code(5));
+        code: Code(6));
 
     /// <summary>
     /// A path points to an illegal import.
@@ -64,7 +73,7 @@ internal static class SymbolResolutionErrors
         title: "illegal import",
         severity: DiagnosticSeverity.Error,
         format: "the path {0} can not be imported",
-        code: Code(6));
+        code: Code(7));
 
     /// <summary>
     /// A module was used as an expression.
@@ -73,7 +82,7 @@ internal static class SymbolResolutionErrors
         title: "illegal expression",
         severity: DiagnosticSeverity.Error,
         format: "the module name {0} is illegal in expression context",
-        code: Code(7));
+        code: Code(8));
 
     /// <summary>
     /// A type was used as an expression.
@@ -82,7 +91,7 @@ internal static class SymbolResolutionErrors
         title: "illegal expression",
         severity: DiagnosticSeverity.Error,
         format: "the type name {0} is illegal in expression context",
-        code: Code(8));
+        code: Code(9));
 
     /// <summary>
     /// A module was used as an expression.
@@ -91,7 +100,7 @@ internal static class SymbolResolutionErrors
         title: "illegal type",
         severity: DiagnosticSeverity.Error,
         format: "the module name {0} is illegal in type context",
-        code: Code(9));
+        code: Code(10));
 
     /// <summary>
     /// Import is not at the top of the scope.
@@ -100,7 +109,7 @@ internal static class SymbolResolutionErrors
         title: "import not at the top of the scope",
         severity: DiagnosticSeverity.Error,
         format: "import directives must appear at the top of the scope",
-        code: Code(10));
+        code: Code(11));
 
     /// <summary>
     /// A function group was used as an expression.
@@ -109,7 +118,7 @@ internal static class SymbolResolutionErrors
         title: "illegal expression",
         severity: DiagnosticSeverity.Error,
         format: "the function group {0} is illegal in expression context",
-        code: Code(11));
+        code: Code(12));
 
     /// <summary>
     /// File path is outside of root path.
@@ -118,7 +127,7 @@ internal static class SymbolResolutionErrors
         title: "file path is outside of root path",
         severity: DiagnosticSeverity.Error,
         format: "the file path {0} is outside of the root path {1}",
-        code: Code(12));
+        code: Code(13));
 
     /// <summary>
     /// Can not set get only property.
@@ -127,7 +136,7 @@ internal static class SymbolResolutionErrors
         title: "can not set get-only property",
         severity: DiagnosticSeverity.Error,
         format: "can not set get-only property {0}",
-        code: Code(13));
+        code: Code(14));
 
     /// <summary>
     /// Can not get set only property.
@@ -136,7 +145,7 @@ internal static class SymbolResolutionErrors
         title: "can not get set-only property",
         severity: DiagnosticSeverity.Error,
         format: "can not get set-only property {0}",
-        code: Code(14));
+        code: Code(15));
 
     /// <summary>
     /// No settable indexer was found in type.
@@ -145,7 +154,7 @@ internal static class SymbolResolutionErrors
         title: "no settable indexer was found in type",
         severity: DiagnosticSeverity.Error,
         format: "no settable indexer was found in type {0}",
-        code: Code(15));
+        code: Code(16));
 
     /// <summary>
     /// No gettable indexer was found in type.
@@ -154,5 +163,5 @@ internal static class SymbolResolutionErrors
         title: "no gettable indexer was found in type",
         severity: DiagnosticSeverity.Error,
         format: "no gettable indexer was found in type {0}",
-        code: Code(16));
+        code: Code(17));
 }

@@ -87,7 +87,7 @@
         },
         "draco.sdkVersion": {
           "type": "string",
-          "default": "*",
+          "default": null,
           "description": "The package version pattern for the Draco SDK to use."
         },
         "draco.promptGenerateSettings": {

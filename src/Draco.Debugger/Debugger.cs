@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using System.Threading.Tasks;
 using ClrDebug;
 using Draco.Debugger.IO;
-using Draco.Debugger.Platform;
 
 namespace Draco.Debugger;
 

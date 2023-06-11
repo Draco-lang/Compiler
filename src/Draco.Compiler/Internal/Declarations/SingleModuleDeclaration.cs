@@ -33,22 +33,15 @@ internal sealed class SingleModuleDeclaration : Declaration
     private ImmutableArray<Declaration> BuildChildren() =>
         this.Syntax.Declarations.Select(BuildChild).OfType<Declaration>().ToImmutableArray();
 
-    private static Declaration? BuildChild(SyntaxNode node)
+    private static Declaration? BuildChild(SyntaxNode node) => node switch
     {
-        switch (node)
-        {
         // NOTE: We ignore import declarations in the declaration tree, unlike Roslyn
         // We handle import declarations during constructing the binders
         // Since we allow for imports in local scopes too, this is the most sensible choice
-        case ImportDeclarationSyntax:
-        case UnexpectedDeclarationSyntax:
-            return null;
-        case VariableDeclarationSyntax var:
-            return new GlobalDeclaration(var);
-        case FunctionDeclarationSyntax func:
-            return new FunctionDeclaration(func);
-        default:
-            throw new ArgumentOutOfRangeException(nameof(node)),
-        }
-    }
+        ImportDeclarationSyntax => null,
+        VariableDeclarationSyntax var => new GlobalDeclaration(var),
+        FunctionDeclarationSyntax func => new FunctionDeclaration(func),
+        UnexpectedDeclarationSyntax => null,
+        _ => throw new ArgumentOutOfRangeException(nameof(node)),
+    };
 }

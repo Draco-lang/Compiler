@@ -191,6 +191,10 @@ public sealed class Issue139Tests
             ImmutableArray<int32>.Empt|
         }
         """")]
+    [InlineData(""""
+        import System.Collections.Immutable;
+        func foo(): ImmutableArray { }
+        """")]
     [InlineData("public import Foo")]
     [Theory]
     public void DoesNotCrash(string source)

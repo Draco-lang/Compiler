@@ -22,7 +22,7 @@ export async function promptUserToUsePrereleaseOrStableFeed() {
     }
 
     // Ask the user which feed they would like to use
-    const response = await promptYesNoDisable(PromptKind.info, "Would you like to use the prerelease feed?");
+    const response = await promptYesNoDisable(PromptKind.info, "Would you like to use the prerelease feed of the Sdk?");
     if (response === PromptResult.yes) {
         await config.update('sdkVersion', '*-*', ConfigurationTarget.Global);
     } else {

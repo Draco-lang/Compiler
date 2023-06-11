@@ -15,6 +15,22 @@ namespace Draco.Compiler.Internal.Syntax;
 internal sealed class Parser
 {
     /// <summary>
+    /// The different declaration contexts.
+    /// </summary>
+    private enum DeclarationContext
+    {
+        /// <summary>
+        /// Global, like in a compilation unit, module, class, ...
+        /// </summary>
+        Global,
+
+        /// <summary>
+        /// Local to a function body/expression/code-block.
+        /// </summary>
+        Local,
+    }
+
+    /// <summary>
     /// Control flow statements parse sligtly differently in expression and statement contexts.
     /// This is the discriminating enum for them to avoid duplicating parser code.
     /// </summary>
@@ -225,10 +241,19 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// Parses a global-level declaration.
+    /// </summary>
+    /// <param name="local">True, if the declaration should allow local context elements.</param>
+    /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
+    internal DeclarationSyntax ParseDeclaration(bool local = false) =>
+        this.ParseDeclaration(local ? DeclarationContext.Local : DeclarationContext.Global);
+
+    /// <summary>
     /// Parses a declaration.
     /// </summary>
+    /// <param name="context">The current context.</param>
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
-    internal DeclarationSyntax ParseDeclaration()
+    private DeclarationSyntax ParseDeclaration(DeclarationContext context)
     {
         var modifier = this.ParseVisibilityModifier();
         switch (this.Peek())
@@ -244,7 +269,7 @@ internal sealed class Parser
             return this.ParseVariableDeclaration(modifier);
 
         case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
-            return this.ParseLabelDeclaration();
+            return this.ParseLabelDeclaration(context);
 
         default:
         {
@@ -274,7 +299,7 @@ internal sealed class Parser
         // Declarations
         case TokenKind t when allowDecl && this.IsDeclarationStarter(t):
         {
-            var decl = this.ParseDeclaration();
+            var decl = this.ParseDeclaration(DeclarationContext.Local);
             return new DeclarationStatementSyntax(decl);
         }
 
@@ -399,12 +424,24 @@ internal sealed class Parser
     /// <summary>
     /// Parses a label declaration.
     /// </summary>
-    /// <returns>The parsed <see cref="LabelDeclarationSyntax"/>.</returns>
-    private LabelDeclarationSyntax ParseLabelDeclaration()
+    /// <param name="context">The current declaration context.</param>
+    /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
+    private DeclarationSyntax ParseLabelDeclaration(DeclarationContext context)
     {
         var labelName = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
-        return new(labelName, colon);
+        var result = new LabelDeclarationSyntax(labelName, colon) as DeclarationSyntax;
+        if (context != DeclarationContext.Local)
+        {
+            // Create diagnostic
+            var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "label");
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
+            // Wrap up the result in an error node
+            result = new UnexpectedDeclarationSyntax(null, SyntaxList.Create(result as SyntaxNode));
+            // Add diagnostic
+            this.AddDiagnostic(result, diag);
+        }
+        return result;
     }
 
     /// <summary>
@@ -639,7 +676,7 @@ internal sealed class Parser
 
             case TokenKind t when this.IsDeclarationStarter(t):
             {
-                var decl = this.ParseDeclaration();
+                var decl = this.ParseDeclaration(DeclarationContext.Local);
                 stmts.Add(new DeclarationStatementSyntax(decl));
                 break;
             }

@@ -14,8 +14,15 @@ internal sealed class ParserFuzzer : ComponentFuzzerBase<ImmutableArray<SyntaxTo
     {
     }
 
-    protected override void NextEpochInternal(ImmutableArray<SyntaxToken> input) =>
-        new Parser(TokenSource.From(input.AsMemory()), new SyntaxDiagnosticTable()).ParseCompilationUnit();
+    protected override void NextEpochInternal(ImmutableArray<SyntaxToken> input)
+    {
+        // NOTE: To not have to implement every single parsing constraint for the token generator,
+        // we stringify the tokens and re-lex them
+        var diags = new SyntaxDiagnosticTable();
+        var source = string.Join(string.Empty, input.Select(t => t.ToCode()));
+        var lexer = new Lexer(SourceReader.From(source), diags);
+        new Parser(TokenSource.From(lexer), diags).ParseCompilationUnit();
+    }
 
     protected override void NextMutationInternal(ImmutableArray<SyntaxToken> oldInput, ImmutableArray<SyntaxToken> newInput) =>
         throw new NotImplementedException();

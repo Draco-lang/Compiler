@@ -126,4 +126,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "unexpected end of escape sequence",
         code: Code(13));
+
+    /// <summary>
+    /// An illegal language element in the context.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalElementInContext = DiagnosticTemplate.Create(
+        title: "illegal element in context",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal language element {0} in context",
+        code: Code(14));
 }

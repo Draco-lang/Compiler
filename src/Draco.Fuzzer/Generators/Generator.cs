@@ -109,6 +109,13 @@ internal static class Generator
             MaxInsert = maxInsert,
         });
 
+    public static IGenerator<ImmutableArray<T>> Append<T>(
+        this IGenerator<ImmutableArray<T>> generator,
+        T last) => Delegate(
+            nextEpoch: () => generator.NextEpoch().Append(last).ToImmutableArray(),
+            nextMutation: () => generator.NextMutation().Append(last).ToImmutableArray(),
+            toString: generator.ToString);
+
     public static IGenerator<string> String(
         string? charset,
         SequenceGenerationSettings settings)

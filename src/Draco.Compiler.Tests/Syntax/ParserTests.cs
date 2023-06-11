@@ -24,6 +24,9 @@ public sealed class ParserTests
     private void ParseDeclaration(string text) =>
         this.ParseInto(text, p => p.ParseDeclaration());
 
+    private void ParseLocalDeclaration(string text) =>
+        this.ParseInto(text, p => p.ParseDeclaration(true));
+
     private void ParseExpression(string text) =>
         this.ParseInto(text, p => p.ParseExpression());
 
@@ -1141,9 +1144,25 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestLabelDeclaration()
+    public void TestLabelDeclarationInGlobalContext()
     {
         this.ParseDeclaration("""
+            myLabel:
+            """);
+
+        this.N<UnexpectedDeclarationSyntax>();
+        this.N<SyntaxList<SyntaxNode>>();
+        this.N<LabelDeclarationSyntax>();
+        {
+            this.T(TokenKind.Identifier, "myLabel");
+            this.T(TokenKind.Colon);
+        }
+    }
+
+    [Fact]
+    public void TestLabelDeclaration()
+    {
+        this.ParseLocalDeclaration("""
             myLabel:
             """);
 
@@ -1157,7 +1176,7 @@ public sealed class ParserTests
     [Fact]
     public void TestLabelDeclarationNewlineBeforeColon()
     {
-        this.ParseDeclaration("""
+        this.ParseLocalDeclaration("""
             myLabel
             :
             """);

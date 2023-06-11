@@ -34,6 +34,8 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     public override bool IsMember => !this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override bool IsVirtual => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Virtual);
+    public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
+    public override Api.Semantics.Visibility Visibility => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
     public override Symbol ContainingSymbol { get; }
 
@@ -76,7 +78,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     private void BuildSignature()
     {
         // Decode signature
-        var decoder = new SignatureDecoder(this.Assembly.Compilation);
+        var decoder = new TypeProvider(this.Assembly.Compilation);
         var signature = this.methodDefinition.DecodeSignature(decoder, this);
 
         // Build parameters

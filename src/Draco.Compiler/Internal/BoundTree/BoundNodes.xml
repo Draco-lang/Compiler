@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Tree
   xmlns="http://draco-lang.com/bound-tree/bound-nodes"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -100,7 +100,7 @@
   </Node>
 
   <Node Name="BoundMemberExpression" Base="BoundExpression">
-    <Field Name="Receiver" Type="BoundExpression?" />
+    <Field Name="Receiver" Type="BoundExpression" />
     <Field Name="Member" Type="Symbol" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
@@ -113,12 +113,6 @@
 
   <Node Name="BoundIndirectCallExpression" Base="BoundExpression">
     <Field Name="Method" Type="BoundExpression" />
-    <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
-  </Node>
-
-  <Node Name="BoundIndexExpression" Base="BoundExpression">
-    <Field Name="Collection" Type="BoundExpression" />
     <Field Name="Arguments" Type="ImmutableArray&lt;BoundExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
@@ -169,6 +163,35 @@
 
   <Node Name="BoundGlobalExpression" Base="BoundExpression">
     <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="BoundFieldExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Field" Type="FieldSymbol" />
+  </Node>
+
+  <Node Name="BoundPropertyGetExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Getter" Type="FunctionSymbol" />
+  </Node>
+
+  <Node Name="BoundPropertySetExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Setter" Type="FunctionSymbol" />
+    <Field Name="Value" Type="BoundExpression"/>
+  </Node>
+
+  <Node Name="BoundIndexGetExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression"/>
+    <Field Name="Getter" Type="FunctionSymbol" />
+    <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
+  <Node Name="BoundIndexSetExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression"/>
+    <Field Name="Setter" Type="FunctionSymbol" />
+    <Field Name="Value" Type="BoundExpression"/>
+    <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 
   <Node Name="BoundParameterExpression" Base="BoundExpression">
@@ -230,6 +253,11 @@
 
   <Node Name="BoundGlobalLvalue" Base="BoundLvalue">
     <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="BoundFieldLvalue" Base="BoundLvalue">
+    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
   <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">

@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// It does not necessarily mean that the function itself was generic, it might have been within another generic
 /// context (like a generic type definition).
 /// </summary>
-internal sealed class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
+internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
 {
     public override ImmutableArray<TypeParameterSymbol> GenericParameters
     {
@@ -41,6 +41,7 @@ internal sealed class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceS
     public override string Name => this.GenericDefinition.Name;
     public override bool IsMember => this.GenericDefinition.IsMember;
     public override bool IsVirtual => this.GenericDefinition.IsVirtual;
+    public override bool IsStatic => this.GenericDefinition.IsStatic;
 
     public override Symbol? ContainingSymbol { get; }
     public override FunctionSymbol GenericDefinition { get; }

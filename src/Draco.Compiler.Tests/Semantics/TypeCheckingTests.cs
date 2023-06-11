@@ -1052,6 +1052,116 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void AccessingField()
+    {
+        // func main() {
+        //     import System;
+        //     var x = String.Empty;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System")),
+                DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("String"), "Empty")))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var consoleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+             syntaxTrees: ImmutableArray.Create(tree),
+             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes))).ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var stringEmptySym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.String);
+        Assert.Equal(stringEmptySym.Type, IntrinsicSymbols.String);
+    }
+
+    [Fact]
+    public void AccessingProperty()
+    {
+        // func main() {
+        //     import System;
+        //     var x = Console.WindowWidth;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System")),
+                DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("Console"), "WindowWidth")))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var consoleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+             syntaxTrees: ImmutableArray.Create(tree),
+             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes))).ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var windowWidthSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "WindowWidth");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(windowWidthSym.Type, IntrinsicSymbols.Int32);
+    }
+
+    [Fact]
+    public void AccessingIndexer()
+    {
+        // func main() {
+        //     import System.Collections.Generic;
+        //     var list = List<int32>();
+        //     var x = list[0];
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImportDeclaration("System", "Collections", "Generic")),
+                DeclarationStatement(VariableDeclaration("list", null, CallExpression(GenericExpression(NameExpression("List"), NameType("int32"))))),
+                DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("list"), LiteralExpression(0))))))));
+
+        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var listRef = tree.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+
+        // Act
+        var compilation = Compilation.Create(
+             syntaxTrees: ImmutableArray.Create(tree),
+             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes))).ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var indexSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(listRef)).Type, "Item");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(indexSym.Type, IntrinsicSymbols.Int32);
+    }
+
+    [Fact]
     public void IllegalCallToNonFunctionType()
     {
         // func foo() {

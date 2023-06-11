@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api;
@@ -7,6 +8,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -65,6 +67,34 @@ internal abstract partial class Binder
     /// <returns>The appropriate binder for the node.</returns>
     protected virtual Binder GetBinder(SyntaxNode node) =>
         this.Compilation.GetBinder(node);
+
+    private FunctionSymbol GetGetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    {
+        var result = prop.Getter;
+        if (result is null)
+        {
+            diags.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
+                location: syntax?.Location,
+                prop.FullName));
+            result = new NoOverloadFunctionSymbol(0);
+        }
+        return result;
+    }
+
+    private FunctionSymbol GetSetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    {
+        var result = prop.Setter;
+        if (result is null)
+        {
+            diags.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                location: syntax?.Location,
+                prop.FullName));
+            result = new NoOverloadFunctionSymbol(1);
+        }
+        return result;
+    }
 
     public BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
@@ -125,8 +155,9 @@ internal abstract partial class Binder
     }
 
     // NOTE: This is a hack, until we find out something nicer
-    // We essentially use this to notify incremental binder that a left-hand side of a module access
+    // We essentially use this to notify incremental binder that a left-hand side of a module or a type access
     // will be erased, won't be present in the bound tree.
     // Once we start modeling module member access without throwing it away, we can get rid of it.
     internal virtual void BindModuleSyntaxToSymbol(SyntaxNode syntax, ModuleSymbol module) { }
+    internal virtual void BindTypeSyntaxToSymbol(SyntaxNode syntax, TypeSymbol type) { }
 }

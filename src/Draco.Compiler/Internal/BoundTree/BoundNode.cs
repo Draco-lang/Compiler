@@ -100,6 +100,31 @@ internal partial class BoundGlobalExpression
     public override TypeSymbol Type => this.Global.Type;
 }
 
+internal partial class BoundFieldExpression
+{
+    public override TypeSymbol Type => this.Field.Type;
+}
+
+internal partial class BoundPropertyGetExpression
+{
+    public override TypeSymbol Type => this.Getter.ReturnType;
+}
+
+internal partial class BoundPropertySetExpression
+{
+    public override TypeSymbol? Type => this.Value.Type;
+}
+
+internal partial class BoundIndexGetExpression
+{
+    public override TypeSymbol? Type => this.Getter.ReturnType;
+}
+
+internal partial class BoundIndexSetExpression
+{
+    public override TypeSymbol? Type => this.Value.Type;
+}
+
 internal partial class BoundLocalExpression
 {
     public override TypeSymbol Type => this.Local.Type;
@@ -176,6 +201,11 @@ internal partial class BoundLocalLvalue
 internal partial class BoundGlobalLvalue
 {
     public override TypeSymbol Type => this.Global.Type;
+}
+
+internal partial class BoundFieldLvalue
+{
+    public override TypeSymbol Type => this.Field.Type;
 }
 
 internal partial class BoundArrayAccessLvalue

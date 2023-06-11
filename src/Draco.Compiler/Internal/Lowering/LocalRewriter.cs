@@ -328,6 +328,77 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return result.Accept(this);
     }
 
+    public override BoundNode VisitPropertySetExpression(BoundPropertySetExpression node)
+    {
+        // property = x
+        //
+        // =>
+        //
+        // property_set(x)
+
+        var receiver = node.Receiver is null ? null : (BoundExpression)node.Receiver.Accept(this);
+        var setter = node.Setter;
+        var value = (BoundExpression)node.Value.Accept(this);
+
+        return CallExpression(
+            receiver: receiver,
+            method: setter,
+            arguments: ImmutableArray.Create(value));
+    }
+
+    public override BoundNode VisitPropertyGetExpression(BoundPropertyGetExpression node)
+    {
+        // property
+        //
+        // =>
+        //
+        // property_get()
+
+        var receiver = node.Receiver is null ? null : (BoundExpression)node.Receiver.Accept(this);
+        var getter = node.Getter;
+
+        return CallExpression(
+            receiver: receiver,
+            method: getter,
+            arguments: ImmutableArray<BoundExpression>.Empty);
+    }
+
+    public override BoundNode VisitIndexSetExpression(BoundIndexSetExpression node)
+    {
+        // indexed[x] = foo
+        //
+        // =>
+        //
+        // indexed.Item_set(x, foo)
+
+        var receiver = (BoundExpression)node.Receiver.Accept(this);
+        var setter = node.Setter;
+        var args = node.Indices.Append(node.Value).Select(x => (BoundExpression)x.Accept(this)).ToImmutableArray();
+
+        return CallExpression(
+            receiver: receiver,
+            method: setter,
+            arguments: args);
+    }
+
+    public override BoundNode VisitIndexGetExpression(BoundIndexGetExpression node)
+    {
+        // indexed[x]
+        //
+        // =>
+        //
+        // indexed.Item_get()
+
+        var receiver = (BoundExpression)node.Receiver.Accept(this);
+        var getter = node.Getter;
+        var args = node.Indices.Select(x => (BoundExpression)x.Accept(this)).ToImmutableArray();
+
+        return CallExpression(
+            receiver: receiver,
+            method: getter,
+            arguments: args);
+    }
+
     // Utility to store an expression to a temporary variable
     private TemporaryStorage StoreTemporary(BoundExpression expr)
     {

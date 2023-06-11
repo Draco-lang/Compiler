@@ -59,6 +59,7 @@ internal sealed class ValAssignment : BoundTreeVisitor
         {
             BoundLocalLvalue l => l.Local as VariableSymbol,
             BoundGlobalLvalue l => l.Global,
+            BoundFieldLvalue l => l.Field,
             _ => null,
         };
 

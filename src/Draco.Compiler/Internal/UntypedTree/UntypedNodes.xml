@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Tree
   xmlns="http://draco-lang.com/untyped-tree/untyped-nodes"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -90,13 +90,7 @@
     <Field Name="Promise" Type="IConstraintPromise&lt;UntypedExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
-
-  <Node Name="UntypedIndexExpression" Base="UntypedExpression">
-    <Field Name="Collection" Type="UntypedExpression" />
-    <Field Name="Arguments" Type="ImmutableArray&lt;UntypedExpression&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
-  </Node>
-
+  
   <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Operand" Type="UntypedExpression" />
@@ -130,6 +124,10 @@
     <Field Name="Module" Type="ModuleSymbol" />
   </Node>
 
+  <Node Name="UntypedTypeExpression" Base="UntypedExpression">
+    <Field Name="Type" Type="TypeSymbol" Override="true"/>
+  </Node>
+
   <Node Name="UntypedLocalExpression" Base="UntypedExpression">
     <!-- Locals are special, they are remapped after binding to a typed variant -->
     <Field Name="Local" Type="UntypedLocalSymbol" />
@@ -139,6 +137,23 @@
 
   <Node Name="UntypedGlobalExpression" Base="UntypedExpression">
     <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="UntypedFieldExpression" Base="UntypedExpression">
+    <Field Name="Reciever" Type="UntypedExpression?"/>
+    <Field Name="Field" Type="FieldSymbol" />
+  </Node>
+
+  <Node Name="UntypedPropertyGetExpression" Base="UntypedExpression">
+    <Field Name="Receiver" Type="UntypedExpression?"/>
+    <Field Name="Getter" Type="FunctionSymbol" />
+  </Node>
+
+  <Node Name="UntypedIndexGetExpression" Base="UntypedExpression">
+    <Field Name="Receiver" Type="UntypedExpression"/>
+    <Field Name="Getter" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true"/>
   </Node>
 
   <Node Name="UntypedParameterExpression" Base="UntypedExpression">
@@ -173,6 +188,7 @@
 
   <Node Name="UntypedMemberExpression" Base="UntypedExpression">
     <Field Name="Accessed" Type="UntypedExpression" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
     <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
   </Node>
 
@@ -208,5 +224,28 @@
 
   <Node Name="UntypedGlobalLvalue" Base="UntypedLvalue">
     <Field Name="Global" Type="GlobalSymbol" />
+  </Node>
+
+  <Node Name="UntypedFieldLvalue" Base="UntypedLvalue">
+    <Field Name="Reciever" Type="UntypedExpression?"/>
+    <Field Name="Field" Type="FieldSymbol" />
+  </Node>
+
+  <Node Name="UntypedPropertySetLvalue" Base="UntypedLvalue">
+    <Field Name="Receiver" Type="UntypedExpression?"/>
+    <Field Name="Setter" Type="FunctionSymbol" />
+  </Node>
+
+  <Node Name="UntypedIndexSetLvalue" Base="UntypedLvalue">
+    <Field Name="Receiver" Type="UntypedExpression"/>
+    <Field Name="Setter" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true"/>
+  </Node>
+
+  <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">
+    <Field Name="Accessed" Type="UntypedExpression" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+    <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
   </Node>
 </Tree>

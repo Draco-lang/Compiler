@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A static class read up from metadata that we handle as a module.
 /// </summary>
-internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
+internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol, IMetadataClass
 {
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
@@ -17,12 +17,17 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
 
+    public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+
     public override Symbol ContainingSymbol { get; }
 
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+
+    public string? DefaultMemberAttributeName => this.defaultMemberAttributeName ??= MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
+    private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;
 
@@ -36,9 +41,17 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
-        // TODO: nested-types
-        // TODO: static fields
-        // TODO: static properties
+        // Nested types
+        foreach (var typeHandle in this.typeDefinition.GetNestedTypes())
+        {
+            var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
+            // Skip special name
+            if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
+            // Skip non-public
+            if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
+            result.AddRange(symbols);
+        }
 
         // Methods
         foreach (var methodHandle in this.typeDefinition.GetMethods())
@@ -55,6 +68,32 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol
                 containingSymbol: this,
                 methodDefinition: methodDef);
             result.Add(methodSym);
+        }
+
+        // Fields
+        foreach (var fieldHandle in this.typeDefinition.GetFields())
+        {
+            var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
+            // Skip fields with special name
+            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
+            // Skip non-public fields
+            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
+            // Skip non-static fields
+            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
+            var fieldSym = new MetadataFieldSymbol(
+                containingSymbol: this,
+                fieldDefinition: fieldDef);
+            result.Add(fieldSym);
+        }
+
+        // Properties
+        foreach (var propHandle in this.typeDefinition.GetProperties())
+        {
+            var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
+            var propSym = new MetadataPropertySymbol(
+                containingSymbol: this,
+                propertyDefinition: propDef);
+            if (propSym.IsStatic && propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 
         // Done

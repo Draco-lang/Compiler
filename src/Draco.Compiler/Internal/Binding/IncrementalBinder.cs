@@ -83,6 +83,12 @@ public sealed partial class SemanticModel
         internal override void BindModuleSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.ModuleSymbol module) =>
             this.semanticModel.symbolMap[syntax] = module;
 
+        internal override void BindTypeSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.TypeSymbol type)
+        {
+            this.semanticModel.symbolMap[syntax] = type;
+            if (syntax.Parent is GenericExpressionSyntax) this.semanticModel.symbolMap[syntax.Parent] = type;
+        }
+
         // Memo logic
 
         private TUntypedNode BindNode<TUntypedNode>(SyntaxNode syntax, Func<TUntypedNode> binder)
@@ -148,6 +154,12 @@ public sealed partial class SemanticModel
             BoundGlobalLvalue g => g.Global,
             BoundMemberExpression m => m.Member,
             BoundCallExpression c => c.Method,
+            BoundFieldLvalue f => f.Field,
+            BoundFieldExpression f => f.Field,
+            BoundPropertyGetExpression p => (p.Getter as IPropertyAccessorSymbol)?.Property,
+            BoundPropertySetExpression p => (p.Setter as IPropertyAccessorSymbol)?.Property,
+            BoundIndexGetExpression i => (i.Getter as IPropertyAccessorSymbol)?.Property,
+            BoundIndexSetExpression i => (i.Setter as IPropertyAccessorSymbol)?.Property,
             _ => null,
         };
     }

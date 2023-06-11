@@ -39,11 +39,17 @@ public sealed class MemberCompletionProvider : CompletionProvider
         result = ImmutableArray<ISymbol>.Empty;
         if (TryDeconstructMemberAccess(expr, out var accessed))
         {
-            var symbol = null as ISymbol;
-            if (accessed is ExpressionSyntax accessedExpr) symbol = semanticModel.TypeOf(accessedExpr);
-            symbol ??= semanticModel.GetReferencedSymbol(accessed);
+            var referencedType = semanticModel.GetReferencedSymbol(accessed);
+            // NOTE: This is how we check for static access
+            if (referencedType is ITypeSymbol or IModuleSymbol)
+            {
+                result = referencedType.StaticMembers.ToImmutableArray();
+                return true;
+            }
+            if (accessed is not ExpressionSyntax accessedExpr) return false;
+            var symbol = semanticModel.TypeOf(accessedExpr);
             if (symbol is null) return false;
-            result = symbol.Members.ToImmutableArray();
+            result = symbol.InstanceMembers.ToImmutableArray();
             return true;
         }
         return false;
@@ -79,8 +85,11 @@ public sealed class MemberCompletionProvider : CompletionProvider
                        || currentContexts.HasFlag(CompletionContext.Import) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
 
-        IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+        IVariableSymbol var when currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Variable),
+
+        PropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Property),
 
         FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Function),

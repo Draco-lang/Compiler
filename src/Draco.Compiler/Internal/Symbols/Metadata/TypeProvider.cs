@@ -2,24 +2,24 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
-using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
 /// <summary>
-/// Helper for decoding signature types.
+/// Helper for decoding metadata blob-encoded types.
 /// </summary>
-internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Symbol>
+internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>, ICustomAttributeTypeProvider<TypeSymbol>
 {
     // TODO: We return a special error type for now to swallow errors
-    private static TypeSymbol UnknownType { get; } = new ErrorTypeSymbol("<unknown>");
+    private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
 
     private readonly Compilation compilation;
 
-    public SignatureDecoder(Compilation compilation)
+    public TypeProvider(Compilation compilation)
     {
         this.compilation = compilation;
     }
@@ -96,5 +96,10 @@ internal sealed class SignatureDecoder : ISignatureTypeProvider<TypeSymbol, Symb
         // TODO: Based on resolution scope, do the lookup
         return UnknownType;
     }
-    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind) => UnknownType;
+    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind) =>
+        UnknownType;
+    public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
+    public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
+    public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;
+    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type) => throw new System.ArgumentOutOfRangeException(nameof(type));
 }

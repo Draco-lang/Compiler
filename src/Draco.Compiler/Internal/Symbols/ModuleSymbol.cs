@@ -8,9 +8,11 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a compilation unit.
 /// </summary>
-internal abstract partial class ModuleSymbol : Symbol
+internal abstract partial class ModuleSymbol : Symbol, IMemberSymbol
 {
-    public override Api.Semantics.Visibility Visibility => this.Members.Any(x => x.Visibility == Api.Semantics.Visibility.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Visibility Visibility => this.Members.Any(x => x.Visibility == Visibility.Public) ? Visibility.Public : Visibility.Internal;
+
+    public bool IsStatic => true;
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitModule(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitModule(this);
@@ -28,7 +30,7 @@ internal abstract partial class ModuleSymbol : Symbol
         {
             var part = parts[i];
             current = current.Members
-                .Where(m => m.MetadataName == part)
+                .Where(m => m.MetadataName == part && m is ModuleSymbol or TypeSymbol)
                 .Single();
         }
 

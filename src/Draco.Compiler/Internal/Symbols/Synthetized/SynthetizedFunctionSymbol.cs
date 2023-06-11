@@ -11,6 +11,8 @@ internal abstract class SynthetizedFunctionSymbol : FunctionSymbol
 
     public override abstract string Name { get; }
 
+    public override bool IsStatic => true;
+
     /// <summary>
     /// The body of this synthetized function.
     /// </summary>

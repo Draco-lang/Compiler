@@ -13,6 +13,7 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray<TypeParameterSymbol>.Empty;
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
     public override TypeSymbol ReturnType => IntrinsicSymbols.ErrorType;
+    public override bool IsStatic => true;
 
     public override Symbol? ContainingSymbol => null;
     public override bool IsError => true;

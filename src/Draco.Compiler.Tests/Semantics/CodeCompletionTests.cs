@@ -322,13 +322,97 @@ public sealed class CodeCompletionTests
             { "WriteLine", 18 },
             { "SetWindowPosition", 1 },
             { "SetWindowSize", 1 },
+            { "BufferWidth", 1 },
+            { "LargestWindowHeight", 1 },
+            { "LargestWindowWidth", 1 },
+            { "WindowHeight", 1 },
+            { "WindowLeft", 1 },
+            { "WindowTop", 1 },
+            { "WindowWidth", 1 },
         };
-        Assert.Equal(4, completions.Length);
+        Assert.Equal(expected.Count, completions.Length);
         foreach (var completion in completions)
         {
             Assert.True(expected.TryGetValue(completion.DisplayText, out var type));
             Assert.Equal(type, completion.Symbols.Length);
         }
+    }
+
+    [Fact]
+    public void TestCompletionTypeMemberAccess()
+    {
+        var code = """
+            import System;
+            func main(){
+                String.Empt|
+            }
+            """;
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
+
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Empt"))).ToImmutableArray();
+        AssertCompletions(completions, "Empty");
+    }
+
+    [Fact]
+    public void TestCompletionGenericTypeMemberAccess()
+    {
+        var code = """
+            import System;
+            func main(){
+                Memory<int32>.Empt|
+            }
+            """;
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
+
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Empt"))).ToImmutableArray();
+        AssertCompletions(completions, "Empty");
+    }
+
+    [Fact]
+    public void TestCompletionMemberLvalue()
+    {
+        var code = """
+            import System;
+            func main(){
+                Console.WindowW| = 5;
+            }
+            """;
+        var source = SourceText.FromText(code);
+        var tree = SyntaxTree.Parse(source);
+        var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
+
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.Contains("WindowW"))).ToImmutableArray();
+        var expected = new[]
+        {
+            "WindowWidth",
+            "LargestWindowWidth",
+        };
+        AssertCompletions(completions, expected);
     }
 
     [Fact]

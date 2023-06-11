@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A type definition read up from metadata.
 /// </summary>
-internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
+internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadataClass
 {
     public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
     private ImmutableArray<Symbol>? members;
@@ -18,6 +18,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
     private string? name;
 
     public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
+
+    public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
     private ImmutableArray<TypeParameterSymbol>? genericParameters;
@@ -30,6 +32,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
     private MetadataAssemblySymbol? assembly;
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+
+    public string? DefaultMemberAttributeName => this.defaultMemberAttributeName ??= MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
+    private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;
 
@@ -71,11 +76,17 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
-        // TODO: nested-types
-        // TODO: static fields
-        // TODO: static properties
-        // TODO: nonstatic fields
-        // TODO: nonstatic properties
+        // Nested types
+        foreach (var typeHandle in this.typeDefinition.GetNestedTypes())
+        {
+            var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
+            // Skip special name
+            if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
+            // Skip non-public
+            if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
+            result.AddRange(symbols);
+        }
 
         // Methods
         foreach (var methodHandle in this.typeDefinition.GetMethods())
@@ -90,6 +101,31 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol
                 containingSymbol: this,
                 methodDefinition: method);
             result.Add(methodSymbol);
+        }
+
+        // Fields
+        foreach (var fieldHandle in this.typeDefinition.GetFields())
+        {
+            var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
+            // Skip special name
+            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
+            // Skip non-public
+            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
+            // Add it
+            var fieldSym = new MetadataFieldSymbol(
+                containingSymbol: this,
+                fieldDefinition: fieldDef);
+            result.Add(fieldSym);
+        }
+
+        // Properties
+        foreach (var propHandle in this.typeDefinition.GetProperties())
+        {
+            var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
+            var propSym = new MetadataPropertySymbol(
+                containingSymbol: this,
+                propertyDefinition: propDef);
+            if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 
         // Done

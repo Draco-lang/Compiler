@@ -38,6 +38,9 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
         IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Variable),
 
+        PropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Property),
+
         // We need the type context here for qualified type references
         ModuleSymbol when currentContexts.HasFlag(CompletionContext.Expression)
                        || currentContexts.HasFlag(CompletionContext.Type)

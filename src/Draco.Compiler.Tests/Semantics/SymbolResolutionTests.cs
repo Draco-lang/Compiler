@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
 using static Draco.Compiler.Tests.TestUtilities;
+using Draco.Compiler.Internal.Symbols.Error;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -1224,7 +1225,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     {
         // import FooModule;
         // func main(){
-        //   foo();
+        //   Foo();
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1234,7 +1235,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    ExpressionStatement(CallExpression(NameExpression("foo")))))));
+                    ExpressionStatement(CallExpression(NameExpression("Foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
@@ -1260,7 +1261,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void InternalElementFullyQualifiedFromDifferentAssembly()
     {
         // func main(){
-        //   FooModule.foo();
+        //   FooModule.Foo();
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1269,7 +1270,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo")))))));
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "Foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
             public static class FooModule{
@@ -1526,6 +1527,1547 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(paramTypeSymbol.IsError);
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void ReadingAndSettingStaticFieldFullyQualified()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        //   var x = FooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo = 0;
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void ReadingAndSettingStaticFieldImported()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo = 5;
+        //   var x = foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo = 0;
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooNameRef = main.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetReferencedSymbol(fooNameRef));
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void ReadingAndSettingNonStaticField()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
+        //   var x = fooType.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int foo = 0;
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void SettingReadonlyStaticField()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static readonly int foo = 0;
+            }
+            """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void SettingConstantField()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public const int foo = 0;
+            }
+            """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void SettingReadonlyNonStaticField()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public readonly int foo = 0;
+            }
+            """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)).Type, "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void ReadingNonExistingNonStaticField()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   var x = fooType.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType { }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+    }
+
+    [Fact]
+    public void SettingNonExistingNonStaticField()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType { }
+            """);
+
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+    }
+
+    [Fact]
+    public void SettingNonExistingStaticField()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule { }
+            """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooModuleSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef));
+        var fooModuleDecl = GetMetadataSymbol(compilation, null, "FooModule");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooModuleSym.IsError);
+        Assert.Same(fooModuleSym, fooModuleDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void ReadingNonExistingStaticField()
+    {
+        // func main(){
+        //   var x = FooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule { }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooModuleSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef));
+        var fooModuleDecl = GetMetadataSymbol(compilation, null, "FooModule");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooModuleSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooModuleSym, fooModuleDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void ReadingAndSettingStaticPropertyFullyQualified()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        //   var x = FooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { get; set; }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void ReadingAndSettingStaticPropertyImported()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo = 5;
+        //   var x = foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { get; set; }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void ReadingAndSettingNonStaticProperty()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
+        //   var x = fooType.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int foo { get; set; }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+
+    }
+
+    [Fact]
+    public void SettingGetOnlyStaticProperty()
+    {
+        // func main(){
+        //   FooModule.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
+
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { get; }
+            }
+            """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
+    }
+
+    [Fact]
+    public void GettingSetOnlyStaticProperty()
+    {
+        // func main(){
+        //   var x = FooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { set { } }
+            }
+            """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
+    }
+
+    [Fact]
+    public void SettingGetOnlyNonStaticProperty()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType.foo = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int foo { get; }
+            }
+            """);
+
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
+    }
+
+    [Fact]
+    public void GettingSetOnlyNonStaticProperty()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   var x = fooType.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int foo { set { } }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
+    }
+
+    [Fact]
+    public void CompoundAssignmentNonStaticProperty()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType.foo += 2;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), PlusAssign, LiteralExpression(2)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int foo { get; set; }
+            }
+            """);
+
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void CompoundAssignmentStaticProperty()
+    {
+        // func main(){
+        //   FooModule.foo += 2;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), PlusAssign, LiteralExpression(2)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class FooModule{
+                public static int foo { get; set; }
+            }
+            """);
+
+        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void ReadingAndSettingIndexer()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType[0] = 5;
+        //   var x = fooType[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int this[int index]
+                {
+                    get => index * 2;
+                    set { }
+                }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void SettingGetOnlyIndexer()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType[0] = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int this[int index] => index * 2;
+            }
+            """);
+
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(fooSym.IsError);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+    }
+
+    [Fact]
+    public void GettingSetOnlyIndexer()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   var x = fooType[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int this[int index] { set { } }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(fooSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+    }
+
+    [Fact]
+    public void ReadingAndSettingMemberAccessIndexer()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType.foo[0] = 5;
+        //   var x = fooType.foo[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public Foo foo = new Foo();
+            }
+            public class Foo{
+                public int this[int index]
+                {
+                    get => index * 2;
+                    set { }
+                }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = GetMemberSymbol<PropertySymbol>(fooSym.Type, "Item");
+        var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
+        Assert.False(indexSym.IsError);
+        Assert.Same(indexSym, indexDecl);
+    }
+
+    [Fact]
+    public void SettingGetOnlyMemberAccessIndexer()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   fooType.foo[0] = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public Foo foo = new Foo();
+            }
+            public class Foo{
+                public int this[int index] => index * 2;
+            }
+            """);
+
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(fooSym.IsError);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+    }
+
+    [Fact]
+    public void GettingSetOnlyMemberAccessIndexer()
+    {
+        // func main(){
+        //   var fooType = FooType();
+        //   var x = fooType.foo[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public Foo foo = new Foo();
+            }
+            public class Foo{
+                public int this[int index] { set { } }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = GetMemberSymbol<PropertySymbol>(fooSym.Type, "Item");
+        var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooSym.IsError);
+        Assert.False(indexSym.IsError);
+        Assert.Same(indexSym, indexDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+    }
+
+    [Fact]
+    public void GettingNonExistingIndexer()
+    {
+        // func main(){
+        //   var foo = FooType();
+        //   var x = foo[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType { }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+
+        // Assert
+        Assert.Single(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+    }
+
+    [Fact]
+    public void SettingNonExistingIndexer()
+    {
+        // func main(){
+        //   var foo = FooType();
+        //   foo[0] = 5;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType { }
+            """);
+
+        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(fooSym.IsError);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+    }
+
+    [Fact]
+    public void CompoundAssignmentIndexer()
+    {
+        // func main(){
+        //   var foo = FooType();
+        //   foo[0] += 2;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
+                    ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), PlusAssign, LiteralExpression(2)))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType{
+                public int this[int index]
+                {
+                    get => index * 2;
+                    set { }
+                }
+            }
+            """);
+
+        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooSym.IsError);
+        Assert.Same(fooSym, fooDecl);
+    }
+
+    [Fact]
+    public void NestedTypeWithStaticParentInTypeContextAndConstructorFullyQualified()
+    {
+        // func foo(): ParentType.FooType = ParentType.FooType();
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                MemberType(NameType("ParentType"), "FooType"),
+                InlineFunctionBody(
+                    CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class ParentType{
+                public class FooType { }
+            }
+            """);
+
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
+    }
+
+    [Fact]
+    public void NestedTypeWithStaticParentInTypeContextAndConstructorImported()
+    {
+        // import ParentType;
+        // func foo(): FooType = FooType();
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("ParentType"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("FooType"),
+                InlineFunctionBody(
+                    CallExpression(NameExpression("FooType"))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class ParentType{
+                public class FooType { }
+            }
+            """);
+
+        var fooTypeRef = main.FindInChildren<TypeSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef));
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
+    }
+
+    [Fact]
+    public void NestedTypeWithNonStaticParentInTypeContextAndConstructor()
+    {
+        // func foo(): ParentType.FooType = ParentType.FooType();
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                MemberType(NameType("ParentType"), "FooType"),
+                InlineFunctionBody(
+                    CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class ParentType{
+                public class FooType { }
+            }
+            """);
+
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
+    }
+
+    [Fact]
+    public void NestedTypeWithStaticParentStaticMemberAccess()
+    {
+        // func foo()
+        // {
+        //   var x = ParentType.FooType.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class ParentType{
+                public class FooType{
+                    public static int foo = 0;
+                }
+            }
+            """);
+
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
+    }
+
+    [Fact]
+    public void NestedTypeWithNonStaticParentStaticMemberAccess()
+    {
+        // func foo()
+        // {
+        //   var x = ParentType.FooType.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class ParentType{
+                public class FooType{
+                    public static int foo = 0;
+                }
+            }
+            """);
+
+        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeDecl, fooTypeSym);
+    }
+
+    [Fact]
+    public void NestedTypeWithStaticParentNonStaticMemberAccess()
+    {
+        // func foo()
+        // {
+        //   var foo = ParentType.FooType();
+        //   var x = foo.member;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public static class ParentType{
+                public class FooType{
+                    public int member = 0;
+                }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+    }
+
+    [Fact]
+    public void NestedTypeWithNonStaticParentNonStaticMemberAccess()
+    {
+        // func foo()
+        // {
+        //   var foo = ParentType.FooType();
+        //   var x = foo.member;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class ParentType{
+                public class FooType{
+                    public int member = 0;
+                }
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: ImmutableArray.Create(fooRef));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fooTypeSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
     }
 
     [Fact]

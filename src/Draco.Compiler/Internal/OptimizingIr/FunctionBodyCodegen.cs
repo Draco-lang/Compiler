@@ -145,6 +145,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
     public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
+    public override IOperand VisitFieldLvalue(BoundFieldLvalue node) => node.Receiver is null
+        ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
+        : new FieldAccess(this.Compile(node.Receiver), node.Field);
     public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) =>
         new ArrayAccess(this.Compile(node.Array), node.Indices.Select(this.Compile).ToImmutableArray());
 
@@ -167,22 +170,23 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
+        var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
         if (node.Receiver is null)
         {
             var args = node.Arguments.Select(this.Compile).ToList();
-            var result = this.DefineRegister(node.TypeRequired);
+            var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);
-            this.Write(Call(result, proc, args));
-            return result;
+            this.Write(Call(callResult, proc, args));
+            return isSetter ? args[^1] : callResult;
         }
         else
         {
             var receiver = this.Compile(node.Receiver);
             var args = node.Arguments.Select(this.Compile).ToList();
-            var result = this.DefineRegister(node.TypeRequired);
+            var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);
-            this.Write(MemberCall(result, proc, receiver, args));
-            return result;
+            this.Write(MemberCall(callResult, proc, receiver, args));
+            return isSetter ? args[^1] : callResult;
         }
     }
 
@@ -407,6 +411,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
+
+    public override IOperand VisitFieldExpression(BoundFieldExpression node) => node.Receiver is null
+        ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
+        : new FieldAccess(this.Compile(node.Receiver), node.Field);
 
     // TODO: Do something with this block
 

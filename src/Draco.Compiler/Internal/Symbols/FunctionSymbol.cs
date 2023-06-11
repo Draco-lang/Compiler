@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a free-function.
 /// </summary>
-internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
+internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSymbol
 {
     /// <summary>
     /// Retrieves the name for the unary operator that is referenced by a given token.
@@ -66,6 +66,8 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     /// </summary>
     public abstract TypeSymbol ReturnType { get; }
 
+    public abstract bool IsStatic { get; }
+
     /// <summary>
     /// If true, this is a member function.
     /// </summary>
@@ -109,7 +111,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
         new FunctionInstanceSymbol(containingSymbol, this, context);
 
-    public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
+    public override Api.Semantics.IFunctionSymbol ToApiSymbol() => new Api.Semantics.FunctionSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitFunction(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitFunction(this);

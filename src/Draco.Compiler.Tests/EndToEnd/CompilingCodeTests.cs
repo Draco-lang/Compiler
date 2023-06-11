@@ -450,4 +450,34 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "foo");
         Assert.Equal(125, x);
     }
+
+    [Fact]
+    public void PropertiesCompoundAssignment()
+    {
+        var csReference = CompileCSharpToStream(
+            "Test.dll",
+            """
+            public class FooTest
+            {
+                public static int StaticProp { get; set; } = 5;
+                public int NonStaticProp { get; set; } = 4;
+            }
+            """);
+        var foo = SyntaxTree.Parse("""
+            public func foo(): int32 {
+                var test = FooTest();
+                test.NonStaticProp += 2;
+                FooTest.StaticProp += 3;
+                return test.NonStaticProp += FooTest.StaticProp;
+            }
+            """);
+
+        var assembly = Compile(
+            root: null,
+            syntaxTrees: ImmutableArray.Create(foo),
+            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(14, x);
+    }
 }

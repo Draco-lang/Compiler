@@ -9,5 +9,6 @@ public enum CompletionKind
     Function,
     Class,
     Module,
+    Property,
     Keyword,
 }

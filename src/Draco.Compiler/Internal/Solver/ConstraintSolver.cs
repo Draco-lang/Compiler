@@ -93,10 +93,12 @@ internal sealed class ConstraintSolver
     /// </summary>
     /// <param name="accessedType">The accessed object type.</param>
     /// <param name="memberName">The accessed member name.</param>
+    /// <param name="memberType">The type of the member.</param>
     /// <returns>The promise of the accessed member symbol.</returns>
-    public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName)
+    public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName, out TypeSymbol memberType)
     {
-        var constraint = new MemberConstraint(this, accessedType, memberName);
+        memberType = this.AllocateTypeVariable();
+        var constraint = new MemberConstraint(this, accessedType, memberName, memberType);
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -144,19 +146,45 @@ internal sealed class ConstraintSolver
     /// <returns>The promise that is resolved, when <paramref name="awaited"/>.</returns>
     public IConstraintPromise<TResult> Await<TAwaitedResult, TResult>(
         IConstraintPromise<TAwaitedResult> awaited,
-        Func<TAwaitedResult, TResult> map)
+        Func<TResult> map)
     {
         if (awaited.IsResolved)
         {
             // If resolved, don't bother with indirections
-            var constraint = map(awaited.Result);
+            var constraint = map();
             return ConstraintPromise.FromResult(constraint);
         }
         else
         {
-            var constraint = new AwaitConstraint<TAwaitedResult, TResult>(this, awaited.Constraint, map);
+            var constraint = new AwaitConstraint<TResult>(this, () => awaited.IsResolved, map);
             this.Add(constraint);
             return constraint.Promise;
+        }
+    }
+
+    /// <summary>
+    /// Adds a constraint, that waits until a type variable is substituted.
+    /// </summary>
+    /// <param name="original">The original type, usually a type variable.</param>
+    /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
+    /// <returns>The promise of the type symbol symbol.</returns>
+    public IConstraintPromise<TResult> Substituted<TResult>(TypeSymbol original, Func<IConstraintPromise<TResult>> map)
+    {
+        if (!original.IsTypeVariable)
+        {
+            var constraintPromise = map();
+            return constraintPromise;
+        }
+        else
+        {
+            var constraint = new AwaitConstraint<IConstraintPromise<TResult>>(this, () => !this.Unwrap(original).IsTypeVariable, map);
+            this.Add(constraint);
+
+            var await = new AwaitConstraint<TResult>(this,
+                () => constraint.Promise.IsResolved && constraint.Promise.Result.IsResolved,
+                () => constraint.Promise.Result.Result);
+            this.Add(await);
+            return await.Promise;
         }
     }
 

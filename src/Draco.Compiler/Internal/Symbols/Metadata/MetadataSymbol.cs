@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -13,7 +14,7 @@ internal static class MetadataSymbol
     /// <summary>
     /// Attributes of a static class.
     /// </summary>
-    private static readonly TypeAttributes StaticClassAttributes =
+    public static readonly TypeAttributes StaticClassAttributes =
         TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class;
 
     public static IEnumerable<Symbol> ToSymbol(
@@ -48,6 +49,30 @@ internal static class MetadataSymbol
             }
             return results;
         }
+    }
+
+    public static string? GetDefaultMemberAttributeName(TypeDefinition typeDefinition, Compilation compilation, MetadataReader reader)
+    {
+        foreach (var attributeHandle in typeDefinition.GetCustomAttributes())
+        {
+            var attribute = reader.GetCustomAttribute(attributeHandle);
+            var typeProvider = new TypeProvider(compilation!);
+            switch (attribute.Constructor.Kind)
+            {
+            case HandleKind.MethodDefinition:
+                var method = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
+                var methodType = reader.GetTypeDefinition(method.GetDeclaringType());
+                if (reader.GetString(methodType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                break;
+            case HandleKind.MemberReference:
+                var member = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+                var memberType = reader.GetTypeReference((TypeReferenceHandle)member.Parent);
+                if (reader.GetString(memberType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                break;
+            default: throw new System.InvalidOperationException();
+            };
+        }
+        return null;
     }
 
     private static FunctionSymbol SynthetizeConstructor(

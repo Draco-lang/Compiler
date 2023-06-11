@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
@@ -14,6 +15,16 @@ public abstract class SemanticTestsBase
         Assert.NotNull(symbol);
         var symbolBase = (SymbolBase)symbol!;
         return (TSymbol)symbolBase.Symbol;
+    }
+
+    private protected static TMember GetMemberSymbol<TMember>(Symbol parent, string memberName) where TMember : Symbol =>
+        parent.Members.OfType<TMember>().Single(x => x.Name == memberName);
+
+    private protected static Symbol GetMetadataSymbol(Compilation compilation, string? @namespace, params string[] path)
+    {
+        @namespace ??= string.Empty;
+        var asm = compilation.MetadataAssemblies.Values.Single(a => a.RootNamespace.Name == @namespace);
+        return asm.RootNamespace.Lookup(path.ToImmutableArray()).First();
     }
 
     private protected static Binder GetDefiningScope(Compilation compilation, Symbol? symbol)

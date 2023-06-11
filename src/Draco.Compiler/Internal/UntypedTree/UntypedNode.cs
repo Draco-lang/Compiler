@@ -84,6 +84,16 @@ internal partial class UntypedGlobalExpression
     public override TypeSymbol Type => this.Global.Type;
 }
 
+internal partial class UntypedFieldExpression
+{
+    public override TypeSymbol Type => this.Field.Type;
+}
+
+internal partial class UntypedPropertyGetExpression
+{
+    public override TypeSymbol Type => this.Getter.ReturnType;
+}
+
 internal partial class UntypedReferenceErrorExpression
 {
     public override TypeSymbol? Type => IntrinsicSymbols.ErrorType;
@@ -125,6 +135,16 @@ internal partial class UntypedUnexpectedLvalue
 internal partial class UntypedIllegalLvalue
 {
     public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
+}
+
+internal partial class UntypedFieldLvalue
+{
+    public override TypeSymbol Type => this.Field.Type;
+}
+
+internal partial class UntypedPropertySetLvalue
+{
+    public override TypeSymbol Type => this.Setter.Parameters[0].Type;
 }
 
 internal partial class UntypedLvalue

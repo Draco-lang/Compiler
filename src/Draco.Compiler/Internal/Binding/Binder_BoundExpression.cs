@@ -2,10 +2,12 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -23,12 +25,16 @@ internal partial class Binder
     {
         UntypedUnexpectedExpression unexpected => new BoundUnexpectedExpression(unexpected.Syntax),
         UntypedModuleExpression module => this.TypeModuleExpression(module, constraints, diagnostics),
+        UntypedTypeExpression type => this.TypeTypeExpression(type, constraints, diagnostics),
         UntypedUnitExpression unit => this.TypeUnitExpression(unit, constraints, diagnostics),
         UntypedLiteralExpression literal => this.TypeLiteralExpression(literal, constraints, diagnostics),
         UntypedStringExpression str => this.TypeStringExpression(str, constraints, diagnostics),
         UntypedParameterExpression @param => this.TypeParameterExpression(param, constraints, diagnostics),
         UntypedLocalExpression local => this.TypeLocalExpression(local, constraints, diagnostics),
         UntypedGlobalExpression global => this.TypeGlobalExpression(global, constraints, diagnostics),
+        UntypedFieldExpression field => this.TypeFieldExpression(field, constraints, diagnostics),
+        UntypedPropertyGetExpression prop => this.TypePropertyGetExpression(prop, constraints, diagnostics),
+        UntypedIndexGetExpression index => this.TypeIndexGetExpression(index, constraints, diagnostics),
         UntypedFunctionGroupExpression group => this.TypeFunctionGroupExpression(group, constraints, diagnostics),
         UntypedReferenceErrorExpression err => this.TypeReferenceErrorExpression(err, constraints, diagnostics),
         UntypedReturnExpression @return => this.TypeReturnExpression(@return, constraints, diagnostics),
@@ -59,6 +65,16 @@ internal partial class Binder
         return new BoundUnexpectedExpression(module.Syntax);
     }
 
+    private BoundUnexpectedExpression TypeTypeExpression(UntypedTypeExpression type, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // A type expression is illegal by itself, report it
+        diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.IllegalTypeExpression,
+            location: type.Syntax?.Location,
+            formatArgs: type.Type.Name));
+        return new BoundUnexpectedExpression(type.Syntax);
+    }
+
     private BoundExpression TypeUnitExpression(UntypedUnitExpression unit, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);
 
@@ -86,6 +102,25 @@ internal partial class Binder
 
     private BoundExpression TypeGlobalExpression(UntypedGlobalExpression global, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundGlobalExpression(global.Syntax, global.Global);
+
+    private BoundExpression TypeFieldExpression(UntypedFieldExpression field, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var receiver = field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics);
+        return new BoundFieldExpression(field.Syntax, receiver, field.Field);
+    }
+
+    private BoundExpression TypePropertyGetExpression(UntypedPropertyGetExpression prop, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var receiver = prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics);
+        return new BoundPropertyGetExpression(prop.Syntax, receiver, prop.Getter);
+    }
+
+    private BoundExpression TypeIndexGetExpression(UntypedIndexGetExpression index, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var receiver = this.TypeExpression(index.Receiver, constraints, diagnostics);
+        var indices = index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray();
+        return new BoundIndexGetExpression(index.Syntax, receiver, index.Getter.Result, indices);
+    }
 
     private BoundExpression TypeFunctionGroupExpression(UntypedFunctionGroupExpression group, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
@@ -160,9 +195,79 @@ internal partial class Binder
 
     private BoundExpression TypeAssignmentExpression(UntypedAssignmentExpression assignment, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var typedLeft = this.TypeLvalue(assignment.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(assignment.Right, constraints, diagnostics);
         var compoundOperator = assignment.CompoundOperator?.Result;
+
+        // NOTE: This is how we deal with properties and indexers
+        if (assignment.Left is UntypedPropertySetLvalue prop)
+        {
+            if (prop.Setter.IsError)
+            {
+                return new BoundReferenceErrorExpression(prop.Syntax, prop.Setter);
+            }
+            var receiver = prop.Receiver is null ? null : this.TypeExpression(prop.Receiver, constraints, diagnostics);
+            return new BoundPropertySetExpression(
+                assignment.Syntax,
+                receiver,
+                prop.Setter,
+                compoundOperator is not null
+                    ? this.CompoundPropertyExpression(
+                        assignment.Syntax,
+                        receiver,
+                        typedRight,
+                        ((IPropertyAccessorSymbol)prop.Setter).Property,
+                        compoundOperator,
+                        ImmutableArray<BoundExpression>.Empty,
+                        diagnostics)
+                    : typedRight);
+        }
+
+        if (assignment.Left is UntypedIndexSetLvalue index)
+        {
+            if (index.Setter.Result.IsError)
+            {
+                return new BoundReferenceErrorExpression(index.Syntax, index.Setter.Result);
+            }
+            var receiver = this.TypeExpression(index.Receiver, constraints, diagnostics);
+            var indices = index.Indices
+                .Select(x => this.TypeExpression(x, constraints, diagnostics))
+                .ToImmutableArray();
+            return new BoundIndexSetExpression(
+                assignment.Syntax,
+                receiver,
+                index.Setter.Result,
+                compoundOperator is not null
+                    ? this.CompoundPropertyExpression(
+                        assignment.Syntax,
+                        receiver,
+                        typedRight,
+                        ((IPropertyAccessorSymbol)index.Setter.Result).Property,
+                        compoundOperator,
+                        indices,
+                        diagnostics)
+                    : typedRight,
+                indices);
+        }
+        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
+        {
+            var receiver = this.TypeExpression(mem.Accessed, constraints, diagnostics);
+            var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);
+            return new BoundPropertySetExpression(
+                assignment.Syntax,
+                receiver,
+                setter,
+                compoundOperator is not null
+                    ? this.CompoundPropertyExpression(
+                        assignment.Syntax,
+                        receiver,
+                        typedRight,
+                        pr,
+                        compoundOperator,
+                        ImmutableArray<BoundExpression>.Empty,
+                        diagnostics)
+                    : typedRight);
+        }
+        var typedLeft = this.TypeLvalue(assignment.Left, constraints, diagnostics);
         return new BoundAssignmentExpression(assignment.Syntax, compoundOperator, typedLeft, typedRight);
     }
 
@@ -219,6 +324,12 @@ internal partial class Binder
         var members = mem.Member.Result;
         if (members.Length == 1 && members[0] is ITypedSymbol member)
         {
+            if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
+            if (member is PropertySymbol prop)
+            {
+                var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
+                return new BoundPropertyGetExpression(mem.Syntax, left, getter);
+            }
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }
         else
@@ -237,5 +348,19 @@ internal partial class Binder
         // Just take result and type that
         var result = delay.Promise.Result;
         return this.TypeExpression(result, constraints, diagnostics);
+    }
+
+    private BoundExpression CompoundPropertyExpression(
+        SyntaxNode? syntax,
+        BoundExpression? receiver,
+        BoundExpression right,
+        PropertySymbol prop,
+        FunctionSymbol compoundOperator,
+        ImmutableArray<BoundExpression> args,
+        DiagnosticBag diagnostics)
+    {
+        var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
+        var getterCall = new BoundCallExpression(null, receiver, getter, args);
+        return new BoundBinaryExpression(syntax, compoundOperator, getterCall, right, right.TypeRequired);
     }
 }

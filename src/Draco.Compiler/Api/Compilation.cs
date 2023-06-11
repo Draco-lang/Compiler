@@ -127,7 +127,7 @@ public sealed class Compilation : IBinderProvider
     DiagnosticBag IBinderProvider.DiagnosticBag => this.GlobalDiagnosticBag;
 
     /// <summary>
-    /// Welol-known types that need to be referenced during compilation.
+    /// Well-known types that need to be referenced during compilation.
     /// </summary>
     internal WellKnownTypes WellKnownTypes { get; }
 

@@ -196,6 +196,7 @@ public sealed class Issue139Tests
         func foo(): ImmutableArray { }
         """")]
     [InlineData("public import Foo")]
+    [InlineData("label:")]
     [Theory]
     public void DoesNotCrash(string source)
     {

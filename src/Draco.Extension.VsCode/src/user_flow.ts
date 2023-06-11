@@ -11,6 +11,26 @@ import { AssetGenerator } from "./assets";
 import { updateWithDefaultSettings } from "./settings";
 
 /**
+ * Prompts the user if they would like to use the stable or prerelease feed, in case they haven't chosen yet.
+ */
+export async function promptUserToUsePrereleaseOrStableFeed() {
+    const config = workspace.getConfiguration('draco');
+    const sdkVersion = config.get<string>('sdkVersion') || null;
+    if (sdkVersion) {
+        // Already set
+        return;
+    }
+
+    // Ask the user which feed they would like to use
+    const response = await promptYesNoDisable(PromptKind.info, "Would you like to use the prerelease feed?");
+    if (response === PromptResult.yes) {
+        await config.update('sdkVersion', '*-*', ConfigurationTarget.Global);
+    } else {
+        await config.update('sdkVersion', '*', ConfigurationTarget.Global);
+    }
+}
+
+/**
  * Asks the user, if they want to generate assets for the project. If they answer yes, 'tasks.json' and
  * 'launch.json' are automatically generated.
  */

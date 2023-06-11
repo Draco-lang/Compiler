@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ClrDebug;
 
@@ -12,6 +13,7 @@ internal sealed class SessionCache
     private readonly Dictionary<ICorDebugModule, Module> modules = new();
     private readonly Dictionary<ICorDebugThread, Thread> threads = new();
     private readonly Dictionary<ICorDebugFunction, Method> methods = new();
+    private readonly Dictionary<ICorDebugBreakpoint, Breakpoint> breakpoints = new();
 
     public Module GetModule(CorDebugModule corDebugModule)
     {
@@ -42,4 +44,23 @@ internal sealed class SessionCache
         }
         return cached;
     }
+
+    public Breakpoint GetBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint = false)
+    {
+        if (!this.breakpoints.TryGetValue(breakpoint.Raw, out var cached))
+        {
+            cached = this.BuildBreakpoint(breakpoint, isEntryPoint);
+            this.breakpoints.Add(breakpoint.Raw, cached);
+        }
+        return cached;
+    }
+
+    public bool RemoveBreakpoint(CorDebugBreakpoint breakpoint) => this.breakpoints.Remove(breakpoint.Raw);
+
+    private Breakpoint BuildBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint) => breakpoint switch
+    {
+        CorDebugFunctionBreakpoint f when isEntryPoint => new EntryPointBreakpoint(this, f),
+        CorDebugFunctionBreakpoint f => new MethodBreakpoint(this, f),
+        _ => throw new ArgumentOutOfRangeException(nameof(breakpoint)),
+    };
 }

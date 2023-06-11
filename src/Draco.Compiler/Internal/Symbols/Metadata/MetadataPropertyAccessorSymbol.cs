@@ -1,6 +1,4 @@
-using System.Collections.Immutable;
 using System.Reflection.Metadata;
-using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

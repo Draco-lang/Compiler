@@ -20,14 +20,35 @@ public sealed class Thread
     internal CorDebugThread CorDebugThread { get; }
 
     /// <summary>
+    /// The ID of this thread.
+    /// </summary>
+    public int Id => this.CorDebugThread.Id;
+
+    /// <summary>
+    /// The name of this thread.
+    /// </summary>
+    public string? Name
+    {
+        get => this.name ??= this.BuildName();
+        internal set => this.name = value;
+    }
+    private string? name;
+
+    /// <summary>
     /// The current state of the call-stack.
     /// </summary>
-    public ImmutableArray<StackFrame> CallStack => this.BuildCallStack();
+    public ImmutableArray<StackFrame> CallStack => this.callStack ??= this.BuildCallStack();
+    private ImmutableArray<StackFrame>? callStack;
 
     internal Thread(SessionCache sessionCache, CorDebugThread corDebugThread)
     {
         this.SessionCache = sessionCache;
         this.CorDebugThread = corDebugThread;
+    }
+
+    internal void ClearCache()
+    {
+        this.callStack = null;
     }
 
     /// <summary>
@@ -75,6 +96,14 @@ public sealed class Thread
         var stepper = this.BuildCorDebugStepper();
         stepper.StepOut();
         this.CorDebugThread.Process.Continue(false);
+    }
+
+    private string? BuildName()
+    {
+        var threadObject = ValueUtils.ToBrowsableObject(this.CorDebugThread.Object);
+        if (threadObject is not ObjectValue objectValue) return null;
+        if (!objectValue.TryGetValue("_name", out var name)) return null;
+        return name as string;
     }
 
     private ImmutableArray<StackFrame> BuildCallStack()

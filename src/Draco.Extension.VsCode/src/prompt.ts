@@ -1,3 +1,7 @@
+/**
+ * Prompt utilities.
+ */
+
 import { MessageItem, window } from "vscode";
 
 /**

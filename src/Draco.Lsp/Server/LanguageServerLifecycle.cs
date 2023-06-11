@@ -131,8 +131,8 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         propType = Nullable.GetUnderlyingType(propType) ?? propType;
         capabilityType = Nullable.GetUnderlyingType(capabilityType) ?? capabilityType;
 
-        // If they are equal, just assign
-        if (propType == capabilityType)
+        // If they are assignable, just assign
+        if (capabilityType.IsAssignableTo(propType))
         {
             // Convert for nullability
             prop.SetValue(capabilities, capability);
@@ -143,7 +143,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         if (propType.IsAssignableTo(typeof(IOneOf)))
         {
             var genericArgs = propType.GetGenericArguments();
-            if (genericArgs.Contains(capabilityType))
+            if (genericArgs.Any(capabilityType.IsAssignableTo))
             {
                 // Match, wrap in OneOf
                 capability = Activator.CreateInstance(propType, capability);

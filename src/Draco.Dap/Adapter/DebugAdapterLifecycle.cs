@@ -22,15 +22,15 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
         this.connection = connection;
     }
 
-    public async Task<Capabilities> InitializeAsync(InitializeRequestArguments args)
+    public async Task<Model.Capabilities> InitializeAsync(InitializeRequestArguments args)
     {
         await this.adapter.InitializeAsync(args);
         return this.BuildAdapterCapabilities();
     }
 
-    private Capabilities BuildAdapterCapabilities()
+    private Model.Capabilities BuildAdapterCapabilities()
     {
-        var capabilities = new Capabilities();
+        var capabilities = new Model.Capabilities();
 
         // We collect all properties on the adapter that have the capability annotation
         var capabilityProperties = this.adapter
@@ -46,7 +46,7 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
             Debug.Assert(attr is not null);
 
             // Retrieve the capability property from the adapter capabilities
-            var adapterCapabilityProp = typeof(Capabilities).GetProperty(attr.Property)
+            var adapterCapabilityProp = typeof(Model.Capabilities).GetProperty(attr.Property)
                                      ?? throw new InvalidOperationException($"no capability {attr.Property} found in adapter capabilities");
 
             // Retrieve the capability value defined by the interface
@@ -58,7 +58,7 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
         return capabilities;
     }
 
-    private static void SetCapability(Capabilities capabilities, PropertyInfo prop, object? capability)
+    private static void SetCapability(Model.Capabilities capabilities, PropertyInfo prop, object? capability)
     {
         // If it's null, we can't do anything, and it's already null
         if (capability is null) return;
@@ -69,8 +69,8 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
         propType = Nullable.GetUnderlyingType(propType) ?? propType;
         capabilityType = Nullable.GetUnderlyingType(capabilityType) ?? capabilityType;
 
-        // If they are equal, just assign
-        if (propType == capabilityType)
+        // If they are assignable, just assign
+        if (capabilityType.IsAssignableTo(propType))
         {
             // Convert for nullability
             prop.SetValue(capabilities, capability);
@@ -81,7 +81,7 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
         if (propType.IsAssignableTo(typeof(IOneOf)))
         {
             var genericArgs = propType.GetGenericArguments();
-            if (genericArgs.Contains(capabilityType))
+            if (genericArgs.Any(capabilityType.IsAssignableTo))
             {
                 // Match, wrap in OneOf
                 capability = Activator.CreateInstance(propType, capability);

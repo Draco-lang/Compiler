@@ -14,12 +14,24 @@ public interface IDebugClient
     /// </summary>
     public DebugAdapterConnection Connection { get; }
 
+    [Event("initialized")]
+    public Task Initialized();
+
     [Event("output", Mutating = true)]
-    public Task SendOutput(OutputEvent args);
+    public Task SendOutputAsync(OutputEvent args);
 
-    [Event("exited", Mutating = true)]
-    public Task ProcessExited(ExitedEvent args);
+    [Event("process")]
+    public Task ProcessStartedAsync(ProcessEvent args);
 
-    [Event("terminated", Mutating = true)]
-    public Task DebuggerTerminated(TerminatedEvent args);
+    [Event("breakpoint")]
+    public Task UpdateBreakpointAsync(BreakpointEvent args);
+
+    [Event("stopped")]
+    public Task StoppedAsync(StoppedEvent args);
+
+    [Event("exited")]
+    public Task ProcessExitedAsync(ExitedEvent args);
+
+    [Event("terminated")]
+    public Task DebuggerTerminatedAsync(TerminatedEvent args);
 }

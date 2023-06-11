@@ -18,7 +18,7 @@ internal sealed class Win32PlatformMethods : IPlatformMethods
 
     private const string Kernel32 = "kernel32.dll";
 
-    private static readonly nint INVALID_HANDLE_VALUE = new nint(-1);
+    private static readonly nint INVALID_HANDLE_VALUE = new(-1);
 
     [DllImport(Kernel32, SetLastError = true)]
     private static extern nint GetStdHandle(StandardHandleType nStdHandle);

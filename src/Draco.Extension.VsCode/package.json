@@ -21,7 +21,7 @@
     "workspaceContains:**/*.draco",
     "workspaceContains:**/*.dracoproj",
     "onDebugInitialConfigurations",
-    "onDebugResolve:draco"
+    "onDebugResolve:dracodbg"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -49,6 +49,24 @@
         "path": "./syntaxes/draco.tmLanguage.json"
       }
     ],
+    "commands": [
+      {
+        "command": "draco.installLanguageServer",
+        "title": "Install Draco Language Server"
+      },
+      {
+        "command": "draco.updateLanguageServer",
+        "title": "Update Draco Language Server"
+      },
+      {
+        "command": "draco.installDebugAdapter",
+        "title": "Install Draco Debug Adapter"
+      },
+      {
+        "command": "draco.updateDebugAdapter",
+        "title": "Update Draco Debug Adapter"
+      }
+    ],
     "configuration": {
       "title": "Draco",
       "properties": {
@@ -67,25 +85,40 @@
           "default": "dotnet",
           "description": "The command to invoke the dotnet tool."
         },
-        "draco.dracoSdkVersion": {
+        "draco.sdkVersion": {
           "type": "string",
           "default": "*",
           "description": "The package version pattern for the Draco SDK to use."
+        },
+        "draco.promptGenerateSettings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Offer generating tasks.json and launch.json when opening an unconfigured Draco project."
         },
         "draco.promptOpenSettings": {
           "type": "boolean",
           "default": true,
           "description": "In case of a setting error, should the settings file be prompted for opening."
         },
-        "draco.promptInstallDracoLangserver": {
+        "draco.promptInstallLanguageServer": {
           "type": "boolean",
           "default": true,
           "description": "In case the Draco Language Server was not found, should it be prompted for installation."
         },
-        "draco.promptUpdateDracoLangserver": {
+        "draco.promptUpdateLanguageServer": {
           "type": "boolean",
           "default": true,
           "description": "Check for Draco language server updates."
+        },
+        "draco.promptInstallDebugAdapter": {
+          "type": "boolean",
+          "default": true,
+          "description": "In case the Draco debug adapter was not found, should it be prompted for installation."
+        },
+        "draco.promptUpdateDebugAdapter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check for Draco debug adapter updates."
         },
         "draco.inlayHints.parameterNames": {
           "type": "boolean",
@@ -99,15 +132,27 @@
         }
       }
     },
-    "breakpoints": [{ "language": "draco" }],
+    "breakpoints": [
+      {
+        "language": "draco"
+      },
+      {
+        "language": "csharp"
+      }
+    ],
     "debuggers": [
       {
-        "type": "draco",
+        "type": "dracodbg",
         "label": "Draco Debug",
-
+        "languages": [
+          "draco",
+          "csharp"
+        ],
         "configurationAttributes": {
           "launch": {
-            "required": ["program"],
+            "required": [
+              "program"
+            ],
             "properties": {
               "program": {
                 "type": "string",
@@ -122,14 +167,13 @@
             }
           }
         },
-
         "configurationSnippets": [
           {
             "label": "Draco: Launch Console App",
             "description": "Launch a Draco Console App with a debugger.",
             "body": {
               "name": "Draco Launch (console)",
-              "type": "draco",
+              "type": "dracodbg",
               "request": "launch",
               "preLaunchTask": "build",
               "program": "^\"\\${workspaceFolder}/bin/Debug/${1:<target-framework>}/${2:<project-name.dll>}\"",

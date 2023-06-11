@@ -72,14 +72,12 @@ internal class Program
             debugger.OnStandardOut += (_, text) => debuggerWindow.AppendStdout(text);
             debugger.OnStandardError += (_, text) => debuggerWindow.AppendStderr(text);
 
-            debugger.OnBreakpoint += (_, a) => BreakAt(a.Thread, a.Method, a.Range);
+            debugger.OnBreakpoint += (_, a) => BreakAt(a.Thread, a.Breakpoint.Method, a.Breakpoint.Range);
             debugger.OnStep += (_, a) => BreakAt(a.Thread, a.Method, a.Range);
 
             debuggerWindow.OnStepInto += (_, _) => currentThread?.StepInto();
             debuggerWindow.OnStepOver += (_, _) => currentThread?.StepOver();
             debuggerWindow.OnStepOut += (_, _) => currentThread?.StepOut();
-
-            // Application.Run(debuggerWindow);
 
             await debugger.Terminated;
             Application.Refresh();

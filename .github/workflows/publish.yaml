@@ -9,6 +9,9 @@ on:
       deploy-langserver:
         type: boolean
         description: Deploy the language server (Compiler, LanguageServer)
+      deploy-debugadapter:
+        type: boolean
+        description: Deploy the debug adapter (DebugAdapter)
       deploy-vscext:
         type: boolean
         description: Deploy the VS Code extension
@@ -56,10 +59,12 @@ jobs:
         cd src
         $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
         $langserverProjects = "Compiler", "LanguageServer"
+        $debugadapterProjects = @("DebugAdapter")
         $projects = @()
 
         if ($${{ github.event.inputs.deploy-sdk }}) { $projects += $sdkProjects; }
         if ($${{ github.event.inputs.deploy-langserver }}) { $projects += $langserverProjects; }
+        if ($${{ github.event.inputs.deploy-debugadapter }}) { $projects += $debugadapterProjects; }
 
         $version = "${{ env.VERSION }}"
         if ($${{ env.PRERELEASE }}) { $version = "$version-pre"; }

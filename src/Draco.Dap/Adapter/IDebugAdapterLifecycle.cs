@@ -7,5 +7,5 @@ namespace Draco.Dap.Adapter;
 internal interface IDebugAdapterLifecycle
 {
     [Request("initialize")]
-    public Task<Capabilities> InitializeAsync(InitializeRequestArguments args);
+    public Task<Model.Capabilities> InitializeAsync(InitializeRequestArguments args);
 }

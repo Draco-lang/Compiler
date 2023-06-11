@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +24,18 @@ public sealed class Debugger
     /// </summary>
     public Module MainModule => this.mainModule
         ?? throw new InvalidOperationException("the main module has not been loaded yet");
+
+    /// <summary>
+    /// The main thread.
+    /// </summary>
+    public Thread MainThread => this.mainThread
+        ?? throw new InvalidOperationException("the main thread has not been started yet");
+
+    /// <summary>
+    /// The threads in the debugged process.
+    /// </summary>
+    public ImmutableArray<Thread> Threads => this.threads.ToImmutable();
+    private readonly ImmutableArray<Thread>.Builder threads = ImmutableArray.CreateBuilder<Thread>();
 
     /// <summary>
     /// The event that triggers when the process writes to its STDOUT.
@@ -64,6 +76,11 @@ public sealed class Debugger
     public event EventHandler<OnStepEventArgs>? OnStep;
 
     /// <summary>
+    /// The event that triggers, when the program is paused.
+    /// </summary>
+    public event EventHandler? OnPause;
+
+    /// <summary>
     /// The event that is triggered on a debugger event logged.
     /// </summary>
     public event EventHandler<string>? OnEventLog;
@@ -81,8 +98,9 @@ public sealed class Debugger
 
     private readonly SessionCache sessionCache = new();
 
-    private CorDebugBreakpoint? entryPointBreakpoint;
+    private Breakpoint? entryPointBreakpoint;
     private Module? mainModule;
+    private Thread? mainThread;
 
     internal Debugger(
         CorDebugProcess corDebugProcess,
@@ -94,6 +112,23 @@ public sealed class Debugger
 
         this.InitializeEventHandler(cb);
         ioWorker.Run(this.terminateTokenSource.Token);
+    }
+
+    private void ClearCache()
+    {
+        foreach (var t in this.Threads) t.ClearCache();
+    }
+
+    /// <summary>
+    /// Pauses the execution of the program.
+    /// </summary>
+    public void Pause()
+    {
+        if (this.corDebugProcess.TryStop(0) == HRESULT.S_OK)
+        {
+            this.ClearCache();
+            this.OnPause?.Invoke(this.corDebugProcess, EventArgs.Empty);
+        }
     }
 
     /// <summary>
@@ -210,54 +245,67 @@ public sealed class Debugger
 
     private void OnNameChangeHandler(object? sender, NameChangeCorDebugManagedCallbackEventArgs args)
     {
+        if (args.Thread is not null)
+        {
+            // Clear cached name
+            var thread = this.sessionCache.GetThread(args.Thread);
+            thread.Name = null;
+        }
+
         this.Continue();
     }
 
     private void OnCreateThreadHandler(object? sender, CreateThreadCorDebugManagedCallbackEventArgs args)
     {
+        var thread = this.sessionCache.GetThread(args.Thread);
+        this.threads.Add(thread);
+
+        // Set main thread, which is guaranteed to be the first created one
+        if (this.mainThread is null)
+        {
+            this.mainThread = thread;
+            this.mainThread.Name = "Main Thread";
+        }
+
         this.Continue();
     }
 
     private void OnExitThreadHandler(object? sender, ExitThreadCorDebugManagedCallbackEventArgs args)
     {
+        var thread = this.sessionCache.GetThread(args.Thread);
+        this.threads.Remove(thread);
+
         this.Continue();
     }
 
     private void OnBreakpointHandler(object? sender, BreakpointCorDebugManagedCallbackEventArgs args)
     {
-        if (this.entryPointBreakpoint?.Raw == args.Breakpoint.Raw)
+        this.ClearCache();
+
+        var breakpoint = this.sessionCache.GetBreakpoint(args.Breakpoint);
+        if (this.entryPointBreakpoint == breakpoint)
         {
-            // This was the entry point breakpoint
-            this.entryPointBreakpoint.Activate(false);
+            // This was the entry point breakpoint, remove it
+            this.entryPointBreakpoint.Remove();
         }
 
-        switch (args.Breakpoint)
+        this.OnBreakpoint?.Invoke(sender, new()
         {
-        case CorDebugFunctionBreakpoint funcBp:
-        {
-            var function = this.sessionCache.GetMethod(funcBp.Function);
-            var range = GetSourceRangeForOffset(function, funcBp.Offset);
-            this.OnBreakpoint?.Invoke(sender, new()
-            {
-                Thread = this.sessionCache.GetThread(args.Thread),
-                Method = function,
-                Range = range,
-            });
-            break;
-        }
-        default:
-            throw new NotImplementedException("unhahdled breakpoint kind");
-        }
+            Thread = this.sessionCache.GetThread(args.Thread),
+            Breakpoint = breakpoint,
+        });
     }
 
     private void OnStepCompleteHandler(object? sender, StepCompleteCorDebugManagedCallbackEventArgs args)
     {
+        this.ClearCache();
+
         var frame = args.Thread.ActiveFrame;
         if (frame is not CorDebugILFrame ilFrame) return;
 
         var offset = ilFrame.IP.pnOffset;
         var function = this.sessionCache.GetMethod(args.Thread.ActiveFrame.Function);
-        var range = GetSourceRangeForOffset(function, offset);
+        var range = function.GetSourceRangeForIlOffset(offset);
 
         this.OnStep?.Invoke(sender, new()
         {
@@ -301,18 +349,8 @@ public sealed class Debugger
         // We do
         var method = corModule.GetFunctionFromToken(MetadataTokens.GetToken(entryPointToken));
         var code = method.ILCode;
-        this.entryPointBreakpoint = code.CreateBreakpoint(0);
-    }
-
-    private static SourceRange? GetSourceRangeForOffset(Method function, int offset)
-    {
-        var seqPoint = function.SequencePoints.FirstOrDefault(s => offset == s.Offset);
-        return seqPoint.Document.IsNil
-            ? null
-            : new(
-                StartLine: seqPoint.StartLine - 1,
-                StartColumn: seqPoint.StartColumn - 1,
-                EndLine: seqPoint.EndLine - 1,
-                EndColumn: seqPoint.EndColumn);
+        var corDebugBreakpoint = code.CreateBreakpoint(0);
+        // Cache it
+        this.entryPointBreakpoint = this.sessionCache.GetBreakpoint(corDebugBreakpoint, isEntryPoint: true);
     }
 }

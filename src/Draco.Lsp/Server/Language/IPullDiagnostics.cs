@@ -1,7 +1,7 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
-using System.Threading.Tasks;
-using System.Threading;
 using DocumentDiagnosticReport = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RelatedFullDocumentDiagnosticReport, Draco.Lsp.Model.RelatedUnchangedDocumentDiagnosticReport>;
 
 namespace Draco.Lsp.Server.Language;

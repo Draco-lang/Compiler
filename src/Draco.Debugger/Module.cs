@@ -83,7 +83,7 @@ public sealed class Module
             {
                 var doc = reader.GetDocument(docHandle);
                 var docPath = reader.GetString(doc.Name);
-                return new SourceFile(docHandle, new Uri(docPath));
+                return new SourceFile(this, docHandle, new Uri(docPath));
             })
             .ToImmutableArray();
     }

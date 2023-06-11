@@ -10,5 +10,6 @@
   <BuiltinType Name="any" FullName="System.Text.Json.JsonElement" />
   <BuiltinType Name="number" FullName="System.Double" />
   <BuiltinType Name="LaunchRequestArguments" FullName="Draco.Dap.Model.LaunchRequestArguments" />
+  <BuiltinType Name="AttachRequestArguments" FullName="Draco.Dap.Model.AttachRequestArguments" />
 
 </DapModel>

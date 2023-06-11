@@ -5,10 +5,10 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
-using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using Binder = Draco.Compiler.Internal.Binding.Binder;
-using static Draco.Compiler.Tests.TestUtilities;
 using Draco.Compiler.Internal.Symbols.Error;
+using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using static Draco.Compiler.Tests.TestUtilities;
+using Binder = Draco.Compiler.Internal.Binding.Binder;
 
 namespace Draco.Compiler.Tests.Semantics;
 

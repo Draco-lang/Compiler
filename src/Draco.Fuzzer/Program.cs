@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Draco.Compiler.Internal.Syntax;
 using Draco.Fuzzer.Components;
 using Draco.Fuzzer.Generators;
 
@@ -45,7 +46,8 @@ internal static class Program
         Fuzz(numEpochs, numMutations, new LexerFuzzer(Generator.String()));
 
     private static void FuzzParser(int numEpochs, int numMutations) =>
-        Fuzz(numEpochs, numMutations, new ParserFuzzer(new TokenGenerator().Sequence()));
+        Fuzz(numEpochs, numMutations, new ParserFuzzer(
+            new TokenGenerator().Sequence().Append(SyntaxToken.From(Compiler.Api.Syntax.TokenKind.EndOfInput))));
 
     private static void FuzzE2e(int numEpochs, int numMutations) =>
         Fuzz(numEpochs, numMutations, new E2eFuzzer(Generator.String()));

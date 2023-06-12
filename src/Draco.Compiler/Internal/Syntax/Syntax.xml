@@ -96,6 +96,50 @@
     </Field>
   </Node>
 
+  <Node Name="ModuleDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A module declaration.
+    </Documentation>
+
+    <Field Name="ModuleKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'module' keyword starting the delcaration.
+      </Documentation>
+
+      <Token Kind="KeywordModule" />
+    </Field>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared module.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace token.
+      </Documentation>
+
+      <Token Kind="CurlyOpen" />
+    </Field>
+
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;">
+      <Documentation>
+        All declaration syntaxes within the module.
+      </Documentation>
+    </Field>
+    
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace token.
+      </Documentation>
+
+      <Token Kind="CurlyClose" />
+    </Field>
+  </Node>
+
   <Node Name="ImportDeclarationSyntax" Base="DeclarationSyntax">
     <Documentation>
       An import declaration.

@@ -126,6 +126,11 @@ public enum TokenKind
     KeywordMod,
 
     /// <summary>
+    /// The keyword 'module'.
+    /// </summary>
+    KeywordModule,
+
+    /// <summary>
     /// The keyword 'not'.
     /// </summary>
     KeywordNot,

@@ -1718,4 +1718,65 @@ public sealed class ParserTests
             }
         }
     }
+
+    [Fact]
+    public void TestEmptyModuleDeclaration()
+    {
+        this.ParseDeclaration("""
+            module Foo { }
+            """);
+
+        this.N<ModuleDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordModule);
+            this.T(TokenKind.Identifier, "Foo");
+        }
+    }
+
+    [Fact]
+    public void TestModuleDeclarationContainingVariableAndUnexpectedDeclaration()
+    {
+        this.ParseDeclaration("""
+            module Foo
+            {
+                var bar = 0;
+                baz();
+            }
+            """);
+
+        this.N<ModuleDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordModule);
+            this.T(TokenKind.Identifier, "Foo");
+            this.T(TokenKind.CurlyOpen);
+            this.N<SyntaxList<DeclarationSyntax>>();
+            {
+                this.N<VariableDeclarationSyntax>();
+                {
+                    this.T(TokenKind.KeywordVar);
+                    this.T(TokenKind.Identifier, "bar");
+                    this.N<ValueSpecifierSyntax>();
+                    {
+                        this.T(TokenKind.Assign);
+                        this.N<LiteralExpressionSyntax>();
+                        {
+                            this.T(TokenKind.LiteralInteger, "0");
+                        }
+                    }
+                    this.T(TokenKind.Semicolon);
+                }
+                this.N<UnexpectedDeclarationSyntax>();
+                {
+                    this.N<SyntaxList<SyntaxNode>>();
+                    {
+                        this.T(TokenKind.Identifier, "baz");
+                        this.T(TokenKind.ParenOpen);
+                        this.T(TokenKind.ParenClose);
+                        this.T(TokenKind.Semicolon);
+                    }
+                }
+            }
+            this.T(TokenKind.CurlyClose);
+        }
+    }
 }

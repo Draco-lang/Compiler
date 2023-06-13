@@ -43,6 +43,7 @@ internal sealed class BinderCache
     private Binder BuildBinder(SyntaxNode syntax) => syntax switch
     {
         CompilationUnitSyntax cu => this.BuildCompilationUnitBinder(cu),
+        ModuleDeclarationSyntax mo => this.BuildModuleBinder(mo),
         FunctionDeclarationSyntax decl => this.BuildFunctionDeclarationBinder(decl),
         FunctionBodySyntax body => this.BuildFunctionBodyBinder(body),
         BlockExpressionSyntax block => this.BuildLocalBinder(block),
@@ -57,6 +58,21 @@ internal sealed class BinderCache
         binder = new ModuleBinder(binder, this.compilation.GetModuleForSyntaxTree(syntax.Tree));
         binder = WrapInImportBinder(binder, syntax);
         return binder;
+    }
+
+    private Binder BuildModuleBinder(ModuleDeclarationSyntax syntax)
+    {
+        Debug.Assert(syntax.Parent is not null);
+        var binder = this.GetBinder(syntax.Parent);
+        // Search for the module in the parents container
+        // For that we unwrap from the injected import layer(s)
+        var parent = UnwrapFromImportBinder(binder);
+        var moduleSymbol = parent.DeclaredSymbols
+            .OfType<SourceModuleSymbol>()
+            .FirstOrDefault(member => member.Name == syntax.Name.Text);
+        Debug.Assert(moduleSymbol is not null);
+        // NOTE: We are not using the unwrapped parent, we need the injected import layers
+        return new ModuleBinder(parent, moduleSymbol);
     }
 
     private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)

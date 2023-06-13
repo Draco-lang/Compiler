@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Draco.Compiler.Internal;
@@ -87,6 +88,9 @@ internal readonly record struct SplitPath(ReadOnlyMemory<string> Parts)
     /// <param name="range">The range to slice by.</param>
     /// <returns>The sub-path of this path sliced by <paramref name="range"/>.</returns>
     public SplitPath Slice(Range range) => new(this.Parts[range]);
+
+    public SplitPath Append(params string[] text) =>
+        new SplitPath(this.Parts.ToArray().Concat(text).ToArray().AsMemory());
 
     public bool Equals(SplitPath other) =>
         this.Span.SequenceEqual(other.Span);

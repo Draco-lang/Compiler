@@ -480,4 +480,19 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "foo");
         Assert.Equal(14, x);
     }
+
+    [Fact]
+    public void InCodeModuleUsage()
+    {
+        var assembly = Compile(""""
+            public func foo(): string = FooModule.GetFoo();
+
+            module FooModule{
+                public func GetFoo(): string = "foo";
+            }
+            """");
+
+        var x = Invoke<string>(assembly, "foo");
+        Assert.Equal("foo", x);
+    }
 }

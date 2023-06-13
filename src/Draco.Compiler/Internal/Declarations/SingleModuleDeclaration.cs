@@ -13,7 +13,7 @@ internal sealed class SingleModuleDeclaration : Declaration
     /// <summary>
     /// The syntax node of this module portion.
     /// </summary>
-    public CompilationUnitSyntax Syntax { get; }
+    public ContainerSyntax Syntax { get; }
 
     /// <summary>
     /// The path of this module, including the root module.
@@ -23,7 +23,7 @@ internal sealed class SingleModuleDeclaration : Declaration
     public override ImmutableArray<Declaration> Children => this.children ??= this.BuildChildren();
     private ImmutableArray<Declaration>? children;
 
-    public SingleModuleDeclaration(string name, SplitPath path, CompilationUnitSyntax syntax)
+    public SingleModuleDeclaration(string name, SplitPath path, ContainerSyntax syntax)
         : base(name)
     {
         this.Syntax = syntax;
@@ -31,9 +31,9 @@ internal sealed class SingleModuleDeclaration : Declaration
     }
 
     private ImmutableArray<Declaration> BuildChildren() =>
-        this.Syntax.Declarations.Select(BuildChild).OfType<Declaration>().ToImmutableArray();
+        this.Syntax.Declarations.Select(this.BuildChild).OfType<Declaration>().ToImmutableArray();
 
-    private static Declaration? BuildChild(SyntaxNode node) => node switch
+    private Declaration? BuildChild(SyntaxNode node) => node switch
     {
         // NOTE: We ignore import declarations in the declaration tree, unlike Roslyn
         // We handle import declarations during constructing the binders
@@ -41,6 +41,7 @@ internal sealed class SingleModuleDeclaration : Declaration
         ImportDeclarationSyntax => null,
         VariableDeclarationSyntax var => new GlobalDeclaration(var),
         FunctionDeclarationSyntax func => new FunctionDeclaration(func),
+        ModuleDeclarationSyntax module => new SingleModuleDeclaration(module.Name.Text, this.Path.Append(module.Name.Text), module),
         UnexpectedDeclarationSyntax => null,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };

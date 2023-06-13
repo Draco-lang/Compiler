@@ -8,12 +8,18 @@
   <PredefinedNode Name="SyntaxToken" />
   <PredefinedNode Name="SyntaxTrivia" />
 
-  <Node Name="CompilationUnitSyntax" Base="SyntaxNode">
+  <AbstractNode Name="ContainerSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      Any container, for example module declaration or compilation unit.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="CompilationUnitSyntax" Base="ContainerSyntax">
     <Documentation>
       Contains all declarations within an entire compilation unit.
     </Documentation>
 
-    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;">
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;" Override="true">
       <Documentation>
         All declaration syntaxes within the compilation unit.
       </Documentation>
@@ -96,7 +102,7 @@
     </Field>
   </Node>
 
-  <Node Name="ModuleDeclarationSyntax" Base="DeclarationSyntax">
+  <Node Name="ModuleDeclarationSyntax" Base="ContainerSyntax">
     <Documentation>
       A module declaration.
     </Documentation>
@@ -125,7 +131,7 @@
       <Token Kind="CurlyOpen" />
     </Field>
 
-    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;">
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;"  Override="true">
       <Documentation>
         All declaration syntaxes within the module.
       </Documentation>

@@ -1182,6 +1182,101 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
+    public void VisibleElementFullyQualifiedInCodeDefinedModule()
+    {
+        // func main(){
+        //   FooModule.foo();
+        // }
+        //
+        // module FooModule{
+        //   internal func foo(): int32 = 0;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo"))))),
+            ModuleDeclaration(
+                "FooModule",
+                SyntaxList<DeclarationSyntax>(
+                    FunctionDeclaration(
+                        Api.Semantics.Visibility.Internal,
+                        "foo",
+                        ParameterList(),
+                        NameType("int32"),
+                        InlineFunctionBody(LiteralExpression(0)))))));
+
+        var fooDecl = main.FindInChildren<FunctionDeclarationSyntax>(1);
+        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var mainModel = compilation.GetSemanticModel(main);
+
+        var diags = mainModel.Diagnostics;
+
+        var fooCallSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetReferencedSymbol(fooCall));
+        var fooDeclSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetDeclaredSymbol(fooDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(fooDeclSymbol, fooCallSymbol);
+    }
+
+    [Fact]
+    public void NotVisibleElementFullyQualifiedInCodeDefinedModule()
+    {
+        // func main(){
+        //   FooModule.foo();
+        // }
+        //
+        // module FooModule{
+        //   func foo(): int32 = 0;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo"))))),
+            ModuleDeclaration(
+                "FooModule",
+                SyntaxList<DeclarationSyntax>(
+                    FunctionDeclaration(
+                        "foo",
+                        ParameterList(),
+                        NameType("int32"),
+                        InlineFunctionBody(LiteralExpression(0)))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
     public void NotVisibleGlobalVariableFullyQualified()
     {
         // func main(){
@@ -1376,6 +1471,105 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main, foo),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+    }
+
+    [Fact]
+    public void VisibleElementImportedInCodeDefinedModule()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo();
+        // }
+        //
+        // module FooModule{
+        //   internal func foo(): int32 = 0;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo"))))),
+            ModuleDeclaration(
+                "FooModule",
+                SyntaxList<DeclarationSyntax>(
+                    FunctionDeclaration(
+                        Api.Semantics.Visibility.Internal,
+                        "foo",
+                        ParameterList(),
+                        NameType("int32"),
+                        InlineFunctionBody(LiteralExpression(0)))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var fooDecl = main.FindInChildren<FunctionDeclarationSyntax>(1);
+        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+
+        var mainModel = compilation.GetSemanticModel(main);
+
+        var diags = mainModel.Diagnostics;
+
+        var fooCallSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetReferencedSymbol(fooCall));
+        var fooDeclSymbol = GetInternalSymbol<FunctionSymbol>(mainModel.GetDeclaredSymbol(fooDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(fooDeclSymbol, fooCallSymbol);
+    }
+
+    [Fact]
+    public void NotVisibleElementImportedInCodeDefinedModule()
+    {
+        // import FooModule;
+        // func main(){
+        //   foo();
+        // }
+        //
+        // module FooModule{
+        //   func foo(): int32 = 0;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("FooModule"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("foo"))))),
+            ModuleDeclaration(
+                "FooModule",
+                SyntaxList<DeclarationSyntax>(
+                    FunctionDeclaration(
+                        "foo",
+                        ParameterList(),
+                        NameType("int32"),
+                        InlineFunctionBody(LiteralExpression(0)))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -18,11 +19,15 @@ internal sealed partial class DracoLanguageServer : IFindReferences
 
     public Task<IList<Location>> FindReferencesAsync(ReferenceParams param, CancellationToken cancellationToken)
     {
+        var syntaxTree = this.GetSyntaxTree(param.TextDocument.Uri);
+        if (syntaxTree is null) return Task.FromResult<IList<Location>>(Array.Empty<Location>());
+
+        var semanticModel = this.compilation.GetSemanticModel(syntaxTree);
         var cursorPosition = Translator.ToCompiler(param.Position);
 
-        var referencedSymbol = this.syntaxTree
+        var referencedSymbol = syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(symbol => this.semanticModel.GetReferencedSymbol(symbol) ?? this.semanticModel.GetDeclaredSymbol(symbol))
+            .Select(symbol => semanticModel.GetReferencedSymbol(symbol) ?? semanticModel.GetDeclaredSymbol(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
         var references = new List<Location>();
@@ -30,8 +35,8 @@ internal sealed partial class DracoLanguageServer : IFindReferences
         if (referencedSymbol is not null)
         {
             var referencingNodes = FindAllReferences(
-                tree: this.syntaxTree,
-                semanticModel: this.semanticModel,
+                tree: syntaxTree,
+                semanticModel: semanticModel,
                 symbol: referencedSymbol,
                 includeDeclaration: param.Context.IncludeDeclaration,
                 cancellationToken: cancellationToken);

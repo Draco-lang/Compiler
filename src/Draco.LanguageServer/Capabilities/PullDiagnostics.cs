@@ -29,8 +29,9 @@ internal partial class DracoLanguageServer : IPullDiagnostics
             Uri = param.TextDocument.Uri
         });
 
-        this.UpdateDocument(param.TextDocument.Uri);
-        var diags = this.semanticModel.Diagnostics;
+        var syntaxTree = this.UpdateDocument(param.TextDocument.Uri);
+        var semanticModel = this.compilation.GetSemanticModel(syntaxTree);
+        var diags = semanticModel.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
         return new RelatedFullDocumentDiagnosticReport()
         {
@@ -39,7 +40,7 @@ internal partial class DracoLanguageServer : IPullDiagnostics
         };
     }
 
-    public Task<WorkspaceDiagnosticReport> WorkSpaceDiagnosticsAsync(WorkspaceDiagnosticParams param, CancellationToken cancellationToken)
+    public Task<WorkspaceDiagnosticReport> WorkspaceDiagnosticsAsync(WorkspaceDiagnosticParams param, CancellationToken cancellationToken)
     {
         var fileDiags = new List<OneOf<WorkspaceFullDocumentDiagnosticReport, WorkspaceUnchangedDocumentDiagnosticReport>>();
         foreach (var file in this.compilation.SyntaxTrees)

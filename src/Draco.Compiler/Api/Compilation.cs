@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -56,9 +57,6 @@ public sealed class Compilation : IBinderProvider
         outputPath: outputPath,
         assemblyName: assemblyName);
 
-    // TODO: Should we cache semantic models? Currently we sometimes pass the entire code twice
-    // just because this method instantiates a new semantic model each time, and then
-    // we ask for a semantic model
     /// <summary>
     /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
     /// </summary>
@@ -132,6 +130,7 @@ public sealed class Compilation : IBinderProvider
     internal WellKnownTypes WellKnownTypes { get; }
 
     private readonly BinderCache binderCache;
+    private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
 
     // Main ctor with all state
     private Compilation(
@@ -201,6 +200,8 @@ public sealed class Compilation : IBinderProvider
             sourceModule: null,
             // Needs to be rebuilt
             declarationTable: null,
+            // TODO: We might want to change the compilation of well-known-types?
+            // Or we keep it as long as metadata refs don't change?
             // Just a cache
             wellKnownTypes: this.WellKnownTypes,
             // TODO: We could definitely carry on info here, invalidating the correct things
@@ -212,7 +213,8 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     /// <param name="tree">The syntax tree to get the semantic model for.</param>
     /// <returns>The semantic model for <paramref name="tree"/>.</returns>
-    public SemanticModel GetSemanticModel(SyntaxTree tree) => new(this, tree);
+    public SemanticModel GetSemanticModel(SyntaxTree tree) =>
+        this.semanticModels.GetOrAdd(tree, tree => new(this, tree));
 
     /// <summary>
     /// Emits compiled binary to a <see cref="Stream"/>.

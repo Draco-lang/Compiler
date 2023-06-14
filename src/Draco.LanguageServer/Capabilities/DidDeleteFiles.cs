@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,6 +34,7 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
 
     private async Task DeleteDocument(DocumentUri documentUri)
     {
+        await this.PublishDiagnosticsAsync(documentUri, ImmutableArray<Compiler.Api.Diagnostics.Diagnostic>.Empty);
         var uri = documentUri.ToUri();
         var oldTree = this.compilation.SyntaxTrees
             .First(tree => tree.SourceText.Path == uri);

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,10 +43,10 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
     }
 
-    private async Task PublishDiagnosticsAsync(DocumentUri uri)
+    private async Task PublishDiagnosticsAsync(DocumentUri uri, ImmutableArray<Compiler.Api.Diagnostics.Diagnostic>? diags = null)
     {
-        var diags = this.semanticModel.Diagnostics;
-        var lspDiags = diags.Select(Translator.ToLsp).ToList();
+        diags ??= this.semanticModel.Diagnostics;
+        var lspDiags = diags.Value.Select(Translator.ToLsp).ToList();
         await this.client.PublishDiagnosticsAsync(new()
         {
             Uri = uri,

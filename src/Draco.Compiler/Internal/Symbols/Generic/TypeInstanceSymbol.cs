@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -17,7 +18,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.GenericsNeedsBuild) this.BuildGenerics();
+            if (this.genericsNeedsBuild) this.BuildGenerics();
             return this.genericParameters;
         }
     }
@@ -25,7 +26,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.GenericsNeedsBuild) this.BuildGenerics();
+            if (this.genericsNeedsBuild) this.BuildGenerics();
             return this.genericArguments;
         }
     }
@@ -45,8 +46,8 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
 
     public override TypeSymbol GenericDefinition { get; }
 
-    // IMPORTANT: Choice of flag affects write order
-    private bool GenericsNeedsBuild => this.genericParameters.IsDefault;
+    // IMPORTANT: Flag is a bool and not computed because we can't atomically write structs
+    private bool genericsNeedsBuild = true;
 
     public GenericContext Context { get; }
 
@@ -105,9 +106,10 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         // If the definition wasn't generic, we just carry over the context
         if (!this.GenericDefinition.IsGenericDefinition)
         {
-            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
-            // IMPORTANT: genericParameters is flag, written last
             this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
+            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: Flag is written last
+            Volatile.Write(ref this.genericsNeedsBuild, false);
             return;
         }
 
@@ -117,18 +119,20 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         // If the parameters are not specified, we have the same old generic params
         if (!hasParametersSpecified)
         {
-            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
-            // IMPORTANT: genericParameters is flag, written last
             this.genericParameters = this.GenericDefinition.GenericParameters;
+            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: Flag is written last
+            Volatile.Write(ref this.genericsNeedsBuild, false);
             return;
         }
 
         // Otherwise, this must have been substituted
+        this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
         this.genericArguments = this.GenericDefinition.GenericParameters
             .Select(param => this.Context[param])
             .ToImmutableArray();
-        // IMPORTANT: genericParameters is flag, written last
-        this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
+        // IMPORTANT: Flag is written last
+        Volatile.Write(ref this.genericsNeedsBuild, false);
     }
 
     private ImmutableArray<Symbol> BuildMembers() => this.GenericDefinition.Members

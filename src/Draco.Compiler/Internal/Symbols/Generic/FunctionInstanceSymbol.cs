@@ -17,7 +17,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.GenericsNeedsBuild) this.BuildGenerics();
+            if (this.genericsNeedsBuild) this.BuildGenerics();
             return this.genericParameters;
         }
     }
@@ -25,7 +25,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.GenericsNeedsBuild) this.BuildGenerics();
+            if (this.genericsNeedsBuild) this.BuildGenerics();
             return this.genericArguments;
         }
     }
@@ -48,8 +48,8 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override FunctionSymbol GenericDefinition { get; }
 
-    // IMPORTANT: Choice of flag, important for write order
-    private bool GenericsNeedsBuild => this.genericParameters.IsDefault;
+    // IMPORTANT: Flag is a bool and not computed because we can't atomically copy structs
+    private bool genericsNeedsBuild = true;
 
     public GenericContext Context { get; }
 
@@ -88,9 +88,10 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // If the definition wasn't generic, we just carry over the context
         if (!this.GenericDefinition.IsGenericDefinition)
         {
-            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
-            // IMPORTANT: genericParameters is the flag, has to be written last
             this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
+            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: Write flag last
+            Volatile.Write(ref this.genericsNeedsBuild, false);
             return;
         }
 
@@ -100,18 +101,20 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // If the parameters are not specified, we have the same old generic params
         if (!hasParametersSpecified)
         {
-            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
-            // IMPORTANT: genericParameters is the flag, has to be written last
             this.genericParameters = this.GenericDefinition.GenericParameters;
+            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: Write flag last
+            Volatile.Write(ref this.genericsNeedsBuild, false);
             return;
         }
 
         // Otherwise, this must have been substituted
+        this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
         this.genericArguments = this.GenericDefinition.GenericParameters
             .Select(param => this.Context[param])
             .ToImmutableArray();
-        // IMPORTANT: genericParameters is the flag, has to be written last
-        this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
+        // IMPORTANT: Write flag last
+        Volatile.Write(ref this.genericsNeedsBuild, false);
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.GenericDefinition.Parameters

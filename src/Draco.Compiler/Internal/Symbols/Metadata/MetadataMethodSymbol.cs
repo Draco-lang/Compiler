@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -40,6 +41,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     public override Symbol ContainingSymbol { get; }
 
+    // IMPORTANT: Choice of flag field because of write order
     private bool SignatureNeedsBuild => this.returnType is null;
 
     private ImmutableArray<ParameterSymbol> parameters;
@@ -94,8 +96,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             parameters.Add(paramSym);
         }
         this.parameters = parameters.ToImmutable();
-
-        // Build return type
-        this.returnType = signature.ReturnType;
+        // IMPORTANT: returnType is the build flag, needs to be written last
+        Volatile.Write(ref this.returnType, signature.ReturnType);
     }
 }

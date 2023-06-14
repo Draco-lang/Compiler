@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
@@ -16,8 +17,9 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
             if (this.NeedsBuild)
             {
                 var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
-                this.type = type;
                 this.value = value;
+                // IMPORTANT: type is flag, written last
+                Volatile.Write(ref this.type, type);
             }
             Debug.Assert(this.type is not null);
             return this.type;
@@ -39,8 +41,9 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
             if (this.NeedsBuild)
             {
                 var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
-                this.type = type;
                 this.value = value;
+                // IMPORTANT: type is flag, written last
+                Volatile.Write(ref this.type, type);
             }
             return this.value;
         }
@@ -48,6 +51,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 
     public override string Documentation => this.DeclaringSyntax.Documentation;
 
+    // IMPORTANT: flag is type, needs to be written last
     // NOTE: We check the TYPE here, as value is nullable
     private bool NeedsBuild => this.type is null;
 

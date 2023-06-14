@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -16,7 +17,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.NeedsGenericsBuild) this.BuildGenerics();
+            if (this.GenericsNeedsBuild) this.BuildGenerics();
             return this.genericParameters;
         }
     }
@@ -24,7 +25,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.NeedsGenericsBuild) this.BuildGenerics();
+            if (this.GenericsNeedsBuild) this.BuildGenerics();
             return this.genericArguments;
         }
     }
@@ -47,7 +48,8 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override FunctionSymbol GenericDefinition { get; }
 
-    private bool NeedsGenericsBuild => this.genericParameters.IsDefault;
+    // IMPORTANT: Choice of flag, important for write order
+    private bool GenericsNeedsBuild => this.genericParameters.IsDefault;
 
     public GenericContext Context { get; }
 
@@ -86,8 +88,9 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // If the definition wasn't generic, we just carry over the context
         if (!this.GenericDefinition.IsGenericDefinition)
         {
-            this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
             this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: genericParameters is the flag, has to be written last
+            this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
             return;
         }
 
@@ -97,16 +100,18 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // If the parameters are not specified, we have the same old generic params
         if (!hasParametersSpecified)
         {
-            this.genericParameters = this.GenericDefinition.GenericParameters;
             this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: genericParameters is the flag, has to be written last
+            this.genericParameters = this.GenericDefinition.GenericParameters;
             return;
         }
 
         // Otherwise, this must have been substituted
-        this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
         this.genericArguments = this.GenericDefinition.GenericParameters
             .Select(param => this.Context[param])
             .ToImmutableArray();
+        // IMPORTANT: genericParameters is the flag, has to be written last
+        this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.GenericDefinition.Parameters

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -65,6 +66,7 @@ internal sealed class LocalBinder : Binder
 
     public override Symbol ContainingSymbol => base.ContainingSymbol ?? throw new InvalidOperationException();
 
+    // IMPORTANT: The choice of flag field is important because of write order
     private bool NeedsBuild => this.relativePositions is null;
 
     private ImmutableDictionary<SyntaxNode, int>? relativePositions;
@@ -140,9 +142,10 @@ internal sealed class LocalBinder : Binder
             // Increment relative position
             ++position;
         }
-        this.relativePositions = relativePositionsBuilder.ToImmutable();
         this.declarations = declarationsBuilder.ToImmutable();
         this.localDeclarations = localDeclarationsBuilder.ToImmutable();
+        // IMPORTANT: relativePositions is used as the build flag, it has to be set last
+        Volatile.Write(ref this.relativePositions, relativePositionsBuilder.ToImmutable());
     }
 
     private Symbol? BuildSymbol(SyntaxNode syntax) => syntax switch

@@ -3,12 +3,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Lsp.Model;
+using Draco.Lsp.Server.Language;
 using DocumentDiagnosticReport = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RelatedFullDocumentDiagnosticReport, Draco.Lsp.Model.RelatedUnchangedDocumentDiagnosticReport>;
 
 namespace Draco.LanguageServer;
 
-// TODO: Uncomment when we have threadsafe compiler
-internal partial class DracoLanguageServer// : IPullDiagnostics
+internal partial class DracoLanguageServer : IPullDiagnostics
 {
     public DiagnosticRegistrationOptions DiagnosticRegistrationOptions => new()
     {

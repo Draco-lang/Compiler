@@ -466,7 +466,7 @@ internal sealed class Parser
         if (context != DeclarationContext.Global)
         {
             // Create diagnostic
-            var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "label");
+            var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "module");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
             result = new UnexpectedDeclarationSyntax(null, SyntaxList.Create(result as SyntaxNode));

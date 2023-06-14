@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -22,6 +23,15 @@ internal partial class DracoLanguageServer : IPullDiagnostics
 
     public async Task<DocumentDiagnosticReport> DocumentDiagnosticsAsync(DocumentDiagnosticParams param, CancellationToken cancellationToken)
     {
+        var syntaxTree = this.GetSyntaxTree(param.TextDocument.Uri);
+        if (syntaxTree is null)
+        {
+            return new RelatedFullDocumentDiagnosticReport()
+            {
+                Items = Array.Empty<Diagnostic>(),
+            };
+        }
+
         // Clear push diagnostics to avoid duplicates
         await this.client.PublishDiagnosticsAsync(new()
         {
@@ -29,7 +39,6 @@ internal partial class DracoLanguageServer : IPullDiagnostics
             Uri = param.TextDocument.Uri
         });
 
-        var syntaxTree = this.UpdateDocument(param.TextDocument.Uri);
         var semanticModel = this.compilation.GetSemanticModel(syntaxTree);
         var diags = semanticModel.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();

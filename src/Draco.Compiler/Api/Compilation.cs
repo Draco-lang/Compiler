@@ -172,7 +172,7 @@ public sealed class Compilation : IBinderProvider
         var newSyntaxTrees = this.SyntaxTrees.ToBuilder();
         if (newTree is null)
         {
-            if (oldTree is null) throw new ArgumentNullException("either oldTree or newTree must not be null");
+            if (oldTree is null) throw new ArgumentNullException(nameof(newTree), "either oldTree or newTree must not be null");
             newSyntaxTrees.Remove(oldTree);
         }
         else if (oldTree is null)

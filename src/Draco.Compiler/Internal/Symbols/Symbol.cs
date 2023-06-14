@@ -119,7 +119,7 @@ internal abstract partial class Symbol
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => null;
 
-    protected private static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
+    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
     {
         null => Api.Semantics.Visibility.Private,
         TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,

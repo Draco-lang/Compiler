@@ -16,13 +16,15 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
-        this.genericParameters ??= this.BindGenericParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
-    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters.IsDefault
+        ? (this.genericParameters = this.BindGenericParameters(this.DeclaringCompilation!.GlobalDiagnosticBag))
+        : this.genericParameters;
+    private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override ImmutableArray<ParameterSymbol> Parameters =>
-        this.parameters ??= this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag);
-    private ImmutableArray<ParameterSymbol>? parameters;
+    public override ImmutableArray<ParameterSymbol> Parameters => this.parameters.IsDefault
+        ? (this.parameters = this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag))
+        : this.parameters;
+    private ImmutableArray<ParameterSymbol> parameters;
 
     public override TypeSymbol ReturnType =>
         this.returnType ??= this.BindReturnType(this.DeclaringCompilation!);

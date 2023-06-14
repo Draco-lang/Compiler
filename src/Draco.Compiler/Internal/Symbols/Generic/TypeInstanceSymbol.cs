@@ -18,7 +18,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         get
         {
             if (this.NeedsGenericsBuild) this.BuildGenerics();
-            return this.genericParameters!.Value;
+            return this.genericParameters;
         }
     }
     public override ImmutableArray<TypeSymbol> GenericArguments
@@ -26,15 +26,16 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         get
         {
             if (this.NeedsGenericsBuild) this.BuildGenerics();
-            return this.genericArguments!.Value;
+            return this.genericArguments;
         }
     }
 
-    private ImmutableArray<TypeSymbol>? genericArguments;
-    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+    private ImmutableArray<TypeSymbol> genericArguments;
+    private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
-    private ImmutableArray<Symbol>? members;
+    public override IEnumerable<Symbol> Members =>
+        this.members.IsDefault ? (this.members = this.BuildMembers()) : this.members;
+    private ImmutableArray<Symbol> members;
 
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;
@@ -44,7 +45,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
 
     public override TypeSymbol GenericDefinition { get; }
 
-    private bool NeedsGenericsBuild => this.genericParameters is null;
+    private bool NeedsGenericsBuild => this.genericParameters.IsDefault;
 
     public GenericContext Context { get; }
 

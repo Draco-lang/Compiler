@@ -27,8 +27,9 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <summary>
     /// All <see cref="Diagnostic"/>s in this model.
     /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics ??= this.GetDiagnostics();
-    private ImmutableArray<Diagnostic>? diagnostics;
+    public ImmutableArray<Diagnostic> Diagnostics =>
+        this.diagnostics.IsDefault ? (this.diagnostics = this.GetDiagnostics()) : this.diagnostics;
+    private ImmutableArray<Diagnostic> diagnostics;
 
     internal DiagnosticBag DiagnosticBag { get; } = new();
     DiagnosticBag IBinderProvider.DiagnosticBag => this.DiagnosticBag;

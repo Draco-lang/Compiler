@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -35,9 +36,9 @@ public sealed partial class SemanticModel : IBinderProvider
     private readonly Compilation compilation;
 
     // Filled out by incremental binding
-    private readonly Dictionary<SyntaxNode, UntypedNode> untypedNodeMap = new();
-    private readonly Dictionary<UntypedNode, BoundNode> boundNodeMap = new();
-    private readonly Dictionary<SyntaxNode, Symbol> symbolMap = new();
+    private readonly ConcurrentDictionary<SyntaxNode, UntypedNode> untypedNodeMap = new();
+    private readonly ConcurrentDictionary<UntypedNode, BoundNode> boundNodeMap = new();
+    private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 
     internal SemanticModel(Compilation compilation, SyntaxTree tree)
     {

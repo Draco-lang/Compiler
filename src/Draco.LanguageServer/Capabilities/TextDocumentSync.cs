@@ -29,17 +29,6 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         await this.PublishDiagnosticsAsync(uri);
     }
 
-    private SyntaxTree UpdateDocument(DocumentUri documentUri, string? sourceText = null)
-    {
-        var newSourceText = sourceText is null
-            ? this.documentRepository.GetOrCreateDocument(documentUri)
-            : this.documentRepository.AddOrUpdateDocument(documentUri, sourceText);
-        var oldTree = this.GetSyntaxTree(documentUri);
-        var newTree = SyntaxTree.Parse(newSourceText);
-        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, newTree);
-        return newTree;
-    }
-
     private async Task PublishDiagnosticsAsync(DocumentUri uri)
     {
         var syntaxTree = this.GetSyntaxTree(uri);

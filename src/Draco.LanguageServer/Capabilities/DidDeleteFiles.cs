@@ -30,11 +30,4 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
             await this.DeleteDocument(DocumentUri.From(file.Uri));
         }
     }
-
-    private async Task DeleteDocument(DocumentUri documentUri)
-    {
-        var oldTree = this.GetSyntaxTree(documentUri);
-        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, null);
-        await this.PublishDiagnosticsAsync(documentUri);
-    }
 }

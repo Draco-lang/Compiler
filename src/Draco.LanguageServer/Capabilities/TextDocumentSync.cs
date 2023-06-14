@@ -11,10 +11,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
 {
     public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken)
     {
-        var uri = param.TextDocument.Uri;
-        var sourceText = param.TextDocument.Text;
-        this.UpdateDocument(uri, sourceText);
-        await this.PublishDiagnosticsAsync(uri);
+        await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
     }
 
     public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken) =>

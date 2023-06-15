@@ -42,7 +42,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override Symbol ContainingSymbol { get; }
 
     // IMPORTANT: Choice of flag field because of write order
-    private bool SignatureNeedsBuild => this.returnType is null;
+    private bool SignatureNeedsBuild => Volatile.Read(ref this.returnType) is null;
 
     private ImmutableArray<ParameterSymbol> parameters;
     private TypeSymbol? returnType;

@@ -67,7 +67,7 @@ internal sealed class LocalBinder : Binder
     public override Symbol ContainingSymbol => base.ContainingSymbol ?? throw new InvalidOperationException();
 
     // IMPORTANT: The choice of flag field is important because of write order
-    private bool NeedsBuild => this.relativePositions is null;
+    private bool NeedsBuild => Volatile.Read(ref this.relativePositions) is null;
 
     private ImmutableDictionary<SyntaxNode, int>? relativePositions;
     private ImmutableArray<Symbol> declarations;

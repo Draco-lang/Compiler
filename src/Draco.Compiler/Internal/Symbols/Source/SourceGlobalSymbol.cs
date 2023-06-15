@@ -53,7 +53,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 
     // IMPORTANT: flag is type, needs to be written last
     // NOTE: We check the TYPE here, as value is nullable
-    private bool NeedsBuild => this.type is null;
+    private bool NeedsBuild => Volatile.Read(ref this.type) is null;
 
     private readonly GlobalDeclaration declaration;
     private TypeSymbol? type;

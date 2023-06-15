@@ -18,7 +18,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
+            if (Volatile.Read(ref this.genericsNeedsBuild)) this.BuildGenerics();
             return this.genericParameters;
         }
     }
@@ -26,7 +26,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
+            if (Volatile.Read(ref this.genericsNeedsBuild)) this.BuildGenerics();
             return this.genericArguments;
         }
     }

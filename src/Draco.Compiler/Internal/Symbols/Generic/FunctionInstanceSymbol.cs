@@ -17,7 +17,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
+            if (Volatile.Read(ref this.genericsNeedsBuild)) this.BuildGenerics();
             return this.genericParameters;
         }
     }
@@ -25,7 +25,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
+            if (Volatile.Read(ref this.genericsNeedsBuild)) this.BuildGenerics();
             return this.genericArguments;
         }
     }

@@ -90,7 +90,7 @@ internal readonly record struct SplitPath(ReadOnlyMemory<string> Parts)
     public SplitPath Slice(Range range) => new(this.Parts[range]);
 
     public SplitPath Append(params string[] text) =>
-        new SplitPath(this.Parts.ToArray().Concat(text).ToArray().AsMemory());
+        new SplitPath(MemoryMarshal.ToEnumerable(this.Parts).Concat(text).ToArray().AsMemory());
 
     public bool Equals(SplitPath other) =>
         this.Span.SequenceEqual(other.Span);

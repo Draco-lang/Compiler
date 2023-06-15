@@ -385,7 +385,7 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Parsed a function declaration.
+    /// Parses a function declaration.
     /// </summary>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
     private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxToken? visibility)
@@ -425,7 +425,7 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Parsed a module declaration.
+    /// Parses a module declaration.
     /// </summary>
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
@@ -444,7 +444,7 @@ internal sealed class Parser
             {
             case TokenKind.EndOfInput:
             case TokenKind.CurlyClose:
-                // On a close curly or out of input, we can immediately exit
+                // On a close curly or end of input, we can immediately exit
                 goto end_of_block;
             default:
             {

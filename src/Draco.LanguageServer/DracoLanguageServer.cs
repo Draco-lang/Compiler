@@ -38,8 +38,6 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     private Uri rootUri;
     private Compilation compilation;
-    private SemanticModel semanticModel;
-    private SyntaxTree syntaxTree;
 
     private readonly CompletionService completionService;
     private readonly SignatureService signatureService;
@@ -52,10 +50,8 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.rootUri = default!; // Default value, it will be given correct value on initialization
 
         // Some empty defaults
-        this.syntaxTree = SyntaxTree.Create(SyntaxFactory.CompilationUnit());
         this.compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(this.syntaxTree));
-        this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
+            syntaxTrees: ImmutableArray<SyntaxTree>.Empty);
 
         this.completionService = new CompletionService();
         this.completionService.AddProvider(new KeywordCompletionProvider());
@@ -71,7 +67,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private void CreateCompilation()
     {
         var rootPath = this.rootUri.LocalPath;
-        var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories).Select(x => SyntaxTree.Parse(SourceText.FromFile(x))).ToImmutableArray();
+        var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
+            .Select(x => SyntaxTree.Parse(SourceText.FromFile(x)))
+            .ToImmutableArray();
 
         this.compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
@@ -80,6 +78,30 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
             rootModulePath: rootPath);
+    }
+
+    private SyntaxTree? GetSyntaxTree(DocumentUri documentUri)
+    {
+        var uri = documentUri.ToUri();
+        return this.compilation.SyntaxTrees.FirstOrDefault(t => t.SourceText.Path == uri);
+    }
+
+    private SyntaxTree UpdateDocument(DocumentUri documentUri, string? sourceText = null)
+    {
+        var newSourceText = sourceText is null
+            ? this.documentRepository.GetOrCreateDocument(documentUri)
+            : this.documentRepository.AddOrUpdateDocument(documentUri, sourceText);
+        var oldTree = this.GetSyntaxTree(documentUri);
+        var newTree = SyntaxTree.Parse(newSourceText);
+        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, newTree);
+        return newTree;
+    }
+
+    private async Task DeleteDocument(DocumentUri documentUri)
+    {
+        var oldTree = this.GetSyntaxTree(documentUri);
+        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, null);
+        await this.PublishDiagnosticsAsync(documentUri);
     }
 
     public void Dispose() { }

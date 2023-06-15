@@ -18,5 +18,5 @@ public interface IPullDiagnostics
     public Task<DocumentDiagnosticReport> DocumentDiagnosticsAsync(DocumentDiagnosticParams param, CancellationToken cancellationToken);
 
     [Request("workspace/diagnostic")]
-    public Task<WorkspaceDiagnosticReport> WorkSpaceDiagnosticsAsync(WorkspaceDiagnosticParams param, CancellationToken cancellationToken);
+    public Task<WorkspaceDiagnosticReport> WorkspaceDiagnosticsAsync(WorkspaceDiagnosticParams param, CancellationToken cancellationToken);
 }

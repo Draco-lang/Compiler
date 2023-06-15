@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -16,24 +17,25 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.NeedsGenericsBuild) this.BuildGenerics();
-            return this.genericParameters!.Value;
+            if (this.genericsNeedsBuild) this.BuildGenerics();
+            return this.genericParameters;
         }
     }
     public override ImmutableArray<TypeSymbol> GenericArguments
     {
         get
         {
-            if (this.NeedsGenericsBuild) this.BuildGenerics();
-            return this.genericArguments!.Value;
+            if (this.genericsNeedsBuild) this.BuildGenerics();
+            return this.genericArguments;
         }
     }
 
-    private ImmutableArray<TypeSymbol>? genericArguments;
-    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+    private ImmutableArray<TypeSymbol> genericArguments;
+    private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
-    private ImmutableArray<ParameterSymbol>? parameters;
+    public override ImmutableArray<ParameterSymbol> Parameters =>
+        this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
+    private ImmutableArray<ParameterSymbol> parameters;
 
     public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
     private TypeSymbol? returnType;
@@ -46,7 +48,8 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override FunctionSymbol GenericDefinition { get; }
 
-    private bool NeedsGenericsBuild => this.genericParameters is null;
+    // IMPORTANT: Flag is a bool and not computed because we can't atomically copy structs
+    private volatile bool genericsNeedsBuild = true;
 
     public GenericContext Context { get; }
 
@@ -87,6 +90,8 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         {
             this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
             this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: Write flag last
+            this.genericsNeedsBuild = false;
             return;
         }
 
@@ -98,6 +103,8 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         {
             this.genericParameters = this.GenericDefinition.GenericParameters;
             this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: Write flag last
+            this.genericsNeedsBuild = false;
             return;
         }
 
@@ -106,6 +113,8 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         this.genericArguments = this.GenericDefinition.GenericParameters
             .Select(param => this.Context[param])
             .ToImmutableArray();
+        // IMPORTANT: Write flag last
+        this.genericsNeedsBuild = false;
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.GenericDefinition.Parameters

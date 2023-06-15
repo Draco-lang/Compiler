@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -18,21 +19,24 @@ internal sealed partial class DracoLanguageServer : IInlayHint
 
     public Task<IList<InlayHint>> InlayHintAsync(InlayHintParams param, CancellationToken cancellationToken)
     {
+        var syntaxTree = this.GetSyntaxTree(param.TextDocument.Uri);
+        if (syntaxTree is null) return Task.FromResult<IList<InlayHint>>(Array.Empty<InlayHint>());
+
+        var semanticModel = this.compilation.GetSemanticModel(syntaxTree);
+
         // Get relevant config
         var config = this.configurationRepository.InlayHints;
 
         var range = Translator.ToCompiler(param.Range);
-
         var inlayHints = new List<InlayHint>();
-
-        foreach (var node in this.syntaxTree.TraverseSubtreesIntersectingRange(range))
+        foreach (var node in syntaxTree.TraverseSubtreesIntersectingRange(range))
         {
             if (config.VariableTypes && node is VariableDeclarationSyntax varDecl)
             {
                 // Type is already specified by user
                 if (varDecl.Type is not null) continue;
 
-                var symbol = this.semanticModel.GetDeclaredSymbol(varDecl);
+                var symbol = semanticModel.GetDeclaredSymbol(varDecl);
                 if (symbol is not IVariableSymbol varSymbol) continue;
 
                 var varType = varSymbol.Type;
@@ -47,7 +51,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
             }
             else if (config.ParameterNames && node is CallExpressionSyntax call)
             {
-                var symbol = this.semanticModel.GetReferencedSymbol(call.Function);
+                var symbol = semanticModel.GetReferencedSymbol(call.Function);
                 if (symbol is not IFunctionSymbol funcSymbol) continue;
 
                 foreach (var (argSyntax, paramSymbol) in call.ArgumentList.Values.Zip(funcSymbol.Parameters))

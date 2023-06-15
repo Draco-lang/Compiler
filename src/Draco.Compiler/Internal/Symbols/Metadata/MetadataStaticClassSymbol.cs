@@ -11,8 +11,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol, IMetadataClass
 {
-    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
-    private ImmutableArray<Symbol>? members;
+    public override IEnumerable<Symbol> Members =>
+        this.members.IsDefault ? (this.members = this.BuildMembers()) : this.members;
+    private ImmutableArray<Symbol> members;
 
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);

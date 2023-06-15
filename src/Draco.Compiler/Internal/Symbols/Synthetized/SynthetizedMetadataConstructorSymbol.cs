@@ -17,11 +17,12 @@ internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunction
     public override string Name => this.instantiatedType.Name;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
-        this.genericParameters ??= this.BuildGenericParameters();
-    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+        this.genericParameters.IsDefault ? (this.genericParameters = this.BuildGenericParameters()) : this.genericParameters;
+    private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override ImmutableArray<ParameterSymbol> Parameters => this.parameters ??= this.BuildParameters();
-    private ImmutableArray<ParameterSymbol>? parameters;
+    public override ImmutableArray<ParameterSymbol> Parameters =>
+        this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
+    private ImmutableArray<ParameterSymbol> parameters;
 
     public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
     private TypeSymbol? returnType;

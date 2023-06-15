@@ -92,49 +92,33 @@ public sealed partial class SemanticModel
         // Memo logic
 
         private TUntypedNode BindNode<TUntypedNode>(SyntaxNode syntax, Func<TUntypedNode> binder)
-            where TUntypedNode : UntypedNode
-        {
-            if (!this.semanticModel.untypedNodeMap.TryGetValue(syntax, out var node))
-            {
-                node = binder();
-                this.semanticModel.untypedNodeMap.Add(syntax, node);
-            }
-            return (TUntypedNode)node;
-        }
+            where TUntypedNode : UntypedNode => (TUntypedNode)this.semanticModel.untypedNodeMap.GetOrAdd(
+                key: syntax,
+                valueFactory: _ => binder());
 
         private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode untyped, Func<TBoundNode> binder)
             where TUntypedNode : UntypedNode
-            where TBoundNode : BoundNode
-        {
-            if (!this.semanticModel.boundNodeMap.TryGetValue(untyped, out var node))
-            {
-                node = binder();
-                this.semanticModel.boundNodeMap.Add(untyped, node);
-
-                if (untyped.Syntax is not null)
+            where TBoundNode : BoundNode => (TBoundNode)this.semanticModel.boundNodeMap.GetOrAdd(
+                key: untyped,
+                valueFactory: _ =>
                 {
-                    var symbol = ExtractSymbol(node);
-                    if (symbol is not null)
-                    {
-                        foreach (var syntax in EnumerateSyntaxesWithSameSymbol(untyped.Syntax))
-                        {
-                            this.semanticModel.symbolMap[syntax] = symbol;
-                        }
-                    }
-                }
-            }
-            return (TBoundNode)node;
-        }
+                    var node = binder();
+                    if (untyped.Syntax is null) return node;
 
-        private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder)
-        {
-            if (!this.semanticModel.symbolMap.TryGetValue(node, out var symbol))
-            {
-                symbol = binder();
-                this.semanticModel.symbolMap.Add(node, symbol);
-            }
-            return symbol;
-        }
+                    var symbol = ExtractSymbol(node);
+                    if (symbol is null) return node;
+
+                    foreach (var syntax in EnumerateSyntaxesWithSameSymbol(untyped.Syntax))
+                    {
+                        this.semanticModel.symbolMap[syntax] = symbol;
+                    }
+
+                    return node;
+                });
+
+        private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder) => this.semanticModel.symbolMap.GetOrAdd(
+            key: node,
+            valueFactory: _ => binder());
 
         private static IEnumerable<SyntaxNode> EnumerateSyntaxesWithSameSymbol(SyntaxNode node)
         {

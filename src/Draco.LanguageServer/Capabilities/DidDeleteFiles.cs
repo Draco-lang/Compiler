@@ -30,22 +30,4 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
             await this.DeleteDocument(DocumentUri.From(file.Uri));
         }
     }
-
-    private async Task DeleteDocument(DocumentUri documentUri)
-    {
-        var uri = documentUri.ToUri();
-        var oldTree = this.compilation.SyntaxTrees
-            .First(tree => tree.SourceText.Path == uri);
-        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, null);
-        if (this.syntaxTree == oldTree)
-        {
-            this.syntaxTree = SyntaxTree.Create(SyntaxFactory.CompilationUnit());
-            this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
-        }
-        else
-        {
-            this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
-            await this.PublishDiagnosticsAsync(DocumentUri.From(this.syntaxTree.SourceText.Path!));
-        }
-    }
 }

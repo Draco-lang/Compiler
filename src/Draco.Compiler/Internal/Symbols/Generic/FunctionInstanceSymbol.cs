@@ -17,7 +17,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (Volatile.Read(ref this.genericsNeedsBuild)) this.BuildGenerics();
+            if (this.genericsNeedsBuild) this.BuildGenerics();
             return this.genericParameters;
         }
     }
@@ -25,7 +25,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (Volatile.Read(ref this.genericsNeedsBuild)) this.BuildGenerics();
+            if (this.genericsNeedsBuild) this.BuildGenerics();
             return this.genericArguments;
         }
     }
@@ -49,7 +49,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     public override FunctionSymbol GenericDefinition { get; }
 
     // IMPORTANT: Flag is a bool and not computed because we can't atomically copy structs
-    private bool genericsNeedsBuild = true;
+    private volatile bool genericsNeedsBuild = true;
 
     public GenericContext Context { get; }
 
@@ -91,7 +91,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
             this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
             this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
             // IMPORTANT: Write flag last
-            Volatile.Write(ref this.genericsNeedsBuild, false);
+            this.genericsNeedsBuild = false;
             return;
         }
 
@@ -104,7 +104,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
             this.genericParameters = this.GenericDefinition.GenericParameters;
             this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
             // IMPORTANT: Write flag last
-            Volatile.Write(ref this.genericsNeedsBuild, false);
+            this.genericsNeedsBuild = false;
             return;
         }
 
@@ -114,7 +114,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
             .Select(param => this.Context[param])
             .ToImmutableArray();
         // IMPORTANT: Write flag last
-        Volatile.Write(ref this.genericsNeedsBuild, false);
+        this.genericsNeedsBuild = false;
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.GenericDefinition.Parameters

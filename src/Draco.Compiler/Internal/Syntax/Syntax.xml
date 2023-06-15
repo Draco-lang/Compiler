@@ -12,6 +12,13 @@
     <Documentation>
       Any container, for example module declaration or compilation unit.
     </Documentation>
+
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;" Abstract="true">
+      <Documentation>
+        All declaration syntaxes within the compilation unit.
+      </Documentation>
+    </Field>
+    
   </AbstractNode>
 
   <Node Name="CompilationUnitSyntax" Base="ContainerSyntax">

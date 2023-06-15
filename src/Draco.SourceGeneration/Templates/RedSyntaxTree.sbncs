@@ -18,10 +18,14 @@ namespace Draco.Compiler.Api.Syntax;
     public {{class_header($node)}}
     {
         {{for $field in $node.Fields}}
-            {{$backingField = camel_case($field.Name)}}
-            {{field_prefix($field)}} =>
-                this.{{$backingField}} ??= ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this);
-            private {{$field.NonNullableType}}? {{$backingField}};
+            {{if $field.Abstract}}
+            {{field_prefix($field)}} {get;}
+            {{else}}
+                {{$backingField = camel_case($field.Name)}}
+                {{field_prefix($field)}} =>
+                    this.{{$backingField}} ??= ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this);
+                private {{$field.NonNullableType}}? {{$backingField}};
+            {{end}}
         {{end}}
 
         {{if $node.IsAbstract}}

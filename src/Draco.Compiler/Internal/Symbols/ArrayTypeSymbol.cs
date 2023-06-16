@@ -20,5 +20,9 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
         this.Rank = rank;
     }
 
-    public override string ToString() => $"[{new string(',', this.Rank - 1)}]{this.ElementType}";
+    public override string ToString() => this.Rank switch
+    {
+        1 => $"Array<{this.ElementType}>",
+        _ => $"Array{this.Rank}<{this.ElementType}>",
+    };
 }

@@ -88,7 +88,7 @@ internal partial class Binder
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType);
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
-            return new UntypedMemberLvalue(syntax, left, memberType, promise);
+            return new UntypedMemberLvalue(syntax, left, promise, memberType);
         }
     }
 

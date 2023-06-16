@@ -499,7 +499,7 @@ internal partial class Binder
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType);
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
-            return new UntypedMemberExpression(syntax, left, memberType, promise);
+            return new UntypedMemberExpression(syntax, left, promise, memberType);
         }
     }
 
@@ -628,7 +628,7 @@ internal partial class Binder
                         .ToImmutableArray();
 
                     // Wrap them back up in a member expression
-                    return new UntypedMemberExpression(syntax, member.Accessed, member.Type, ConstraintPromise.FromResult(instantiatedFuncs));
+                    return new UntypedMemberExpression(syntax, member.Accessed, ConstraintPromise.FromResult(instantiatedFuncs), member.Type);
                 }
             });
             // NOTE: The generic function itself has no concrete type

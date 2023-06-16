@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.BoundTree;
@@ -214,5 +215,5 @@ internal partial class BoundFieldLvalue
 
 internal partial class BoundArrayAccessLvalue
 {
-    public override TypeSymbol Type => ((ArrayTypeSymbol)this.Array.TypeRequired).ElementType;
+    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
 }

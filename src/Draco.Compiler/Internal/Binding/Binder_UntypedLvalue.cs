@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -7,7 +8,9 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -106,17 +109,34 @@ internal partial class Binder
         {
             return new UntypedIllegalLvalue(index);
         }
-        var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
+        var args = index.IndexList.Values
+            .Select(x => this.BindExpression(x, constraints, diagnostics))
+            .ToImmutableArray();
         var returnType = constraints.AllocateTypeVariable();
         var promise = constraints.Substituted(receiver.TypeRequired, () =>
         {
-            var indexers = constraints.Unwrap(receiver.TypeRequired).Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Setter).OfType<FunctionSymbol>().ToImmutableArray();
+            var receiverType = constraints.Unwrap(receiver.TypeRequired);
+
+            // Array
+            if (receiverType.GenericDefinition is ArrayTypeSymbol arrayType)
+            {
+                // TODO
+            }
+
+            // General indexer
+            var indexers = receiverType
+                .Members
+                .OfType<PropertySymbol>()
+                .Where(x => x.IsIndexer)
+                .Select(x => x.Setter)
+                .OfType<FunctionSymbol>()
+                .ToImmutableArray();
             if (indexers.Length == 0)
             {
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.NoSettableIndexerInType,
                     location: index.Location,
-                    formatArgs: receiver.Type));
+                    formatArgs: receiverType));
                 constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }

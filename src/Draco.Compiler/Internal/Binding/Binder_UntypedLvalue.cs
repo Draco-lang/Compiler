@@ -120,7 +120,12 @@ internal partial class Binder
             // Array
             if (receiverType.GenericDefinition is ArrayTypeSymbol arrayType)
             {
-                // TODO
+                if (arrayType.Rank != args.Length)
+                {
+                    // TODO: Array-rank vs index cound mismatch
+                }
+                // TODO: Check indices to be all int
+                // TODO: Construct array element lvalue
             }
 
             // General indexer

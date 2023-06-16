@@ -286,7 +286,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             }
         }
 
-        var arrayType = new ArrayTypeSymbol(IntrinsicSymbols.Object, 1);
+        var arrayType = IntrinsicSymbols.Array.GenericInstantiate(IntrinsicSymbols.Object);
         var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
 
         var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);

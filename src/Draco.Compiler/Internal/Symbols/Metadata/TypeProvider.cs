@@ -24,9 +24,9 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     }
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
-        new ArrayTypeSymbol(elementType, shape.Rank);
+        new ArrayTypeSymbol(shape.Rank).GenericInstantiate(elementType);
     public TypeSymbol GetSZArrayType(TypeSymbol elementType) =>
-        new ArrayTypeSymbol(elementType, 1);
+        IntrinsicSymbols.Array.GenericInstantiate(elementType);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
     public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments)

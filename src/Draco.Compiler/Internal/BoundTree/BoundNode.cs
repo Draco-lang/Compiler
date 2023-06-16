@@ -168,7 +168,11 @@ internal partial class BoundObjectCreationExpression
 
 internal partial class BoundArrayCreationExpression
 {
-    public override TypeSymbol Type => new ArrayTypeSymbol(this.ElementType, this.Sizes.Length);
+    public override TypeSymbol Type => this.Sizes.Length switch
+    {
+        1 => IntrinsicSymbols.Array.GenericInstantiate(this.ElementType),
+        int n => new ArrayTypeSymbol(n).GenericInstantiate(this.ElementType),
+    };
 }
 
 internal partial class BoundCallExpression

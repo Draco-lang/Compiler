@@ -520,7 +520,7 @@ internal partial class Binder
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.NoGettableIndexerInType,
                     location: index.Location,
-                    receiver.ToString()));
+                    formatArgs: receiver.Type));
                 constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }

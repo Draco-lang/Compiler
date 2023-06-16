@@ -2,7 +2,9 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -26,7 +28,9 @@ internal sealed partial class WellKnownTypes
     public MetadataMethodSymbol SystemString_Format => this.systemString_Format ??= this.SystemString
         .Members
         .OfType<MetadataMethodSymbol>()
-        .First(m => m.Name == "Format" && m.Parameters is [_, { Type: ArrayTypeSymbol }]);
+        .First(m =>
+            m.Name == "Format"
+         && m.Parameters is [_, { Type: TypeInstanceSymbol { GenericDefinition: ArrayTypeSymbol } }]);
     private MetadataMethodSymbol? systemString_Format;
 
     private readonly Compilation compilation;

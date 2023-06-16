@@ -514,7 +514,22 @@ internal partial class Binder
         var returnType = constraints.AllocateTypeVariable();
         var promise = constraints.Substituted(receiver.TypeRequired, () =>
         {
-            var indexers = constraints.Unwrap(receiver.TypeRequired).Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Getter).OfType<FunctionSymbol>().ToImmutableArray();
+            var receiverType = constraints.Unwrap(receiver.TypeRequired);
+
+            // Array
+            if (receiverType.GenericDefinition is ArrayTypeSymbol arrayType)
+            {
+                // TODO
+            }
+
+            // General indexer
+            var indexers = receiverType
+                .Members
+                .OfType<PropertySymbol>()
+                .Where(x => x.IsIndexer)
+                .Select(x => x.Getter)
+                .OfType<FunctionSymbol>()
+                .ToImmutableArray();
             if (indexers.Length == 0)
             {
                 diagnostics.Add(Diagnostic.Create(
@@ -524,7 +539,10 @@ internal partial class Binder
                 constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }
-            var overloaded = constraints.Overload(indexers, args.Select(x => x.TypeRequired).ToImmutableArray(), out var gotReturnType);
+            var argTypes = args
+                .Select(x => x.TypeRequired)
+                .ToImmutableArray();
+            var overloaded = constraints.Overload(indexers, argTypes, out var gotReturnType);
             constraints.Unify(returnType, gotReturnType);
             return overloaded;
         });

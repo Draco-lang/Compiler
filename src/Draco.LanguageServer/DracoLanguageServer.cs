@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.CodeCompletion;
@@ -37,7 +38,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private readonly DracoDocumentRepository documentRepository = new();
 
     private Uri rootUri;
-    private Compilation compilation;
+    private volatile Compilation compilation;
 
     private readonly CompletionService completionService;
     private readonly SignatureService signatureService;
@@ -109,7 +110,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     public Task InitializeAsync(InitializeParams param)
     {
         if (param.WorkspaceFolders is null || param.WorkspaceFolders.Count == 0) return Task.CompletedTask;
-        this.rootUri = param.WorkspaceFolders[0].Uri;
+        Volatile.Write(ref this.rootUri, param.WorkspaceFolders[0].Uri);
         this.CreateCompilation();
         return Task.CompletedTask;
     }

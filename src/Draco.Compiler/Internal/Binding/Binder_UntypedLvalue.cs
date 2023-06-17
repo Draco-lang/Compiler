@@ -126,8 +126,7 @@ internal partial class Binder
                         template: SymbolResolutionErrors.ArrayRankIndexCountMismatch,
                         location: index.Location,
                         formatArgs: new object[] { arrayType.Rank, args.Length }));
-                    // TODO: Return an error
-                    throw new NotImplementedException();
+                    return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
                 }
                 // TODO: Check indices to be all int
                 // TODO: Construct array element lvalue

@@ -164,4 +164,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "no gettable indexer was found in type {0}",
         code: Code(17));
+
+    /// <summary>
+    /// Array rank does not match the index count.
+    /// </summary>
+    public static readonly DiagnosticTemplate ArrayRankIndexCountMismatch = DiagnosticTemplate.Create(
+        title: "index count does not match array rank",
+        severity: DiagnosticSeverity.Error,
+        format: "an array of rank {0} can not be indexed with {1} indices",
+        code: Code(18));
 }

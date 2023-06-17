@@ -281,6 +281,26 @@ internal sealed class CilCodegen
             this.StoreLocal(newArr.Target);
             break;
         }
+        case ArrayElementInstruction arrElement:
+        {
+            // Array
+            this.EncodePush(arrElement.Array);
+            // Indices
+            foreach (var i in arrElement.Indices) this.EncodePush(i);
+            // One-dimensional and multi-dimensional arrays are very different
+            if (arrElement.Indices.Count == 1)
+            {
+                this.InstructionEncoder.OpCode(ILOpCode.Ldelem_i4);
+            }
+            else
+            {
+                // TODO: More complicated, because it's a proper type
+                throw new NotImplementedException();
+            }
+            // Store result
+            this.StoreLocal(arrElement.Target);
+            break;
+        }
         default:
             throw new ArgumentOutOfRangeException(nameof(instruction));
         }

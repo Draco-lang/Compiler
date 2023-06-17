@@ -201,8 +201,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitArrayAccessExpression(BoundArrayAccessExpression node)
     {
-        // TODO
-        throw new System.NotImplementedException();
+        var array = this.Compile(node.Array);
+        var indices = node.Indices.Select(this.Compile).ToList();
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(ArrayElement(result, array, indices));
+        return result;
     }
 
     public override IOperand VisitArrayCreationExpression(BoundArrayCreationExpression node)

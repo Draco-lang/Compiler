@@ -125,8 +125,7 @@ internal partial class Binder
         if (arrayIndexProperty is not null)
         {
             // Array getter
-            // TODO
-            throw new NotImplementedException();
+            return new BoundArrayAccessExpression(index.Syntax, receiver, indices);
         }
         return new BoundIndexGetExpression(index.Syntax, receiver, index.Getter.Result, indices);
     }
@@ -247,8 +246,15 @@ internal partial class Binder
             if (arrayIndexProperty is not null)
             {
                 // Array setter
-                // TODO
-                throw new NotImplementedException();
+                var arrayLvalue = new BoundArrayAccessLvalue(
+                    assignment.Left.Syntax,
+                    receiver,
+                    indices);
+                return new BoundAssignmentExpression(
+                    assignment.Syntax,
+                    compoundOperator,
+                    arrayLvalue,
+                    typedRight);
             }
 
             return new BoundIndexSetExpression(

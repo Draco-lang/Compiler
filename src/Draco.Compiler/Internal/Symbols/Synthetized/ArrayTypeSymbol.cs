@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
@@ -21,6 +22,8 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
     public override string Name => "Array";
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
+
+    public override IEnumerable<Symbol> Members => new[] { new ArrayIndexPropertySymbol(this) };
 
     public ArrayTypeSymbol(int rank)
     {

@@ -516,21 +516,6 @@ internal partial class Binder
         {
             var receiverType = constraints.Unwrap(receiver.TypeRequired);
 
-            // Array
-            if (receiverType.GenericDefinition is ArrayTypeSymbol arrayType)
-            {
-                if (arrayType.Rank != args.Length)
-                {
-                    diagnostics.Add(Diagnostic.Create(
-                        template: SymbolResolutionErrors.ArrayRankIndexCountMismatch,
-                        location: index.Location,
-                        formatArgs: new object[] { arrayType.Rank, args.Length }));
-                    return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
-                }
-                // TODO: Check indices to be all int
-                // TODO: Construct array element expression
-            }
-
             // General indexer
             var indexers = receiverType
                 .Members
@@ -553,8 +538,11 @@ internal partial class Binder
                 .ToImmutableArray();
             var overloaded = constraints.Overload(indexers, argTypes, out var gotReturnType);
             constraints.Unify(returnType, gotReturnType);
+            overloaded.ConfigureDiagnostic(diag => diag
+                .WithLocation(index.Location));
             return overloaded;
         }).Unwrap();
+
         promise.ConfigureDiagnostic(diag => diag
             .WithLocation(index.Location));
 

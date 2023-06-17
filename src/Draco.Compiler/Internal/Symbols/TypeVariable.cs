@@ -17,10 +17,7 @@ internal sealed class TypeVariable : TypeSymbol
     public override IEnumerable<Symbol> Members => throw new NotSupportedException();
     public override string Documentation => throw new NotSupportedException();
 
-    /// <summary>
-    /// The substitution for this type variable.
-    /// </summary>
-    public TypeSymbol Substitution => this.solver.Unwrap(this);
+    public override TypeSymbol Substitution => this.solver.Unwrap(this);
 
     private readonly ConstraintSolver solver;
     private readonly int index;

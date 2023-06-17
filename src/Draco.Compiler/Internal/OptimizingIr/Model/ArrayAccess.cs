@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <param name="Indices">The access indices.</param>
 internal readonly record struct ArrayAccess(IOperand Array, ImmutableArray<IOperand> Indices) : IOperand
 {
-    public TypeSymbol Type => ((ArrayTypeSymbol)this.Array.Type!).ElementType;
+    public TypeSymbol Type => this.Array.Type!.GenericArguments[0];
 
     public override string ToString() => this.ToOperandString();
     public string ToOperandString() =>

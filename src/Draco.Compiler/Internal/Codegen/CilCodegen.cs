@@ -209,13 +209,26 @@ internal sealed class CilCodegen
                 this.EncodePush(store.Source);
                 if (arrayAccess.Indices.Length == 1)
                 {
-                    if (store.Source.Type!.IsValueType)
+                    var storedValueType = store.Source.Type!;
+                    var targetStorageType = arrayAccess.Type.Substitution;
+                    var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
+                    if (needsToBox)
                     {
                         // We need to box it
                         this.InstructionEncoder.OpCode(ILOpCode.Box);
-                        this.EncodeToken(store.Source.Type);
+                        this.EncodeToken(store.Source.Type!);
                     }
-                    this.InstructionEncoder.OpCode(ILOpCode.Stelem_ref);
+                    if (!needsToBox && storedValueType.IsValueType)
+                    {
+                        // If no need to box but is a value type, encode what we store
+                        this.InstructionEncoder.OpCode(ILOpCode.Stelem);
+                        this.EncodeToken(storedValueType);
+                    }
+                    else
+                    {
+                        // Need to box or not value type, store as reference
+                        this.InstructionEncoder.OpCode(ILOpCode.Stelem_ref);
+                    }
                 }
                 else
                 {

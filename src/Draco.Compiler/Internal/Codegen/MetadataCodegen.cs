@@ -214,6 +214,16 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddTypeSpecification(blob);
         }
 
+        case TypeSymbol typeSymbol:
+        {
+            var blob = this.EncodeBlob(e =>
+            {
+                var encoder = e.TypeSpecificationSignature();
+                this.EncodeSignatureType(encoder, typeSymbol);
+            });
+            return this.MetadataBuilder.AddTypeSpecification(blob);
+        }
+
         // Generic function instance
         case FunctionSymbol func when func.IsGenericInstance:
         {

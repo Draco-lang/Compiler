@@ -19,6 +19,7 @@ internal static class IntrinsicSymbols
     public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
     public static TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
     public static ArrayTypeSymbol Array { get; } = new(1);
+    public static ArrayConstructorSymbol ArrayCtor { get; } = new(1);
 
     // Operators
 

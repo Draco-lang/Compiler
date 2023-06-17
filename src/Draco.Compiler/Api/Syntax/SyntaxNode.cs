@@ -25,9 +25,10 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The diagnostics on this tree node.
     /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics =>
-        this.diagnostics ??= this.Tree.SyntaxDiagnosticTable.Get(this).ToImmutableArray();
-    private ImmutableArray<Diagnostic>? diagnostics;
+    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics.IsDefault
+        ? (this.diagnostics = this.Tree.SyntaxDiagnosticTable.Get(this).ToImmutableArray())
+        : this.diagnostics;
+    private ImmutableArray<Diagnostic> diagnostics;
 
     /// <summary>
     /// The <see cref="Diagnostics.Location"/> of this node, excluding the trivia surrounding the node.

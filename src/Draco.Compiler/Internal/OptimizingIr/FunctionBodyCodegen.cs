@@ -199,6 +199,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
+    public override IOperand VisitArrayAccessExpression(BoundArrayAccessExpression node)
+    {
+        // TODO
+        throw new System.NotImplementedException();
+    }
+
     public override IOperand VisitArrayCreationExpression(BoundArrayCreationExpression node)
     {
         var dimensions = node.Sizes.Select(this.Compile).ToList();

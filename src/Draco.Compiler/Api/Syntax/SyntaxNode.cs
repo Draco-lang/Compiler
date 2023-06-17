@@ -105,6 +105,9 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public override bool Equals(object? obj) => this.Equals(obj as SyntaxNode);
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this.Green);
 
+    public static bool operator ==(SyntaxNode? left, SyntaxNode? right) => Equals(left, right);
+    public static bool operator !=(SyntaxNode? left, SyntaxNode? right) => !Equals(left, right);
+
     public override string ToString() => this.Green.ToCodeWithoutSurroundingTrivia();
 
     /// <summary>

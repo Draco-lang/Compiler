@@ -192,12 +192,6 @@
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
-  <Node Name="UntypedArrayAccessExpression" Base="UntypedExpression">
-    <Field Name="Accessed" Type="UntypedExpression" />
-    <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
-  </Node>
-
   <AbstractNode Name="UntypedStringPart" Base="UntypedNode" />
 
   <Node Name="UntypedUnexpectedStringPart" Base="UntypedStringPart">
@@ -252,12 +246,6 @@
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">
     <Field Name="Accessed" Type="UntypedExpression" />
     <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
-  </Node>
-
-  <Node Name="UntypedArrayAccessLvalue" Base="UntypedLvalue">
-    <Field Name="Accessed" Type="UntypedExpression" />
-    <Field Name="Indices" Type="ImmutableArray&lt;UntypedExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 </Tree>

@@ -22,7 +22,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var uri = param.TextDocument.Uri;
         var change = param.ContentChanges.First();
         var sourceText = change.Text;
-        this.UpdateDocument(uri, sourceText);
+        await this.UpdateDocument(uri, sourceText);
     }
 
     private async Task PublishDiagnosticsAsync(DocumentUri uri)

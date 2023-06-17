@@ -7,6 +7,8 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Generic;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -118,6 +120,14 @@ internal partial class Binder
     {
         var receiver = this.TypeExpression(index.Receiver, constraints, diagnostics);
         var indices = index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray();
+        var getter = index.Getter.Result;
+        var arrayIndexProperty = (getter.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
+        if (arrayIndexProperty is not null)
+        {
+            // Array getter
+            // TODO
+            throw new NotImplementedException();
+        }
         return new BoundIndexGetExpression(index.Syntax, receiver, index.Getter.Result, indices);
     }
 
@@ -231,6 +241,16 @@ internal partial class Binder
             var indices = index.Indices
                 .Select(x => this.TypeExpression(x, constraints, diagnostics))
                 .ToImmutableArray();
+
+            var setter = index.Setter.Result;
+            var arrayIndexProperty = (setter.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
+            if (arrayIndexProperty is not null)
+            {
+                // Array setter
+                // TODO
+                throw new NotImplementedException();
+            }
+
             return new BoundIndexSetExpression(
                 assignment.Syntax,
                 receiver,

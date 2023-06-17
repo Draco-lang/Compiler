@@ -23,15 +23,15 @@ internal sealed class ArrayIndexPropertySymbol : PropertySymbol
     public ArrayIndexPropertySymbol(ArrayTypeSymbol containingSymbol)
     {
         this.ContainingSymbol = containingSymbol;
-        this.Getter = new ArrayIndexGetSymbol(containingSymbol);
-        this.Setter = new ArrayIndexSetSymbol(containingSymbol);
+        this.Getter = new ArrayIndexGetSymbol(containingSymbol, this);
+        this.Setter = new ArrayIndexSetSymbol(containingSymbol, this);
     }
 }
 
 /// <summary>
 /// The index getter of arrays.
 /// </summary>
-internal sealed class ArrayIndexGetSymbol : FunctionSymbol
+internal sealed class ArrayIndexGetSymbol : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters =>
         this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
@@ -42,10 +42,12 @@ internal sealed class ArrayIndexGetSymbol : FunctionSymbol
     public override string Name => "Array_get";
 
     public override ArrayTypeSymbol ContainingSymbol { get; }
+    public PropertySymbol Property { get; }
 
-    public ArrayIndexGetSymbol(ArrayTypeSymbol containingSymbol)
+    public ArrayIndexGetSymbol(ArrayTypeSymbol containingSymbol, PropertySymbol propertySymbol)
     {
         this.ContainingSymbol = containingSymbol;
+        this.Property = propertySymbol;
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.ContainingSymbol.Rank == 1
@@ -59,7 +61,7 @@ internal sealed class ArrayIndexGetSymbol : FunctionSymbol
 /// <summary>
 /// The index setter of arrays.
 /// </summary>
-internal sealed class ArrayIndexSetSymbol : FunctionSymbol
+internal sealed class ArrayIndexSetSymbol : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters =>
         this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
@@ -71,10 +73,12 @@ internal sealed class ArrayIndexSetSymbol : FunctionSymbol
     public override string Name => "Array_set";
 
     public override ArrayTypeSymbol ContainingSymbol { get; }
+    public PropertySymbol Property { get; }
 
-    public ArrayIndexSetSymbol(ArrayTypeSymbol containingSymbol)
+    public ArrayIndexSetSymbol(ArrayTypeSymbol containingSymbol, PropertySymbol propertySymbol)
     {
         this.ContainingSymbol = containingSymbol;
+        this.Property = propertySymbol;
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters()

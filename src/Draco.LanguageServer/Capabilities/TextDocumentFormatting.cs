@@ -16,7 +16,9 @@ internal sealed partial class DracoLanguageServer : ITextDocumentFormatting
 
     public Task<IList<TextEdit>?> FormatTextDocumentAsync(DocumentFormattingParams param, CancellationToken cancellationToken)
     {
-        var syntaxTree = this.GetSyntaxTree(param.TextDocument.Uri);
+        var compilation = this.compilation;
+
+        var syntaxTree = GetSyntaxTree(compilation, param.TextDocument.Uri);
         if (syntaxTree is null) return Task.FromResult(null as IList<TextEdit>);
 
         var originalRange = syntaxTree.Root.Range;

@@ -122,7 +122,12 @@ internal partial class Binder
             {
                 if (arrayType.Rank != args.Length)
                 {
-                    // TODO: Array-rank vs index cound mismatch
+                    diagnostics.Add(Diagnostic.Create(
+                        template: SymbolResolutionErrors.ArrayRankIndexCountMismatch,
+                        location: index.Location,
+                        formatArgs: new object[] { arrayType.Rank, args.Length }));
+                    // TODO: Return an error
+                    throw new NotImplementedException();
                 }
                 // TODO: Check indices to be all int
                 // TODO: Construct array element lvalue

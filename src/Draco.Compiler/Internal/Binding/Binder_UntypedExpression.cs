@@ -550,7 +550,7 @@ internal partial class Binder
             var overloaded = constraints.Overload(indexers, argTypes, out var gotReturnType);
             constraints.Unify(returnType, gotReturnType);
             return overloaded;
-        });
+        }).Unwrap();
         promise.ConfigureDiagnostic(diag => diag
             .WithLocation(index.Location));
 

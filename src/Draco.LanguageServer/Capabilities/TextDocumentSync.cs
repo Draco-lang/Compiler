@@ -22,16 +22,17 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var uri = param.TextDocument.Uri;
         var change = param.ContentChanges.First();
         var sourceText = change.Text;
-        this.UpdateDocument(uri, sourceText);
-        await this.PublishDiagnosticsAsync(uri);
+        await this.UpdateDocument(uri, sourceText);
     }
 
     private async Task PublishDiagnosticsAsync(DocumentUri uri)
     {
-        var syntaxTree = this.GetSyntaxTree(uri);
+        var compilation = this.compilation;
+
+        var syntaxTree = GetSyntaxTree(compilation, uri);
         if (syntaxTree is null) return;
 
-        var semanticModel = this.compilation.GetSemanticModel(syntaxTree);
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var diags = semanticModel.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
         await this.client.PublishDiagnosticsAsync(new()

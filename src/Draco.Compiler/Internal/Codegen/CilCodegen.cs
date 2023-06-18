@@ -314,6 +314,18 @@ internal sealed class CilCodegen
             this.StoreLocal(arrElement.Target);
             break;
         }
+        case ArrayLengthInstruction arrLen:
+        {
+            // Array
+            this.EncodePush(arrLen.Array);
+            // Length query
+            this.InstructionEncoder.OpCode(ILOpCode.Ldlen);
+            // Convert to I4
+            this.InstructionEncoder.OpCode(ILOpCode.Conv_i4);
+            // Store result
+            this.StoreLocal(arrLen.Target);
+            break;
+        }
         default:
             throw new ArgumentOutOfRangeException(nameof(instruction));
         }

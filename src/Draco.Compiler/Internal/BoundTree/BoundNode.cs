@@ -181,6 +181,11 @@ internal partial class BoundArrayAccessExpression
     public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
 }
 
+internal partial class BoundArrayLengthExpression
+{
+    public override TypeSymbol? Type => IntrinsicSymbols.Int32;
+}
+
 internal partial class BoundCallExpression
 {
     public override TypeSymbol Type => this.Method.ReturnType;

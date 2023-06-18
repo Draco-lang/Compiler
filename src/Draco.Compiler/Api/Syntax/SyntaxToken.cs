@@ -31,19 +31,21 @@ public sealed class SyntaxToken : SyntaxNode
     /// <summary>
     /// The <see cref="SyntaxTrivia"/> before this token.
     /// </summary>
-    public SyntaxList<SyntaxTrivia> LeadingTrivia => (SyntaxList<SyntaxTrivia>)this.Green.LeadingTrivia.ToRedNode(this.Tree, this.Parent);
+    public SyntaxList<SyntaxTrivia> LeadingTrivia =>
+        (SyntaxList<SyntaxTrivia>)this.Green.LeadingTrivia.ToRedNode(this.Tree, this.Parent, this.FullPosition);
 
     /// <summary>
     /// The <see cref="SyntaxTrivia"/> after this token.
     /// </summary>
-    public SyntaxList<SyntaxTrivia> TrailingTrivia => (SyntaxList<SyntaxTrivia>)this.Green.TrailingTrivia.ToRedNode(this.Tree, this.Parent);
+    public SyntaxList<SyntaxTrivia> TrailingTrivia =>
+        (SyntaxList<SyntaxTrivia>)this.Green.TrailingTrivia.ToRedNode(this.Tree, this.Parent, this.FullPosition + this.Green.LeadingTrivia.FullWidth + this.Green.Width);
 
     public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxToken>();
 
     internal override Internal.Syntax.SyntaxToken Green { get; }
 
-    internal SyntaxToken(SyntaxTree tree, SyntaxNode? parent, Internal.Syntax.SyntaxToken green)
-        : base(tree, parent)
+    internal SyntaxToken(SyntaxTree tree, SyntaxNode? parent, int fullPosition, Internal.Syntax.SyntaxToken green)
+        : base(tree, parent, fullPosition)
     {
         this.Green = green;
     }

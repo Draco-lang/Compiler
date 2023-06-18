@@ -57,7 +57,7 @@ public sealed class SyntaxTree
     /// <summary>
     /// The root <see cref="SyntaxNode"/> of the tree.
     /// </summary>
-    public SyntaxNode Root => this.root ??= this.GreenRoot.ToRedNode(this, null);
+    public SyntaxNode Root => this.root ??= this.GreenRoot.ToRedNode(this, null, 0);
     private SyntaxNode? root;
 
     /// <summary>
@@ -177,14 +177,4 @@ public sealed class SyntaxTree
     public string ToDot() => this.GreenRoot.ToDot();
 
     public override string ToString() => this.Root.ToString();
-
-    internal void ComputeFullPositions()
-    {
-        var position = 0;
-        foreach (var node in this.Root.PreOrderTraverse())
-        {
-            node.SetFullPosition(position);
-            if (node is SyntaxToken token) position += token.Green.FullWidth;
-        }
-    }
 }

@@ -38,7 +38,10 @@ public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
             var existing = this.mappedNodes[index];
             if (existing is null)
             {
-                existing = this.GreenList[index].ToRedNode(this.Tree, this.Parent);
+                var prevWidth = Enumerable
+                    .Range(0, index)
+                    .Sum(i => this.GreenList[i].FullWidth);
+                existing = this.GreenList[index].ToRedNode(this.Tree, this.Parent, this.FullPosition + prevWidth);
                 this.mappedNodes[index] = existing;
             }
             return (TNode)existing;
@@ -47,8 +50,8 @@ public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
 
     private SyntaxNode?[]? mappedNodes = null;
 
-    internal SyntaxList(SyntaxTree tree, SyntaxNode? parent, IReadOnlyList<Internal.Syntax.SyntaxNode> green)
-        : base(tree, parent)
+    internal SyntaxList(SyntaxTree tree, SyntaxNode? parent, int fullPosition, IReadOnlyList<Internal.Syntax.SyntaxNode> green)
+        : base(tree, parent, fullPosition)
     {
         if (green is not Internal.Syntax.SyntaxNode greenNode) throw new ArgumentException("green must be a SyntaxNode", nameof(green));
         this.Green = greenNode;

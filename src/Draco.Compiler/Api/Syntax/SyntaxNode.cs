@@ -38,15 +38,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The position of the node, including leading trivia.
     /// </summary>
-    internal int FullPosition
-    {
-        get
-        {
-            if (this.fullPosition == -1) this.Tree.ComputeFullPositions();
-            return this.fullPosition;
-        }
-    }
-    private int fullPosition = -1;
+    internal int FullPosition { get; }
 
     /// <summary>
     /// The position of the node, excluding leading trivia.
@@ -61,8 +53,6 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
             return position;
         }
     }
-
-    internal void SetFullPosition(int fullPosition) => this.fullPosition = fullPosition;
 
     /// <summary>
     /// The span of this syntax node, excluding the trivia surrounding the node.
@@ -94,10 +84,11 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// </summary>
     internal abstract Internal.Syntax.SyntaxNode Green { get; }
 
-    internal SyntaxNode(SyntaxTree tree, SyntaxNode? parent)
+    internal SyntaxNode(SyntaxTree tree, SyntaxNode? parent, int fullPosition)
     {
         this.Tree = tree;
         this.Parent = parent;
+        this.FullPosition = fullPosition;
     }
 
     // Equality by green nodes

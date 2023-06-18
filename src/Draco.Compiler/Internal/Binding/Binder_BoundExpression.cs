@@ -352,8 +352,16 @@ internal partial class Binder
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
             if (member is PropertySymbol prop)
             {
-                var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
-                return new BoundPropertyGetExpression(mem.Syntax, left, getter);
+                // It could be array length
+                if (prop.GenericDefinition is ArrayLengthPropertySymbol)
+                {
+                    return new BoundArrayLengthExpression(mem.Syntax, left);
+                }
+                else
+                {
+                    var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
+                    return new BoundPropertyGetExpression(mem.Syntax, left, getter);
+                }
             }
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }

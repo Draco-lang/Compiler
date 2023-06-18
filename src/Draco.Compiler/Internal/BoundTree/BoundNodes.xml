@@ -162,6 +162,10 @@
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 
+  <Node Name="BoundArrayLengthExpression" Base="BoundExpression">
+    <Field Name="Array" Type="BoundExpression" />
+  </Node>
+
   <Node Name="BoundLocalExpression" Base="BoundExpression">
     <Field Name="Local" Type="LocalSymbol" />
   </Node>

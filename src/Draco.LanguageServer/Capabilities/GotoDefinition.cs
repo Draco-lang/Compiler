@@ -17,10 +17,12 @@ internal sealed partial class DracoLanguageServer : IGotoDefinition
 
     public Task<IList<Location>> GotoDefinitionAsync(DefinitionParams param, CancellationToken cancellationToken)
     {
-        var syntaxTree = this.GetSyntaxTree(param.TextDocument.Uri);
+        var compilation = this.compilation;
+
+        var syntaxTree = GetSyntaxTree(compilation, param.TextDocument.Uri);
         if (syntaxTree is null) return Task.FromResult<IList<Location>>(Array.Empty<Location>());
 
-        var semanticModel = this.compilation.GetSemanticModel(syntaxTree);
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var cursorPosition = Translator.ToCompiler(param.Position);
 
         var referencedSymbol = syntaxTree

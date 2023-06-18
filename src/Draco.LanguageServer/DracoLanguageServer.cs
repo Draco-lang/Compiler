@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.CodeCompletion;
@@ -34,10 +35,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     private readonly ILanguageClient client;
     private readonly DracoConfigurationRepository configurationRepository;
-    private readonly DracoDocumentRepository documentRepository = new();
 
     private Uri rootUri;
-    private Compilation compilation;
+    private volatile Compilation compilation;
 
     private readonly CompletionService completionService;
     private readonly SignatureService signatureService;
@@ -80,27 +80,31 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
             rootModulePath: rootPath);
     }
 
-    private SyntaxTree? GetSyntaxTree(DocumentUri documentUri)
+    private static SyntaxTree? GetSyntaxTree(Compilation compilation, DocumentUri documentUri)
     {
         var uri = documentUri.ToUri();
-        return this.compilation.SyntaxTrees.FirstOrDefault(t => t.SourceText.Path == uri);
+        return compilation.SyntaxTrees.FirstOrDefault(t => t.SourceText.Path == uri);
     }
 
-    private SyntaxTree UpdateDocument(DocumentUri documentUri, string? sourceText = null)
+    private async Task UpdateDocument(DocumentUri documentUri, string? sourceText = null)
     {
-        var newSourceText = sourceText is null
-            ? this.documentRepository.GetOrCreateDocument(documentUri)
-            : this.documentRepository.AddOrUpdateDocument(documentUri, sourceText);
-        var oldTree = this.GetSyntaxTree(documentUri);
-        var newTree = SyntaxTree.Parse(newSourceText);
-        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, newTree);
-        return newTree;
+        var compilation = this.compilation;
+
+        var oldTree = GetSyntaxTree(compilation, documentUri);
+        var newTree = SyntaxTree.Parse(sourceText is null
+            ? SourceText.FromFile(documentUri.ToUri())
+            : SourceText.FromText(documentUri.ToUri(), sourceText.AsMemory()));
+        this.compilation = compilation.UpdateSyntaxTree(oldTree, newTree);
+
+        await this.PublishDiagnosticsAsync(documentUri);
     }
 
     private async Task DeleteDocument(DocumentUri documentUri)
     {
-        var oldTree = this.GetSyntaxTree(documentUri);
-        this.compilation = this.compilation.UpdateSyntaxTree(oldTree, null);
+        var compilation = this.compilation;
+
+        var oldTree = GetSyntaxTree(compilation, documentUri);
+        this.compilation = compilation.UpdateSyntaxTree(oldTree, null);
         await this.PublishDiagnosticsAsync(documentUri);
     }
 
@@ -109,7 +113,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     public Task InitializeAsync(InitializeParams param)
     {
         if (param.WorkspaceFolders is null || param.WorkspaceFolders.Count == 0) return Task.CompletedTask;
-        this.rootUri = param.WorkspaceFolders[0].Uri;
+        Volatile.Write(ref this.rootUri, param.WorkspaceFolders[0].Uri);
         this.CreateCompilation();
         return Task.CompletedTask;
     }

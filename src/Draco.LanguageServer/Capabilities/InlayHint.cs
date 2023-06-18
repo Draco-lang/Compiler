@@ -19,10 +19,12 @@ internal sealed partial class DracoLanguageServer : IInlayHint
 
     public Task<IList<InlayHint>> InlayHintAsync(InlayHintParams param, CancellationToken cancellationToken)
     {
-        var syntaxTree = this.GetSyntaxTree(param.TextDocument.Uri);
+        var compilation = this.compilation;
+
+        var syntaxTree = GetSyntaxTree(compilation, param.TextDocument.Uri);
         if (syntaxTree is null) return Task.FromResult<IList<InlayHint>>(Array.Empty<InlayHint>());
 
-        var semanticModel = this.compilation.GetSemanticModel(syntaxTree);
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         // Get relevant config
         var config = this.configurationRepository.InlayHints;

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -18,6 +19,11 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// True, if this is a type variable, false otherwise.
     /// </summary>
     public virtual bool IsTypeVariable => false;
+
+    /// <summary>
+    /// True, if this is a ground type, meaning there are no type variables or all type variables have been substituted.
+    /// </summary>
+    public virtual bool IsGroundType => !this.IsGenericInstance || this.GenericArguments.All(t => t.IsGroundType);
 
     /// <summary>
     /// True, if this type is a value-type.

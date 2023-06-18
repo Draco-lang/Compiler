@@ -42,11 +42,11 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     {
         get
         {
-            if (this.fullPosition is null) this.Tree.ComputeFullPositions();
-            return this.fullPosition!.Value;
+            if (this.fullPosition == -1) this.Tree.ComputeFullPositions();
+            return this.fullPosition;
         }
     }
-    private int? fullPosition;
+    private int fullPosition = -1;
 
     /// <summary>
     /// The position of the node, excluding leading trivia.

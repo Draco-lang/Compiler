@@ -14,15 +14,18 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     {
         get
         {
-            if (this.NeedsBuild)
+            if (!this.NeedsBuild) return this.type!;
+            lock (this.buildLock)
             {
-                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
-                this.value = value;
-                // IMPORTANT: type is flag, written last
-                Volatile.Write(ref this.type, type);
+                if (this.NeedsBuild)
+                {
+                    var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
+                    this.value = value;
+                    // IMPORTANT: type is flag, written last
+                    Volatile.Write(ref this.type, type);
+                }
+                return this.type!;
             }
-            Debug.Assert(this.type is not null);
-            return this.type;
         }
     }
 
@@ -36,16 +39,20 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     {
         get
         {
-            // NOTE: We check the TYPE here, as value is nullable,
-            // but a type always needs to be inferred
-            if (this.NeedsBuild)
+            if (!this.NeedsBuild) return this.value;
+            lock (this.buildLock)
             {
-                var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
-                this.value = value;
-                // IMPORTANT: type is flag, written last
-                Volatile.Write(ref this.type, type);
+                // NOTE: We check the TYPE here, as value is nullable,
+                // but a type always needs to be inferred
+                if (this.NeedsBuild)
+                {
+                    var (type, value) = this.BindTypeAndValue(this.DeclaringCompilation!);
+                    this.value = value;
+                    // IMPORTANT: type is flag, written last
+                    Volatile.Write(ref this.type, type);
+                }
+                return this.value;
             }
-            return this.value;
         }
     }
 
@@ -58,6 +65,8 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     private readonly GlobalDeclaration declaration;
     private TypeSymbol? type;
     private BoundExpression? value;
+
+    private readonly object buildLock = new();
 
     public SourceGlobalSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
     {

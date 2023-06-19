@@ -37,18 +37,23 @@ internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunction
     {
         get
         {
-            if (this.contextNeedsBuild)
+            if (!this.contextNeedsBuild) return this.context;
+            lock (this.contextBuildLock)
             {
-                this.context = this.BuildContext();
-                // IMPORTANT: We write the flag last and here
-                this.contextNeedsBuild = false;
+                if (this.contextNeedsBuild)
+                {
+                    this.context = this.BuildContext();
+                    // IMPORTANT: We write the flag last and here
+                    this.contextNeedsBuild = false;
+                }
+                return this.context;
             }
-            return this.context;
         }
     }
     private GenericContext? context;
     // IMPORTANT: Flag is a bool and not computed because we can't atomically copy nullable structs
     private volatile bool contextNeedsBuild = true;
+    private readonly object contextBuildLock = new();
 
     private readonly MetadataTypeSymbol instantiatedType;
     private readonly MethodDefinition ctorDefinition;

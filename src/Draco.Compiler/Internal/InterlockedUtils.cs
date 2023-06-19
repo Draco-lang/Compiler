@@ -29,7 +29,7 @@ internal static class InterlockedUtils
 
     public static ImmutableArray<T> InitializeDefault<T>(ref ImmutableArray<T> field, Func<ImmutableArray<T>> factory)
     {
-        ImmutableInterlocked.InterlockedInitialize(ref field, factory());
+        if (field.IsDefault) ImmutableInterlocked.InterlockedInitialize(ref field, factory());
         return field;
     }
 }

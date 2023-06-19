@@ -17,16 +17,24 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
-            return this.genericParameters;
+            if (!this.genericsNeedsBuild) return this.genericParameters;
+            lock (this.genericsBuildLock)
+            {
+                if (this.genericsNeedsBuild) this.BuildGenerics();
+                return this.genericParameters;
+            }
         }
     }
     public override ImmutableArray<TypeSymbol> GenericArguments
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
-            return this.genericArguments;
+            if (!this.genericsNeedsBuild) return this.genericArguments;
+            lock (this.genericsBuildLock)
+            {
+                if (this.genericsNeedsBuild) this.BuildGenerics();
+                return this.genericArguments;
+            }
         }
     }
 
@@ -50,6 +58,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
 
     // IMPORTANT: Flag is a bool and not computed because we can't atomically copy structs
     private volatile bool genericsNeedsBuild = true;
+    private readonly object genericsBuildLock = new();
 
     public GenericContext Context { get; }
 
@@ -79,7 +88,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // Either way:
         //  - We have generic parameters, this is still a generic definition
         //  - Non-generic
-        // 
+        //
         return base.ToString();
     }
 

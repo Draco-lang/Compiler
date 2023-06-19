@@ -30,8 +30,12 @@ internal sealed class LocalBinder : Binder
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
-            return this.relativePositions!;
+            if (!this.NeedsBuild) return this.relativePositions!;
+            lock (this.buildLock)
+            {
+                if (this.NeedsBuild) this.Build();
+                return this.relativePositions!;
+            }
         }
     }
 
@@ -42,8 +46,12 @@ internal sealed class LocalBinder : Binder
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
-            return this.declarations;
+            if (!this.NeedsBuild) return this.declarations;
+            lock (this.buildLock)
+            {
+                if (this.NeedsBuild) this.Build();
+                return this.declarations;
+            }
         }
     }
 
@@ -54,8 +62,12 @@ internal sealed class LocalBinder : Binder
     {
         get
         {
-            if (this.NeedsBuild) this.Build();
-            return this.localDeclarations;
+            if (!this.NeedsBuild) return this.localDeclarations;
+            lock (this.buildLock)
+            {
+                if (this.NeedsBuild) this.Build();
+                return this.localDeclarations;
+            }
         }
     }
 
@@ -68,6 +80,8 @@ internal sealed class LocalBinder : Binder
 
     // IMPORTANT: The choice of flag field is important because of write order
     private bool NeedsBuild => Volatile.Read(ref this.relativePositions) is null;
+
+    private readonly object buildLock = new();
 
     private ImmutableDictionary<SyntaxNode, int>? relativePositions;
     private ImmutableArray<Symbol> declarations;

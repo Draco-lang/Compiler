@@ -21,16 +21,24 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     {
         get
         {
-            if (this.SignatureNeedsBuild) this.BuildSignature();
-            return this.parameters;
+            if (!this.SignatureNeedsBuild) return this.parameters;
+            lock (this.signatureBuildLock)
+            {
+                if (this.SignatureNeedsBuild) this.BuildSignature();
+                return this.parameters;
+            }
         }
     }
     public override TypeSymbol ReturnType
     {
         get
         {
-            if (this.SignatureNeedsBuild) this.BuildSignature();
-            return this.returnType!;
+            if (!this.SignatureNeedsBuild) return this.returnType!;
+            lock (this.signatureBuildLock)
+            {
+                if (this.SignatureNeedsBuild) this.BuildSignature();
+                return this.returnType!;
+            }
         }
     }
 
@@ -57,6 +65,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly MethodDefinition methodDefinition;
+    private readonly object signatureBuildLock = new();
 
     public MetadataMethodSymbol(Symbol containingSymbol, MethodDefinition methodDefinition)
     {

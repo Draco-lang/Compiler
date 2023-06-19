@@ -9,8 +9,9 @@ namespace Draco.Compiler.Internal.Declarations;
 /// </summary>
 internal sealed class MergedModuleDeclaration : Declaration
 {
-    public override ImmutableArray<Declaration> Children => this.children ??= this.BuildChildren();
-    private ImmutableArray<Declaration>? children;
+    public override ImmutableArray<Declaration> Children =>
+        this.children.IsDefault ? (this.children = this.BuildChildren()) : this.children;
+    private ImmutableArray<Declaration> children;
 
     /// <summary>
     /// The path of this module, including the root module.

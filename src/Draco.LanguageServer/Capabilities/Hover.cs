@@ -15,11 +15,17 @@ internal sealed partial class DracoLanguageServer : IHover
 
     public Task<Hover?> HoverAsync(HoverParams param, CancellationToken cancellationToken)
     {
+        var compilation = this.compilation;
+
+        var syntaxTree = GetSyntaxTree(compilation, param.TextDocument.Uri);
+        if (syntaxTree is null) return Task.FromResult(null as Hover);
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var cursorPosition = Translator.ToCompiler(param.Position);
 
-        var referencedSymbol = this.syntaxTree
+        var referencedSymbol = syntaxTree
             .TraverseSubtreesAtPosition(cursorPosition)
-            .Select(symbol => this.semanticModel.GetReferencedSymbol(symbol) ?? this.semanticModel.GetDeclaredSymbol(symbol))
+            .Select(symbol => semanticModel.GetReferencedSymbol(symbol) ?? semanticModel.GetDeclaredSymbol(symbol))
             .LastOrDefault(symbol => symbol is not null);
 
         var docs = referencedSymbol is null ? string.Empty : referencedSymbol.Documentation;

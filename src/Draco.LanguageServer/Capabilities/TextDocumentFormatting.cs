@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,11 +16,16 @@ internal sealed partial class DracoLanguageServer : ITextDocumentFormatting
 
     public Task<IList<TextEdit>?> FormatTextDocumentAsync(DocumentFormattingParams param, CancellationToken cancellationToken)
     {
-        var originalRange = this.syntaxTree.Root.Range;
-        this.syntaxTree = this.syntaxTree.Format();
+        var compilation = this.compilation;
+
+        var syntaxTree = GetSyntaxTree(compilation, param.TextDocument.Uri);
+        if (syntaxTree is null) return Task.FromResult(null as IList<TextEdit>);
+
+        var originalRange = syntaxTree.Root.Range;
+        syntaxTree = syntaxTree.Format();
         var edit = new TextEdit()
         {
-            NewText = this.syntaxTree.ToString(),
+            NewText = syntaxTree.ToString(),
             Range = Translator.ToLsp(originalRange),
         };
         return Task.FromResult<IList<TextEdit>?>(new[] { edit });

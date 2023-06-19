@@ -11,8 +11,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadataClass
 {
-    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
-    private ImmutableArray<Symbol>? members;
+    public override IEnumerable<Symbol> Members =>
+        this.members.IsDefault ? (this.members = this.BuildMembers()) : this.members;
+    private ImmutableArray<Symbol> members;
 
     public override string Name => this.name ??= this.BuildName();
     private string? name;
@@ -21,8 +22,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
-    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
+        this.genericParameters.IsDefault ? (this.genericParameters = this.BuildGenericParameters()) : this.genericParameters;
+    private ImmutableArray<TypeParameterSymbol> genericParameters;
 
     public override Symbol ContainingSymbol { get; }
     // TODO: Is this correct?

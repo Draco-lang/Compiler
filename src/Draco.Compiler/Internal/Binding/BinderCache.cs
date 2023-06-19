@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace Draco.Compiler.Internal.Binding;
 internal sealed class BinderCache
 {
     private readonly Compilation compilation;
-    private readonly Dictionary<SyntaxNode, Binder> binders = new();
+    private readonly ConcurrentDictionary<SyntaxNode, Binder> binders = new();
 
     public BinderCache(Compilation compilation)
     {
@@ -31,13 +32,7 @@ internal sealed class BinderCache
         var scopeDefiningAncestor = BinderFacts.GetScopeDefiningAncestor(syntax);
         Debug.Assert(scopeDefiningAncestor is not null);
 
-        if (!this.binders.TryGetValue(scopeDefiningAncestor, out var binder))
-        {
-            binder = this.BuildBinder(scopeDefiningAncestor);
-            this.binders.Add(scopeDefiningAncestor, binder);
-        }
-
-        return binder;
+        return this.binders.GetOrAdd(scopeDefiningAncestor, this.BuildBinder);
     }
 
     private Binder BuildBinder(SyntaxNode syntax) => syntax switch

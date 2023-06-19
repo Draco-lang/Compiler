@@ -20,8 +20,9 @@ internal sealed class SingleModuleDeclaration : Declaration
     /// </summary>
     public SplitPath Path { get; }
 
-    public override ImmutableArray<Declaration> Children => this.children ??= this.BuildChildren();
-    private ImmutableArray<Declaration>? children;
+    public override ImmutableArray<Declaration> Children =>
+        this.children.IsDefault ? (this.children = this.BuildChildren()) : this.children;
+    private ImmutableArray<Declaration> children;
 
     public SingleModuleDeclaration(string name, SplitPath path, ContainerSyntax syntax)
         : base(name)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.CodeCompletion;
@@ -34,12 +35,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     private readonly ILanguageClient client;
     private readonly DracoConfigurationRepository configurationRepository;
-    private readonly DracoDocumentRepository documentRepository = new();
 
     private Uri rootUri;
-    private Compilation compilation;
-    private SemanticModel semanticModel;
-    private SyntaxTree syntaxTree;
+    private volatile Compilation compilation;
 
     private readonly CompletionService completionService;
     private readonly SignatureService signatureService;
@@ -52,10 +50,8 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.rootUri = default!; // Default value, it will be given correct value on initialization
 
         // Some empty defaults
-        this.syntaxTree = SyntaxTree.Create(SyntaxFactory.CompilationUnit());
         this.compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(this.syntaxTree));
-        this.semanticModel = this.compilation.GetSemanticModel(this.syntaxTree);
+            syntaxTrees: ImmutableArray<SyntaxTree>.Empty);
 
         this.completionService = new CompletionService();
         this.completionService.AddProvider(new KeywordCompletionProvider());
@@ -71,7 +67,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private void CreateCompilation()
     {
         var rootPath = this.rootUri.LocalPath;
-        var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories).Select(x => SyntaxTree.Parse(SourceText.FromFile(x))).ToImmutableArray();
+        var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
+            .Select(x => SyntaxTree.Parse(SourceText.FromFile(x)))
+            .ToImmutableArray();
 
         this.compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
@@ -82,12 +80,40 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
             rootModulePath: rootPath);
     }
 
+    private static SyntaxTree? GetSyntaxTree(Compilation compilation, DocumentUri documentUri)
+    {
+        var uri = documentUri.ToUri();
+        return compilation.SyntaxTrees.FirstOrDefault(t => t.SourceText.Path == uri);
+    }
+
+    private async Task UpdateDocument(DocumentUri documentUri, string? sourceText = null)
+    {
+        var compilation = this.compilation;
+
+        var oldTree = GetSyntaxTree(compilation, documentUri);
+        var newTree = SyntaxTree.Parse(sourceText is null
+            ? SourceText.FromFile(documentUri.ToUri())
+            : SourceText.FromText(documentUri.ToUri(), sourceText.AsMemory()));
+        this.compilation = compilation.UpdateSyntaxTree(oldTree, newTree);
+
+        await this.PublishDiagnosticsAsync(documentUri);
+    }
+
+    private async Task DeleteDocument(DocumentUri documentUri)
+    {
+        var compilation = this.compilation;
+
+        var oldTree = GetSyntaxTree(compilation, documentUri);
+        this.compilation = compilation.UpdateSyntaxTree(oldTree, null);
+        await this.PublishDiagnosticsAsync(documentUri);
+    }
+
     public void Dispose() { }
 
     public Task InitializeAsync(InitializeParams param)
     {
         if (param.WorkspaceFolders is null || param.WorkspaceFolders.Count == 0) return Task.CompletedTask;
-        this.rootUri = param.WorkspaceFolders[0].Uri;
+        Volatile.Write(ref this.rootUri, param.WorkspaceFolders[0].Uri);
         this.CreateCompilation();
         return Task.CompletedTask;
     }

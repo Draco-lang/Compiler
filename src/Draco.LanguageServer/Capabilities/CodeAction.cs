@@ -18,7 +18,13 @@ internal sealed partial class DracoLanguageServer : ICodeAction
 
     public Task<IList<OneOf<Command, CodeAction>>?> CodeActionAsync(CodeActionParams param, CancellationToken cancellationToken)
     {
-        var fixes = this.codeFixService.GetCodeFixes(this.syntaxTree, this.semanticModel, Translator.ToCompiler(param.Range));
+        var compilation = this.compilation;
+
+        var syntaxTree = GetSyntaxTree(compilation, param.TextDocument.Uri);
+        if (syntaxTree is null) return Task.FromResult(null as IList<OneOf<Command, CodeAction>>);
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var fixes = this.codeFixService.GetCodeFixes(syntaxTree, semanticModel, Translator.ToCompiler(param.Range));
         var actions = new List<OneOf<Command, CodeAction>>();
 
         foreach (var fix in fixes)

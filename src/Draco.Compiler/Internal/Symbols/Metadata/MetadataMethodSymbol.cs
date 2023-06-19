@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -12,8 +13,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 {
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters ??= this.BuildGenericParameters();
-    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
+        this.genericParameters.IsDefault ? (this.genericParameters = this.BuildGenericParameters()) : this.genericParameters;
+    private ImmutableArray<TypeParameterSymbol> genericParameters;
 
     public override ImmutableArray<ParameterSymbol> Parameters
     {
@@ -39,7 +41,8 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     public override Symbol ContainingSymbol { get; }
 
-    private bool SignatureNeedsBuild => this.returnType is null;
+    // IMPORTANT: Choice of flag field because of write order
+    private bool SignatureNeedsBuild => Volatile.Read(ref this.returnType) is null;
 
     private ImmutableArray<ParameterSymbol> parameters;
     private TypeSymbol? returnType;
@@ -93,8 +96,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             parameters.Add(paramSym);
         }
         this.parameters = parameters.ToImmutable();
-
-        // Build return type
-        this.returnType = signature.ReturnType;
+        // IMPORTANT: returnType is the build flag, needs to be written last
+        Volatile.Write(ref this.returnType, signature.ReturnType);
     }
 }

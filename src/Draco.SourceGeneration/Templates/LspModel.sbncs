@@ -69,15 +69,15 @@ namespace Draco.Lsp.Model;
 {{end}}
 
 {{func property(decl, settable)}}
+    {{$is_required = !decl.OmitIfNull && !decl.Value && settable}}
     {{summary(decl.Documentation)}}
     {{obsolete(decl.Deprecated)}}
     [JsonPropertyName({{string.literal(decl.SerializedName)}})]
     [JsonIgnore(Condition = JsonIgnoreCondition.{{if decl.OmitIfNull}}WhenWritingDefault{{else}}Never{{end}})]
-    {{if !decl.OmitIfNull}}
+    {{if $is_required}}
         [JsonRequired]
     {{end}}
-    {{$use_required_modifier = !decl.OmitIfNull && !decl.Value && settable}}
-    public {{if $use_required_modifier}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
+    public {{if $is_required}}required{{end}} {{type(decl.Type)}} {{decl.Name}}
     {{if decl.Value}}
         =>
         {{case decl.ValueDiscriminator}}

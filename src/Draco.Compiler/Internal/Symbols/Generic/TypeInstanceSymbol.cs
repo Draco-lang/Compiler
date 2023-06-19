@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -17,24 +18,25 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.NeedsGenericsBuild) this.BuildGenerics();
-            return this.genericParameters!.Value;
+            if (this.genericsNeedsBuild) this.BuildGenerics();
+            return this.genericParameters;
         }
     }
     public override ImmutableArray<TypeSymbol> GenericArguments
     {
         get
         {
-            if (this.NeedsGenericsBuild) this.BuildGenerics();
-            return this.genericArguments!.Value;
+            if (this.genericsNeedsBuild) this.BuildGenerics();
+            return this.genericArguments;
         }
     }
 
-    private ImmutableArray<TypeSymbol>? genericArguments;
-    private ImmutableArray<TypeParameterSymbol>? genericParameters;
+    private ImmutableArray<TypeSymbol> genericArguments;
+    private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override IEnumerable<Symbol> Members => this.members ??= this.BuildMembers();
-    private ImmutableArray<Symbol>? members;
+    public override IEnumerable<Symbol> Members =>
+        this.members.IsDefault ? (this.members = this.BuildMembers()) : this.members;
+    private ImmutableArray<Symbol> members;
 
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;
@@ -44,7 +46,8 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
 
     public override TypeSymbol GenericDefinition { get; }
 
-    private bool NeedsGenericsBuild => this.genericParameters is null;
+    // IMPORTANT: Flag is a bool and not computed because we can't atomically write structs
+    private volatile bool genericsNeedsBuild = true;
 
     public GenericContext Context { get; }
 
@@ -105,6 +108,8 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         {
             this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
             this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: Flag is written last
+            this.genericsNeedsBuild = false;
             return;
         }
 
@@ -116,6 +121,8 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         {
             this.genericParameters = this.GenericDefinition.GenericParameters;
             this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            // IMPORTANT: Flag is written last
+            this.genericsNeedsBuild = false;
             return;
         }
 
@@ -124,6 +131,8 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         this.genericArguments = this.GenericDefinition.GenericParameters
             .Select(param => this.Context[param])
             .ToImmutableArray();
+        // IMPORTANT: Flag is written last
+        this.genericsNeedsBuild = false;
     }
 
     private ImmutableArray<Symbol> BuildMembers() => this.GenericDefinition.Members

@@ -154,6 +154,7 @@ internal sealed class Parser
     {
         TokenKind.KeywordImport,
         TokenKind.KeywordFunc,
+        TokenKind.KeywordModule,
         TokenKind.KeywordVar,
         TokenKind.KeywordVal,
     };

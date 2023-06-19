@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Draco.Compiler.Internal;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -68,16 +69,14 @@ public sealed class SeparatedSyntaxList<TNode> : SyntaxNode, IEnumerable<SyntaxN
 
     private SyntaxNode GetNodeAt(int index)
     {
-        this.mappedNodes ??= new SyntaxNode?[this.GreenList.Count];
-        var existing = this.mappedNodes[index];
-        if (existing is null)
+        var mappedNodes = InterlockedUtils.InitializeNull(ref this.mappedNodes, () => new SyntaxNode?[this.GreenList.Count]);
+        var existing = InterlockedUtils.InitializeNull(ref mappedNodes[index], () =>
         {
             var prevWidth = Enumerable
                 .Range(0, index)
                 .Sum(i => this.GreenList[i].FullWidth);
-            existing = this.GreenList[index].ToRedNode(this.Tree, this.Parent, this.FullPosition + prevWidth);
-            this.mappedNodes[index] = existing;
-        }
+            return this.GreenList[index].ToRedNode(this.Tree, this.Parent, this.FullPosition + prevWidth);
+        });
         return existing;
     }
 }

@@ -12,13 +12,14 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members =>
-        this.members.IsDefault ? (this.members = this.BuildMembers()) : this.members;
+        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(this.namespaceDefinition.Name);
     public override Symbol ContainingSymbol { get; }
 
+    // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 

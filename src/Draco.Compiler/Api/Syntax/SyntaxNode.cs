@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -25,9 +26,9 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The diagnostics on this tree node.
     /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics.IsDefault
-        ? (this.diagnostics = this.Tree.SyntaxDiagnosticTable.Get(this).ToImmutableArray())
-        : this.diagnostics;
+    public ImmutableArray<Diagnostic> Diagnostics => InterlockedUtils.InitializeDefault(
+        ref this.diagnostics,
+        () => this.Tree.SyntaxDiagnosticTable.Get(this).ToImmutableArray());
     private ImmutableArray<Diagnostic> diagnostics;
 
     /// <summary>

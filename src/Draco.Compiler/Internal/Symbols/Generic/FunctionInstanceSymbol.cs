@@ -34,10 +34,10 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
     public override ImmutableArray<ParameterSymbol> Parameters =>
-        this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
+        InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
+    public override TypeSymbol ReturnType => InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
     public override string Name => this.GenericDefinition.Name;

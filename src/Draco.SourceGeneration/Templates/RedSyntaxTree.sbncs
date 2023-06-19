@@ -21,7 +21,13 @@ namespace Draco.Compiler.Api.Syntax;
         {{for $field in $node.Fields}}
             {{$backingField = camel_case($field.Name)}}
             {{field_prefix($field)}} =>
-                this.{{$backingField}} ??= ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this, {{$fieldFullPosition}});
+            {{if $field.IsNullable}}
+            Internal.InterlockedUtils.InitializeMaybeNull(
+            {{else}}
+                Internal.InterlockedUtils.InitializeNull(
+            {{end}}
+                ref this.{{$backingField}},
+                () => ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this, {{$fieldFullPosition}}));
             private {{$field.NonNullableType}}? {{$backingField}};
             {{if $field.IsNullable}}
                 {{$fieldFullPosition += '+ (this.Green.' + $field.Name + '?.FullWidth ?? 0)'}}

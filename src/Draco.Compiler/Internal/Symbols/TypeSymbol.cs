@@ -10,12 +10,6 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 {
     /// <summary>
-    /// The substitution for this type, in case it's a type variable.
-    /// If it's not, then the type itself.
-    /// </summary>
-    public virtual TypeSymbol Substitution => this;
-
-    /// <summary>
     /// True, if this is a type variable, false otherwise.
     /// </summary>
     public virtual bool IsTypeVariable => false;

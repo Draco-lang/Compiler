@@ -19,10 +19,11 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
 
     public override ImmutableArray<ParameterSymbol> Parameters =>
-        this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
+        InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
+    public override TypeSymbol ReturnType =>
+        InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
     /// <summary>
@@ -33,10 +34,12 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
     /// <summary>
     /// The array element type.
     /// </summary>
-    public TypeParameterSymbol ElementType => this.elementType ??= this.BuildElementType();
+    public TypeParameterSymbol ElementType =>
+        InterlockedUtils.InitializeNull(ref this.elementType, this.BuildElementType);
     private TypeParameterSymbol? elementType;
 
-    public override BoundStatement Body => this.body ??= this.BuildBody();
+    public override BoundStatement Body =>
+        InterlockedUtils.InitializeNull(ref this.body, this.BuildBody);
     private BoundStatement? body;
 
     public ArrayConstructorSymbol(int rank)

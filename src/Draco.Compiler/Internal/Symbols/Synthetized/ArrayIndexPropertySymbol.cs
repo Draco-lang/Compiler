@@ -34,7 +34,7 @@ internal sealed class ArrayIndexPropertySymbol : PropertySymbol
 internal sealed class ArrayIndexGetSymbol : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters =>
-        this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
+        InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
     public override TypeSymbol ReturnType => this.ContainingSymbol.ElementType;
@@ -64,7 +64,7 @@ internal sealed class ArrayIndexGetSymbol : FunctionSymbol, IPropertyAccessorSym
 internal sealed class ArrayIndexSetSymbol : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters =>
-        this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
+        InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
     // TODO: Is this correct? Should we return array element instead?

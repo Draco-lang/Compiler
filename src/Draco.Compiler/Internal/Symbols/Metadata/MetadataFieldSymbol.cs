@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 {
-    public override TypeSymbol Type => this.type ??= this.BuildType();
+    public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
@@ -25,6 +25,7 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
     /// <summary>
     /// The metadata assembly of this metadata symbol.
     /// </summary>
+    // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 

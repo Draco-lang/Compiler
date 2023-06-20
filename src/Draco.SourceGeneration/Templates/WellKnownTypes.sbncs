@@ -23,8 +23,9 @@ internal sealed partial class WellKnownTypes
             {{for $b in $assembly.PublicKeyToken}}{{$b}}, {{end}}
         };
 
-        public MetadataAssemblySymbol {{$prop_name}} =>
-            this.{{$field_name}} ??= this.GetAssemblyWithNameAndToken("{{$assembly.Name}}", {{$prop_name}}_PublicKeyToken);
+        public MetadataAssemblySymbol {{$prop_name}} => InterlockedUtils.InitializeNull(
+            ref this.{{$field_name}},
+            () => this.GetAssemblyWithNameAndToken("{{$assembly.Name}}", {{$prop_name}}_PublicKeyToken));
         private MetadataAssemblySymbol? {{$field_name}};
     {{end}}
 
@@ -33,12 +34,13 @@ internal sealed partial class WellKnownTypes
         {{$field_name = camel_case($prop_name)}}
         {{$path = string.split($type.Name, '.')}}
 
-        public MetadataTypeSymbol {{$prop_name}} =>
-            this.{{$field_name}} ??= this.GetTypeFromAssembly(
+        public MetadataTypeSymbol {{$prop_name}} => InterlockedUtils.InitializeNull(
+            ref this.{{$field_name}},
+            () => this.GetTypeFromAssembly(
                 {{nameify($type.Assembly.Name)}},
                 ImmutableArray.Create({{wrap separated(', ', $path)}}
                     "{{$element}}"
-                {{end}}));
+                {{end}})));
         private MetadataTypeSymbol? {{$field_name}};
     {{end}}
 

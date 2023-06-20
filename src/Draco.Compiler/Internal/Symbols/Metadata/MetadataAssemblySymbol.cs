@@ -15,7 +15,8 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     /// <summary>
     /// The root namespace of this assembly.
     /// </summary>
-    public MetadataNamespaceSymbol RootNamespace => this.rootNamespace ??= this.BuildRootNamespace();
+    public MetadataNamespaceSymbol RootNamespace =>
+        InterlockedUtils.InitializeNull(ref this.rootNamespace, this.BuildRootNamespace);
     private MetadataNamespaceSymbol? rootNamespace;
 
     public override string Name => this.MetadataName;
@@ -26,7 +27,8 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     /// <summary>
     /// The <see cref="System.Reflection.AssemblyName"/> of this referenced assembly.
     /// </summary>
-    public AssemblyName AssemblyName => this.assemblyName ??= this.assemblyDefinition.GetAssemblyName();
+    public AssemblyName AssemblyName =>
+        InterlockedUtils.InitializeNull(ref this.assemblyName, this.assemblyDefinition.GetAssemblyName);
     private AssemblyName? assemblyName;
 
     public override string MetadataName => this.MetadataReader.GetString(this.assemblyDefinition.Name);

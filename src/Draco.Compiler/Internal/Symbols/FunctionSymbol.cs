@@ -92,7 +92,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     public override IEnumerable<Symbol> Members => this.Parameters;
 
-    public TypeSymbol Type => this.type ??= this.BuildType();
+    public TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public override string ToString()

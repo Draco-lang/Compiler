@@ -16,18 +16,16 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.genericParameters.IsDefault
-        ? (this.genericParameters = this.BindGenericParameters(this.DeclaringCompilation!.GlobalDiagnosticBag))
-        : this.genericParameters;
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
+        InterlockedUtils.InitializeDefault(ref this.genericParameters, () => this.BindGenericParameters(this.DeclaringCompilation!.GlobalDiagnosticBag));
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override ImmutableArray<ParameterSymbol> Parameters => this.parameters.IsDefault
-        ? (this.parameters = this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag))
-        : this.parameters;
+    public override ImmutableArray<ParameterSymbol> Parameters =>
+        InterlockedUtils.InitializeDefault(ref this.parameters, () => this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag));
     private ImmutableArray<ParameterSymbol> parameters;
 
     public override TypeSymbol ReturnType =>
-        this.returnType ??= this.BindReturnType(this.DeclaringCompilation!);
+        InterlockedUtils.InitializeNull(ref this.returnType, () => this.BindReturnType(this.DeclaringCompilation!));
     private TypeSymbol? returnType;
 
     public override Symbol ContainingSymbol { get; }
@@ -36,7 +34,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 
-    public BoundStatement Body => this.body ??= this.BindBody(this.DeclaringCompilation!);
+    public BoundStatement Body =>
+        InterlockedUtils.InitializeNull(ref this.body, () => this.BindBody(this.DeclaringCompilation!));
     private BoundStatement? body;
 
     public override string Documentation => this.DeclaringSyntax.Documentation;

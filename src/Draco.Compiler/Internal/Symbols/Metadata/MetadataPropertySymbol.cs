@@ -12,11 +12,11 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     public override TypeSymbol Type => this.Getter?.ReturnType ?? this.Setter?.Parameters[0].Type ?? throw new InvalidOperationException();
 
     // NOTE: This can lead to re-asking for the accessor, in case there isn't one
-    public override FunctionSymbol? Getter => this.getter ??= this.BuildGetter();
+    public override FunctionSymbol? Getter => InterlockedUtils.InitializeMaybeNull(ref this.getter, this.BuildGetter);
     private FunctionSymbol? getter;
 
     // NOTE: This can lead to re-asking for the accessor, in case there isn't one
-    public override FunctionSymbol? Setter => this.setter ??= this.BuildSetter();
+    public override FunctionSymbol? Setter => InterlockedUtils.InitializeMaybeNull(ref this.setter, this.BuildSetter);
     private FunctionSymbol? setter;
 
     public override bool IsStatic => (this.Getter ?? this.Setter)?.IsStatic ?? throw new InvalidOperationException();
@@ -32,6 +32,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     /// <summary>
     /// The metadata assembly of this metadata symbol.
     /// </summary>
+    // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 

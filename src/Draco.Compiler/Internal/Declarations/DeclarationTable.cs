@@ -30,7 +30,8 @@ internal sealed class DeclarationTable
     /// <summary>
     /// The merged root module.
     /// </summary>
-    public MergedModuleDeclaration MergedRoot => this.mergedRoot ??= this.BuildMergedRoot();
+    public MergedModuleDeclaration MergedRoot =>
+        InterlockedUtils.InitializeNull(ref this.mergedRoot, this.BuildMergedRoot);
     private MergedModuleDeclaration? mergedRoot;
 
     /// <summary>

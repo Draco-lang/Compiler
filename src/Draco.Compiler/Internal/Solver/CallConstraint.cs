@@ -54,7 +54,7 @@ internal sealed class CallConstraint : Constraint<Unit>
     public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
     start:
-        var called = this.Unwrap(this.CalledType);
+        var called = this.CalledType.Substitution;
         // We can't advance on type variables
         if (called.IsTypeVariable)
         {

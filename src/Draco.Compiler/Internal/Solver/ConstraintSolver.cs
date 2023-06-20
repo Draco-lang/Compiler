@@ -39,7 +39,7 @@ internal sealed class ConstraintSolver
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = new();
     // Type variable substitutions
-    private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new();
     // The declared/inferred types of locals
     private readonly Dictionary<UntypedLocalSymbol, TypeSymbol> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
     // All locals that have a typed variant constructed
@@ -177,7 +177,7 @@ internal sealed class ConstraintSolver
         }
         else
         {
-            var constraint = new AwaitConstraint<TResult>(this, () => !this.Unwrap(original).IsTypeVariable, map);
+            var constraint = new AwaitConstraint<TResult>(this, () => !original.Substitution.IsTypeVariable, map);
             this.Add(constraint);
 
             var await = new AwaitConstraint<TResult>(this,
@@ -273,7 +273,7 @@ internal sealed class ConstraintSolver
     {
         foreach (var (local, localType) in this.inferredLocalTypes)
         {
-            var unwrappedLocalType = this.Unwrap(localType);
+            var unwrappedLocalType = localType.Substitution;
             if (unwrappedLocalType is TypeVariable typeVar)
             {
                 this.Unify(typeVar, IntrinsicSymbols.UninferredType);
@@ -288,7 +288,7 @@ internal sealed class ConstraintSolver
     private void CheckForIncompleteInference(DiagnosticBag diagnostics)
     {
         var inferenceFailed = this.constraints.Count > 0
-                           || this.typeVariables.Select(this.Unwrap).Any(t => t.IsTypeVariable);
+                           || this.typeVariables.Select(t => t.Substitution).Any(t => t.IsTypeVariable);
         if (!inferenceFailed) return;
 
         // Couldn't solve all constraints or infer all variables
@@ -303,7 +303,7 @@ internal sealed class ConstraintSolver
         // We also unify type variables with the error type
         foreach (var typeVar in this.typeVariables)
         {
-            var unwrapped = this.Unwrap(typeVar);
+            var unwrapped = typeVar.Substitution;
             if (unwrapped is TypeVariable unwrappedTv) this.Unify(unwrappedTv, IntrinsicSymbols.UninferredType);
         }
     }
@@ -326,7 +326,7 @@ internal sealed class ConstraintSolver
     /// </summary>
     /// <param name="local">The local to get the type of.</param>
     /// <returns>The type of the local inferred so far.</returns>
-    public TypeSymbol GetLocalType(UntypedLocalSymbol local) => this.Unwrap(this.inferredLocalTypes[local]);
+    public TypeSymbol GetLocalType(UntypedLocalSymbol local) => this.inferredLocalTypes[local].Substitution;
 
     /// <summary>
     /// Retrieves the typed variant of an untyped local symbol. In case this is the first time the local is
@@ -373,9 +373,9 @@ internal sealed class ConstraintSolver
         // If it is, but has no substitutions, just return it as-is
         if (!this.substitutions.TryGetValue(typeVar, out var substitution)) return typeVar;
         // If the substitution is also a type-variable, we prune
-        if (substitution is TypeVariable)
+        if (substitution.IsTypeVariable)
         {
-            substitution = this.Unwrap(substitution);
+            substitution = substitution.Substitution;
             this.substitutions[typeVar] = substitution;
         }
         return substitution;
@@ -397,8 +397,8 @@ internal sealed class ConstraintSolver
     /// <returns>True, if unification was successful, false otherwise.</returns>
     public bool Unify(TypeSymbol first, TypeSymbol second)
     {
-        first = this.Unwrap(first);
-        second = this.Unwrap(second);
+        first = first.Substitution;
+        second = second.Substitution;
 
         // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComprer, this is unification
         if (ReferenceEquals(first, second)) return true;
@@ -474,8 +474,8 @@ internal sealed class ConstraintSolver
     /// <returns>The score of the match.</returns>
     public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
     {
-        var paramType = this.Unwrap(param.Type);
-        argType = this.Unwrap(argType);
+        var paramType = param.Type.Substitution;
+        argType = argType.Substitution;
 
         // If either are still not ground types, we can't decide
         if (!paramType.IsGroundType || !argType.IsGroundType) return null;

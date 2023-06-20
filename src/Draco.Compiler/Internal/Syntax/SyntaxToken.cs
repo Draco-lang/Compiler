@@ -80,7 +80,7 @@ internal sealed partial class SyntaxToken : SyntaxNode
     /// <returns>A new builder with all data copied from this token.</returns>
     public Builder ToBuilder() => Builder.From(this);
 
-    public override Api.Syntax.SyntaxToken ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent) => new(tree, parent, this);
+    public override Api.Syntax.SyntaxToken ToRedNode(SyntaxTree tree, Api.Syntax.SyntaxNode? parent, int fullPosition) => new(tree, parent, fullPosition, this);
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxToken(this);
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxToken(this);
 }

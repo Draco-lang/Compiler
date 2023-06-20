@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Symbols;
 internal sealed class MergedModuleSymbol : ModuleSymbol
 {
     public override IEnumerable<Symbol> Members =>
-        this.members.IsDefault ? (this.members = this.BuildMembers()) : this.members;
+        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     public override Symbol? ContainingSymbol { get; }

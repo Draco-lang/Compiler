@@ -514,7 +514,7 @@ internal partial class Binder
         var returnType = constraints.AllocateTypeVariable();
         var promise = constraints.Substituted(receiver.TypeRequired, () =>
         {
-            var receiverType = constraints.Unwrap(receiver.TypeRequired);
+            var receiverType = receiver.TypeRequired.Substitution;
 
             // General indexer
             var indexers = receiverType

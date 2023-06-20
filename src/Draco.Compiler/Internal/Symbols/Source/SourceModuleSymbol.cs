@@ -19,9 +19,8 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 {
     public override Compilation DeclaringCompilation { get; }
 
-    public override IEnumerable<Symbol> Members => this.members.IsDefault
-        ? (this.members = this.BindMembers(this.DeclaringCompilation!.GlobalDiagnosticBag))
-        : this.members;
+    public override IEnumerable<Symbol> Members =>
+        InterlockedUtils.InitializeDefault(ref this.members, () => this.BindMembers(this.DeclaringCompilation!.GlobalDiagnosticBag));
     private ImmutableArray<Symbol> members;
 
     public override Symbol? ContainingSymbol { get; }

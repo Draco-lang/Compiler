@@ -41,9 +41,11 @@ internal sealed class TypeVariable : TypeSymbol, IEquatable<TypeVariable>
     public override int GetHashCode() => this.index.GetHashCode();
     public override bool Equals(object? obj) => this.Equals(obj as TypeVariable);
 
-    public override string ToString() => this.Substitution is TypeVariable typeVar
-        ? $"{StringUtils.IndexToExcelColumnName(typeVar.index)}'"
-        : this.Substitution.ToString();
+    public override string ToString() => this.Substitution switch
+    {
+        TypeVariable typeVar => $"{StringUtils.IndexToExcelColumnName(typeVar.index)}'",
+        var t => t.ToString(),
+    };
 
     public override void Accept(SymbolVisitor visitor) => throw new NotSupportedException();
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => throw new NotSupportedException();

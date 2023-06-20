@@ -18,6 +18,12 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// </summary>
     public virtual bool IsValueType => false;
 
+    /// <summary>
+    /// The substituted type of this one, in case this is a type variable.
+    /// It's this instance itself, if not a type variable, or not substituted.
+    /// </summary>
+    public virtual TypeSymbol Substitution => this;
+
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
 

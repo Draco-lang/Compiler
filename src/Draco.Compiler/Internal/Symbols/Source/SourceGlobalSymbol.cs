@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;

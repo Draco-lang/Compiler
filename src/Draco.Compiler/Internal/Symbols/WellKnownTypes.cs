@@ -14,19 +14,23 @@ internal sealed partial class WellKnownTypes
     /// <summary>
     /// object.ToString().
     /// </summary>
-    public MetadataMethodSymbol SystemObject_ToString => this.object_ToString ??= this.SystemObject
-        .Members
-        .OfType<MetadataMethodSymbol>()
-        .Single(m => m.Name == "ToString");
+    public MetadataMethodSymbol SystemObject_ToString => InterlockedUtils.InitializeNull(
+        ref this.object_ToString,
+        () => this.SystemObject
+            .Members
+            .OfType<MetadataMethodSymbol>()
+            .Single(m => m.Name == "ToString"));
     private MetadataMethodSymbol? object_ToString;
 
     /// <summary>
     /// string.Format(string formatString, object[] args).
     /// </summary>
-    public MetadataMethodSymbol SystemString_Format => this.systemString_Format ??= this.SystemString
-        .Members
-        .OfType<MetadataMethodSymbol>()
-        .First(m => m.Name == "Format" && m.Parameters is [_, { Type: ArrayTypeSymbol }]);
+    public MetadataMethodSymbol SystemString_Format => InterlockedUtils.InitializeNull(
+        ref this.systemString_Format,
+        () => this.SystemString
+            .Members
+            .OfType<MetadataMethodSymbol>()
+            .First(m => m.Name == "Format" && m.Parameters is [_, { Type: ArrayTypeSymbol }]));
     private MetadataMethodSymbol? systemString_Format;
 
     private readonly Compilation compilation;

@@ -22,8 +22,8 @@ public sealed class SyntaxTrivia : SyntaxNode
 
     internal override Internal.Syntax.SyntaxTrivia Green { get; }
 
-    internal SyntaxTrivia(SyntaxTree tree, SyntaxNode? parent, Internal.Syntax.SyntaxTrivia green)
-        : base(tree, parent)
+    internal SyntaxTrivia(SyntaxTree tree, SyntaxNode? parent, int fullPosition, Internal.Syntax.SyntaxTrivia green)
+        : base(tree, parent, fullPosition)
     {
         this.Green = green;
     }

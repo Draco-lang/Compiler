@@ -85,7 +85,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public int GetHashCode([DisallowNull] TypeSymbol obj)
     {
-        if (obj is TypeVariable v) obj = v;
+        if (obj is TypeVariable v) obj = Unwrap(v);
 
         switch (obj)
         {

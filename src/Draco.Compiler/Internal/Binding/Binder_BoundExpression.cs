@@ -160,7 +160,7 @@ internal partial class Binder
         var typedCondition = this.TypeExpression(@if.Condition, constraints, diagnostics);
         var typedThen = this.TypeExpression(@if.Then, constraints, diagnostics);
         var typedElse = this.TypeExpression(@if.Else, constraints, diagnostics);
-        var resultType = constraints.Unwrap(@if.TypeRequired);
+        var resultType = @if.TypeRequired.Substitution;
         return new BoundIfExpression(@if.Syntax, typedCondition, typedThen, typedElse, resultType);
     }
 
@@ -188,7 +188,7 @@ internal partial class Binder
         var typedArgs = call.Arguments
             .Select(arg => this.TypeExpression(arg, constraints, diagnostics))
             .ToImmutableArray();
-        var resultType = constraints.Unwrap(call.TypeRequired);
+        var resultType = call.TypeRequired.Substitution;
         return new BoundIndirectCallExpression(call.Syntax, function, typedArgs, resultType);
     }
 
@@ -274,7 +274,7 @@ internal partial class Binder
     {
         var typedOperand = this.TypeExpression(ury.Operand, constraints, diagnostics);
         var unaryOperator = ury.Operator.Result;
-        var resultType = constraints.Unwrap(ury.TypeRequired);
+        var resultType = ury.TypeRequired.Substitution;
         return new BoundUnaryExpression(ury.Syntax, unaryOperator, typedOperand, resultType);
     }
 
@@ -283,7 +283,7 @@ internal partial class Binder
         var typedLeft = this.TypeExpression(bin.Left, constraints, diagnostics);
         var typedRight = this.TypeExpression(bin.Right, constraints, diagnostics);
         var binaryOperator = bin.Operator.Result;
-        var resultType = constraints.Unwrap(bin.TypeRequired);
+        var resultType = bin.TypeRequired.Substitution;
         return new BoundBinaryExpression(bin.Syntax, binaryOperator, typedLeft, typedRight, resultType);
     }
 

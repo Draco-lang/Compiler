@@ -116,9 +116,7 @@ public sealed class Field
     public string? Documentation { get; }
     public IList<string> TokenKinds { get; }
     public bool IsNullable => this.Type.EndsWith("?");
-    public string NonNullableType => this.IsNullable
-        ? this.Type.Substring(0, this.Type.Length - 1)
-        : this.Type;
+    public string NonNullableType => this.IsNullable ? this.Type[..^1] : this.Type;
     public bool IsToken => this.NonNullableType == "SyntaxToken";
 
     public Field(string name, string type, bool @override, string? documentation, IList<string> tokenKinds)

@@ -96,26 +96,29 @@ public sealed class Compilation : IBinderProvider
     /// <summary>
     /// The top-level merged module that contains the source along with references.
     /// </summary>
-    internal ModuleSymbol RootModule => this.rootModule ??= this.BuildRootModule();
+    internal ModuleSymbol RootModule =>
+        InterlockedUtils.InitializeNull(ref this.rootModule, this.BuildRootModule);
     private ModuleSymbol? rootModule;
 
     /// <summary>
     /// The metadata assemblies this compilation references.
     /// </summary>
     internal ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> MetadataAssemblies =>
-        this.metadataAssemblies ??= this.BuildMetadataAssemblies();
+        InterlockedUtils.InitializeNull(ref this.metadataAssemblies, this.BuildMetadataAssemblies);
     private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
     /// </summary>
-    internal ModuleSymbol SourceModule => this.sourceModule ??= this.BuildSourceModule();
+    internal ModuleSymbol SourceModule =>
+        InterlockedUtils.InitializeNull(ref this.sourceModule, this.BuildSourceModule);
     private ModuleSymbol? sourceModule;
 
     /// <summary>
     /// The declaration table managing the top-level declarations of the compilation.
     /// </summary>
-    internal DeclarationTable DeclarationTable => this.declarationTable ??= this.BuildDeclarationTable();
+    internal DeclarationTable DeclarationTable =>
+        InterlockedUtils.InitializeNull(ref this.declarationTable, this.BuildDeclarationTable);
     private DeclarationTable? declarationTable;
 
     /// <summary>

@@ -25,7 +25,7 @@ internal sealed class ImportBinder : Binder
     /// The import items this binder brings in.
     /// </summary>
     public ImmutableArray<ImportItem> ImportItems =>
-        this.importItems.IsDefault ? (this.importItems = this.BindImportItems(this.ImportDiagnostics)) : this.importItems;
+        InterlockedUtils.InitializeDefault(ref this.importItems, () => this.BindImportItems(this.ImportDiagnostics));
     private ImmutableArray<ImportItem> importItems;
 
     public override IEnumerable<Symbol> DeclaredSymbols => this.ImportItems.SelectMany(i => i.ImportedSymbols);

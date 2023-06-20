@@ -136,7 +136,7 @@ internal abstract partial class Binder
         var boundValue = untypedValue is null ? null : this.TypeExpression(untypedValue, constraints, diagnostics);
 
         // Unwrap the type
-        declaredType = constraints.Unwrap(declaredType);
+        declaredType = declaredType.Substitution;
 
         if (declaredType.IsTypeVariable)
         {

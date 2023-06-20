@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
@@ -28,7 +29,7 @@ public sealed partial class SemanticModel : IBinderProvider
     /// All <see cref="Diagnostic"/>s in this model.
     /// </summary>
     public ImmutableArray<Diagnostic> Diagnostics =>
-        this.diagnostics.IsDefault ? (this.diagnostics = this.GetDiagnostics()) : this.diagnostics;
+        InterlockedUtils.InitializeDefault(ref this.diagnostics, () => this.GetDiagnostics());
     private ImmutableArray<Diagnostic> diagnostics;
 
     internal DiagnosticBag DiagnosticBag { get; } = new();

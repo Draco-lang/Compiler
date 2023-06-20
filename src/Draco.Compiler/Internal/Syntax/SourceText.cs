@@ -23,26 +23,26 @@ internal sealed class MemorySourceText : Api.Syntax.SourceText
 
     internal override Api.Syntax.SyntaxPosition IndexToSyntaxPosition(int index)
     {
-        this.lineStarts ??= this.BuildLineStarts();
-        var lineIndex = this.lineStarts.BinarySearch(index);
+        var lineStarts = InterlockedUtils.InitializeNull(ref this.lineStarts, this.BuildLineStarts);
+        var lineIndex = lineStarts.BinarySearch(index);
         // No exact match, we need the previous line
         if (lineIndex < 0) lineIndex = ~lineIndex - 1;
         // From this, the position is simply the line index for the line
         // and the index - the line start index for the column
-        return new(Line: lineIndex, Column: index - this.lineStarts[lineIndex]);
+        return new(Line: lineIndex, Column: index - lineStarts[lineIndex]);
     }
 
     internal override int SyntaxPositionToIndex(Api.Syntax.SyntaxPosition position)
     {
-        this.lineStarts ??= this.BuildLineStarts();
+        var lineStarts = InterlockedUtils.InitializeNull(ref this.lineStarts, this.BuildLineStarts);
 
         // Avoid over-indexing
-        if (position.Line >= this.lineStarts.Count) return this.content.Length;
+        if (position.Line >= lineStarts.Count) return this.content.Length;
 
-        var lineOffset = this.lineStarts[position.Line];
-        var nextLineOffset = position.Line + 1 >= this.lineStarts.Count
+        var lineOffset = lineStarts[position.Line];
+        var nextLineOffset = position.Line + 1 >= lineStarts.Count
             ? this.content.Length
-            : this.lineStarts[position.Line + 1];
+            : lineStarts[position.Line + 1];
         var lineLength = nextLineOffset - lineOffset;
         var columnOffset = Math.Min(lineLength, position.Column);
 

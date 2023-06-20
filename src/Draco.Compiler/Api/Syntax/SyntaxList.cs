@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Draco.Compiler.Internal;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -34,21 +35,22 @@ public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
     {
         get
         {
-            this.mappedNodes ??= new SyntaxNode?[this.GreenList.Count];
-            var existing = this.mappedNodes[index];
-            if (existing is null)
+            var mappedNodes = InterlockedUtils.InitializeNull(ref this.mappedNodes, () => new SyntaxNode?[this.GreenList.Count]);
+            var existing = InterlockedUtils.InitializeNull(ref mappedNodes[index], () =>
             {
-                existing = this.GreenList[index].ToRedNode(this.Tree, this.Parent);
-                this.mappedNodes[index] = existing;
-            }
+                var prevWidth = this.GreenList
+                    .Take(index)
+                    .Sum(g => g.FullWidth);
+                return this.GreenList[index].ToRedNode(this.Tree, this.Parent, this.FullPosition + prevWidth);
+            });
             return (TNode)existing;
         }
     }
 
     private SyntaxNode?[]? mappedNodes = null;
 
-    internal SyntaxList(SyntaxTree tree, SyntaxNode? parent, IReadOnlyList<Internal.Syntax.SyntaxNode> green)
-        : base(tree, parent)
+    internal SyntaxList(SyntaxTree tree, SyntaxNode? parent, int fullPosition, IReadOnlyList<Internal.Syntax.SyntaxNode> green)
+        : base(tree, parent, fullPosition)
     {
         if (green is not Internal.Syntax.SyntaxNode greenNode) throw new ArgumentException("green must be a SyntaxNode", nameof(green));
         this.Green = greenNode;

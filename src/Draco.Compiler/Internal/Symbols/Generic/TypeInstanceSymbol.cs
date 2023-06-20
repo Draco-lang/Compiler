@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -18,16 +17,24 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
-            return this.genericParameters;
+            if (!this.genericsNeedsBuild) return this.genericParameters;
+            lock (this.genericsBuildLock)
+            {
+                if (this.genericsNeedsBuild) this.BuildGenerics();
+                return this.genericParameters;
+            }
         }
     }
     public override ImmutableArray<TypeSymbol> GenericArguments
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
-            return this.genericArguments;
+            if (!this.genericsNeedsBuild) return this.genericArguments;
+            lock (this.genericsBuildLock)
+            {
+                if (this.genericsNeedsBuild) this.BuildGenerics();
+                return this.genericArguments;
+            }
         }
     }
 
@@ -35,7 +42,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
     public override IEnumerable<Symbol> Members =>
-        this.members.IsDefault ? (this.members = this.BuildMembers()) : this.members;
+        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
@@ -48,6 +55,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
 
     // IMPORTANT: Flag is a bool and not computed because we can't atomically write structs
     private volatile bool genericsNeedsBuild = true;
+    private readonly object genericsBuildLock = new();
 
     public GenericContext Context { get; }
 

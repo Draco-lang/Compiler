@@ -42,7 +42,7 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
     public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
     start:
-        var accessed = this.Unwrap(this.Accessed);
+        var accessed = this.Accessed.Substitution;
         // We can't advance on type variables
         if (accessed.IsTypeVariable)
         {
@@ -60,7 +60,7 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
             // No such member, error
             this.Diagnostic
                 .WithTemplate(SymbolResolutionErrors.MemberNotFound)
-                .WithFormatArgs(this.MemberName, this.Unwrap(this.Accessed));
+                .WithFormatArgs(this.MemberName, this.Accessed.Substitution);
             // We still provide a single error symbol
             var errorSymbol = new UndefinedMemberSymbol();
             this.Unify(this.MemberType, new ErrorTypeSymbol("<error>"));

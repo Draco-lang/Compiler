@@ -14,23 +14,31 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 {
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
-        this.genericParameters.IsDefault ? (this.genericParameters = this.BuildGenericParameters()) : this.genericParameters;
+        InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
     public override ImmutableArray<ParameterSymbol> Parameters
     {
         get
         {
-            if (this.SignatureNeedsBuild) this.BuildSignature();
-            return this.parameters;
+            if (!this.SignatureNeedsBuild) return this.parameters;
+            lock (this.signatureBuildLock)
+            {
+                if (this.SignatureNeedsBuild) this.BuildSignature();
+                return this.parameters;
+            }
         }
     }
     public override TypeSymbol ReturnType
     {
         get
         {
-            if (this.SignatureNeedsBuild) this.BuildSignature();
-            return this.returnType!;
+            if (!this.SignatureNeedsBuild) return this.returnType!;
+            lock (this.signatureBuildLock)
+            {
+                if (this.SignatureNeedsBuild) this.BuildSignature();
+                return this.returnType!;
+            }
         }
     }
 
@@ -50,12 +58,14 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(this.methodDefinition.Name);
 
+    // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly MethodDefinition methodDefinition;
+    private readonly object signatureBuildLock = new();
 
     public MetadataMethodSymbol(Symbol containingSymbol, MethodDefinition methodDefinition)
     {

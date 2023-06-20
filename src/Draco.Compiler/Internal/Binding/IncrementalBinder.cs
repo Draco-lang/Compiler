@@ -92,9 +92,12 @@ public sealed partial class SemanticModel
         // Memo logic
 
         private TUntypedNode BindNode<TUntypedNode>(SyntaxNode syntax, Func<TUntypedNode> binder)
-            where TUntypedNode : UntypedNode => (TUntypedNode)this.semanticModel.untypedNodeMap.GetOrAdd(
-                key: syntax,
-                valueFactory: _ => binder());
+            where TUntypedNode : UntypedNode
+        {
+            var node = binder();
+            this.semanticModel.untypedNodeMap.TryAdd(syntax, node);
+            return node;
+        }
 
         private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode untyped, Func<TBoundNode> binder)
             where TUntypedNode : UntypedNode

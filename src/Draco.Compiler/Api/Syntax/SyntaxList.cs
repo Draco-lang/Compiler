@@ -38,9 +38,9 @@ public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
             var mappedNodes = InterlockedUtils.InitializeNull(ref this.mappedNodes, () => new SyntaxNode?[this.GreenList.Count]);
             var existing = InterlockedUtils.InitializeNull(ref mappedNodes[index], () =>
             {
-                var prevWidth = Enumerable
-                    .Range(0, index)
-                    .Sum(i => this.GreenList[i].FullWidth);
+                var prevWidth = this.GreenList
+                    .Take(index)
+                    .Sum(g => g.FullWidth);
                 return this.GreenList[index].ToRedNode(this.Tree, this.Parent, this.FullPosition + prevWidth);
             });
             return (TNode)existing;

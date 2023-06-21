@@ -220,7 +220,7 @@ internal sealed class CilCodegen
                     }
                     // Actual store
                     this.InstructionEncoder.OpCode(ILOpCode.Stelem);
-                    this.EncodeToken(store.Source.Type!);
+                    this.EncodeToken(targetStorageType);
                 }
                 else
                 {

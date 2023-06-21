@@ -472,9 +472,11 @@ internal sealed class ConstraintSolver
     /// <param name="param">The function parameter.</param>
     /// <param name="argType">The passed in argument type.</param>
     /// <returns>The score of the match.</returns>
-    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
+    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType) => ScoreArgument(param.Type, argType);
+
+    private static int? ScoreArgument(TypeSymbol paramType, TypeSymbol argType)
     {
-        var paramType = param.Type.Substitution;
+        paramType = paramType.Substitution;
         argType = argType.Substitution;
 
         // If either are still not ground types, we can't decide
@@ -482,6 +484,22 @@ internal sealed class ConstraintSolver
 
         // Exact equality is max score
         if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return 16;
+
+        // TODO: Unspecified what happens for generics
+        // For now we require an exact match and score is the lowest score among generic args
+        if (paramType.IsGenericInstance && argType.IsGenericInstance)
+        {
+            var paramGenericDefinition = paramType.GenericDefinition!;
+            var argGenericDefinition = argType.GenericDefinition!;
+
+            if (!SymbolEqualityComparer.Default.Equals(paramGenericDefinition, argGenericDefinition)) return 0;
+
+            Debug.Assert(paramType.GenericArguments.Length == argType.GenericArguments.Length);
+            return paramType.GenericArguments
+                .Zip(argType.GenericArguments)
+                .Select(pair => ScoreArgument(pair.First, pair.Second))
+                .Min();
+        }
 
         // Type parameter match is half score
         if (paramType is TypeParameterSymbol) return 8;

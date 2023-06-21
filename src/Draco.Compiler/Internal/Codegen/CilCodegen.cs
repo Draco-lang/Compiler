@@ -218,17 +218,9 @@ internal sealed class CilCodegen
                         this.InstructionEncoder.OpCode(ILOpCode.Box);
                         this.EncodeToken(store.Source.Type!);
                     }
-                    if (!needsToBox && storedValueType.IsValueType)
-                    {
-                        // If no need to box but is a value type, encode what we store
-                        this.InstructionEncoder.OpCode(ILOpCode.Stelem);
-                        this.EncodeToken(storedValueType);
-                    }
-                    else
-                    {
-                        // Need to box or not value type, store as reference
-                        this.InstructionEncoder.OpCode(ILOpCode.Stelem_ref);
-                    }
+                    // Actual store
+                    this.InstructionEncoder.OpCode(ILOpCode.Stelem);
+                    this.EncodeToken(store.Source.Type!);
                 }
                 else
                 {

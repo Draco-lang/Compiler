@@ -480,4 +480,31 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "foo");
         Assert.Equal(14, x);
     }
+
+    [Fact]
+    public void BubbleSortArray()
+    {
+        var assembly = Compile("""
+            public func bubblesort(a: Array<int32>) {
+                var i = 1;
+                while (i < a.Length) {
+                    var j = 0;
+                    while (j < a.Length - i) {
+                        if (a[j + 1] < a[j]) {
+                            val tmp = a[j];
+                            a[j] = a[j + 1];
+                            a[j + 1] = tmp;
+                        }
+                        j += 1;
+                    }
+                    i += 1;
+                }
+            }
+            """);
+
+        var input = new[] { 17, 1, 12, 7, 10, 10, 6, 12, 2, 8 };
+        var output = new[] { 1, 2, 6, 7, 8, 10, 10, 12, 12, 17 };
+        Invoke<object?>(assembly, "bubblesort", input);
+        Assert.True(input.SequenceEqual(output));
+    }
 }

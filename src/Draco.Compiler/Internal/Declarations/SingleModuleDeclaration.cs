@@ -21,7 +21,7 @@ internal sealed class SingleModuleDeclaration : Declaration
     public SplitPath Path { get; }
 
     public override ImmutableArray<Declaration> Children =>
-        this.children.IsDefault ? (this.children = this.BuildChildren()) : this.children;
+        InterlockedUtils.InitializeDefault(ref this.children, this.BuildChildren);
     private ImmutableArray<Declaration> children;
 
     public SingleModuleDeclaration(string name, SplitPath path, ContainerSyntax syntax)

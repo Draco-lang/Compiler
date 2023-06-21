@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol, IMetadataClass
 {
     public override IEnumerable<Symbol> Members =>
-        this.members.IsDefault ? (this.members = this.BuildMembers()) : this.members;
+        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     public override string Name => this.MetadataName;
@@ -22,12 +22,14 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     public override Symbol ContainingSymbol { get; }
 
+    // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
-    public string? DefaultMemberAttributeName => this.defaultMemberAttributeName ??= MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader);
+    public string? DefaultMemberAttributeName =>
+        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;

@@ -6,13 +6,13 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// </summary>
 internal sealed class PropertyInstanceSymbol : PropertySymbol, IGenericInstanceSymbol
 {
-    public override TypeSymbol Type => this.type ??= this.BuildType();
+    public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
-    public override FunctionSymbol? Getter => this.getter ??= this.BuildGetter();
+    public override FunctionSymbol? Getter => InterlockedUtils.InitializeMaybeNull(ref this.getter, this.BuildGetter);
     private FunctionSymbol? getter;
 
-    public override FunctionSymbol? Setter => this.setter ??= this.BuildSetter();
+    public override FunctionSymbol? Setter => InterlockedUtils.InitializeMaybeNull(ref this.setter, this.BuildSetter);
     private FunctionSymbol? setter;
 
     public override string Name => this.GenericDefinition.Name;

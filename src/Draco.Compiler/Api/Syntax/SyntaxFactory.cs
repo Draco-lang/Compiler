@@ -41,7 +41,7 @@ public static partial class SyntaxFactory
     {
         var rewriter = new AddLeadingTriviaRewriter(trivia);
         var green = node.Green.Accept(rewriter);
-        return (TNode)green.ToRedNode(null!, null);
+        return (TNode)green.ToRedNode(null!, null, 0);
     }
 
     private static IEnumerable<Internal.Syntax.SyntaxTrivia> CreateCommentBlockTrivia(string prefix, string docs)
@@ -65,7 +65,7 @@ public static partial class SyntaxFactory
         WithLeadingTrivia(node, CreateCommentBlockTrivia("///", docs));
 
     public static SyntaxToken Missing(TokenKind kind) =>
-        Internal.Syntax.SyntaxToken.From(kind, string.Empty).ToRedNode(null!, null);
+        Internal.Syntax.SyntaxToken.From(kind, string.Empty).ToRedNode(null!, null, 0);
 
     public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
@@ -81,6 +81,7 @@ public static partial class SyntaxFactory
         where TNode : SyntaxNode => new(
             tree: null!,
             parent: null,
+            fullPosition: 0,
             green: Syntax.SyntaxList<TNode>.MakeGreen(elements.Select(n => n.Green)));
     public static SyntaxList<TNode> SyntaxList<TNode>(params TNode[] elements)
         where TNode : SyntaxNode => SyntaxList(elements.AsEnumerable());
@@ -89,6 +90,7 @@ public static partial class SyntaxFactory
         where TNode : SyntaxNode => new(
             tree: null!,
             parent: null,
+            fullPosition: 0,
             green: Syntax.SeparatedSyntaxList<TNode>.MakeGreen(elements.SelectMany(n => new[] { n.Green, separator.Green })));
     public static SeparatedSyntaxList<TNode> SeparatedSyntaxList<TNode>(SyntaxToken separator, params TNode[] elements)
         where TNode : SyntaxNode => SeparatedSyntaxList(separator, elements.AsEnumerable());
@@ -333,11 +335,11 @@ public static partial class SyntaxFactory
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
 
     private static SyntaxToken MakeToken(TokenKind tokenKind) =>
-        Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null);
+        Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);
     private static SyntaxToken MakeToken(TokenKind tokenKind, string text) =>
-        Internal.Syntax.SyntaxToken.From(tokenKind, text).ToRedNode(null!, null);
+        Internal.Syntax.SyntaxToken.From(tokenKind, text).ToRedNode(null!, null, 0);
     private static SyntaxToken MakeToken(TokenKind tokenKind, string text, object? value) =>
-        Internal.Syntax.SyntaxToken.From(tokenKind, text, value).ToRedNode(null!, null);
+        Internal.Syntax.SyntaxToken.From(tokenKind, text, value).ToRedNode(null!, null, 0);
     private static SyntaxToken MakeToken(TokenKind tokenKind, object? value) =>
-        Internal.Syntax.SyntaxToken.From(tokenKind, value: value).ToRedNode(null!, null);
+        Internal.Syntax.SyntaxToken.From(tokenKind, value: value).ToRedNode(null!, null, 0);
 }

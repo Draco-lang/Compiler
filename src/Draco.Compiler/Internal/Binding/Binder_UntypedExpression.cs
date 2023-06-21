@@ -514,7 +514,7 @@ internal partial class Binder
         var returnType = constraints.AllocateTypeVariable();
         var promise = constraints.Substituted(receiver.TypeRequired, () =>
         {
-            var indexers = constraints.Unwrap(receiver.TypeRequired).Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Getter).OfType<FunctionSymbol>().ToImmutableArray();
+            var indexers = receiver.TypeRequired.Substitution.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Getter).OfType<FunctionSymbol>().ToImmutableArray();
             if (indexers.Length == 0)
             {
                 diagnostics.Add(Diagnostic.Create(

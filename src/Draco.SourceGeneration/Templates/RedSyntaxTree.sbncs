@@ -17,14 +17,26 @@ namespace Draco.Compiler.Api.Syntax;
     /// </summary>
     public {{class_header($node)}}
     {
+        {{$fieldFullPosition = 'this.FullPosition'}}
         {{for $field in $node.Fields}}
+            {{$backingField = camel_case($field.Name)}}
             {{if $field.Abstract}}
-            {{field_prefix($field)}} {get;}
+                {{field_prefix($field)}} {get;}
             {{else}}
-                {{$backingField = camel_case($field.Name)}}
                 {{field_prefix($field)}} =>
-                    this.{{$backingField}} ??= ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this);
+                {{if $field.IsNullable}}
+                Internal.InterlockedUtils.InitializeMaybeNull(
+                {{else}}
+                    Internal.InterlockedUtils.InitializeNull(
+                {{end}}
+                    ref this.{{$backingField}},
+                    () => ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this, {{$fieldFullPosition}}));
                 private {{$field.NonNullableType}}? {{$backingField}};
+                {{if $field.IsNullable}}
+                    {{$fieldFullPosition += '+ (this.Green.' + $field.Name + '?.FullWidth ?? 0)'}}
+                {{else}}
+                    {{$fieldFullPosition += '+ this.Green.' + $field.Name + '.FullWidth'}}
+                {{end}}
             {{end}}
         {{end}}
 
@@ -44,7 +56,9 @@ namespace Draco.Compiler.Api.Syntax;
             {{if $node.Base}}
                 internal {{$node.Name}}(
                     SyntaxTree tree,
-                    {{Root.Name}}? parent) : base(tree, parent)
+                    {{Root.Name}}? parent,
+                    int fullPosition)
+                    : base(tree, parent, fullPosition)
                 {
                 }
             {{end}}
@@ -52,7 +66,9 @@ namespace Draco.Compiler.Api.Syntax;
             internal {{$node.Name}}(
                 SyntaxTree tree,
                 {{Root.Name}}? parent,
-                Internal.Syntax.{{$node.Name}} green) : base(tree, parent)
+                int fullPosition,
+                Internal.Syntax.{{$node.Name}} green)
+                : base(tree, parent, fullPosition)
             {
                 this.Green = green;
             }
@@ -85,7 +101,7 @@ namespace Draco.Compiler.Api.Syntax;
                 {{wrap separated(', ', $node.Fields)}}
                     ({{to_internal_type($element.Type)}}){{camel_case($element.Name)}}{{nullable($element)}}.Green
                 {{end}}
-            ).ToRedNode(null!, null);
+            ).ToRedNode(null!, null, 0);
         }
     {{end}}
 {{end}}

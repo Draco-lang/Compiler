@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -25,9 +26,9 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The diagnostics on this tree node.
     /// </summary>
-    public ImmutableArray<Diagnostic> Diagnostics => this.diagnostics.IsDefault
-        ? (this.diagnostics = this.Tree.SyntaxDiagnosticTable.Get(this).ToImmutableArray())
-        : this.diagnostics;
+    public ImmutableArray<Diagnostic> Diagnostics => InterlockedUtils.InitializeDefault(
+        ref this.diagnostics,
+        () => this.Tree.SyntaxDiagnosticTable.Get(this).ToImmutableArray());
     private ImmutableArray<Diagnostic> diagnostics;
 
     /// <summary>
@@ -38,15 +39,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <summary>
     /// The position of the node, including leading trivia.
     /// </summary>
-    internal int FullPosition
-    {
-        get
-        {
-            if (this.fullPosition is null) this.Tree.ComputeFullPositions();
-            return this.fullPosition!.Value;
-        }
-    }
-    private int? fullPosition;
+    internal int FullPosition { get; }
 
     /// <summary>
     /// The position of the node, excluding leading trivia.
@@ -61,8 +54,6 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
             return position;
         }
     }
-
-    internal void SetFullPosition(int fullPosition) => this.fullPosition = fullPosition;
 
     /// <summary>
     /// The span of this syntax node, excluding the trivia surrounding the node.
@@ -94,10 +85,11 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// </summary>
     internal abstract Internal.Syntax.SyntaxNode Green { get; }
 
-    internal SyntaxNode(SyntaxTree tree, SyntaxNode? parent)
+    internal SyntaxNode(SyntaxTree tree, SyntaxNode? parent, int fullPosition)
     {
         this.Tree = tree;
         this.Parent = parent;
+        this.FullPosition = fullPosition;
     }
 
     // Equality by green nodes

@@ -62,10 +62,10 @@ namespace Draco.Compiler.Internal.Syntax;
             {{if $node.Base}}
                 override
             {{end}}
-            Api.Syntax.{{$node.Name}} ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent);
+            Api.Syntax.{{$node.Name}} ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent, int fullPosition);
         {{else}}
-            public override Api.Syntax.{{$node.Name}} ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent) =>
-                new Api.Syntax.{{$node.Name}}(tree, parent, this);
+            public override Api.Syntax.{{$node.Name}} ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.{{Root.Name}}? parent, int fullPosition) =>
+                new Api.Syntax.{{$node.Name}}(tree, parent, fullPosition, this);
 
             /// <summary>
             /// Updates this <see cref="{{$node.Name}}"/> with the new provided data.

@@ -1,8 +1,5 @@
-using System.Collections.Immutable;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Workspace;
 

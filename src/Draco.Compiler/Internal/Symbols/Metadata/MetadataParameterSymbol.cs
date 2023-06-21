@@ -14,6 +14,7 @@ internal sealed class MetadataParameterSymbol : ParameterSymbol, IMetadataSymbol
     public override TypeSymbol Type { get; }
     public override Symbol ContainingSymbol { get; }
 
+    // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 

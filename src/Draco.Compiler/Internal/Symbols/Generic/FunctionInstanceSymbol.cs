@@ -2,7 +2,6 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -17,16 +16,24 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
-            return this.genericParameters;
+            if (!this.genericsNeedsBuild) return this.genericParameters;
+            lock (this.genericsBuildLock)
+            {
+                if (this.genericsNeedsBuild) this.BuildGenerics();
+                return this.genericParameters;
+            }
         }
     }
     public override ImmutableArray<TypeSymbol> GenericArguments
     {
         get
         {
-            if (this.genericsNeedsBuild) this.BuildGenerics();
-            return this.genericArguments;
+            if (!this.genericsNeedsBuild) return this.genericArguments;
+            lock (this.genericsBuildLock)
+            {
+                if (this.genericsNeedsBuild) this.BuildGenerics();
+                return this.genericArguments;
+            }
         }
     }
 
@@ -34,10 +41,10 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
     public override ImmutableArray<ParameterSymbol> Parameters =>
-        this.parameters.IsDefault ? (this.parameters = this.BuildParameters()) : this.parameters;
+        InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType => this.returnType ??= this.BuildReturnType();
+    public override TypeSymbol ReturnType => InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
     public override string Name => this.GenericDefinition.Name;
@@ -50,6 +57,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
 
     // IMPORTANT: Flag is a bool and not computed because we can't atomically copy structs
     private volatile bool genericsNeedsBuild = true;
+    private readonly object genericsBuildLock = new();
 
     public GenericContext Context { get; }
 
@@ -79,7 +87,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // Either way:
         //  - We have generic parameters, this is still a generic definition
         //  - Non-generic
-        // 
+        //
         return base.ToString();
     }
 

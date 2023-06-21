@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Declarations;
 internal sealed class MergedModuleDeclaration : Declaration
 {
     public override ImmutableArray<Declaration> Children =>
-        this.children.IsDefault ? (this.children = this.BuildChildren()) : this.children;
+        InterlockedUtils.InitializeDefault(ref this.children, this.BuildChildren);
     private ImmutableArray<Declaration> children;
 
     /// <summary>

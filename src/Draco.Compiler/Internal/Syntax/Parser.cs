@@ -448,10 +448,8 @@ internal sealed class Parser
                 // On a close curly or end of input, we can immediately exit
                 goto end_of_block;
             default:
-            {
                 decls.Add(this.ParseDeclaration(DeclarationContext.Global));
                 break;
-            }
             }
         }
     end_of_block:

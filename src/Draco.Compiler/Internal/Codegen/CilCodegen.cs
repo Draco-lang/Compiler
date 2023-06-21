@@ -303,7 +303,8 @@ internal sealed class CilCodegen
             // One-dimensional and multi-dimensional arrays are very different
             if (arrElement.Indices.Count == 1)
             {
-                this.InstructionEncoder.OpCode(ILOpCode.Ldelem_i4);
+                this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
+                this.EncodeToken(arrElement.Target.Type);
             }
             else
             {

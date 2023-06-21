@@ -209,7 +209,7 @@ internal sealed class CilCodegen
                 this.EncodePush(store.Source);
                 if (arrayAccess.Indices.Length == 1)
                 {
-                    var storedValueType = store.Source.Type!;
+                    var storedValueType = store.Source.Type!.Substitution;
                     var targetStorageType = arrayAccess.Type.Substitution;
                     var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
                     if (needsToBox)

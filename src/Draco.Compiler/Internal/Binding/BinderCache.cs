@@ -65,7 +65,7 @@ internal sealed class BinderCache
             .OfType<SourceModuleSymbol>()
             .FirstOrDefault(member => member.Name == syntax.Name.Text);
         Debug.Assert(moduleSymbol is not null);
-        // NOTE: We are not using the unwrapped parent, we need the injected import layers
+        binder = WrapInImportBinder(binder, syntax);
         return new ModuleBinder(binder, moduleSymbol);
     }
 

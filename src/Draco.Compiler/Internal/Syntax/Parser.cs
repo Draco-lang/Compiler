@@ -436,7 +436,6 @@ internal sealed class Parser
         var moduleKeyword = this.Expect(TokenKind.KeywordModule);
         var name = this.Expect(TokenKind.Identifier);
 
-        // Parameters
         var openCurly = this.Expect(TokenKind.CurlyOpen);
         var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
         while (true)

@@ -1,4 +1,4 @@
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,16 +25,21 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         await this.UpdateDocument(uri, sourceText);
     }
 
-    private async Task PublishDiagnosticsAsync(DocumentUri uri, ImmutableArray<Compiler.Api.Diagnostics.Diagnostic>? diags = null)
+    private async Task PublishDiagnosticsAsync(DocumentUri uri)
     {
         var compilation = this.compilation;
 
         var syntaxTree = GetSyntaxTree(compilation, uri);
-        if (syntaxTree is null) return;
 
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
-        diags ??= semanticModel.Diagnostics;
-        var lspDiags = diags.Value.Select(Translator.ToLsp).ToList();
+        var lspDiags = new List<Diagnostic>();
+        // If the tree is null we want to push empty diags
+        if (syntaxTree is not null)
+        {
+            var semanticModel = compilation.GetSemanticModel(syntaxTree);
+            var diags = semanticModel.Diagnostics;
+            lspDiags = diags.Select(Translator.ToLsp).ToList();
+        }
+
         await this.client.PublishDiagnosticsAsync(new()
         {
             Uri = uri,

@@ -18,7 +18,6 @@
         All declaration syntaxes within the container.
       </Documentation>
     </Field>
-    
   </AbstractNode>
 
   <Node Name="CompilationUnitSyntax" Base="ContainerSyntax">

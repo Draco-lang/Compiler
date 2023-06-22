@@ -38,8 +38,7 @@ public sealed partial class SemanticModel : IBinderProvider
     private readonly Compilation compilation;
 
     // Filled out by incremental binding
-    private readonly ConcurrentDictionary<SyntaxNode, UntypedNode> untypedNodeMap = new();
-    private readonly ConcurrentDictionary<UntypedNode, BoundNode> boundNodeMap = new();
+    private readonly ConcurrentDictionary<SyntaxNode, BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 
     internal SemanticModel(Compilation compilation, SyntaxTree tree)
@@ -298,15 +297,8 @@ public sealed partial class SemanticModel : IBinderProvider
         return (node as BoundExpression)?.Type?.ToApiSymbol();
     }
 
-    private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node)
-    {
-        if (!this.untypedNodeMap.TryGetValue(syntax, out var untypedNode))
-        {
-            node = null;
-            return false;
-        }
-        return this.boundNodeMap.TryGetValue(untypedNode, out node);
-    }
+    private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node) =>
+        this.boundNodeMap.TryGetValue(syntax, out node);
 
     /// <summary>
     /// Retrieves the function overloads referenced by <paramref name="syntax"/>.

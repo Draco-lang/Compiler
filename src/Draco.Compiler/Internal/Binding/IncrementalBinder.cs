@@ -55,15 +55,6 @@ public sealed partial class SemanticModel
 
         // Memoizing overrides /////////////////////////////////////////////////
 
-        protected override UntypedStatement BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.BindNode(syntax, () => base.BindStatement(syntax, constraints, diagnostics));
-
-        protected override UntypedExpression BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.BindNode(syntax, () => base.BindExpression(syntax, constraints, diagnostics));
-
-        protected override UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.BindNode(syntax, () => base.BindLvalue(syntax, constraints, diagnostics));
-
         internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));
 
@@ -91,18 +82,14 @@ public sealed partial class SemanticModel
 
         // Memo logic
 
-        private TUntypedNode BindNode<TUntypedNode>(SyntaxNode syntax, Func<TUntypedNode> binder)
-            where TUntypedNode : UntypedNode
-        {
-            var node = binder();
-            this.semanticModel.untypedNodeMap.TryAdd(syntax, node);
-            return node;
-        }
-
         private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode untyped, Func<TBoundNode> binder)
             where TUntypedNode : UntypedNode
-            where TBoundNode : BoundNode => (TBoundNode)this.semanticModel.boundNodeMap.GetOrAdd(
-                key: untyped,
+            where TBoundNode : BoundNode
+        {
+            if (untyped.Syntax is null) return binder();
+
+            return (TBoundNode)this.semanticModel.boundNodeMap.GetOrAdd(
+                key: untyped.Syntax,
                 valueFactory: _ =>
                 {
                     var node = binder();
@@ -118,6 +105,7 @@ public sealed partial class SemanticModel
 
                     return node;
                 });
+        }
 
         private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder) => this.semanticModel.symbolMap.GetOrAdd(
             key: node,

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Reflection;
 using Draco.Compiler.Api;
@@ -1668,6 +1669,69 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, SymbolResolutionErrors.FilePathOutsideOfRootPath);
+    }
+
+    [Fact]
+    public void InCodeModuleImports()
+    {
+        // import System.Text;
+        //
+        // module FooModule {
+        //     import System.Console;
+        //
+        //     func bar()
+        //     {
+        //         var sb = StringBuilder(); // OK
+        //         WriteLine(sb.ToString()); // OK
+        //     }
+        // }
+        //
+        // func baz()
+        // {
+        //     var sb = StringBuilder(); // OK
+        //     WriteLine(); // ERROR
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Text"),
+            ModuleDeclaration(
+                "FooModule",
+                SyntaxList<DeclarationSyntax>(
+                    ImportDeclaration("System", "Console"),
+                    FunctionDeclaration(
+                        "bar",
+                        ParameterList(),
+                        null,
+                        BlockFunctionBody(
+                            DeclarationStatement(VariableDeclaration("sb", null, CallExpression(NameExpression("StringBuilder")))),
+                            ExpressionStatement(CallExpression(NameExpression("WriteLine"), CallExpression(MemberExpression(NameExpression("sb"), "ToString")))))))),
+            FunctionDeclaration(
+                "baz",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("sb", null, CallExpression(NameExpression("StringBuilder")))),
+                    ExpressionStatement(CallExpression(NameExpression("WriteLine")))))));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray(),
+            rootModulePath: ToPath("Tests"));
+
+        var writeLineCall = main.FindInChildren<CallExpressionSyntax>(4).Function;
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var writeLineCallSymbol = GetInternalSymbol<Symbol>(semanticModel.GetReferencedSymbol(writeLineCall));
+
+        // Assert
+        Assert.Single(diags);
+        Assert.True(writeLineCallSymbol.IsError);
+        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]

@@ -39,6 +39,9 @@
         /// </summary>
     {{end}}
     public
+    {{if field.Abstract}}
+        abstract
+    {{end}}
     {{if field.Override}}
         override
     {{end}}

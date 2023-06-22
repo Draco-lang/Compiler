@@ -8,12 +8,24 @@
   <PredefinedNode Name="SyntaxToken" />
   <PredefinedNode Name="SyntaxTrivia" />
 
-  <Node Name="CompilationUnitSyntax" Base="SyntaxNode">
+  <AbstractNode Name="ContainerSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      Any declaration that groups together other declarations, for example a module declaration or a compilation unit.
+    </Documentation>
+
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;" Abstract="true">
+      <Documentation>
+        All declaration syntaxes within the container.
+      </Documentation>
+    </Field>
+  </AbstractNode>
+
+  <Node Name="CompilationUnitSyntax" Base="ContainerSyntax">
     <Documentation>
       Contains all declarations within an entire compilation unit.
     </Documentation>
 
-    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;">
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;" Override="true">
       <Documentation>
         All declaration syntaxes within the compilation unit.
       </Documentation>
@@ -93,6 +105,50 @@
       <Documentation>
         The unexpected syntax nodes.
       </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ModuleDeclarationSyntax" Base="ContainerSyntax">
+    <Documentation>
+      A module declaration.
+    </Documentation>
+
+    <Field Name="ModuleKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'module' keyword starting the delcaration.
+      </Documentation>
+
+      <Token Kind="KeywordModule" />
+    </Field>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared module.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace token.
+      </Documentation>
+
+      <Token Kind="CurlyOpen" />
+    </Field>
+
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;" Override="true">
+      <Documentation>
+        All declaration syntaxes within the module.
+      </Documentation>
+    </Field>
+    
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace token.
+      </Documentation>
+
+      <Token Kind="CurlyClose" />
     </Field>
   </Node>
 

@@ -112,6 +112,9 @@ public static partial class SyntaxFactory
     public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
         CompilationUnit(SyntaxList(decls), EndOfInput);
 
+    public static ModuleDeclarationSyntax ModuleDeclaration(string name, SyntaxList<DeclarationSyntax> declarations) =>
+        ModuleDeclaration(Module, Name(name), OpenBrace, declarations, CloseBrace);
+
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
         Import,
         path.Aggregate(
@@ -315,6 +318,7 @@ public static partial class SyntaxFactory
     public static SyntaxToken Val { get; } = MakeToken(TokenKind.KeywordVal);
     public static SyntaxToken Func { get; } = MakeToken(TokenKind.KeywordFunc);
     public static SyntaxToken Goto { get; } = MakeToken(TokenKind.KeywordGoto);
+    public static SyntaxToken Module { get; } = MakeToken(TokenKind.KeywordModule);
     public static SyntaxToken True { get; } = MakeToken(TokenKind.KeywordTrue, true);
     public static SyntaxToken False { get; } = MakeToken(TokenKind.KeywordFalse, false);
     public static SyntaxToken OpenBrace { get; } = MakeToken(TokenKind.CurlyOpen);

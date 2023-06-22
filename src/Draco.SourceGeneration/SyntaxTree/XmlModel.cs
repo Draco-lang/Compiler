@@ -71,6 +71,9 @@ public sealed class XmlField
     [XmlAttribute]
     public bool Override { get; set; }
 
+    [XmlAttribute]
+    public bool Abstract { get; set; }
+
     public string? Documentation { get; set; }
 
     [XmlElement("Token")]

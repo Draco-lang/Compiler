@@ -20,19 +20,23 @@ namespace Draco.Compiler.Api.Syntax;
         {{$fieldFullPosition = 'this.FullPosition'}}
         {{for $field in $node.Fields}}
             {{$backingField = camel_case($field.Name)}}
-            {{field_prefix($field)}} =>
-            {{if $field.IsNullable}}
-            Internal.InterlockedUtils.InitializeMaybeNull(
+            {{if $field.Abstract}}
+                {{field_prefix($field)}} {get;}
             {{else}}
-                Internal.InterlockedUtils.InitializeNull(
-            {{end}}
-                ref this.{{$backingField}},
-                () => ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this, {{$fieldFullPosition}}));
-            private {{$field.NonNullableType}}? {{$backingField}};
-            {{if $field.IsNullable}}
-                {{$fieldFullPosition += '+ (this.Green.' + $field.Name + '?.FullWidth ?? 0)'}}
-            {{else}}
-                {{$fieldFullPosition += '+ this.Green.' + $field.Name + '.FullWidth'}}
+                {{field_prefix($field)}} =>
+                {{if $field.IsNullable}}
+                Internal.InterlockedUtils.InitializeMaybeNull(
+                {{else}}
+                    Internal.InterlockedUtils.InitializeNull(
+                {{end}}
+                    ref this.{{$backingField}},
+                    () => ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this, {{$fieldFullPosition}}));
+                private {{$field.NonNullableType}}? {{$backingField}};
+                {{if $field.IsNullable}}
+                    {{$fieldFullPosition += '+ (this.Green.' + $field.Name + '?.FullWidth ?? 0)'}}
+                {{else}}
+                    {{$fieldFullPosition += '+ this.Green.' + $field.Name + '.FullWidth'}}
+                {{end}}
             {{end}}
         {{end}}
 

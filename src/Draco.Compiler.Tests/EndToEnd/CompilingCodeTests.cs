@@ -535,4 +535,39 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         Invoke<object?>(assembly, "bubblesort", input);
         Assert.True(input.SequenceEqual(output));
     }
+
+    public void InCodeModuleUsage()
+    {
+        var assembly = Compile(""""
+            public func foo(): string = FooModule.GetFoo();
+
+            module FooModule{
+                public func GetFoo(): string = "foo";
+            }
+            """");
+
+        var x = Invoke<string>(assembly, "foo");
+        Assert.Equal("foo", x);
+    }
+
+    [Fact]
+    public void InCodeModuleUsageImportingInsideModule()
+    {
+        var assembly = Compile(""""
+            public func foo(): string = FooModule.Hello();
+
+            module FooModule {
+                import System.Text;
+
+                public func Hello(): string{
+                    var sb = StringBuilder();
+                    sb.Append("Hello, World!");
+                    return sb.ToString();
+                }
+            }
+            """");
+
+        var x = Invoke<string>(assembly, "foo");
+        Assert.Equal("Hello, World!", x);
+    }
 }

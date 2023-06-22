@@ -11,7 +11,7 @@ public sealed class Tree
         ValidateXml(tree);
 
         Field MakeField(XmlField field) =>
-            new(field.Name, field.Type, field.Override, field.Documentation?.Trim(), field.Tokens.Select(t => t.Kind).ToList());
+            new(field.Name, field.Type, field.Override, field.Abstract, field.Documentation?.Trim(), field.Tokens.Select(t => t.Kind).ToList());
 
         Node MakePredefinedNode(XmlPredefinedNode node) =>
             new(node.Name, GetBaseByName(node.Base), false, string.Empty);
@@ -113,17 +113,19 @@ public sealed class Field
     public string Name { get; }
     public string Type { get; }
     public bool Override { get; }
+    public bool Abstract { get; }
     public string? Documentation { get; }
     public IList<string> TokenKinds { get; }
     public bool IsNullable => this.Type.EndsWith("?");
     public string NonNullableType => this.IsNullable ? this.Type[..^1] : this.Type;
     public bool IsToken => this.NonNullableType == "SyntaxToken";
 
-    public Field(string name, string type, bool @override, string? documentation, IList<string> tokenKinds)
+    public Field(string name, string type, bool @override, bool @abstract, string? documentation, IList<string> tokenKinds)
     {
         this.Name = name;
         this.Type = type;
         this.Override = @override;
+        this.Abstract = @abstract;
         this.Documentation = documentation;
         this.TokenKinds = tokenKinds;
     }

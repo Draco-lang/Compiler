@@ -154,6 +154,7 @@ internal sealed class Parser
     {
         TokenKind.KeywordImport,
         TokenKind.KeywordFunc,
+        TokenKind.KeywordModule,
         TokenKind.KeywordVar,
         TokenKind.KeywordVal,
     };
@@ -263,6 +264,9 @@ internal sealed class Parser
 
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration(modifier);
+
+        case TokenKind.KeywordModule:
+            return this.ParseModuleDeclaration(context);
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
@@ -382,7 +386,7 @@ internal sealed class Parser
     }
 
     /// <summary>
-    /// Parsed a function declaration.
+    /// Parses a function declaration.
     /// </summary>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
     private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxToken? visibility)
@@ -419,6 +423,55 @@ internal sealed class Parser
             closeParen,
             returnType,
             body);
+    }
+
+    /// <summary>
+    /// Parses a module declaration.
+    /// </summary>
+    /// <param name="context">The current declaration context.</param>
+    /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
+    private DeclarationSyntax ParseModuleDeclaration(DeclarationContext context)
+    {
+        // Module keyword and name of the module
+        var moduleKeyword = this.Expect(TokenKind.KeywordModule);
+        var name = this.Expect(TokenKind.Identifier);
+
+        var openCurly = this.Expect(TokenKind.CurlyOpen);
+        var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
+        while (true)
+        {
+            switch (this.Peek())
+            {
+            case TokenKind.EndOfInput:
+            case TokenKind.CurlyClose:
+                // On a close curly or end of input, we can immediately exit
+                goto end_of_block;
+            default:
+                decls.Add(this.ParseDeclaration(DeclarationContext.Global));
+                break;
+            }
+        }
+    end_of_block:
+        var closeCurly = this.Expect(TokenKind.CurlyClose);
+
+        var result = new ModuleDeclarationSyntax(
+            moduleKeyword,
+            name,
+            openCurly,
+            decls.ToSyntaxList(),
+            closeCurly) as DeclarationSyntax;
+
+        if (context != DeclarationContext.Global)
+        {
+            // Create diagnostic
+            var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "module");
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
+            // Wrap up the result in an error node
+            result = new UnexpectedDeclarationSyntax(null, SyntaxList.Create(result as SyntaxNode));
+            // Add diagnostic
+            this.AddDiagnostic(result, diag);
+        }
+        return result;
     }
 
     /// <summary>

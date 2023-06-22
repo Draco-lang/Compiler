@@ -96,6 +96,7 @@ internal static class BinderFacts
     public static bool DefinesScope(SyntaxNode node) => node
         is CompilationUnitSyntax
         or FunctionDeclarationSyntax
+        or ModuleDeclarationSyntax
         or FunctionBodySyntax
         or BlockExpressionSyntax
         or WhileExpressionSyntax;

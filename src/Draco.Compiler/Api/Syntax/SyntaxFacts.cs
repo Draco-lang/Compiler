@@ -25,6 +25,7 @@ public static class SyntaxFacts
         TokenKind.KeywordImport => "import",
         TokenKind.KeywordInternal => "internal",
         TokenKind.KeywordMod => "mod",
+        TokenKind.KeywordModule => "module",
         TokenKind.KeywordNot => "not",
         TokenKind.KeywordOr => "or",
         TokenKind.KeywordPublic => "public",

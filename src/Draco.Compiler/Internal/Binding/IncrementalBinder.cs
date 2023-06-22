@@ -89,7 +89,7 @@ public sealed partial class SemanticModel
             if (untyped.Syntax is null) return binder();
 
             return (TBoundNode)this.semanticModel.boundNodeMap.GetOrAdd(
-                key: untyped.Syntax,
+                key: (untyped.Syntax, typeof(TBoundNode)),
                 valueFactory: _ =>
                 {
                     var node = binder();

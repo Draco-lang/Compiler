@@ -138,7 +138,7 @@
       <Token Kind="CurlyOpen" />
     </Field>
 
-    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;"  Override="true">
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;" Override="true">
       <Documentation>
         All declaration syntaxes within the module.
       </Documentation>

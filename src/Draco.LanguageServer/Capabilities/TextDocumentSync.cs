@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -31,14 +32,19 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
 
         var syntaxTree = GetSyntaxTree(compilation, uri);
 
-        var lspDiags = new List<Diagnostic>();
-        // If the tree is null we want to push empty diags
-        if (syntaxTree is not null)
+        if (syntaxTree is null)
         {
-            var semanticModel = compilation.GetSemanticModel(syntaxTree);
-            var diags = semanticModel.Diagnostics;
-            lspDiags = diags.Select(Translator.ToLsp).ToList();
+            await this.client.PublishDiagnosticsAsync(new()
+            {
+                Uri = uri,
+                Diagnostics = Array.Empty<Diagnostic>(),
+            });
+            return;
         }
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var diags = semanticModel.Diagnostics;
+        var lspDiags = diags.Select(Translator.ToLsp).ToList();
 
         await this.client.PublishDiagnosticsAsync(new()
         {

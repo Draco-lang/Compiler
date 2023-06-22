@@ -1779,4 +1779,27 @@ public sealed class ParserTests
             this.T(TokenKind.CurlyClose);
         }
     }
+
+    [Fact]
+    public void TestEmptyModuleDeclarationStatement()
+    {
+        this.ParseStatement("""
+            module Foo { }
+            """);
+
+        this.N<DeclarationStatementSyntax>();
+        {
+            this.N<UnexpectedDeclarationSyntax>();
+            {
+                this.N<SyntaxList<SyntaxNode>>();
+                {
+                    this.N<ModuleDeclarationSyntax>();
+                    {
+                        this.T(TokenKind.KeywordModule);
+                        this.T(TokenKind.Identifier, "Foo");
+                    }
+                }
+            }
+        }
+    }
 }

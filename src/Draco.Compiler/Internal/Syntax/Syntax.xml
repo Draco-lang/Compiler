@@ -10,12 +10,12 @@
 
   <AbstractNode Name="ContainerSyntax" Base="DeclarationSyntax">
     <Documentation>
-      Any container, for example module declaration or compilation unit.
+      Any declaration that groups together other declarations, for example a module declaration or a compilation unit.
     </Documentation>
 
     <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;" Abstract="true">
       <Documentation>
-        All declaration syntaxes within the compilation unit.
+        All declaration syntaxes within the container.
       </Documentation>
     </Field>
     

@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 

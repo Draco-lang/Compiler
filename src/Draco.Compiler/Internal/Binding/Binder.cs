@@ -67,7 +67,7 @@ internal abstract partial class Binder
     protected virtual Binder GetBinder(SyntaxNode node) =>
         this.Compilation.GetBinder(node);
 
-    public BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
+    public virtual BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
         var functionName = function.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(function.DeclaringSyntax, $"function {functionName}");
@@ -77,7 +77,7 @@ internal abstract partial class Binder
         return boundStatement;
     }
 
-    public (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
+    public virtual (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
         var globalName = global.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(global.DeclaringSyntax, $"global {globalName}");

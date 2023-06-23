@@ -38,6 +38,8 @@ public sealed partial class SemanticModel : IBinderProvider
     private readonly Compilation compilation;
 
     // Filled out by incremental binding
+    private readonly ConcurrentDictionary<SourceFunctionSymbol, BoundStatement> boundFunctions = new();
+    private readonly ConcurrentDictionary<SourceGlobalSymbol, (Internal.Symbols.TypeSymbol Type, BoundExpression? Value)> boundGlobals = new();
     private readonly ConcurrentDictionary<(SyntaxNode, System.Type), BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 

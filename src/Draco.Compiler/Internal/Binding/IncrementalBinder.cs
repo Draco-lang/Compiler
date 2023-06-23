@@ -6,7 +6,9 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.UntypedTree;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 // NOTE: We don't follow the file-hierarchy here
 // The reason is because this is a nested class of semantic model
@@ -52,6 +54,18 @@ public sealed partial class SemanticModel
 
         internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference) =>
             this.UnderlyingBinder.LookupLocal(result, name, ref flags, allowSymbol, currentReference);
+
+        // API /////////////////////////////////////////////////////////////////
+
+        public override BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics) =>
+            this.semanticModel.boundFunctions.GetOrAdd(
+                key: function,
+                valueFactory: _ => base.BindFunction(function, diagnostics));
+
+        public override (Internal.Symbols.TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics) =>
+            this.semanticModel.boundGlobals.GetOrAdd(
+                key: global,
+                valueFactory: _ => base.BindGlobal(global, diagnostics));
 
         // Memoizing overrides /////////////////////////////////////////////////
 

@@ -536,6 +536,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         Assert.True(input.SequenceEqual(output));
     }
 
+    [Fact]
     public void InCodeModuleUsage()
     {
         var assembly = Compile(""""

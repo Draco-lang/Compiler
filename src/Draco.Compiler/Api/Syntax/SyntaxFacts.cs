@@ -60,6 +60,7 @@ public static class SyntaxFacts
         TokenKind.MinusAssign => "-=",
         TokenKind.StarAssign => "*=",
         TokenKind.SlashAssign => "/=",
+        TokenKind.Ellipsis => "...",
         _ => null,
     };
 

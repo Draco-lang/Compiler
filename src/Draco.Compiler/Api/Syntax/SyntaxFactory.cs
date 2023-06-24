@@ -99,7 +99,7 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList(Comma, parameters);
     public static SeparatedSyntaxList<ParameterSyntax> ParameterList(params ParameterSyntax[] parameters) =>
         SeparatedSyntaxList(Comma, parameters);
-    public static ParameterSyntax Parameter(string name, TypeSyntax type) => Parameter(Name(name), Colon, type);
+    public static ParameterSyntax Parameter(string name, TypeSyntax type) => Parameter(null, Name(name), Colon, type);
 
     public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
         SeparatedSyntaxList(Comma, parameters);

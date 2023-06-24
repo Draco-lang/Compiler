@@ -67,35 +67,7 @@ internal abstract partial class Binder
     protected virtual Binder GetBinder(SyntaxNode node) =>
         this.Compilation.GetBinder(node);
 
-    private FunctionSymbol GetGetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
-    {
-        var result = prop.Getter;
-        if (result is null)
-        {
-            diags.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
-                location: syntax?.Location,
-                prop.FullName));
-            result = new NoOverloadFunctionSymbol(0);
-        }
-        return result;
-    }
-
-    private FunctionSymbol GetSetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
-    {
-        var result = prop.Setter;
-        if (result is null)
-        {
-            diags.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
-                location: syntax?.Location,
-                prop.FullName));
-            result = new NoOverloadFunctionSymbol(1);
-        }
-        return result;
-    }
-
-    public BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
+    public virtual BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
         var functionName = function.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(function.DeclaringSyntax, $"function {functionName}");
@@ -105,7 +77,7 @@ internal abstract partial class Binder
         return boundStatement;
     }
 
-    public (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
+    public virtual (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
         var globalName = global.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(global.DeclaringSyntax, $"global {globalName}");
@@ -159,4 +131,32 @@ internal abstract partial class Binder
     // Once we start modeling module member access without throwing it away, we can get rid of it.
     internal virtual void BindModuleSyntaxToSymbol(SyntaxNode syntax, ModuleSymbol module) { }
     internal virtual void BindTypeSyntaxToSymbol(SyntaxNode syntax, TypeSymbol type) { }
+
+    private FunctionSymbol GetGetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    {
+        var result = prop.Getter;
+        if (result is null)
+        {
+            diags.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
+                location: syntax?.Location,
+                prop.FullName));
+            result = new NoOverloadFunctionSymbol(0);
+        }
+        return result;
+    }
+
+    private FunctionSymbol GetSetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    {
+        var result = prop.Setter;
+        if (result is null)
+        {
+            diags.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
+                location: syntax?.Location,
+                prop.FullName));
+            result = new NoOverloadFunctionSymbol(1);
+        }
+        return result;
+    }
 }

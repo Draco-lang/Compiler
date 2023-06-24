@@ -168,7 +168,21 @@ internal partial class BoundObjectCreationExpression
 
 internal partial class BoundArrayCreationExpression
 {
-    public override TypeSymbol Type => new ArrayTypeSymbol(this.ElementType, this.Sizes.Length);
+    public override TypeSymbol Type => this.Sizes.Length switch
+    {
+        1 => IntrinsicSymbols.Array.GenericInstantiate(this.ElementType),
+        int n => new ArrayTypeSymbol(n).GenericInstantiate(this.ElementType),
+    };
+}
+
+internal partial class BoundArrayAccessExpression
+{
+    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
+}
+
+internal partial class BoundArrayLengthExpression
+{
+    public override TypeSymbol? Type => IntrinsicSymbols.Int32;
 }
 
 internal partial class BoundCallExpression
@@ -210,5 +224,5 @@ internal partial class BoundFieldLvalue
 
 internal partial class BoundArrayAccessLvalue
 {
-    public override TypeSymbol Type => ((ArrayTypeSymbol)this.Array.TypeRequired).ElementType;
+    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
 }

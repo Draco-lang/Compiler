@@ -90,7 +90,7 @@
     <Field Name="Promise" Type="IConstraintPromise&lt;UntypedExpression&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
-  
+
   <Node Name="UntypedUnaryExpression" Base="UntypedExpression">
     <Field Name="Operator" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
     <Field Name="Operand" Type="UntypedExpression" />
@@ -188,8 +188,8 @@
 
   <Node Name="UntypedMemberExpression" Base="UntypedExpression">
     <Field Name="Accessed" Type="UntypedExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
     <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <AbstractNode Name="UntypedStringPart" Base="UntypedNode" />
@@ -245,7 +245,7 @@
 
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">
     <Field Name="Accessed" Type="UntypedExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
     <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 </Tree>

@@ -168,21 +168,21 @@ internal sealed class ConstraintSolver
     /// <param name="original">The original type, usually a type variable.</param>
     /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
     /// <returns>The promise of the type symbol symbol.</returns>
-    public IConstraintPromise<TResult> Substituted<TResult>(TypeSymbol original, Func<IConstraintPromise<TResult>> map)
+    public IConstraintPromise<TResult> Substituted<TResult>(TypeSymbol original, Func<TResult> map)
     {
         if (!original.IsTypeVariable)
         {
             var constraintPromise = map();
-            return constraintPromise;
+            return ConstraintPromise.FromResult(constraintPromise);
         }
         else
         {
-            var constraint = new AwaitConstraint<IConstraintPromise<TResult>>(this, () => !original.Substitution.IsTypeVariable, map);
+            var constraint = new AwaitConstraint<TResult>(this, () => !original.Substitution.IsTypeVariable, map);
             this.Add(constraint);
 
             var await = new AwaitConstraint<TResult>(this,
-                () => constraint.Promise.IsResolved && constraint.Promise.Result.IsResolved,
-                () => constraint.Promise.Result.Result);
+                () => constraint.Promise.IsResolved && constraint.Promise.IsResolved,
+                () => constraint.Promise.Result);
             this.Add(await);
             return await.Promise;
         }
@@ -472,16 +472,34 @@ internal sealed class ConstraintSolver
     /// <param name="param">The function parameter.</param>
     /// <param name="argType">The passed in argument type.</param>
     /// <returns>The score of the match.</returns>
-    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
+    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType) => ScoreArgument(param.Type, argType);
+
+    private static int? ScoreArgument(TypeSymbol paramType, TypeSymbol argType)
     {
-        var paramType = param.Type.Substitution;
+        paramType = paramType.Substitution;
         argType = argType.Substitution;
 
-        // If the parameter or argument is still a type parameter, we can't score it
-        if (paramType.IsTypeVariable || argType.IsTypeVariable) return null;
+        // If either are still not ground types, we can't decide
+        if (!paramType.IsGroundType || !argType.IsGroundType) return null;
 
         // Exact equality is max score
         if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return 16;
+
+        // TODO: Unspecified what happens for generics
+        // For now we require an exact match and score is the lowest score among generic args
+        if (paramType.IsGenericInstance && argType.IsGenericInstance)
+        {
+            var paramGenericDefinition = paramType.GenericDefinition!;
+            var argGenericDefinition = argType.GenericDefinition!;
+
+            if (!SymbolEqualityComparer.Default.Equals(paramGenericDefinition, argGenericDefinition)) return 0;
+
+            Debug.Assert(paramType.GenericArguments.Length == argType.GenericArguments.Length);
+            return paramType.GenericArguments
+                .Zip(argType.GenericArguments)
+                .Select(pair => ScoreArgument(pair.First, pair.Second))
+                .Min();
+        }
 
         // Type parameter match is half score
         if (paramType is TypeParameterSymbol) return 8;

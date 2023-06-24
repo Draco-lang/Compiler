@@ -214,6 +214,16 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddTypeSpecification(blob);
         }
 
+        case TypeSymbol typeSymbol:
+        {
+            var blob = this.EncodeBlob(e =>
+            {
+                var encoder = e.TypeSpecificationSignature();
+                this.EncodeSignatureType(encoder, typeSymbol);
+            });
+            return this.MetadataBuilder.AddTypeSpecification(blob);
+        }
+
         // Generic function instance
         case FunctionSymbol func when func.IsGenericInstance:
         {
@@ -526,6 +536,21 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         if (type.GenericArguments.Length > 0)
         {
+            // Check, if this is an array
+            if (type.GenericDefinition is ArrayTypeSymbol arrayType)
+            {
+                // One-dimensional arrays are special
+                if (arrayType.Rank == 1)
+                {
+                    Debug.Assert(type.GenericArguments.Length == 1);
+                    var elementType = type.GenericArguments[0];
+                    this.EncodeSignatureType(encoder.SZArray(), elementType);
+                    return;
+                }
+                // TODO
+                throw new NotImplementedException();
+            }
+
             // Generic instantiation
             Debug.Assert(type.GenericDefinition is not null);
             var genericsEncoder = encoder.GenericInstantiation(
@@ -543,13 +568,6 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             var reference = this.GetEntityHandle(metadataType);
             encoder.Type(reference, metadataType.IsValueType);
-            return;
-        }
-
-        // TODO: Multi-dimensional arrays
-        if (type is ArrayTypeSymbol { Rank: 1 } arrayType)
-        {
-            this.EncodeSignatureType(encoder.SZArray(), arrayType.ElementType);
             return;
         }
 

@@ -27,11 +27,20 @@ internal static class ConstraintPromise
     public static IConstraintPromise<TResult> FromResult<TResult>(TResult result) =>
         new ResolvedConstraintPromise<TResult>(result);
 
+    /// <summary>
+    /// Unwraps a nested constraint promise type.
+    /// </summary>
+    /// <typeparam name="TResult">The result of the nested promise.</typeparam>
+    /// <param name="promise">The unwrapped promise.</param>
+    /// <returns>A flattened promise.</returns>
+    public static IConstraintPromise<TResult> Unwrap<TResult>(this IConstraintPromise<IConstraintPromise<TResult>> promise) =>
+        new UnwrapConstraintPromise<TResult>(promise);
+
     private sealed class ResolvedConstraintPromise<TResult> : IConstraintPromise<TResult>
     {
         public bool IsResolved => true;
         public TResult Result { get; }
-        public IConstraint<TResult> Constraint => throw new NotSupportedException();
+        public IConstraint<TResult> Constraint => throw new NotSupportedException("no constraint is associated with a completed promise");
         IConstraint IConstraintPromise.Constraint => this.Constraint;
 
         public ResolvedConstraintPromise(TResult result)
@@ -95,5 +104,32 @@ internal static class ConstraintPromise
                 diagnostics.Add(diag);
             }
         }
+    }
+
+    private sealed class UnwrapConstraintPromise<TResult> : IConstraintPromise<TResult>
+    {
+        public IConstraint<TResult> Constraint => throw new NotSupportedException("no constraint is associated with an unwrap promise");
+        IConstraint IConstraintPromise.Constraint => this.Constraint;
+
+        public TResult Result => this.underlying.Result.Result;
+        public bool IsResolved => this.underlying.IsResolved && this.underlying.Result.IsResolved;
+
+        private readonly IConstraintPromise<IConstraintPromise<TResult>> underlying;
+
+        public UnwrapConstraintPromise(IConstraintPromise<IConstraintPromise<TResult>> underlying)
+        {
+            this.underlying = underlying;
+        }
+
+        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
+        {
+            this.underlying.ConfigureDiagnostic(configure);
+            return this;
+        }
+        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
+            this.ConfigureDiagnostic(configure);
+
+        public void Resolve(TResult result) => throw new NotSupportedException("can not resolve unwrap promise");
+        public void Fail(TResult result, DiagnosticBag? diagnostics) => throw new NotSupportedException("can not fail unwrap promise");
     }
 }

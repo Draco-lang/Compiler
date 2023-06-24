@@ -482,6 +482,61 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void MergeArrays()
+    {
+        var assembly = Compile("""
+            func merge<T>(a: Array<T>, b: Array<T>): Array<T> {
+                val result = Array(a.Length + b.Length);
+                var offs = 0;
+                while (offs < a.Length) {
+                    result[offs] = a[offs];
+                    offs += 1;
+                }
+                while (offs - a.Length < b.Length) {
+                    result[offs] = b[offs - a.Length];
+                    offs += 1;
+                }
+                return result;
+            }
+
+            public func merge_int(a: Array<int32>, b: Array<int32>): Array<int32> = merge(a, b);
+            """);
+
+        var input1 = new[] { 1, 3 };
+        var input2 = new[] { 2, 4 };
+        var expectedOutput = new[] { 1, 3, 2, 4 };
+        var output = Invoke<int[]>(assembly, "merge_int", input1, input2);
+        Assert.True(output.SequenceEqual(expectedOutput));
+    }
+
+    [Fact]
+    public void BubbleSortArray()
+    {
+        var assembly = Compile("""
+            public func bubblesort(a: Array<int32>) {
+                var i = 1;
+                while (i < a.Length) {
+                    var j = 0;
+                    while (j < a.Length - i) {
+                        if (a[j + 1] < a[j]) {
+                            val tmp = a[j];
+                            a[j] = a[j + 1];
+                            a[j + 1] = tmp;
+                        }
+                        j += 1;
+                    }
+                    i += 1;
+                }
+            }
+            """);
+
+        var input = new[] { 17, 1, 12, 7, 10, 10, 6, 12, 2, 8 };
+        var output = new[] { 1, 2, 6, 7, 8, 10, 10, 12, 12, 17 };
+        Invoke<object?>(assembly, "bubblesort", input);
+        Assert.True(input.SequenceEqual(output));
+    }
+
+    [Fact]
     public void InCodeModuleUsage()
     {
         var assembly = Compile(""""

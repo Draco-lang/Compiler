@@ -199,11 +199,28 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
+    public override IOperand VisitArrayAccessExpression(BoundArrayAccessExpression node)
+    {
+        var array = this.Compile(node.Array);
+        var indices = node.Indices.Select(this.Compile).ToList();
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(ArrayElement(result, array, indices));
+        return result;
+    }
+
     public override IOperand VisitArrayCreationExpression(BoundArrayCreationExpression node)
     {
         var dimensions = node.Sizes.Select(this.Compile).ToList();
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(NewArray(result, node.ElementType, dimensions));
+        return result;
+    }
+
+    public override IOperand VisitArrayLengthExpression(BoundArrayLengthExpression node)
+    {
+        var array = this.Compile(node.Array);
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(ArrayLength(result, array));
         return result;
     }
 

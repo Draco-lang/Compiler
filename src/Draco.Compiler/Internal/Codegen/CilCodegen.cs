@@ -209,13 +209,18 @@ internal sealed class CilCodegen
                 this.EncodePush(store.Source);
                 if (arrayAccess.Indices.Length == 1)
                 {
-                    if (store.Source.Type!.IsValueType)
+                    var storedValueType = store.Source.Type!.Substitution;
+                    var targetStorageType = arrayAccess.Type.Substitution;
+                    var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
+                    if (needsToBox)
                     {
                         // We need to box it
                         this.InstructionEncoder.OpCode(ILOpCode.Box);
-                        this.EncodeToken(store.Source.Type);
+                        this.EncodeToken(store.Source.Type!);
                     }
-                    this.InstructionEncoder.OpCode(ILOpCode.Stelem_ref);
+                    // Actual store
+                    this.InstructionEncoder.OpCode(ILOpCode.Stelem);
+                    this.EncodeToken(targetStorageType);
                 }
                 else
                 {
@@ -279,6 +284,39 @@ internal sealed class CilCodegen
             }
             // Store result
             this.StoreLocal(newArr.Target);
+            break;
+        }
+        case ArrayElementInstruction arrElement:
+        {
+            // Array
+            this.EncodePush(arrElement.Array);
+            // Indices
+            foreach (var i in arrElement.Indices) this.EncodePush(i);
+            // One-dimensional and multi-dimensional arrays are very different
+            if (arrElement.Indices.Count == 1)
+            {
+                this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
+                this.EncodeToken(arrElement.Target.Type);
+            }
+            else
+            {
+                // TODO: More complicated, because it's a proper type
+                throw new NotImplementedException();
+            }
+            // Store result
+            this.StoreLocal(arrElement.Target);
+            break;
+        }
+        case ArrayLengthInstruction arrLen:
+        {
+            // Array
+            this.EncodePush(arrLen.Array);
+            // Length query
+            this.InstructionEncoder.OpCode(ILOpCode.Ldlen);
+            // Convert to I4
+            this.InstructionEncoder.OpCode(ILOpCode.Conv_i4);
+            // Store result
+            this.StoreLocal(arrLen.Target);
             break;
         }
         default:

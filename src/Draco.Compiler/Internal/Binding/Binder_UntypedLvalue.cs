@@ -85,7 +85,7 @@ internal partial class Binder
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType);
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
-            return new UntypedMemberLvalue(syntax, left, memberType, promise);
+            return new UntypedMemberLvalue(syntax, left, promise, memberType);
         }
     }
 
@@ -106,24 +106,42 @@ internal partial class Binder
         {
             return new UntypedIllegalLvalue(index);
         }
-        var args = index.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
+        var args = index.IndexList.Values
+            .Select(x => this.BindExpression(x, constraints, diagnostics))
+            .ToImmutableArray();
         var returnType = constraints.AllocateTypeVariable();
         var promise = constraints.Substituted(receiver.TypeRequired, () =>
         {
-            var indexers = receiver.TypeRequired.Substitution.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Setter).OfType<FunctionSymbol>().ToImmutableArray();
+            var receiverType = receiver.TypeRequired.Substitution;
+
+            // General indexer
+            var indexers = receiverType
+                .Members
+                .OfType<PropertySymbol>()
+                .Where(x => x.IsIndexer)
+                .Select(x => x.Setter)
+                .OfType<FunctionSymbol>()
+                .ToImmutableArray();
             if (indexers.Length == 0)
             {
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.NoSettableIndexerInType,
                     location: index.Location,
-                    receiver.ToString()));
+                    formatArgs: receiverType));
                 constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }
-            var overloaded = constraints.Overload(indexers, args.Select(x => x.TypeRequired).Append(returnType).ToImmutableArray(), out var gotReturnType);
+            var argTypes = args
+                .Select(x => x.TypeRequired)
+                .Append(returnType)
+                .ToImmutableArray();
+            var overloaded = constraints.Overload(indexers, argTypes, out var gotReturnType);
             constraints.Unify(returnType, gotReturnType);
+            overloaded.ConfigureDiagnostic(diag => diag
+                .WithLocation(index.Location));
             return overloaded;
-        });
+        }).Unwrap();
+
         promise.ConfigureDiagnostic(diag => diag
             .WithLocation(index.Location));
 

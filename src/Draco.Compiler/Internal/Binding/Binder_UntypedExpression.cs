@@ -499,7 +499,7 @@ internal partial class Binder
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType);
             promise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
-            return new UntypedMemberExpression(syntax, left, memberType, promise);
+            return new UntypedMemberExpression(syntax, left, promise, memberType);
         }
     }
 
@@ -514,20 +514,35 @@ internal partial class Binder
         var returnType = constraints.AllocateTypeVariable();
         var promise = constraints.Substituted(receiver.TypeRequired, () =>
         {
-            var indexers = receiver.TypeRequired.Substitution.Members.OfType<PropertySymbol>().Where(x => x.IsIndexer).Select(x => x.Getter).OfType<FunctionSymbol>().ToImmutableArray();
+            var receiverType = receiver.TypeRequired.Substitution;
+
+            // General indexer
+            var indexers = receiverType
+                .Members
+                .OfType<PropertySymbol>()
+                .Where(x => x.IsIndexer)
+                .Select(x => x.Getter)
+                .OfType<FunctionSymbol>()
+                .ToImmutableArray();
             if (indexers.Length == 0)
             {
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.NoGettableIndexerInType,
                     location: index.Location,
-                    receiver.ToString()));
+                    formatArgs: receiver.Type));
                 constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
-                return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
+                return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
             }
-            var overloaded = constraints.Overload(indexers, args.Select(x => x.TypeRequired).ToImmutableArray(), out var gotReturnType);
+            var argTypes = args
+                .Select(x => x.TypeRequired)
+                .ToImmutableArray();
+            var overloaded = constraints.Overload(indexers, argTypes, out var gotReturnType);
             constraints.Unify(returnType, gotReturnType);
+            overloaded.ConfigureDiagnostic(diag => diag
+                .WithLocation(index.Location));
             return overloaded;
-        });
+        }).Unwrap();
+
         promise.ConfigureDiagnostic(diag => diag
             .WithLocation(index.Location));
 
@@ -605,7 +620,7 @@ internal partial class Binder
                         .ToImmutableArray();
 
                     // Wrap them back up in a member expression
-                    return new UntypedMemberExpression(syntax, member.Accessed, member.Type, ConstraintPromise.FromResult(instantiatedFuncs));
+                    return new UntypedMemberExpression(syntax, member.Accessed, ConstraintPromise.FromResult(instantiatedFuncs), member.Type);
                 }
             });
             // NOTE: The generic function itself has no concrete type

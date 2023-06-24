@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -118,6 +119,13 @@ internal partial class Binder
     {
         var receiver = this.TypeExpression(index.Receiver, constraints, diagnostics);
         var indices = index.Indices.Select(x => this.TypeExpression(x, constraints, diagnostics)).ToImmutableArray();
+        var getter = index.Getter.Result;
+        var arrayIndexProperty = (getter.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
+        if (arrayIndexProperty is not null)
+        {
+            // Array getter
+            return new BoundArrayAccessExpression(index.Syntax, receiver, indices);
+        }
         return new BoundIndexGetExpression(index.Syntax, receiver, index.Getter.Result, indices);
     }
 
@@ -231,6 +239,23 @@ internal partial class Binder
             var indices = index.Indices
                 .Select(x => this.TypeExpression(x, constraints, diagnostics))
                 .ToImmutableArray();
+
+            var setter = index.Setter.Result;
+            var arrayIndexProperty = (setter.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
+            if (arrayIndexProperty is not null)
+            {
+                // Array setter
+                var arrayLvalue = new BoundArrayAccessLvalue(
+                    assignment.Left.Syntax,
+                    receiver,
+                    indices);
+                return new BoundAssignmentExpression(
+                    assignment.Syntax,
+                    compoundOperator,
+                    arrayLvalue,
+                    typedRight);
+            }
+
             return new BoundIndexSetExpression(
                 assignment.Syntax,
                 receiver,
@@ -326,8 +351,16 @@ internal partial class Binder
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
             if (member is PropertySymbol prop)
             {
-                var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
-                return new BoundPropertyGetExpression(mem.Syntax, left, getter);
+                // It could be array length
+                if (prop.GenericDefinition is ArrayLengthPropertySymbol)
+                {
+                    return new BoundArrayLengthExpression(mem.Syntax, left);
+                }
+                else
+                {
+                    var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
+                    return new BoundPropertyGetExpression(mem.Syntax, left, getter);
+                }
             }
             return new BoundMemberExpression(mem.Syntax, left, (Symbol)member, member.Type);
         }

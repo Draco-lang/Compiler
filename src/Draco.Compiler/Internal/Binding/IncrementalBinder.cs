@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.UntypedTree;
 
 // NOTE: We don't follow the file-hierarchy here
@@ -53,16 +54,19 @@ public sealed partial class SemanticModel
         internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference) =>
             this.UnderlyingBinder.LookupLocal(result, name, ref flags, allowSymbol, currentReference);
 
+        // API /////////////////////////////////////////////////////////////////
+
+        public override BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics) =>
+            this.semanticModel.boundFunctions.GetOrAdd(
+                key: function,
+                valueFactory: _ => base.BindFunction(function, diagnostics));
+
+        public override (Internal.Symbols.TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics) =>
+            this.semanticModel.boundGlobals.GetOrAdd(
+                key: global,
+                valueFactory: _ => base.BindGlobal(global, diagnostics));
+
         // Memoizing overrides /////////////////////////////////////////////////
-
-        protected override UntypedStatement BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.BindNode(syntax, () => base.BindStatement(syntax, constraints, diagnostics));
-
-        protected override UntypedExpression BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.BindNode(syntax, () => base.BindExpression(syntax, constraints, diagnostics));
-
-        protected override UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.BindNode(syntax, () => base.BindLvalue(syntax, constraints, diagnostics));
 
         internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));
@@ -91,15 +95,14 @@ public sealed partial class SemanticModel
 
         // Memo logic
 
-        private TUntypedNode BindNode<TUntypedNode>(SyntaxNode syntax, Func<TUntypedNode> binder)
-            where TUntypedNode : UntypedNode => (TUntypedNode)this.semanticModel.untypedNodeMap.GetOrAdd(
-                key: syntax,
-                valueFactory: _ => binder());
-
         private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode untyped, Func<TBoundNode> binder)
             where TUntypedNode : UntypedNode
-            where TBoundNode : BoundNode => (TBoundNode)this.semanticModel.boundNodeMap.GetOrAdd(
-                key: untyped,
+            where TBoundNode : BoundNode
+        {
+            if (untyped.Syntax is null) return binder();
+
+            return (TBoundNode)this.semanticModel.boundNodeMap.GetOrAdd(
+                key: (untyped.Syntax, typeof(TBoundNode)),
                 valueFactory: _ =>
                 {
                     var node = binder();
@@ -115,6 +118,7 @@ public sealed partial class SemanticModel
 
                     return node;
                 });
+        }
 
         private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder) => this.semanticModel.symbolMap.GetOrAdd(
             key: node,

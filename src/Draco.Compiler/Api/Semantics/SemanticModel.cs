@@ -11,7 +11,6 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -38,8 +37,9 @@ public sealed partial class SemanticModel : IBinderProvider
     private readonly Compilation compilation;
 
     // Filled out by incremental binding
-    private readonly ConcurrentDictionary<SyntaxNode, UntypedNode> untypedNodeMap = new();
-    private readonly ConcurrentDictionary<UntypedNode, BoundNode> boundNodeMap = new();
+    private readonly ConcurrentDictionary<SourceFunctionSymbol, BoundStatement> boundFunctions = new();
+    private readonly ConcurrentDictionary<SourceGlobalSymbol, (Internal.Symbols.TypeSymbol Type, BoundExpression? Value)> boundGlobals = new();
+    private readonly ConcurrentDictionary<(SyntaxNode, System.Type), BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 
     internal SemanticModel(Compilation compilation, SyntaxTree tree)
@@ -264,7 +264,7 @@ public sealed partial class SemanticModel : IBinderProvider
     /// or null if it does not evaluate to a value with type.</returns>
     public ITypeSymbol? TypeOf(ExpressionSyntax syntax)
     {
-        if (this.TryGetBoundNode(syntax, out var existing))
+        if (this.TryGetBoundNode(syntax, typeof(BoundExpression), out var existing))
         {
             return (existing as BoundExpression)?.Type?.ToApiSymbol();
         }
@@ -294,19 +294,12 @@ public sealed partial class SemanticModel : IBinderProvider
         }
 
         // Attempt to retrieve
-        this.TryGetBoundNode(syntax, out var node);
+        this.TryGetBoundNode(syntax, typeof(BoundExpression), out var node);
         return (node as BoundExpression)?.Type?.ToApiSymbol();
     }
 
-    private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node)
-    {
-        if (!this.untypedNodeMap.TryGetValue(syntax, out var untypedNode))
-        {
-            node = null;
-            return false;
-        }
-        return this.boundNodeMap.TryGetValue(untypedNode, out node);
-    }
+    private bool TryGetBoundNode(SyntaxNode syntax, System.Type type, [MaybeNullWhen(false)] out BoundNode node) =>
+        this.boundNodeMap.TryGetValue((syntax, type), out node);
 
     /// <summary>
     /// Retrieves the function overloads referenced by <paramref name="syntax"/>.

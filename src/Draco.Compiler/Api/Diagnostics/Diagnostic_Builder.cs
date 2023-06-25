@@ -32,7 +32,8 @@ public sealed partial class Diagnostic
                 template: this.Template,
                 location: this.Location,
                 formatArgs: this.FormatArgs ?? Array.Empty<object?>(),
-                relatedInformation: this.RelatedInformation?.ToImmutable() ?? ImmutableArray<DiagnosticRelatedInformation>.Empty);
+                relatedInformation: this.RelatedInformation?.ToImmutable()
+                                 ?? ImmutableArray<DiagnosticRelatedInformation>.Empty);
             return true;
         }
 

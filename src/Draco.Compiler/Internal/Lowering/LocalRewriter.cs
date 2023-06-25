@@ -206,7 +206,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 .Select(tmp => tmp.Symbol)
                 .OfType<LocalSymbol>()
                 .ToImmutableArray(),
-            statements: tmpVariables.Select(t => t.Assignment).ToImmutableArray(),
+            statements: tmpVariables
+                .Select(t => t.Assignment)
+                .ToImmutableArray(),
             value: conjunction);
     }
 
@@ -373,7 +375,10 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
         var receiver = (BoundExpression)node.Receiver.Accept(this);
         var setter = node.Setter;
-        var args = node.Indices.Append(node.Value).Select(x => (BoundExpression)x.Accept(this)).ToImmutableArray();
+        var args = node.Indices
+            .Append(node.Value)
+            .Select(x => (BoundExpression)x.Accept(this))
+            .ToImmutableArray();
 
         return CallExpression(
             receiver: receiver,
@@ -391,7 +396,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
         var receiver = (BoundExpression)node.Receiver.Accept(this);
         var getter = node.Getter;
-        var args = node.Indices.Select(x => (BoundExpression)x.Accept(this)).ToImmutableArray();
+        var args = node.Indices
+            .Select(x => (BoundExpression)x.Accept(this))
+            .ToImmutableArray();
 
         return CallExpression(
             receiver: receiver,

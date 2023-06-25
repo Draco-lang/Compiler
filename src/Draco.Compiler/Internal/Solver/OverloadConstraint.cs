@@ -63,7 +63,9 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             .Where(this.MatchesParameterCount)
             .ToList();
         var maxArgc = functionsWithMatchingArgc
-            .Max(f => f.Parameters.Length);
+            .Select(f => f.Parameters.Length)
+            .Append(0)
+            .Max();
         var candidates = functionsWithMatchingArgc
             .Select(f => new Candidate(f, new(maxArgc)))
             .ToList();

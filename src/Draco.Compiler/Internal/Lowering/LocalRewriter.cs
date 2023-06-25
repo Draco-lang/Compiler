@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -33,6 +36,83 @@ internal partial class LocalRewriter : BoundTreeRewriter
     public LocalRewriter(Compilation compilation)
     {
         this.compilation = compilation;
+    }
+
+    public override BoundNode VisitCallExpression(BoundCallExpression node)
+    {
+        if (!node.Method.IsVariadic) return base.VisitCallExpression(node);
+
+        // For variadics we desugar to array construction
+        //
+        // method(fixedArg1, ..., fixedArgN, varArg1, ..., varArgM);
+        //
+        // =>
+        //
+        // {
+        //     // We pre-eval all args to keep evaluation order
+        //     val tmp1 = fixedArg1;
+        //     ...
+        //     val tmpN = fixedArgN;
+        //     val varArgs = Array(M);
+        //     varArgs[0] = varArg1;
+        //     ...
+        //     varArgs[M] = varArgM;
+        //     method(tmp1, ..., tmpN, varArgs);
+        // }
+
+        var receiver = (BoundExpression?)node.Receiver?.Accept(this);
+
+        var method = node.Method;
+        var fixedArgs = node.Arguments
+            .Take(method.Parameters.Length - 1)
+            .Select(n => n.Accept(this))
+            .Cast<BoundExpression>()
+            .Select(this.StoreTemporary)
+            .ToList();
+        var variadicType = method.Parameters[^1].Type;
+
+        if (!BinderFacts.TryGetVariadicElementType(variadicType, out var elementType))
+        {
+            // NOTE: Should not happen
+            throw new InvalidOperationException();
+        }
+
+        var varArgs = new SynthetizedLocalSymbol(variadicType, false);
+        var varArgCount = node.Arguments.Length - (method.Parameters.Length - 1);
+        var varArgAssignments = node.Arguments
+            .Skip(method.Parameters.Length - 1)
+            .Select(n => n.Accept(this))
+            .Cast<BoundExpression>()
+            .Select((n, i) => ExpressionStatement(AssignmentExpression(
+                compoundOperator: null,
+                left: ArrayAccessLvalue(
+                    array: LocalExpression(varArgs),
+                    indices: ImmutableArray.Create<BoundExpression>(LiteralExpression(i))),
+                right: n)) as BoundStatement);
+
+        return BlockExpression(
+            locals: fixedArgs
+                .Select(a => a.Symbol)
+                .OfType<LocalSymbol>()
+                .Append(varArgs)
+                .ToImmutableArray(),
+            statements: fixedArgs
+                .Select(a => a.Assignment)
+                .Append(ExpressionStatement(AssignmentExpression(
+                    compoundOperator: null,
+                    left: LocalLvalue(varArgs),
+                    right: ArrayCreationExpression(
+                        elementType: elementType,
+                        sizes: ImmutableArray.Create<BoundExpression>(LiteralExpression(varArgCount))))))
+                .Concat(varArgAssignments)
+                .ToImmutableArray(),
+            value: CallExpression(
+                receiver: receiver,
+                method: method,
+                arguments: fixedArgs
+                    .Select(a => a.Reference)
+                    .Append(LocalExpression(varArgs))
+                    .ToImmutableArray()));
     }
 
     public override BoundNode VisitBlockExpression(BoundBlockExpression node)

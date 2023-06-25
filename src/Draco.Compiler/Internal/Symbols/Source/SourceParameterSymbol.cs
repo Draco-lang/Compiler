@@ -13,6 +13,7 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     private TypeSymbol? type;
 
     public override Symbol ContainingSymbol { get; }
+    public override bool IsVariadic => this.DeclaringSyntax.Variadic is not null;
     public override string Name => this.DeclaringSyntax.Name.Text;
 
     public override ParameterSyntax DeclaringSyntax { get; }

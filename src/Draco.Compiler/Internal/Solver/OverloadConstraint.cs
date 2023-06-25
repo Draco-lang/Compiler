@@ -99,9 +99,17 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             var chosen = this.ChooseSymbol(dominatingCandidates[0]);
 
             // Inference
-            // NOTE: Unification won't always be correct, especially not when subtyping arises
-            foreach (var (param, argType) in chosen.Parameters.Zip(this.Arguments)) this.Unify(param.Type, argType);
-            this.Unify(this.ReturnType, chosen.ReturnType);
+            if (chosen.IsVariadic)
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+            else
+            {
+                // NOTE: Unification won't always be correct, especially not when subtyping arises
+                foreach (var (param, argType) in chosen.Parameters.Zip(this.Arguments)) this.Unify(param.Type, argType);
+                this.Unify(this.ReturnType, chosen.ReturnType);
+            }
             // Resolve promise
             this.Promise.Resolve(chosen);
             yield return SolveState.Solved;

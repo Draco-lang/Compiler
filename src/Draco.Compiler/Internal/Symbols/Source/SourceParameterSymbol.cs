@@ -1,3 +1,4 @@
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 
@@ -32,6 +33,20 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Type);
-        return binder.BindTypeToTypeSymbol(this.DeclaringSyntax.Type, binderProvider.DiagnosticBag);
+        var diagnostics = binderProvider.DiagnosticBag;
+
+        var result = binder.BindTypeToTypeSymbol(this.DeclaringSyntax.Type, diagnostics);
+
+        // Check if this is a legal variadic type
+        if (this.IsVariadic && !result.IsError && !BinderFacts.TryGetVariadicElementType(result, out _))
+        {
+            // It's not
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.IllegalVariadicType,
+                location: this.DeclaringSyntax.Type.Location,
+                formatArgs: result));
+        }
+
+        return result;
     }
 }

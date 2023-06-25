@@ -140,7 +140,7 @@ internal sealed class CallConstraint : Constraint<Unit>
             // If the argument is not null, it means we have already scored it
             if (score is not null) continue;
 
-            score = this.Solver.ScoreArgument(param, arg);
+            score = OverloadConstraint.ScoreArgument(param, arg);
             changed = changed || score is not null;
             scoreVector[i] = score;
 

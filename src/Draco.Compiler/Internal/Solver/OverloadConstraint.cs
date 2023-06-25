@@ -101,15 +101,30 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             // Inference
             if (chosen.IsVariadic)
             {
-                // TODO
-                throw new NotImplementedException();
+                if (!BinderFacts.TryGetVariadicElementType(chosen.Parameters[^1].Type, out var elementType))
+                {
+                    // Should not happen
+                    throw new InvalidOperationException();
+                }
+                var nonVariadicPairs = chosen.Parameters
+                    .SkipLast(1)
+                    .Zip(this.Arguments);
+                var variadicPairs = this.Arguments
+                    .Skip(chosen.Parameters.Length - 1)
+                    .Select(a => (ParameterType: elementType, ArgumentType: a));
+                // NOTE: Unification won't always be correct, especially not when subtyping arises
+                foreach (var (param, argType) in nonVariadicPairs) this.Unify(param.Type, argType);
+                // NOTE: Unification won't always be correct, especially not when subtyping arises
+                foreach (var (paramType, argType) in variadicPairs) this.Unify(paramType, argType);
             }
             else
             {
                 // NOTE: Unification won't always be correct, especially not when subtyping arises
                 foreach (var (param, argType) in chosen.Parameters.Zip(this.Arguments)) this.Unify(param.Type, argType);
-                this.Unify(this.ReturnType, chosen.ReturnType);
             }
+            // NOTE: Unification won't always be correct, especially not when subtyping arises
+            // In all cases, return type is simple
+            this.Unify(this.ReturnType, chosen.ReturnType);
             // Resolve promise
             this.Promise.Resolve(chosen);
             yield return SolveState.Solved;

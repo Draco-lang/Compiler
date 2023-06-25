@@ -467,12 +467,37 @@ internal sealed class ConstraintSolver
     }
 
     /// <summary>
+    /// Scores a sequence of variadic function call argument.
+    /// </summary>
+    /// <param name="param">The variadic function parameter.</param>
+    /// <param name="argTypes">The passed in argument types.</param>
+    /// <returns>The score of the match.</returns>
+    public int? ScoreVariadicArguments(ParameterSymbol param, IEnumerable<TypeSymbol> argTypes)
+    {
+        if (!param.IsVariadic) throw new ArgumentException("the provided parameter is not variadic", nameof(param));
+        if (!BinderFacts.TryGetVariadicElementType(param.Type, out var elementType)) return 0;
+
+        return argTypes
+            .Select(argType => ScoreArgument(elementType, argType))
+            .Append(HalfScore)
+            .Min();
+    }
+
+    /// <summary>
     /// Scores a function call argument.
     /// </summary>
     /// <param name="param">The function parameter.</param>
     /// <param name="argType">The passed in argument type.</param>
     /// <returns>The score of the match.</returns>
-    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType) => ScoreArgument(param.Type, argType);
+    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
+    {
+        if (param.IsVariadic) throw new ArgumentException("the provided parameter variadic", nameof(param));
+        return ScoreArgument(param.Type, argType);
+    }
+
+    public const int FullScore = 16;
+    public const int HalfScore = 8;
+    public const int ZeroScore = 0;
 
     private static int? ScoreArgument(TypeSymbol paramType, TypeSymbol argType)
     {
@@ -483,7 +508,7 @@ internal sealed class ConstraintSolver
         if (!paramType.IsGroundType || !argType.IsGroundType) return null;
 
         // Exact equality is max score
-        if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return 16;
+        if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return FullScore;
 
         // TODO: Unspecified what happens for generics
         // For now we require an exact match and score is the lowest score among generic args
@@ -492,7 +517,7 @@ internal sealed class ConstraintSolver
             var paramGenericDefinition = paramType.GenericDefinition!;
             var argGenericDefinition = argType.GenericDefinition!;
 
-            if (!SymbolEqualityComparer.Default.Equals(paramGenericDefinition, argGenericDefinition)) return 0;
+            if (!SymbolEqualityComparer.Default.Equals(paramGenericDefinition, argGenericDefinition)) return ZeroScore;
 
             Debug.Assert(paramType.GenericArguments.Length == argType.GenericArguments.Length);
             return paramType.GenericArguments
@@ -502,9 +527,9 @@ internal sealed class ConstraintSolver
         }
 
         // Type parameter match is half score
-        if (paramType is TypeParameterSymbol) return 8;
+        if (paramType is TypeParameterSymbol) return HalfScore;
 
         // Otherwise, no match
-        return 0;
+        return ZeroScore;
     }
 }

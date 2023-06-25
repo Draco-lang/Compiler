@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
@@ -58,9 +59,13 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
         var functionName = this.Candidates[0].Name;
-        var candidates = this.Candidates
+        var functionsWithMatchingArgc = this.Candidates
             .Where(this.MatchesParameterCount)
-            .Select(f => new Candidate(f, new CallScore(f.Parameters.Length)))
+            .ToList();
+        var maxArgc = functionsWithMatchingArgc
+            .Max(f => f.Parameters.Length);
+        var candidates = functionsWithMatchingArgc
+            .Select(f => new Candidate(f, new(maxArgc)))
             .ToList();
 
         while (true)
@@ -197,11 +202,25 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     private bool AdjustScore(Candidate candidate)
     {
         var changed = false;
-        for (var i = 0; i < candidate.Score.Length; ++i)
-        {
-            var (func, scoreVector) = candidate;
+        var (func, scoreVector) = candidate;
 
+        for (var i = 0; i < scoreVector.Length; ++i)
+        {
             var param = func.Parameters[i];
+            // Handle that separately
+            if (param.IsVariadic) continue;
+
+            if (this.Arguments.Length == i)
+            {
+                // Special case, this call was extended because of variadics
+                if (scoreVector[i] is null)
+                {
+                    scoreVector[i] = ConstraintSolver.FullScore;
+                    changed = true;
+                }
+                continue;
+            }
+
             var arg = this.Arguments[i];
             var score = scoreVector[i];
 
@@ -214,6 +233,16 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
             // If the score hit 0, terminate early, this overload got eliminated
             if (score == 0) return changed;
+        }
+        // Handle variadic arguments
+        if (func.IsVariadic && scoreVector[^1] is null)
+        {
+            var variadicParam = func.Parameters[^1];
+            var variadicArgTypes = this.Arguments
+                .Skip(func.Parameters.Length - 1);
+            var score = this.Solver.ScoreVariadicArguments(variadicParam, variadicArgTypes);
+            changed = changed || score is not null;
+            scoreVector[^1] = score;
         }
         return changed;
     }

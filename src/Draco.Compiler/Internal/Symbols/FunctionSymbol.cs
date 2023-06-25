@@ -78,6 +78,11 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// </summary>
     public virtual bool IsVirtual => false;
 
+    /// <summary>
+    /// True, if this is a variadic function.
+    /// </summary>
+    public bool IsVariadic => this.Parameters.Length > 0 && this.Parameters[^1].IsVariadic;
+
     public override FunctionSymbol? GenericDefinition => null;
 
     public override Api.Semantics.Visibility Visibility

@@ -59,7 +59,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     {
         var functionName = this.Candidates[0].Name;
         var candidates = this.Candidates
-            .Where(f => f.Parameters.Length == this.Arguments.Length)
+            .Where(this.MatchesParameterCount)
             .Select(f => new Candidate(f, new CallScore(f.Parameters.Length)))
             .ToList();
 
@@ -110,6 +110,21 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
             this.Promise.Fail(errorSymbol, diagnostics);
             yield return SolveState.Solved;
         }
+    }
+
+    private bool MatchesParameterCount(FunctionSymbol function)
+    {
+        // Exact count match is always eligibe by only param count
+        if (function.Parameters.Length == this.Arguments.Length) return true;
+        // If not variadic, we do need an exact match
+        if (!function.IsVariadic) return false;
+        // Otherise, there must be one less, exactly as many, or more arguments
+        //  - one less means nullary variadics
+        //  - exact match is one variadic
+        //  - more is more variadics
+        if (this.Arguments.Length + 1 >= function.Parameters.Length) return true;
+        // No match
+        return false;
     }
 
     private FunctionSymbol ChooseSymbol(FunctionSymbol chosen)

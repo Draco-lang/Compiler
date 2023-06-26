@@ -1679,4 +1679,71 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Equal(variadicFuncSym, call2Sym);
         Assert.Equal(variadicFuncSym, call3Sym);
     }
+
+    [Fact]
+    public void GenericVariadicOverloadPriority()
+    {
+        // func bar<T>(s: string, x: T): int32 = 0;
+        // func bar<T>(s: string, ...x: Array<T>): int32 = 0;
+        //
+        // func main() {
+        //     bar("Hi", true);
+        //     bar("Hi", 5, 9);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "bar",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    Parameter("s", NameType("string")),
+                    Parameter("x", NameType("T"))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                "bar",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    Parameter("s", NameType("string")),
+                    VariadicParameter("x", GenericType(NameType("Array"), NameType("T")))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi"),
+                        LiteralExpression(true))),
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi"),
+                        LiteralExpression(5),
+                        LiteralExpression(9)))))));
+
+        var nonVariadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var variadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
+        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var nonVariadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(nonVariadicFuncSyntax));
+        var variadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(variadicFuncSyntax));
+        var call1Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call1Syntax.Function));
+        var call2Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call2Syntax.Function));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(nonVariadicFuncSym, call1Sym);
+        Assert.Equal(variadicFuncSym, call2Sym);
+    }
 }

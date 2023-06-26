@@ -285,7 +285,8 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
         return argTypes
             .Select(argType => ScoreArgument(elementType, argType))
-            .Append(HalfScore)
+            .Append(FullScore)
+            .Select(s => s / 2)
             .Min();
     }
 

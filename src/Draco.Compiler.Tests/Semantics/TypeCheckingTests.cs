@@ -1743,7 +1743,9 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(nonVariadicFuncSym, call1Sym);
-        Assert.Equal(variadicFuncSym, call2Sym);
+        Assert.True(call1Sym.IsGenericInstance);
+        Assert.True(call2Sym.IsGenericInstance);
+        Assert.Equal(nonVariadicFuncSym, call1Sym.GenericDefinition);
+        Assert.Equal(variadicFuncSym, call2Sym.GenericDefinition);
     }
 }

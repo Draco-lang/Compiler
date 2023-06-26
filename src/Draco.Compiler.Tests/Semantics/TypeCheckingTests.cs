@@ -1748,4 +1748,87 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Equal(nonVariadicFuncSym, call1Sym.GenericDefinition);
         Assert.Equal(variadicFuncSym, call2Sym.GenericDefinition);
     }
+
+    [Fact]
+    public void InferredGenericsMismatch()
+    {
+        // func foo<T>(x: T, y: T) {}
+        //
+        // func main() {
+        //     foo(1, true);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    Parameter("x", NameType("T")),
+                    Parameter("y", NameType("T"))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("foo"),
+                        LiteralExpression(1),
+                        LiteralExpression(true)))))));
+
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+    }
+
+    [Fact]
+    public void InferredVariadicGenericsMismatch()
+    {
+        // func foo<T>(...xs: Array<T>) {}
+        //
+        // func main() {
+        //     foo(1, true);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    VariadicParameter("xs", GenericType(NameType("Array"), NameType("T")))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("foo"),
+                        LiteralExpression(1),
+                        LiteralExpression(true)))))));
+
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+    }
 }

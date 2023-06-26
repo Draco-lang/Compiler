@@ -11,6 +11,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.UntypedTree;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -107,10 +108,13 @@ internal sealed class ConstraintSolver
     /// Adds a callability constraint to the solver.
     /// </summary>
     /// <param name="calledType">The called function type.</param>
-    /// <param name="args">The calling argument types.</param>
+    /// <param name="args">The calling arguments.</param>
     /// <param name="returnType">The return type.</param>
     /// <returns>The promise of the constraint.</returns>
-    public IConstraintPromise<Unit> Call(TypeSymbol calledType, ImmutableArray<TypeSymbol> args, out TypeSymbol returnType)
+    public IConstraintPromise<Unit> Call(
+        TypeSymbol calledType,
+        ImmutableArray<object> args,
+        out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();
         var constraint = new CallConstraint(this, calledType, args, returnType);
@@ -127,7 +131,7 @@ internal sealed class ConstraintSolver
     /// <returns>The promise for the resolved overload.</returns>
     public IConstraintPromise<FunctionSymbol> Overload(
         ImmutableArray<FunctionSymbol> functions,
-        ImmutableArray<TypeSymbol> args,
+        ImmutableArray<object> args,
         out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();

@@ -1,11 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.UntypedTree;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -23,7 +26,7 @@ internal sealed class CallConstraint : Constraint<Unit>
     /// <summary>
     /// The arguments the function was called with.
     /// </summary>
-    public ImmutableArray<TypeSymbol> Arguments { get; }
+    public ImmutableArray<object> Arguments { get; }
 
     /// <summary>
     /// The return type of the call.
@@ -33,7 +36,7 @@ internal sealed class CallConstraint : Constraint<Unit>
     public CallConstraint(
         ConstraintSolver solver,
         TypeSymbol calledType,
-        ImmutableArray<TypeSymbol> arguments,
+        ImmutableArray<object> arguments,
         TypeSymbol returnType)
         : base(solver)
     {
@@ -122,6 +125,12 @@ internal sealed class CallConstraint : Constraint<Unit>
             yield return changed ? SolveState.AdvancedContinue : SolveState.Stale;
         }
 
+        // We are done
+        foreach (var (param, arg) in functionType.Parameters.Zip(this.Arguments))
+        {
+            this.UnifyParameterWithArgument(param.Type, arg);
+        }
+
         yield return SolveState.Solved;
     }
 
@@ -140,7 +149,7 @@ internal sealed class CallConstraint : Constraint<Unit>
             // If the argument is not null, it means we have already scored it
             if (score is not null) continue;
 
-            score = OverloadConstraint.ScoreArgument(param, arg);
+            score = OverloadConstraint.ScoreArgument(param, ExtractType(arg));
             changed = changed || score is not null;
             scoreVector[i] = score;
 
@@ -152,8 +161,32 @@ internal sealed class CallConstraint : Constraint<Unit>
 
     private FunctionTypeSymbol MakeMismatchedType(TypeSymbol returnType) => new(
         this.Arguments
-            .Select(a => new SynthetizedParameterSymbol(null, a))
+            .Select(a => new SynthetizedParameterSymbol(null, ExtractType(a)))
             .Cast<ParameterSymbol>()
             .ToImmutableArray(),
         returnType);
+
+    private void UnifyParameterWithArgument(TypeSymbol paramType, object argument)
+    {
+        var promise = this.Solver.Assignable(paramType, ExtractType(argument));
+        var syntax = ExtractSyntax(argument);
+        if (syntax is not null)
+        {
+            promise.ConfigureDiagnostic(diag => diag.WithLocation(syntax.Location));
+        }
+    }
+
+    private static TypeSymbol ExtractType(object node) => node switch
+    {
+        UntypedExpression e => e.TypeRequired,
+        UntypedLvalue l => l.Type,
+        TypeSymbol t => t,
+        _ => throw new ArgumentOutOfRangeException(nameof(node)),
+    };
+
+    private static SyntaxNode? ExtractSyntax(object node) => node switch
+    {
+        UntypedNode n => n.Syntax,
+        _ => null,
+    };
 }

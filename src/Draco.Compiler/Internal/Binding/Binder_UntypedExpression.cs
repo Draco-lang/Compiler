@@ -87,8 +87,8 @@ internal partial class Binder
             {
             case TextStringPartSyntax content:
             {
-                var text = content.Content.ValueText;
-                if (text is null) throw new InvalidOperationException();
+                var text = content.Content.ValueText
+                        ?? throw new InvalidOperationException();
                 // Single line string or string newline or malformed input
                 if (!lastNewline || !text.StartsWith(cutoff)) parts.Add(new UntypedStringText(syntax, text));
                 else parts.Add(new UntypedStringText(syntax, text[cutoff.Length..]));
@@ -256,7 +256,7 @@ internal partial class Binder
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 group.Functions,
-                args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                args.Cast<object>().ToImmutableArray(),
                 out var resultType);
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Function.Location));
@@ -283,7 +283,7 @@ internal partial class Binder
 
                     var symbolPromise = constraints.Overload(
                         funcMembers,
-                        args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                        args.Cast<object>().ToImmutableArray(),
                         out var resultType);
                     symbolPromise.ConfigureDiagnostic(diag => diag
                         .WithLocation(syntax.Function.Location));
@@ -295,7 +295,7 @@ internal partial class Binder
                 {
                     var callPromise = constraints.Call(
                         method.TypeRequired,
-                        args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                        args.Cast<object>().ToImmutableArray(),
                         out var resultType);
                     callPromise.ConfigureDiagnostic(diag => diag
                         .WithLocation(syntax.Location));
@@ -317,7 +317,7 @@ internal partial class Binder
         {
             var callPromise = constraints.Call(
                 method.TypeRequired,
-                args.Select(arg => arg.TypeRequired).ToImmutableArray(),
+                args.Cast<object>().ToImmutableArray(),
                 out var resultType);
             callPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
@@ -335,7 +335,7 @@ internal partial class Binder
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
             GetFunctions(operatorSymbol),
-            ImmutableArray.Create(operand.TypeRequired),
+            ImmutableArray.Create<object>(operand),
             out var resultType);
         symbolPromise.ConfigureDiagnostic(diag => diag
             .WithLocation(syntax.Operator.Location));
@@ -389,7 +389,7 @@ internal partial class Binder
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 GetFunctions(operatorSymbol),
-                ImmutableArray.Create(left.Type, right.TypeRequired),
+                ImmutableArray.Create<object>(left, right),
                 out var resultType);
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
@@ -414,7 +414,7 @@ internal partial class Binder
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 GetFunctions(operatorSymbol),
-                ImmutableArray.Create(left.TypeRequired, right.TypeRequired),
+                ImmutableArray.Create<object>(left, right),
                 out var resultType);
             symbolPromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
@@ -452,7 +452,7 @@ internal partial class Binder
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
             GetFunctions(operatorSymbol),
-            ImmutableArray.Create(prev.TypeRequired, right.TypeRequired),
+            ImmutableArray.Create<object>(prev, right),
             out var resultType);
         symbolPromise.ConfigureDiagnostic(diag => diag
             .WithLocation(syntax.Operator.Location));
@@ -533,10 +533,10 @@ internal partial class Binder
                 constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
             }
-            var argTypes = args
-                .Select(x => x.TypeRequired)
-                .ToImmutableArray();
-            var overloaded = constraints.Overload(indexers, argTypes, out var gotReturnType);
+            var overloaded = constraints.Overload(
+                indexers,
+                args.Cast<object>().ToImmutableArray(),
+                out var gotReturnType);
             constraints.Unify(returnType, gotReturnType);
             overloaded.ConfigureDiagnostic(diag => diag
                 .WithLocation(index.Location));

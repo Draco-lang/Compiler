@@ -4,11 +4,13 @@ using System.Collections.Immutable;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -27,7 +29,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     /// <summary>
     /// The arguments the function was called with.
     /// </summary>
-    public ImmutableArray<TypeSymbol> Arguments { get; }
+    public ImmutableArray<object> Arguments { get; }
 
     /// <summary>
     /// The return type of the call.
@@ -37,7 +39,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     public OverloadConstraint(
         ConstraintSolver solver,
         ImmutableArray<FunctionSymbol> candidates,
-        ImmutableArray<TypeSymbol> arguments,
+        ImmutableArray<object> arguments,
         TypeSymbol returnType)
         : base(solver)
     {
@@ -112,15 +114,17 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
                 var variadicPairs = this.Arguments
                     .Skip(chosen.Parameters.Length - 1)
                     .Select(a => (ParameterType: elementType, ArgumentType: a));
-                // NOTE: Unification won't always be correct, especially not when subtyping arises
-                foreach (var (param, argType) in nonVariadicPairs) this.Unify(param.Type, argType);
-                // NOTE: Unification won't always be correct, especially not when subtyping arises
-                foreach (var (paramType, argType) in variadicPairs) this.Unify(paramType, argType);
+                // Non-variadic part
+                foreach (var (param, arg) in nonVariadicPairs) this.UnifyParameterWithArgument(param.Type, arg);
+                // Variadic part
+                foreach (var (paramType, arg) in variadicPairs) this.UnifyParameterWithArgument(paramType, arg);
             }
             else
             {
-                // NOTE: Unification won't always be correct, especially not when subtyping arises
-                foreach (var (param, argType) in chosen.Parameters.Zip(this.Arguments)) this.Unify(param.Type, argType);
+                foreach (var (param, arg) in chosen.Parameters.Zip(this.Arguments))
+                {
+                    this.UnifyParameterWithArgument(param.Type, arg);
+                }
             }
             // NOTE: Unification won't always be correct, especially not when subtyping arises
             // In all cases, return type is simple
@@ -173,6 +177,16 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         // Instantiate the chosen symbol
         var instantiated = chosen.GenericInstantiate(chosen.ContainingSymbol, typeArgs);
         return instantiated;
+    }
+
+    private void UnifyParameterWithArgument(TypeSymbol paramType, object argument)
+    {
+        var promise = this.Solver.Assignable(paramType, ExtractType(argument));
+        var syntax = ExtractSyntax(argument);
+        if (syntax is not null)
+        {
+            promise.ConfigureDiagnostic(diag => diag.WithLocation(syntax.Location));
+        }
     }
 
     private static ImmutableArray<FunctionSymbol> GetDominatingCandidates(IReadOnlyList<Candidate> candidates)
@@ -246,7 +260,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
                 continue;
             }
 
-            var arg = this.Arguments[i];
+            var arg = ExtractType(this.Arguments[i]);
             var score = scoreVector[i];
 
             // If the argument is not null, it means we have already scored it
@@ -264,13 +278,28 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         {
             var variadicParam = func.Parameters[^1];
             var variadicArgTypes = this.Arguments
-                .Skip(func.Parameters.Length - 1);
+                .Skip(func.Parameters.Length - 1)
+                .Select(ExtractType);
             var score = ScoreVariadicArguments(variadicParam, variadicArgTypes);
             changed = changed || score is not null;
             scoreVector[^1] = score;
         }
         return changed;
     }
+
+    private static TypeSymbol ExtractType(object node) => node switch
+    {
+        UntypedExpression e => e.TypeRequired,
+        UntypedLvalue l => l.Type,
+        TypeSymbol t => t,
+        _ => throw new ArgumentOutOfRangeException(nameof(node)),
+    };
+
+    private static SyntaxNode? ExtractSyntax(object node) => node switch
+    {
+        UntypedNode n => n.Syntax,
+        _ => null,
+    };
 
     /// <summary>
     /// Scores a sequence of variadic function call argument.

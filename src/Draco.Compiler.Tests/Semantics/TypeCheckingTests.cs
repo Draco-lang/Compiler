@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using static Draco.Compiler.Tests.TestUtilities;
 
@@ -1606,5 +1608,77 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.AmbiguousOverloadedCall);
+    }
+
+    [Fact]
+    public void VariadicOverloadPriority()
+    {
+        // func bar(s: string, x: int32): int32 = 0;
+        // func bar(s: string, ...x: Array<int32>): int32 = 0;
+        //
+        // func main() {
+        //     bar("Hi", 5);
+        //     bar("Hi", 5, 9);
+        //     bar("Hi");
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "bar",
+                ParameterList(
+                    Parameter("s", NameType("string")),
+                    Parameter("x", NameType("int32"))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(
+                    Parameter("s", NameType("string")),
+                    VariadicParameter("x", GenericType(NameType("Array"), NameType("int32")))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi"),
+                        LiteralExpression(5))),
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi"),
+                        LiteralExpression(5),
+                        LiteralExpression(9))),
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi")))))));
+
+        var nonVariadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var variadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
+        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
+        var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var nonVariadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(nonVariadicFuncSyntax));
+        var variadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(variadicFuncSyntax));
+        var call1Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call1Syntax.Function));
+        var call2Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call2Syntax.Function));
+        var call3Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call3Syntax.Function));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(nonVariadicFuncSym, call1Sym);
+        Assert.Equal(variadicFuncSym, call2Sym);
+        Assert.Equal(variadicFuncSym, call3Sym);
     }
 }

@@ -26,7 +26,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override Symbol ContainingSymbol { get; }
+    public override Symbol? ContainingSymbol { get; }
     // TODO: Is this correct?
     public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
 
@@ -45,7 +45,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private readonly TypeDefinition typeDefinition;
 
-    public MetadataTypeSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
+    public MetadataTypeSymbol(Symbol? containingSymbol, TypeDefinition typeDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.typeDefinition = typeDefinition;

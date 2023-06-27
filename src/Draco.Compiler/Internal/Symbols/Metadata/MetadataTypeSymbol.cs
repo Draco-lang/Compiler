@@ -30,6 +30,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     // TODO: Is this correct?
     public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
 
+    public override IEnumerable<TypeSymbol> BaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
+    private ImmutableArray<TypeSymbol> baseTypes;
+
     // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
@@ -74,6 +77,22 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             result.Add(symbol);
         }
         return result.ToImmutableArray();
+    }
+
+    private ImmutableArray<TypeSymbol> BuildBaseTypes()
+    {
+        var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
+        foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
+        {
+            var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
+            interfaceDef.Interface.Kind switch
+            {
+                HandleKind.TypeDefinition => new MetadataTypeSymbol(null, this.MetadataReader.GetTypeDefinition((TypeDefinitionHandle)interfaceDef.Interface)),
+                // TODO
+                HandleKind.TypeReference => ,
+                HandleKind.TypeSpecification => ,
+            }
+        }
     }
 
     private ImmutableArray<Symbol> BuildMembers()

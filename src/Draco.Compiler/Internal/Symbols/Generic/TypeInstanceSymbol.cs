@@ -45,6 +45,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
+    public override IEnumerable<TypeSymbol> BaseTypes => this.GenericDefinition.BaseTypes;
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;
     public override string Name => this.GenericDefinition.Name;

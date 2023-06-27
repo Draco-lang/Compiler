@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols.Generic;
@@ -29,6 +30,8 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// It's this instance itself, if not a type variable, or not substituted.
     /// </summary>
     public virtual TypeSymbol Substitution => this;
+
+    public virtual IEnumerable<TypeSymbol> BaseTypes => ImmutableArray<TypeSymbol>.Empty;
 
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;

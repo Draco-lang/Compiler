@@ -10,7 +10,11 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
 {
-    public override string Name => "Array";
+    public override string Name => this.Rank switch
+    {
+        1 => "Array",
+        int n => $"Array{n}D",
+    };
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
 

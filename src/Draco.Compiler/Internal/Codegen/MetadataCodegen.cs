@@ -297,7 +297,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             signature: this.EncodeBlob(e =>
             {
                 e
-                    .MethodSignature()
+                    .MethodSignature(isInstanceMethod: true)
                     .Parameters(rank, out var returnTypeEncoder, out var parametersEncoder);
                 returnTypeEncoder.Void();
                 for (var i = 0; i < rank; ++i) parametersEncoder.AddParameter().Type().Int32();
@@ -320,9 +320,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             signature: this.EncodeBlob(e =>
             {
                 e
-                    .MethodSignature()
+                    .MethodSignature(isInstanceMethod: true)
                     .Parameters(rank, out var returnTypeEncoder, out var parametersEncoder);
-                returnTypeEncoder.Void();
+                this.EncodeSignatureType(returnTypeEncoder.Type(), elementType);
                 for (var i = 0; i < rank; ++i) parametersEncoder.AddParameter().Type().Int32();
             }));
     }
@@ -343,8 +343,8 @@ internal sealed class MetadataCodegen : MetadataWriter
             signature: this.EncodeBlob(e =>
             {
                 e
-                    .MethodSignature()
-                    .Parameters(rank, out var returnTypeEncoder, out var parametersEncoder);
+                    .MethodSignature(isInstanceMethod: true)
+                    .Parameters(rank + 1, out var returnTypeEncoder, out var parametersEncoder);
                 returnTypeEncoder.Void();
                 for (var i = 0; i < rank; ++i) parametersEncoder.AddParameter().Type().Int32();
                 this.EncodeSignatureType(parametersEncoder.AddParameter().Type(), elementType);

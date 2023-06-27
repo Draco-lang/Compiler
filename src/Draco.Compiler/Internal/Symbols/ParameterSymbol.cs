@@ -9,6 +9,11 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class ParameterSymbol : LocalSymbol
 {
+    /// <summary>
+    /// True, if this a variadic parameter.
+    /// </summary>
+    public virtual bool IsVariadic => false;
+
     public override bool IsMutable => false;
 
     public override ParameterSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

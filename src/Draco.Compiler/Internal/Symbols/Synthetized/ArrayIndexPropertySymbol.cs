@@ -63,8 +63,7 @@ internal sealed class ArrayIndexSetSymbol : FunctionSymbol, IPropertyAccessorSym
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    // TODO: Is this correct? Should we return array element instead?
-    public override TypeSymbol ReturnType => IntrinsicSymbols.Unit;
+    public override TypeSymbol ReturnType => this.ContainingSymbol.ElementType;
     public override bool IsStatic => false;
     public override string Name => "Array_set";
 

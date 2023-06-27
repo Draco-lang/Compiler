@@ -9,6 +9,7 @@ internal sealed class ParameterInstanceSymbol : ParameterSymbol, IGenericInstanc
     public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
+    public override bool IsVariadic => this.GenericDefinition.IsVariadic;
     public override string Name => this.GenericDefinition.Name;
 
     public override Symbol? ContainingSymbol { get; }

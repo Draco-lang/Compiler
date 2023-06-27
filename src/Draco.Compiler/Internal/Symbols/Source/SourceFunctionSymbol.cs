@@ -136,8 +136,9 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
-        foreach (var parameterSyntax in parameterSyntaxes)
+        for (var i = 0; i < parameterSyntaxes.Count; ++i)
         {
+            var parameterSyntax = parameterSyntaxes[i];
             var parameterName = parameterSyntax.Name.Text;
 
             var usedBefore = parameters.Any(p => p.Name == parameterName);
@@ -146,6 +147,14 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
                 // NOTE: We only report later duplicates, no need to report the first instance
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalShadowing,
+                    location: parameterSyntax.Location,
+                    formatArgs: parameterName));
+            }
+
+            if (parameterSyntax.Variadic is not null && i != parameterSyntaxes.Count - 1)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.VariadicParameterNotLast,
                     location: parameterSyntax.Location,
                     formatArgs: parameterName));
             }

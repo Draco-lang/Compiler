@@ -571,4 +571,25 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<string>(assembly, "foo");
         Assert.Equal("Hello, World!", x);
     }
+
+    [Fact]
+    public void VariadicArgsSum()
+    {
+        var assembly = Compile(""""
+            func sum(...ns: Array<int32>): int32 {
+                var result = 0;
+                var i = 0;
+                while (i < ns.Length) {
+                    result += ns[i];
+                    i += 1;
+                }
+                return result;
+            }
+
+            public func get_sum(): int32 = sum(1, 2, 3, 4, 5);
+            """");
+
+        var x = Invoke<int>(assembly, "get_sum");
+        Assert.Equal(15, x);
+    }
 }

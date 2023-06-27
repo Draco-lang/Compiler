@@ -107,10 +107,13 @@ internal sealed class ConstraintSolver
     /// Adds a callability constraint to the solver.
     /// </summary>
     /// <param name="calledType">The called function type.</param>
-    /// <param name="args">The calling argument types.</param>
+    /// <param name="args">The calling arguments.</param>
     /// <param name="returnType">The return type.</param>
     /// <returns>The promise of the constraint.</returns>
-    public IConstraintPromise<Unit> Call(TypeSymbol calledType, ImmutableArray<TypeSymbol> args, out TypeSymbol returnType)
+    public IConstraintPromise<Unit> Call(
+        TypeSymbol calledType,
+        ImmutableArray<object> args,
+        out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();
         var constraint = new CallConstraint(this, calledType, args, returnType);
@@ -127,7 +130,7 @@ internal sealed class ConstraintSolver
     /// <returns>The promise for the resolved overload.</returns>
     public IConstraintPromise<FunctionSymbol> Overload(
         ImmutableArray<FunctionSymbol> functions,
-        ImmutableArray<TypeSymbol> args,
+        ImmutableArray<object> args,
         out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();
@@ -464,47 +467,5 @@ internal sealed class ConstraintSolver
         default:
             return false;
         }
-    }
-
-    /// <summary>
-    /// Scores a function call argument.
-    /// </summary>
-    /// <param name="param">The function parameter.</param>
-    /// <param name="argType">The passed in argument type.</param>
-    /// <returns>The score of the match.</returns>
-    public int? ScoreArgument(ParameterSymbol param, TypeSymbol argType) => ScoreArgument(param.Type, argType);
-
-    private static int? ScoreArgument(TypeSymbol paramType, TypeSymbol argType)
-    {
-        paramType = paramType.Substitution;
-        argType = argType.Substitution;
-
-        // If either are still not ground types, we can't decide
-        if (!paramType.IsGroundType || !argType.IsGroundType) return null;
-
-        // Exact equality is max score
-        if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return 16;
-
-        // TODO: Unspecified what happens for generics
-        // For now we require an exact match and score is the lowest score among generic args
-        if (paramType.IsGenericInstance && argType.IsGenericInstance)
-        {
-            var paramGenericDefinition = paramType.GenericDefinition!;
-            var argGenericDefinition = argType.GenericDefinition!;
-
-            if (!SymbolEqualityComparer.Default.Equals(paramGenericDefinition, argGenericDefinition)) return 0;
-
-            Debug.Assert(paramType.GenericArguments.Length == argType.GenericArguments.Length);
-            return paramType.GenericArguments
-                .Zip(argType.GenericArguments)
-                .Select(pair => ScoreArgument(pair.First, pair.Second))
-                .Min();
-        }
-
-        // Type parameter match is half score
-        if (paramType is TypeParameterSymbol) return 8;
-
-        // Otherwise, no match
-        return 0;
     }
 }

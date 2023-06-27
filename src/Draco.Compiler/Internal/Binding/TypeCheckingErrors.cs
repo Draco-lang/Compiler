@@ -99,5 +99,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "the given construct can not be generic instantiated",
         code: Code(10));
+
+    /// <summary>
+    /// The given variadic parameter type is illegal.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalVariadicType = DiagnosticTemplate.Create(
+        title: "illegal variadic type",
+        severity: DiagnosticSeverity.Error,
+        format: "the given type {0} is not legal for variadic parameters",
+        code: Code(11));
 }
 

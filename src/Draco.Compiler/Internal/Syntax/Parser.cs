@@ -503,10 +503,11 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="ParameterSyntax"/>.</returns>
     private ParameterSyntax ParseParameter()
     {
+        this.Matches(TokenKind.Ellipsis, out var variadic);
         var name = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
-        return new(name, colon, type);
+        return new(variadic, name, colon, type);
     }
 
     /// <summary>

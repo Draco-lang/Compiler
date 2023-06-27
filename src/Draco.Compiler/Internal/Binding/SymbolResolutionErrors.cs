@@ -164,4 +164,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "no gettable indexer was found in type {0}",
         code: Code(17));
+
+    /// <summary>
+    /// A variadic parameter was not last in a parameter list.
+    /// </summary>
+    public static readonly DiagnosticTemplate VariadicParameterNotLast = DiagnosticTemplate.Create(
+        title: "variadic parameter was not last",
+        severity: DiagnosticSeverity.Error,
+        format: "the variadic parameter {0} must be last in the parameter list",
+        code: Code(18));
 }

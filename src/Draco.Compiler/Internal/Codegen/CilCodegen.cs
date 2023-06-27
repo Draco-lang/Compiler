@@ -229,7 +229,10 @@ internal sealed class CilCodegen
                 else
                 {
                     // Multi-dimensional array
-                    throw new NotImplementedException();
+                    this.InstructionEncoder.OpCode(ILOpCode.Call);
+                    this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArraySetHandle(
+                        targetStorageType,
+                        arrayAccess.Indices.Length));
                 }
                 break;
             }
@@ -279,13 +282,17 @@ internal sealed class CilCodegen
             // One-dimensional and multi-dimensional arrays are very different
             if (newArr.Dimensions.Count == 1)
             {
+                // One-dimensional
                 this.InstructionEncoder.OpCode(ILOpCode.Newarr);
                 this.EncodeToken(newArr.ElementType);
             }
             else
             {
-                // TODO: More complicated, because it's a proper type
-                throw new NotImplementedException();
+                // Multi-dimensional
+                this.InstructionEncoder.OpCode(ILOpCode.Newobj);
+                this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArrayCtorHandle(
+                    newArr.ElementType,
+                    newArr.Dimensions.Count));
             }
             // Store result
             this.StoreLocal(newArr.Target);
@@ -300,13 +307,17 @@ internal sealed class CilCodegen
             // One-dimensional and multi-dimensional arrays are very different
             if (arrElement.Indices.Count == 1)
             {
+                // One-dimensional
                 this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
                 this.EncodeToken(arrElement.Target.Type);
             }
             else
             {
-                // TODO: More complicated, because it's a proper type
-                throw new NotImplementedException();
+                // Multi-dimensional
+                this.InstructionEncoder.OpCode(ILOpCode.Call);
+                this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArrayGetHandle(
+                    arrElement.Target.Type,
+                    arrElement.Indices.Count));
             }
             // Store result
             this.StoreLocal(arrElement.Target);

@@ -204,30 +204,35 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.Token(this.GetHandle(fieldAccess.Member));
                 break;
             case ArrayAccess arrayAccess:
+            {
                 this.EncodePush(arrayAccess.Array);
                 foreach (var index in arrayAccess.Indices) this.EncodePush(index);
                 this.EncodePush(store.Source);
+
+                var storedValueType = store.Source.Type!.Substitution;
+                var targetStorageType = arrayAccess.Type.Substitution;
+                var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
+
+                if (needsToBox)
+                {
+                    // We need to box it
+                    this.InstructionEncoder.OpCode(ILOpCode.Box);
+                    this.EncodeToken(store.Source.Type!);
+                }
+
                 if (arrayAccess.Indices.Length == 1)
                 {
-                    var storedValueType = store.Source.Type!.Substitution;
-                    var targetStorageType = arrayAccess.Type.Substitution;
-                    var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
-                    if (needsToBox)
-                    {
-                        // We need to box it
-                        this.InstructionEncoder.OpCode(ILOpCode.Box);
-                        this.EncodeToken(store.Source.Type!);
-                    }
-                    // Actual store
+                    // One-dimensional array
                     this.InstructionEncoder.OpCode(ILOpCode.Stelem);
                     this.EncodeToken(targetStorageType);
                 }
                 else
                 {
-                    // TODO: More complex, involves member functions
+                    // Multi-dimensional array
                     throw new NotImplementedException();
                 }
                 break;
+            }
             default:
                 throw new InvalidOperationException();
             }

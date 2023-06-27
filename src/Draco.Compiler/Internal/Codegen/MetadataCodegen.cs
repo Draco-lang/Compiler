@@ -539,16 +539,21 @@ internal sealed class MetadataCodegen : MetadataWriter
             // Check, if this is an array
             if (type.GenericDefinition is ArrayTypeSymbol arrayType)
             {
-                // One-dimensional arrays are special
+                var elementType = type.GenericArguments[0];
                 if (arrayType.Rank == 1)
                 {
+                    // One-dimensional arrays are special
                     Debug.Assert(type.GenericArguments.Length == 1);
-                    var elementType = type.GenericArguments[0];
                     this.EncodeSignatureType(encoder.SZArray(), elementType);
                     return;
                 }
-                // TODO
-                throw new NotImplementedException();
+                {
+                    // Multi-dimensional
+                    encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
+                    this.EncodeSignatureType(elementTypeEncoder, elementType);
+                    shapeEncoder.Shape(arrayType.Rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
+                    return;
+                }
             }
 
             // Generic instantiation

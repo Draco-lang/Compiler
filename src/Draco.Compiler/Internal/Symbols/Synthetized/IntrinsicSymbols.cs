@@ -18,23 +18,20 @@ internal static class IntrinsicSymbols
     public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
     public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
     public static TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
-
     public static ArrayTypeSymbol Array { get; } = new(1);
     public static ArrayConstructorSymbol ArrayCtor { get; } = new(1);
-    public static ArrayTypeSymbol Array2D { get; } = new(2);
-    public static ArrayConstructorSymbol Array2DCtor { get; } = new(2);
-    public static ArrayTypeSymbol Array3D { get; } = new(3);
-    public static ArrayConstructorSymbol Array3DCtor { get; } = new(3);
-    public static ArrayTypeSymbol Array4D { get; } = new(4);
-    public static ArrayConstructorSymbol Array4DCtor { get; } = new(4);
-    public static ArrayTypeSymbol Array5D { get; } = new(5);
-    public static ArrayConstructorSymbol Array5DCtor { get; } = new(5);
-    public static ArrayTypeSymbol Array6D { get; } = new(6);
-    public static ArrayConstructorSymbol Array6DCtor { get; } = new(6);
-    public static ArrayTypeSymbol Array7D { get; } = new(7);
-    public static ArrayConstructorSymbol Array7DCtor { get; } = new(7);
-    public static ArrayTypeSymbol Array8D { get; } = new(8);
-    public static ArrayConstructorSymbol Array8DCtor { get; } = new(8);
+
+    public static IEnumerable<Symbol> GenerateIntrinsicSymbols()
+    {
+        // Array types from 2D to 8D
+        for (var i = 2; i <= 8; ++i)
+        {
+            // Type
+            yield return new ArrayTypeSymbol(i);
+            // Ctor
+            yield return new ArrayConstructorSymbol(i);
+        }
+    }
 
     // Operators
 

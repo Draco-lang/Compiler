@@ -183,6 +183,18 @@ internal sealed class CilCodegen
             this.StoreLocal(load.Target);
             break;
         }
+        case LoadElementInstruction loadElement:
+        {
+            // TODO
+            throw new NotImplementedException();
+            break;
+        }
+        case LoadFieldInstruction loadField:
+        {
+            // TODO
+            throw new NotImplementedException();
+            break;
+        }
         case StoreInstruction store:
         {
             switch (store.Target)
@@ -199,6 +211,18 @@ internal sealed class CilCodegen
             default:
                 throw new InvalidOperationException();
             }
+            break;
+        }
+        case StoreElementInstruction storeElement:
+        {
+            // TODO
+            throw new NotImplementedException();
+            break;
+        }
+        case StoreFieldInstruction storeField:
+        {
+            // TODO
+            throw new NotImplementedException();
             break;
         }
         case CallInstruction call:
@@ -256,31 +280,6 @@ internal sealed class CilCodegen
             }
             // Store result
             this.StoreLocal(newArr.Target);
-            break;
-        }
-        case LoadElementInstruction arrElement:
-        {
-            // Array
-            this.EncodePush(arrElement.Array);
-            // Indices
-            foreach (var i in arrElement.Indices) this.EncodePush(i);
-            // One-dimensional and multi-dimensional arrays are very different
-            if (arrElement.Indices.Count == 1)
-            {
-                // One-dimensional
-                this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
-                this.EncodeToken(arrElement.Target.Type);
-            }
-            else
-            {
-                // Multi-dimensional
-                this.InstructionEncoder.OpCode(ILOpCode.Call);
-                this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArrayGetHandle(
-                    arrElement.Target.Type,
-                    arrElement.Indices.Count));
-            }
-            // Store result
-            this.StoreLocal(arrElement.Target);
             break;
         }
         case ArrayLengthInstruction arrLen:

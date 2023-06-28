@@ -7,8 +7,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class LoadInstruction : InstructionBase
 {
-    public override IEnumerable<IOperand> Operands => new[] { this.Target, this.Source };
-
     /// <summary>
     /// The register to load to.
     /// </summary>

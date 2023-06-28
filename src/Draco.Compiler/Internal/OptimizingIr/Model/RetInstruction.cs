@@ -8,7 +8,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal sealed class RetInstruction : InstructionBase
 {
     public override bool IsBranch => true;
-    public override IEnumerable<IOperand> Operands => new[] { this.Value };
 
     /// <summary>
     /// The returned value.
@@ -19,6 +18,8 @@ internal sealed class RetInstruction : InstructionBase
     {
         this.Value = value;
     }
+
+    public override string ToString() => $"ret {this.Value.ToOperandString()}";
 
     public override RetInstruction Clone() => new(this.Value);
 }

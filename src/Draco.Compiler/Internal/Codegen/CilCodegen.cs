@@ -298,7 +298,7 @@ internal sealed class CilCodegen
             this.StoreLocal(newArr.Target);
             break;
         }
-        case ArrayElementInstruction arrElement:
+        case LoadElementInstruction arrElement:
         {
             // Array
             this.EncodePush(arrElement.Array);

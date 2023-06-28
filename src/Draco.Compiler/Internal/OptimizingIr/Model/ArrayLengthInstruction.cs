@@ -7,8 +7,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class ArrayLengthInstruction : InstructionBase
 {
-    public override IEnumerable<IOperand> Operands => new[] { this.Target, this.Array };
-
     /// <summary>
     /// The register to write the array length to.
     /// </summary>
@@ -26,7 +24,7 @@ internal sealed class ArrayLengthInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := length({this.Array.ToOperandString()})";
+        $"{this.Target.ToOperandString()} := length {this.Array.ToOperandString()}";
 
     public override ArrayLengthInstruction Clone() => new(this.Target, this.Array);
 }

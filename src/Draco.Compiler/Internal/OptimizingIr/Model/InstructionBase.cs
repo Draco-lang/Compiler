@@ -20,30 +20,8 @@ internal abstract class InstructionBase : IInstruction
     public virtual bool IsValidInUnreachableContext => false;
     public virtual IEnumerable<BasicBlock> JumpTargets => Enumerable.Empty<BasicBlock>();
     IEnumerable<IBasicBlock> IInstruction.JumpTargets => this.JumpTargets;
-    public virtual IEnumerable<IOperand> Operands => Enumerable.Empty<IOperand>();
 
-    public override string ToString()
-    {
-        var result = new StringBuilder();
-
-        // Infer a good operand name
-        var name = this.GetType().Name;
-        if (name.EndsWith("Instruction")) name = name[..^11];
-        name = StringUtils.ToSnakeCase(name);
-
-        // Append it
-        result.Append(name);
-
-        // If we have operands, add a space, then write them comma-separated
-        if (this.Operands.Any())
-        {
-            result.Append(' ');
-            result.AppendJoin(", ", this.Operands.Select(o => o.ToOperandString()));
-        }
-
-        // Done
-        return result.ToString();
-    }
+    public abstract override string ToString();
 
     public abstract IInstruction Clone();
 }

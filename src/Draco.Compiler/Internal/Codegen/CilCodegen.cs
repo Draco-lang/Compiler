@@ -218,6 +218,7 @@ internal sealed class CilCodegen
             this.EncodePush(loadField.Receiver);
             this.InstructionEncoder.OpCode(ILOpCode.Ldfld);
             this.InstructionEncoder.Token(this.GetHandle(loadField.Member));
+            this.StoreLocal(loadField.Target);
             break;
         }
         case StoreInstruction store:

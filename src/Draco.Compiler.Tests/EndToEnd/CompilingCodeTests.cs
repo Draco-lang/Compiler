@@ -620,7 +620,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             }
             """");
 
-        var x = Invoke<int>(assembly, "get_sum");
+        var x = Invoke<int>(assembly, "get_result");
         Assert.Equal(24, x);
     }
 }

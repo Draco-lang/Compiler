@@ -185,8 +185,27 @@ internal sealed class CilCodegen
         }
         case LoadElementInstruction loadElement:
         {
-            // TODO
-            throw new NotImplementedException();
+            // Array
+            this.EncodePush(loadElement.Array);
+            // Indices
+            foreach (var i in loadElement.Indices) this.EncodePush(i);
+            // One-dimensional and multi-dimensional arrays are very different
+            if (loadElement.Indices.Count == 1)
+            {
+                // One-dimensional
+                this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
+                this.EncodeToken(loadElement.Target.Type);
+            }
+            else
+            {
+                // Multi-dimensional
+                this.InstructionEncoder.OpCode(ILOpCode.Call);
+                this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArrayGetHandle(
+                    loadElement.Target.Type,
+                    loadElement.Indices.Count));
+            }
+            // Store result
+            this.StoreLocal(loadElement.Target);
             break;
         }
         case LoadFieldInstruction loadField:
@@ -215,8 +234,36 @@ internal sealed class CilCodegen
         }
         case StoreElementInstruction storeElement:
         {
-            // TODO
-            throw new NotImplementedException();
+            this.EncodePush(storeElement.TargetArray);
+            foreach (var index in storeElement.Indices) this.EncodePush(index);
+            this.EncodePush(storeElement.Source);
+
+            var storedValueType = storeElement.Source.Type!.Substitution;
+            // TODO: Not the prettiest...
+            var targetStorageType = storeElement.TargetArray.Type!.Substitution.GenericArguments[0].Substitution;
+            var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
+
+            if (needsToBox)
+            {
+                // We need to box it
+                this.InstructionEncoder.OpCode(ILOpCode.Box);
+                this.EncodeToken(storeElement.Source.Type!);
+            }
+
+            if (storeElement.Indices.Count == 1)
+            {
+                // One-dimensional array
+                this.InstructionEncoder.OpCode(ILOpCode.Stelem);
+                this.EncodeToken(targetStorageType);
+            }
+            else
+            {
+                // Multi-dimensional array
+                this.InstructionEncoder.OpCode(ILOpCode.Call);
+                this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArraySetHandle(
+                    targetStorageType,
+                    storeElement.Indices.Count));
+            }
             break;
         }
         case StoreFieldInstruction storeField:

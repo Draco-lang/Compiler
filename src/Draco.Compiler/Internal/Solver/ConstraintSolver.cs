@@ -438,6 +438,9 @@ internal sealed class ConstraintSolver
         case (_, ErrorTypeSymbol):
             return true;
 
+        case (ArrayTypeSymbol a1, ArrayTypeSymbol a2) when a1.IsGenericDefinition && a2.IsGenericDefinition:
+            return a1.Rank == a2.Rank;
+
         // NOTE: Primitives are filtered out already, along with metadata types
 
         case (FunctionTypeSymbol f1, FunctionTypeSymbol f2):

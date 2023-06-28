@@ -592,4 +592,35 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "get_sum");
         Assert.Equal(15, x);
     }
+
+    [Fact]
+    public void MultidimensionalArrays()
+    {
+        var assembly = Compile(""""
+            func make(a: int32, b: int32, c: int32, d: int32): Array2D<int32> {
+                val res = Array2D(2, 2);
+                res[0, 0] = a;
+                res[1, 0] = b;
+                res[0, 1] = c;
+                res[1, 1] = d;
+                return res;
+            }
+
+            func add_to_main_diagonal(a: Array2D<int32>, n: int32) {
+                a[0, 0] += n;
+                a[1, 1] += n;
+            }
+
+            func sum(a: Array2D<int32>): int32 = a[0, 0] + a[1, 0] + a[0, 1] + a[1, 1];
+
+            public func get_result(): int32 {
+                val m = make(1, 2, 3, 4);
+                add_to_main_diagonal(m, 7);
+                return sum(m);
+            }
+            """");
+
+        var x = Invoke<int>(assembly, "get_sum");
+        Assert.Equal(24, x);
+    }
 }

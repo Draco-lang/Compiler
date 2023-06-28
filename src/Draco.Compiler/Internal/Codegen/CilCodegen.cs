@@ -216,7 +216,7 @@ internal sealed class CilCodegen
         case LoadFieldInstruction loadField:
         {
             this.EncodePush(loadField.Receiver);
-            this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
+            this.InstructionEncoder.OpCode(ILOpCode.Ldfld);
             this.InstructionEncoder.Token(this.GetHandle(loadField.Member));
             break;
         }

@@ -286,13 +286,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     {
         if (rank <= 1) throw new ArgumentOutOfRangeException(nameof(rank));
         return this.AddMemberReference(
-            parent: this.MetadataBuilder.AddTypeSpecification(this.EncodeBlob(e =>
-            {
-                var encoder = e.TypeSpecificationSignature();
-                encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
-                this.EncodeSignatureType(elementTypeEncoder, elementType);
-                shapeEncoder.Shape(rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
-            })),
+            parent: this.GetMultidimensionalArrayTypeHandle(elementType, rank),
             name: ".ctor",
             signature: this.EncodeBlob(e =>
             {
@@ -309,13 +303,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     {
         if (rank <= 1) throw new ArgumentOutOfRangeException(nameof(rank));
         return this.AddMemberReference(
-            parent: this.MetadataBuilder.AddTypeSpecification(this.EncodeBlob(e =>
-            {
-                var encoder = e.TypeSpecificationSignature();
-                encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
-                this.EncodeSignatureType(elementTypeEncoder, elementType);
-                shapeEncoder.Shape(rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
-            })),
+            parent: this.GetMultidimensionalArrayTypeHandle(elementType, rank),
             name: "Get",
             signature: this.EncodeBlob(e =>
             {
@@ -332,13 +320,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     {
         if (rank <= 1) throw new ArgumentOutOfRangeException(nameof(rank));
         return this.AddMemberReference(
-            parent: this.MetadataBuilder.AddTypeSpecification(this.EncodeBlob(e =>
-            {
-                var encoder = e.TypeSpecificationSignature();
-                encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
-                this.EncodeSignatureType(elementTypeEncoder, elementType);
-                shapeEncoder.Shape(rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
-            })),
+            parent: this.GetMultidimensionalArrayTypeHandle(elementType, rank),
             name: "Set",
             signature: this.EncodeBlob(e =>
             {
@@ -350,6 +332,16 @@ internal sealed class MetadataCodegen : MetadataWriter
                 this.EncodeSignatureType(parametersEncoder.AddParameter().Type(), elementType);
             }));
     }
+
+    // TODO: This can be cached
+    private EntityHandle GetMultidimensionalArrayTypeHandle(TypeSymbol elementType, int rank) =>
+        this.MetadataBuilder.AddTypeSpecification(this.EncodeBlob(e =>
+        {
+            var encoder = e.TypeSpecificationSignature();
+            encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
+            this.EncodeSignatureType(elementTypeEncoder, elementType);
+            shapeEncoder.Shape(rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
+        }));
 
     private EntityHandle GetContainerEntityHandle(Symbol symbol) => symbol switch
     {

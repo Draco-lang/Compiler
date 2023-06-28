@@ -271,6 +271,19 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.GetModuleReferenceHandle(irModule);
         }
 
+        case FieldSymbol field:
+        {
+            return this.AddMemberReference(
+                parent: this.GetEntityHandle(field.ContainingSymbol
+                                          ?? throw new InvalidOperationException()),
+                name: field.Name,
+                signature: this.EncodeBlob(e =>
+                {
+                    var encoder = e.Field();
+                    this.EncodeSignatureType(encoder.Type(), field.Type);
+                }));
+        }
+
         default:
             throw new ArgumentOutOfRangeException(nameof(symbol));
         }

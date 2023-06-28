@@ -233,6 +233,11 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
+            case SymbolReference symbol:
+                this.EncodePush(store.Source);
+                this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
+                this.InstructionEncoder.Token(this.GetHandle(symbol));
+                break;
             default:
                 throw new InvalidOperationException();
             }

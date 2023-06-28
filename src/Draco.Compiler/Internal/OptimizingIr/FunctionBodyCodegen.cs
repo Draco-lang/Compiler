@@ -144,7 +144,44 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private (IInstruction Load, IInstruction Store) CompileLvalue(BoundLvalue lvalue)
     {
-        throw new System.NotImplementedException();
+        switch (lvalue)
+        {
+        case BoundLocalLvalue local:
+        {
+            var src = this.DefineLocal(local.Local);
+            return (Load: Load(default!, src), Store: Store(src, default!));
+        }
+        case BoundGlobalLvalue global:
+        {
+            var src = this.DefineGlobal(global.Global);
+            return (Load: Load(default!, src), Store: Store(src, default!));
+        }
+        case BoundFieldLvalue field:
+        {
+            var receiver = field.Receiver is null ? null : this.Compile(field.Receiver);
+            if (receiver is null)
+            {
+                var src = new SymbolReference(field.Field);
+                return (Load: Load(default!, src), Store: Store(src, default!));
+            }
+            else
+            {
+                return (
+                    Load: LoadField(default!, receiver, field.Field),
+                    Store: StoreField(receiver, field.Field, default!));
+            }
+        }
+        case BoundArrayAccessLvalue arrayAccess:
+        {
+            var array = this.Compile(arrayAccess.Array);
+            var indices = arrayAccess.Indices
+                .Select(this.Compile)
+                .ToList();
+            return (Load: LoadElement(default!, array, indices), Store: StoreElement(array, indices, default!));
+        }
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(lvalue));
+        }
     }
 
     // Expressions /////////////////////////////////////////////////////////////
@@ -278,14 +315,38 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private static void PatchLoadTarget(IInstruction loadInstr, Register target)
     {
-        // TODO
-        throw new System.NotImplementedException();
+        switch (loadInstr)
+        {
+        case LoadInstruction load:
+            load.Target = target;
+            break;
+        case LoadElementInstruction loadElement:
+            loadElement.Target = target;
+            break;
+        case LoadFieldInstruction loadField:
+            loadField.Target = target;
+            break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(loadInstr));
+        }
     }
 
     private static void PatchStoreSource(IInstruction storeInstr, IOperand source)
     {
-        // TODO
-        throw new System.NotImplementedException();
+        switch (storeInstr)
+        {
+        case StoreInstruction store:
+            store.Source = source;
+            break;
+        case StoreElementInstruction storeElement:
+            storeElement.Source = source;
+            break;
+        case StoreFieldInstruction storeField:
+            storeField.Source = source;
+            break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(storeInstr));
+        }
     }
 
     public override IOperand VisitUnaryExpression(BoundUnaryExpression node)

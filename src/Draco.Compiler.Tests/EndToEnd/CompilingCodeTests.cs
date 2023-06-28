@@ -482,6 +482,61 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void MemberFields()
+    {
+        var csReference = CompileCSharpToStream(
+            "Test.dll",
+            """
+            public class FooTest
+            {
+                public int number = 3;
+            }
+            """);
+        var foo = SyntaxTree.Parse("""
+            public func foo(): int32 {
+                var test = FooTest();
+                test.number += 2;
+                return test.number;
+            }
+            """);
+
+        var assembly = Compile(
+            root: null,
+            syntaxTrees: ImmutableArray.Create(foo),
+            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(5, x);
+    }
+
+    [Fact]
+    public void StaticFields()
+    {
+        var csReference = CompileCSharpToStream(
+            "Test.dll",
+            """
+            public class FooTest
+            {
+                public static int number = 3;
+            }
+            """);
+        var foo = SyntaxTree.Parse("""
+            public func foo(): int32 {
+                FooTest.number += 2;
+                return FooTest.number;
+            }
+            """);
+
+        var assembly = Compile(
+            root: null,
+            syntaxTrees: ImmutableArray.Create(foo),
+            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(5, x);
+    }
+
+    [Fact]
     public void MergeArrays()
     {
         var assembly = Compile("""

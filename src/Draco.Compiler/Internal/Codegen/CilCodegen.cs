@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -176,6 +177,10 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
+            case SymbolReference symbol:
+                this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
+                this.InstructionEncoder.Token(this.GetHandle(symbol));
+                break;
             default:
                 throw new InvalidOperationException();
             }
@@ -210,8 +215,9 @@ internal sealed class CilCodegen
         }
         case LoadFieldInstruction loadField:
         {
-            // TODO
-            throw new NotImplementedException();
+            this.EncodePush(loadField.Receiver);
+            this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
+            this.InstructionEncoder.Token(this.GetHandle(loadField.Member));
             break;
         }
         case StoreInstruction store:
@@ -268,8 +274,10 @@ internal sealed class CilCodegen
         }
         case StoreFieldInstruction storeField:
         {
-            // TODO
-            throw new NotImplementedException();
+            this.EncodePush(storeField.Receiver);
+            this.EncodePush(storeField.Source);
+            this.InstructionEncoder.OpCode(ILOpCode.Stfld);
+            this.InstructionEncoder.Token(this.GetHandle(storeField.Member));
             break;
         }
         case CallInstruction call:

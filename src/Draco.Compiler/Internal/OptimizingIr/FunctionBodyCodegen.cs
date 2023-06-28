@@ -140,6 +140,13 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return default!;
     }
 
+    // Lvalues /////////////////////////////////////////////////////////////////
+
+    private (IInstruction Load, IInstruction Store) CompileLvalue(BoundLvalue lvalue)
+    {
+        throw new System.NotImplementedException();
+    }
+
     // Expressions /////////////////////////////////////////////////////////////
 
     public override IOperand VisitStringExpression(BoundStringExpression node) =>
@@ -245,7 +252,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitAssignmentExpression(BoundAssignmentExpression node)
     {
         var right = this.Compile(node.Right);
-        var left = this.Compile(node.Left);
+        var (leftLoad, leftStore) = this.CompileLvalue(node.Left);
         var toStore = right;
 
         if (node.CompoundOperator is not null)
@@ -253,7 +260,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var leftValue = this.DefineRegister(node.Left.Type);
             var tmp = this.DefineRegister(node.TypeRequired);
             toStore = tmp;
-            this.Write(Load(leftValue, left));
+            // Patch
+            PatchLoadTarget(leftLoad, leftValue);
+            this.Write(leftLoad);
             if (IsAdd(node.CompoundOperator)) this.Write(Add(tmp, leftValue, right));
             else if (IsSub(node.CompoundOperator)) this.Write(Sub(tmp, leftValue, right));
             else if (IsMul(node.CompoundOperator)) this.Write(Mul(tmp, leftValue, right));
@@ -261,8 +270,22 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             else throw new System.NotImplementedException();
         }
 
-        this.Write(Store(left, toStore));
+        // Patch
+        PatchStoreSource(leftStore, toStore);
+        this.Write(leftStore);
         return toStore;
+    }
+
+    private static void PatchLoadTarget(IInstruction loadInstr, Register target)
+    {
+        // TODO
+        throw new System.NotImplementedException();
+    }
+
+    private static void PatchStoreSource(IInstruction storeInstr, IOperand source)
+    {
+        // TODO
+        throw new System.NotImplementedException();
     }
 
     public override IOperand VisitUnaryExpression(BoundUnaryExpression node)

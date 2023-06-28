@@ -12,7 +12,15 @@ internal static class InstructionFactory
 {
     public static NopInstruction Nop() => new();
     public static StoreInstruction Store(IOperand target, IOperand source) => new(target, source);
+    public static StoreElementInstruction StoreElement(IOperand array, IEnumerable<IOperand> indices, IOperand source) =>
+        new(array, indices, source);
+    public static StoreFieldInstruction StoreField(IOperand receiver, FieldSymbol field, IOperand source) =>
+        new(receiver, field, source);
     public static LoadInstruction Load(Register target, IOperand source) => new(target, source);
+    public static LoadElementInstruction LoadElement(Register target, IOperand array, IEnumerable<IOperand> indices) =>
+        new(target, array, indices);
+    public static LoadFieldInstruction LoadField(Register target, IOperand receiver, FieldSymbol field) =>
+        new(target, receiver, field);
     public static RetInstruction Ret(IOperand value) => new(value);
     public static JumpInstruction Jump(BasicBlock target) => new(target);
     public static BranchInstruction Branch(IOperand condition, BasicBlock then, BasicBlock @else) =>
@@ -25,8 +33,6 @@ internal static class InstructionFactory
         new(target, ctor, args);
     public static NewArrayInstruction NewArray(Register target, TypeSymbol elementType, IEnumerable<IOperand> dimensions) =>
         new(target, elementType, dimensions);
-    public static LoadElementInstruction ArrayElement(Register target, IOperand array, IEnumerable<IOperand> indices) =>
-        new(target, array, indices);
     public static ArrayLengthInstruction ArrayLength(Register target, IOperand array) =>
         new(target, array);
     public static ArithmeticInstruction Arithmetic(Register target, ArithmeticOp op, IOperand left, IOperand right) =>

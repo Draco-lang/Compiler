@@ -21,7 +21,7 @@ internal abstract class InstructionBase : IInstruction
     public virtual IEnumerable<BasicBlock> JumpTargets => Enumerable.Empty<BasicBlock>();
     IEnumerable<IBasicBlock> IInstruction.JumpTargets => this.JumpTargets;
 
-    public abstract override string ToString();
+    public override abstract string ToString();
 
     public abstract IInstruction Clone();
 }

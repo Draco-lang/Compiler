@@ -68,15 +68,14 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
     private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
-    private AssemblyReferenceHandle systemRuntimeReference;
-    private TypeReferenceHandle systemObjectReference;
+    private readonly AssemblyReferenceHandle systemRuntimeReference;
+    private readonly TypeReferenceHandle systemObjectReference;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
     {
         this.Compilation = compilation;
         if (writePdb) this.PdbCodegen = new(this);
         this.assembly = assembly;
-        this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
 
         // Reference System.Object from System.Runtime
@@ -89,10 +88,6 @@ internal sealed class MetadataCodegen : MetadataWriter
           assembly: this.systemRuntimeReference,
           @namespace: "System",
           name: "Object");
-    }
-
-    private void LoadIntrinsics()
-    {
     }
 
     private void WriteModuleAndAssemblyDefinition()

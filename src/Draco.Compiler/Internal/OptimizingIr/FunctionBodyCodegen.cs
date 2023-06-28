@@ -30,7 +30,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     }
 
     private void Compile(BoundStatement stmt) => stmt.Accept(this);
-    private IOperand Compile(BoundLvalue lvalue) => lvalue.Accept(this);
     private IOperand Compile(BoundExpression expr) => expr.Accept(this);
 
     private void AttachBlock(BasicBlock basicBlock)
@@ -141,16 +140,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return default!;
     }
 
-    // Lvalues /////////////////////////////////////////////////////////////////
-
-    public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
-    public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
-    public override IOperand VisitFieldLvalue(BoundFieldLvalue node) => node.Receiver is null
-        ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
-        : new FieldAccess(this.Compile(node.Receiver), node.Field);
-    public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) =>
-        new ArrayAccess(this.Compile(node.Array), node.Indices.Select(this.Compile).ToImmutableArray());
-
     // Expressions /////////////////////////////////////////////////////////////
 
     public override IOperand VisitStringExpression(BoundStringExpression node) =>
@@ -204,7 +193,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var array = this.Compile(node.Array);
         var indices = node.Indices.Select(this.Compile).ToList();
         var result = this.DefineRegister(node.TypeRequired);
-        this.Write(ArrayElement(result, array, indices));
+        this.Write(LoadElement(result, array, indices));
         return result;
     }
 
@@ -429,9 +418,15 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
-    public override IOperand VisitFieldExpression(BoundFieldExpression node) => node.Receiver is null
-        ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
-        : new FieldAccess(this.Compile(node.Receiver), node.Field);
+    public override IOperand VisitFieldExpression(BoundFieldExpression node)
+    {
+        var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(receiver is null
+            ? Load(result, new SymbolReference(node.Field))
+            : LoadField(result, receiver, node.Field));
+        return result;
+    }
 
     // TODO: Do something with this block
 

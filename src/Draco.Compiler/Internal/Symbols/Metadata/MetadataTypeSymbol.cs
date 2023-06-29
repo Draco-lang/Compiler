@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -37,6 +38,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
+    public override Compilation DeclaringCompilation { get; }
+
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public string? DefaultMemberAttributeName =>
@@ -45,10 +48,11 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private readonly TypeDefinition typeDefinition;
 
-    public MetadataTypeSymbol(Symbol? containingSymbol, TypeDefinition typeDefinition)
+    public MetadataTypeSymbol(Symbol? containingSymbol, TypeDefinition typeDefinition, Compilation declaringCompilation)
     {
         this.ContainingSymbol = containingSymbol;
         this.typeDefinition = typeDefinition;
+        this.DeclaringCompilation = declaringCompilation;
     }
 
     public override string ToString() => this.GenericParameters.Length == 0
@@ -82,17 +86,26 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
+        var y = this.typeDefinition.BaseType.Kind switch
+        {
+            HandleKind.TypeDefinition => new MetadataTypeSymbol(null, this.MetadataReader.GetTypeDefinition((TypeDefinitionHandle)this.typeDefinition.BaseType), this.DeclaringCompilation),
+            HandleKind.TypeReference => new TypeProvider(this.DeclaringCompilation).GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)this.typeDefinition.BaseType, 0),
+            // TODO
+            HandleKind.TypeSpecification => null,
+        };
         foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
         {
             var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
-            interfaceDef.Interface.Kind switch
+            var x = interfaceDef.Interface.Kind switch
             {
-                HandleKind.TypeDefinition => new MetadataTypeSymbol(null, this.MetadataReader.GetTypeDefinition((TypeDefinitionHandle)interfaceDef.Interface)),
+                HandleKind.TypeDefinition => new MetadataTypeSymbol(null, this.MetadataReader.GetTypeDefinition((TypeDefinitionHandle)interfaceDef.Interface), this.DeclaringCompilation),
+                HandleKind.TypeReference => new TypeProvider(this.DeclaringCompilation).GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)interfaceDef.Interface, 0),
                 // TODO
-                HandleKind.TypeReference => ,
-                HandleKind.TypeSpecification => ,
-            }
+                HandleKind.TypeSpecification => null,
+            };
         }
+
+        return ImmutableArray<TypeSymbol>.Empty;
     }
 
     private ImmutableArray<Symbol> BuildMembers()
@@ -107,7 +120,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader, this.DeclaringCompilation);
             result.AddRange(symbols);
         }
 

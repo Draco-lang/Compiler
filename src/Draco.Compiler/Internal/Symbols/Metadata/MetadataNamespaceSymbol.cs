@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -23,14 +24,17 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
+    public override Compilation DeclaringCompilation { get; }
+
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly NamespaceDefinition namespaceDefinition;
 
-    public MetadataNamespaceSymbol(Symbol containingSymbol, NamespaceDefinition namespaceDefinition)
+    public MetadataNamespaceSymbol(Symbol containingSymbol, NamespaceDefinition namespaceDefinition, Compilation declaringCompilation)
     {
         this.ContainingSymbol = containingSymbol;
         this.namespaceDefinition = namespaceDefinition;
+        this.DeclaringCompilation = declaringCompilation;
     }
 
     private ImmutableArray<Symbol> BuildMembers()
@@ -43,7 +47,8 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
             var subNamespaceDef = this.MetadataReader.GetNamespaceDefinition(subNamespaceHandle);
             var subNamespaceSym = new MetadataNamespaceSymbol(
                 containingSymbol: this,
-                namespaceDefinition: subNamespaceDef);
+                namespaceDefinition: subNamespaceDef,
+                declaringCompilation: this.DeclaringCompilation);
             result.Add(subNamespaceSym);
         }
 
@@ -58,7 +63,7 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
             // Skip non-public types
             if (!typeDef.Attributes.HasFlag(TypeAttributes.Public)) continue;
             // Turn into a symbol, or potentially symbols
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader, this.DeclaringCompilation);
             result.AddRange(symbols);
         }
 

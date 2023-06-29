@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -26,6 +27,8 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
+    public override Compilation DeclaringCompilation { get; }
+
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public string? DefaultMemberAttributeName =>
@@ -34,10 +37,11 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     private readonly TypeDefinition typeDefinition;
 
-    public MetadataStaticClassSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
+    public MetadataStaticClassSymbol(Symbol containingSymbol, TypeDefinition typeDefinition, Compilation declaringCompilation)
     {
         this.ContainingSymbol = containingSymbol;
         this.typeDefinition = typeDefinition;
+        this.DeclaringCompilation = declaringCompilation;
     }
 
     private ImmutableArray<Symbol> BuildMembers()
@@ -52,7 +56,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader, this.DeclaringCompilation);
             result.AddRange(symbols);
         }
 

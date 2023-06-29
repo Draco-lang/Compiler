@@ -1,6 +1,7 @@
 using System.Text;
 using Draco.Compiler.Api;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using RoslynMetadataReference = Microsoft.CodeAnalysis.MetadataReference;
 
@@ -8,11 +9,12 @@ namespace Draco.Compiler.Tests;
 
 internal static class TestUtilities
 {
+    public const string DefaultAssemblyName = "Test.dll";
     public static string ToPath(params string[] parts) => Path.GetFullPath(Path.Combine(parts));
 
-    public static MetadataReference CompileCSharpToMetadataRef(string code)
+    public static MetadataReference CompileCSharpToMetadataRef(string code, string name = DefaultAssemblyName)
     {
-        var stream = CompileCSharpToStream("Test.dll", code);
+        var stream = CompileCSharpToStream(name, code);
         return MetadataReference.FromPeStream(stream);
     }
 

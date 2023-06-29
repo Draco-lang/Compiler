@@ -20,18 +20,19 @@ internal static class MetadataSymbol
     public static IEnumerable<Symbol> ToSymbol(
         Symbol containingSymbol,
         TypeDefinition type,
-        MetadataReader metadataReader)
+        MetadataReader metadataReader,
+        Compilation declaringCompilation)
     {
         if (type.Attributes.HasFlag(StaticClassAttributes))
         {
             // Static classes are treated as modules, nothing extra to do
-            var result = new MetadataStaticClassSymbol(containingSymbol, type);
+            var result = new MetadataStaticClassSymbol(containingSymbol, type, declaringCompilation);
             return new[] { result };
         }
         else
         {
             // Non-static classes get constructor methods injected, in case they are not abstract
-            var typeSymbol = new MetadataTypeSymbol(containingSymbol, type);
+            var typeSymbol = new MetadataTypeSymbol(containingSymbol, type, declaringCompilation);
             var results = new List<Symbol>() { typeSymbol };
             if (!type.Attributes.HasFlag(TypeAttributes.Abstract))
             {

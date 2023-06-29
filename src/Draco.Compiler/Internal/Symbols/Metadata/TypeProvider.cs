@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -89,11 +90,21 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     }
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
+        var parts = new List<string>();
         var reference = reader.GetTypeReference(handle);
-        var resolutionScope = reference.ResolutionScope;
+        parts.Add(reader.GetString(reference.Name));
+        EntityHandle resolutionScope;
+        for (resolutionScope = reference.ResolutionScope; resolutionScope.Kind == HandleKind.TypeReference; resolutionScope = reference.ResolutionScope)
+        {
+            reference = reader.GetTypeReference((TypeReferenceHandle)resolutionScope);
+            parts.Add(reader.GetString(reference.Name));
+        }
+        parts.AddRange(reader.GetString(reference.Namespace).Split('.'));
+        parts.Reverse();
 
-        // TODO: Based on resolution scope, do the lookup
-        return UnknownType;
+        var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
+        var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
+        return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
     }
     public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind) =>
         UnknownType;

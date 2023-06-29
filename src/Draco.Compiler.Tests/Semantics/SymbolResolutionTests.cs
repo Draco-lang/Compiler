@@ -3372,4 +3372,48 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Same(genericTypeSymbol, returnTypeSymbol);
         Assert.Empty(diags);
     }
+
+    [Fact]
+    public void InheretanceFromObject()
+    {
+        // func foo()
+        // {
+        //   var foo = FooType();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType { }
+            """);
+
+        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        Assert.Single(fooTypeSym.BaseTypes);
+        Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
+    }
 }

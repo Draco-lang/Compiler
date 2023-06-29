@@ -99,7 +99,8 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
             reference = reader.GetTypeReference((TypeReferenceHandle)resolutionScope);
             parts.Add(reader.GetString(reference.Name));
         }
-        parts.AddRange(reader.GetString(reference.Namespace).Split('.'));
+        var @namespace = reader.GetString(reference.Namespace);
+        if(!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.'));
         parts.Reverse();
 
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();

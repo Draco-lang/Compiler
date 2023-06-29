@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.IO;
 using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
@@ -3416,4 +3417,110 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(fooTypeSym.BaseTypes);
         Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
     }
+
+    [Fact]
+    public void InheretanceFromTypeDefinition()
+    {
+        // func foo()
+        // {
+        //   var foo = FooType();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class ParentType { }
+            public class FooType : ParentType { }
+            """);
+
+        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+        var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        Assert.Single(fooTypeSym.BaseTypes);
+        Assert.Equal(parentTypeDecl, fooTypeSym.BaseTypes.First());
+    }
+
+    [Fact]
+    public void InheretanceFromNestedTypeReference()
+    {
+        // func foo()
+        // {
+        //   var foo = FooType();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
+
+        var baseStream = CompileCSharpToStream("""
+            public class ParentType
+            {
+                public class BaseType { }
+            }
+            """, "Base.dll");
+
+        var baseRef = MetadataReference.FromPeStream(baseStream);
+
+        baseStream.Position = 0;
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType : ParentType.BaseType { }
+            """, aditionalReferences: new[] { baseStream });
+
+        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(baseRef)
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+        var baseTypeDecl = GetMetadataSymbol(compilation, "Base.dll", "ParentType", "BaseType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        Assert.Single(fooTypeSym.BaseTypes);
+        Assert.Equal(baseTypeDecl, fooTypeSym.BaseTypes.First());
+    }
+
+    // TODO: From Specification
+    // TODO: Interfaces
 }

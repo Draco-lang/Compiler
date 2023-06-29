@@ -86,17 +86,18 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
-        var y = this.typeDefinition.BaseType.Kind switch
+        var typeProvider = new TypeProvider(this.DeclaringCompilation);
+        builder.Add(this.typeDefinition.BaseType.Kind switch
         {
-            HandleKind.TypeDefinition => new MetadataTypeSymbol(null, this.MetadataReader.GetTypeDefinition((TypeDefinitionHandle)this.typeDefinition.BaseType), this.DeclaringCompilation),
-            HandleKind.TypeReference => new TypeProvider(this.DeclaringCompilation).GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)this.typeDefinition.BaseType, 0),
+            HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)this.typeDefinition.BaseType, 0),
+            HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)this.typeDefinition.BaseType, 0),
             // TODO
-            HandleKind.TypeSpecification => null,
-        };
+            HandleKind.TypeSpecification => null!,
+        });
         foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
         {
             var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
-            var x = interfaceDef.Interface.Kind switch
+            _ = interfaceDef.Interface.Kind switch
             {
                 HandleKind.TypeDefinition => new MetadataTypeSymbol(null, this.MetadataReader.GetTypeDefinition((TypeDefinitionHandle)interfaceDef.Interface), this.DeclaringCompilation),
                 HandleKind.TypeReference => new TypeProvider(this.DeclaringCompilation).GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)interfaceDef.Interface, 0),
@@ -105,7 +106,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             };
         }
 
-        return ImmutableArray<TypeSymbol>.Empty;
+        return builder.ToImmutable();
     }
 
     private ImmutableArray<Symbol> BuildMembers()

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>

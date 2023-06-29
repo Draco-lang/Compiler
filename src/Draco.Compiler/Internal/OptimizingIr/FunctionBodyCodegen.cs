@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;

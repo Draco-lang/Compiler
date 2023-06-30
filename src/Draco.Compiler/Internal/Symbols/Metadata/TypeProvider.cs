@@ -100,9 +100,10 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
             parts.Add(reader.GetString(reference.Name));
         }
         var @namespace = reader.GetString(reference.Namespace);
-        if(!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.'));
+        if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.'));
         parts.Reverse();
 
+        // TODO: If we dont have the assembly report error
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
         var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();

@@ -3521,6 +3521,104 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Equal(baseTypeDecl, fooTypeSym.BaseTypes.First());
     }
 
-    // TODO: From Specification
-    // TODO: Interfaces
+    // TODO: BaseType From Specification
+
+    [Fact]
+    public void InheretingInterfacesFromTypeDefinition()
+    {
+        // func foo()
+        // {
+        //   var foo = FooType();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class ParentType { }
+            public interface ParentInterface { }
+            public class FooType : ParentType, ParentInterface { }
+            """);
+
+        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+        var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType");
+        var parentInterfaceDecl = GetMetadataSymbol(compilation, null, "ParentInterface");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        Assert.Equal(2, fooTypeSym.BaseTypes.Count());
+        Assert.Equal(parentTypeDecl, fooTypeSym.BaseTypes.First());
+        Assert.Equal(parentInterfaceDecl, fooTypeSym.BaseTypes.Last());
+    }
+
+    [Fact]
+    public void InheretingInterfacesFromTypeReference()
+    {
+        // func foo()
+        // {
+        //   var foo = FooType();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class FooType : System.ICloneable
+            {
+                public object Clone() => new object();
+            }
+            """);
+
+        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        Assert.Equal(2, fooTypeSym.BaseTypes.Count());
+        Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
+        Assert.Equal("System.ICloneable", fooTypeSym.BaseTypes.Last().FullName);
+    }
+
+    // TODO: Interfaces From Specification
 }

@@ -97,13 +97,13 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
         {
             var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
-            _ = interfaceDef.Interface.Kind switch
+            builder.Add(interfaceDef.Interface.Kind switch
             {
-                HandleKind.TypeDefinition => new MetadataTypeSymbol(null, this.MetadataReader.GetTypeDefinition((TypeDefinitionHandle)interfaceDef.Interface), this.DeclaringCompilation),
-                HandleKind.TypeReference => new TypeProvider(this.DeclaringCompilation).GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)interfaceDef.Interface, 0),
+                HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)interfaceDef.Interface, 0),
+                HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)interfaceDef.Interface, 0),
                 // TODO
-                HandleKind.TypeSpecification => null,
-            };
+                HandleKind.TypeSpecification => null!,
+            });
         }
 
         return builder.ToImmutable();

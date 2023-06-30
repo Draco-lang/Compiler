@@ -8,9 +8,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class NewObjectInstruction : InstructionBase
 {
-    public override IEnumerable<IOperand> Operands => new[] { this.Target, this.Constructor }
-        .Concat(this.Arguments);
-
     /// <summary>
     /// The register to write the instantiated object to.
     /// </summary>

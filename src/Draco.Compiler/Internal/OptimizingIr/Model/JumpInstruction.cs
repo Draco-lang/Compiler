@@ -9,7 +9,6 @@ internal sealed class JumpInstruction : InstructionBase
 {
     public override bool IsBranch => true;
     public override IEnumerable<BasicBlock> JumpTargets => new[] { this.Target };
-    public override IEnumerable<IOperand> Operands => new[] { this.Target };
 
     /// <summary>
     /// The jump target.
@@ -20,6 +19,8 @@ internal sealed class JumpInstruction : InstructionBase
     {
         this.Target = target;
     }
+
+    public override string ToString() => $"jump {this.Target.ToOperandString()}";
 
     public override JumpInstruction Clone() => new(this.Target);
 }

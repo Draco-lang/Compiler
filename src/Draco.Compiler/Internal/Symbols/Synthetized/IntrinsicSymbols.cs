@@ -21,6 +21,18 @@ internal static class IntrinsicSymbols
     public static ArrayTypeSymbol Array { get; } = new(1);
     public static ArrayConstructorSymbol ArrayCtor { get; } = new(1);
 
+    public static IEnumerable<Symbol> GenerateIntrinsicSymbols()
+    {
+        // Array types from 2D to 8D
+        for (var i = 2; i <= 8; ++i)
+        {
+            // Type
+            yield return new ArrayTypeSymbol(i);
+            // Ctor
+            yield return new ArrayConstructorSymbol(i);
+        }
+    }
+
     // Operators
 
     private static FunctionSymbol Unary(TokenKind token, TypeSymbol operandType, TypeSymbol returnType) =>

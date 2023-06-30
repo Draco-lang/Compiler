@@ -9,7 +9,6 @@ internal sealed class BranchInstruction : InstructionBase
 {
     public override bool IsBranch => true;
     public override IEnumerable<BasicBlock> JumpTargets => new[] { this.Then, this.Else };
-    public override IEnumerable<IOperand> Operands => new[] { this.Condition, this.Then, this.Else };
 
     /// <summary>
     /// The condition to base the jump on.
@@ -32,6 +31,9 @@ internal sealed class BranchInstruction : InstructionBase
         this.Then = then;
         this.Else = @else;
     }
+
+    public override string ToString() =>
+        $"if {this.Condition.ToOperandString()} jump {this.Then.ToOperandString()} else jump {this.Else.ToOperandString()}";
 
     public override BranchInstruction Clone() => new(this.Condition, this.Then, this.Else);
 }

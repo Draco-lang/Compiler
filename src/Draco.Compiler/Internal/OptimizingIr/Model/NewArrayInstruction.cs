@@ -9,8 +9,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class NewArrayInstruction : InstructionBase
 {
-    public override IEnumerable<IOperand> Operands => this.Dimensions.Prepend(this.Target);
-
     /// <summary>
     /// The register to write the instantiated array to.
     /// </summary>

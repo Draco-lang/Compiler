@@ -67,15 +67,14 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
     private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
-    private AssemblyReferenceHandle systemRuntimeReference;
-    private TypeReferenceHandle systemObjectReference;
+    private readonly AssemblyReferenceHandle systemRuntimeReference;
+    private readonly TypeReferenceHandle systemObjectReference;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
     {
         this.Compilation = compilation;
         if (writePdb) this.PdbCodegen = new(this);
         this.assembly = assembly;
-        this.LoadIntrinsics();
         this.WriteModuleAndAssemblyDefinition();
 
         // Reference System.Object from System.Runtime
@@ -88,10 +87,6 @@ internal sealed class MetadataCodegen : MetadataWriter
           assembly: this.systemRuntimeReference,
           @namespace: "System",
           name: "Object");
-    }
-
-    private void LoadIntrinsics()
-    {
     }
 
     private void WriteModuleAndAssemblyDefinition()
@@ -275,9 +270,78 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.GetModuleReferenceHandle(irModule);
         }
 
+        case FieldSymbol field:
+        {
+            return this.AddMemberReference(
+                parent: this.GetEntityHandle(field.ContainingSymbol
+                                          ?? throw new InvalidOperationException()),
+                name: field.Name,
+                signature: this.EncodeBlob(e =>
+                {
+                    var encoder = e.Field();
+                    this.EncodeSignatureType(encoder.Type(), field.Type);
+                }));
+        }
+
         default:
             throw new ArgumentOutOfRangeException(nameof(symbol));
         }
+    }
+
+    // TODO: This can be cached
+    public EntityHandle GetMultidimensionalArrayCtorHandle(TypeSymbol elementType, int rank) =>
+        this.AddMemberReference(
+            parent: this.GetMultidimensionalArrayTypeHandle(elementType, rank),
+            name: ".ctor",
+            signature: this.EncodeBlob(e =>
+            {
+                e
+                    .MethodSignature(isInstanceMethod: true)
+                    .Parameters(rank, out var returnTypeEncoder, out var parametersEncoder);
+                returnTypeEncoder.Void();
+                for (var i = 0; i < rank; ++i) parametersEncoder.AddParameter().Type().Int32();
+            }));
+
+    // TODO: This can be cached
+    public EntityHandle GetMultidimensionalArrayGetHandle(TypeSymbol elementType, int rank) =>
+        this.AddMemberReference(
+            parent: this.GetMultidimensionalArrayTypeHandle(elementType, rank),
+            name: "Get",
+            signature: this.EncodeBlob(e =>
+            {
+                e
+                    .MethodSignature(isInstanceMethod: true)
+                    .Parameters(rank, out var returnTypeEncoder, out var parametersEncoder);
+                this.EncodeSignatureType(returnTypeEncoder.Type(), elementType);
+                for (var i = 0; i < rank; ++i) parametersEncoder.AddParameter().Type().Int32();
+            }));
+
+    // TODO: This can be cached
+    public EntityHandle GetMultidimensionalArraySetHandle(TypeSymbol elementType, int rank) =>
+        this.AddMemberReference(
+            parent: this.GetMultidimensionalArrayTypeHandle(elementType, rank),
+            name: "Set",
+            signature: this.EncodeBlob(e =>
+            {
+                e
+                    .MethodSignature(isInstanceMethod: true)
+                    .Parameters(rank + 1, out var returnTypeEncoder, out var parametersEncoder);
+                returnTypeEncoder.Void();
+                for (var i = 0; i < rank; ++i) parametersEncoder.AddParameter().Type().Int32();
+                this.EncodeSignatureType(parametersEncoder.AddParameter().Type(), elementType);
+            }));
+
+    // TODO: This can be cached
+    private EntityHandle GetMultidimensionalArrayTypeHandle(TypeSymbol elementType, int rank)
+    {
+        if (rank <= 1) throw new ArgumentOutOfRangeException(nameof(rank));
+        return this.MetadataBuilder.AddTypeSpecification(this.EncodeBlob(e =>
+        {
+            var encoder = e.TypeSpecificationSignature();
+            encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
+            this.EncodeSignatureType(elementTypeEncoder, elementType);
+            shapeEncoder.Shape(rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
+        }));
     }
 
     private EntityHandle GetContainerEntityHandle(Symbol symbol) => symbol switch
@@ -539,16 +603,21 @@ internal sealed class MetadataCodegen : MetadataWriter
             // Check, if this is an array
             if (type.GenericDefinition is ArrayTypeSymbol arrayType)
             {
-                // One-dimensional arrays are special
+                var elementType = type.GenericArguments[0];
                 if (arrayType.Rank == 1)
                 {
+                    // One-dimensional arrays are special
                     Debug.Assert(type.GenericArguments.Length == 1);
-                    var elementType = type.GenericArguments[0];
                     this.EncodeSignatureType(encoder.SZArray(), elementType);
                     return;
                 }
-                // TODO
-                throw new NotImplementedException();
+                {
+                    // Multi-dimensional
+                    encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
+                    this.EncodeSignatureType(elementTypeEncoder, elementType);
+                    shapeEncoder.Shape(arrayType.Rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
+                    return;
+                }
             }
 
             // Generic instantiation

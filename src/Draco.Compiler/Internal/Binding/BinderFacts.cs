@@ -20,7 +20,7 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="type"/> is a legal variadic argument type, false otherwise.</returns>
     public static bool TryGetVariadicElementType(TypeSymbol type, [MaybeNullWhen(false)] out TypeSymbol elementType)
     {
-        if (type.GenericDefinition is ArrayTypeSymbol)
+        if (type.GenericDefinition is ArrayTypeSymbol { Rank: 1 })
         {
             elementType = type.GenericArguments[0];
             return true;

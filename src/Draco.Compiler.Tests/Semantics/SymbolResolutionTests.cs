@@ -3521,7 +3521,51 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Equal(baseTypeDecl, fooTypeSym.BaseTypes.First());
     }
 
-    // TODO: BaseType From Specification
+    [Fact]
+    public void InheretanceFromTypeSpecification()
+    {
+        // func foo()
+        // {
+        //   var foo = FooType();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class ParentType<T> { }
+            public class FooType : ParentType<int> { }
+            """);
+
+        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+        var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType`1");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        Assert.Single(fooTypeSym.BaseTypes);
+        Assert.Equal(parentTypeDecl, fooTypeSym.BaseTypes.First());
+    }
 
     [Fact]
     public void InheretingInterfacesFromTypeDefinition()
@@ -3540,9 +3584,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class ParentType { }
             public interface ParentInterface { }
-            public class FooType : ParentType, ParentInterface { }
+            public class FooType : ParentInterface { }
             """);
 
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
@@ -3560,7 +3603,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
-        var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType");
         var parentInterfaceDecl = GetMetadataSymbol(compilation, null, "ParentInterface");
 
         // Assert
@@ -3568,7 +3610,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
         Assert.Equal(2, fooTypeSym.BaseTypes.Count());
-        Assert.Equal(parentTypeDecl, fooTypeSym.BaseTypes.First());
+        Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
         Assert.Equal(parentInterfaceDecl, fooTypeSym.BaseTypes.Last());
     }
 
@@ -3620,5 +3662,50 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Equal("System.ICloneable", fooTypeSym.BaseTypes.Last().FullName);
     }
 
-    // TODO: Interfaces From Specification
+    [Fact]
+    public void InheretingInterfaceFromTypeSpecification()
+    {
+        // func foo()
+        // {
+        //   var foo = FooType();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public interface ParentInterface<T> { }
+            public class FooType : ParentInterface<int> { }
+            """);
+
+        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
+        var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
+        var parentInterfaceDecl = GetMetadataSymbol(compilation, null, "ParentInterface`1");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fooTypeSym.IsError);
+        Assert.Same(fooTypeSym, fooTypeDecl);
+        Assert.Equal(2, fooTypeSym.BaseTypes.Count());
+        Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
+        Assert.Equal(parentInterfaceDecl, fooTypeSym.BaseTypes.Last());
+    }
 }

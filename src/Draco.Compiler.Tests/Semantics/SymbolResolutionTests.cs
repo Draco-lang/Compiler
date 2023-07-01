@@ -3558,14 +3558,19 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
-        var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType`1").GenericInstantiate(null, ImmutableArray.Create(IntrinsicSymbols.Int32));
+        var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType`1");
+        var baseTypeSym = fooTypeSym.BaseTypes.First();
 
         // Assert
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
         Assert.Single(fooTypeSym.BaseTypes);
-        Assert.Equal(parentTypeDecl, fooTypeSym.BaseTypes.First());
+        Assert.True(baseTypeSym.IsGenericInstance);
+        Assert.False(baseTypeSym.IsGenericDefinition);
+        Assert.Same(parentTypeDecl,baseTypeSym.GenericDefinition);
+        Assert.Single(baseTypeSym.GenericArguments);
+        Assert.Same(IntrinsicSymbols.Int32, baseTypeSym.GenericArguments[0]);
     }
 
     [Fact]
@@ -3700,6 +3705,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
         var parentInterfaceDecl = GetMetadataSymbol(compilation, null, "ParentInterface`1");
+        var baseInterfaceSym = fooTypeSym.BaseTypes.Last();
 
         // Assert
         Assert.Empty(diags);
@@ -3707,6 +3713,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Same(fooTypeSym, fooTypeDecl);
         Assert.Equal(2, fooTypeSym.BaseTypes.Count());
         Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
-        Assert.Equal(parentInterfaceDecl, fooTypeSym.BaseTypes.Last());
+        Assert.True(baseInterfaceSym.IsGenericInstance);
+        Assert.False(baseInterfaceSym.IsGenericDefinition);
+        Assert.Same(parentInterfaceDecl, baseInterfaceSym.GenericDefinition);
+        Assert.Single(baseInterfaceSym.GenericArguments);
+        Assert.Same(IntrinsicSymbols.Int32, baseInterfaceSym.GenericArguments[0]);
     }
 }

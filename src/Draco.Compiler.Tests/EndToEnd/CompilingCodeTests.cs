@@ -427,14 +427,12 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void GenericMemberMethodCall()
     {
-        var csReference = CompileCSharpToStream(
-            "Test.dll",
-            """
+        var csReference = CompileCSharpToStream("""
             public class IdentityProvider
             {
                 public T Identity<T>(T x) => x;
             }
-            """);
+            """, "Test.dll");
         var foo = SyntaxTree.Parse("""
             public func foo(): int32 {
                 val provider = IdentityProvider();
@@ -454,15 +452,13 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void PropertiesCompoundAssignment()
     {
-        var csReference = CompileCSharpToStream(
-            "Test.dll",
-            """
+        var csReference = CompileCSharpToStream("""
             public class FooTest
             {
                 public static int StaticProp { get; set; } = 5;
                 public int NonStaticProp { get; set; } = 4;
             }
-            """);
+            """, "Test.dll");
         var foo = SyntaxTree.Parse("""
             public func foo(): int32 {
                 var test = FooTest();

@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using static Draco.Compiler.Tests.TestUtilities;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
@@ -3557,7 +3558,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
-        var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType`1");
+        var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType`1").GenericInstantiate(null, ImmutableArray.Create(IntrinsicSymbols.Int32));
 
         // Assert
         Assert.Empty(diags);

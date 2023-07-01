@@ -108,8 +108,12 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
     }
-    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind) =>
-        UnknownType;
+    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
+    {
+        var specification = reader.GetTypeSpecification(handle);
+        return specification.DecodeSignature(this, genericContext);
+    }
+
     public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
     public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
     public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;

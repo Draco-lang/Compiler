@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -91,8 +92,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         {
             HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)this.typeDefinition.BaseType, 0),
             HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)this.typeDefinition.BaseType, 0),
-            // TODO
-            HandleKind.TypeSpecification => null!,
+            // TODO: What symbol do we pass there? do we need to pass anything? it works without it
+            HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, new PrimitiveTypeSymbol("<unknown>", false), (TypeSpecificationHandle)this.typeDefinition.BaseType, 0),
         });
         foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
         {
@@ -101,8 +102,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             {
                 HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)interfaceDef.Interface, 0),
                 HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)interfaceDef.Interface, 0),
-                // TODO
-                HandleKind.TypeSpecification => null!,
+                // TODO: What symbol do we pass there? do we need to pass anything? it works without it
+                HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, new PrimitiveTypeSymbol("<unknown>", false), (TypeSpecificationHandle)interfaceDef.Interface, 0),
             });
         }
 

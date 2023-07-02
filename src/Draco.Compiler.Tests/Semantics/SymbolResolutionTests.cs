@@ -3416,7 +3416,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
         Assert.Single(fooTypeSym.BaseTypes);
-        Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
+        Assert.Equal("System.Object", fooTypeSym.BaseTypes[0].FullName);
     }
 
     [Fact]
@@ -3462,7 +3462,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
         Assert.Single(fooTypeSym.BaseTypes);
-        Assert.Equal(parentTypeDecl, fooTypeSym.BaseTypes.First());
+        Assert.Equal(parentTypeDecl, fooTypeSym.BaseTypes[0]);
     }
 
     [Fact]
@@ -3519,7 +3519,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
         Assert.Single(fooTypeSym.BaseTypes);
-        Assert.Equal(baseTypeDecl, fooTypeSym.BaseTypes.First());
+        Assert.Equal(baseTypeDecl, fooTypeSym.BaseTypes[0]);
     }
 
     [Fact]
@@ -3559,7 +3559,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
         var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType`1");
-        var baseTypeSym = fooTypeSym.BaseTypes.First();
+        var baseTypeSym = fooTypeSym.BaseTypes[0];
 
         // Assert
         Assert.Empty(diags);
@@ -3568,7 +3568,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(fooTypeSym.BaseTypes);
         Assert.True(baseTypeSym.IsGenericInstance);
         Assert.False(baseTypeSym.IsGenericDefinition);
-        Assert.Same(parentTypeDecl,baseTypeSym.GenericDefinition);
+        Assert.Same(parentTypeDecl, baseTypeSym.GenericDefinition);
         Assert.Single(baseTypeSym.GenericArguments);
         Assert.Same(IntrinsicSymbols.Int32, baseTypeSym.GenericArguments[0]);
     }
@@ -3615,9 +3615,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Equal(2, fooTypeSym.BaseTypes.Count());
-        Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
-        Assert.Equal(parentInterfaceDecl, fooTypeSym.BaseTypes.Last());
+        Assert.Equal(2, fooTypeSym.BaseTypes.Length);
+        Assert.Equal("System.Object", fooTypeSym.BaseTypes[0].FullName);
+        Assert.Equal(parentInterfaceDecl, fooTypeSym.BaseTypes[1]);
     }
 
     [Fact]
@@ -3663,9 +3663,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Equal(2, fooTypeSym.BaseTypes.Count());
-        Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
-        Assert.Equal("System.ICloneable", fooTypeSym.BaseTypes.Last().FullName);
+        Assert.Equal(2, fooTypeSym.BaseTypes.Length);
+        Assert.Equal("System.Object", fooTypeSym.BaseTypes[0].FullName);
+        Assert.Equal("System.ICloneable", fooTypeSym.BaseTypes[1].FullName);
     }
 
     [Fact]
@@ -3705,18 +3705,69 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
         var parentInterfaceDecl = GetMetadataSymbol(compilation, null, "ParentInterface`1");
-        var baseInterfaceSym = fooTypeSym.BaseTypes.Last();
+        var baseInterfaceSym = fooTypeSym.BaseTypes[^1];
 
         // Assert
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Equal(2, fooTypeSym.BaseTypes.Count());
-        Assert.Equal("System.Object", fooTypeSym.BaseTypes.First().FullName);
+        Assert.Equal(2, fooTypeSym.BaseTypes.Length);
+        Assert.Equal("System.Object", fooTypeSym.BaseTypes[0].FullName);
         Assert.True(baseInterfaceSym.IsGenericInstance);
         Assert.False(baseInterfaceSym.IsGenericDefinition);
         Assert.Same(parentInterfaceDecl, baseInterfaceSym.GenericDefinition);
         Assert.Single(baseInterfaceSym.GenericArguments);
         Assert.Same(IntrinsicSymbols.Int32, baseInterfaceSym.GenericArguments[0]);
+    }
+
+    [Fact]
+    public void AccessingMemberOfBaseType()
+    {
+        // func foo()
+        // {
+        //   var foo = FooType();
+        //   var x = foo.Field;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "Field")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class ParentType
+            {
+                public int Field = 5;
+            }
+            public class FooType : ParentType { }
+            """);
+
+        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var fieldSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.BaseTypes[0], "Field");
+        var fieldDecl = GetMetadataSymbol(compilation, null, "ParentType", "Field");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(fieldSym.IsError);
+        Assert.False(xSym.IsError);
+        Assert.Same(fieldSym, fieldDecl);
     }
 }

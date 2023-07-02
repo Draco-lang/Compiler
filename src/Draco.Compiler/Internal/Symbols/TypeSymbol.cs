@@ -31,7 +31,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// </summary>
     public virtual TypeSymbol Substitution => this;
 
-    public virtual IEnumerable<TypeSymbol> BaseTypes => ImmutableArray<TypeSymbol>.Empty;
+    public virtual ImmutableArray<TypeSymbol> BaseTypes => ImmutableArray<TypeSymbol>.Empty;
 
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;

@@ -84,16 +84,16 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
         }
     }
 
-    private ImmutableArray<TypeSymbol> RecurseBases(TypeSymbol original)
+    private ImmutableArray<Symbol> RecurseBases(TypeSymbol original)
     {
-        var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
+        var builder = ImmutableArray.CreateBuilder<Symbol>();
         foreach (var baseType in original.BaseTypes)
         {
             var membersWithName = baseType.InstanceMembers
                 .Where(m => m.Name == this.MemberName)
                 .ToImmutableArray();
 
-            if (membersWithName.Length > 0) builder.AddRange(membersWithName.Select(x => ((ITypedSymbol)x).Type));
+            if (membersWithName.Length > 0) builder.AddRange(membersWithName);
             builder.AddRange(this.RecurseBases(baseType));
         }
 

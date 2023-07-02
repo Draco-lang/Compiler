@@ -86,6 +86,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
+        if (this.FullName == "System.Object") return ImmutableArray<TypeSymbol>.Empty;
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
         var typeProvider = new TypeProvider(this.DeclaringCompilation);
         builder.Add(this.typeDefinition.BaseType.Kind switch

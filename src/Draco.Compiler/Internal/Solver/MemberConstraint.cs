@@ -53,7 +53,6 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
         // Not a type variable, we can look into members
         var membersWithName = accessed.InstanceMembers
             .Where(m => m.Name == this.MemberName)
-            .Concat(this.RecurseBases(accessed))
             .ToImmutableArray();
 
         if (membersWithName.Length == 0)
@@ -82,21 +81,5 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
             this.Promise.Resolve(membersWithName);
             yield return SolveState.Solved;
         }
-    }
-
-    private ImmutableArray<Symbol> RecurseBases(TypeSymbol original)
-    {
-        var builder = ImmutableArray.CreateBuilder<Symbol>();
-        foreach (var baseType in original.BaseTypes)
-        {
-            var membersWithName = baseType.InstanceMembers
-                .Where(m => m.Name == this.MemberName)
-                .ToImmutableArray();
-
-            if (membersWithName.Length > 0) builder.AddRange(membersWithName);
-            builder.AddRange(this.RecurseBases(baseType));
-        }
-
-        return builder.ToImmutable();
     }
 }

@@ -33,6 +33,14 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 
     public virtual ImmutableArray<TypeSymbol> BaseTypes => ImmutableArray<TypeSymbol>.Empty;
 
+    /// <summary>
+    /// The members defined directly in this type doesn't include members from <see cref="BaseTypes"/>.
+    /// </summary>
+    public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
+
+    // TODO: Filter out overrides and interface implementation
+    public override IEnumerable<Symbol> Members => this.DefinedMembers.Concat(this.BaseTypes.SelectMany(t => t.Members));
+
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
 

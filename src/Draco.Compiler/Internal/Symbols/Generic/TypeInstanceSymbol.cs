@@ -41,6 +41,10 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     private ImmutableArray<TypeSymbol> genericArguments;
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
+    public override IEnumerable<Symbol> DefinedMembers =>
+        InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
+    private ImmutableArray<Symbol> definedMembers;
+
     public override IEnumerable<Symbol> Members =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;

@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -56,6 +57,7 @@ internal partial class Binder
         NameTypeSyntax name => this.BindNameType(name, diagnostics),
         MemberTypeSyntax member => this.BindMemberType(member, diagnostics),
         GenericTypeSyntax generic => this.BindGenericType(generic, diagnostics),
+        FunctionTypeSyntax func => this.BindFunctionType(func, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -105,5 +107,21 @@ internal partial class Binder
         }
         // Ok, instantiate
         return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);
+    }
+
+    private Symbol BindFunctionType(FunctionTypeSyntax syntax, DiagnosticBag diagnostics)
+    {
+        var parameters = syntax.ParameterList.Values
+            .Select(t => this.BindType(t, diagnostics))
+            .OfType<TypeSymbol>()
+            // TODO: This isn't correct, this is in-source
+            // Problem is, currently we don't model parameter signatures by themselves
+            .Select(t => new SynthetizedParameterSymbol(null, t))
+            .Cast<ParameterSymbol>()
+            .ToImmutableArray();
+        var returnType = this.BindType(syntax.ReturnType, diagnostics);
+        return returnType is TypeSymbol returnTypeSymbol
+            ? new FunctionTypeSymbol(parameters, returnTypeSymbol)
+            : IntrinsicSymbols.ErrorType;
     }
 }

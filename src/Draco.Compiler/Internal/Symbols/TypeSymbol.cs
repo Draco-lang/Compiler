@@ -39,7 +39,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
 
     // TODO: Filter out overrides and interface implementation
-    public override IEnumerable<Symbol> Members => this.DefinedMembers.Concat(this.BaseTypes.SelectMany(t => t.Members));
+    public sealed override IEnumerable<Symbol> Members => this.DefinedMembers.Concat(this.BaseTypes.SelectMany(t => t.Members));
 
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;

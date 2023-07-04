@@ -86,26 +86,29 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
-        if (this.FullName == "System.Object") return ImmutableArray<TypeSymbol>.Empty;
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
         var typeProvider = new TypeProvider(this.DeclaringCompilation);
-        builder.Add(this.typeDefinition.BaseType.Kind switch
+        if (!this.typeDefinition.BaseType.IsNil)
         {
-            HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)this.typeDefinition.BaseType, 0),
-            HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)this.typeDefinition.BaseType, 0),
-            // TODO: What symbol do we pass there? do we need to pass anything? it works without it
-            HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, new PrimitiveTypeSymbol("<unknown>", false), (TypeSpecificationHandle)this.typeDefinition.BaseType, 0),
-        });
+            builder.Add(this.typeDefinition.BaseType.Kind switch
+            {
+                HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)this.typeDefinition.BaseType, 0),
+                HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)this.typeDefinition.BaseType, 0),
+                HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)this.typeDefinition.BaseType, 0),
+            });
+        }
         foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
         {
             var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
-            builder.Add(interfaceDef.Interface.Kind switch
+            if (!interfaceDef.Interface.IsNil)
             {
-                HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)interfaceDef.Interface, 0),
-                HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)interfaceDef.Interface, 0),
-                // TODO: What symbol do we pass there? do we need to pass anything? it works without it
-                HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, new PrimitiveTypeSymbol("<unknown>", false), (TypeSpecificationHandle)interfaceDef.Interface, 0),
-            });
+                builder.Add(interfaceDef.Interface.Kind switch
+                {
+                    HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)interfaceDef.Interface, 0),
+                    HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)interfaceDef.Interface, 0),
+                    HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)interfaceDef.Interface, 0),
+                });
+            }
         }
 
         return builder.ToImmutable();

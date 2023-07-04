@@ -1284,6 +1284,8 @@ internal sealed class Parser
         {
             var peek = this.Peek(offset);
             ++offset;
+            // TODO: For any illegal token in type context, we might want to break out of this loop
+            // not to lex the entire input by accident
             if (peek == TokenKind.ParenOpen)
             {
                 ++depth;

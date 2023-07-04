@@ -162,6 +162,7 @@
 
   <Node Name="UntypedFunctionGroupExpression" Base="UntypedExpression">
     <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true"/>
   </Node>
 
   <Node Name="UntypedReferenceErrorExpression" Base="UntypedExpression">

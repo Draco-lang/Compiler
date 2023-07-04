@@ -582,7 +582,8 @@ internal partial class Binder
                     .ToImmutableArray();
 
                 // Wrap them back up in a function group
-                return new UntypedFunctionGroupExpression(syntax, instantiatedFuncs);
+                var groupType = constraints.AllocateTypeVariable();
+                return new UntypedFunctionGroupExpression(syntax, instantiatedFuncs, groupType);
             }
         }
         else if (instantiated is UntypedMemberExpression member)
@@ -666,9 +667,12 @@ internal partial class Binder
             var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
             return new UntypedPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
-            return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));
+            return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func), func.Type);
         case OverloadSymbol overload:
-            return new UntypedFunctionGroupExpression(syntax, overload.Functions);
+        {
+            var type = constraints.AllocateTypeVariable();
+            return new UntypedFunctionGroupExpression(syntax, overload.Functions, type);
+        }
         default:
             throw new InvalidOperationException();
         }

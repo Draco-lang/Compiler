@@ -649,6 +649,22 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="TypeSyntax"/>.</returns>
     private TypeSyntax ParseAtomType()
     {
+        if (this.Peek() == TokenKind.ParenOpen)
+        {
+            // Disambiguate
+            var disambiguation = this.DisambiguateOpenParen();
+            if (disambiguation == OpenParenDisambiguation.FunctionType)
+            {
+                // TODO: Parse function type
+                throw new NotImplementedException();
+            }
+            else
+            {
+                // Grouping
+                throw new NotImplementedException();
+            }
+        }
+
         if (this.Matches(TokenKind.Identifier, out var typeName))
         {
             return new NameTypeSyntax(typeName);

@@ -61,6 +61,7 @@ public static class SyntaxFacts
         TokenKind.StarAssign => "*=",
         TokenKind.SlashAssign => "/=",
         TokenKind.Ellipsis => "...",
+        TokenKind.Arrow => "->",
         _ => null,
     };
 

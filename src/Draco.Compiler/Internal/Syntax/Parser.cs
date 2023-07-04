@@ -655,8 +655,16 @@ internal sealed class Parser
             var disambiguation = this.DisambiguateOpenParen();
             if (disambiguation == OpenParenDisambiguation.FunctionType)
             {
-                // TODO: Parse function type
-                throw new NotImplementedException();
+                // Function type
+                var openParen = this.Expect(TokenKind.ParenOpen);
+                var paramTypes = this.ParseSeparatedSyntaxList(
+                    elementParser: this.ParseType,
+                    separatorKind: TokenKind.Comma,
+                    stopKind: TokenKind.ParenClose);
+                var closeParen = this.Expect(TokenKind.ParenClose);
+                var arrow = this.Expect(TokenKind.Arrow);
+                var returnType = this.ParseType();
+                return new FunctionTypeSyntax(openParen, paramTypes, closeParen, arrow, returnType);
             }
             else
             {

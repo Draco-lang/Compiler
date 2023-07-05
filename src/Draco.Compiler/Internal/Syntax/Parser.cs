@@ -1245,6 +1245,7 @@ internal sealed class Parser
             {
             case TokenKind.Dot:
             case TokenKind.Comma:
+            case TokenKind.Arrow:
             {
                 // Just skip, legal here
                 ++offset;

@@ -29,6 +29,26 @@ internal readonly struct GenericContext : IReadOnlyDictionary<TypeParameterSymbo
     {
     }
 
+    public GenericContext Merge(GenericContext other)
+    {
+        var substitutions = ImmutableDictionary.CreateBuilder<TypeParameterSymbol, TypeSymbol>();
+        substitutions.AddRange(this);
+        // Go through existing substitutions and where we have X -> Y in the old, Y -> Z in the new,
+        // replace with X -> Z
+        foreach (var (typeParam, typeSubst) in this)
+        {
+            if (typeSubst is not TypeParameterSymbol paramSubst) continue;
+            if (other.TryGetValue(paramSubst, out var prunedSubst))
+            {
+                substitutions[typeParam] = prunedSubst;
+            }
+        }
+        // Add the rest
+        substitutions.AddRange(other);
+        // Done merging
+        return new GenericContext(substitutions.ToImmutable());
+    }
+
     public bool TryGetValue(TypeParameterSymbol key, [MaybeNullWhen(false)] out TypeSymbol value) =>
         this.substitutions.TryGetValue(key, out value);
     public bool ContainsKey(TypeParameterSymbol key) => this.substitutions.ContainsKey(key);

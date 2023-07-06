@@ -72,22 +72,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context)
     {
         // We need to merge contexts
-        var substitutions = ImmutableDictionary.CreateBuilder<TypeParameterSymbol, TypeSymbol>();
-        substitutions.AddRange(this.Context);
-        // Go through existing substitutions and where we have X -> Y in the old, Y -> Z in the new,
-        // replace with X -> Z
-        foreach (var (typeParam, typeSubst) in this.Context)
-        {
-            if (typeSubst is not TypeParameterSymbol paramSubst) continue;
-            if (context.TryGetValue(paramSubst, out var prunedSubst))
-            {
-                substitutions[typeParam] = prunedSubst;
-            }
-        }
-        // Add the rest
-        substitutions.AddRange(context);
-        // Done merging
-        var newContext = new GenericContext(substitutions.ToImmutable());
+        var newContext = this.Context.Merge(context);
         return new TypeInstanceSymbol(containingSymbol, this.GenericDefinition, newContext);
     }
 

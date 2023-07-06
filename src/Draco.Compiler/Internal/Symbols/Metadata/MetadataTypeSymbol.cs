@@ -32,6 +32,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     // TODO: Is this correct?
     public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
 
+    public override bool IsInterface => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
+
     public override ImmutableArray<TypeSymbol> BaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
     private ImmutableArray<TypeSymbol> baseTypes;
 

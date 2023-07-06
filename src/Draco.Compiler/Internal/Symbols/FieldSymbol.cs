@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -11,7 +12,17 @@ internal abstract class FieldSymbol : VariableSymbol, IMemberSymbol, IOverridabl
 {
     public abstract bool IsStatic { get; }
 
-    public virtual FieldSymbol? Overridden => null;
+    public virtual FieldSymbol? ExplicitOverride => null;
+
+    public override bool SignatureEquals(Symbol other)
+    {
+        if (other is not FieldSymbol field) return false;
+        if (this.Name != field.Name) return false;
+        if (this.Visibility != field.Visibility) return false;
+        if (this.IsStatic != field.IsStatic) return false;
+        if (this.IsMutable != field.IsMutable) return false;
+        return this.Type.FullName == field.Type.FullName;
+    }
 
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (FieldSymbol)base.GenericInstantiate(containingSymbol, arguments);

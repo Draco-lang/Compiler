@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -44,10 +45,35 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
 
     // TODO: Filter out overrides and interface implementation
-    public sealed override IEnumerable<Symbol> Members => this.DefinedMembers.Concat(this.BaseTypes.SelectMany(t => t.Members));
+    public sealed override IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, () => this.BuildMembers());
+    private ImmutableArray<Symbol> members;
 
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
+
+    private ImmutableArray<Symbol> BuildMembers()
+    {
+        var builder = ImmutableArray.CreateBuilder<Symbol>();
+        var ignore = new List<Symbol>();
+        builder.AddRange(this.DefinedMembers);
+        ignore.AddRange(this.DefinedMembers);
+        Recurse(this);
+        return builder.ToImmutable();
+
+        void Recurse(TypeSymbol current)
+        {
+            foreach (var baseType in current.BaseTypes.Where(x => !x.IsInterface))
+            {
+                foreach (var member in baseType.Members)
+                {
+                    if (ignore.Any(member.SignatureEquals)) continue;
+                    builder.Add(member);
+                    ignore.Add(member);
+                }
+                Recurse(baseType);
+            }
+        }
+    }
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);

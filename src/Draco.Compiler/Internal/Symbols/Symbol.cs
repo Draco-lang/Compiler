@@ -143,6 +143,14 @@ internal abstract partial class Symbol
     public virtual ImmutableArray<TypeSymbol> GenericArguments => ImmutableArray<TypeSymbol>.Empty;
 
     /// <summary>
+    /// Compares signatures of this symbol and <paramref name="other"/> symbol.
+    /// </summary>
+    /// <param name="other">The other symbol to compare signatures with.</param>
+    /// <returns>True, if signature of this symbol and <paramref name="other"/> symbol are the same, otherwise false.</returns>
+    /// <exception cref="System.NotSupportedException"></exception>
+    public virtual bool SignatureEquals(Symbol other) => throw new System.NotSupportedException();
+
+    /// <summary>
     /// Instantiates this generic symbol with the given substitutions.
     /// </summary>
     /// <param name="containingSymbol">The symbol that should be considered the containing symbol.</param>

@@ -42,7 +42,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
     public override IEnumerable<Symbol> DefinedMembers =>
-        InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
+        InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildDefinedMembers);
     private ImmutableArray<Symbol> definedMembers;
 
     public override ImmutableArray<TypeSymbol> BaseTypes => this.GenericDefinition.BaseTypes;
@@ -144,7 +144,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         this.genericsNeedsBuild = false;
     }
 
-    private ImmutableArray<Symbol> BuildMembers() => this.GenericDefinition.Members
+    private ImmutableArray<Symbol> BuildDefinedMembers() => this.GenericDefinition.Members
         .Select(m => m.GenericInstantiate(this, this.Context))
         .ToImmutableArray();
 }

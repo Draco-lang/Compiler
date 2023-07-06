@@ -27,7 +27,20 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
     public abstract bool IsIndexer { get; }
     public abstract bool IsStatic { get; }
 
-    public virtual PropertySymbol? Overridden => null;
+    public virtual PropertySymbol? ExplicitOverride => null;
+
+    public override bool SignatureEquals(Symbol other)
+    {
+        if (other is not PropertySymbol prop) return false;
+        if (this.Name != prop.Name) return false;
+        if (this.Visibility != prop.Visibility) return false;
+        if (this.IsStatic != prop.IsStatic) return false;
+        if (this.Getter is null && prop.Getter is not null) return false;
+        if (this.Getter is not null && prop.Getter is null) return false;
+        if (this.Setter is null && prop.Setter is not null) return false;
+        if (this.Setter is not null && prop.Setter is null) return false;
+        return this.Type.FullName == prop.Type.FullName;
+    }
 
     public override PropertySymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (PropertySymbol)base.GenericInstantiate(containingSymbol, arguments);

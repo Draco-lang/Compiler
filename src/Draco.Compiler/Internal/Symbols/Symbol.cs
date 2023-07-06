@@ -148,7 +148,7 @@ internal abstract partial class Symbol
     /// <param name="other">The other symbol to compare signatures with.</param>
     /// <returns>True, if signature of this symbol and <paramref name="other"/> symbol are the same, otherwise false.</returns>
     /// <exception cref="System.NotSupportedException"></exception>
-    public virtual bool SignatureEquals(Symbol other) => throw new System.NotSupportedException();
+    public virtual bool SignatureEquals(Symbol other) => this.Name == other.Name;
 
     /// <summary>
     /// Instantiates this generic symbol with the given substitutions.

@@ -14,16 +14,6 @@ internal abstract class FieldSymbol : VariableSymbol, IMemberSymbol, IOverridabl
 
     public virtual FieldSymbol? ExplicitOverride => null;
 
-    public override bool SignatureEquals(Symbol other)
-    {
-        if (other is not FieldSymbol field) return false;
-        if (this.Name != field.Name) return false;
-        if (this.Visibility != field.Visibility) return false;
-        if (this.IsStatic != field.IsStatic) return false;
-        if (this.IsMutable != field.IsMutable) return false;
-        return this.Type.FullName == field.Type.FullName;
-    }
-
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (FieldSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>

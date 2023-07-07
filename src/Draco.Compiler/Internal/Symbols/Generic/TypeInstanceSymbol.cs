@@ -48,6 +48,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     public override ImmutableArray<TypeSymbol> BaseTypes => this.GenericDefinition.BaseTypes;
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;
+    public override bool IsInterface => this.GenericDefinition.IsInterface;
     public override string Name => this.GenericDefinition.Name;
 
     public override Symbol? ContainingSymbol { get; }
@@ -129,7 +130,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         this.genericsNeedsBuild = false;
     }
 
-    private ImmutableArray<Symbol> BuildDefinedMembers() => this.GenericDefinition.Members
+    private ImmutableArray<Symbol> BuildDefinedMembers() => this.GenericDefinition.DefinedMembers
         .Select(m => m.GenericInstantiate(this, this.Context))
         .ToImmutableArray();
 }

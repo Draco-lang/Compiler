@@ -35,10 +35,6 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
         if (this.Name != prop.Name) return false;
         if (this.Visibility != prop.Visibility) return false;
         if (this.IsStatic != prop.IsStatic) return false;
-        if (this.Getter is null && prop.Getter is not null) return false;
-        if (this.Getter is not null && prop.Getter is null) return false;
-        if (this.Setter is null && prop.Setter is not null) return false;
-        if (this.Setter is not null && prop.Setter is null) return false;
         return this.Type.FullName == prop.Type.FullName;
     }
 

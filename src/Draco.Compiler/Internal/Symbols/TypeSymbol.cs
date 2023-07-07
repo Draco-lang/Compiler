@@ -64,7 +64,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         {
             foreach (var baseType in current.BaseTypes.Where(x => !x.IsInterface))
             {
-                foreach (var member in baseType.Members)
+                foreach (var member in baseType.DefinedMembers)
                 {
                     if (ignore.Any(member.SignatureEquals)) continue;
                     builder.Add(member);

@@ -5,7 +5,7 @@
     <TargetFramework>$(DracoToolsTargetFramework)</TargetFramework>
     <HasRuntimeOutput>true</HasRuntimeOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
-    <IncludeBuildOutput>false</IncludeBuildOutput>    
+    <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <NoWarn>$(NoWarn);NU5100</NoWarn>
     <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
@@ -18,15 +18,15 @@
     <ProjectReference Include="..\Draco.Compiler.Cli\Draco.Compiler.Cli.csproj" />
   </ItemGroup>
 
-  <Target Name="GetFilesToPackage" BeforeTargets="Build">    
+  <Target Name="GetFilesToPackage" AfterTargets="Build">
     <ItemGroup>
-      <_File Include="$(OutDir)\**\*.*" TargetDir="tools" Exclude="$(OutDir)\tasks\*.*" />
-      <_File Include="$(OutDir)\tasks\*.*" TargetDir="tasks" />
-      
-      <_File Include="$(MSBuildProjectDirectory)\build\**\*.*" TargetDir="build" />
-      <_File Include="$(MSBuildProjectDirectory)\buildMultiTargeting\**\*.*" TargetDir="buildMultiTargeting" />
+      <_File Include="$(OutDir)\**\*.*" PackagePath="tools" Exclude="$(OutDir)\tasks\*.*" />
+      <_File Include="$(OutDir)\tasks\*.*" PackagePath="tasks" />
 
-      <None Include="@(_File)" Pack="True" PackagePath="%(_File.TargetDir)/%(_File.RecursiveDir)%(_File.FileName)%(_File.Extension)" />
+      <_File Include="build\**\*.*" PackagePath="build" />
+      <_File Include="buildMultiTargeting\**\*.*" PackagePath="buildMultiTargeting" />
+
+      <None Include="@(_File)" Pack="True" PackagePath="%(_File.PackagePath)" />
     </ItemGroup>
   </Target>
 

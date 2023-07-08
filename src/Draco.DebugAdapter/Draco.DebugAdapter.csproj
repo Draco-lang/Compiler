@@ -4,7 +4,6 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <LangVersion>11</LangVersion>
 
     <!-- Dotnet tool -->
     <PackAsTool>true</PackAsTool>
@@ -21,5 +20,7 @@
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="NuGet.Protocol" Version="6.4.0" />
   </ItemGroup>
+
+  <Import Project="../Draco.Debugger/DbgShim.targets" />
 
 </Project>

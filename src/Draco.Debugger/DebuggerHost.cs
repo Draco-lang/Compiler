@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using ClrDebug;
@@ -11,9 +12,9 @@ namespace Draco.Debugger;
 /// </summary>
 public sealed class DebuggerHost
 {
-    public static DebuggerHost Create(string dbgshimPath)
+    public static DebuggerHost Create()
     {
-        var dbgshim = new XplatDbgShim(NativeLibrary.Load(dbgshimPath));
+        var dbgshim = new XplatDbgShim(NativeLibrary.Load("dbgshim", Assembly.GetCallingAssembly(), null));
         return new(dbgshim);
     }
 

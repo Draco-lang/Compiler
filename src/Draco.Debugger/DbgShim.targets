@@ -1,0 +1,27 @@
+<Project>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Diagnostics.DbgShim" Version="7.0.430602" />
+  </ItemGroup>
+
+  <!--
+       We want to redistribute dbgshim with our debugger. Unfortunately, just referencing the dbgshim package doesn't cause the binaries to end up in the package.
+       While processing NuGet package assets, the SDK determines that the dbgshim binaries from the package conflict with the dbgshim binaries from the .NET runtime.
+       This prevents the binaries from being copied to build output. To work around this, we temporarily remove the dbgshim assets from consideration while the SDK runs conflict resolution.
+  -->
+  <Target Name="RemoveDbgShimCopyLocalItems" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <DbgShimCopyLocalItems Include="@(RuntimeTargetsCopyLocalItems)"
+                             Condition="$([MSBuild]::ValueOrDefault('%(RuntimeTargetsCopyLocalItems.NuGetPackageId)', '').StartsWith('Microsoft.Diagnostics.DbgShim'))"  />
+      <RuntimeTargetsCopyLocalItems Remove="@(DbgShimCopyLocalItems)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="RestoreDbgShimCopyLocalItems" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths Include="@(DbgShimCopyLocalItems)" />
+      <RuntimeTargetsCopyLocalItems Include="@(DbgShimCopyLocalItems)" />
+    </ItemGroup>
+  </Target>
+
+</Project>

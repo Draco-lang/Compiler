@@ -36,30 +36,10 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         this.clientInfo = args;
         this.translator = new(args);
 
-        var dbgShim = FindDbgShim();
-        this.debuggerHost = DebuggerHost.Create(dbgShim);
+        this.debuggerHost = DebuggerHost.Create();
 
         // Starts the configuration sequence
         await this.client.Initialized();
-    }
-
-    // TODO: Temporary
-    private static string FindDbgShim()
-    {
-        var root = "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App";
-
-        if (!Directory.Exists(root))
-        {
-            throw new InvalidOperationException($"Cannot find dbgshim.dll: '{root}' does not exist");
-        }
-
-        foreach (var dir in Directory.EnumerateDirectories(root).Reverse())
-        {
-            var dbgshim = Directory.EnumerateFiles(dir, "dbgshim.dll").FirstOrDefault();
-            if (dbgshim is not null) return dbgshim;
-        }
-
-        throw new InvalidOperationException($"Failed to find a runtime containing dbgshim.dll under '{root}'");
     }
 
     // Launching ///////////////////////////////////////////////////////////////

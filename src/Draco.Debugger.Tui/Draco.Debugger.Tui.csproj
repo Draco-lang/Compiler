@@ -15,4 +15,6 @@
     <PackageReference Include="Terminal.Gui" Version="1.11.2" />
   </ItemGroup>
 
+  <Import Project="../Draco.Debugger/DbgShim.targets" />
+
 </Project>

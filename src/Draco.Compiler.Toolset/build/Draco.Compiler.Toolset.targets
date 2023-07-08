@@ -1,7 +1,6 @@
 <Project>
     
   <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
-
     <PropertyGroup Condition="'$(DOTNET_HOST_PATH)' == ''">
         <DotNetHostDirectory>$(NetCoreRoot)</DotNetHostDirectory>
         <DotNetHostFileName>dotnet</DotNetHostFileName>

@@ -3,7 +3,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(DracoToolsTargetFramework)</TargetFramework>
-    <LangVersion>11</LangVersion>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
 

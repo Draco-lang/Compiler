@@ -47,6 +47,21 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override Api.Semantics.Visibility Visibility => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
+    public override FunctionSymbol? ExplicitOverride
+    {
+        get
+        {
+            if (this.overrideNeedsBuild)
+            {
+                this.explicitOverride = this.GetExplicitOverride();
+                this.overrideNeedsBuild = false;
+            }
+            return this.explicitOverride;
+        }
+    }
+    private FunctionSymbol? explicitOverride;
+    private bool overrideNeedsBuild = true;
+
     public override Symbol ContainingSymbol { get; }
 
     // IMPORTANT: Choice of flag field because of write order
@@ -65,12 +80,14 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly MethodDefinition methodDefinition;
+    private readonly MethodDefinitionHandle methodHandle;
     private readonly object signatureBuildLock = new();
 
-    public MetadataMethodSymbol(Symbol containingSymbol, MethodDefinition methodDefinition)
+    public MetadataMethodSymbol(Symbol containingSymbol, MethodDefinition methodDefinition)//, MethodDefinitionHandle methodHandle)
     {
         this.ContainingSymbol = containingSymbol;
         this.methodDefinition = methodDefinition;
+        //this.methodHandle = methodHandle;
     }
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
@@ -108,5 +125,16 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         this.parameters = parameters.ToImmutable();
         // IMPORTANT: returnType is the build flag, needs to be written last
         Volatile.Write(ref this.returnType, signature.ReturnType);
+    }
+
+    private FunctionSymbol? GetExplicitOverride()
+    {
+        var type = this.MetadataReader.GetTypeDefinition(this.methodDefinition.GetDeclaringType());
+        foreach (var impl in type.GetMethodImplementations())
+        {
+            var implementation = this.MetadataReader.GetMethodImplementation(impl);
+            if (this.methodHandle != implementation.MethodBody) continue;
+        }
+        return null;
     }
 }

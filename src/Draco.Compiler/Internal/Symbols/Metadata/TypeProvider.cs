@@ -103,7 +103,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.').Reverse());
         parts.Reverse();
 
-        // TODO: If we dont have the assembly report error
+        // TODO: If we don't have the assembly report error
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
         var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();

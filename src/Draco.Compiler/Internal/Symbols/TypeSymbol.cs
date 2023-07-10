@@ -55,8 +55,12 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     {
         var builder = ImmutableArray.CreateBuilder<Symbol>();
         var ignore = new List<Symbol>();
-        builder.AddRange(this.DefinedMembers);
-        ignore.AddRange(this.DefinedMembers);
+        foreach (var member in this.DefinedMembers)
+        {
+            builder.Add(member);
+            if (member is IOverridableSymbol overridable && overridable.ExplicitOverride is not null) ignore.Add(overridable.ExplicitOverride);
+            else ignore.Add(member);
+        }
         Recurse(this);
         return builder.ToImmutable();
 
@@ -68,7 +72,8 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
                 {
                     if (ignore.Any(member.SignatureEquals)) continue;
                     builder.Add(member);
-                    ignore.Add(member);
+                    if (member is IOverridableSymbol overridable && overridable.ExplicitOverride is not null) ignore.Add(overridable.ExplicitOverride);
+                    else ignore.Add(member);
                 }
                 Recurse(baseType);
             }

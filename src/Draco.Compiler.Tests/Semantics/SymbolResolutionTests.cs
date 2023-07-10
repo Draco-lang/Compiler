@@ -3442,7 +3442,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void InheretanceFromObject()
+    public void InheritanceFromObject()
     {
         // func foo()
         // {
@@ -3486,7 +3486,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void InheretanceFromTypeDefinition()
+    public void InheritanceFromTypeDefinition()
     {
         // func foo()
         // {
@@ -3532,7 +3532,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void InheretanceFromNestedTypeReference()
+    public void InheritanceFromNestedTypeReference()
     {
         // func foo()
         // {
@@ -3589,7 +3589,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void InheretanceFromTypeSpecification()
+    public void InheritanceFromTypeSpecification()
     {
         // func foo()
         // {
@@ -3640,7 +3640,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void InheretingInterfacesFromTypeDefinition()
+    public void InheritingInterfacesFromTypeDefinition()
     {
         // func foo()
         // {
@@ -3687,7 +3687,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void InheretingInterfacesFromTypeReference()
+    public void InheritingInterfacesFromTypeReference()
     {
         // func foo()
         // {
@@ -3835,5 +3835,109 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fieldSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fieldSym, fieldDecl);
+    }
+
+    [Fact]
+    public void ImplicitOverride()
+    {
+        // func foo()
+        // {
+        //   var foo = Derived();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class Base
+            {
+                public virtual Base Clone() => this;
+            }
+
+            public class Derived : Base
+            {
+                public override Base Clone() => this;
+            }
+            """);
+
+        var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
+        var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
+        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Same(derivedDecl, derivedSym);
+        Assert.Single(nonObjectSymbols);
+        Assert.Equal("Derived.Clone", nonObjectSymbols.First().FullName);
+    }
+
+    [Fact]
+    public void ExplicitOverride()
+    {
+        // func foo()
+        // {
+        //   var foo = Derived();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class Base
+            {
+                public virtual Base Clone() => this;
+            }
+
+            public class Derived : Base
+            {
+                public override Derived Clone() => this;
+            }
+            """);
+
+        var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
+        var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
+        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Same(derivedDecl, derivedSym);
+        Assert.Single(nonObjectSymbols);
+        Assert.Equal("Derived.Clone", nonObjectSymbols.First().FullName);
     }
 }

@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a free-function.
 /// </summary>
-internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSymbol, IOverridableSymbol<FunctionSymbol>
+internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSymbol, IOverridableSymbol
 {
     /// <summary>
     /// Retrieves the name for the unary operator that is referenced by a given token.
@@ -94,7 +94,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     public TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
 
-    public virtual FunctionSymbol? ExplicitOverride => null;
+    public virtual Symbol? ExplicitOverride => null;
 
     private TypeSymbol? type;
 

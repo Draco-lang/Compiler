@@ -191,6 +191,17 @@ internal sealed class ConstraintSolver
         }
     }
 
+    // TODO: Doc
+    public IConstraintPromise<FunctionSymbol> Delegate(
+        ImmutableArray<FunctionSymbol> functions,
+        out TypeSymbol functionType)
+    {
+        functionType = this.AllocateTypeVariable();
+        var del = new DelegateConstraint(this, functions, functionType);
+        this.Add(del);
+        return del.Promise;
+    }
+
     /// <summary>
     /// Adds the given constraint to the solver.
     /// </summary>

@@ -19,7 +19,13 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
     protected Constraint(ConstraintSolver solver)
     {
         this.Solver = solver;
-        this.Promise = ConstraintPromise.Create<TResult>(this);
+        this.Promise = ConstraintPromise.Create(this);
+    }
+
+    protected Constraint(ConstraintSolver solver, IConstraintPromise<TResult> promise)
+    {
+        this.Solver = solver;
+        this.Promise = promise;
     }
 
     public override abstract string ToString();

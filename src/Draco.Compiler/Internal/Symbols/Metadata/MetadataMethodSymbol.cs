@@ -133,7 +133,12 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         foreach (var impl in type.GetMethodImplementations())
         {
             var implementation = this.MetadataReader.GetMethodImplementation(impl);
-            if (this.methodHandle != implementation.MethodBody) continue;
+
+            if (implementation.MethodBody == this.methodHandle && !implementation.MethodDeclaration.IsNil) return implementation.MethodDeclaration.Kind switch
+            {
+                HandleKind.MethodDefinition => null,
+                HandleKind.MemberReference => null,
+            };
         }
         return null;
     }

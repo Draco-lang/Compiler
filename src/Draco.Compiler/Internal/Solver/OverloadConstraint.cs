@@ -38,6 +38,19 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     public OverloadConstraint(
         ConstraintSolver solver,
+        IConstraintPromise<FunctionSymbol> promise,
+        ImmutableArray<FunctionSymbol> candidates,
+        ImmutableArray<object> arguments,
+        TypeSymbol returnType)
+        : base(solver, promise)
+    {
+        this.Candidates = candidates;
+        this.Arguments = arguments;
+        this.ReturnType = returnType;
+    }
+
+    public OverloadConstraint(
+        ConstraintSolver solver,
         ImmutableArray<FunctionSymbol> candidates,
         ImmutableArray<object> arguments,
         TypeSymbol returnType)

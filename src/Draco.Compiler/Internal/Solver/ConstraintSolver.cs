@@ -121,6 +121,19 @@ internal sealed class ConstraintSolver
         return constraint.Promise;
     }
 
+    // TODO: Doc
+    public IConstraintPromise<FunctionSymbol> Overload(
+        IConstraintPromise<FunctionSymbol> promise,
+        ImmutableArray<FunctionSymbol> functions,
+        ImmutableArray<object> args,
+        out TypeSymbol returnType)
+    {
+        returnType = this.AllocateTypeVariable();
+        var constraint = new OverloadConstraint(this, promise, functions, args, returnType);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
+
     /// <summary>
     /// Adds an overload constraint to the solver.
     /// </summary>

@@ -3908,12 +3908,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooRef = CompileCSharpToMetadataRef("""
             public class Base
             {
-                public virtual Base Clone() => this;
+                public virtual Base Clone(int parameter) => this;
             }
 
             public class Derived : Base
             {
-                public override Derived Clone() => this;
+                public override Derived Clone(int parameter) => this;
             }
             """);
 

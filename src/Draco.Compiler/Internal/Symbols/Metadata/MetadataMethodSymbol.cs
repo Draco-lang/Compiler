@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -133,13 +134,61 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         foreach (var impl in type.GetMethodImplementations())
         {
             var implementation = this.MetadataReader.GetMethodImplementation(impl);
-
-            if (implementation.MethodBody == this.methodHandle && !implementation.MethodDeclaration.IsNil) return implementation.MethodDeclaration.Kind switch
+            var body = implementation.MethodBody.Kind switch
             {
-                HandleKind.MethodDefinition => null,
-                HandleKind.MemberReference => null,
+                HandleKind.MethodDefinition => this.GetFunctionFromDefinition((MethodDefinitionHandle)implementation.MethodBody),
+                HandleKind.MemberReference => this.GetFunctionFromReference((MemberReferenceHandle)implementation.MethodBody),
+                _ => throw new InvalidOperationException(),
             };
+
+
+            if (!implementation.MethodDeclaration.IsNil
+                && body.SignatureEquals(this)) return implementation.MethodDeclaration.Kind switch
+                {
+                    HandleKind.MethodDefinition => this.GetFunctionFromDefinition((MethodDefinitionHandle)implementation.MethodDeclaration),
+                    HandleKind.MemberReference => this.GetFunctionFromReference((MemberReferenceHandle)implementation.MethodDeclaration),
+                    _ => throw new InvalidOperationException(),
+                };
         }
         return null;
+    }
+
+    private FunctionSymbol GetFunctionFromDefinition(MethodDefinitionHandle methodDef)
+    {
+        var definition = this.MetadataReader.GetMethodDefinition(methodDef);
+        var provider = new TypeProvider(this.Assembly.Compilation);
+        var signature = definition.DecodeSignature(provider, this);
+        var type = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
+        foreach (var function in type.DefinedMembers.OfType<FunctionSymbol>())
+        {
+            if (function.Name != this.MetadataReader.GetString(definition.Name)) continue;
+            if (CompareSignatures(function, signature)) return function;
+        }
+        throw new InvalidOperationException();
+    }
+
+    private FunctionSymbol GetFunctionFromReference(MemberReferenceHandle methodRef)
+    {
+        var reference = this.MetadataReader.GetMemberReference(methodRef);
+        var provider = new TypeProvider(this.Assembly.Compilation);
+        var signature = reference.DecodeMethodSignature(provider, this);
+        var type = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
+        foreach (var function in type.DefinedMembers.OfType<FunctionSymbol>())
+        {
+            if (function.Name != this.MetadataReader.GetString(reference.Name)) continue;
+            if (CompareSignatures(function, signature)) return function;
+        }
+        throw new InvalidOperationException();
+    }
+
+    private static bool CompareSignatures(FunctionSymbol function, MethodSignature<TypeSymbol> signature)
+    {
+        if (function.Parameters.Length != signature.ParameterTypes.Length) return false;
+        if (function.GenericParameters.Length != signature.GenericParameterCount) return false;
+        for (int i = 0; i < function.Parameters.Length; i++)
+        {
+            if (function.Parameters[i].Type.FullName != signature.ParameterTypes[i].FullName) return false;
+        }
+        return true;
     }
 }

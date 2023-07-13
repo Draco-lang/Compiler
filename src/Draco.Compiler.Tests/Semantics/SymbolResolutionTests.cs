@@ -4051,4 +4051,56 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(nonObjectSymbols);
         Assert.Equal("Derived.Clone", nonObjectSymbols.First().FullName);
     }
+
+    [Fact]
+    public void ExplicitOverrideProperty()
+    {
+        // func foo()
+        // {
+        //   var foo = Derived();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class Base
+            {
+                public virtual Base Clone => this;
+            }
+
+            public class Derived : Base
+            {
+                public override Derived Clone => this;
+            }
+            """);
+
+        var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
+        var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
+        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Same(derivedDecl, derivedSym);
+        Assert.Single(nonObjectSymbols);
+        Assert.Equal("Derived.Clone", nonObjectSymbols.First().FullName);
+    }
 }

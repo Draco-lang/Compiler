@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -13,9 +12,25 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadataClass
 {
-    public override IEnumerable<Symbol> DefinedMembers =>
-        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
-    private ImmutableArray<Symbol> members;
+    public override IEnumerable<Symbol> DefinedMembers
+    {
+        get
+        {
+            if (this.definedMembers.IsDefault) this.BuildMembers();
+            return this.definedMembers;
+        }
+    }
+
+    public ImmutableArray<Symbol> SpecialNameMembers
+    {
+        get
+        {
+            if (this.specialNameMembers.IsDefault) this.BuildMembers();
+            return this.specialNameMembers;
+        }
+    }
+    private ImmutableArray<Symbol> definedMembers;
+    private ImmutableArray<Symbol> specialNameMembers;
 
     public override string Name => InterlockedUtils.InitializeNull(ref this.name, this.BuildName);
     private string? name;
@@ -116,20 +131,21 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         return builder.ToImmutable();
     }
 
-    private ImmutableArray<Symbol> BuildMembers()
+    private void BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
+        var specialNameResult = ImmutableArray.CreateBuilder<Symbol>();
 
         // Nested types
         foreach (var typeHandle in this.typeDefinition.GetNestedTypes())
         {
             var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
-            // Skip special name
-            if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
             var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader, this.DeclaringCompilation);
-            result.AddRange(symbols);
+
+            if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) specialNameResult.AddRange(symbols);
+            else result.AddRange(symbols);
         }
 
         // Methods
@@ -138,41 +154,44 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             var method = this.MetadataReader.GetMethodDefinition(methodHandle);
             // Skip private
             if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
-            // Skip special name
-            if (method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
             // Add it
             var methodSymbol = new MetadataMethodSymbol(
                 containingSymbol: this,
                 methodDefinition: method);
-            result.Add(methodSymbol);
+
+            if (method.Attributes.HasFlag(MethodAttributes.SpecialName)) specialNameResult.Add(methodSymbol);
+            else result.Add(methodSymbol);
         }
 
         // Fields
         foreach (var fieldHandle in this.typeDefinition.GetFields())
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
-            // Skip special name
-            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
             // Skip non-public
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Add it
             var fieldSym = new MetadataFieldSymbol(
                 containingSymbol: this,
                 fieldDefinition: fieldDef);
-            result.Add(fieldSym);
+
+            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) specialNameResult.Add(fieldSym);
+            else result.Add(fieldSym);
         }
 
         // Properties
         foreach (var propHandle in this.typeDefinition.GetProperties())
         {
             var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
+
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef);
+
             if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 
         // Done
-        return result.ToImmutable();
+        this.definedMembers = result.ToImmutable();
+        this.specialNameMembers = specialNameResult.ToImmutable();
     }
 }

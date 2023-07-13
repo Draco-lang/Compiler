@@ -12,9 +12,25 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol, IMetadataClass
 {
-    public override IEnumerable<Symbol> Members =>
-        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
+    public override IEnumerable<Symbol> Members
+    {
+        get
+        {
+            if (this.members.IsDefault) this.BuildMembers();
+            return this.members;
+        }
+    }
+
+    public ImmutableArray<Symbol> SpecialNameMembers
+    {
+        get
+        {
+            if (this.specialNameMembers.IsDefault) this.BuildMembers();
+            return this.specialNameMembers;
+        }
+    }
     private ImmutableArray<Symbol> members;
+    private ImmutableArray<Symbol> specialNameMembers;
 
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
@@ -44,28 +60,27 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
         this.DeclaringCompilation = declaringCompilation;
     }
 
-    private ImmutableArray<Symbol> BuildMembers()
+    private void BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
+        var specialNameResult = ImmutableArray.CreateBuilder<Symbol>();
 
         // Nested types
         foreach (var typeHandle in this.typeDefinition.GetNestedTypes())
         {
             var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
-            // Skip special name
-            if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
             var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader, this.DeclaringCompilation);
-            result.AddRange(symbols);
+
+            if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) specialNameResult.AddRange(symbols);
+            else result.AddRange(symbols);
         }
 
         // Methods
         foreach (var methodHandle in this.typeDefinition.GetMethods())
         {
             var methodDef = this.MetadataReader.GetMethodDefinition(methodHandle);
-            // Skip methods with special name
-            if (methodDef.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
             // Skip non-public methods
             if (!methodDef.Attributes.HasFlag(MethodAttributes.Public)) continue;
             // Skip non-static methods
@@ -74,15 +89,15 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
             var methodSym = new MetadataMethodSymbol(
                 containingSymbol: this,
                 methodDefinition: methodDef);
-            result.Add(methodSym);
+
+            if (methodDef.Attributes.HasFlag(MethodAttributes.SpecialName)) specialNameResult.Add(methodSym);
+            else result.Add(methodSym);
         }
 
         // Fields
         foreach (var fieldHandle in this.typeDefinition.GetFields())
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
-            // Skip fields with special name
-            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
             // Skip non-public fields
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Skip non-static fields
@@ -90,7 +105,9 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
             var fieldSym = new MetadataFieldSymbol(
                 containingSymbol: this,
                 fieldDefinition: fieldDef);
-            result.Add(fieldSym);
+
+            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) specialNameResult.Add(fieldSym);
+            else result.Add(fieldSym);
         }
 
         // Properties
@@ -104,6 +121,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
         }
 
         // Done
-        return result.ToImmutable();
+        this.members = result.ToImmutable();
+        this.specialNameMembers = specialNameResult.ToImmutable();
     }
 }

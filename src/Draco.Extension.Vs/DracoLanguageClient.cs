@@ -29,8 +29,8 @@ namespace Draco.Extension.Vs
         {
             var processStartInfo = new ProcessStartInfo()
             {
-                FileName = "",
-                Arguments = "",
+                FileName = "draco-langserver",
+                Arguments = "run --stdio",
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
@@ -53,6 +53,7 @@ namespace Draco.Extension.Vs
         public Task<InitializationFailureContext> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState) =>
             Task.FromResult(new InitializationFailureContext()
             {
+                // TODO
                 FailureMessage = "ERROR",
             });
     }

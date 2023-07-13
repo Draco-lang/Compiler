@@ -81,14 +81,12 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly MethodDefinition methodDefinition;
-    private readonly MethodDefinitionHandle methodHandle;
     private readonly object signatureBuildLock = new();
 
-    public MetadataMethodSymbol(Symbol containingSymbol, MethodDefinition methodDefinition)//, MethodDefinitionHandle methodHandle)
+    public MetadataMethodSymbol(Symbol containingSymbol, MethodDefinition methodDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.methodDefinition = methodDefinition;
-        //this.methodHandle = methodHandle;
     }
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()

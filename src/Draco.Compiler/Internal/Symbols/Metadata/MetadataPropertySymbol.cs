@@ -27,6 +27,21 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
 
+    public override PropertySymbol? ExplicitOverride
+    {
+        get
+        {
+            if (this.overrideNeedsBuild)
+            {
+                this.explicitOverride = this.GetExplicitOverride();
+                this.overrideNeedsBuild = false;
+            }
+            return this.explicitOverride;
+        }
+    }
+    private PropertySymbol? explicitOverride;
+    private bool overrideNeedsBuild = true;
+
     public override Symbol ContainingSymbol { get; }
 
     /// <summary>
@@ -63,5 +78,11 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
         if (accessors.Setter.IsNil) return null;
         var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
         return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, setter, this);
+    }
+
+    private PropertySymbol? GetExplicitOverride()
+    {
+        // TODO: Take getter or setter, find what it overrides and get the prop
+        return null;
     }
 }

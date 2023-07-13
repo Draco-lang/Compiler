@@ -141,6 +141,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
                 _ => throw new InvalidOperationException(),
             };
 
+            if (body is null) return null;
 
             if (!implementation.MethodDeclaration.IsNil
                 && body.SignatureEquals(this)) return implementation.MethodDeclaration.Kind switch
@@ -153,7 +154,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         return null;
     }
 
-    private FunctionSymbol GetFunctionFromDefinition(MethodDefinitionHandle methodDef)
+    private FunctionSymbol? GetFunctionFromDefinition(MethodDefinitionHandle methodDef)
     {
         var definition = this.MetadataReader.GetMethodDefinition(methodDef);
         var provider = new TypeProvider(this.Assembly.Compilation);
@@ -164,10 +165,10 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             if (function.Name != this.MetadataReader.GetString(definition.Name)) continue;
             if (CompareSignatures(function, signature)) return function;
         }
-        throw new InvalidOperationException();
+        return null;
     }
 
-    private FunctionSymbol GetFunctionFromReference(MemberReferenceHandle methodRef)
+    private FunctionSymbol? GetFunctionFromReference(MemberReferenceHandle methodRef)
     {
         var reference = this.MetadataReader.GetMemberReference(methodRef);
         var provider = new TypeProvider(this.Assembly.Compilation);
@@ -178,7 +179,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             if (function.Name != this.MetadataReader.GetString(reference.Name)) continue;
             if (CompareSignatures(function, signature)) return function;
         }
-        throw new InvalidOperationException();
+        return null;
     }
 
     private static bool CompareSignatures(FunctionSymbol function, MethodSignature<TypeSymbol> signature)

@@ -1684,4 +1684,87 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
         Assert.Equal(wellKnownTypes.SystemString, xSym.Type);
     }
+
+    [Fact]
+    public void SuplyDerivedTypeToBaseTypeParameter()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   bar(String.Empty);
+        // }
+        //
+        // func bar(x: Object) { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"), MemberExpression(NameExpression("String"), "Empty"))))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("Object"))),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+        var wellKnownTypes = new WellKnownTypes(compilation);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void SuplyBaseTypeToDerivedTypeParameter()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   bar(Object());
+        // }
+        //
+        // func bar(x: String) { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("String"))),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+        var wellKnownTypes = new WellKnownTypes(compilation);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+    }
 }

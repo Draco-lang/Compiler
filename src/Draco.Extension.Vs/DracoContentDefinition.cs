@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Utilities;
 
 namespace Draco.Extension.Vs
 {
-    public sealed class BarContentDefinition
+    public sealed class DracoContentDefinition
     {
         [Export]
         [Name("draco")]

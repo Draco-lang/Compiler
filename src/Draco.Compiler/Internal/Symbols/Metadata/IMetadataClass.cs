@@ -13,7 +13,8 @@ internal interface IMetadataClass
     public string? DefaultMemberAttributeName { get; }
 
     /// <summary>
-    /// All members that have SpecialName flag.
+    /// All property accessors in this metadata class.
+    /// Property accessors are not contained in Members, because they have SpecialName flag.
     /// </summary>
-    public ImmutableArray<Symbol> SpecialNameMembers { get; }
+    public ImmutableArray<FunctionSymbol> PropertyAccessors { get; }
 }

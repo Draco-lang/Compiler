@@ -158,7 +158,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         var provider = new TypeProvider(this.Assembly.Compilation);
         var signature = definition.DecodeSignature(provider, this);
         var type = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
-        var symbols = type.DefinedMembers.Concat((type as IMetadataClass)!.SpecialNameMembers).OfType<FunctionSymbol>();
+        var symbols = type.DefinedMembers.Concat((type as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
         foreach (var function in symbols)
         {
             if (function.Name != this.MetadataReader.GetString(definition.Name)) continue;
@@ -173,7 +173,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         var provider = new TypeProvider(this.Assembly.Compilation);
         var signature = reference.DecodeMethodSignature(provider, this);
         var type = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
-        var symbols = type.DefinedMembers.Concat((type as IMetadataClass)!.SpecialNameMembers).OfType<FunctionSymbol>();
+        var symbols = type.DefinedMembers.Concat((type as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
         foreach (var function in symbols)
         {
             if (function.Name != this.MetadataReader.GetString(reference.Name)) continue;

@@ -46,7 +46,7 @@ namespace Draco.Extension.Vs
             return Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
         }
 
-        public async Task OnLoadedAsync() => await StartAsync.InvokeAsync(this, EventArgs.Empty);
+        public async Task OnLoadedAsync() => await StartAsync?.InvokeAsync(this, EventArgs.Empty);
 
         public Task OnServerInitializedAsync() => Task.CompletedTask;
 

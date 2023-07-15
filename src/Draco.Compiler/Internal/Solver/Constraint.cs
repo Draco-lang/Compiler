@@ -31,5 +31,5 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
 
     protected bool Unify(TypeSymbol first, TypeSymbol second) => this.Solver.Unify(first, second);
 
-    protected bool IsBase(TypeSymbol possibleBase, TypeSymbol possibleDerived) => this.Solver.IsBase(possibleBase, possibleDerived);
+    protected bool IsBase(TypeSymbol possibleBase, TypeSymbol possibleDerived) => ConstraintSolver.IsBase(possibleBase, possibleDerived);
 }

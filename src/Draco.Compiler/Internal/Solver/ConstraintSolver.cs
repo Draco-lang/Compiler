@@ -475,15 +475,15 @@ internal sealed class ConstraintSolver
     /// <param name="possibleBase">The type that could be base of <paramref name="possibleDerived"/>.</param>
     /// <param name="possibleDerived">The type that could inherit from <paramref name="possibleBase"/>.</param>
     /// <returns>True, if <paramref name="possibleBase"/> is base type of <paramref name="possibleDerived"/>, otherwise false.</returns>
-    public bool IsBase(TypeSymbol possibleBase, TypeSymbol possibleDerived)
+    public static bool IsBase(TypeSymbol possibleBase, TypeSymbol possibleDerived)
     {
         possibleBase = possibleBase.Substitution;
         possibleDerived = possibleDerived.Substitution;
 
         foreach (var baseType in possibleDerived.BaseTypes)
         {
-            if (this.Unify(baseType, possibleBase)) return true;
-            if (this.IsBase(baseType, possibleBase)) return true;
+            if (SymbolEqualityComparer.Default.Equals(baseType, possibleBase)) return true;
+            if (IsBase(baseType, possibleBase)) return true;
         }
         return false;
     }
@@ -506,6 +506,9 @@ internal sealed class ConstraintSolver
 
         // Exact equality is max score
         if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return 16;
+
+        // Base type match halves the score
+        if (IsBase(paramType, argType)) return 8;
 
         // TODO: Unspecified what happens for generics
         // For now we require an exact match and score is the lowest score among generic args

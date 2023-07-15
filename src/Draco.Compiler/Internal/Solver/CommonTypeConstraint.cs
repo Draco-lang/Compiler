@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
 using Draco.Compiler.Internal.Binding;
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -44,13 +45,13 @@ internal class CommonTypeConstraint : Constraint<Unit>
             var candidate = candidates[0];
             for (int i = 0; i < this.AlternativeTypes.Length; i++)
             {
-                if (!(this.Solver.Unify(candidate.Substitution, this.AlternativeTypes[i].Substitution) || IsBase(candidate.Substitution, this.AlternativeTypes[i].Substitution)))
+                if (!(this.Unify(candidate, this.AlternativeTypes[i]) || this.IsBase(candidate, this.AlternativeTypes[i])))
                 {
                     candidates.RemoveAt(0);
                     goto while_loop;
                 }
             }
-            this.Solver.Substitute(this.CommonType, candidate.Substitution);
+            this.Solver.Unify(this.CommonType, candidate.Substitution);
             // Successful unification
             this.Promise.Resolve(default);
             yield return SolveState.Solved;
@@ -60,17 +61,8 @@ internal class CommonTypeConstraint : Constraint<Unit>
         this.Diagnostic
             .WithTemplate(TypeCheckingErrors.NoCommonType)
             .WithFormatArgs(string.Join(", ", this.AlternativeTypes));
+        this.Unify(this.CommonType, IntrinsicSymbols.ErrorType);
         this.Promise.Fail(default, diagnostics);
         yield return SolveState.Solved;
-
-        bool IsBase(TypeSymbol possibleBase, TypeSymbol possibleDerived)
-        {
-            foreach (var baseType in possibleDerived.BaseTypes)
-            {
-                if (this.Solver.Unify(baseType, possibleBase)) return true;
-                if (IsBase(baseType, possibleBase)) return true;
-            }
-            return false;
-        }
     }
 }

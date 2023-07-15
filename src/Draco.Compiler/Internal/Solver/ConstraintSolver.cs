@@ -73,7 +73,7 @@ internal sealed class ConstraintSolver
     /// <returns>The promise for the constraint added.</returns>
     public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType)
     {
-        var constraint = new CommonTypeConstraint(this, this.AllocateTypeVariable(), ImmutableArray.Create(targetType, assignedType));
+        var constraint = new AssignableConstraint(this, targetType, assignedType);
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -467,6 +467,25 @@ internal sealed class ConstraintSolver
         default:
             return false;
         }
+    }
+
+    /// <summary>
+    /// Checks if <paramref name="possibleBase"/> is base type of <paramref name="possibleDerived"/>.
+    /// </summary>
+    /// <param name="possibleBase">The type that could be base of <paramref name="possibleDerived"/>.</param>
+    /// <param name="possibleDerived">The type that could inherit from <paramref name="possibleBase"/>.</param>
+    /// <returns>True, if <paramref name="possibleBase"/> is base type of <paramref name="possibleDerived"/>, otherwise false.</returns>
+    public bool IsBase(TypeSymbol possibleBase, TypeSymbol possibleDerived)
+    {
+        possibleBase = possibleBase.Substitution;
+        possibleDerived = possibleDerived.Substitution;
+
+        foreach (var baseType in possibleDerived.BaseTypes)
+        {
+            if (this.Unify(baseType, possibleBase)) return true;
+            if (this.IsBase(baseType, possibleBase)) return true;
+        }
+        return false;
     }
 
     /// <summary>

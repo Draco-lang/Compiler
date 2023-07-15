@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
+using System.Xml.Linq;
 using Cs = Draco.SourceGeneration.Lsp.CsModel;
 using Ts = Draco.SourceGeneration.Lsp.Metamodel;
 
@@ -54,10 +55,7 @@ internal sealed class Translator
         if (structure is not null)
         {
             // If the structure is used as a base type for other types, we return the interface to be referenced instead
-            var usedAsInterface = this.sourceModel.Structures
-                .Any(s => s.Extends.OfType<Ts.NamedType>().Any(t => t.Name == name));
-
-            return usedAsInterface
+            return this.IsUsedAsInterface(name)
                 ? new Cs.DeclarationType(this.TranslateStructureAsInterface(structure))
                 : this.TranslateStructure(structure);
         }
@@ -423,6 +421,9 @@ internal sealed class Translator
             return new Cs.BuiltinType($"UNKNOWN<{type.Kind}>");
         }
     }
+
+    private bool IsUsedAsInterface(string typeName) => this.sourceModel.Structures
+        .Any(s => s.Extends.OfType<Ts.NamedType>().Any(t => t.Name == typeName));
 
     private static TDeclaration TranslateDeclaration<TDeclaration>(Ts.IDocumented source)
         where TDeclaration : Cs.Declaration, new()

@@ -1614,7 +1614,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // import System;
         // func foo()
         // {
-        //   var x: Object = String.Empty;
+        //   var x: Object = Random();
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -1624,7 +1624,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("x", NameType("Object"), MemberExpression(NameExpression("String"), "Empty")))))));
+                    DeclarationStatement(VariableDeclaration("x", NameType("Object"), CallExpression(NameExpression("Random"))))))));
 
         var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
 
@@ -1691,7 +1691,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // import System;
         // func foo()
         // {
-        //   bar(String.Empty);
+        //   bar(Random());
         // }
         //
         // func bar(x: Object) { }
@@ -1703,7 +1703,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    ExpressionStatement(CallExpression(NameExpression("bar"), MemberExpression(NameExpression("String"), "Empty"))))),
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))))),
             FunctionDeclaration(
                 "bar",
                 ParameterList(Parameter("x", NameType("Object"))),
@@ -1766,5 +1766,43 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+    }
+
+    [Fact]
+    public void IfStatementCommonTypeResult()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   var x = if(true) Random() else Object();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, IfExpression(LiteralExpression(true), CallExpression(NameExpression("Random")), CallExpression(NameExpression("Object")))))))));
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+        var wellKnownTypes = new WellKnownTypes(compilation);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(wellKnownTypes.SystemObject, xSym.Type);
     }
 }

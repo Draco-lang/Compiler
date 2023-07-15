@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -70,9 +71,12 @@ internal sealed class ConstraintSolver
     /// <param name="targetType">The type being assigned to.</param>
     /// <param name="assignedType">The type assigned.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType) =>
-        // TODO: Hack, this is temporary until we have other constraints
-        this.SameType(targetType, assignedType);
+    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType)
+    {
+        var constraint = new CommonTypeConstraint(this, this.AllocateTypeVariable(), ImmutableArray.Create(targetType, assignedType));
+        this.Add(constraint);
+        return constraint.Promise;
+    }
 
     /// <summary>
     /// Adds a common-type constraint to the solver.
@@ -80,10 +84,9 @@ internal sealed class ConstraintSolver
     /// <param name="commonType">The common type of the provided alternative types.</param>
     /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
     /// <returns>The promise of the constraint added.</returns>
-    public IConstraintPromise<Unit> CommonType(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
+    public IConstraintPromise<Unit> CommonType(TypeVariable commonType, ImmutableArray<TypeSymbol> alternativeTypes)
     {
-        // TODO: Hack, this is temporary until we have other constraints
-        var constraint = new SameTypeConstraint(this, alternativeTypes.Prepend(commonType).ToImmutableArray());
+        var constraint = new CommonTypeConstraint(this, commonType, alternativeTypes);
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -400,7 +403,7 @@ internal sealed class ConstraintSolver
         first = first.Substitution;
         second = second.Substitution;
 
-        // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComprer, this is unification
+        // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComparer, this is unification
         if (ReferenceEquals(first, second)) return true;
 
         switch (first, second)

@@ -4,9 +4,10 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.TextDocument;
 
+[ClientCapability("TextDocument.Synchronization")]
 public interface ITextDocumentSync : ITextDocumentDidOpen, ITextDocumentDidClose, ITextDocumentDidChange
 {
-    [Capability(nameof(ServerCapabilities.TextDocumentSync))]
+    [ServerCapability(nameof(ServerCapabilities.TextDocumentSync))]
     public TextDocumentSyncOptions Capability => new()
     {
         Change = this.SyncKind,

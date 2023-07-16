@@ -5,6 +5,7 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.TextDocument;
 
+[ClientCapability("TextDocument.Synchronization")]
 public interface ITextDocumentDidClose
 {
     [RegistrationOptions("textDocument/didClose")]

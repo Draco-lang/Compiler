@@ -5,9 +5,10 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
 
+[ClientCapability("TextDocument.SignatureHelp")]
 public interface ISignatureHelp
 {
-    [Capability(nameof(ServerCapabilities.SignatureHelpProvider))]
+    [ServerCapability(nameof(ServerCapabilities.SignatureHelpProvider))]
     public ISignatureHelpOptions Capability => this.SignatureHelpRegistrationOptions;
 
     [RegistrationOptions("textDocument/signatureHelp")]

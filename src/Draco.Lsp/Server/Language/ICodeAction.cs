@@ -6,9 +6,10 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
 
+[ClientCapability("TextDocument.CodeAction")]
 public interface ICodeAction
 {
-    [Capability(nameof(ServerCapabilities.CompletionProvider))]
+    [ServerCapability(nameof(ServerCapabilities.CompletionProvider))]
     public ICodeActionOptions Capability => this.CodeActionRegistrationOptions;
 
     [RegistrationOptions("textDocument/codeAction")]

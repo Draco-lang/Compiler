@@ -6,9 +6,10 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
 
+[ClientCapability("TextDocument.InlayHint")]
 public interface IInlayHint
 {
-    [Capability(nameof(ServerCapabilities.InlayHintProvider))]
+    [ServerCapability(nameof(ServerCapabilities.InlayHintProvider))]
     public IInlayHintOptions Capability => this.InlayHintRegistrationOptions;
 
     [RegistrationOptions("textDocument/inlayHint")]

@@ -5,9 +5,10 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
 
+[ClientCapability("TextDocument.Hover")]
 public interface IHover
 {
-    [Capability(nameof(ServerCapabilities.HoverProvider))]
+    [ServerCapability(nameof(ServerCapabilities.HoverProvider))]
     public IHoverOptions Capability => this.HoverRegistrationOptions;
 
     [RegistrationOptions("textDocument/hover")]

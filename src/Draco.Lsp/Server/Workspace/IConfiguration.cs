@@ -4,6 +4,8 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Workspace;
 
+// TODO: Not correct, this should be an aggregate similar to ITextDocumentSync
+[ClientCapability("Workspace.DidChangeConfiguration")]
 public interface IConfiguration
 {
     [RegistrationOptions("workspace/didChangeConfiguration")]

@@ -64,7 +64,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
             .GetType()
             .GetInterfaces()
             .SelectMany(i => i.GetProperties())
-            .Select(p => (Attribute: p.GetCustomAttribute<CapabilityAttribute>(), Property: p))
+            .Select(p => (Attribute: p.GetCustomAttribute<ServerCapabilityAttribute>(), Property: p))
             .Where(pair => pair.Attribute is not null);
 
         // Go through these pairs

@@ -6,9 +6,10 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
 
+[ClientCapability("TextDocument.References")]
 public interface IFindReferences
 {
-    [Capability(nameof(ServerCapabilities.ReferencesProvider))]
+    [ServerCapability(nameof(ServerCapabilities.ReferencesProvider))]
     public IReferenceOptions Capability => this.FindReferencesRegistrationOptions;
 
     [RegistrationOptions("textDocument/references")]

@@ -1822,10 +1822,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // import System;
         // func foo()
         // {
-        //   bar(Object(), Random());
+        //   bar(Object(), Random(), Random());
         // }
         //
-        // func bar<T>(x: T, y: T) { }
+        // func bar<T>(x: T, y: T, z: T) { }
 
         var main = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System"),
@@ -1834,11 +1834,11 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))))),
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")), CallExpression(NameExpression("Random")), CallExpression(NameExpression("Random")))))),
             FunctionDeclaration(
                 "bar",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("T")), Parameter("y", NameType("T"))),
+                ParameterList(Parameter("x", NameType("T")), Parameter("y", NameType("T")), Parameter("z", NameType("T"))),
                 null,
                 BlockFunctionBody())));
 

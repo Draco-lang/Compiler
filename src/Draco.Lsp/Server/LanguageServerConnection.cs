@@ -37,6 +37,7 @@ public sealed class LanguageServerConnection
         {
             new TupleConverter(),
             new UriConverter(),
+            new ModelInterfaceConverter(),
         }
     };
 

@@ -16,8 +16,8 @@ namespace Draco.Lsp.Serialization;
 internal sealed class OneOfConverter : JsonConverterFactory
 {
     public override bool CanConvert(Type typeToConvert) => typeToConvert.IsAssignableTo(typeof(IOneOf));
-    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
-        => (JsonConverter?)Activator.CreateInstance(typeof(OneOfConverter<>).MakeGenericType(typeToConvert));
+    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options) =>
+        (JsonConverter?)Activator.CreateInstance(typeof(OneOfConverter<>).MakeGenericType(typeToConvert));
 }
 
 internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>

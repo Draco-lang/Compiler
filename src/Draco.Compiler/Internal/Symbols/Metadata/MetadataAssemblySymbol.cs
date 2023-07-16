@@ -14,7 +14,7 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     public override IEnumerable<Symbol> Members => this.RootNamespace.Members;
 
     /// <summary>
-    /// The version if this assembly.
+    /// The version of this assembly.
     /// </summary>
     public Version Version => this.assemblyDefinition.Version;
 

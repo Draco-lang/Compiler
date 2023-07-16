@@ -129,6 +129,12 @@ internal sealed class Translator
             result.Interfaces.Add(@interface);
         }
 
+        foreach (var @base in structure.Mixins)
+        {
+            var @interface = this.TranslateBaseType(@base);
+            result.Interfaces.Add(@interface);
+        }
+
         // The properties will be an aggregation of
         //  - implemented interface properties (transitive closure)
         //  - mixin properties (transitive closure)
@@ -434,8 +440,9 @@ internal sealed class Translator
         }
     }
 
-    private bool IsUsedAsInterface(string typeName) => this.sourceModel.Structures
-        .Any(s => s.Extends.OfType<Ts.NamedType>().Any(t => t.Name == typeName));
+    private bool IsUsedAsInterface(string typeName) =>
+           this.sourceModel.Structures.Any(s => s.Extends.OfType<Ts.NamedType>().Any(t => t.Name == typeName))
+        || this.sourceModel.Structures.Any(s => s.Mixins.OfType<Ts.NamedType>().Any(t => t.Name == typeName));
 
     private static TDeclaration TranslateDeclaration<TDeclaration>(Ts.IDocumented source)
         where TDeclaration : Cs.Declaration, new()

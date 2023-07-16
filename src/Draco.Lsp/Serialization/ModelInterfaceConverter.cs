@@ -108,6 +108,21 @@ internal sealed class ModelInterfaceConverter<TInterface> : JsonConverter<TInter
         throw new InvalidOperationException();
     }
 
-    public override void Write(Utf8JsonWriter writer, TInterface value, JsonSerializerOptions options) =>
-        JsonSerializer.Serialize(writer, value, options);
+    public override void Write(Utf8JsonWriter writer, TInterface value, JsonSerializerOptions options)
+    {
+        // TODO: Ugly hack, can we avoid recursion in a nicer way?
+        // Remove this converter
+        var newOptions = new JsonSerializerOptions(options);
+        for (var i = options.Converters.Count - 1; i >= 0; --i)
+        {
+            if (options.Converters[i].GetType() == this.GetType()
+             || options.Converters[i].GetType() == typeof(ModelInterfaceConverter))
+            {
+                newOptions.Converters.RemoveAt(i);
+            }
+        }
+
+        // Default behavior
+        JsonSerializer.Serialize(writer, value, newOptions);
+    }
 }

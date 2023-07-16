@@ -383,10 +383,33 @@ internal sealed class Translator
                 return this.TranslateType(tsSubtype, parent: parent, hintName: hintName);
             }
 
-            // Just a general DU
+            // Translate alternatives
             var alternatives = items
                 .Select(i => this.TranslateType(i, parent: parent, hintName: hintName))
                 .ToImmutableArray();
+
+            // We have one last trick up our sleeve, if all alternatives point to one base alternative, we can
+            // eliminate the DU and just use the interface
+            {
+                var interfaceAlts = alternatives
+                    .OfType<Cs.DeclarationType>()
+                    .Select(d => d.Declaration)
+                    .OfType<Cs.Interface>();
+                foreach (var interfaceAlt in interfaceAlts)
+                {
+                    var allBasedOnInterface = alternatives.All(alt =>
+                    {
+                        if (alt is not Cs.DeclarationType declType) return false;
+                        var decl = declType.Declaration;
+                        if (decl is Cs.Class classDecl) return classDecl.Interfaces.Contains(interfaceAlt);
+                        if (decl is Cs.Interface intDecl) return intDecl.Interfaces.Contains(interfaceAlt);
+                        return false;
+                    });
+                    if (allBasedOnInterface) return new Cs.DeclarationType(interfaceAlt);
+                }
+            }
+
+            // Just a general DU
             return new Cs.DiscriminatedUnionType(alternatives);
         }
         case "tuple":

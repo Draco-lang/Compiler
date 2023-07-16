@@ -68,30 +68,25 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
             // Check, if dynamic registration is allowed by the server
             if (!this.AllowRegistration(attr, isDynamic: false)) continue;
 
-            // TODO
-        }
+            // Get all props with capability attribute and go through them
+            foreach (var (regAttr, prop) in GetOptionsPropety<ServerCapabilityAttribute>(capabilityInterface))
+            {
+                // Get the property value
+                var propValue = prop.GetValue(this.server);
 
-        // We collect all properties on the server that have the capability annotation
-        var capabilityProperties = this.server
-            .GetType()
-            .GetInterfaces()
-            .SelectMany(i => i.GetProperties())
-            .Select(p => (Attribute: p.GetCustomAttribute<ServerCapabilityAttribute>(), Property: p))
-            .Where(pair => pair.Attribute is not null);
+                // If the property value is null, we don't register
+                if (propValue is null) continue;
 
-        // Go through these pairs
-        foreach (var (attr, interfaceCapabilityProp) in capabilityProperties)
-        {
-            Debug.Assert(attr is not null);
+                // Non-null, set it
+                // Retrieve the capability property from the server capabilities
+                var serverCapabilityProp = typeof(ServerCapabilities).GetProperty(regAttr.Property)
+                                        ?? throw new InvalidOperationException($"no capability {regAttr.Property} found in server capabilities");
 
-            // Retrieve the capability property from the server capabilities
-            var serverCapabilityProp = typeof(ServerCapabilities).GetProperty(attr.Property)
-                                    ?? throw new InvalidOperationException($"no capability {attr.Property} found in server capabilities");
-
-            // Retrieve the capability value defined by the interface
-            var capability = interfaceCapabilityProp.GetValue(this.server);
-            // We can fill out the appropriate field in the server capabilities
-            SetCapability(capabilities, serverCapabilityProp, capability);
+                // Retrieve the capability value defined by the interface
+                var capability = prop.GetValue(this.server);
+                // We can fill out the appropriate field in the server capabilities
+                SetCapability(capabilities, serverCapabilityProp, capability);
+            }
         }
 
         return capabilities;
@@ -102,40 +97,29 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         var registrations = new List<Registration>();
 
         // Go through each capability interface
-        foreach (var (attr, capabilityInterface) in this.GetCapabilityInterfaces())
+        foreach (var (capabilityAttr, capabilityInterface) in this.GetCapabilityInterfaces())
         {
             // Check, if dynamic registration is allowed by the server
-            if (!this.AllowRegistration(attr, isDynamic: true)) continue;
+            if (!this.AllowRegistration(capabilityAttr, isDynamic: true)) continue;
 
-            // TODO
-        }
-
-        // We collect all properties with the registration options attribute
-        var registrationOptionsProps = this.server
-            .GetType()
-            .GetInterfaces()
-            .SelectMany(i => i.GetProperties())
-            .Select(p => (Attribute: p.GetCustomAttribute<RegistrationOptionsAttribute>(), Property: p))
-            .Where(pair => pair.Attribute is not null);
-
-        // Go through these properties
-        foreach (var (attr, prop) in registrationOptionsProps)
-        {
-            Debug.Assert(attr is not null);
-
-            // Get the property value
-            var propValue = prop.GetValue(this.server);
-
-            // If the property value is null, we don't register
-            if (propValue is null) continue;
-
-            // Add it as a registration
-            registrations.Add(new()
+            // Get all props with registration options attribute and go through them
+            foreach (var (regAttr, prop) in GetOptionsPropety<RegistrationOptionsAttribute>(capabilityInterface))
             {
-                Id = $"reg_{attr.Method}",
-                Method = attr.Method,
-                RegisterOptions = JsonSerializer.SerializeToElement(propValue),
-            });
+                // Get the property value
+                var propValue = prop.GetValue(this.server);
+
+                // If the property value is null, we don't register
+                if (propValue is null) continue;
+
+                // Non-null, set it
+                // Add it as a registration
+                registrations.Add(new()
+                {
+                    Id = $"reg_{regAttr.Method}",
+                    Method = regAttr.Method,
+                    RegisterOptions = JsonSerializer.SerializeToElement(propValue),
+                });
+            }
         }
 
         return registrations;
@@ -172,6 +156,13 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         // If supports static, we only allow if it doesn't support dynamic
         return isDynamic ? supportsDynamic : !supportsDynamic;
     }
+
+    private static IEnumerable<(TAttribute Attribute, PropertyInfo Property)> GetOptionsPropety<TAttribute>(
+        Type capabilityInterface)
+        where TAttribute : Attribute => capabilityInterface
+        .GetProperties()
+        .Select(p => (Attribute: p.GetCustomAttribute<TAttribute>(), Property: p))
+        .Where(pair => pair.Attribute is not null)!;
 
     private static void SetCapability(ServerCapabilities capabilities, PropertyInfo prop, object? capability)
     {

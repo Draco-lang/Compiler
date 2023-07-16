@@ -50,8 +50,6 @@ internal sealed class Translator
     /// <returns>The translated C# type reference.</returns>
     public Cs.Type TranslateTypeByName(string name)
     {
-        if (this.translatedTypes.TryGetValue(name, out var translated)) return translated;
-
         var structure = this.sourceModel.Structures.FirstOrDefault(s => s.Name == name);
         if (structure is not null)
         {
@@ -73,6 +71,8 @@ internal sealed class Translator
             this.TranslateTypeAlias(alias);
             return this.translatedTypes[name];
         }
+
+        if (this.translatedTypes.TryGetValue(name, out var translated)) return translated;
 
         // Marker for unresolved types
         return new Cs.BuiltinType($"NOT_FOUND<{name}>");

@@ -18,6 +18,8 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
     private readonly ILanguageServer server;
     private readonly LanguageServerConnection connection;
 
+    private ClientCapabilities clientCapabilities = null!;
+
     public LanguageServerLifecycle(ILanguageServer server, LanguageServerConnection connection)
     {
         this.server = server;
@@ -26,6 +28,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
 
     public async Task<InitializeResult> InitializeAsync(InitializeParams param)
     {
+        this.clientCapabilities = param.Capabilities;
         await this.server.InitializeAsync(param);
         return new InitializeResult()
         {
@@ -59,6 +62,15 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
     {
         var capabilities = new ServerCapabilities();
 
+        // Go through each capability interface
+        foreach (var (attr, capabilityInterface) in this.GetCapabilityInterfaces())
+        {
+            // Check, if dynamic registration is allowed by the server
+            if (!this.AllowRegistration(attr, isDynamic: false)) continue;
+
+            // TODO
+        }
+
         // We collect all properties on the server that have the capability annotation
         var capabilityProperties = this.server
             .GetType()
@@ -89,6 +101,15 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
     {
         var registrations = new List<Registration>();
 
+        // Go through each capability interface
+        foreach (var (attr, capabilityInterface) in this.GetCapabilityInterfaces())
+        {
+            // Check, if dynamic registration is allowed by the server
+            if (!this.AllowRegistration(attr, isDynamic: true)) continue;
+
+            // TODO
+        }
+
         // We collect all properties with the registration options attribute
         var registrationOptionsProps = this.server
             .GetType()
@@ -118,6 +139,38 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         }
 
         return registrations;
+    }
+
+    private IEnumerable<(ClientCapabilityAttribute Attribute, Type Interface)> GetCapabilityInterfaces() => this.server
+        .GetType()
+        .GetInterfaces()
+        .Select(i => (Attribute: i.GetCustomAttribute<ClientCapabilityAttribute>(), Interface: i))
+        .Where(p => p.Attribute is not null)!;
+
+    private bool AllowRegistration(ClientCapabilityAttribute attrib, bool isDynamic)
+    {
+        Debug.Assert(this.clientCapabilities is not null);
+
+        var path = attrib.Path.Split('.');
+
+        var currentObj = this.clientCapabilities as object;
+        foreach (var prop in path)
+        {
+            var nextObj = currentObj.GetType().GetProperty(prop)?.GetValue(currentObj);
+            // No matter what, we couldn't navigate to the capability
+            // The capability isn't supported either way
+            if (nextObj is null) return false;
+            currentObj = nextObj;
+        }
+
+        // We got to the end of the path with a non-null capability object
+        // We need to check for a dynamic registration property
+        var dynamicReg = currentObj.GetType().GetProperty("DynamicRegistration")?.GetValue(currentObj);
+        var supportsDynamic = (dynamicReg as bool?) ?? false;
+
+        // If supports dynamic, we only allow for the dynamic branch to succeed
+        // If supports static, we only allow if it doesn't support dynamic
+        return isDynamic ? supportsDynamic : !supportsDynamic;
     }
 
     private static void SetCapability(ServerCapabilities capabilities, PropertyInfo prop, object? capability)

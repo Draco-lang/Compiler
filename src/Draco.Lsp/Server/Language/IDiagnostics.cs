@@ -7,7 +7,7 @@ using DocumentDiagnosticReport = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RelatedFu
 namespace Draco.Lsp.Server.Language;
 
 [ClientCapability("TextDocument.Diagnostic")]
-public interface IPullDiagnostics
+public interface IDiagnostics
 {
     [ServerCapability(nameof(ServerCapabilities.DiagnosticProvider))]
     public IDiagnosticOptions Capability => this.DiagnosticRegistrationOptions;

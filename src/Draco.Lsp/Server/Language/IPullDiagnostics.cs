@@ -9,7 +9,7 @@ namespace Draco.Lsp.Server.Language;
 [ClientCapability("TextDocument.Diagnostic")]
 public interface IPullDiagnostics
 {
-    [ServerCapability(nameof(ServerCapabilities.CompletionProvider))]
+    [ServerCapability(nameof(ServerCapabilities.DiagnosticProvider))]
     public IDiagnosticOptions Capability => this.DiagnosticRegistrationOptions;
 
     [RegistrationOptions("textDocument/diagnostic")]

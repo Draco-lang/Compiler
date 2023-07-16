@@ -9,7 +9,7 @@ namespace Draco.Lsp.Server.Language;
 [ClientCapability("TextDocument.CodeAction")]
 public interface ICodeAction
 {
-    [ServerCapability(nameof(ServerCapabilities.CompletionProvider))]
+    [ServerCapability(nameof(ServerCapabilities.CodeActionProvider))]
     public ICodeActionOptions Capability => this.CodeActionRegistrationOptions;
 
     [RegistrationOptions("textDocument/codeAction")]

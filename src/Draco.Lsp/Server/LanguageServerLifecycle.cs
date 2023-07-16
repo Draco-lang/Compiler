@@ -157,8 +157,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         return isDynamic ? supportsDynamic : !supportsDynamic;
     }
 
-    private static IEnumerable<(TAttribute Attribute, PropertyInfo Property)> GetOptionsPropety<TAttribute>(
-        Type capabilityInterface)
+    private static IEnumerable<(TAttribute Attribute, PropertyInfo Property)> GetOptionsPropety<TAttribute>(Type capabilityInterface)
         where TAttribute : Attribute => capabilityInterface
         .GetProperties()
         .Select(p => (Attribute: p.GetCustomAttribute<TAttribute>(), Property: p))

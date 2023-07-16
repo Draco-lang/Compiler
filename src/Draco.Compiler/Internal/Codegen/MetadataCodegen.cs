@@ -358,7 +358,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     private AssemblyReferenceHandle AddAssemblyReference(MetadataAssemblySymbol module) =>
         this.GetOrAddAssemblyReference(
             name: module.Name,
-            version: new(1, 0)); // TODO: What version?
+            version: module.Version);
 
     private static string? GetNamespaceForSymbol(Symbol symbol) => symbol switch
     {

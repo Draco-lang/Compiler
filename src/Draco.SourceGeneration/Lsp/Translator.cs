@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
@@ -115,6 +116,13 @@ internal sealed class Translator
         this.translatedTypes.Add(structure.Name, resultRef);
         this.targetModel.Declarations.Add(result);
 
+        // If used as an interface, it's also a base
+        if (this.IsUsedAsInterface(structure.Name))
+        {
+            var asInterface = this.TranslateStructureAsInterface(structure);
+            result.Interfaces.Add(asInterface);
+        }
+
         foreach (var @base in structure.Extends)
         {
             var @interface = this.TranslateBaseType(@base);
@@ -160,8 +168,12 @@ internal sealed class Translator
         if (this.structureInterfaces.TryGetValue(structure, out var existing)) return existing;
 
         var csClass = (Cs.Class)((Cs.DeclarationType)this.TranslateStructure(structure)).Declaration;
+        // NOTE: Because of circularity, we do a little jank here, we check for the interface again
+        if (this.structureInterfaces.TryGetValue(structure, out var result)) return result;
+
+        // Otherwise we do need to build it
+        result = TranslateDeclaration<Cs.Interface>(structure);
         // Prefix the interface name to follow C# conventions
-        var result = TranslateDeclaration<Cs.Interface>(structure);
         result.Name = $"I{result.Name}";
         this.structureInterfaces.Add(structure, result);
         this.targetModel.Declarations.Add(result);

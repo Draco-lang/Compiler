@@ -481,13 +481,12 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void MemberFields()
     {
         var csReference = CompileCSharpToStream(
-            "Test.dll",
             """
             public class FooTest
             {
                 public int number = 3;
             }
-            """);
+            """, "Test.dll");
         var foo = SyntaxTree.Parse("""
             public func foo(): int32 {
                 var test = FooTest();
@@ -509,13 +508,12 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void StaticFields()
     {
         var csReference = CompileCSharpToStream(
-            "Test.dll",
             """
             public class FooTest
             {
                 public static int number = 3;
             }
-            """);
+            """, "Test.dll");
         var foo = SyntaxTree.Parse("""
             public func foo(): int32 {
                 FooTest.number += 2;

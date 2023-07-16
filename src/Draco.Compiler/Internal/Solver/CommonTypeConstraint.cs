@@ -45,7 +45,7 @@ internal class CommonTypeConstraint : Constraint<Unit>
             var candidate = candidates[0];
             for (int i = 0; i < this.AlternativeTypes.Length; i++)
             {
-                if (!(this.Unify(candidate, this.AlternativeTypes[i]) || this.IsBase(candidate, this.AlternativeTypes[i])))
+                if (!(this.Unify(candidate, this.AlternativeTypes[i]) || IsBase(candidate, this.AlternativeTypes[i])))
                 {
                     candidates.RemoveAt(0);
                     goto while_loop;

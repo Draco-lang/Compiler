@@ -36,7 +36,7 @@ internal class AssignableConstraint : Constraint<Unit>
 
     public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
     {
-        if (this.Solver.Unify(this.TargetType, this.AssignedType) || this.IsBase(this.TargetType, this.AssignedType))
+        if (this.Solver.Unify(this.TargetType, this.AssignedType) || IsBase(this.TargetType, this.AssignedType))
         {
             // Successful unification
             this.Promise.Resolve(default);

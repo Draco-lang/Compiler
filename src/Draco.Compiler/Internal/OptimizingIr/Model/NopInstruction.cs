@@ -5,5 +5,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class NopInstruction : InstructionBase
 {
+    public override string ToString() => "nop";
+
     public override NopInstruction Clone() => new();
 }

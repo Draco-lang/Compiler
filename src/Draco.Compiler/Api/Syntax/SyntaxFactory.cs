@@ -99,7 +99,10 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList(Comma, parameters);
     public static SeparatedSyntaxList<ParameterSyntax> ParameterList(params ParameterSyntax[] parameters) =>
         SeparatedSyntaxList(Comma, parameters);
-    public static ParameterSyntax Parameter(string name, TypeSyntax type) => Parameter(Name(name), Colon, type);
+    public static ParameterSyntax Parameter(string name, TypeSyntax type) =>
+        Parameter(null, Name(name), Colon, type);
+    public static ParameterSyntax VariadicParameter(string name, TypeSyntax type) =>
+        Parameter(Ellipsis, Name(name), Colon, type);
 
     public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
         SeparatedSyntaxList(Comma, parameters);
@@ -333,6 +336,7 @@ public static partial class SyntaxFactory
     public static SyntaxToken GreaterThan { get; } = MakeToken(TokenKind.GreaterThan);
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
+    public static SyntaxToken Ellipsis { get; } = MakeToken(TokenKind.Ellipsis);
 
     private static SyntaxToken MakeToken(TokenKind tokenKind) =>
         Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);

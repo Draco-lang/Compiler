@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
@@ -7,8 +5,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class StoreInstruction : InstructionBase
 {
-    public override IEnumerable<IOperand> Operands => new[] { this.Target, this.Source };
-
     /// <summary>
     /// The operand to store to.
     /// </summary>
@@ -24,6 +20,8 @@ internal sealed class StoreInstruction : InstructionBase
         this.Target = target;
         this.Source = source;
     }
+
+    public override string ToString() => $"store {this.Target.ToOperandString()} := {this.Source.ToOperandString()}";
 
     public override StoreInstruction Clone() => new(this.Target, this.Source);
 }

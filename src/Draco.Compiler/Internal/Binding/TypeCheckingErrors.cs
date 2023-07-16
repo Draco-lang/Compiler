@@ -101,6 +101,15 @@ internal static class TypeCheckingErrors
         code: Code(10));
 
     /// <summary>
+    /// The given variadic parameter type is illegal.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalVariadicType = DiagnosticTemplate.Create(
+        title: "illegal variadic type",
+        severity: DiagnosticSeverity.Error,
+        format: "the given type {0} is not legal for variadic parameters",
+        code: Code(11));
+
+    /// <summary>
     /// No common type found for types.
     /// Expected string of concatenated types as argument.
     /// </summary>
@@ -108,6 +117,6 @@ internal static class TypeCheckingErrors
         title: "no common type found for types",
         severity: DiagnosticSeverity.Error,
         format: "no common type found for types {0}",
-        code: Code(11));
+        code: Code(12));
 }
 

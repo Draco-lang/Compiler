@@ -478,6 +478,61 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void MemberFields()
+    {
+        var csReference = CompileCSharpToStream(
+            "Test.dll",
+            """
+            public class FooTest
+            {
+                public int number = 3;
+            }
+            """);
+        var foo = SyntaxTree.Parse("""
+            public func foo(): int32 {
+                var test = FooTest();
+                test.number += 2;
+                return test.number;
+            }
+            """);
+
+        var assembly = Compile(
+            root: null,
+            syntaxTrees: ImmutableArray.Create(foo),
+            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(5, x);
+    }
+
+    [Fact]
+    public void StaticFields()
+    {
+        var csReference = CompileCSharpToStream(
+            "Test.dll",
+            """
+            public class FooTest
+            {
+                public static int number = 3;
+            }
+            """);
+        var foo = SyntaxTree.Parse("""
+            public func foo(): int32 {
+                FooTest.number += 2;
+                return FooTest.number;
+            }
+            """);
+
+        var assembly = Compile(
+            root: null,
+            syntaxTrees: ImmutableArray.Create(foo),
+            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+
+        var x = Invoke<int>(assembly, "foo");
+        Assert.Equal(5, x);
+    }
+
+    [Fact]
     public void MergeArrays()
     {
         var assembly = Compile("""
@@ -566,5 +621,57 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var x = Invoke<string>(assembly, "foo");
         Assert.Equal("Hello, World!", x);
+    }
+
+    [Fact]
+    public void VariadicArgsSum()
+    {
+        var assembly = Compile(""""
+            func sum(...ns: Array<int32>): int32 {
+                var result = 0;
+                var i = 0;
+                while (i < ns.Length) {
+                    result += ns[i];
+                    i += 1;
+                }
+                return result;
+            }
+
+            public func get_sum(): int32 = sum(1, 2, 3, 4, 5);
+            """");
+
+        var x = Invoke<int>(assembly, "get_sum");
+        Assert.Equal(15, x);
+    }
+
+    [Fact]
+    public void MultidimensionalArrays()
+    {
+        var assembly = Compile(""""
+            func make(a: int32, b: int32, c: int32, d: int32): Array2D<int32> {
+                val res = Array2D(2, 2);
+                res[0, 0] = a;
+                res[1, 0] = b;
+                res[0, 1] = c;
+                res[1, 1] = d;
+                return res;
+            }
+
+            func add_to_main_diagonal(a: Array2D<int32>, n: int32) {
+                a[0, 0] += n;
+                a[1, 1] += n;
+            }
+
+            func sum(a: Array2D<int32>): int32 = a[0, 0] + a[1, 0] + a[0, 1] + a[1, 1];
+
+            public func get_result(): int32 {
+                val m = make(1, 2, 3, 4);
+                add_to_main_diagonal(m, 7);
+                return sum(m);
+            }
+            """");
+
+        var x = Invoke<int>(assembly, "get_result");
+        Assert.Equal(24, x);
     }
 }

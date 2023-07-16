@@ -24,14 +24,12 @@ internal abstract partial class BoundTreeRewriter
                 }
                 elements.Add((TNode)rewritten);
             }
-            else if (elements is not null)
+            else
             {
                 // We already have a list because of an update
-                elements.Add(node);
+                elements?.Add(node);
             }
         }
-        return elements is null
-            ? array
-            : elements.ToImmutable();
+        return elements?.ToImmutable() ?? array;
     }
 }

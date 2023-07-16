@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
@@ -30,7 +29,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     }
 
     private void Compile(BoundStatement stmt) => stmt.Accept(this);
-    private IOperand Compile(BoundLvalue lvalue) => lvalue.Accept(this);
     private IOperand Compile(BoundExpression expr) => expr.Accept(this);
 
     private void AttachBlock(BasicBlock basicBlock)
@@ -143,13 +141,47 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     // Lvalues /////////////////////////////////////////////////////////////////
 
-    public override IOperand VisitLocalLvalue(BoundLocalLvalue node) => this.DefineLocal(node.Local);
-    public override IOperand VisitGlobalLvalue(BoundGlobalLvalue node) => this.DefineGlobal(node.Global);
-    public override IOperand VisitFieldLvalue(BoundFieldLvalue node) => node.Receiver is null
-        ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
-        : new FieldAccess(this.Compile(node.Receiver), node.Field);
-    public override IOperand VisitArrayAccessLvalue(BoundArrayAccessLvalue node) =>
-        new ArrayAccess(this.Compile(node.Array), node.Indices.Select(this.Compile).ToImmutableArray());
+    private (IInstruction Load, IInstruction Store) CompileLvalue(BoundLvalue lvalue)
+    {
+        switch (lvalue)
+        {
+        case BoundLocalLvalue local:
+        {
+            var src = this.DefineLocal(local.Local);
+            return (Load: Load(default!, src), Store: Store(src, default!));
+        }
+        case BoundGlobalLvalue global:
+        {
+            var src = this.DefineGlobal(global.Global);
+            return (Load: Load(default!, src), Store: Store(src, default!));
+        }
+        case BoundFieldLvalue field:
+        {
+            var receiver = field.Receiver is null ? null : this.Compile(field.Receiver);
+            if (receiver is null)
+            {
+                var src = new SymbolReference(field.Field);
+                return (Load: Load(default!, src), Store: Store(src, default!));
+            }
+            else
+            {
+                return (
+                    Load: LoadField(default!, receiver, field.Field),
+                    Store: StoreField(receiver, field.Field, default!));
+            }
+        }
+        case BoundArrayAccessLvalue arrayAccess:
+        {
+            var array = this.Compile(arrayAccess.Array);
+            var indices = arrayAccess.Indices
+                .Select(this.Compile)
+                .ToList();
+            return (Load: LoadElement(default!, array, indices), Store: StoreElement(array, indices, default!));
+        }
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(lvalue));
+        }
+    }
 
     // Expressions /////////////////////////////////////////////////////////////
 
@@ -204,7 +236,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var array = this.Compile(node.Array);
         var indices = node.Indices.Select(this.Compile).ToList();
         var result = this.DefineRegister(node.TypeRequired);
-        this.Write(ArrayElement(result, array, indices));
+        this.Write(LoadElement(result, array, indices));
         return result;
     }
 
@@ -256,7 +288,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitAssignmentExpression(BoundAssignmentExpression node)
     {
         var right = this.Compile(node.Right);
-        var left = this.Compile(node.Left);
+        var (leftLoad, leftStore) = this.CompileLvalue(node.Left);
         var toStore = right;
 
         if (node.CompoundOperator is not null)
@@ -264,7 +296,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var leftValue = this.DefineRegister(node.Left.Type);
             var tmp = this.DefineRegister(node.TypeRequired);
             toStore = tmp;
-            this.Write(Load(leftValue, left));
+            // Patch
+            PatchLoadTarget(leftLoad, leftValue);
+            this.Write(leftLoad);
             if (IsAdd(node.CompoundOperator)) this.Write(Add(tmp, leftValue, right));
             else if (IsSub(node.CompoundOperator)) this.Write(Sub(tmp, leftValue, right));
             else if (IsMul(node.CompoundOperator)) this.Write(Mul(tmp, leftValue, right));
@@ -272,8 +306,46 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             else throw new System.NotImplementedException();
         }
 
-        this.Write(Store(left, toStore));
+        // Patch
+        PatchStoreSource(leftStore, toStore);
+        this.Write(leftStore);
         return toStore;
+    }
+
+    private static void PatchLoadTarget(IInstruction loadInstr, Register target)
+    {
+        switch (loadInstr)
+        {
+        case LoadInstruction load:
+            load.Target = target;
+            break;
+        case LoadElementInstruction loadElement:
+            loadElement.Target = target;
+            break;
+        case LoadFieldInstruction loadField:
+            loadField.Target = target;
+            break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(loadInstr));
+        }
+    }
+
+    private static void PatchStoreSource(IInstruction storeInstr, IOperand source)
+    {
+        switch (storeInstr)
+        {
+        case StoreInstruction store:
+            store.Source = source;
+            break;
+        case StoreElementInstruction storeElement:
+            storeElement.Source = source;
+            break;
+        case StoreFieldInstruction storeField:
+            storeField.Source = source;
+            break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(storeInstr));
+        }
     }
 
     public override IOperand VisitUnaryExpression(BoundUnaryExpression node)
@@ -429,9 +501,15 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
-    public override IOperand VisitFieldExpression(BoundFieldExpression node) => node.Receiver is null
-        ? new FieldAccess(new SymbolReference(node.Field.ContainingSymbol!), node.Field)
-        : new FieldAccess(this.Compile(node.Receiver), node.Field);
+    public override IOperand VisitFieldExpression(BoundFieldExpression node)
+    {
+        var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(receiver is null
+            ? Load(result, new SymbolReference(node.Field))
+            : LoadField(result, receiver, node.Field));
+        return result;
+    }
 
     // TODO: Do something with this block
 

@@ -8,9 +8,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class CallInstruction : InstructionBase
 {
-    public override IEnumerable<IOperand> Operands => new[] { this.Target, this.Procedure }
-        .Concat(this.Arguments);
-
     /// <summary>
     /// The register to write the call result to.
     /// </summary>

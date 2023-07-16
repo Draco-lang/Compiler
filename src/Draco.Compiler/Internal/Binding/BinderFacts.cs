@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -10,6 +12,24 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal static class BinderFacts
 {
+    /// <summary>
+    /// Retrieves the element type for a variadic argument type.
+    /// </summary>
+    /// <param name="type">The variadic argument type.</param>
+    /// <param name="elementType">The element type, if <paramref name="type"/> is a legal variadic argument type.</param>
+    /// <returns>True, if <paramref name="type"/> is a legal variadic argument type, false otherwise.</returns>
+    public static bool TryGetVariadicElementType(TypeSymbol type, [MaybeNullWhen(false)] out TypeSymbol elementType)
+    {
+        if (type.GenericDefinition is ArrayTypeSymbol { Rank: 1 })
+        {
+            elementType = type.GenericArguments[0];
+            return true;
+        }
+
+        elementType = null;
+        return false;
+    }
+
     /// <summary>
     /// Checks, if a given symbol can be referenced in a value-context.
     /// </summary>

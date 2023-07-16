@@ -176,11 +176,48 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
+            case SymbolReference symbol:
+                this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
+                this.InstructionEncoder.Token(this.GetHandle(symbol));
+                break;
             default:
                 throw new InvalidOperationException();
             }
             // Just copy to the target local
             this.StoreLocal(load.Target);
+            break;
+        }
+        case LoadElementInstruction loadElement:
+        {
+            // Array
+            this.EncodePush(loadElement.Array);
+            // Indices
+            foreach (var i in loadElement.Indices) this.EncodePush(i);
+            // One-dimensional and multi-dimensional arrays are very different
+            if (loadElement.Indices.Count == 1)
+            {
+                // One-dimensional
+                this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
+                this.EncodeToken(loadElement.Target.Type);
+            }
+            else
+            {
+                // Multi-dimensional
+                this.InstructionEncoder.OpCode(ILOpCode.Call);
+                this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArrayGetHandle(
+                    loadElement.Target.Type,
+                    loadElement.Indices.Count));
+            }
+            // Store result
+            this.StoreLocal(loadElement.Target);
+            break;
+        }
+        case LoadFieldInstruction loadField:
+        {
+            this.EncodePush(loadField.Receiver);
+            this.InstructionEncoder.OpCode(ILOpCode.Ldfld);
+            this.InstructionEncoder.Token(this.GetHandle(loadField.Member));
+            this.StoreLocal(loadField.Target);
             break;
         }
         case StoreInstruction store:
@@ -196,41 +233,56 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
-            case FieldAccess fieldAccess:
-                // TODO: Structs
-                if (!fieldAccess.IsStatic) this.EncodePush(fieldAccess.Receiver);
+            case SymbolReference symbol:
                 this.EncodePush(store.Source);
-                this.InstructionEncoder.OpCode(fieldAccess.IsStatic ? ILOpCode.Stsfld : ILOpCode.Stfld);
-                this.InstructionEncoder.Token(this.GetHandle(fieldAccess.Member));
-                break;
-            case ArrayAccess arrayAccess:
-                this.EncodePush(arrayAccess.Array);
-                foreach (var index in arrayAccess.Indices) this.EncodePush(index);
-                this.EncodePush(store.Source);
-                if (arrayAccess.Indices.Length == 1)
-                {
-                    var storedValueType = store.Source.Type!.Substitution;
-                    var targetStorageType = arrayAccess.Type.Substitution;
-                    var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
-                    if (needsToBox)
-                    {
-                        // We need to box it
-                        this.InstructionEncoder.OpCode(ILOpCode.Box);
-                        this.EncodeToken(store.Source.Type!);
-                    }
-                    // Actual store
-                    this.InstructionEncoder.OpCode(ILOpCode.Stelem);
-                    this.EncodeToken(targetStorageType);
-                }
-                else
-                {
-                    // TODO: More complex, involves member functions
-                    throw new NotImplementedException();
-                }
+                this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
+                this.InstructionEncoder.Token(this.GetHandle(symbol));
                 break;
             default:
                 throw new InvalidOperationException();
             }
+            break;
+        }
+        case StoreElementInstruction storeElement:
+        {
+            this.EncodePush(storeElement.TargetArray);
+            foreach (var index in storeElement.Indices) this.EncodePush(index);
+            this.EncodePush(storeElement.Source);
+
+            var storedValueType = storeElement.Source.Type!.Substitution;
+            // TODO: Not the prettiest...
+            var targetStorageType = storeElement.TargetArray.Type!.Substitution.GenericArguments[0].Substitution;
+            var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
+
+            if (needsToBox)
+            {
+                // We need to box it
+                this.InstructionEncoder.OpCode(ILOpCode.Box);
+                this.EncodeToken(storeElement.Source.Type!);
+            }
+
+            if (storeElement.Indices.Count == 1)
+            {
+                // One-dimensional array
+                this.InstructionEncoder.OpCode(ILOpCode.Stelem);
+                this.EncodeToken(targetStorageType);
+            }
+            else
+            {
+                // Multi-dimensional array
+                this.InstructionEncoder.OpCode(ILOpCode.Call);
+                this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArraySetHandle(
+                    targetStorageType,
+                    storeElement.Indices.Count));
+            }
+            break;
+        }
+        case StoreFieldInstruction storeField:
+        {
+            this.EncodePush(storeField.Receiver);
+            this.EncodePush(storeField.Source);
+            this.InstructionEncoder.OpCode(ILOpCode.Stfld);
+            this.InstructionEncoder.Token(this.GetHandle(storeField.Member));
             break;
         }
         case CallInstruction call:
@@ -274,37 +326,20 @@ internal sealed class CilCodegen
             // One-dimensional and multi-dimensional arrays are very different
             if (newArr.Dimensions.Count == 1)
             {
+                // One-dimensional
                 this.InstructionEncoder.OpCode(ILOpCode.Newarr);
                 this.EncodeToken(newArr.ElementType);
             }
             else
             {
-                // TODO: More complicated, because it's a proper type
-                throw new NotImplementedException();
+                // Multi-dimensional
+                this.InstructionEncoder.OpCode(ILOpCode.Newobj);
+                this.InstructionEncoder.Token(this.metadataCodegen.GetMultidimensionalArrayCtorHandle(
+                    newArr.ElementType,
+                    newArr.Dimensions.Count));
             }
             // Store result
             this.StoreLocal(newArr.Target);
-            break;
-        }
-        case ArrayElementInstruction arrElement:
-        {
-            // Array
-            this.EncodePush(arrElement.Array);
-            // Indices
-            foreach (var i in arrElement.Indices) this.EncodePush(i);
-            // One-dimensional and multi-dimensional arrays are very different
-            if (arrElement.Indices.Count == 1)
-            {
-                this.InstructionEncoder.OpCode(ILOpCode.Ldelem);
-                this.EncodeToken(arrElement.Target.Type);
-            }
-            else
-            {
-                // TODO: More complicated, because it's a proper type
-                throw new NotImplementedException();
-            }
-            // Store result
-            this.StoreLocal(arrElement.Target);
             break;
         }
         case ArrayLengthInstruction arrLen:
@@ -369,11 +404,6 @@ internal sealed class CilCodegen
             break;
         case Parameter p:
             this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
-            break;
-        case FieldAccess f:
-            if (!f.IsStatic) this.EncodePush(f.Receiver);
-            this.InstructionEncoder.OpCode(f.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
-            this.InstructionEncoder.Token(this.GetHandle(f.Member));
             break;
         case SymbolReference s when s.Symbol is ModuleSymbol module:
             this.InstructionEncoder.Token(this.GetHandle(module));

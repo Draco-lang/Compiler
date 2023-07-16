@@ -131,11 +131,10 @@ internal partial class Binder
                 constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }
-            var argTypes = args
-                .Select(x => x.TypeRequired)
-                .Append(returnType)
-                .ToImmutableArray();
-            var overloaded = constraints.Overload(indexers, argTypes, out var gotReturnType);
+            var overloaded = constraints.Overload(
+                indexers,
+                args.Append(returnType as object).ToImmutableArray(),
+                out var gotReturnType);
             constraints.Unify(returnType, gotReturnType);
             overloaded.ConfigureDiagnostic(diag => diag
                 .WithLocation(index.Location));

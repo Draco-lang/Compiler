@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -68,6 +69,8 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
         return (x, y) switch
         {
+            (ArrayTypeSymbol a1, ArrayTypeSymbol a2)
+                when a1.IsGenericDefinition && a2.IsGenericDefinition => a1.Rank == a2.Rank,
             (FunctionTypeSymbol f1, FunctionTypeSymbol f2) =>
                    f1.Parameters.SequenceEqual(f2.Parameters, this)
                 && this.Equals(f1.ReturnType, f2.ReturnType),

@@ -110,10 +110,13 @@ internal sealed class ConstraintSolver
     /// Adds a callability constraint to the solver.
     /// </summary>
     /// <param name="calledType">The called function type.</param>
-    /// <param name="args">The calling argument types.</param>
+    /// <param name="args">The calling arguments.</param>
     /// <param name="returnType">The return type.</param>
     /// <returns>The promise of the constraint.</returns>
-    public IConstraintPromise<Unit> Call(TypeSymbol calledType, ImmutableArray<TypeSymbol> args, out TypeSymbol returnType)
+    public IConstraintPromise<Unit> Call(
+        TypeSymbol calledType,
+        ImmutableArray<object> args,
+        out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();
         var constraint = new CallConstraint(this, calledType, args, returnType);
@@ -130,7 +133,7 @@ internal sealed class ConstraintSolver
     /// <returns>The promise for the resolved overload.</returns>
     public IConstraintPromise<FunctionSymbol> Overload(
         ImmutableArray<FunctionSymbol> functions,
-        ImmutableArray<TypeSymbol> args,
+        ImmutableArray<object> args,
         out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();
@@ -437,6 +440,9 @@ internal sealed class ConstraintSolver
         case (ErrorTypeSymbol, _):
         case (_, ErrorTypeSymbol):
             return true;
+
+        case (ArrayTypeSymbol a1, ArrayTypeSymbol a2) when a1.IsGenericDefinition && a2.IsGenericDefinition:
+            return a1.Rank == a2.Rank;
 
         // NOTE: Primitives are filtered out already, along with metadata types
 

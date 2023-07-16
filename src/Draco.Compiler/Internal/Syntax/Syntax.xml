@@ -142,7 +142,7 @@
         All declaration syntaxes within the module.
       </Documentation>
     </Field>
-    
+
     <Field Name="CloseBrace" Type="SyntaxToken">
       <Documentation>
         The closing brace token.
@@ -295,6 +295,13 @@
       A single parameter in a function parameter list.
     </Documentation>
 
+    <Field Name="Variadic" Type="SyntaxToken?">
+      <Documentation>
+        The ellipsis token, in case it's variadic.
+      </Documentation>
+
+      <Token Kind="Ellipsis" />
+    </Field>
     <Field Name="Name" Type="SyntaxToken">
       <Documentation>
         The name of the parameter.

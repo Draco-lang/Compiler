@@ -38,11 +38,6 @@ internal interface IInstruction
     public IEnumerable<IBasicBlock> JumpTargets { get; }
 
     /// <summary>
-    /// The operands of this instruction.
-    /// </summary>
-    public IEnumerable<IOperand> Operands { get; }
-
-    /// <summary>
     /// Clones this instruction.
     /// </summary>
     /// <returns>The clone of this instruction not associated to any block.</returns>

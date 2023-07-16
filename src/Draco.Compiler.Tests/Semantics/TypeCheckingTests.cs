@@ -1609,6 +1609,230 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void VariadicOverloadPriority()
+    {
+        // func bar(s: string, x: int32): int32 = 0;
+        // func bar(s: string, ...x: Array<int32>): int32 = 0;
+        //
+        // func main() {
+        //     bar("Hi", 5);
+        //     bar("Hi", 5, 9);
+        //     bar("Hi");
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "bar",
+                ParameterList(
+                    Parameter("s", NameType("string")),
+                    Parameter("x", NameType("int32"))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(
+                    Parameter("s", NameType("string")),
+                    VariadicParameter("x", GenericType(NameType("Array"), NameType("int32")))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi"),
+                        LiteralExpression(5))),
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi"),
+                        LiteralExpression(5),
+                        LiteralExpression(9))),
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi")))))));
+
+        var nonVariadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var variadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
+        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
+        var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var nonVariadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(nonVariadicFuncSyntax));
+        var variadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(variadicFuncSyntax));
+        var call1Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call1Syntax.Function));
+        var call2Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call2Syntax.Function));
+        var call3Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call3Syntax.Function));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(nonVariadicFuncSym, call1Sym);
+        Assert.Equal(variadicFuncSym, call2Sym);
+        Assert.Equal(variadicFuncSym, call3Sym);
+    }
+
+    [Fact]
+    public void GenericVariadicOverloadPriority()
+    {
+        // func bar<T>(s: string, x: T): int32 = 0;
+        // func bar<T>(s: string, ...x: Array<T>): int32 = 0;
+        //
+        // func main() {
+        //     bar("Hi", true);
+        //     bar("Hi", 5, 9);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "bar",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    Parameter("s", NameType("string")),
+                    Parameter("x", NameType("T"))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                "bar",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    Parameter("s", NameType("string")),
+                    VariadicParameter("x", GenericType(NameType("Array"), NameType("T")))),
+                NameType("int32"),
+                InlineFunctionBody(LiteralExpression(0))),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi"),
+                        LiteralExpression(true))),
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        StringExpression("Hi"),
+                        LiteralExpression(5),
+                        LiteralExpression(9)))))));
+
+        var nonVariadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var variadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
+        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var nonVariadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(nonVariadicFuncSyntax));
+        var variadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(variadicFuncSyntax));
+        var call1Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call1Syntax.Function));
+        var call2Sym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call2Syntax.Function));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.True(call1Sym.IsGenericInstance);
+        Assert.True(call2Sym.IsGenericInstance);
+        Assert.Equal(nonVariadicFuncSym, call1Sym.GenericDefinition);
+        Assert.Equal(variadicFuncSym, call2Sym.GenericDefinition);
+    }
+
+    [Fact]
+    public void InferredGenericsMismatch()
+    {
+        // func foo<T>(x: T, y: T) {}
+        //
+        // func main() {
+        //     foo(1, true);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    Parameter("x", NameType("T")),
+                    Parameter("y", NameType("T"))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("foo"),
+                        LiteralExpression(1),
+                        LiteralExpression(true)))))));
+
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+    }
+
+    [Fact]
+    public void InferredVariadicGenericsMismatch()
+    {
+        // func foo<T>(...xs: Array<T>) {}
+        //
+        // func main() {
+        //     foo(1, true);
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    VariadicParameter("xs", GenericType(NameType("Array"), NameType("T")))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("foo"),
+                        LiteralExpression(1),
+                        LiteralExpression(true)))))));
+
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+    }
+
+    [Fact]
     public void AssignDerivedTypeToBaseType()
     {
         // import System;

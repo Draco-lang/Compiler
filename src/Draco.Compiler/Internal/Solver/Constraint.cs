@@ -22,7 +22,7 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
         this.Promise = ConstraintPromise.Create<TResult>(this);
     }
 
-    public abstract override string ToString();
+    public override abstract string ToString();
     public abstract IEnumerable<SolveState> Solve(DiagnosticBag diagnostics);
 
     public virtual void FailSilently() { }

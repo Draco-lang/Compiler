@@ -299,4 +299,9 @@ public enum TokenKind
     /// '/='.
     /// </summary>
     SlashAssign,
+
+    /// <summary>
+    /// '...'.
+    /// </summary>
+    Ellipsis,
 }

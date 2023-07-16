@@ -205,7 +205,9 @@ internal sealed class Lexer
         case '[': return TakeBasic(TokenKind.BracketOpen, 1);
         case ']': return TakeBasic(TokenKind.BracketClose, 1);
 
-        case '.': return TakeBasic(TokenKind.Dot, 1);
+        case '.':
+            if (this.Peek(1) == '.' && this.Peek(2) == '.') return TakeBasic(TokenKind.Ellipsis, 3);
+            return TakeBasic(TokenKind.Dot, 1);
         case ',': return TakeBasic(TokenKind.Comma, 1);
         case ':': return TakeBasic(TokenKind.Colon, 1);
         case ';': return TakeBasic(TokenKind.Semicolon, 1);

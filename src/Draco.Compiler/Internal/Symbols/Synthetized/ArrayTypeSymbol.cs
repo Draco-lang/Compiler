@@ -19,7 +19,11 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
     public int Rank { get; }
 
     public override Symbol? ContainingSymbol => null;
-    public override string Name => "Array";
+    public override string Name => this.Rank switch
+    {
+        1 => "Array",
+        int n => $"Array{n}D",
+    };
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
 
@@ -38,9 +42,5 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
     public TypeSymbol GenericInstantiate(TypeSymbol elementType) =>
         this.GenericInstantiate(containingSymbol: null, ImmutableArray.Create(elementType));
 
-    public override string ToString() => this.Rank switch
-    {
-        1 => $"Array{this.GenericsToString()}",
-        _ => $"Array{this.Rank}{this.GenericsToString()}",
-    };
+    public override string ToString() => $"{this.Name}{this.GenericsToString()}";
 }

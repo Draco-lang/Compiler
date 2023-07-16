@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -8,8 +7,6 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class ArithmeticInstruction : InstructionBase
 {
-    public override IEnumerable<IOperand> Operands => new[] { this.Target, this.Left, this.Right };
-
     /// <summary>
     /// The register to store the result at.
     /// </summary>

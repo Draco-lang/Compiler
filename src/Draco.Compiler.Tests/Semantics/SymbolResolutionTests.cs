@@ -3059,7 +3059,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), PlusAssign, LiteralExpression(2)))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class FooType{
+            public class FooType
+            {
                 public int this[int index]
                 {
                     get => index * 2;
@@ -3104,7 +3105,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public static class ParentType{
+            public static class ParentType
+            {
                 public class FooType { }
             }
             """);
@@ -3182,7 +3184,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class ParentType{
+            public class ParentType
+            {
                 public class FooType { }
             }
             """);
@@ -3226,8 +3229,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public static class ParentType{
-                public class FooType{
+            public static class ParentType
+            {
+                public class FooType
+                {
                     public static int foo = 0;
                 }
             }
@@ -3272,8 +3277,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class ParentType{
-                public class FooType{
+            public class ParentType
+            {
+                public class FooType
+                {
                     public static int foo = 0;
                 }
             }
@@ -3320,8 +3327,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public static class ParentType{
-                public class FooType{
+            public static class ParentType
+            {
+                public class FooType
+                {
                     public int member = 0;
                 }
             }
@@ -3371,8 +3380,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public class ParentType{
-                public class FooType{
+            public class ParentType
+            {
+                public class FooType
+                {
                     public int member = 0;
                 }
             }

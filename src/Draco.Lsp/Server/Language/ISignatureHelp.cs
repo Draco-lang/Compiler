@@ -8,7 +8,7 @@ namespace Draco.Lsp.Server.Language;
 public interface ISignatureHelp
 {
     [Capability(nameof(ServerCapabilities.SignatureHelpProvider))]
-    public SignatureHelpOptions? Capability => null;
+    public ISignatureHelpOptions Capability => this.SignatureHelpRegistrationOptions;
 
     [RegistrationOptions("textDocument/signatureHelp")]
     public SignatureHelpRegistrationOptions SignatureHelpRegistrationOptions { get; }

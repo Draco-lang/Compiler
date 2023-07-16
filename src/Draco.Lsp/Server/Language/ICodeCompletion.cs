@@ -9,7 +9,7 @@ namespace Draco.Lsp.Server.Language;
 public interface ICodeCompletion
 {
     [Capability(nameof(ServerCapabilities.CompletionProvider))]
-    public CompletionOptions? Capability => null;
+    public ICompletionOptions Capability => this.CompletionRegistrationOptions;
 
     [RegistrationOptions("textDocument/completion")]
     public CompletionRegistrationOptions CompletionRegistrationOptions { get; }

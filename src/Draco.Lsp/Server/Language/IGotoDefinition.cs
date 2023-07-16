@@ -9,7 +9,7 @@ namespace Draco.Lsp.Server.Language;
 public interface IGotoDefinition
 {
     [Capability(nameof(ServerCapabilities.DefinitionProvider))]
-    public DefinitionOptions? Capability => null;
+    public IDefinitionOptions Capability => this.GotoDefinitionRegistrationOptions;
 
     [RegistrationOptions("textDocument/definition")]
     public DefinitionRegistrationOptions GotoDefinitionRegistrationOptions { get; }

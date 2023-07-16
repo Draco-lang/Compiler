@@ -9,7 +9,7 @@ namespace Draco.Lsp.Server.Language;
 public interface IFindReferences
 {
     [Capability(nameof(ServerCapabilities.ReferencesProvider))]
-    public ReferenceOptions? Capability => null;
+    public IReferenceOptions Capability => this.FindReferencesRegistrationOptions;
 
     [RegistrationOptions("textDocument/references")]
     public ReferenceRegistrationOptions FindReferencesRegistrationOptions { get; }

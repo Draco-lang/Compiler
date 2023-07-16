@@ -9,7 +9,7 @@ namespace Draco.Lsp.Server.Language;
 public interface IInlayHint
 {
     [Capability(nameof(ServerCapabilities.InlayHintProvider))]
-    public InlayHintOptions? Capability => null;
+    public IInlayHintOptions Capability => this.InlayHintRegistrationOptions;
 
     [RegistrationOptions("textDocument/inlayHint")]
     public InlayHintRegistrationOptions InlayHintRegistrationOptions { get; }

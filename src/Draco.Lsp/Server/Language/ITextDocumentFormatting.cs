@@ -9,7 +9,7 @@ namespace Draco.Lsp.Server.Language;
 public interface ITextDocumentFormatting
 {
     [Capability(nameof(ServerCapabilities.DocumentFormattingProvider))]
-    public DocumentFormattingOptions? Capability => null;
+    public IDocumentFormattingOptions Capability => this.DocumentFormattingRegistrationOptions;
 
     [RegistrationOptions("textDocument/formatting")]
     public DocumentFormattingRegistrationOptions DocumentFormattingRegistrationOptions { get; }

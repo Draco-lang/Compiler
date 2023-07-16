@@ -7,7 +7,14 @@ namespace Draco.Lsp.Server.TextDocument;
 public interface ITextDocumentSync : ITextDocumentDidOpen, ITextDocumentDidClose, ITextDocumentDidChange
 {
     [Capability(nameof(ServerCapabilities.TextDocumentSync))]
-    public TextDocumentSyncOptions? Capability => null;
+    public TextDocumentSyncOptions Capability => new()
+    {
+        Change = this.SyncKind,
+        OpenClose = true,
+        Save = true,
+        WillSave = true,
+        WillSaveWaitUntil = true,
+    };
 
     public IList<DocumentFilter>? DocumentSelector { get; }
     public TextDocumentSyncKind SyncKind { get; }

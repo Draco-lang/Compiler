@@ -8,7 +8,7 @@ namespace Draco.Lsp.Server.TextDocument;
 public interface ITextDocumentDidChange
 {
     [RegistrationOptions("textDocument/didChange")]
-    public TextDocumentChangeRegistrationOptions? DidChangeRegistrationOptions { get; }
+    public TextDocumentChangeRegistrationOptions DidChangeRegistrationOptions { get; }
 
     [Notification("textDocument/didChange", Mutating = true)]
     public Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param, CancellationToken cancellationToken);

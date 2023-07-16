@@ -8,7 +8,7 @@ namespace Draco.Lsp.Server.Language;
 public interface IHover
 {
     [Capability(nameof(ServerCapabilities.HoverProvider))]
-    public HoverOptions? Capability => null;
+    public IHoverOptions Capability => this.HoverRegistrationOptions;
 
     [RegistrationOptions("textDocument/hover")]
     public HoverRegistrationOptions HoverRegistrationOptions { get; }

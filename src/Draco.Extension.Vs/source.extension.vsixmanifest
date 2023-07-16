@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="Draco.Extension.Vs.b53d6aad-95d9-4c14-8320-c2351fdbc8eb" Version="1.0" Language="en-US" Publisher="Company" />
-        <DisplayName>Draco.Extension.Vs</DisplayName>
-        <Description>Empty VSIX Project.</Description>
+        <Identity Id="Draco.Extension.Vs.b53d6aad-95d9-4c14-8320-c2351fdbc8eb" Version="0.1" Language="en-US" Publisher="Draco-lang" />
+        <DisplayName>Draco language support</DisplayName>
+        <Description xml:space="preserve">Draco language support for Visual Studio.</Description>
+        <Preview>true</Preview>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">

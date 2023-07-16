@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -11,6 +12,11 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members => this.RootNamespace.Members;
+
+    /// <summary>
+    /// The version if this assembly.
+    /// </summary>
+    public Version Version => this.assemblyDefinition.Version;
 
     /// <summary>
     /// The root namespace of this assembly.

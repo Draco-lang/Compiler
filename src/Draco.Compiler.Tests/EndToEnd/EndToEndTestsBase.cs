@@ -23,6 +23,18 @@ public abstract class EndToEndTestsBase
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<(string Name, Stream Stream)> additionalPeReferences)
     {
+        using var peStream = CompileRaw(root, syntaxTrees, additionalPeReferences);
+        return LoadAssembly(additionalPeReferences, peStream);
+    }
+
+    protected static MemoryStream CompileRaw(string sourceCode)
+    {
+        var syntaxTree = SyntaxTree.Parse(sourceCode);
+        return CompileRaw(null, ImmutableArray.Create(syntaxTree), ImmutableArray<(string, Stream)>.Empty);
+    }
+
+    private static MemoryStream CompileRaw(string? root, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<(string Name, Stream Stream)> additionalPeReferences)
+    {
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
@@ -38,10 +50,16 @@ public abstract class EndToEndTestsBase
                 .ToImmutableArray(),
             rootModulePath: root);
 
-        using var peStream = new MemoryStream();
+        var peStream = new MemoryStream();
         var emitResult = compilation.Emit(peStream: peStream);
+        peStream.Position = 0;
 
         Assert.True(emitResult.Success);
+        return peStream;
+    }
+
+    private static Assembly LoadAssembly(ImmutableArray<(string Name, Stream Stream)> additionalPeReferences, MemoryStream peStream)
+    {
 
         // We need a custom load context
         var loadContext = new AssemblyLoadContext("testLoadContext");
@@ -53,9 +71,7 @@ public abstract class EndToEndTestsBase
         };
 
         // Load emitted bytes as assembly
-        peStream.Position = 0;
         var assembly = loadContext.LoadFromStream(peStream);
-
         return assembly;
     }
 

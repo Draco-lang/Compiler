@@ -6,10 +6,11 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
 
+[ClientCapability("TextDocument.Formatting")]
 public interface ITextDocumentFormatting
 {
-    [Capability(nameof(ServerCapabilities.DocumentFormattingProvider))]
-    public DocumentFormattingOptions? Capability => null;
+    [ServerCapability(nameof(ServerCapabilities.DocumentFormattingProvider))]
+    public IDocumentFormattingOptions Capability => this.DocumentFormattingRegistrationOptions;
 
     [RegistrationOptions("textDocument/formatting")]
     public DocumentFormattingRegistrationOptions DocumentFormattingRegistrationOptions { get; }

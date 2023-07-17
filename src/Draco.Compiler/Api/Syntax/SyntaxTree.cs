@@ -124,14 +124,20 @@ public sealed class SyntaxTree
     /// <param name="toReorder">The <see cref="SyntaxNode"/> that will be reordered.</param>
     /// <param name="position">The position in the original <see cref="SyntaxList"/> where <paramref name="toReorder"/> node will be put.</param>
     /// <returns>New constructed <see cref="SyntaxTree"/> with <paramref name="toReorder"/> at new <paramref name="position"/>.</returns>
-    public SyntaxTree Reorder(SyntaxNode toReorder, int position) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new ReorderRewriter(toReorder.Green, position)), new());
+    public SyntaxTree Reorder(SyntaxNode toReorder, int position) => new(
+        this.SourceText,
+        this.GreenRoot.Accept(new ReorderRewriter(toReorder.Green, position)),
+        new());
 
     /// <summary>
     /// Removes the <paramref name="toRemove"/> node from the <see cref="SyntaxList"/> <paramref name="toRemove"/> is contained in.
     /// </summary>
     /// <param name="toRemove">The <see cref="SyntaxNode"/> that will be removed.</param>
     /// <returns>New constructed <see cref="SyntaxTree"/> with <paramref name="toRemove"/> remove from the <see cref="SyntaxTree"/>.</returns>
-    public SyntaxTree Remove(SyntaxNode toRemove) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new RemoveRewriter(toRemove.Green)), new());
+    public SyntaxTree Remove(SyntaxNode toRemove) => new(
+        this.SourceText,
+        this.GreenRoot.Accept(new RemoveRewriter(toRemove.Green)),
+        new());
 
     /// <summary>
     /// Inserts the <paramref name="toInsert"/> node to <paramref name="insertInto"/> at specified <paramref name="position"/> if <paramref name="insertInto"/> is a <see cref="SyntaxList"/>.
@@ -140,17 +146,25 @@ public sealed class SyntaxTree
     /// <param name="insertInto">The <see cref="SyntaxNode"/> <paramref name="toInsert"/> will be inserted to.</param>
     /// <param name="position">The position <paramref name="toInsert"/> node will be put.</param>
     /// <returns>New constructed <see cref="SyntaxTree"/> with <paramref name="toInsert"/> inserted into <paramref name="insertInto"/>.</returns>
-    public SyntaxTree Insert(SyntaxNode toInsert, SyntaxNode insertInto, int position) => new SyntaxTree(this.SourceText, this.GreenRoot.Accept(new InsertRewriter(toInsert.Green, insertInto.Green, position)), new());
+    public SyntaxTree Insert(SyntaxNode toInsert, SyntaxNode insertInto, int position) => new(
+        this.SourceText,
+        this.GreenRoot.Accept(new InsertRewriter(toInsert.Green, insertInto.Green, position)),
+        new());
+
+    // TODO: Doc
+    public SyntaxTree Replace(IEnumerable<KeyValuePair<SyntaxNode, SyntaxNode>> replacements) => new(
+        this.SourceText,
+        this.GreenRoot.Accept(new ReplaceRewriter(replacements.ToImmutableDictionary(p => p.Key.Green, p => p.Value.Green))),
+        new());
 
     /// <summary>
     /// Returns the difference between this <see cref="SyntaxTree"/> and <paramref name="other"/>.
     /// </summary>
     /// <param name="other">The other <see cref="SyntaxTree"/> to find differences with this tree.</param>
     /// <returns>Array of <see cref="TextEdit"/>s.</returns>
-    public ImmutableArray<TextEdit> SyntaxTreeDiff(SyntaxTree other)
-    {
-        return ImmutableArray.Create(new TextEdit(this.Root.Range, other.ToString()));
-    }
+    public ImmutableArray<TextEdit> SyntaxTreeDiff(SyntaxTree other) =>
+        // TODO: We can use a better diff algo
+        ImmutableArray.Create(new TextEdit(this.Root.Range, other.ToString()));
 
     /// <summary>
     /// The internal root of the tree.

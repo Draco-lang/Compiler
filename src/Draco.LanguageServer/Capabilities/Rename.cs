@@ -42,8 +42,8 @@ internal partial class DracoLanguageServer : IRename
             semanticModel: semanticModel,
             symbol: referencedSymbol,
             cancellationToken: cancellationToken);
-        var replacementNodes = referencedNodes
-            .Select(n => MakeReplacement(n, param.NewName));
+        var textEdits = referencedNodes
+            .Select(n => MakeTextEdit(n, param.NewName));
 
         // TODO
 
@@ -71,7 +71,7 @@ internal partial class DracoLanguageServer : IRename
         }
     }
 
-    private static IEnumerable<KeyValuePair<SyntaxNode, SyntaxNode>> MakeReplacement(SyntaxNode original, string name) => original switch
+    private static ITextEdit? MakeTextEdit(SyntaxNode original, string name) => original switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(original)),
     };

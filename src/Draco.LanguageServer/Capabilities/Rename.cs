@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 
@@ -33,8 +36,43 @@ internal partial class DracoLanguageServer : IRename
         if (referencedSymbol is null) return Task.FromResult<WorkspaceEdit?>(null);
 
         // TODO: Check if symbol is owned by this compilation
-        // TODO: Go through all nodes of all trees and rewrite
+
+        var referencedNodes = FindAllAppearances(
+            trees: compilation.SyntaxTrees,
+            semanticModel: semanticModel,
+            symbol: referencedSymbol,
+            cancellationToken: cancellationToken);
+        var replacementNodes = referencedNodes
+            .Select(n => MakeReplacement(n, param.NewName));
+
+        // TODO
 
         throw new NotImplementedException();
     }
+
+    private static IEnumerable<SyntaxNode> FindAllAppearances(
+        ImmutableArray<SyntaxTree> trees,
+        SemanticModel semanticModel,
+        ISymbol symbol,
+        CancellationToken cancellationToken)
+    {
+        foreach (var tree in trees)
+        {
+            foreach (var node in tree.Root.PreOrderTraverse())
+            {
+                if (cancellationToken.IsCancellationRequested) yield break;
+
+                var referencedSymbol = semanticModel.GetReferencedSymbol(node)
+                                    ?? semanticModel.GetDeclaredSymbol(node);
+                if (referencedSymbol is null) continue;
+
+                if (symbol.Equals(referencedSymbol)) yield return node;
+            }
+        }
+    }
+
+    private static IEnumerable<KeyValuePair<SyntaxNode, SyntaxNode>> MakeReplacement(SyntaxNode original, string name) => original switch
+    {
+        _ => throw new ArgumentOutOfRangeException(nameof(original)),
+    };
 }

@@ -134,7 +134,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         }
         // NOTE: VS still uses these...
 #pragma warning disable CS0618 // Type or member is obsolete
-        if (param.RootUri is not null) return param.RootUri?.ToUri();
+        if (param.RootUri is not null) return param.RootUri.Value.ToUri();
         if (param.RootPath is not null) return new Uri(param.RootPath);
 #pragma warning restore CS0618 // Type or member is obsolete
         return null;

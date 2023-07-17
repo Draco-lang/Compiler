@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -30,56 +32,52 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
     /// <param name="Properties">The properties that exclude the use of <paramref name="Type"/>.</param>
     private readonly record struct Discrimination(Type Type, ImmutableHashSet<string> Properties);
 
-    private static readonly Dictionary<(Type, JsonSerializerOptions), ImmutableArray<Discrimination>> discriminatorCache = new();
+    private static readonly ConcurrentDictionary<JsonSerializerOptions, ImmutableArray<Discrimination>> discriminatorCache = new();
 
-    private static ImmutableArray<Discrimination> GetDiscriminators(Type oneOfType, JsonSerializerOptions options)
-    {
-        // Check if it's cached
-        if (discriminatorCache.TryGetValue((oneOfType, options), out var existing)) return existing;
-
-        // No, we need to build the discriminators
-        var oneOfArgs = oneOfType.GetGenericArguments();
-        var builder = ImmutableArray.CreateBuilder<Discrimination>();
-
-        // First, we collect all of the names of all one of types
-
-        JsonTypeInfo JsonType(Type t) => options.TypeInfoResolver!.GetTypeInfo(t, options)!;
-
-        var allPropertyNames = oneOfArgs
-            .SelectMany(arg => JsonType(arg).Properties.Select(p => p.Name))
-            .ToHashSet();
-
-        // Next, we collect discriminators for each arg
-        foreach (var arg in oneOfArgs)
+    private static ImmutableArray<Discrimination> GetDiscriminators(JsonSerializerOptions options) =>
+        discriminatorCache.GetOrAdd(options, options =>
         {
-            // We don't care about primitives
-            if (arg.IsPrimitive) continue;
+            var oneOfArgs = typeof(TOneOf).GetGenericArguments();
+            var builder = ImmutableArray.CreateBuilder<Discrimination>();
 
-            // Get the property names of this argument
-            var argPropertyNames = JsonType(arg)
-                .Properties
-                .Select(p => p.Name)
+            // First, we collect all of the names of all one of types
+
+            JsonTypeInfo JsonType(Type t) => options.TypeInfoResolver!.GetTypeInfo(t, options)!;
+
+            var allPropertyNames = oneOfArgs
+                .SelectMany(arg => JsonType(arg).Properties.Select(p => p.Name))
                 .ToHashSet();
 
-            // subtracting these names from all possible property names gives a discriminative set
-            var discriminativeSet = allPropertyNames
-                .Except(argPropertyNames)
-                .ToImmutableHashSet();
+            // Next, we collect discriminators for each arg
+            foreach (var arg in oneOfArgs)
+            {
+                // We don't care about primitives
+                if (arg.IsPrimitive) continue;
 
-            // Add to result
-            builder.Add(new(arg, discriminativeSet));
-        }
+                // Get the property names of this argument
+                var argPropertyNames = JsonType(arg)
+                    .Properties
+                    .Select(p => p.Name)
+                    .ToHashSet();
 
-        // Sort by most discriminators first
-        builder.Sort((a, b) => b.Properties.Count - a.Properties.Count);
+                // subtracting these names from all possible property names gives a discriminative set
+                var discriminativeSet = allPropertyNames
+                    .Except(argPropertyNames)
+                    .ToImmutableHashSet();
 
-        // Build, save to cache
-        var result = builder.ToImmutable();
-        discriminatorCache.Add((oneOfType, options), result);
+                // Add to result
+                builder.Add(new(arg, discriminativeSet));
+            }
 
-        // Done
-        return result;
-    }
+            // Sort by most discriminators first
+            builder.Sort((a, b) => b.Properties.Count - a.Properties.Count);
+
+            // Build
+            var result = builder.ToImmutable();
+
+            // Done
+            return result;
+        });
 
     private static Type? ExtractOneOfType(Type objectType)
     {
@@ -111,6 +109,8 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
 
     public override TOneOf? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
+        if (typeToConvert != typeof(TOneOf)) throw new ArgumentException("This OneOf converter cannot read the given type", nameof(typeToConvert));
+
         var oneOfType = ExtractOneOfType(typeToConvert)
                      ?? throw new InvalidOperationException();
 
@@ -130,7 +130,7 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
         // Assume it's an object
         var obj = JsonElement.ParseValue(ref reader);
         // Get the discriminative fields
-        var discriminators = GetDiscriminators(oneOfType, options);
+        var discriminators = GetDiscriminators(options);
 
         // Go through all discriminators
         foreach (var (altType, discriminativeProps) in discriminators)

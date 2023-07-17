@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ internal sealed partial class DracoLanguageServer : IFindReferences
         if (referencedSymbol is not null)
         {
             var referencingNodes = FindAllReferences(
-                tree: syntaxTree,
+                trees: compilation.SyntaxTrees,
                 semanticModel: semanticModel,
                 symbol: referencedSymbol,
                 includeDeclaration: param.Context.IncludeDeclaration,
@@ -53,23 +54,26 @@ internal sealed partial class DracoLanguageServer : IFindReferences
     }
 
     private static IEnumerable<SyntaxNode> FindAllReferences(
-        SyntaxTree tree,
+        ImmutableArray<SyntaxTree> trees,
         SemanticModel semanticModel,
         ISymbol symbol,
         bool includeDeclaration,
         CancellationToken cancellationToken)
     {
-        foreach (var node in tree.Root.PreOrderTraverse())
+        foreach (var tree in trees)
         {
-            if (cancellationToken.IsCancellationRequested) yield break;
+            foreach (var node in tree.Root.PreOrderTraverse())
+            {
+                if (cancellationToken.IsCancellationRequested) yield break;
 
-            if (symbol.Equals(semanticModel.GetReferencedSymbol(node)))
-            {
-                yield return node;
-            }
-            if (includeDeclaration && symbol.Equals(semanticModel.GetDeclaredSymbol(node)))
-            {
-                yield return node;
+                if (symbol.Equals(semanticModel.GetReferencedSymbol(node)))
+                {
+                    yield return node;
+                }
+                if (includeDeclaration && symbol.Equals(semanticModel.GetDeclaredSymbol(node)))
+                {
+                    yield return node;
+                }
             }
         }
     }

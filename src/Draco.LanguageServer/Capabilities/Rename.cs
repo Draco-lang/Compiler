@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,11 +44,18 @@ internal partial class DracoLanguageServer : IRename
             symbol: referencedSymbol,
             cancellationToken: cancellationToken);
         var textEdits = referencedNodes
-            .Select(n => MakeTextEdit(n, param.NewName));
+            .GroupBy(n => n.Tree.SourceText.Path)
+            .Select(g => (
+                Path: g.Key,
+                Edits: g.Select(n => RenameNode(n, param.NewName))))
+            .Where(g => g.Path is not null);
 
-        // TODO
-
-        throw new NotImplementedException();
+        return Task.FromResult<WorkspaceEdit?>(new()
+        {
+            Changes = textEdits.ToDictionary(
+                e => new DocumentUri(e.Path!.LocalPath),
+                e => e.Edits.ToList() as IList<ITextEdit>),
+        });
     }
 
     private static IEnumerable<SyntaxNode> FindAllAppearances(
@@ -71,8 +79,27 @@ internal partial class DracoLanguageServer : IRename
         }
     }
 
-    private static ITextEdit? MakeTextEdit(SyntaxNode original, string name) => original switch
+    private static ITextEdit RenameNode(SyntaxNode original, string name) => original switch
     {
+        ParameterSyntax p => RenameToken(p.Name, name),
+        GenericParameterSyntax g => RenameToken(g.Name, name),
+        FunctionDeclarationSyntax f => RenameToken(f.Name, name),
+        VariableDeclarationSyntax v => RenameToken(v.Name, name),
+        LabelDeclarationSyntax l => RenameToken(l.Name, name),
+        ModuleDeclarationSyntax m => RenameToken(m.Name, name),
+        RootImportPathSyntax r => RenameToken(r.Name, name),
+        MemberImportPathSyntax m => RenameToken(m.Member, name),
+        MemberTypeSyntax m => RenameToken(m.Member, name),
+        MemberExpressionSyntax m => RenameToken(m.Member, name),
+        NameExpressionSyntax n => RenameToken(n.Name, name),
+        NameTypeSyntax n => RenameToken(n.Name, name),
+        NameLabelSyntax n => RenameToken(n.Name, name),
         _ => throw new ArgumentOutOfRangeException(nameof(original)),
+    };
+
+    private static ITextEdit RenameToken(SyntaxToken token, string name) => new TextEdit()
+    {
+        Range = Translator.ToLsp(token.Range),
+        NewText = name,
     };
 }

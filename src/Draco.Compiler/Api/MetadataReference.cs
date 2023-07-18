@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
+using System.Xml;
 
 namespace Draco.Compiler.Api;
 
@@ -17,7 +18,10 @@ public abstract class MetadataReference
     /// </summary>
     public abstract MetadataReader MetadataReader { get; }
 
-    public virtual string? FilePath { get; private set; }
+    /// <summary>
+    /// The documentation for this reference.
+    /// </summary>
+    public abstract XmlDocument? Documentation { get; }
 
     /// <summary>
     /// Creates a metadata reference from the given assembly.
@@ -39,18 +43,6 @@ public abstract class MetadataReference
     }
 
     /// <summary>
-    /// Creates a metadata reference from the given file.
-    /// </summary>
-    /// <param name="filePath">The path to the file.</param>
-    /// <returns>The <see cref="MetadataReference"/> created from file.</returns>
-    public static MetadataReference FromFile(string filePath)
-    {
-        var reference = FromPeStream(File.OpenRead(filePath));
-        reference.FilePath = filePath;
-        return reference;
-    }
-
-    /// <summary>
     /// Creates a metadata reference from the given PE stream.
     /// </summary>
     /// <param name="peStream">The PE stream to create the metadata reference from.</param>
@@ -62,13 +54,27 @@ public abstract class MetadataReference
         return new MetadataReaderReference(metadataReader);
     }
 
+    public MetadataReference DocumentationFromStream(Stream xmlStream)
+    {
+        var doc = new XmlDocument();
+        doc.Load(xmlStream);
+        return new MetadataReaderReference(this.MetadataReader, doc);
+    }
+
     private sealed class MetadataReaderReference : MetadataReference
     {
         public override MetadataReader MetadataReader { get; }
+        public override XmlDocument? Documentation { get; }
 
         public MetadataReaderReference(MetadataReader metadataReader)
         {
             this.MetadataReader = metadataReader;
+        }
+
+        public MetadataReaderReference(MetadataReader metadataReader, XmlDocument documentation)
+        {
+            this.MetadataReader = metadataReader;
+            this.Documentation = documentation;
         }
     }
 }

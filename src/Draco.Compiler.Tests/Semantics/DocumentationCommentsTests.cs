@@ -124,10 +124,12 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             null,
             BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
+        var docs = "<summary> Documentation for TestClass </summary>";
+
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef("""
-            /// <summary> Documentation for TestClass </summary>
+        var testRef = CompileCSharpToMetadataRef($$"""
+            /// {{docs}}
             public class TestClass { }
             """, xmlStream).DocumentationFromStream(xmlStream);
 
@@ -143,6 +145,6 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal("<summary> Documentation for TestClass </summary>", typeSym.Documentation);
+        Assert.Equal(docs, typeSym.Documentation);
     }
 }

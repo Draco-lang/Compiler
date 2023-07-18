@@ -3,6 +3,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
@@ -107,5 +108,41 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
         Assert.Equal(string.Empty, labelSym.Documentation);
+    }
+
+    [Fact]
+    public void TypeDocumentationFromMetadata()
+    {
+        // func main() {
+        //   TestClass();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef("""
+            /// <summary> Documentation for TestClass </summary>
+            public class TestClass { }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal("<summary> Documentation for TestClass </summary>", typeSym.Documentation);
     }
 }

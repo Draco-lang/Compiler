@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Xml;
 using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -43,6 +44,11 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     public MetadataReader MetadataReader { get; }
 
     /// <summary>
+    /// XmlDocument containing documentation for this assembly.
+    /// </summary>
+    public XmlDocument AssemblyDocumentation { get; }
+
+    /// <summary>
     /// The compilation this assembly belongs to.
     /// </summary>
     public Compilation Compilation { get; }
@@ -58,6 +64,24 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
         this.MetadataReader = metadataReader;
         this.moduleDefinition = metadataReader.GetModuleDefinition();
         this.assemblyDefinition = metadataReader.GetAssemblyDefinition();
+    }
+
+    public MetadataAssemblySymbol(
+        Compilation compilation,
+        MetadataReader metadataReader,
+        XmlDocument documentation) : this(compilation, metadataReader)
+    {
+        this.AssemblyDocumentation = documentation;
+    }
+
+    public MetadataAssemblySymbol(
+        Compilation compilation,
+        MetadataReader metadataReader,
+        string pathToDocumentation) : this(compilation, metadataReader)
+    {
+        var doc = new XmlDocument();
+        doc.Load(pathToDocumentation);
+        this.AssemblyDocumentation = doc;
     }
 
     private MetadataNamespaceSymbol BuildRootNamespace()

@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
 
 namespace Draco.Compiler.Api;
 
@@ -15,6 +16,8 @@ public abstract class MetadataReference
     /// Retrieves the metadata reader for this reference.
     /// </summary>
     public abstract MetadataReader MetadataReader { get; }
+
+    public virtual string? FilePath { get; private set; }
 
     /// <summary>
     /// Creates a metadata reference from the given assembly.
@@ -33,6 +36,18 @@ public abstract class MetadataReference
             var reader = new MetadataReader(blob, length);
             return new MetadataReaderReference(reader);
         }
+    }
+
+    /// <summary>
+    /// Creates a metadata reference from the given file.
+    /// </summary>
+    /// <param name="filePath">The path to the file.</param>
+    /// <returns>The <see cref="MetadataReference"/> created from file.</returns>
+    public static MetadataReference FromFile(string filePath)
+    {
+        var reference = FromPeStream(File.OpenRead(filePath));
+        reference.FilePath = filePath;
+        return reference;
     }
 
     /// <summary>

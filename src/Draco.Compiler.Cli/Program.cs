@@ -111,7 +111,7 @@ internal class Program
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
             metadataReferences: references
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Select(r => MetadataReference.FromFile(r.FullName))
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName,
             outputPath: path,
@@ -132,7 +132,7 @@ internal class Program
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
             metadataReferences: references
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Select(r => MetadataReference.FromFile(r.FullName))
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName);
         var execResult = ScriptingEngine.Execute(compilation);

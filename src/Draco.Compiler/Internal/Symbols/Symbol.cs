@@ -4,6 +4,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols.Generic;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -85,6 +86,24 @@ internal abstract partial class Symbol
             var thisFullName = string.IsNullOrWhiteSpace(parentFullName)
                 ? this.Name
                 : $"{parentFullName}.{this.Name}";
+            return $"{thisFullName}{this.GenericsToString()}";
+        }
+    }
+
+    /// <summary>
+    /// The fully qualified metadata name of this symbol.
+    /// </summary>
+    public virtual string MetadataFullName
+    {
+        get
+        {
+            var parentFullName = this.ContainingSymbol is not MetadataAssemblySymbol
+                ? this.ContainingSymbol?.MetadataFullName
+                : null;
+
+            var thisFullName = string.IsNullOrWhiteSpace(parentFullName)
+                ? this.MetadataName
+                : $"{parentFullName}.{this.MetadataName}";
             return $"{thisFullName}{this.GenericsToString()}";
         }
     }

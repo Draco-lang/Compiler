@@ -149,6 +149,90 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
     }
 
     [Fact]
+    public void NestedTypeDocumentationFromMetadata()
+    {
+        // func main() {
+        //   TestClass();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
+
+        var docs = "<summary> Documentation for NestedTestClass </summary>";
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            public class TestClass
+            {
+                /// {{docs}}
+                public class NestedTestClass { }
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+        var nestedTypeSym = GetMemberSymbol<TypeSymbol>(typeSym, "NestedTestClass");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(docs, nestedTypeSym.Documentation);
+    }
+
+    [Fact]
+    public void StaticTypeDocumentationFromMetadata()
+    {
+        // func main() {
+        //   var x = TestClass.foo;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("TestClass"), "foo")))))));
+
+        var docs = "<summary> Documentation for TestClass </summary>";
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            /// {{docs}}
+            public static class TestClass
+            {
+                // Just so i can use it in draco
+                public static int foo = 0;
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var @class = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(@class));
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(docs, typeSym.Documentation);
+    }
+
+    [Fact]
     public void MethodDocumentationFromMetadata()
     {
         // func main() {
@@ -167,6 +251,8 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var xmlStream = new MemoryStream();
 
         var testRef = CompileCSharpToMetadataRef($$"""
+            using System;
+
             public class TestClass
             {
                 /// {{docs}}
@@ -274,5 +360,5 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         Assert.Equal(docs, propertySym.Documentation);
     }
 
-    // TODO: Generics, Nested types
+    // TODO: Generics
 }

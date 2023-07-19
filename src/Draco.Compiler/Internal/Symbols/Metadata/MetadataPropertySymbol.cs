@@ -27,7 +27,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
 
-    public override string Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"P:{this.FullName}"));
+    public override string Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"P:{this.MetadataFullName}"));
     private string? documentation;
 
     public override Symbol ContainingSymbol { get; }

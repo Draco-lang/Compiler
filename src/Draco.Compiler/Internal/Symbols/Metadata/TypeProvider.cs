@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>, ICustomAttributeTypeProvider<TypeSymbol>
 {
     // TODO: We return a special error type for now to swallow errors
-    private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
+    private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", "<unknown>", false);
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
 

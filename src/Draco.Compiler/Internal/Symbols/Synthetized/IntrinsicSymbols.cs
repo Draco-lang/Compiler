@@ -12,12 +12,12 @@ internal static class IntrinsicSymbols
     public static TypeSymbol Never => NeverTypeSymbol.Instance;
     public static TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
     public static TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
-    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
-    public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", isValueType: true);
-    public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);
-    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
-    public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
-    public static TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
+    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", "System.Void", isValueType: true);
+    public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", "System.Int32", isValueType: true);
+    public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", "System.Double", isValueType: true);
+    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", "System.String", isValueType: false);
+    public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", "System.Bool", isValueType: true);
+    public static TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", "System.Object", isValueType: false);
     public static ArrayTypeSymbol Array { get; } = new(1);
     public static ArrayConstructorSymbol ArrayCtor { get; } = new(1);
 

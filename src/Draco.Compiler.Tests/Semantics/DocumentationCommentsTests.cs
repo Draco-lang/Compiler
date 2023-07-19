@@ -277,6 +277,50 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
     }
 
     [Fact]
+    public void NoParamsMethodDocumentationFromMetadata()
+    {
+        // func main() {
+        //   TestClass();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
+
+        var docs = "<summary> Documentation for TestMethod </summary>";
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            using System;
+
+            public class TestClass
+            {
+                /// {{docs}}
+                public void TestMethod() { }
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(docs, methodSym.Documentation);
+    }
+
+    [Fact]
     public void FieldDocumentationFromMetadata()
     {
         // func main() {

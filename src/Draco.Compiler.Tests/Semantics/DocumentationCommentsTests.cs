@@ -147,4 +147,132 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         Assert.Empty(semanticModel.Diagnostics);
         Assert.Equal(docs, typeSym.Documentation);
     }
+
+    [Fact]
+    public void MethodDocumentationFromMetadata()
+    {
+        // func main() {
+        //   TestClass();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
+
+        var docs = "<summary> Documentation for TestMethod </summary>";
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            public class TestClass
+            {
+                /// {{docs}}
+                public void TestMethod(int arg) { }
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(docs, methodSym.Documentation);
+    }
+
+    [Fact]
+    public void FieldDocumentationFromMetadata()
+    {
+        // func main() {
+        //   TestClass();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
+
+        var docs = "<summary> Documentation for TestField </summary>";
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            public class TestClass
+            {
+                /// {{docs}}
+                public int TestField = 5;
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+        var fieldSym = GetMemberSymbol<FieldSymbol>(typeSym, "TestField");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(docs, fieldSym.Documentation);
+    }
+
+    [Fact]
+    public void PropertyDocumentationFromMetadata()
+    {
+        // func main() {
+        //   TestClass();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
+
+        var docs = "<summary> Documentation for TestProperty </summary>";
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            public class TestClass
+            {
+                /// {{docs}}
+                public int TestProperty { get; }
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+        var propertySym = GetMemberSymbol<PropertySymbol>(typeSym, "TestProperty");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(docs, propertySym.Documentation);
+    }
+
+    // TODO: Generics, Nested types
 }

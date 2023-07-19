@@ -20,6 +20,9 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     public override Api.Semantics.Visibility Visibility => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
+    public override string Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"F:{this.FullName}"));
+    private string? documentation;
+
     public override Symbol? ContainingSymbol { get; }
 
     /// <summary>

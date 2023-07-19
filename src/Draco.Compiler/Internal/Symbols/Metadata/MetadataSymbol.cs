@@ -75,6 +75,12 @@ internal static class MetadataSymbol
         return null;
     }
 
+    public static string GetDocumentation(MetadataAssemblySymbol assembly, string documentationName)
+    {
+        var root = assembly.AssemblyDocumentation.DocumentElement;
+        return root?.SelectSingleNode($"//member[@name='{documentationName}']")?.InnerXml ?? string.Empty;
+    }
+
     private static FunctionSymbol SynthetizeConstructor(
         MetadataTypeSymbol type,
         MethodDefinition ctorMethod) => new SynthetizedMetadataConstructorSymbol(type, ctorMethod);

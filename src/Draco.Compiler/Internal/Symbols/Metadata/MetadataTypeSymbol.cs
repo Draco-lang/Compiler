@@ -26,7 +26,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override string Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    public override string Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"T:{this.FullName}"));
     private string? documentation;
 
     public override Symbol ContainingSymbol { get; }
@@ -139,10 +139,10 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         return result.ToImmutable();
     }
 
-    private string BuildDocumentation()
-    {
-        var root = this.Assembly.AssemblyDocumentation.DocumentElement;
-        var name = $"T:{this.MetadataName}";
-        return root?.SelectSingleNode($"//member[@name='{name}']")?.InnerXml ?? string.Empty;
-    }
+    //private string BuildDocumentation()
+    //{
+    //    var root = this.Assembly.AssemblyDocumentation.DocumentElement;
+    //    var name = $"T:{this.MetadataName}";
+    //    return root?.SelectSingleNode($"//member[@name='{name}']")?.InnerXml ?? string.Empty;
+    //}
 }

@@ -101,10 +101,9 @@ internal abstract partial class Symbol
                 ? this.ContainingSymbol?.MetadataFullName
                 : null;
 
-            var thisFullName = string.IsNullOrWhiteSpace(parentFullName)
+            return string.IsNullOrWhiteSpace(parentFullName)
                 ? this.MetadataName
                 : $"{parentFullName}.{this.MetadataName}";
-            return $"{thisFullName}{this.GenericsToString()}";
         }
     }
 

@@ -360,5 +360,50 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         Assert.Equal(docs, propertySym.Documentation);
     }
 
-    // TODO: Generics
+    [Fact]
+    public void GenericsDocumentationFromMetadata()
+    {
+        // func main() {
+        //   TestClass<int32>();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(ExpressionStatement(CallExpression(GenericExpression(NameExpression("TestClass"), NameType("int32"))))))));
+
+        var classDocs = "<summary> Documentation for TestClass </summary>";
+        var methodDocs = "<summary> Documentation for TestMethod </summary>";
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            using System;
+
+            /// {{classDocs}}
+            public class TestClass<T>
+            {
+                /// {{methodDocs}}
+                public void TestMethod<U>(T arg1, T arg2, U arg3) { }
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<CallExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(classDocs, typeSym.GenericDefinition?.Documentation);
+        Assert.Equal(methodDocs, methodSym.GenericDefinition?.Documentation);
+    }
 }

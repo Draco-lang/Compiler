@@ -151,12 +151,6 @@ public sealed class SyntaxTree
         this.GreenRoot.Accept(new InsertRewriter(toInsert.Green, insertInto.Green, position)),
         new());
 
-    // TODO: Doc
-    public SyntaxTree Replace(IEnumerable<KeyValuePair<SyntaxNode, SyntaxNode>> replacements) => new(
-        this.SourceText,
-        this.GreenRoot.Accept(new ReplaceRewriter(replacements.ToImmutableDictionary(p => p.Key.Green, p => p.Value.Green))),
-        new());
-
     /// <summary>
     /// Returns the difference between this <see cref="SyntaxTree"/> and <paramref name="other"/>.
     /// </summary>

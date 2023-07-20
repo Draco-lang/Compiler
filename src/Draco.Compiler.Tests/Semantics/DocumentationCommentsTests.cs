@@ -256,7 +256,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             public class TestClass
             {
                 /// {{docs}}
-                public void TestMethod(int arg) { }
+                public void TestMethod(int arg1, string arg2) { }
             }
             """, xmlStream).DocumentationFromStream(xmlStream);
 

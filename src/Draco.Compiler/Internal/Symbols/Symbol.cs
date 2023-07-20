@@ -108,6 +108,11 @@ internal abstract partial class Symbol
     }
 
     /// <summary>
+    /// The full name used to retrieve documentation from metadata.
+    /// </summary>
+    public virtual string DocumentationFullName => this.MetadataFullName;
+
+    /// <summary>
     /// All the members within this symbol.
     /// </summary>
     public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();

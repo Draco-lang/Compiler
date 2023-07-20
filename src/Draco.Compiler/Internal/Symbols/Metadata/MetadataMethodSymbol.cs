@@ -48,12 +48,23 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override Api.Semantics.Visibility Visibility => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
-    public override string Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"M:{this.MetadataFullName}{this.parametersJoined}"));
+    public override string Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"M:{this.DocumentationFullName}"));
     private string? documentation;
 
-    private string parametersJoined => this.Parameters.Length == 0
-        ? string.Empty
-        : $"({string.Join(", ", this.Parameters.Select(x => x.Type.MetadataFullName))})";
+    public override string DocumentationFullName
+    {
+        get
+        {
+            string parametersJoined = this.Parameters.Length == 0
+                ? string.Empty
+                : $"({string.Join(",", this.Parameters.Select(x => x.Type.DocumentationFullName))})";
+
+            var generics = this.GenericParameters.Length == 0
+                ? string.Empty
+                : $"``{this.GenericParameters.Length}";
+            return base.DocumentationFullName + generics + parametersJoined;
+        }
+    }
 
     public override Symbol ContainingSymbol { get; }
 

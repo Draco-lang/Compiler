@@ -18,5 +18,5 @@ internal record class Documentation(ImmutableArray<DocumentationSection> Section
 internal sealed record class FunctionDocumentation(ImmutableArray<DocumentationSection> Sections) : Documentation(Sections)
 {
     public DocumentationSection? Return => this.Sections.FirstOrDefault(x => x.Name.ToLower() == "return");
-    public DocumentationSection? Parameters => this.Sections.OfType<ParametersDocumentationSection>().FirstOrDefault();
+    public ParametersDocumentationSection? Parameters => this.Sections.OfType<ParametersDocumentationSection>().FirstOrDefault();
 }

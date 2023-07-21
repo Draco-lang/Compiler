@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Internal.Documentation;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -25,6 +26,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
+
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation));
+    private SymbolDocumentation? documentation;
 
     public override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"T:{this.DocumentationFullName}"));
     private string? rawDocumentation;

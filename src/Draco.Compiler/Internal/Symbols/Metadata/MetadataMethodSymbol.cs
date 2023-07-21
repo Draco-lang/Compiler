@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
+using Draco.Compiler.Internal.Documentation;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -47,6 +48,9 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override bool IsVirtual => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Virtual);
     public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override Api.Semantics.Visibility Visibility => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation));
+    private SymbolDocumentation? documentation;
 
     public override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"M:{this.DocumentationFullName}"));
     private string? rawDocumentation;

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
@@ -9,6 +10,17 @@ namespace Draco.Compiler.Tests.Semantics;
 
 public sealed class DocumentationCommentsTests : SemanticTestsBase
 {
+    private static string CreateXmlDocComment(string originalXml)
+    {
+        var result = new StringBuilder();
+        originalXml = originalXml.ReplaceLineEndings("\n");
+        foreach (var line in originalXml.Split('\n'))
+        {
+            result.Append($"/// {line}{Environment.NewLine}");
+        }
+        return result.ToString();
+    }
+
     [Theory]
     [InlineData("This is doc comment")]
     [InlineData("""
@@ -251,8 +263,6 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var xmlStream = new MemoryStream();
 
         var testRef = CompileCSharpToMetadataRef($$"""
-            using System;
-
             public class TestClass
             {
                 /// {{docs}}
@@ -449,5 +459,67 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         Assert.Empty(semanticModel.Diagnostics);
         Assert.Equal(classDocs, typeSym.GenericDefinition?.RawDocumentation);
         Assert.Equal(methodDocs, methodSym.GenericDefinition?.RawDocumentation);
+    }
+
+    [Fact]
+    public void XmlDocumentationExtractorTest()
+    {
+        // func main() {
+        //   TestClass();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
+
+        var xmlDocs = """
+            <summary>
+            Documentation for TestMethod
+            </summary>
+            <param name="arg1">Documentation for arg1</param>
+            <param name="arg2">Documentation for arg2</param>
+            <returns>
+            The value 0
+            </returns>
+            """;
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            public class TestClass
+            {
+                {{CreateXmlDocComment(xmlDocs)}}
+                public int TestMethod(int arg1, string arg2) => 0; 
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: ImmutableArray.Create(testRef));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+
+        var mdDocs = """
+            # summary
+            Documentation for TestMethod
+            # parameters
+            - [arg1](arg1): Documentation for arg1
+            - [arg2](arg2): Documentation for arg2
+            # returns
+            The value 0
+            """;
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(xmlDocs, methodSym.Documentation.ToXml(), ignoreLineEndingDifferences: true);
+        Assert.Equal(mdDocs, methodSym.Documentation.ToMarkdown(), ignoreLineEndingDifferences: true);
     }
 }

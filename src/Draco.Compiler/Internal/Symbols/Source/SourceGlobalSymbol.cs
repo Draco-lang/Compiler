@@ -55,7 +55,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         }
     }
 
-    public override string Documentation => this.DeclaringSyntax.Documentation;
+    public override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
     // IMPORTANT: flag is type, needs to be written last
     // NOTE: We check the TYPE here, as value is nullable

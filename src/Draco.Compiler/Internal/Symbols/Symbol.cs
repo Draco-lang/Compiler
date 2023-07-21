@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Utilities;
@@ -128,9 +129,14 @@ internal abstract partial class Symbol
     public virtual IEnumerable<Symbol> InstanceMembers => this.Members.Where(x => x is IMemberSymbol mem && !mem.IsStatic);
 
     /// <summary>
-    /// Documentation attached to this symbol.
+    /// The raw documentation attached to this symbol.
     /// </summary>
-    public virtual string Documentation => string.Empty;
+    public virtual string RawDocumentation => string.Empty;
+
+    /// <summary>
+    /// The structured documentation attached to this symbol.
+    /// </summary>
+    public virtual SymbolDocumentation Documentation => SymbolDocumentation.Empty;
 
     /// <summary>
     /// The visibility of this symbol.

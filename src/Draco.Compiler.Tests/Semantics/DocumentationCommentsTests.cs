@@ -39,7 +39,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, funcSym.Documentation);
+        Assert.Equal(docComment, funcSym.RawDocumentation);
     }
 
     [Theory]
@@ -71,7 +71,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, xSym.Documentation);
+        Assert.Equal(docComment, xSym.RawDocumentation);
     }
 
     [Theory]
@@ -107,7 +107,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(string.Empty, labelSym.Documentation);
+        Assert.Equal(string.Empty, labelSym.RawDocumentation);
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, typeSym.Documentation);
+        Assert.Equal(docs, typeSym.RawDocumentation);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, nestedTypeSym.Documentation);
+        Assert.Equal(docs, nestedTypeSym.RawDocumentation);
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, typeSym.Documentation);
+        Assert.Equal(docs, typeSym.RawDocumentation);
     }
 
     [Fact]
@@ -273,7 +273,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, methodSym.Documentation);
+        Assert.Equal(docs, methodSym.RawDocumentation);
     }
 
     [Fact]
@@ -317,7 +317,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, methodSym.Documentation);
+        Assert.Equal(docs, methodSym.RawDocumentation);
     }
 
     [Fact]
@@ -359,7 +359,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, fieldSym.Documentation);
+        Assert.Equal(docs, fieldSym.RawDocumentation);
     }
 
     [Fact]
@@ -401,7 +401,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, propertySym.Documentation);
+        Assert.Equal(docs, propertySym.RawDocumentation);
     }
 
     [Fact]
@@ -447,7 +447,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(classDocs, typeSym.GenericDefinition?.Documentation);
-        Assert.Equal(methodDocs, methodSym.GenericDefinition?.Documentation);
+        Assert.Equal(classDocs, typeSym.GenericDefinition?.RawDocumentation);
+        Assert.Equal(methodDocs, methodSym.GenericDefinition?.RawDocumentation);
     }
 }

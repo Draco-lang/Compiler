@@ -176,7 +176,7 @@ internal abstract class SymbolBase : ISymbol
     public bool IsError => this.Symbol.IsError;
     public bool IsSpecialName => this.Symbol.IsSpecialName;
     public Location? Definition => this.Symbol.DeclaringSyntax?.Location;
-    public string Documentation => this.Symbol.Documentation;
+    public string Documentation => this.Symbol.RawDocumentation;
     public IEnumerable<ISymbol> Members => this.Symbol.Members.Select(x => x.ToApiSymbol());
 
     public SymbolBase(Symbol symbol)

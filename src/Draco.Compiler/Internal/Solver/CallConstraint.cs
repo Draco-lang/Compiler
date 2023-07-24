@@ -34,11 +34,9 @@ internal sealed class CallConstraint : Constraint<Unit>
     public TypeSymbol ReturnType { get; }
 
     public CallConstraint(
-        ConstraintSolver solver,
         TypeSymbol calledType,
         ImmutableArray<object> arguments,
         TypeSymbol returnType)
-        : base(solver)
     {
         this.CalledType = calledType;
         this.Arguments = arguments;

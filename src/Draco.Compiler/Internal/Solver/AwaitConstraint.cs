@@ -20,11 +20,7 @@ internal sealed class AwaitConstraint<TResult> : Constraint<TResult>
     /// </summary>
     public Func<TResult> Map { get; }
 
-    public AwaitConstraint(
-        ConstraintSolver solver,
-        Func<bool> awaited,
-        Func<TResult> map)
-        : base(solver)
+    public AwaitConstraint(Func<bool> awaited, Func<TResult> map)
     {
         this.Awaited = awaited;
         this.Map = map;

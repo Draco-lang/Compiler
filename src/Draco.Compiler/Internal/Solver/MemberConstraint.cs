@@ -29,8 +29,7 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
     /// </summary>
     public TypeSymbol MemberType { get; }
 
-    public MemberConstraint(ConstraintSolver solver, TypeSymbol accessed, string memberName, TypeSymbol memberType)
-        : base(solver)
+    public MemberConstraint(TypeSymbol accessed, string memberName, TypeSymbol memberType)
     {
         this.Accessed = accessed;
         this.MemberName = memberName;

@@ -23,24 +23,4 @@ internal sealed class SameTypeConstraint : Constraint<Unit>
     }
 
     public override string ToString() => $"SameType({string.Join(", ", this.Types)})";
-
-    public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
-    {
-        for (var i = 1; i < this.Types.Length; ++i)
-        {
-            if (!this.Solver.Unify(this.Types[0], this.Types[i]))
-            {
-                // Type-mismatch
-                this.Diagnostic
-                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                    .WithFormatArgs(this.Types[0].Substitution, this.Types[i].Substitution);
-                this.Promise.Fail(default, diagnostics);
-                yield return SolveState.Solved;
-            }
-        }
-
-        // Successful unification
-        this.Promise.Resolve(default);
-        yield return SolveState.Solved;
-    }
 }

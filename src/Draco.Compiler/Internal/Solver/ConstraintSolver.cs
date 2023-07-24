@@ -18,7 +18,7 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// Solves sets of <see cref="IConstraint"/>s for the type-system.
 /// </summary>
-internal sealed class ConstraintSolver
+internal sealed partial class ConstraintSolver
 {
     /// <summary>
     /// The context being inferred.

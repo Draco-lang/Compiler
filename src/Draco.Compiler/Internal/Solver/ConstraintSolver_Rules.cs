@@ -45,6 +45,20 @@ internal sealed partial class ConstraintSolver
             }
         }
 
+        // TODO: Same as for overload
+        if (this.TryDequeue<CallConstraint>(out var call, c => !c.CalledType.Substitution.IsTypeVariable))
+        {
+            this.HandleRule(call, diagnostics);
+            if (call.Promise.IsResolved)
+            {
+                return true;
+            }
+            else
+            {
+                this.Add(call);
+            }
+        }
+
         return false;
     }
 

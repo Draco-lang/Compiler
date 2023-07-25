@@ -79,4 +79,19 @@ internal sealed partial class ConstraintSolver
             constraint.Promise.Resolve(overload);
         }
     }
+
+    private void HandleRule<T>(AwaitConstraint<T> constraint)
+    {
+        // Wait until resolved
+        if (!constraint.Awaited())
+        {
+            throw new InvalidOperationException("rule handling for await constraint called prematurely");
+        }
+
+        // We can resolve the awaited promise
+        var mappedValue = constraint.Map();
+
+        // Resolve this promise
+        constraint.Promise.Resolve(mappedValue);
+    }
 }

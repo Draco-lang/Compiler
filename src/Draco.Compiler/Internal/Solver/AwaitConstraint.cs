@@ -27,17 +27,4 @@ internal sealed class AwaitConstraint<TResult> : Constraint<TResult>
     }
 
     public override string ToString() => $"Await({this.Awaited})";
-
-    public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
-    {
-        // Wait until resolved
-        while (!this.Awaited()) yield return SolveState.Stale;
-
-        // We can resolve the awaited promise
-        var mappedValue = this.Map();
-
-        // Resolve this promise
-        this.Promise.Resolve(mappedValue);
-        yield return SolveState.Solved;
-    }
 }

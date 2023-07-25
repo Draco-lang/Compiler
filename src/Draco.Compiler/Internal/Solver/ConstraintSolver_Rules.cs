@@ -18,13 +18,26 @@ internal sealed partial class ConstraintSolver
     private bool ApplyRules()
     {
         // TODO
-        throw new NotImplementedException();
+
+        return false;
     }
 
     private void FailRemainingRules()
     {
-        // TODO
-        throw new NotImplementedException();
+        foreach (var constraint in this.constraints) this.FailRemainingRule(constraint);
+    }
+
+    private void FailRemainingRule(IConstraint constraint)
+    {
+        switch (constraint)
+        {
+        case CallConstraint call:
+            this.FailRule(call);
+            break;
+        case OverloadConstraint overload:
+            this.FailRule(overload);
+            break;
+        }
     }
 
     private void HandleRule(SameTypeConstraint constraint, DiagnosticBag diagnostics)

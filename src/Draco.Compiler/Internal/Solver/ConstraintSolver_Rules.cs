@@ -15,9 +15,13 @@ namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
-    private bool ApplyRules()
+    private bool ApplyRules(DiagnosticBag diagnostics)
     {
-        // TODO
+        if (this.TryDequeue<SameTypeConstraint>(out var sameType))
+        {
+            this.HandleRule(sameType, diagnostics);
+            return true;
+        }
 
         return false;
     }

@@ -56,7 +56,7 @@ internal sealed partial class ConstraintSolver
         while (this.constraints.Count > 0)
         {
             // Apply rules once
-            if (!this.ApplyRules()) break;
+            if (!this.ApplyRules(diagnostics)) break;
         }
 
         // Check for uninferred locals

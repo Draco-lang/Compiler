@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,24 @@ internal sealed partial class ConstraintSolver
     /// <param name="constraint">The constraint to add.</param>
     public void Add(IConstraint constraint) =>
         this.constraints.Add(constraint);
+
+    // TODO: Doc
+    public bool TryDequeue<TConstraint>(
+        [MaybeNullWhen(false)] out TConstraint constraint,
+        Func<TConstraint, bool>? filter = null)
+        where TConstraint : IConstraint
+    {
+        filter ??= _ => true;
+        constraint = this.constraints
+            .OfType<TConstraint>()
+            .FirstOrDefault(filter);
+        if (constraint is not null)
+        {
+            this.constraints.Remove(constraint);
+            return true;
+        }
+        return false;
+    }
 
     /// <summary>
     /// Adds a same-type constraint to the solver.

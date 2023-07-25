@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -128,7 +129,7 @@ internal partial class Binder
                     template: SymbolResolutionErrors.NoSettableIndexerInType,
                     location: index.Location,
                     formatArgs: receiverType));
-                constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
+                constraints.Unify(returnType, IntrinsicSymbols.ErrorType);
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }
             var overloaded = constraints.Overload(

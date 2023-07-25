@@ -146,7 +146,7 @@ internal sealed partial class ConstraintSolver
                 .WithFormatArgs(constraint.MemberName, accessed);
             // We still provide a single error symbol
             var errorSymbol = new UndefinedMemberSymbol();
-            this.Unify(constraint.MemberType, new ErrorTypeSymbol("<error>"));
+            this.Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
             constraint.Promise.Fail(errorSymbol, diagnostics);
             return;
         }
@@ -164,7 +164,7 @@ internal sealed partial class ConstraintSolver
             // All must be functions, otherwise we have bigger problems
             // TODO: Can this assertion fail? Like in a faulty module decl?
             Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
-            this.Unify(constraint.MemberType, new ErrorTypeSymbol("<error>"));
+            this.Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
             var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
             constraint.Promise.Resolve(overload);
         }

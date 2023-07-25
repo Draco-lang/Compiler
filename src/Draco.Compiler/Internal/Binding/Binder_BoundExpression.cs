@@ -346,7 +346,7 @@ internal partial class Binder
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var members = mem.Member.Result;
-        if (members.Length == 1 && members[0] is ITypedSymbol member)
+        if (members is ITypedSymbol member)
         {
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
             if (member is PropertySymbol prop)
@@ -370,7 +370,7 @@ internal partial class Binder
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
                 location: mem.Syntax?.Location,
-                formatArgs: members[0].Name));
+                formatArgs: members.Name));
             return new BoundUnexpectedExpression(mem.Syntax);
         }
     }

@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols;
 using System.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -26,6 +27,24 @@ internal sealed partial class ConstraintSolver
         if (this.TryDequeue<MemberConstraint>(out var member, m => !m.Accessed.Substitution.IsTypeVariable))
         {
             this.HandleRule(member, diagnostics);
+            return true;
+        }
+
+        if (this.TryDequeue<AwaitConstraint<UntypedExpression>>(out var wait, w => w.Awaited()))
+        {
+            this.HandleRule(wait);
+            return true;
+        }
+
+        if (this.TryDequeue<AwaitConstraint<Symbol>>(out var wait2, w => w.Awaited()))
+        {
+            this.HandleRule(wait2);
+            return true;
+        }
+
+        if (this.TryDequeue<AwaitConstraint<TypeSymbol>>(out var wait3, w => w.Awaited()))
+        {
+            this.HandleRule(wait3);
             return true;
         }
 

@@ -48,6 +48,12 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
+        if (this.TryDequeue<AwaitConstraint<IConstraintPromise<FunctionSymbol>>>(out var wait4, w => w.Awaited()))
+        {
+            this.HandleRule(wait4);
+            return true;
+        }
+
         // TODO: With constraints that can be put back, ORDER MATTERS
         // If we failed to resolve it and we needed to put it back, next time we want to try another one
         // Otherwise, we might never try the one that we could resolve and would allow us to proceed

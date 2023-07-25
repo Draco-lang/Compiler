@@ -31,7 +31,7 @@ internal sealed partial class ConstraintSolver
     public string ContextName { get; }
 
     // The raw constraints and their states
-    private readonly List<KeyValuePair<IConstraint, IEnumerator<SolveState>>> constraints = new();
+    private readonly List<IConstraint> constraints = new();
     // The constraints that were marked for removal
     private readonly List<IConstraint> constraintsToRemove = new();
     // The constraints that were queued for insertion

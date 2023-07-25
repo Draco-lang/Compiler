@@ -45,10 +45,4 @@ internal sealed class CallConstraint : Constraint<Unit>
 
     public override string ToString() =>
         $"Call(function: {this.CalledType}, args: [{string.Join(", ", this.Arguments)}]) => {this.ReturnType}";
-
-    public override void FailSilently()
-    {
-        this.Unify(this.ReturnType, IntrinsicSymbols.ErrorType);
-        this.Promise.Fail(default, null);
-    }
 }

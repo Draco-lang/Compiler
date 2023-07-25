@@ -193,8 +193,7 @@ internal sealed partial class ConstraintSolver
         if (called.IsError)
         {
             // Don't propagate errors
-            this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
-            constraint.Promise.Fail(default, null);
+            this.FailRule(constraint);
             return;
         }
 
@@ -254,5 +253,18 @@ internal sealed partial class ConstraintSolver
         {
             this.UnifyParameterWithArgument(param.Type, arg);
         }
+    }
+
+    private void FailRule(OverloadConstraint constraint)
+    {
+        this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+        var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
+        constraint.Promise.Fail(errorSymbol, null);
+    }
+
+    private void FailRule(CallConstraint constraint)
+    {
+        this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+        constraint.Promise.Fail(default, null);
     }
 }

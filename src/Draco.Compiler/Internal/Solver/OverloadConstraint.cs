@@ -48,11 +48,4 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
 
     public override string ToString() =>
         $"Overload(candidates: [{string.Join(", ", this.Candidates)}], args: [{string.Join(", ", this.Arguments)}]) => {this.ReturnType}";
-
-    public override void FailSilently()
-    {
-        this.Unify(this.ReturnType, IntrinsicSymbols.ErrorType);
-        var errorSymbol = new NoOverloadFunctionSymbol(this.Arguments.Length);
-        this.Promise.Fail(errorSymbol, null);
-    }
 }

@@ -583,17 +583,16 @@ internal partial class Binder
             {
                 var members = member.Member.Result;
                 // Search for all function members with the same number of generic parameters
-                var withSameNoParams = members
-                    .OfType<FunctionSymbol>()
+                var withSameNoParams = (members as OverloadSymbol)?.Functions
                     .Where(f => f.GenericParameters.Length == args.Length)
-                    .ToImmutableArray();
+                    .ToImmutableArray() ?? ImmutableArray<FunctionSymbol>.Empty;
                 if (withSameNoParams.Length == 0)
                 {
                     // No generic functions with this number of parameters
                     diagnostics.Add(Diagnostic.Create(
                         template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
                         location: syntax.Location,
-                        formatArgs: new object[] { members[0].Name, args.Length }));
+                        formatArgs: new object[] { members.Name, args.Length }));
 
                     // Return a sentinel
                     // NOTE: Is this the right one to return?
@@ -605,11 +604,15 @@ internal partial class Binder
                     // Instantiate each possibility
                     var instantiatedFuncs = withSameNoParams
                         .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
-                        .Cast<Symbol>()
                         .ToImmutableArray();
+                    var overload = new OverloadSymbol(instantiatedFuncs);
 
                     // Wrap them back up in a member expression
-                    return new UntypedMemberExpression(syntax, member.Accessed, ConstraintPromise.FromResult(instantiatedFuncs), member.Type);
+                    return new UntypedMemberExpression(
+                        syntax,
+                        member.Accessed,
+                        ConstraintPromise.FromResult<Symbol>(overload),
+                        member.Type);
                 }
             });
             // NOTE: The generic function itself has no concrete type

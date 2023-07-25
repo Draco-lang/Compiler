@@ -272,7 +272,7 @@ internal partial class Binder
                     : typedRight,
                 indices);
         }
-        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
+        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result is PropertySymbol pr)
         {
             var receiver = this.TypeExpression(mem.Accessed, constraints, diagnostics);
             var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);

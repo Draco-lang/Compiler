@@ -31,7 +31,7 @@ internal sealed partial class ConstraintSolver
     public string ContextName { get; }
 
     // The raw constraints
-    private readonly List<IConstraint> constraints = new();
+    private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = new();
     // Type variable substitutions

@@ -583,9 +583,12 @@ internal partial class Binder
             {
                 var members = member.Member.Result;
                 // Search for all function members with the same number of generic parameters
-                var withSameNoParams = (members as OverloadSymbol)?.Functions
-                    .Where(f => f.GenericParameters.Length == args.Length)
-                    .ToImmutableArray() ?? ImmutableArray<FunctionSymbol>.Empty;
+                var withSameNoParams = members switch
+                {
+                    OverloadSymbol o => o.Functions,
+                    FunctionSymbol f => ImmutableArray.Create(f),
+                    _ => ImmutableArray<FunctionSymbol>.Empty,
+                };
                 if (withSameNoParams.Length == 0)
                 {
                     // No generic functions with this number of parameters

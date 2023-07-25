@@ -15,6 +15,18 @@ namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
+    private bool ApplyRules()
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    private void FailRemainingRules()
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
     private void HandleRule(SameTypeConstraint constraint, DiagnosticBag diagnostics)
     {
         for (var i = 1; i < constraint.Types.Length; ++i)

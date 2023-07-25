@@ -12,6 +12,13 @@ namespace Draco.Compiler.Internal.Solver;
 internal sealed partial class ConstraintSolver
 {
     /// <summary>
+    /// Adds the given constraint to the solver.
+    /// </summary>
+    /// <param name="constraint">The constraint to add.</param>
+    public void Add(IConstraint constraint) =>
+        this.constraints.Add(constraint);
+
+    /// <summary>
     /// Adds a same-type constraint to the solver.
     /// </summary>
     /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
@@ -150,18 +157,4 @@ internal sealed partial class ConstraintSolver
             return await.Promise;
         }
     }
-
-    /// <summary>
-    /// Adds the given constraint to the solver.
-    /// </summary>
-    /// <param name="constraint">The constraint to add.</param>
-    public void Add(IConstraint constraint) =>
-        this.constraintsToAdd.Add(constraint);
-
-    /// <summary>
-    /// Removes the given constraint from the solver.
-    /// </summary>
-    /// <param name="constraint">The constraint to remove.</param>
-    public void Remove(IConstraint constraint) =>
-        this.constraintsToRemove.Add(constraint);
 }

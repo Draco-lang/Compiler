@@ -180,4 +180,79 @@ internal sealed partial class ConstraintSolver
             constraint.Promise.Fail(errorSymbol, diagnostics);
         }
     }
+
+    private void HandleRule(CallConstraint constraint, DiagnosticBag diagnostics)
+    {
+        var called = constraint.CalledType.Substitution;
+        // We can't advance on type variables
+        if (called.IsTypeVariable)
+        {
+            throw new InvalidOperationException("rule handling for call constraint called prematurely");
+        }
+
+        if (called.IsError)
+        {
+            // Don't propagate errors
+            this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            constraint.Promise.Fail(default, null);
+            return;
+        }
+
+        // We can now check if it's a function
+        if (called is not FunctionTypeSymbol functionType)
+        {
+            // Error
+            this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.CallNonFunction)
+                .WithFormatArgs(called);
+            constraint.Promise.Fail(default, diagnostics);
+            return;
+        }
+
+        // It's a function
+        // We can merge the return type
+        this.Unify(constraint.ReturnType, functionType.ReturnType);
+
+        // Check if it has the same number of args
+        if (functionType.Parameters.Length != constraint.Arguments.Length)
+        {
+            // Error
+            this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(
+                    functionType,
+                    MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType));
+            constraint.Promise.Fail(default, diagnostics);
+            return;
+        }
+
+        // Start scoring args
+        var score = new CallScore(functionType.Parameters.Length);
+        while (true)
+        {
+            var changed = AdjustScore(functionType, constraint.Arguments, score);
+            if (score.HasZero)
+            {
+                // Error
+                this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+                constraint.Diagnostic
+                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                    .WithFormatArgs(
+                        functionType,
+                        MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType));
+                constraint.Promise.Fail(default, diagnostics);
+                return;
+            }
+            if (score.IsWellDefined) break;
+            if (!changed) return;
+        }
+
+        // We are done
+        foreach (var (param, arg) in functionType.Parameters.Zip(constraint.Arguments))
+        {
+            this.UnifyParameterWithArgument(param.Type, arg);
+        }
+    }
 }

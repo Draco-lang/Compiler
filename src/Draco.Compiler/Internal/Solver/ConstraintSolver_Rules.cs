@@ -23,6 +23,28 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
+        if (this.TryDequeue<MemberConstraint>(out var member, m => !m.Accessed.Substitution.IsTypeVariable))
+        {
+            this.HandleRule(member, diagnostics);
+            return true;
+        }
+
+        // TODO: With constraints that can be put back, ORDER MATTERS
+        // If we failed to resolve it and we needed to put it back, next time we want to try another one
+        // Otherwise, we might never try the one that we could resolve and would allow us to proceed
+        if (this.TryDequeue<OverloadConstraint>(out var overload))
+        {
+            this.HandleRule(overload, diagnostics);
+            if (overload.Promise.IsResolved)
+            {
+                return true;
+            }
+            else
+            {
+                this.Add(overload);
+            }
+        }
+
         return false;
     }
 

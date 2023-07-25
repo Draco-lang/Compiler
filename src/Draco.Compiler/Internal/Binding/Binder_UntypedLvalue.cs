@@ -134,8 +134,8 @@ internal partial class Binder
             var overloaded = constraints.Overload(
                 indexers,
                 args.Append(returnType as object).ToImmutableArray(),
-                out var gotReturnType);
-            constraints.Unify(returnType, gotReturnType);
+                // NOTE: We don't care about the return type, this is an lvalue
+                out _);
             overloaded.ConfigureDiagnostic(diag => diag
                 .WithLocation(index.Location));
             return overloaded;

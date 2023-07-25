@@ -476,14 +476,10 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
         var xmlDocs = """
-            <summary>
-            Documentation for TestMethod
-            </summary>
-            <param name="arg1">Documentation for arg1</param>
-            <param name="arg2">Documentation for arg2</param>
-            <returns>
-            The value 0
-            </returns>
+              <summary>Documentation for TestMethod</summary>
+              <param name="arg1">Documentation for arg1</param>
+              <param name="arg2">Documentation for arg2</param>
+              <returns>The value 0</returns>
             """;
 
         var xmlStream = new MemoryStream();
@@ -519,7 +515,11 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xmlDocs, methodSym.Documentation.ToXml(), ignoreLineEndingDifferences: true);
+        Assert.Equal($"""
+            <documentation>
+            {xmlDocs}
+            </documentation>
+            """, methodSym.Documentation.ToXml().ToString(), ignoreLineEndingDifferences: true);
         Assert.Equal(mdDocs, methodSym.Documentation.ToMarkdown(), ignoreLineEndingDifferences: true);
     }
 }

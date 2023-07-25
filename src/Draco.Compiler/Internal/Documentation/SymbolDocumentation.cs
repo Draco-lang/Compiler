@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace Draco.Compiler.Internal.Documentation;
 
@@ -13,8 +14,8 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     public string ToMarkdown() =>
         string.Join(Environment.NewLine, this.Sections.Select(x => x.ToMarkdown()));
 
-    public string ToXml() =>
-        string.Join(Environment.NewLine, this.Sections.Select(x => x.ToXml()));
+    public XElement ToXml() => new XElement("documentation",
+        this.Sections.Select(x => x.ToXml()));
 }
 
 internal sealed record class FunctionDocumentation(ImmutableArray<DocumentationSection> Sections) : SymbolDocumentation(Sections)

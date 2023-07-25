@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace Draco.Compiler.Internal.Documentation;
 
@@ -13,11 +14,11 @@ internal record class DocumentationSection(string Name, ImmutableArray<Documenta
         {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}
         """;
 
-    public virtual string ToXml() => $"""
-        <{this.loweredName}>
-        {string.Join("", this.Elements.Select(x => x.ToXml()))}
-        </{this.loweredName}>
-        """;
+    public virtual object ToXml() => new XElement(this.loweredName, this.Elements.Select(x => x.ToXml())); //$"""
+    //    <{this.loweredName}>
+    //    {string.Join("", this.Elements.Select(x => x.ToXml()))}
+    //    </{this.loweredName}>
+    //    """;
 }
 
 internal record class ParametersDocumentationSection(ImmutableArray<ParameterDocumentationElement> Parameters) : DocumentationSection("Parameters", Parameters.Cast<DocumentationElement>().ToImmutableArray())
@@ -28,6 +29,5 @@ internal record class ParametersDocumentationSection(ImmutableArray<ParameterDoc
         {string.Join(Environment.NewLine, this.Elements.Select(x => x.ToMarkdown()))}
         """;
 
-    public override string ToXml() =>
-        string.Join(Environment.NewLine, this.Elements.Select(x => x.ToXml()));
+    public override object ToXml() => this.Elements.Select(x => x.ToXml());
 }

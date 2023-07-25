@@ -94,4 +94,90 @@ internal sealed partial class ConstraintSolver
         // Resolve this promise
         constraint.Promise.Resolve(mappedValue);
     }
+
+    private void HandleRule(OverloadConstraint constraint, DiagnosticBag diagnostics)
+    {
+        var functionName = constraint.Candidates[0].Name;
+        var functionsWithMatchingArgc = constraint.Candidates
+            .Where(f => MatchesParameterCount(f, constraint.Arguments.Length))
+            .ToList();
+        var maxArgc = functionsWithMatchingArgc
+            .Select(f => f.Parameters.Length)
+            .Append(0)
+            .Max();
+        var candidates = functionsWithMatchingArgc
+            .Select(f => new OverloadCandidate(f, new(maxArgc)))
+            .ToList();
+
+        while (true)
+        {
+            var changed = RefineOverloadScores(candidates, constraint.Arguments, out var wellDefined);
+            if (wellDefined) break;
+            if (candidates.Count <= 1) break;
+            if (!changed) return;
+        }
+
+        // We have all candidates well-defined, find the absolute dominator
+        if (candidates.Count == 0)
+        {
+            this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            // Best-effort shape approximation
+            var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
+            constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
+                .WithFormatArgs(functionName);
+            constraint.Promise.Fail(errorSymbol, diagnostics);
+            return;
+        }
+
+        // We have one or more, find the max dominator
+        var dominatingCandidates = GetDominatingCandidates(candidates);
+        if (dominatingCandidates.Length == 1)
+        {
+            // Resolved fine, choose the symbol, which might generic-instantiate it
+            var chosen = this.ChooseSymbol(dominatingCandidates[0]);
+
+            // Inference
+            if (chosen.IsVariadic)
+            {
+                if (!BinderFacts.TryGetVariadicElementType(chosen.Parameters[^1].Type, out var elementType))
+                {
+                    // Should not happen
+                    throw new InvalidOperationException();
+                }
+                var nonVariadicPairs = chosen.Parameters
+                    .SkipLast(1)
+                    .Zip(constraint.Arguments);
+                var variadicPairs = constraint.Arguments
+                    .Skip(chosen.Parameters.Length - 1)
+                    .Select(a => (ParameterType: elementType, ArgumentType: a));
+                // Non-variadic part
+                foreach (var (param, arg) in nonVariadicPairs) this.UnifyParameterWithArgument(param.Type, arg);
+                // Variadic part
+                foreach (var (paramType, arg) in variadicPairs) this.UnifyParameterWithArgument(paramType, arg);
+            }
+            else
+            {
+                foreach (var (param, arg) in chosen.Parameters.Zip(constraint.Arguments))
+                {
+                    this.UnifyParameterWithArgument(param.Type, arg);
+                }
+            }
+            // NOTE: Unification won't always be correct, especially not when subtyping arises
+            // In all cases, return type is simple
+            this.Unify(constraint.ReturnType, chosen.ReturnType);
+            // Resolve promise
+            constraint.Promise.Resolve(chosen);
+        }
+        else
+        {
+            // Best-effort shape approximation
+            this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
+            constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
+                .WithFormatArgs(functionName, string.Join(", ", dominatingCandidates));
+            constraint.Promise.Fail(errorSymbol, diagnostics);
+        }
+    }
 }

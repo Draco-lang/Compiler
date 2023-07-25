@@ -19,7 +19,7 @@ internal sealed partial class ConstraintSolver
     /// <returns>The promise for the constraint added.</returns>
     public IConstraintPromise<Unit> SameType(TypeSymbol first, TypeSymbol second)
     {
-        var constraint = new SameTypeConstraint(this, ImmutableArray.Create(first, second));
+        var constraint = new SameTypeConstraint(ImmutableArray.Create(first, second));
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -43,7 +43,7 @@ internal sealed partial class ConstraintSolver
     public IConstraintPromise<Unit> CommonType(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
     {
         // TODO: Hack, this is temporary until we have other constraints
-        var constraint = new SameTypeConstraint(this, alternativeTypes.Prepend(commonType).ToImmutableArray());
+        var constraint = new SameTypeConstraint(alternativeTypes.Prepend(commonType).ToImmutableArray());
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -55,10 +55,10 @@ internal sealed partial class ConstraintSolver
     /// <param name="memberName">The accessed member name.</param>
     /// <param name="memberType">The type of the member.</param>
     /// <returns>The promise of the accessed member symbol.</returns>
-    public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName, out TypeSymbol memberType)
+    public IConstraintPromise<Symbol> Member(TypeSymbol accessedType, string memberName, out TypeSymbol memberType)
     {
         memberType = this.AllocateTypeVariable();
-        var constraint = new MemberConstraint(this, accessedType, memberName, memberType);
+        var constraint = new MemberConstraint(accessedType, memberName, memberType);
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -76,7 +76,7 @@ internal sealed partial class ConstraintSolver
         out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new CallConstraint(this, calledType, args, returnType);
+        var constraint = new CallConstraint(calledType, args, returnType);
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -94,7 +94,7 @@ internal sealed partial class ConstraintSolver
         out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new OverloadConstraint(this, functions, args, returnType);
+        var constraint = new OverloadConstraint(functions, args, returnType);
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -119,7 +119,7 @@ internal sealed partial class ConstraintSolver
         }
         else
         {
-            var constraint = new AwaitConstraint<TResult>(this, () => awaited.IsResolved, map);
+            var constraint = new AwaitConstraint<TResult>(() => awaited.IsResolved, map);
             this.Add(constraint);
             return constraint.Promise;
         }
@@ -140,10 +140,10 @@ internal sealed partial class ConstraintSolver
         }
         else
         {
-            var constraint = new AwaitConstraint<TResult>(this, () => !original.Substitution.IsTypeVariable, map);
+            var constraint = new AwaitConstraint<TResult>(() => !original.Substitution.IsTypeVariable, map);
             this.Add(constraint);
 
-            var await = new AwaitConstraint<TResult>(this,
+            var await = new AwaitConstraint<TResult>(
                 () => constraint.Promise.IsResolved && constraint.Promise.IsResolved,
                 () => constraint.Promise.Result);
             this.Add(await);

@@ -274,15 +274,11 @@ internal partial class Binder
             var promise = constraints.Await(mem.Member, UntypedExpression () =>
             {
                 var members = mem.Member.Result;
-                if (members.All(m => m is FunctionSymbol))
+                if (members is OverloadSymbol overload)
                 {
                     // Overloaded member call
-                    var funcMembers = members
-                        .Cast<FunctionSymbol>()
-                        .ToImmutableArray();
-
                     var symbolPromise = constraints.Overload(
-                        funcMembers,
+                        overload.Functions,
                         args.Cast<object>().ToImmutableArray(),
                         out var resultType);
                     symbolPromise.ConfigureDiagnostic(diag => diag
@@ -291,7 +287,7 @@ internal partial class Binder
                     constraints.Unify(resultType, promisedType);
                     return new UntypedCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
                 }
-                else if (members.Length == 1)
+                else
                 {
                     var callPromise = constraints.Call(
                         method.TypeRequired,
@@ -302,13 +298,6 @@ internal partial class Binder
 
                     constraints.Unify(resultType, promisedType);
                     return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
-                }
-                else
-                {
-                    // NOTE: Can this happen?
-                    // Maybe it can on cascaded errors, like duplicate member definitions
-                    // TODO: Verify
-                    throw new NotImplementedException();
                 }
             });
             return new UntypedDelayedExpression(syntax, promise, promisedType);

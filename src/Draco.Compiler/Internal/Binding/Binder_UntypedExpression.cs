@@ -274,11 +274,17 @@ internal partial class Binder
             var promise = constraints.Await(mem.Member, UntypedExpression () =>
             {
                 var members = mem.Member.Result;
-                if (members is OverloadSymbol overload)
+                if (members is FunctionSymbol or OverloadSymbol)
                 {
                     // Overloaded member call
+                    var functions = members switch
+                    {
+                        OverloadSymbol o => o.Functions,
+                        FunctionSymbol f => ImmutableArray.Create(f),
+                        _ => throw new InvalidOperationException(),
+                    };
                     var symbolPromise = constraints.Overload(
-                        overload.Functions,
+                        functions,
                         args.Cast<object>().ToImmutableArray(),
                         out var resultType);
                     symbolPromise.ConfigureDiagnostic(diag => diag

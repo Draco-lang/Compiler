@@ -50,9 +50,10 @@ internal static class XmlDocumentationExtractor
 
     private static DocumentationElement ExtractElement(XmlNode node) => node.LocalName switch
     {
-        "#text" => new RawTextDocumentationElement(node.InnerText.Trim()),
+        "#text" => new RawTextDocumentationElement(node.InnerText.TrimStart()),
         "see" => new SeeDocumentationElement(node.Attributes?["cref"]?.Value ?? string.Empty),
-        _ => new RawTextDocumentationElement(node.InnerText.Trim()),
+        "paramref" => new ParamrefDocumentationElement(node.Attributes?["name"]?.Value ?? string.Empty),
+        _ => new RawTextDocumentationElement(node.InnerText.TrimStart()),
     };
 
     private static ParameterDocumentationElement ExtractParameter(XmlNode node)

@@ -476,10 +476,10 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
         var xmlDocs = """
-              <summary>Documentation for TestMethod</summary>
+              <summary>Documentation for TestMethod, which is in <see cref="TestClass" /></summary>
               <param name="arg1">Documentation for arg1</param>
               <param name="arg2">Documentation for arg2</param>
-              <returns>The value 0</returns>
+              <returns><paramref name="arg1"/> added to <paramref name="arg2"/></returns>
             """;
 
         var xmlStream = new MemoryStream();
@@ -488,7 +488,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             public class TestClass
             {
                 {{CreateXmlDocComment(xmlDocs)}}
-                public int TestMethod(int arg1, string arg2) => 0; 
+                public int TestMethod(int arg1, int arg2) => arg1 + arg2; 
             }
             """, xmlStream).DocumentationFromStream(xmlStream);
 
@@ -505,12 +505,12 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var mdDocs = """
             # summary
-            Documentation for TestMethod
+            Documentation for TestMethod, which is in [TestClass](TestClass)
             # parameters
             - [arg1](arg1): Documentation for arg1
             - [arg2](arg2): Documentation for arg2
             # returns
-            The value 0
+            [arg1](arg1) added to [arg2](arg2)
             """;
 
         // Assert

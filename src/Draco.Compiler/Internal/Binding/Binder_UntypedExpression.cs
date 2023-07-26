@@ -274,15 +274,17 @@ internal partial class Binder
             var promise = constraints.Await(mem.Member, UntypedExpression () =>
             {
                 var members = mem.Member.Result;
-                if (members.All(m => m is FunctionSymbol))
+                if (members is FunctionSymbol or OverloadSymbol)
                 {
                     // Overloaded member call
-                    var funcMembers = members
-                        .Cast<FunctionSymbol>()
-                        .ToImmutableArray();
-
+                    var functions = members switch
+                    {
+                        OverloadSymbol o => o.Functions,
+                        FunctionSymbol f => ImmutableArray.Create(f),
+                        _ => throw new InvalidOperationException(),
+                    };
                     var symbolPromise = constraints.Overload(
-                        funcMembers,
+                        functions,
                         args.Cast<object>().ToImmutableArray(),
                         out var resultType);
                     symbolPromise.ConfigureDiagnostic(diag => diag
@@ -291,7 +293,7 @@ internal partial class Binder
                     constraints.Unify(resultType, promisedType);
                     return new UntypedCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
                 }
-                else if (members.Length == 1)
+                else
                 {
                     var callPromise = constraints.Call(
                         method.TypeRequired,
@@ -302,13 +304,6 @@ internal partial class Binder
 
                     constraints.Unify(resultType, promisedType);
                     return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
-                }
-                else
-                {
-                    // NOTE: Can this happen?
-                    // Maybe it can on cascaded errors, like duplicate member definitions
-                    // TODO: Verify
-                    throw new NotImplementedException();
                 }
             });
             return new UntypedDelayedExpression(syntax, promise, promisedType);
@@ -530,7 +525,7 @@ internal partial class Binder
                     template: SymbolResolutionErrors.NoGettableIndexerInType,
                     location: index.Location,
                     formatArgs: receiver.Type));
-                constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
+                constraints.Unify(returnType, IntrinsicSymbols.ErrorType);
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
             }
             var overloaded = constraints.Overload(
@@ -594,17 +589,19 @@ internal partial class Binder
             {
                 var members = member.Member.Result;
                 // Search for all function members with the same number of generic parameters
-                var withSameNoParams = members
-                    .OfType<FunctionSymbol>()
-                    .Where(f => f.GenericParameters.Length == args.Length)
-                    .ToImmutableArray();
+                var withSameNoParams = members switch
+                {
+                    OverloadSymbol o => o.Functions,
+                    FunctionSymbol f => ImmutableArray.Create(f),
+                    _ => ImmutableArray<FunctionSymbol>.Empty,
+                };
                 if (withSameNoParams.Length == 0)
                 {
                     // No generic functions with this number of parameters
                     diagnostics.Add(Diagnostic.Create(
                         template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
                         location: syntax.Location,
-                        formatArgs: new object[] { members[0].Name, args.Length }));
+                        formatArgs: new object[] { members.Name, args.Length }));
 
                     // Return a sentinel
                     // NOTE: Is this the right one to return?
@@ -616,11 +613,15 @@ internal partial class Binder
                     // Instantiate each possibility
                     var instantiatedFuncs = withSameNoParams
                         .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
-                        .Cast<Symbol>()
                         .ToImmutableArray();
+                    var overload = new OverloadSymbol(instantiatedFuncs);
 
                     // Wrap them back up in a member expression
-                    return new UntypedMemberExpression(syntax, member.Accessed, ConstraintPromise.FromResult(instantiatedFuncs), member.Type);
+                    return new UntypedMemberExpression(
+                        syntax,
+                        member.Accessed,
+                        ConstraintPromise.FromResult<Symbol>(overload),
+                        member.Type);
                 }
             });
             // NOTE: The generic function itself has no concrete type

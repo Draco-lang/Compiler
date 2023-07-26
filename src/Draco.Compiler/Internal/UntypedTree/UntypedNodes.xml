@@ -188,7 +188,7 @@
 
   <Node Name="UntypedMemberExpression" Base="UntypedExpression">
     <Field Name="Accessed" Type="UntypedExpression" />
-    <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
+    <Field Name="Member" Type="IConstraintPromise&lt;Symbol&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
@@ -245,7 +245,7 @@
 
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">
     <Field Name="Accessed" Type="UntypedExpression" />
-    <Field Name="Member" Type="IConstraintPromise&lt;ImmutableArray&lt;Symbol&gt;&gt;" />
+    <Field Name="Member" Type="IConstraintPromise&lt;Symbol&gt;" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 </Tree>

@@ -272,7 +272,7 @@ internal partial class Binder
                     : typedRight,
                 indices);
         }
-        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
+        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result is PropertySymbol pr)
         {
             var receiver = this.TypeExpression(mem.Accessed, constraints, diagnostics);
             var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);
@@ -346,7 +346,7 @@ internal partial class Binder
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var members = mem.Member.Result;
-        if (members.Length == 1 && members[0] is ITypedSymbol member)
+        if (members is ITypedSymbol member)
         {
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
             if (member is PropertySymbol prop)
@@ -370,7 +370,7 @@ internal partial class Binder
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
                 location: mem.Syntax?.Location,
-                formatArgs: members[0].Name));
+                formatArgs: members.Name));
             return new BoundUnexpectedExpression(mem.Syntax);
         }
     }

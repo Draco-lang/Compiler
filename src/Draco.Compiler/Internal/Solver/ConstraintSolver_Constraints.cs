@@ -19,10 +19,19 @@ internal sealed partial class ConstraintSolver
     public void Add(IConstraint constraint) =>
         this.constraints.Add(constraint);
 
-    // TODO: Doc
+    /// <summary>
+    /// Removes the given constraint from the solver.
+    /// </summary>
+    /// <param name="constraint">The constraint to remove.</param>
+    /// <returns>True, if <paramref name="constraint"/> could be removed, false otherwise.</returns>
     public bool Remove(IConstraint constraint) => this.constraints.Remove(constraint);
 
-    // TODO: Doc
+    /// <summary>
+    /// Enumerates constraints in this solver.
+    /// </summary>
+    /// <typeparam name="TConstraint">The type of constraints to enumerate.</typeparam>
+    /// <param name="filter">An optional constraint filter.</param>
+    /// <returns>All constraints of type <typeparamref name="TConstraint"/> that satisfy <paramref name="filter"/>.</returns>
     public IEnumerable<TConstraint> Enumerate<TConstraint>(
         Func<TConstraint, bool>? filter = null)
     {
@@ -32,7 +41,14 @@ internal sealed partial class ConstraintSolver
             .Where(filter);
     }
 
-    // TODO: Doc
+    /// <summary>
+    /// Attempts to remove a constraint from this solver.
+    /// </summary>
+    /// <typeparam name="TConstraint">The type of constraints to remove.</typeparam>
+    /// <param name="constraint">The constraint is written here, if one satisfying the conditions is found.</param>
+    /// <param name="filter">An optional filter that <paramref name="constraint"/> has to satisfy.</param>
+    /// <returns>True, if a constraint of type <typeparamref name="TConstraint"/> that satisfies
+    /// <paramref name="filter"/> was found and removed.</returns>
     public bool TryDequeue<TConstraint>(
         [MaybeNullWhen(false)] out TConstraint constraint,
         Func<TConstraint, bool>? filter = null)

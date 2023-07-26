@@ -20,15 +20,27 @@ internal sealed partial class ConstraintSolver
         this.constraints.Add(constraint);
 
     // TODO: Doc
+    public bool Remove(IConstraint constraint) => this.constraints.Remove(constraint);
+
+    // TODO: Doc
+    public IEnumerable<TConstraint> Enumerate<TConstraint>(
+        Func<TConstraint, bool>? filter = null)
+    {
+        filter ??= _ => true;
+        return this.constraints
+            .OfType<TConstraint>()
+            .Where(filter);
+    }
+
+    // TODO: Doc
     public bool TryDequeue<TConstraint>(
         [MaybeNullWhen(false)] out TConstraint constraint,
         Func<TConstraint, bool>? filter = null)
         where TConstraint : IConstraint
     {
-        filter ??= _ => true;
-        constraint = this.constraints
-            .OfType<TConstraint>()
-            .FirstOrDefault(filter);
+        constraint = this
+            .Enumerate(filter)
+            .FirstOrDefault();
         if (constraint is not null)
         {
             this.constraints.Remove(constraint);

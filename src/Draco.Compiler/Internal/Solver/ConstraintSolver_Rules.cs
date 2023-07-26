@@ -54,34 +54,22 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
-        // TODO: With constraints that can be put back, ORDER MATTERS
-        // If we failed to resolve it and we needed to put it back, next time we want to try another one
-        // Otherwise, we might never try the one that we could resolve and would allow us to proceed
-        if (this.TryDequeue<OverloadConstraint>(out var overload))
+        foreach (var overload in this.Enumerate<OverloadConstraint>())
         {
             this.HandleRule(overload, diagnostics);
-            if (overload.Promise.IsResolved)
-            {
-                return true;
-            }
-            else
-            {
-                this.Add(overload);
-            }
+            if (!overload.Promise.IsResolved) continue;
+
+            this.Remove(overload);
+            return true;
         }
 
-        // TODO: Same as for overload
-        if (this.TryDequeue<CallConstraint>(out var call, c => !c.CalledType.Substitution.IsTypeVariable))
+        foreach (var call in this.Enumerate<CallConstraint>(c => !c.CalledType.Substitution.IsTypeVariable))
         {
             this.HandleRule(call, diagnostics);
-            if (call.Promise.IsResolved)
-            {
-                return true;
-            }
-            else
-            {
-                this.Add(call);
-            }
+            if (!call.Promise.IsResolved) continue;
+
+            this.Remove(call);
+            return true;
         }
 
         return false;

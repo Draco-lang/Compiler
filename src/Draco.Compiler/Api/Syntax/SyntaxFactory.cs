@@ -115,8 +115,10 @@ public static partial class SyntaxFactory
     public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
         CompilationUnit(SyntaxList(decls), EndOfInput);
 
-    public static ModuleDeclarationSyntax ModuleDeclaration(string name, SyntaxList<DeclarationSyntax> declarations) =>
-        ModuleDeclaration(Module, Name(name), OpenBrace, declarations, CloseBrace);
+    public static ModuleDeclarationSyntax ModuleDeclaration(string name, IEnumerable<DeclarationSyntax> declarations) =>
+        ModuleDeclaration(Module, Name(name), OpenBrace, SyntaxList(declarations), CloseBrace);
+    public static ModuleDeclarationSyntax ModuleDeclaration(string name, params DeclarationSyntax[] declarations) =>
+        ModuleDeclaration(name, declarations.AsEnumerable());
 
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
         Import,

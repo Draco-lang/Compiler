@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -175,6 +176,9 @@ public sealed partial class SemanticModel : IBinderProvider
         }
         case SourceModuleSymbol module:
         {
+            // The module itself
+            if (module.DeclaringSyntaxes.Contains(syntax)) return containingSymbol.ToApiSymbol();
+
             // Just search for the corresponding syntax
             var symbol = module.Members
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);

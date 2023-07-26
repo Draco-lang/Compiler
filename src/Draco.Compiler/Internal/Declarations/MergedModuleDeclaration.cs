@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Declarations;
 
@@ -12,6 +13,9 @@ internal sealed class MergedModuleDeclaration : Declaration
     public override ImmutableArray<Declaration> Children =>
         InterlockedUtils.InitializeDefault(ref this.children, this.BuildChildren);
     private ImmutableArray<Declaration> children;
+
+    public override IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declarations
+        .SelectMany(d => d.DeclaringSyntaxes);
 
     /// <summary>
     /// The path of this module, including the root module.

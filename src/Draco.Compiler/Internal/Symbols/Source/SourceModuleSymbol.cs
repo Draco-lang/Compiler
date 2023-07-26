@@ -28,6 +28,11 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 
     public override SyntaxNode? DeclaringSyntax => null;
 
+    /// <summary>
+    /// The syntaxes contributing to this module.
+    /// </summary>
+    public IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declaration.DeclaringSyntaxes;
+
     private readonly Declaration declaration;
 
     private SourceModuleSymbol(

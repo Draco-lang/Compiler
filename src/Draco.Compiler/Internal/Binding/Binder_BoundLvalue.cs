@@ -44,10 +44,10 @@ internal partial class Binder
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var members = mem.Member.Result;
-        if (members.Length == 1 && members[0] is ITypedSymbol member)
+        if (members is ITypedSymbol member)
         {
             // Error, don't cascade
-            if (members[0].IsError)
+            if (members.IsError)
             {
                 return new BoundIllegalLvalue(mem.Syntax);
             }
@@ -66,7 +66,7 @@ internal partial class Binder
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
                 location: mem.Syntax?.Location,
-                formatArgs: members[0].Name));
+                formatArgs: members.Name));
             return new BoundUnexpectedLvalue(mem.Syntax);
         }
     }

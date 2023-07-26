@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -11,7 +9,6 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
 

@@ -1,7 +1,4 @@
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using Draco.Compiler.Internal.Binding;
-using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 

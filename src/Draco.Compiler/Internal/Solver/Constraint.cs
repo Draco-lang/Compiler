@@ -1,7 +1,4 @@
-using System.Collections.Generic;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver;
 

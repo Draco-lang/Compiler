@@ -92,7 +92,7 @@ internal static class Translator
         {
             Label = item.DisplayText,
             Kind = ToLsp(item.Kind),
-            TextEdit = textEdit,
+            TextEdit = new(textEdit),
             AdditionalTextEdits = additionalEdits,
             Detail = detail,
             Documentation = documentation is not null ? new(documentation) : default,
@@ -139,7 +139,7 @@ internal static class Translator
         };
     }
 
-    public static LspModels.TextEdit ToLsp(CompilerApi.TextEdit edit) => new()
+    public static LspModels.ITextEdit ToLsp(CompilerApi.TextEdit edit) => new LspModels.TextEdit()
     {
         NewText = edit.Text,
         Range = ToLsp(edit.Range),

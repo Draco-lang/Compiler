@@ -37,6 +37,9 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// </summary>
     public virtual TypeSymbol Substitution => this;
 
+    /// <summary>
+    /// The immediate base types of this type.
+    /// </summary>
     public virtual ImmutableArray<TypeSymbol> BaseTypes => ImmutableArray<TypeSymbol>.Empty;
 
     /// <summary>

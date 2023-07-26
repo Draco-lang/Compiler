@@ -82,9 +82,12 @@ internal sealed partial class ConstraintSolver
     /// <param name="targetType">The type being assigned to.</param>
     /// <param name="assignedType">The type assigned.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType) =>
-        // TODO: Hack, this is temporary until we have other constraints
-        this.SameType(targetType, assignedType);
+    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType)
+    {
+        var constraint = new AssignableConstraint(targetType, assignedType);
+        this.Add(constraint);
+        return constraint.Promise;
+    }
 
     /// <summary>
     /// Adds a common-type constraint to the solver.
@@ -94,8 +97,7 @@ internal sealed partial class ConstraintSolver
     /// <returns>The promise of the constraint added.</returns>
     public IConstraintPromise<Unit> CommonType(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
     {
-        // TODO: Hack, this is temporary until we have other constraints
-        var constraint = new SameTypeConstraint(alternativeTypes.Prepend(commonType).ToImmutableArray());
+        var constraint = new CommonTypeConstraint(commonType, alternativeTypes);
         this.Add(constraint);
         return constraint.Promise;
     }

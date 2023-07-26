@@ -15,6 +15,17 @@ internal sealed partial class ConstraintSolver
 {
     private readonly record struct OverloadCandidate(FunctionSymbol Symbol, CallScore Score);
 
+    private static bool IsBaseOf(TypeSymbol @base, TypeSymbol derived)
+    {
+        @base = @base.Substitution;
+        @derived = @derived.Substitution;
+
+        if (@base.IsTypeVariable || derived.IsTypeVariable) throw new InvalidOperationException();
+
+        return SymbolEqualityComparer.Default.Equals(@base, derived)
+            || derived.BaseTypes.Any(b => IsBaseOf(@base, b));
+    }
+
     private static FunctionTypeSymbol MakeMismatchedFunctionType(ImmutableArray<object> args, TypeSymbol returnType) => new(
         args
             .Select(a => new SynthetizedParameterSymbol(null, ExtractArgumentType(a)))

@@ -21,33 +21,15 @@ internal class AssignableConstraint : Constraint<Unit>
     public TypeSymbol TargetType { get; }
 
     /// <summary>
-    /// The type assigned.
+    /// The types assigned.
     /// </summary>
     public TypeSymbol AssignedType { get; }
 
-    public AssignableConstraint(ConstraintSolver solver, TypeSymbol targetType, TypeSymbol assignedType)
-        : base(solver)
+    public AssignableConstraint(TypeSymbol targetType, TypeSymbol assignedType)
     {
         this.TargetType = targetType;
         this.AssignedType = assignedType;
     }
 
     public override string ToString() => $"Assign({this.TargetType}, {this.AssignedType})";
-
-    public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
-    {
-        if (this.Solver.Unify(this.TargetType, this.AssignedType) || IsBase(this.TargetType, this.AssignedType))
-        {
-            // Successful unification
-            this.Promise.Resolve(default);
-            yield return SolveState.Solved;
-        }
-
-        // Type-mismatch
-        this.Diagnostic
-            .WithTemplate(TypeCheckingErrors.TypeMismatch)
-            .WithFormatArgs(this.TargetType.Substitution, this.AssignedType.Substitution);
-        this.Promise.Fail(default, diagnostics);
-        yield return SolveState.Solved;
-    }
 }

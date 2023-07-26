@@ -21,6 +21,22 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
+        if (this.TryDequeue<AssignableConstraint>(
+            out var assignable,
+            a => !a.TargetType.Substitution.IsTypeVariable && !a.AssignedType.Substitution.IsTypeVariable))
+        {
+            this.HandleRule(assignable, diagnostics);
+            return true;
+        }
+
+        if (this.TryDequeue<CommonTypeConstraint>(
+            out var common,
+            c => !c.CommonType.Substitution.IsTypeVariable && c.AlternativeTypes.All(t => !t.Substitution.IsTypeVariable)))
+        {
+            this.HandleRule(common, diagnostics);
+            return true;
+        }
+
         if (this.TryDequeue<MemberConstraint>(out var member, m => !m.Accessed.Substitution.IsTypeVariable))
         {
             this.HandleRule(member, diagnostics);
@@ -107,6 +123,42 @@ internal sealed partial class ConstraintSolver
 
         // Successful unification
         constraint.Promise.Resolve(default);
+    }
+
+    private void HandleRule(AssignableConstraint constraint, DiagnosticBag diagnostics)
+    {
+        if (!IsBaseOf(constraint.TargetType, constraint.AssignedType))
+        {
+            // Type-mismatch
+            constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(constraint.TargetType.Substitution, constraint.AssignedType.Substitution);
+            constraint.Promise.Fail(default, diagnostics);
+            return;
+        }
+
+        // Ok
+        constraint.Promise.Resolve(default);
+    }
+
+    private void HandleRule(CommonTypeConstraint constraint, DiagnosticBag diagnostics)
+    {
+        foreach (var type in constraint.AlternativeTypes)
+        {
+            if (constraint.AlternativeTypes.All(t => IsBaseOf(type, t)))
+            {
+                // Found a good common type
+                this.Unify(constraint.CommonType, type);
+                constraint.Promise.Resolve(default);
+            }
+        }
+
+        // No common type
+        constraint.Diagnostic
+            .WithTemplate(TypeCheckingErrors.NoCommonType)
+            .WithFormatArgs(string.Join(", ", constraint.AlternativeTypes));
+        this.Unify(constraint.CommonType, IntrinsicSymbols.ErrorType);
+        constraint.Promise.Fail(default, diagnostics);
     }
 
     private void HandleRule(MemberConstraint constraint, DiagnosticBag diagnostics)

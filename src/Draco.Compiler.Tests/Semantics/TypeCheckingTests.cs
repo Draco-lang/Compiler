@@ -217,10 +217,9 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
-        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
+        Assert.True(xSym.Type.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
-        Assert.False(xSym.Type.IsError);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -1788,7 +1787,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -1829,7 +1828,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]

@@ -81,14 +81,15 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
-        if (this.TryDequeue<AssignableConstraint>(out assignable, a => a.TargetType.Substitution.IsTypeVariable))
+        if (this.TryDequeue<AssignableConstraint>(out assignable))
         {
             // See if there are other assignments
             var assignmentsWithSameTarget = this
-                .Enumerate<AssignableConstraint>(a => ReferenceEquals(assignable.TargetType, a.TargetType))
+                .Enumerate<AssignableConstraint>(a => SymbolEqualityComparer.AllowTypeVariables.Equals(assignable.TargetType, a.TargetType))
                 .ToList();
             if (assignmentsWithSameTarget.Count == 0)
             {
+                // TODO: Unconditional unification...
                 // No, assume same type
                 this.Unify(assignable.TargetType, assignable.AssignedType);
                 return true;

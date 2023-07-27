@@ -21,7 +21,7 @@ internal sealed partial class ConstraintSolver
         @base = @base.Substitution;
         @derived = @derived.Substitution;
 
-        if (@base.IsTypeVariable || derived.IsTypeVariable) throw new InvalidOperationException();
+        if (!@base.IsGroundType || !derived.IsGroundType) throw new InvalidOperationException();
 
         // NOTE: Duplicate logic from unification
         // TODO: Can we factor it out?

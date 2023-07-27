@@ -21,17 +21,13 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
-        if (this.TryDequeue<AssignableConstraint>(
-            out var assignable,
-            a => !a.TargetType.Substitution.IsTypeVariable && !a.AssignedType.Substitution.IsTypeVariable))
+        if (this.TryDequeue<AssignableConstraint>(out var assignable, a => a.TargetType.IsGroundType && a.AssignedType.IsGroundType))
         {
             this.HandleRule(assignable, diagnostics);
             return true;
         }
 
-        if (this.TryDequeue<CommonTypeConstraint>(
-            out var common,
-            c => c.AlternativeTypes.All(t => !t.Substitution.IsTypeVariable)))
+        if (this.TryDequeue<CommonTypeConstraint>(out var common, c => c.AlternativeTypes.All(t => t.IsGroundType)))
         {
             this.HandleRule(common, diagnostics);
             return true;

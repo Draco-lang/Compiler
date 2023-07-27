@@ -2066,6 +2066,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 null,
                 BlockFunctionBody())));
 
+        var barCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
+
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
@@ -2075,10 +2077,17 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         var semanticModel = compilation.GetSemanticModel(main);
 
+        var calledBarSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(barCallSyntax));
+
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Empty(diags);
+        Assert.True(calledBarSym.IsGenericInstance);
+        Assert.Single(calledBarSym.GenericArguments);
+        Assert.True(SymbolEqualityComparer.Default.Equals(
+            compilation.WellKnownTypes.SystemObject,
+            calledBarSym.GenericArguments[0]));
     }
 
     [Fact]

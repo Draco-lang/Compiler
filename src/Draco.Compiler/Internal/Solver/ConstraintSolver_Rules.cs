@@ -91,6 +91,7 @@ internal sealed partial class ConstraintSolver
             // Later, we should check if there are multiple assignable constraints, make a common type
             // from assigned types and assign that
             this.Unify(assignable.TargetType, assignable.AssignedType);
+            return true;
         }
 
         return false;

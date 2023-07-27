@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.Symbols;
 

@@ -6,6 +6,7 @@ using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
@@ -21,6 +22,11 @@ internal sealed partial class ConstraintSolver
         @derived = @derived.Substitution;
 
         if (@base.IsTypeVariable || derived.IsTypeVariable) throw new InvalidOperationException();
+
+        // NOTE: Duplicate logic from unification
+        // TODO: Can we factor it out?
+        if (@base is NeverTypeSymbol or ErrorTypeSymbol) return true;
+        if (derived is NeverTypeSymbol or ErrorTypeSymbol) return true;
 
         return SymbolEqualityComparer.Default.Equals(@base, derived)
             || derived.BaseTypes.Any(b => IsBaseOf(@base, b));

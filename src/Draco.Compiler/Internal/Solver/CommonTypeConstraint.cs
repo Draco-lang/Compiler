@@ -5,9 +5,9 @@ using Draco.Compiler.Internal.Utilities;
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
-/// Constraint asserting that one type is base type of the other.
+/// A constraint for expressing that a set of types have some common ancestor.
 /// </summary>
-internal class CommonTypeConstraint : Constraint<Unit>
+internal sealed class CommonTypeConstraint : Constraint<Unit>
 {
     /// <summary>
     /// The common type of the <see cref="AlternativeTypes"/>.

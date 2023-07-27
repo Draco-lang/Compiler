@@ -4,9 +4,9 @@ using Draco.Compiler.Internal.Utilities;
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
-/// Constraint asserting that one type is assignable to other type.
+/// Constraint asserting that one type is assignable to another type.
 /// </summary>
-internal class AssignableConstraint : Constraint<Unit>
+internal sealed class AssignableConstraint : Constraint<Unit>
 {
     /// <summary>
     /// The type being assigned to.
@@ -14,7 +14,7 @@ internal class AssignableConstraint : Constraint<Unit>
     public TypeSymbol TargetType { get; }
 
     /// <summary>
-    /// The types assigned.
+    /// The type assigned.
     /// </summary>
     public TypeSymbol AssignedType { get; }
 

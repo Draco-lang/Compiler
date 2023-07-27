@@ -31,7 +31,7 @@ internal sealed partial class ConstraintSolver
 
         if (this.TryDequeue<CommonTypeConstraint>(
             out var common,
-            c => !c.CommonType.Substitution.IsTypeVariable && c.AlternativeTypes.All(t => !t.Substitution.IsTypeVariable)))
+            c => c.AlternativeTypes.All(t => !t.Substitution.IsTypeVariable)))
         {
             this.HandleRule(common, diagnostics);
             return true;
@@ -85,12 +85,34 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
-        if (this.TryDequeue<AssignableConstraint>(out assignable))
+        if (this.TryDequeue<AssignableConstraint>(out assignable, a => a.TargetType.Substitution.IsTypeVariable))
         {
-            // TODO: Way too simplistic
-            // Later, we should check if there are multiple assignable constraints, make a common type
-            // from assigned types and assign that
-            this.Unify(assignable.TargetType, assignable.AssignedType);
+            // See if there are other assignments
+            var assignmentsWithSameTarget = this
+                .Enumerate<AssignableConstraint>(a => ReferenceEquals(assignable.TargetType, a.TargetType))
+                .ToList();
+            if (assignmentsWithSameTarget.Count == 0)
+            {
+                // No, assume same type
+                this.Unify(assignable.TargetType, assignable.AssignedType);
+                return true;
+            }
+
+            // There are multiple constraints targeting the same type
+            // Remove them
+            foreach (var a in assignmentsWithSameTarget) this.Remove(a);
+
+            // Create a common-type constraint for them
+            var commonType = this.AllocateTypeVariable();
+            var alternatives = assignmentsWithSameTarget
+                .Select(a => a.AssignedType)
+                .Append(assignable.AssignedType)
+                .ToImmutableArray();
+
+            // TODO: We forget diag info...
+            this.CommonType(commonType, alternatives);
+            // New assignable
+            this.Assignable(assignable.TargetType, commonType);
             return true;
         }
 
@@ -159,6 +181,7 @@ internal sealed partial class ConstraintSolver
                 // Found a good common type
                 this.Unify(constraint.CommonType, type);
                 constraint.Promise.Resolve(default);
+                return;
             }
         }
 

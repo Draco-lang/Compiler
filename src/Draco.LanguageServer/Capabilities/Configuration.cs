@@ -4,7 +4,7 @@ using Draco.Lsp.Server.Workspace;
 
 namespace Draco.LanguageServer;
 
-internal sealed partial class DracoLanguageServer : IConfiguration
+internal sealed partial class DracoLanguageServer : IDidChangeConfiguration
 {
     public async Task DidChangeConfigurationAsync(DidChangeConfigurationParams param)
     {

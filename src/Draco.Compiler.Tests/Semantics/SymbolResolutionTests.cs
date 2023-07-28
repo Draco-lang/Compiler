@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.IO;
 using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
@@ -1186,7 +1185,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void VisibleElementFullyQualifiedInCodeDefinedModule()
     {
-        // func main(){
+        // func main() {
         //   FooModule.foo();
         // }
         //
@@ -1203,13 +1202,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo"))))),
             ModuleDeclaration(
                 "FooModule",
-                SyntaxList<DeclarationSyntax>(
-                    FunctionDeclaration(
-                        Api.Semantics.Visibility.Internal,
-                        "foo",
-                        ParameterList(),
-                        NameType("int32"),
-                        InlineFunctionBody(LiteralExpression(0)))))));
+                FunctionDeclaration(
+                    Api.Semantics.Visibility.Internal,
+                    "foo",
+                    ParameterList(),
+                    NameType("int32"),
+                    InlineFunctionBody(LiteralExpression(0))))));
 
         var fooDecl = main.FindInChildren<FunctionDeclarationSyntax>(1);
         var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
@@ -1237,11 +1235,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void NotVisibleElementFullyQualifiedInCodeDefinedModule()
     {
-        // func main(){
+        // func main() {
         //   FooModule.foo();
         // }
         //
-        // module FooModule{
+        // module FooModule {
         //   func foo(): int32 = 0;
         // }
 
@@ -1254,12 +1252,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "foo"))))),
             ModuleDeclaration(
                 "FooModule",
-                SyntaxList<DeclarationSyntax>(
-                    FunctionDeclaration(
-                        "foo",
-                        ParameterList(),
-                        NameType("int32"),
-                        InlineFunctionBody(LiteralExpression(0)))))));
+                FunctionDeclaration(
+                    "foo",
+                    ParameterList(),
+                    NameType("int32"),
+                    InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
         var compilation = Compilation.Create(
@@ -1285,7 +1282,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void NotVisibleGlobalVariableFullyQualified()
     {
-        // func main(){
+        // func main() {
         //   var x = BarModule.bar;
         // }
 
@@ -1325,7 +1322,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void InternalElementImportedFromDifferentAssembly()
     {
         // import FooModule;
-        // func main(){
+        // func main() {
         //   Foo();
         // }
 
@@ -1361,7 +1358,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     [Fact]
     public void InternalElementFullyQualifiedFromDifferentAssembly()
     {
-        // func main(){
+        // func main() {
         //   FooModule.Foo();
         // }
 
@@ -1513,13 +1510,12 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("foo"))))),
             ModuleDeclaration(
                 "FooModule",
-                SyntaxList<DeclarationSyntax>(
-                    FunctionDeclaration(
-                        Api.Semantics.Visibility.Internal,
-                        "foo",
-                        ParameterList(),
-                        NameType("int32"),
-                        InlineFunctionBody(LiteralExpression(0)))))));
+                FunctionDeclaration(
+                    Api.Semantics.Visibility.Internal,
+                    "foo",
+                    ParameterList(),
+                    NameType("int32"),
+                    InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
         var compilation = Compilation.Create(
@@ -1566,12 +1562,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("foo"))))),
             ModuleDeclaration(
                 "FooModule",
-                SyntaxList<DeclarationSyntax>(
-                    FunctionDeclaration(
-                        "foo",
-                        ParameterList(),
-                        NameType("int32"),
-                        InlineFunctionBody(LiteralExpression(0)))))));
+                FunctionDeclaration(
+                    "foo",
+                    ParameterList(),
+                    NameType("int32"),
+                    InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
         var compilation = Compilation.Create(
@@ -1697,15 +1692,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             ImportDeclaration("System", "Text"),
             ModuleDeclaration(
                 "FooModule",
-                SyntaxList<DeclarationSyntax>(
-                    ImportDeclaration("System", "Console"),
-                    FunctionDeclaration(
-                        "bar",
-                        ParameterList(),
-                        null,
-                        BlockFunctionBody(
-                            DeclarationStatement(VariableDeclaration("sb", null, CallExpression(NameExpression("StringBuilder")))),
-                            ExpressionStatement(CallExpression(NameExpression("WriteLine"), CallExpression(MemberExpression(NameExpression("sb"), "ToString")))))))),
+                ImportDeclaration("System", "Console"),
+                FunctionDeclaration(
+                    "bar",
+                    ParameterList(),
+                    null,
+                    BlockFunctionBody(
+                        DeclarationStatement(VariableDeclaration("sb", null, CallExpression(NameExpression("StringBuilder")))),
+                        ExpressionStatement(CallExpression(NameExpression("WriteLine"), CallExpression(MemberExpression(NameExpression("sb"), "ToString"))))))),
             FunctionDeclaration(
                 "baz",
                 ParameterList(),
@@ -4113,5 +4107,50 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Same(derivedDecl, derivedSym);
         Assert.Single(nonObjectSymbols);
         Assert.Equal("Derived.Clone", nonObjectSymbols.First().FullName);
+    }
+
+    public void InCodeModules()
+    {
+        // module Foo {
+        //     public func bar() {}
+        // }
+        //
+        // func main() {
+        //     Foo.bar();
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ModuleDeclaration(
+                "Foo",
+                FunctionDeclaration(
+                    Api.Semantics.Visibility.Public,
+                    "bar",
+                    ParameterList(),
+                    null,
+                    BlockFunctionBody())),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("Foo"), "bar")))))));
+
+        var moduleDeclSyntax = tree.FindInChildren<ModuleDeclarationSyntax>(0);
+        var moduleRefSyntax = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var diags = semanticModel.Diagnostics;
+
+        var moduleDefSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetDeclaredSymbol(moduleDeclSyntax));
+        var moduleRefSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(moduleRefSyntax));
+
+        // Assert
+        Assert.True(SymbolEqualityComparer.Default.Equals(moduleDefSymbol, moduleRefSymbol));
+        Assert.Empty(diags);
     }
 }

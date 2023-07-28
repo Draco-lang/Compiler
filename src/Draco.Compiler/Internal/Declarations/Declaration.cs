@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Declarations;
 
@@ -16,6 +18,11 @@ internal abstract class Declaration
     /// The declarations within this one.
     /// </summary>
     public abstract ImmutableArray<Declaration> Children { get; }
+
+    /// <summary>
+    /// The syntaxes that contribute to this declaration.
+    /// </summary>
+    public abstract IEnumerable<SyntaxNode> DeclaringSyntaxes { get; }
 
     protected Declaration(string name)
     {

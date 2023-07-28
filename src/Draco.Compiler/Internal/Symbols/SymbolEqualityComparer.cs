@@ -16,6 +16,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     {
         None = 0,
         EquateGenericParameters = 1 << 0,
+        AllowTypeVariables = 1 << 1,
     }
 
     /// <summary>
@@ -27,6 +28,11 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     /// A symbol equality comparer that can be used for signature matching.
     /// </summary>
     public static SymbolEqualityComparer SignatureMatch { get; } = new(ComparerFlags.EquateGenericParameters);
+
+    /// <summary>
+    /// A symbol equality comparer that equates type variables that are referentially equal.
+    /// </summary>
+    public static SymbolEqualityComparer AllowTypeVariables { get; } = new(ComparerFlags.AllowTypeVariables);
 
     private readonly ComparerFlags flags;
 
@@ -45,8 +51,8 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public bool Equals(TypeSymbol? x, TypeSymbol? y)
     {
-        if (x is TypeVariable xTypeVar) x = Unwrap(xTypeVar);
-        if (y is TypeVariable yTypeVar) y = Unwrap(yTypeVar);
+        if (x is TypeVariable xTypeVar) x = this.Unwrap(xTypeVar);
+        if (y is TypeVariable yTypeVar) y = this.Unwrap(yTypeVar);
 
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
@@ -88,7 +94,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public int GetHashCode([DisallowNull] TypeSymbol obj)
     {
-        if (obj is TypeVariable v) obj = Unwrap(v);
+        if (obj is TypeVariable v) obj = this.Unwrap(v);
 
         switch (obj)
         {
@@ -102,10 +108,13 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     /// </summary>
     /// <param name="type">The type-variable to unwrap.</param>
     /// <returns>The substitution of <paramref name="type"/>.</returns>
-    private static TypeSymbol Unwrap(TypeVariable type)
+    private TypeSymbol Unwrap(TypeVariable type)
     {
         var unwrappedType = type.Substitution;
-        if (unwrappedType.IsTypeVariable) throw new InvalidOperationException("could not unwrap type variable");
+        if (!this.flags.HasFlag(ComparerFlags.AllowTypeVariables) && unwrappedType.IsTypeVariable)
+        {
+            throw new InvalidOperationException("could not unwrap type variable");
+        }
         return unwrappedType;
     }
 }

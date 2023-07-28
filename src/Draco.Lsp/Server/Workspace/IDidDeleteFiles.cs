@@ -5,6 +5,7 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Workspace;
 
+[ClientCapability("Workspace.FileOperations")]
 public interface IDidDeleteFiles
 {
     [RegistrationOptions("workspace/didDeleteFiles")]

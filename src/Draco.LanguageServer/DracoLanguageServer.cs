@@ -111,8 +111,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     public Task InitializeAsync(InitializeParams param)
     {
-        if (param.WorkspaceFolders is null || param.WorkspaceFolders.Count == 0) return Task.CompletedTask;
-        Volatile.Write(ref this.rootUri, param.WorkspaceFolders[0].Uri);
+        var workspaceUri = ExtractRootUri(param);
+        if (workspaceUri is null) return Task.CompletedTask;
+        Volatile.Write(ref this.rootUri, workspaceUri);
         this.CreateCompilation();
         return Task.CompletedTask;
     }
@@ -123,4 +124,19 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     }
 
     public Task ShutdownAsync() => Task.CompletedTask;
+
+    private static Uri? ExtractRootUri(InitializeParams param)
+    {
+        if (param.WorkspaceFolders is not null)
+        {
+            if (param.WorkspaceFolders.Count == 0) return null;
+            return param.WorkspaceFolders[0].Uri;
+        }
+        // NOTE: VS still uses these...
+#pragma warning disable CS0618 // Type or member is obsolete
+        if (param.RootUri is not null) return param.RootUri.Value.ToUri();
+        if (param.RootPath is not null) return new Uri(param.RootPath);
+#pragma warning restore CS0618 // Type or member is obsolete
+        return null;
+    }
 }

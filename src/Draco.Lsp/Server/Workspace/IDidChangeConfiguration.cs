@@ -4,10 +4,11 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Workspace;
 
-public interface IConfiguration
+[ClientCapability("Workspace.DidChangeConfiguration")]
+public interface IDidChangeConfiguration
 {
     [RegistrationOptions("workspace/didChangeConfiguration")]
-    public object DidOpenRegistrationOptions => new();
+    public object DidChangeConfigurationRegistrationOptions => new();
 
     // NOTE: https://github.com/microsoft/vscode-languageserver-node/issues/380
     // The config might not be here, use the notification as an opportunity to re-pull settings

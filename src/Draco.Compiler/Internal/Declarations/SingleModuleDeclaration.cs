@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
@@ -23,6 +24,14 @@ internal sealed class SingleModuleDeclaration : Declaration
     public override ImmutableArray<Declaration> Children =>
         InterlockedUtils.InitializeDefault(ref this.children, this.BuildChildren);
     private ImmutableArray<Declaration> children;
+
+    public override IEnumerable<SyntaxNode> DeclaringSyntaxes
+    {
+        get
+        {
+            yield return this.Syntax;
+        }
+    }
 
     public SingleModuleDeclaration(string name, SplitPath path, ContainerSyntax syntax)
         : base(name)

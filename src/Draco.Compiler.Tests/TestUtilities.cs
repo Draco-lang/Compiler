@@ -1,8 +1,6 @@
-using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Api;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using RoslynMetadataReference = Microsoft.CodeAnalysis.MetadataReference;
 

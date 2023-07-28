@@ -24,17 +24,14 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    public override Compilation DeclaringCompilation { get; }
-
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly NamespaceDefinition namespaceDefinition;
 
-    public MetadataNamespaceSymbol(Symbol containingSymbol, NamespaceDefinition namespaceDefinition, Compilation declaringCompilation)
+    public MetadataNamespaceSymbol(Symbol containingSymbol, NamespaceDefinition namespaceDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.namespaceDefinition = namespaceDefinition;
-        this.DeclaringCompilation = declaringCompilation;
     }
 
     private ImmutableArray<Symbol> BuildMembers()
@@ -47,8 +44,7 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
             var subNamespaceDef = this.MetadataReader.GetNamespaceDefinition(subNamespaceHandle);
             var subNamespaceSym = new MetadataNamespaceSymbol(
                 containingSymbol: this,
-                namespaceDefinition: subNamespaceDef,
-                declaringCompilation: this.DeclaringCompilation);
+                namespaceDefinition: subNamespaceDef);
             result.Add(subNamespaceSym);
         }
 
@@ -63,7 +59,7 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
             // Skip non-public types
             if (!typeDef.Attributes.HasFlag(TypeAttributes.Public)) continue;
             // Turn into a symbol, or potentially symbols
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader, this.DeclaringCompilation);
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
             result.AddRange(symbols);
         }
 

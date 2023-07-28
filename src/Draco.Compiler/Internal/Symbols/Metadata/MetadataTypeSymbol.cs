@@ -45,21 +45,18 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    public override Compilation DeclaringCompilation { get; }
-
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public string? DefaultMemberAttributeName =>
-        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader));
+        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;
 
-    public MetadataTypeSymbol(Symbol containingSymbol, TypeDefinition typeDefinition, Compilation declaringCompilation)
+    public MetadataTypeSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.typeDefinition = typeDefinition;
-        this.DeclaringCompilation = declaringCompilation;
     }
 
     public override string ToString() => this.GenericParameters.Length == 0
@@ -93,7 +90,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
-        var typeProvider = new TypeProvider(this.DeclaringCompilation);
+        var typeProvider = new TypeProvider(this.Assembly.Compilation);
         if (!this.typeDefinition.BaseType.IsNil)
         {
             builder.Add(this.typeDefinition.BaseType.Kind switch
@@ -134,7 +131,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader, this.DeclaringCompilation);
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
             result.AddRange(symbols);
         }
 

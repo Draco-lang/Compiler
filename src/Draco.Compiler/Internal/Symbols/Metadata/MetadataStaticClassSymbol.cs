@@ -31,21 +31,18 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    public override Compilation DeclaringCompilation { get; }
-
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public string? DefaultMemberAttributeName =>
-        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader));
+        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;
 
-    public MetadataStaticClassSymbol(Symbol containingSymbol, TypeDefinition typeDefinition, Compilation declaringCompilation)
+    public MetadataStaticClassSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
     {
         this.ContainingSymbol = containingSymbol;
         this.typeDefinition = typeDefinition;
-        this.DeclaringCompilation = declaringCompilation;
     }
 
     private ImmutableArray<Symbol> BuildMembers()
@@ -60,7 +57,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader, this.DeclaringCompilation);
+            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
             result.AddRange(symbols);
         }
 

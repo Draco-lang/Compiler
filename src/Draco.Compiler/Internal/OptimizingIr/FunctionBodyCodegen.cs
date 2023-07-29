@@ -64,7 +64,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     private Global DefineGlobal(GlobalSymbol global) => this.GetDefiningModule(global).DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
-    private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
+
+    public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
     private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
     {

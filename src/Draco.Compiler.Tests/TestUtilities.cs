@@ -18,7 +18,7 @@ internal static class TestUtilities
         return MetadataReference.FromPeStream(stream);
     }
 
-    public static Stream CompileCSharpToStream(string code, string assemblyName, IEnumerable<Stream>? aditionalReferences = null)
+    public static Stream CompileCSharpToStream(string code, string assemblyName = DefaultAssemblyName, IEnumerable<Stream>? aditionalReferences = null)
     {
         aditionalReferences ??= Enumerable.Empty<Stream>();
         var sourceText = SourceText.From(code, Encoding.UTF8);

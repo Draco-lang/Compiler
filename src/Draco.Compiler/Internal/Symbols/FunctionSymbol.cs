@@ -118,17 +118,12 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     {
         if (other is not FunctionSymbol function) return false;
         if (this.Name != function.Name) return false;
-        if (this.Visibility != function.Visibility) return false;
-        if (this.IsStatic != function.IsStatic) return false;
         if (this.Parameters.Length != function.Parameters.Length) return false;
         if (this.GenericParameters.Length != function.GenericParameters.Length) return false;
         for (var i = 0; i < this.Parameters.Length; i++)
         {
-            if (this.Parameters[i].FullName != function.Parameters[i].FullName) return false;
-        }
-        for (int i = 0; i < this.GenericParameters.Length; i++)
-        {
-            if (this.GenericParameters[i].FullName != function.GenericParameters[i].FullName) return false;
+            if (this.Parameters[i].Type.FullName != function.Parameters[i].Type.FullName) return false;
+            if (this.Parameters[i].IsVariadic != function.Parameters[i].IsVariadic) return false;
         }
         return this.ReturnType.FullName == function.ReturnType.FullName;
     }

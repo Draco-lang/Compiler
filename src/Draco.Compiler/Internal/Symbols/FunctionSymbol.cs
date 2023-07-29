@@ -122,10 +122,10 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         if (this.GenericParameters.Length != function.GenericParameters.Length) return false;
         for (var i = 0; i < this.Parameters.Length; i++)
         {
-            if (this.Parameters[i].Type.FullName != function.Parameters[i].Type.FullName) return false;
+            if (SymbolEqualityComparer.Default.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
             if (this.Parameters[i].IsVariadic != function.Parameters[i].IsVariadic) return false;
         }
-        return this.ReturnType.FullName == function.ReturnType.FullName;
+        return SymbolEqualityComparer.Default.Equals(this.ReturnType, function.ReturnType);
     }
 
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

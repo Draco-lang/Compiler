@@ -46,11 +46,24 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// </summary>
     public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
 
-    public sealed override IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, () => this.BuildMembers());
+    public sealed override IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
+
+    public T? GetOverriddenSymbol<T>(T @override) where T : Symbol
+    {
+        foreach (var baseType in this.BaseTypes.Where(x => !x.IsInterface))
+        {
+            foreach (var member in baseType.DefinedMembers)
+            {
+                if (@override.SignatureEquals(member)) return (T)member;
+            }
+            baseType.GetOverriddenSymbol(@override);
+        }
+        return null;
+    }
 
     private ImmutableArray<Symbol> BuildMembers()
     {
@@ -59,7 +72,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         foreach (var member in this.DefinedMembers)
         {
             builder.Add(member);
-            if (member is IOverridableSymbol overridable && overridable.ExplicitOverride is not null) ignore.Add(overridable.ExplicitOverride);
+            if (member is IOverridableSymbol overridable && overridable.Override is not null) ignore.Add(overridable.Override);
             else ignore.Add(member);
         }
         Recurse(this);
@@ -73,7 +86,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
                 {
                     if (ignore.Any(member.SignatureEquals)) continue;
                     builder.Add(member);
-                    if (member is IOverridableSymbol overridable && overridable.ExplicitOverride is not null) ignore.Add(overridable.ExplicitOverride);
+                    if (member is IOverridableSymbol overridable && overridable.Override is not null) ignore.Add(overridable.Override);
                     else ignore.Add(member);
                 }
                 Recurse(baseType);

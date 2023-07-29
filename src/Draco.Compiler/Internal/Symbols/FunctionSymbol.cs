@@ -99,7 +99,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     public TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
 
-    public virtual Symbol? ExplicitOverride => null;
+    public virtual Symbol? Override => null;
 
     private TypeSymbol? type;
 

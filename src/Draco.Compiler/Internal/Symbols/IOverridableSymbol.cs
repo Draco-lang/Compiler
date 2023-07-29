@@ -6,8 +6,8 @@ namespace Draco.Compiler.Internal.Symbols;
 internal interface IOverridableSymbol
 {
     /// <summary>
-    /// Represents the explicitly overridden symbol.
-    /// Not null, if this symbol has a different signature than the symbol it overrode.
+    /// Represents the overridden symbol.
+    /// Null, if this symbol doesn't override anything.
     /// </summary>
-    public Symbol? ExplicitOverride { get; }
+    public Symbol? Override { get; }
 }

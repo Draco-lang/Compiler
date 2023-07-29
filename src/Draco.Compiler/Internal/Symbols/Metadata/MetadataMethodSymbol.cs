@@ -48,19 +48,21 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override Api.Semantics.Visibility Visibility => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
-    public override FunctionSymbol? ExplicitOverride
+    public override FunctionSymbol? Override
     {
         get
         {
             if (this.overrideNeedsBuild)
             {
-                this.explicitOverride = this.GetExplicitOverride();
+                this.@override = this.ContainingSymbol is TypeSymbol type
+                    ? this.GetExplicitOverride() ?? type.GetOverriddenSymbol(this)
+                    : null;
                 this.overrideNeedsBuild = false;
             }
-            return this.explicitOverride;
+            return this.@override;
         }
     }
-    private FunctionSymbol? explicitOverride;
+    private FunctionSymbol? @override;
     private bool overrideNeedsBuild = true;
 
     public override Symbol ContainingSymbol { get; }

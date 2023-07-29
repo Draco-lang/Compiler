@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
@@ -63,7 +64,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     private Global DefineGlobal(GlobalSymbol global) => this.GetDefiningModule(global).DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
-    private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
+
+    public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
     private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
     {
@@ -299,11 +301,15 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // Patch
             PatchLoadTarget(leftLoad, leftValue);
             this.Write(leftLoad);
-            if (IsAdd(node.CompoundOperator)) this.Write(Add(tmp, leftValue, right));
-            else if (IsSub(node.CompoundOperator)) this.Write(Sub(tmp, leftValue, right));
-            else if (IsMul(node.CompoundOperator)) this.Write(Mul(tmp, leftValue, right));
-            else if (IsDiv(node.CompoundOperator)) this.Write(Div(tmp, leftValue, right));
-            else throw new System.NotImplementedException();
+            if (node.CompoundOperator is IrFunctionSymbol irFunction)
+            {
+                irFunction.Codegen(this, tmp, ImmutableArray.Create(leftValue, right));
+            }
+            else
+            {
+                // TOO
+                throw new System.NotImplementedException();
+            }
         }
 
         // Patch
@@ -353,11 +359,15 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var sub = node.Operand.Accept(this);
         var target = this.DefineRegister(node.TypeRequired);
 
-        if (IsNot(node.Operator)) this.Write(Equal(target, sub, new Constant(false)));
-        else if (IsPlus(node.Operator)) { /* no-op */ }
-        else if (IsMinus(node.Operator)) this.Write(Mul(target, sub, new Constant(-1)));
-        // TODO
-        else throw new System.NotImplementedException();
+        if (node.Operator is IrFunctionSymbol irFunction)
+        {
+            irFunction.Codegen(this, target, ImmutableArray.Create(sub));
+        }
+        else
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
 
         return target;
     }
@@ -368,78 +378,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var right = this.Compile(node.Right);
         var target = this.DefineRegister(node.TypeRequired);
 
-        if (IsAdd(node.Operator))
+        if (node.Operator is IrFunctionSymbol irFunction)
         {
-            this.Write(Add(target, left, right));
-        }
-        else if (IsSub(node.Operator))
-        {
-            this.Write(Sub(target, left, right));
-        }
-        else if (IsMul(node.Operator))
-        {
-            this.Write(Mul(target, left, right));
-        }
-        else if (IsDiv(node.Operator))
-        {
-            this.Write(Div(target, left, right));
-        }
-        else if (IsRem(node.Operator))
-        {
-            this.Write(Rem(target, left, right));
-        }
-        else if (IsMod(node.Operator))
-        {
-            // a mod b
-            //  <=>
-            // (a rem b + b) rem b
-            var tmp1 = this.DefineRegister(node.TypeRequired);
-            var tmp2 = this.DefineRegister(node.TypeRequired);
-            this.Write(Rem(tmp1, left, right));
-            this.Write(Add(tmp2, tmp1, right));
-            this.Write(Rem(target, tmp1, right));
-        }
-        else if (IsLess(node.Operator))
-        {
-            this.Write(Less(target, left, right));
-        }
-        else if (IsGreater(node.Operator))
-        {
-            // a > b
-            //  <=>
-            // b < a
-            this.Write(Less(target, right, left));
-        }
-        else if (IsLessEqual(node.Operator))
-        {
-            // a <= b
-            //  <=>
-            // (b < a) == false
-            var tmp = this.DefineRegister(node.TypeRequired);
-            this.Write(Less(tmp, right, left));
-            this.Write(Equal(target, tmp, new Constant(false)));
-        }
-        else if (IsGreaterEqual(node.Operator))
-        {
-            // a >= b
-            //  <=>
-            // (a < b) == false
-            var tmp = this.DefineRegister(node.TypeRequired);
-            this.Write(Less(tmp, left, right));
-            this.Write(Equal(target, tmp, new Constant(false)));
-        }
-        else if (IsEqual(node.Operator))
-        {
-            this.Write(Equal(target, left, right));
-        }
-        else if (IsNotEqual(node.Operator))
-        {
-            // a != b
-            //  <=>
-            // (a == b) == false
-            var tmp = this.DefineRegister(node.TypeRequired);
-            this.Write(Equal(tmp, left, right));
-            this.Write(Equal(target, tmp, new Constant(false)));
+            irFunction.Codegen(this, target, ImmutableArray.Create(left, right));
         }
         else
         {
@@ -510,38 +451,4 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             : LoadField(result, receiver, node.Field));
         return result;
     }
-
-    // TODO: Do something with this block
-
-    private static bool IsEqual(Symbol op) => op == IntrinsicSymbols.Int32_Equal
-                                           || op == IntrinsicSymbols.Float64_Equal;
-    private static bool IsNotEqual(Symbol op) => op == IntrinsicSymbols.Int32_NotEqual
-                                              || op == IntrinsicSymbols.Float64_NotEqual;
-    private static bool IsLess(Symbol op) => op == IntrinsicSymbols.Int32_LessThan
-                                          || op == IntrinsicSymbols.Float64_LessThan;
-    private static bool IsLessEqual(Symbol op) => op == IntrinsicSymbols.Int32_LessEqual
-                                               || op == IntrinsicSymbols.Float64_LessEqual;
-    private static bool IsGreater(Symbol op) => op == IntrinsicSymbols.Int32_GreaterThan
-                                             || op == IntrinsicSymbols.Float64_GreaterThan;
-    private static bool IsGreaterEqual(Symbol op) => op == IntrinsicSymbols.Int32_GreaterEqual
-                                                  || op == IntrinsicSymbols.Float64_GreaterEqual;
-
-    private static bool IsNot(Symbol op) => op == IntrinsicSymbols.Bool_Not;
-    private static bool IsPlus(Symbol op) => op == IntrinsicSymbols.Int32_Plus
-                                          || op == IntrinsicSymbols.Float64_Plus;
-    private static bool IsMinus(Symbol op) => op == IntrinsicSymbols.Int32_Minus
-                                           || op == IntrinsicSymbols.Float64_Minus;
-
-    private static bool IsAdd(Symbol op) => op == IntrinsicSymbols.Int32_Add
-                                         || op == IntrinsicSymbols.Float64_Add;
-    private static bool IsSub(Symbol op) => op == IntrinsicSymbols.Int32_Sub
-                                         || op == IntrinsicSymbols.Float64_Sub;
-    private static bool IsMul(Symbol op) => op == IntrinsicSymbols.Int32_Mul
-                                         || op == IntrinsicSymbols.Float64_Mul;
-    private static bool IsDiv(Symbol op) => op == IntrinsicSymbols.Int32_Div
-                                         || op == IntrinsicSymbols.Float64_Div;
-    private static bool IsRem(Symbol op) => op == IntrinsicSymbols.Int32_Rem
-                                         || op == IntrinsicSymbols.Float64_Rem;
-    private static bool IsMod(Symbol op) => op == IntrinsicSymbols.Int32_Mod
-                                         || op == IntrinsicSymbols.Float64_Mod;
 }

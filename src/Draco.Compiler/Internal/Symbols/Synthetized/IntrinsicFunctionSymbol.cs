@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// A function intrinsic known by the compiler. This function has no implementation, as it is known by the compiler.
 /// </summary>
-internal sealed class IntrinsicFunctionSymbol : FunctionSymbol
+internal class IntrinsicFunctionSymbol : FunctionSymbol
 {
     /// <summary>
     /// Constructs a function symbol for an unary operator.

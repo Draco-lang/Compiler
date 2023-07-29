@@ -122,7 +122,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         if (this.IsStatic != function.IsStatic) return false;
         if (this.Parameters.Length != function.Parameters.Length) return false;
         if (this.GenericParameters.Length != function.GenericParameters.Length) return false;
-        for (int i = 0; i < this.Parameters.Length; i++)
+        for (var i = 0; i < this.Parameters.Length; i++)
         {
             if (this.Parameters[i].FullName != function.Parameters[i].FullName) return false;
         }

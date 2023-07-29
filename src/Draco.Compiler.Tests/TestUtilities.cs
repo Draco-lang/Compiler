@@ -9,6 +9,7 @@ namespace Draco.Compiler.Tests;
 internal static class TestUtilities
 {
     public const string DefaultAssemblyName = "Test.dll";
+
     public static string ToPath(params string[] parts) => Path.GetFullPath(Path.Combine(parts));
 
     public static MetadataReference CompileCSharpToMetadataRef(string code, string assemblyName = DefaultAssemblyName, IEnumerable<Stream>? aditionalReferences = null)

@@ -35,7 +35,7 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
         if (this.Name != prop.Name) return false;
         if (this.Visibility != prop.Visibility) return false;
         if (this.IsStatic != prop.IsStatic) return false;
-        return this.Type.FullName == prop.Type.FullName;
+        return SymbolEqualityComparer.Default.Equals(this.Type, prop.Type);
     }
 
     public override PropertySymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

@@ -94,6 +94,17 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         }
     }
 
+    public bool IsBaseTypeOrSameType(TypeSymbol possibleBaseType)
+    {
+        if (SymbolEqualityComparer.Default.Equals(this, possibleBaseType)) return true;
+        foreach (var baseType in this.BaseTypes)
+        {
+            if (SymbolEqualityComparer.Default.Equals(baseType, possibleBaseType)) return true;
+            if (baseType.IsBaseTypeOrSameType(possibleBaseType)) return true;
+        }
+        return false;
+    }
+
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>

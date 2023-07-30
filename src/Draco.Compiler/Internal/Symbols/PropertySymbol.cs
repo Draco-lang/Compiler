@@ -36,6 +36,13 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
         return SymbolEqualityComparer.Default.Equals(this.Type, prop.Type);
     }
 
+    public bool CanBeOverride(IOverridableSymbol other)
+    {
+        if (other is not PropertySymbol prop) return false;
+        if (this.Name != prop.Name) return false;
+        return this.Type.IsBaseTypeOrSameType(prop.Type);
+    }
+
     public override PropertySymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (PropertySymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override PropertySymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>

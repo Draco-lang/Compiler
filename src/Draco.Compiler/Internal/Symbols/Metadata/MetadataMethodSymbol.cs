@@ -144,7 +144,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             if (body is null) return null;
 
             if (!implementation.MethodDeclaration.IsNil
-                && body.CanBeOverride(this)) return implementation.MethodDeclaration.Kind switch
+                && body.CanBeOverriddenBy(this)) return implementation.MethodDeclaration.Kind switch
                 {
                     HandleKind.MethodDefinition => this.GetFunctionFromDefinition((MethodDefinitionHandle)implementation.MethodDeclaration),
                     HandleKind.MemberReference => this.GetFunctionFromReference((MemberReferenceHandle)implementation.MethodDeclaration),

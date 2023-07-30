@@ -128,7 +128,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         return SymbolEqualityComparer.Default.Equals(this.ReturnType, function.ReturnType);
     }
 
-    public bool CanBeOverride(IOverridableSymbol other)
+    public bool CanBeOverriddenBy(IOverridableSymbol other)
     {
         if (other is not FunctionSymbol function) return false;
         if (this.Name != function.Name) return false;

@@ -16,5 +16,5 @@ internal interface IOverridableSymbol
     /// </summary>
     /// <param name="other">The symbol that could be override of this symbol.</param>
     /// <returns>True, if <paramref name="other"/> can be override of this symbol, otherwise false.</returns>
-    public bool CanBeOverride(IOverridableSymbol other);
+    public bool CanBeOverriddenBy(IOverridableSymbol other);
 }

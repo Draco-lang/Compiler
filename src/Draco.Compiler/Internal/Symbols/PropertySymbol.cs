@@ -36,7 +36,7 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
         return SymbolEqualityComparer.Default.Equals(this.Type, prop.Type);
     }
 
-    public bool CanBeOverride(IOverridableSymbol other)
+    public bool CanBeOverriddenBy(IOverridableSymbol other)
     {
         if (other is not PropertySymbol prop) return false;
         if (this.Name != prop.Name) return false;

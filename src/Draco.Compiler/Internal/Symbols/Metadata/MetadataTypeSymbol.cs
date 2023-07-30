@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
-using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -93,30 +92,24 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         var typeProvider = new TypeProvider(this.Assembly.Compilation);
         if (!this.typeDefinition.BaseType.IsNil)
         {
-            builder.Add(this.typeDefinition.BaseType.Kind switch
-            {
-                HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)this.typeDefinition.BaseType, 0),
-                HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)this.typeDefinition.BaseType, 0),
-                HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)this.typeDefinition.BaseType, 0),
-                _ => throw new InvalidOperationException(),
-            });
+            builder.Add(GetTypeFromMetadata(this.typeDefinition.BaseType));
         }
         foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
         {
             var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
-            if (!interfaceDef.Interface.IsNil)
-            {
-                builder.Add(interfaceDef.Interface.Kind switch
-                {
-                    HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)interfaceDef.Interface, 0),
-                    HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)interfaceDef.Interface, 0),
-                    HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)interfaceDef.Interface, 0),
-                    _ => throw new InvalidOperationException(),
-                });
-            }
+            if (interfaceDef.Interface.IsNil) continue;
+            builder.Add(GetTypeFromMetadata(interfaceDef.Interface));
         }
 
         return builder.ToImmutable();
+
+        TypeSymbol GetTypeFromMetadata(EntityHandle type) => type.Kind switch
+        {
+            HandleKind.TypeDefinition => typeProvider!.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)type, 0),
+            HandleKind.TypeReference => typeProvider!.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)type, 0),
+            HandleKind.TypeSpecification => typeProvider!.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)type, 0),
+            _ => throw new InvalidOperationException(),
+        };
     }
 
     private ImmutableArray<Symbol> BuildMembers()

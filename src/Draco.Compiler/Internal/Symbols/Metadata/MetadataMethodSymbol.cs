@@ -161,12 +161,12 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         var definition = this.MetadataReader.GetMethodDefinition(methodDef);
         var provider = new TypeProvider(this.Assembly.Compilation);
         var signature = definition.DecodeSignature(provider, this);
-        var type = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
-        var symbols = type.DefinedMembers.Concat((type as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
-        foreach (var function in symbols)
+        var containingType = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
+        var functions = containingType.DefinedMembers.Concat((containingType as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
+        foreach (var function in functions)
         {
             if (function.Name != this.MetadataReader.GetString(definition.Name)) continue;
-            if (CompareSignatures(function, signature)) return function;
+            if (SignaturesMatch(function, signature)) return function;
         }
         return null;
     }
@@ -176,23 +176,23 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         var reference = this.MetadataReader.GetMemberReference(methodRef);
         var provider = new TypeProvider(this.Assembly.Compilation);
         var signature = reference.DecodeMethodSignature(provider, this);
-        var type = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
-        var symbols = type.DefinedMembers.Concat((type as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
-        foreach (var function in symbols)
+        var containingType = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
+        var functions = containingType.DefinedMembers.Concat((containingType as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
+        foreach (var function in functions)
         {
             if (function.Name != this.MetadataReader.GetString(reference.Name)) continue;
-            if (CompareSignatures(function, signature)) return function;
+            if (SignaturesMatch(function, signature)) return function;
         }
         return null;
     }
 
-    private static bool CompareSignatures(FunctionSymbol function, MethodSignature<TypeSymbol> signature)
+    private static bool SignaturesMatch(FunctionSymbol function, MethodSignature<TypeSymbol> signature)
     {
         if (function.Parameters.Length != signature.ParameterTypes.Length) return false;
         if (function.GenericParameters.Length != signature.GenericParameterCount) return false;
         for (int i = 0; i < function.Parameters.Length; i++)
         {
-            if (function.Parameters[i].Type.FullName != signature.ParameterTypes[i].FullName) return false;
+            if (!SymbolEqualityComparer.Default.Equals(function.Parameters[i].Type, signature.ParameterTypes[i])) return false;
         }
         return true;
     }

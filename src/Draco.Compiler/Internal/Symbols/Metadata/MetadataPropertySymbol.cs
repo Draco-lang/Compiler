@@ -84,7 +84,6 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private PropertySymbol? GetExplicitOverride()
     {
-        // TODO: Take getter or setter, find what it overrides and get the prop
         var accessor = this.Getter ?? this.Setter;
         if (accessor is null) throw new InvalidOperationException();
 

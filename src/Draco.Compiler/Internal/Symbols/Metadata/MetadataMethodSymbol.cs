@@ -190,7 +190,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     {
         if (function.Parameters.Length != signature.ParameterTypes.Length) return false;
         if (function.GenericParameters.Length != signature.GenericParameterCount) return false;
-        for (int i = 0; i < function.Parameters.Length; i++)
+        for (var i = 0; i < function.Parameters.Length; i++)
         {
             if (!SymbolEqualityComparer.Default.Equals(function.Parameters[i].Type, signature.ParameterTypes[i])) return false;
         }

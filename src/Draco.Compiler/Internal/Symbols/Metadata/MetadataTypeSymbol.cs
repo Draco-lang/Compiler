@@ -37,7 +37,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     public override bool IsInterface => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
 
-    public override ImmutableArray<TypeSymbol> BaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
+    public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
     private ImmutableArray<TypeSymbol> baseTypes;
 
     // NOTE: thread-safety does not matter, same instance

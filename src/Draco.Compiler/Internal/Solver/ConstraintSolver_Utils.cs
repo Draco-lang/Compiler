@@ -29,7 +29,7 @@ internal sealed partial class ConstraintSolver
         if (derived is NeverTypeSymbol or ErrorTypeSymbol) return true;
 
         return SymbolEqualityComparer.Default.Equals(@base, derived)
-            || derived.BaseTypes.Any(b => IsBaseOf(@base, b));
+            || derived.ImmediateBaseTypes.Any(b => IsBaseOf(@base, b));
     }
 
     private static FunctionTypeSymbol MakeMismatchedFunctionType(ImmutableArray<object> args, TypeSymbol returnType) => new(

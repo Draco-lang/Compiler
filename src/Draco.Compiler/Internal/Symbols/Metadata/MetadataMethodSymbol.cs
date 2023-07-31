@@ -134,26 +134,20 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         foreach (var impl in type.GetMethodImplementations())
         {
             var implementation = this.MetadataReader.GetMethodImplementation(impl);
-            var body = implementation.MethodBody.Kind switch
-            {
-                HandleKind.MethodDefinition => this.GetFunctionFromDefinition((MethodDefinitionHandle)implementation.MethodBody),
-                HandleKind.MemberReference => this.GetFunctionFromReference((MemberReferenceHandle)implementation.MethodBody),
-                _ => throw new InvalidOperationException(),
-            };
+            var body = GetFunctionFromMetadata(implementation.MethodBody);
 
             if (body is null) return null;
 
-            if (!implementation.MethodDeclaration.IsNil && body.CanBeOverriddenBy(this)) 
-            {
-                return implementation.MethodDeclaration.Kind switch
-                {
-                    HandleKind.MethodDefinition => this.GetFunctionFromDefinition((MethodDefinitionHandle)implementation.MethodDeclaration),
-                    HandleKind.MemberReference => this.GetFunctionFromReference((MemberReferenceHandle)implementation.MethodDeclaration),
-                    _ => throw new InvalidOperationException(),
-                };
-            }
+            if (!implementation.MethodDeclaration.IsNil && body.CanBeOverriddenBy(this)) return GetFunctionFromMetadata(implementation.MethodDeclaration);
         }
         return null;
+
+        FunctionSymbol? GetFunctionFromMetadata(EntityHandle function) => function.Kind switch
+        {
+            HandleKind.MethodDefinition => this.GetFunctionFromDefinition((MethodDefinitionHandle)function),
+            HandleKind.MemberReference => this.GetFunctionFromReference((MemberReferenceHandle)function),
+            _ => throw new InvalidOperationException(),
+        };
     }
 
     private FunctionSymbol? GetFunctionFromDefinition(MethodDefinitionHandle methodDef)
@@ -162,13 +156,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         var provider = new TypeProvider(this.Assembly.Compilation);
         var signature = definition.DecodeSignature(provider, this);
         var containingType = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
-        var functions = containingType.DefinedMembers.Concat((containingType as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
-        foreach (var function in functions)
-        {
-            if (function.Name != this.MetadataReader.GetString(definition.Name)) continue;
-            if (SignaturesMatch(function, signature)) return function;
-        }
-        return null;
+        return this.GetFunction(definition.Name, signature, containingType);
     }
 
     private FunctionSymbol? GetFunctionFromReference(MemberReferenceHandle methodRef)
@@ -177,10 +165,15 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         var provider = new TypeProvider(this.Assembly.Compilation);
         var signature = reference.DecodeMethodSignature(provider, this);
         var containingType = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
+        return this.GetFunction(reference.Name, signature, containingType);
+    }
+
+    private FunctionSymbol? GetFunction(StringHandle name, MethodSignature<TypeSymbol> signature, TypeSymbol containingType)
+    {
         var functions = containingType.DefinedMembers.Concat((containingType as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
         foreach (var function in functions)
         {
-            if (function.Name != this.MetadataReader.GetString(reference.Name)) continue;
+            if (function.Name != this.MetadataReader.GetString(name)) continue;
             if (SignaturesMatch(function, signature)) return function;
         }
         return null;

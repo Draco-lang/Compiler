@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -39,10 +40,16 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// <summary>
     /// The immediate base types of this type.
     /// </summary>
-    public virtual ImmutableArray<TypeSymbol> BaseTypes => ImmutableArray<TypeSymbol>.Empty;
+    public virtual ImmutableArray<TypeSymbol> ImmediateBaseTypes => ImmutableArray<TypeSymbol>.Empty;
 
     /// <summary>
-    /// The members defined directly in this type doesn't include members from <see cref="BaseTypes"/>.
+    /// All of the base types of this type (<see cref="ImmediateBaseTypes"/>, their base types, their base types and so on)
+    /// </summary>
+    public ImmutableArray<TypeSymbol> BaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
+    private ImmutableArray<TypeSymbol> baseTypes;
+
+    /// <summary>
+    /// The members defined directly in this type doesn't include members from <see cref="ImmediateBaseTypes"/>.
     /// </summary>
     public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
 
@@ -52,18 +59,8 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
 
-    public T? GetOverriddenSymbol<T>(T @override) where T : Symbol
-    {
-        foreach (var baseType in this.BaseTypes.Where(x => !x.IsInterface))
-        {
-            foreach (var member in baseType.DefinedMembers)
-            {
-                if (@override.SignatureEquals(member)) return (T)member;
-            }
-            baseType.GetOverriddenSymbol(@override);
-        }
-        return null;
-    }
+    public T? GetOverriddenSymbol<T>(T @override) where T : Symbol =>
+        this.BaseTypes.SelectMany(x => x.DefinedMembers).OfType<T>().FirstOrDefault(x => x.SignatureEquals(@override));
 
     private ImmutableArray<Symbol> BuildMembers()
     {
@@ -75,23 +72,25 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
             if (member is IOverridableSymbol overridable && overridable.Override is not null) ignore.Add(overridable.Override);
             else ignore.Add(member);
         }
-        Recurse(this);
-        return builder.ToImmutable();
-
-        void Recurse(TypeSymbol current)
+        foreach (var member in this.BaseTypes.Where(x => !x.IsInterface).SelectMany(x => x.DefinedMembers))
         {
-            foreach (var baseType in current.BaseTypes.Where(x => !x.IsInterface))
-            {
-                foreach (var member in baseType.DefinedMembers)
-                {
-                    if (ignore.Any(member.SignatureEquals)) continue;
-                    builder.Add(member);
-                    if (member is IOverridableSymbol overridable && overridable.Override is not null) ignore.Add(overridable.Override);
-                    else ignore.Add(member);
-                }
-                Recurse(baseType);
-            }
+            if (ignore.Any(member.SignatureEquals)) continue;
+            builder.Add(member);
+            if (member is IOverridableSymbol overridable && overridable.Override is not null) ignore.Add(overridable.Override);
+            else ignore.Add(member);
         }
+        return builder.ToImmutable();
+    }
+
+    private ImmutableArray<TypeSymbol> BuildBaseTypes()
+    {
+        var result = ImmutableArray.CreateBuilder<TypeSymbol>();
+        foreach (var baseType in this.ImmediateBaseTypes)
+        {
+            result.Add(baseType);
+            result.AddRange(baseType.BaseTypes);
+        }
+        return result.ToImmutable();
     }
 
     /// <summary>
@@ -102,7 +101,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public bool IsBaseTypeOrSameType(TypeSymbol other)
     {
         if (SymbolEqualityComparer.Default.Equals(this, other)) return true;
-        foreach (var baseType in this.BaseTypes)
+        foreach (var baseType in this.ImmediateBaseTypes)
         {
             if (SymbolEqualityComparer.Default.Equals(baseType, other)) return true;
             if (baseType.IsBaseTypeOrSameType(other)) return true;

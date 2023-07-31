@@ -45,7 +45,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildDefinedMembers);
     private ImmutableArray<Symbol> definedMembers;
 
-    public override ImmutableArray<TypeSymbol> BaseTypes => this.GenericDefinition.BaseTypes
+    public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => this.GenericDefinition.ImmediateBaseTypes
         .Select(x => x.GenericInstantiate(x.ContainingSymbol, this.Context))
         .ToImmutableArray();
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;

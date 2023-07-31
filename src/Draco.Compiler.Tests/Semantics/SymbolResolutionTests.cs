@@ -3486,8 +3486,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Single(fooTypeSym.BaseTypes);
-        Assert.Equal("System.Object", fooTypeSym.BaseTypes[0].FullName);
+        Assert.Single(fooTypeSym.ImmediateBaseTypes);
+        Assert.Equal("System.Object", fooTypeSym.ImmediateBaseTypes[0].FullName);
     }
 
     [Fact]
@@ -3532,8 +3532,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Single(fooTypeSym.BaseTypes);
-        Assert.Equal(parentTypeDecl, fooTypeSym.BaseTypes[0]);
+        Assert.Single(fooTypeSym.ImmediateBaseTypes);
+        Assert.Equal(parentTypeDecl, fooTypeSym.ImmediateBaseTypes[0]);
     }
 
     [Fact]
@@ -3589,8 +3589,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Single(fooTypeSym.BaseTypes);
-        Assert.Equal(baseTypeDecl, fooTypeSym.BaseTypes[0]);
+        Assert.Single(fooTypeSym.ImmediateBaseTypes);
+        Assert.Equal(baseTypeDecl, fooTypeSym.ImmediateBaseTypes[0]);
     }
 
     [Fact]
@@ -3630,13 +3630,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
         var parentTypeDecl = GetMetadataSymbol(compilation, null, "ParentType`1");
-        var baseTypeSym = fooTypeSym.BaseTypes[0];
+        var baseTypeSym = fooTypeSym.ImmediateBaseTypes[0];
 
         // Assert
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Single(fooTypeSym.BaseTypes);
+        Assert.Single(fooTypeSym.ImmediateBaseTypes);
         Assert.True(baseTypeSym.IsGenericInstance);
         Assert.False(baseTypeSym.IsGenericDefinition);
         Assert.Same(parentTypeDecl, baseTypeSym.GenericDefinition);
@@ -3686,9 +3686,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Equal(2, fooTypeSym.BaseTypes.Length);
-        Assert.Equal("System.Object", fooTypeSym.BaseTypes[0].FullName);
-        Assert.Equal(parentInterfaceDecl, fooTypeSym.BaseTypes[1]);
+        Assert.Equal(2, fooTypeSym.ImmediateBaseTypes.Length);
+        Assert.Equal("System.Object", fooTypeSym.ImmediateBaseTypes[0].FullName);
+        Assert.Equal(parentInterfaceDecl, fooTypeSym.ImmediateBaseTypes[1]);
     }
 
     [Fact]
@@ -3734,9 +3734,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Equal(2, fooTypeSym.BaseTypes.Length);
-        Assert.Equal("System.Object", fooTypeSym.BaseTypes[0].FullName);
-        Assert.Equal("System.ICloneable", fooTypeSym.BaseTypes[1].FullName);
+        Assert.Equal(2, fooTypeSym.ImmediateBaseTypes.Length);
+        Assert.Equal("System.Object", fooTypeSym.ImmediateBaseTypes[0].FullName);
+        Assert.Equal("System.ICloneable", fooTypeSym.ImmediateBaseTypes[1].FullName);
     }
 
     [Fact]
@@ -3776,14 +3776,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).ReturnType;
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "FooType");
         var parentInterfaceDecl = GetMetadataSymbol(compilation, null, "ParentInterface`1");
-        var baseInterfaceSym = fooTypeSym.BaseTypes[^1];
+        var baseInterfaceSym = fooTypeSym.ImmediateBaseTypes[^1];
 
         // Assert
         Assert.Empty(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        Assert.Equal(2, fooTypeSym.BaseTypes.Length);
-        Assert.Equal("System.Object", fooTypeSym.BaseTypes[0].FullName);
+        Assert.Equal(2, fooTypeSym.ImmediateBaseTypes.Length);
+        Assert.Equal("System.Object", fooTypeSym.ImmediateBaseTypes[0].FullName);
         Assert.True(baseInterfaceSym.IsGenericInstance);
         Assert.False(baseInterfaceSym.IsGenericDefinition);
         Assert.Same(parentInterfaceDecl, baseInterfaceSym.GenericDefinition);
@@ -3832,7 +3832,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fieldSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.BaseTypes[0], "Field");
+        var fieldSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.ImmediateBaseTypes[0], "Field");
         var fieldDecl = GetMetadataSymbol(compilation, null, "ParentType", "Field");
 
         // Assert

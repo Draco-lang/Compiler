@@ -34,7 +34,15 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
     /// <summary>
     /// The parameters of this property.
     /// </summary>
-    public virtual ImmutableArray<ParameterSymbol> Parameters => this.Getter?.Parameters ?? this.Setter?.Parameters.Take(this.Setter.Parameters.Length - 1).ToImmutableArray() ?? throw new System.InvalidOperationException();
+    public ImmutableArray<ParameterSymbol> Parameters
+    {
+        get
+        {
+            if (this.Getter is not null) return this.Getter.Parameters;
+            if (this.Setter is not null) return this.Setter.Parameters[..^1].ToImmutableArray();
+            throw new System.InvalidOperationException();
+        }
+    }
 
     /// <summary>
     /// All accessor functions of this property.

@@ -72,15 +72,17 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         foreach (var member in this.DefinedMembers)
         {
             builder.Add(member);
-            if (member is IOverridableSymbol overridable && overridable.Override is not null) ignore.Add(overridable.Override);
-            else ignore.Add(member);
+            ignore.Add(member);
+            if (member is not IOverridableSymbol overridable) continue;
+            if (overridable.Override is not null) ignore.Add(overridable.Override);
         }
         foreach (var member in this.BaseTypes.Where(x => !x.IsInterface).SelectMany(x => x.DefinedMembers))
         {
             if (ignore.Any(member.SignatureEquals)) continue;
             builder.Add(member);
-            if (member is IOverridableSymbol overridable && overridable.Override is not null) ignore.Add(overridable.Override);
-            else ignore.Add(member);
+            ignore.Add(member);
+            if (member is not IOverridableSymbol overridable) continue;
+            if (overridable.Override is not null) ignore.Add(overridable.Override);
         }
         return builder.ToImmutable();
     }

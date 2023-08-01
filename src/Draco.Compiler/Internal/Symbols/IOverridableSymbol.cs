@@ -12,11 +12,6 @@ internal interface IOverridableSymbol
     public Symbol? Override { get; }
 
     /// <summary>
-    /// True, if this is an explicit override.
-    /// </summary>
-    public bool IsExplicitOverride { get; }
-
-    /// <summary>
     /// Checks if <paramref name="other"/> can be override of this symbol.
     /// </summary>
     /// <param name="other">The symbol that could be override of this symbol.</param>

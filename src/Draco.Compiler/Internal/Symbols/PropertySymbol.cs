@@ -30,7 +30,6 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
     public abstract bool IsStatic { get; }
 
     public virtual Symbol? Override => null;
-    public virtual bool IsExplicitOverride => false;
 
     /// <summary>
     /// The parameters of this property.

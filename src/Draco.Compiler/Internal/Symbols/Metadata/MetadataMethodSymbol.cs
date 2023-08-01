@@ -75,22 +75,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             }
         }
     }
-    public override bool IsExplicitOverride
-    {
-        get
-        {
-            if (!this.overrideNeedsBuild) return this.isExplicitOverride;
-            lock (this.overrideBuildLock)
-            {
-                if (this.overrideNeedsBuild) this.BuildOverride();
-                return this.isExplicitOverride;
-            }
-        }
-    }
-
     private FunctionSymbol? @override;
-    private bool isExplicitOverride;
-
     private volatile bool overrideNeedsBuild = true;
     private readonly object overrideBuildLock = new();
 
@@ -163,7 +148,6 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         this.@override = this.ContainingSymbol is TypeSymbol type
             ? explicitOverride ?? type.GetOverriddenSymbol(this)
             : null;
-        this.isExplicitOverride = explicitOverride is not null;
         // IMPORTANT: Write flag last
         this.overrideNeedsBuild = false;
     }

@@ -101,7 +101,6 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     private TypeSymbol? type;
 
     public virtual Symbol? Override => null;
-    public virtual bool IsExplicitOverride => false;
 
     public override string ToString()
     {

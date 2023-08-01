@@ -31,20 +31,17 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     {
         get
         {
-            if (this.overrideNeedsBuild)
+            if (!this.overrideNeedsBuild) return this.@override;
+            lock (this.overrideBuildLock)
             {
-                this.@override = this.ContainingSymbol is TypeSymbol type
-                    ? this.GetExplicitOverride() ?? type.GetOverriddenSymbol(this)
-                    : null;
-                this.overrideNeedsBuild = false;
+                if (this.overrideNeedsBuild) this.BuildOverride();
+                return this.@override;
             }
-            return this.@override;
         }
     }
     private PropertySymbol? @override;
-    private bool overrideNeedsBuild = true;
-
-    public override bool IsExplicitOverride => this.Accessors.Any(x => x.IsExplicitOverride);
+    private volatile bool overrideNeedsBuild = true;
+    private readonly object overrideBuildLock = new();
 
     public override Symbol ContainingSymbol { get; }
 
@@ -82,6 +79,16 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
         if (accessors.Setter.IsNil) return null;
         var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
         return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, setter, this);
+    }
+
+    private void BuildOverride()
+    {
+        var explicitOverride = this.GetExplicitOverride();
+        this.@override = this.ContainingSymbol is TypeSymbol type
+            ? explicitOverride ?? type.GetOverriddenSymbol(this)
+            : null;
+        // IMPORTANT: Write flag last
+        this.overrideNeedsBuild = false;
     }
 
     private PropertySymbol? GetExplicitOverride()

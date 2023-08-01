@@ -81,7 +81,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     {
         var builder = ImmutableArray.CreateBuilder<Symbol>();
         var ignore = new List<Symbol>();
-        foreach (var member in this.BaseTypes.Where(x => !x.IsInterface).SelectMany(x => x.DefinedMembers))
+        foreach (var member in this.BaseTypes.SelectMany(x => x.DefinedMembers))
         {
             if (ignore.Any(member.SignatureEquals)) continue;
             builder.Add(member);

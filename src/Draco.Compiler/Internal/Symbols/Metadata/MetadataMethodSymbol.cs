@@ -46,7 +46,22 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override bool IsMember => !this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override bool IsVirtual => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Virtual);
     public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
-    public override Api.Semantics.Visibility Visibility => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Api.Semantics.Visibility Visibility
+    {
+        get
+        {
+            // If this is an interface member, default to public
+            if (this.ContainingSymbol is TypeSymbol { IsInterface: true })
+            {
+                return Api.Semantics.Visibility.Public;
+            }
+
+            // Otherwise read flag from metadata
+            return this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public)
+                ? Api.Semantics.Visibility.Public
+                : Api.Semantics.Visibility.Internal;
+        }
+    }
 
     public override FunctionSymbol? Override
     {

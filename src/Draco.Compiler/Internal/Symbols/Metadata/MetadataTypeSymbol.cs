@@ -16,10 +16,6 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
     private ImmutableArray<Symbol> definedMembers;
 
-    public ImmutableArray<FunctionSymbol> PropertyAccessors =>
-        InterlockedUtils.InitializeDefault(ref this.propertyAccessors, this.BuildPropertyAccessors);
-    private ImmutableArray<FunctionSymbol> propertyAccessors;
-
     public override string Name => InterlockedUtils.InitializeNull(ref this.name, this.BuildName);
     private string? name;
 
@@ -166,20 +162,6 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
                 containingSymbol: this,
                 propertyDefinition: propDef);
             if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
-        }
-
-        // Done
-        return result.ToImmutable();
-    }
-
-    private ImmutableArray<FunctionSymbol> BuildPropertyAccessors()
-    {
-        var result = ImmutableArray.CreateBuilder<FunctionSymbol>();
-
-        foreach (var prop in this.DefinedMembers.OfType<PropertySymbol>())
-        {
-            if (prop.Getter is not null) result.Add(prop.Getter);
-            if (prop.Setter is not null) result.Add(prop.Setter);
         }
 
         // Done

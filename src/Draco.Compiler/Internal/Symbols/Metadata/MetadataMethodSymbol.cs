@@ -153,27 +153,34 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     private FunctionSymbol? GetFunctionFromDefinition(MethodDefinitionHandle methodDef)
     {
         var definition = this.MetadataReader.GetMethodDefinition(methodDef);
+        var name = this.MetadataReader.GetString(definition.Name);
         var provider = new TypeProvider(this.Assembly.Compilation);
         var signature = definition.DecodeSignature(provider, this);
         var containingType = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
-        return this.GetFunction(definition.Name, signature, containingType);
+        return GetFunctionWithSignature(containingType, name, signature);
     }
 
     private FunctionSymbol? GetFunctionFromReference(MemberReferenceHandle methodRef)
     {
         var reference = this.MetadataReader.GetMemberReference(methodRef);
+        var name = this.MetadataReader.GetString(reference.Name);
         var provider = new TypeProvider(this.Assembly.Compilation);
         var signature = reference.DecodeMethodSignature(provider, this);
         var containingType = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
-        return this.GetFunction(reference.Name, signature, containingType);
+        return GetFunctionWithSignature(containingType, name, signature);
     }
 
-    private FunctionSymbol? GetFunction(StringHandle name, MethodSignature<TypeSymbol> signature, TypeSymbol containingType)
+    private static FunctionSymbol? GetFunctionWithSignature(
+        TypeSymbol containingType,
+        string name,
+        MethodSignature<TypeSymbol> signature)
     {
-        var functions = containingType.DefinedMembers.Concat((containingType as IMetadataClass)!.PropertyAccessors).OfType<FunctionSymbol>();
+        var functions = containingType.DefinedMembers
+            .OfType<FunctionSymbol>()
+            .Concat(containingType.DefinedPropertyAccessors);
         foreach (var function in functions)
         {
-            if (function.Name != this.MetadataReader.GetString(name)) continue;
+            if (function.Name != name) continue;
             if (SignaturesMatch(function, signature)) return function;
         }
         return null;

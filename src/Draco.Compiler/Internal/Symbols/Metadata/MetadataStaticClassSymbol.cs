@@ -15,10 +15,6 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
-    public ImmutableArray<FunctionSymbol> PropertyAccessors =>
-        InterlockedUtils.InitializeDefault(ref this.propertyAccessors, this.BuildPropertyAccessors);
-    private ImmutableArray<FunctionSymbol> propertyAccessors;
-
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
 
@@ -101,20 +97,6 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
                 containingSymbol: this,
                 propertyDefinition: propDef);
             if (propSym.IsStatic && propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
-        }
-
-        // Done
-        return result.ToImmutable();
-    }
-
-    private ImmutableArray<FunctionSymbol> BuildPropertyAccessors()
-    {
-        var result = ImmutableArray.CreateBuilder<FunctionSymbol>();
-
-        foreach (var prop in this.Members.OfType<PropertySymbol>())
-        {
-            if (prop.Getter is not null) result.Add(prop.Getter);
-            if (prop.Setter is not null) result.Add(prop.Setter);
         }
 
         // Done

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
@@ -28,6 +29,18 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
     public abstract bool IsStatic { get; }
 
     public virtual Symbol? Override => null;
+
+    /// <summary>
+    /// All accessor functions of this property.
+    /// </summary>
+    public IEnumerable<FunctionSymbol> Accessors
+    {
+        get
+        {
+            if (this.Getter is not null) yield return this.Getter;
+            if (this.Setter is not null) yield return this.Setter;
+        }
+    }
 
     public override bool SignatureEquals(Symbol other)
     {

@@ -63,6 +63,12 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public sealed override IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
+    /// <summary>
+    /// All property accessors defined by this type.
+    /// </summary>
+    public IEnumerable<FunctionSymbol> DefinedPropertyAccessors =>
+        this.DefinedMembers.OfType<PropertySymbol>().SelectMany(p => p.Accessors);
+
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
 

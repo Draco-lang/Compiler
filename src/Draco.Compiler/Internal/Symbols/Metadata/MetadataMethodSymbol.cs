@@ -67,42 +67,32 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     {
         get
         {
-            if (this.overrideNeedsBuild)
+            if (!this.overrideNeedsBuild) return this.@override;
+            lock (this.overrideBuildLock)
             {
-                var explicitOverride = this.GetExplicitOverride();
-                this.@override = this.ContainingSymbol is TypeSymbol type
-                    ? explicitOverride ?? type.GetOverriddenSymbol(this)
-                    : null;
-
-                this.isExplicitOverride = explicitOverride is not null;
-
-                this.overrideNeedsBuild = false;
+                if (this.overrideNeedsBuild) this.BuildOverride();
+                return this.@override;
             }
-            return this.@override;
         }
     }
-    private FunctionSymbol? @override;
-    private bool overrideNeedsBuild = true;
-
     public override bool IsExplicitOverride
     {
         get
         {
-            if (this.overrideNeedsBuild)
+            if (!this.overrideNeedsBuild) return this.isExplicitOverride;
+            lock (this.overrideBuildLock)
             {
-                var explicitOverride = this.GetExplicitOverride();
-                this.@override = this.ContainingSymbol is TypeSymbol type
-                    ? explicitOverride ?? type.GetOverriddenSymbol(this)
-                    : null;
-
-                this.isExplicitOverride = explicitOverride is not null;
-
-                this.overrideNeedsBuild = false;
+                if (this.overrideNeedsBuild) this.BuildOverride();
+                return this.isExplicitOverride;
             }
-            return this.isExplicitOverride;
         }
     }
-    private bool isExplicitOverride = false;
+
+    private FunctionSymbol? @override;
+    private bool isExplicitOverride;
+
+    private volatile bool overrideNeedsBuild = true;
+    private readonly object overrideBuildLock = new();
 
     public override Symbol ContainingSymbol { get; }
 
@@ -165,6 +155,17 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         this.parameters = parameters.ToImmutable();
         // IMPORTANT: returnType is the build flag, needs to be written last
         Volatile.Write(ref this.returnType, signature.ReturnType);
+    }
+
+    private void BuildOverride()
+    {
+        var explicitOverride = this.GetExplicitOverride();
+        this.@override = this.ContainingSymbol is TypeSymbol type
+            ? explicitOverride ?? type.GetOverriddenSymbol(this)
+            : null;
+        this.isExplicitOverride = explicitOverride is not null;
+        // IMPORTANT: Write flag last
+        this.overrideNeedsBuild = false;
     }
 
     private FunctionSymbol? GetExplicitOverride()

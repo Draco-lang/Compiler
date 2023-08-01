@@ -118,6 +118,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     {
         if (other is not FunctionSymbol function) return false;
         if (this.Name != function.Name) return false;
+        if (this.GenericParameters.Length != function.GenericParameters.Length) return false;
         if (this.Parameters.Length != function.Parameters.Length) return false;
         for (var i = 0; i < this.Parameters.Length; i++)
         {
@@ -130,14 +131,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     public bool CanBeOverriddenBy(IOverridableSymbol other)
     {
         if (other is not FunctionSymbol function) return false;
-        if (this.Name != function.Name) return false;
-        if (this.Parameters.Length != function.Parameters.Length) return false;
-        if (this.GenericParameters.Length != function.GenericParameters.Length) return false;
-        for (var i = 0; i < this.Parameters.Length; i++)
-        {
-            if (!SymbolEqualityComparer.AllowTypeVariables.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
-            if (this.Parameters[i].IsVariadic != function.Parameters[i].IsVariadic) return false;
-        }
+        if (!this.CanBeShadowedBy(function)) return false;
         return SymbolEqualityComparer.AllowTypeVariables.IsBaseOf(this.ReturnType, function.ReturnType);
     }
 

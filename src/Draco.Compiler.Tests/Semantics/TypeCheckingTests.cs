@@ -2123,4 +2123,61 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.Equal(compilation.WellKnownTypes.SystemObject, xSym.Type);
     }
+
+    [Fact]
+    public void InferSwappedArrayElement()
+    {
+        // public func foo() {
+        //     var a = Array(5);
+        //     var b = Array(5);
+        //     a[0] = 1;
+        //     val tmp = a;
+        //     a = b;
+        //     b = tmp;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(NameExpression("Array"), LiteralExpression(5)))),
+                DeclarationStatement(VariableDeclaration(
+                    "b",
+                    null,
+                    CallExpression(NameExpression("Array"), LiteralExpression(5)))),
+                ExpressionStatement(BinaryExpression(
+                    IndexExpression(NameExpression("a"), LiteralExpression(0)),
+                    Assign,
+                    LiteralExpression(1))),
+                DeclarationStatement(ImmutableVariableDeclaration("tmp", null, NameExpression("a"))),
+                ExpressionStatement(BinaryExpression(NameExpression("a"), Assign, NameExpression("b"))),
+                ExpressionStatement(BinaryExpression(NameExpression("b"), Assign, NameExpression("tmp")))))));
+
+        var aDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var bDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var tmpDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(2);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDeclSyntax));
+        var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(bDeclSyntax));
+        var tmpSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(tmpDeclSyntax));
+
+        var intArrayType = IntrinsicSymbols.Array.GenericInstantiate(IntrinsicSymbols.Int32);
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, aSym.Type));
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, bSym.Type));
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, tmpSym.Type));
+    }
 }

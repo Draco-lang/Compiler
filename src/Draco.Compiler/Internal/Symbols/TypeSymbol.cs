@@ -44,6 +44,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 
     /// <summary>
     /// All types that can be considered the base type of this one, including this type itself.
+    /// The types are returned in a pre-order manner, starting from this type.
     /// </summary>
     public IEnumerable<TypeSymbol> BaseTypes
     {

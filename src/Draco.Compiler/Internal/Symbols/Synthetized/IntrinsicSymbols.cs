@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using System.Reflection;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Model;
@@ -51,6 +53,31 @@ internal static class IntrinsicSymbols
             // Ctor
             yield return new ArrayConstructorSymbol(i);
         }
+
+        foreach (var type in new[]
+        {
+            Int8, Int16, Int32, Int64,
+            UInt8, UInt16, UInt32, UInt64,
+            Float32, Float64,
+        })
+        {
+            yield return Comparison(TokenKind.Equal, type, type, CodegenEqual);
+            yield return Comparison(TokenKind.NotEqual, type, type, CodegenNotEqual);
+            yield return Comparison(TokenKind.GreaterThan, type, type, CodegenGreater);
+            yield return Comparison(TokenKind.LessThan, type, type, CodegenLess);
+            yield return Comparison(TokenKind.GreaterEqual, type, type, CodegenGreaterEqual);
+            yield return Comparison(TokenKind.LessEqual, type, type, CodegenLessEqual);
+
+            yield return Unary(TokenKind.Plus, type, type, CodegenPlus);
+            yield return Unary(TokenKind.Minus, type, type, CodegenMinus);
+
+            yield return Binary(TokenKind.Plus, type, type, type, CodegenAdd);
+            yield return Binary(TokenKind.Minus, type, type, type, CodegenSub);
+            yield return Binary(TokenKind.Star, type, type, type, CodegenMul);
+            yield return Binary(TokenKind.Slash, type, type, type, CodegenDiv);
+            yield return Binary(TokenKind.KeywordMod, type, type, type, CodegenMod);
+            yield return Binary(TokenKind.KeywordRem, type, type, type, CodegenRem);
+        }
     }
 
     // Operators
@@ -78,44 +105,6 @@ internal static class IntrinsicSymbols
         new IntrinsicFunctionSymbol(name, paramTypes, returnType);
 
     public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Bool, Bool, CodegenNot);
-
-    // Int32
-
-    public static FunctionSymbol Int32_Equal { get; } = Comparison(TokenKind.Equal, Int32, Int32, CodegenEqual);
-    public static FunctionSymbol Int32_NotEqual { get; } = Comparison(TokenKind.NotEqual, Int32, Int32, CodegenNotEqual);
-    public static FunctionSymbol Int32_GreaterThan { get; } = Comparison(TokenKind.GreaterThan, Int32, Int32, CodegenGreater);
-    public static FunctionSymbol Int32_LessThan { get; } = Comparison(TokenKind.LessThan, Int32, Int32, CodegenLess);
-    public static FunctionSymbol Int32_GreaterEqual { get; } = Comparison(TokenKind.GreaterEqual, Int32, Int32, CodegenGreaterEqual);
-    public static FunctionSymbol Int32_LessEqual { get; } = Comparison(TokenKind.LessEqual, Int32, Int32, CodegenLessEqual);
-
-    public static FunctionSymbol Int32_Plus { get; } = Unary(TokenKind.Plus, Int32, Int32, CodegenPlus);
-    public static FunctionSymbol Int32_Minus { get; } = Unary(TokenKind.Minus, Int32, Int32, CodegenMinus);
-
-    public static FunctionSymbol Int32_Add { get; } = Binary(TokenKind.Plus, Int32, Int32, Int32, CodegenAdd);
-    public static FunctionSymbol Int32_Sub { get; } = Binary(TokenKind.Minus, Int32, Int32, Int32, CodegenSub);
-    public static FunctionSymbol Int32_Mul { get; } = Binary(TokenKind.Star, Int32, Int32, Int32, CodegenMul);
-    public static FunctionSymbol Int32_Div { get; } = Binary(TokenKind.Slash, Int32, Int32, Int32, CodegenDiv);
-    public static FunctionSymbol Int32_Mod { get; } = Binary(TokenKind.KeywordMod, Int32, Int32, Int32, CodegenMod);
-    public static FunctionSymbol Int32_Rem { get; } = Binary(TokenKind.KeywordRem, Int32, Int32, Int32, CodegenRem);
-
-    // Float64
-
-    public static FunctionSymbol Float64_Equal { get; } = Comparison(TokenKind.Equal, Float64, Float64, CodegenEqual);
-    public static FunctionSymbol Float64_NotEqual { get; } = Comparison(TokenKind.NotEqual, Float64, Float64, CodegenNotEqual);
-    public static FunctionSymbol Float64_GreaterThan { get; } = Comparison(TokenKind.GreaterThan, Float64, Float64, CodegenGreater);
-    public static FunctionSymbol Float64_LessThan { get; } = Comparison(TokenKind.LessThan, Float64, Float64, CodegenLess);
-    public static FunctionSymbol Float64_GreaterEqual { get; } = Comparison(TokenKind.GreaterEqual, Float64, Float64, CodegenGreaterEqual);
-    public static FunctionSymbol Float64_LessEqual { get; } = Comparison(TokenKind.LessEqual, Float64, Float64, CodegenLessEqual);
-
-    public static FunctionSymbol Float64_Plus { get; } = Unary(TokenKind.Plus, Float64, Float64, CodegenPlus);
-    public static FunctionSymbol Float64_Minus { get; } = Unary(TokenKind.Minus, Float64, Float64, CodegenMinus);
-
-    public static FunctionSymbol Float64_Add { get; } = Binary(TokenKind.Plus, Float64, Float64, Float64, CodegenAdd);
-    public static FunctionSymbol Float64_Sub { get; } = Binary(TokenKind.Minus, Float64, Float64, Float64, CodegenSub);
-    public static FunctionSymbol Float64_Mul { get; } = Binary(TokenKind.Star, Float64, Float64, Float64, CodegenMul);
-    public static FunctionSymbol Float64_Div { get; } = Binary(TokenKind.Slash, Float64, Float64, Float64, CodegenDiv);
-    public static FunctionSymbol Float64_Mod { get; } = Binary(TokenKind.KeywordMod, Float64, Float64, Float64, CodegenMod);
-    public static FunctionSymbol Float64_Rem { get; } = Binary(TokenKind.KeywordRem, Float64, Float64, Float64, CodegenRem);
 
     // Codegen
 

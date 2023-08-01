@@ -71,6 +71,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         var ignore = new List<Symbol>();
         foreach (var member in this.DefinedMembers)
         {
+            if (ignore.Any(member.SignatureEquals)) continue;
             builder.Add(member);
             ignore.Add(member);
             if (member is not IOverridableSymbol overridable) continue;

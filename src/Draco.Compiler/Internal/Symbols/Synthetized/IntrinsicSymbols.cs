@@ -12,12 +12,28 @@ internal static class IntrinsicSymbols
     public static TypeSymbol Never => NeverTypeSymbol.Instance;
     public static TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
     public static TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
+
     public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
+
+    public static TypeSymbol Int8 { get; } = new PrimitiveTypeSymbol("int8", isValueType: true);
+    public static TypeSymbol Int16 { get; } = new PrimitiveTypeSymbol("int16", isValueType: true);
     public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", isValueType: true);
+    public static TypeSymbol Int64 { get; } = new PrimitiveTypeSymbol("int64", isValueType: true);
+
+    public static TypeSymbol UInt8 { get; } = new PrimitiveTypeSymbol("uint8", isValueType: true);
+    public static TypeSymbol UInt16 { get; } = new PrimitiveTypeSymbol("uint16", isValueType: true);
+    public static TypeSymbol UInt32 { get; } = new PrimitiveTypeSymbol("uint32", isValueType: true);
+    public static TypeSymbol UInt64 { get; } = new PrimitiveTypeSymbol("uint64", isValueType: true);
+
+    public static TypeSymbol Float32 { get; } = new PrimitiveTypeSymbol("float32", isValueType: true);
     public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);
-    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
+
+    public static TypeSymbol Char { get; } = new PrimitiveTypeSymbol("char", isValueType: true);
     public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
+
     public static TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
+    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
+
     public static ArrayTypeSymbol Array { get; } = new(1);
     public static ArrayConstructorSymbol ArrayCtor { get; } = new(1);
 

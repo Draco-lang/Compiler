@@ -60,10 +60,25 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
     {
-        PrimitiveTypeCode.Boolean => IntrinsicSymbols.Bool,
-        PrimitiveTypeCode.Int32 => IntrinsicSymbols.Int32,
-        PrimitiveTypeCode.String => IntrinsicSymbols.String,
         PrimitiveTypeCode.Void => IntrinsicSymbols.Unit,
+
+        PrimitiveTypeCode.SByte => IntrinsicSymbols.Int8,
+        PrimitiveTypeCode.Int16 => IntrinsicSymbols.Int16,
+        PrimitiveTypeCode.Int32 => IntrinsicSymbols.Int32,
+        PrimitiveTypeCode.Int64 => IntrinsicSymbols.Int64,
+
+        PrimitiveTypeCode.Byte => IntrinsicSymbols.UInt8,
+        PrimitiveTypeCode.UInt16 => IntrinsicSymbols.UInt16,
+        PrimitiveTypeCode.UInt32 => IntrinsicSymbols.UInt32,
+        PrimitiveTypeCode.UInt64 => IntrinsicSymbols.UInt64,
+
+        PrimitiveTypeCode.Single => IntrinsicSymbols.Float32,
+        PrimitiveTypeCode.Double => IntrinsicSymbols.Float64,
+
+        PrimitiveTypeCode.Boolean => IntrinsicSymbols.Bool,
+        PrimitiveTypeCode.Char => IntrinsicSymbols.Char,
+
+        PrimitiveTypeCode.String => IntrinsicSymbols.String,
         PrimitiveTypeCode.Object => IntrinsicSymbols.Object,
         _ => UnknownType
     };

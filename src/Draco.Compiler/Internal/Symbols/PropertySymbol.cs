@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
 
@@ -32,6 +33,11 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
     public virtual bool IsExplicitOverride => false;
 
     /// <summary>
+    /// The parameters of this property.
+    /// </summary>
+    public virtual ImmutableArray<ParameterSymbol> Parameters => this.Getter?.Parameters ?? this.Setter?.Parameters.Take(this.Setter.Parameters.Length - 1).ToImmutableArray() ?? throw new System.InvalidOperationException();
+
+    /// <summary>
     /// All accessor functions of this property.
     /// </summary>
     public IEnumerable<FunctionSymbol> Accessors
@@ -43,11 +49,17 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
         }
     }
 
-    public override bool SignatureEquals(Symbol other)
+    public override bool CanBeShadowedBy(Symbol other)
     {
         if (other is not PropertySymbol prop) return false;
         if (this.Name != prop.Name) return false;
-        return SymbolEqualityComparer.Default.Equals(this.Type, prop.Type);
+        if (this.Parameters.Length != prop.Parameters.Length) return false;
+        for (var i = 0; i < this.Parameters.Length; i++)
+        {
+            if (!SymbolEqualityComparer.Default.Equals(this.Parameters[i].Type, prop.Parameters[i].Type)) return false;
+            if (this.Parameters[i].IsVariadic != prop.Parameters[i].IsVariadic) return false;
+        }
+        return true;
     }
 
     public bool CanBeOverriddenBy(IOverridableSymbol other)

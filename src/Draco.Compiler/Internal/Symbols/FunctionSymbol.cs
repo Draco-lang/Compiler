@@ -114,18 +114,17 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         return result.ToString();
     }
 
-    public override bool SignatureEquals(Symbol other)
+    public override bool CanBeShadowedBy(Symbol other)
     {
         if (other is not FunctionSymbol function) return false;
         if (this.Name != function.Name) return false;
         if (this.Parameters.Length != function.Parameters.Length) return false;
-        if (this.GenericParameters.Length != function.GenericParameters.Length) return false;
         for (var i = 0; i < this.Parameters.Length; i++)
         {
             if (!SymbolEqualityComparer.Default.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
             if (this.Parameters[i].IsVariadic != function.Parameters[i].IsVariadic) return false;
         }
-        return SymbolEqualityComparer.Default.Equals(this.ReturnType, function.ReturnType);
+        return true;
     }
 
     public bool CanBeOverriddenBy(IOverridableSymbol other)

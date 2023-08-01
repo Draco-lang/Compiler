@@ -71,11 +71,18 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
 
+    public override bool CanBeShadowedBy(Symbol other)
+    {
+        if (other is not TypeSymbol type) return false;
+        if (this.Name != other.Name) return false;
+        return this.GenericParameters.Length == other.GenericParameters.Length;
+    }
+
     public T? GetOverriddenSymbol<T>(T @override)
         where T : Symbol => this.BaseTypes
         .SelectMany(x => x.DefinedMembers)
         .OfType<T>()
-        .FirstOrDefault(x => x.SignatureEquals(@override));
+        .FirstOrDefault(x => x.CanBeShadowedBy(@override));
 
     private ImmutableArray<Symbol> BuildMembers()
     {
@@ -83,9 +90,10 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         var ignore = new List<Symbol>();
         foreach (var member in this.BaseTypes.SelectMany(x => x.DefinedMembers))
         {
-            if (ignore.Any(member.SignatureEquals)) continue;
-            builder.Add(member);
+            if (ignore.Any(member.CanBeShadowedBy)) continue;
             ignore.Add(member);
+            if (member is IOverridableSymbol ov && ov.IsExplicitOverride) continue;
+            builder.Add(member);
             if (member is not IOverridableSymbol overridable) continue;
             if (overridable.Override is not null) ignore.Add(overridable.Override);
         }

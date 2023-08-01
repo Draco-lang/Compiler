@@ -236,7 +236,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
                 val enumerator = enumerable.GetEnumerator();
                 while(enumerator.MoveNext())
                 {
-                    Write(enumerator.Current);
+                    Write(enumerator.Current + 0);
                 }
             }
             """);

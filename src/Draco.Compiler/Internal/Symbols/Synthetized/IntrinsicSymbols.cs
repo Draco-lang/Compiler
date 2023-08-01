@@ -43,6 +43,8 @@ internal static class IntrinsicSymbols
     public static ArrayTypeSymbol Array { get; } = new(1);
     public static ArrayConstructorSymbol ArrayCtor { get; } = new(1);
 
+    public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Bool, Bool, CodegenNot);
+
     public static IEnumerable<Symbol> GenerateIntrinsicSymbols()
     {
         // Array types from 2D to 8D
@@ -54,6 +56,7 @@ internal static class IntrinsicSymbols
             yield return new ArrayConstructorSymbol(i);
         }
 
+        // Numeric operators
         foreach (var type in new[]
         {
             Int8, Int16, Int32, Int64,
@@ -61,6 +64,7 @@ internal static class IntrinsicSymbols
             Float32, Float64,
         })
         {
+            // Comparison
             yield return Comparison(TokenKind.Equal, type, type, CodegenEqual);
             yield return Comparison(TokenKind.NotEqual, type, type, CodegenNotEqual);
             yield return Comparison(TokenKind.GreaterThan, type, type, CodegenGreater);
@@ -68,9 +72,11 @@ internal static class IntrinsicSymbols
             yield return Comparison(TokenKind.GreaterEqual, type, type, CodegenGreaterEqual);
             yield return Comparison(TokenKind.LessEqual, type, type, CodegenLessEqual);
 
+            // Unary
             yield return Unary(TokenKind.Plus, type, type, CodegenPlus);
             yield return Unary(TokenKind.Minus, type, type, CodegenMinus);
 
+            // Binary
             yield return Binary(TokenKind.Plus, type, type, type, CodegenAdd);
             yield return Binary(TokenKind.Minus, type, type, type, CodegenSub);
             yield return Binary(TokenKind.Star, type, type, type, CodegenMul);
@@ -103,8 +109,6 @@ internal static class IntrinsicSymbols
         IntrinsicFunctionSymbol.ComparisonOperator(token, leftType, rightType, codegen);
     private static FunctionSymbol Function(string name, IEnumerable<TypeSymbol> paramTypes, TypeSymbol returnType) =>
         new IntrinsicFunctionSymbol(name, paramTypes, returnType);
-
-    public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Bool, Bool, CodegenNot);
 
     // Codegen
 

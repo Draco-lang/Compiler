@@ -10,6 +10,7 @@ using System.Reflection.PortableExecutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -591,6 +592,13 @@ internal sealed class MetadataCodegen : MetadataWriter
     public void EncodeSignatureType(SignatureTypeEncoder encoder, TypeSymbol type)
     {
         if (type is TypeVariable typeVar) type = typeVar.Substitution;
+
+        if (type is TypeInstanceSymbol instance && !instance.IsGenericInstance)
+        {
+            // Unwrap
+            this.EncodeSignatureType(encoder, instance.GenericDefinition);
+            return;
+        }
 
         if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
         if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }

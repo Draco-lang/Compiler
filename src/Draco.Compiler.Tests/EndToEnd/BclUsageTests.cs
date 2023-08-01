@@ -231,7 +231,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             import System.Console;
             import System.Linq.Enumerable;
 
-            func main() {
+            public func main() {
                 val enumerable = Range(0, 10);
                 val enumerator = enumerable.GetEnumerator();
                 while(enumerator.MoveNext())

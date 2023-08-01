@@ -121,7 +121,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         if (this.Parameters.Length != function.Parameters.Length) return false;
         for (var i = 0; i < this.Parameters.Length; i++)
         {
-            if (!SymbolEqualityComparer.Default.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
+            if (!SymbolEqualityComparer.AllowTypeVariables.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
             if (this.Parameters[i].IsVariadic != function.Parameters[i].IsVariadic) return false;
         }
         return true;
@@ -135,10 +135,10 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         if (this.GenericParameters.Length != function.GenericParameters.Length) return false;
         for (var i = 0; i < this.Parameters.Length; i++)
         {
-            if (!SymbolEqualityComparer.Default.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
+            if (!SymbolEqualityComparer.AllowTypeVariables.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
             if (this.Parameters[i].IsVariadic != function.Parameters[i].IsVariadic) return false;
         }
-        return SymbolEqualityComparer.Default.IsBaseOf(this.ReturnType, function.ReturnType);
+        return SymbolEqualityComparer.AllowTypeVariables.IsBaseOf(this.ReturnType, function.ReturnType);
     }
 
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

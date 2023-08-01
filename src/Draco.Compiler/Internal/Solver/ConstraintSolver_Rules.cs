@@ -113,6 +113,23 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
+        foreach (var common2 in this.Enumerate<CommonTypeConstraint>())
+        {
+            var commonTypeVars = common2.AlternativeTypes
+                .Where(t => t.Substitution.IsTypeVariable)
+                .ToImmutableArray();
+            var commonNonTypeVars = common2.AlternativeTypes
+                .Where(t => !t.Substitution.IsTypeVariable)
+                .ToImmutableArray();
+            if (commonNonTypeVars.Length != 1) continue;
+
+            // NOTE: We do NOT remove the constraint, will be resolved in a future iteration
+            // Only one non-type-var, the rest are type variables
+            var nonTypeVar = commonNonTypeVars[0];
+            foreach (var tv in commonTypeVars) this.Unify(tv, nonTypeVar);
+            return true;
+        }
+
         return false;
     }
 

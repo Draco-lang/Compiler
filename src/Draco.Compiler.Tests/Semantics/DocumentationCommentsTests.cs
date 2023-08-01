@@ -477,7 +477,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             null,
             BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
-        // TODO: see - , which is in <see cref="TestClass" />, which inherits <see cref="System.Object" />
+        // TODO: see - , which is in <see cref="TestClass" />, which inherits <see cref="System.Collections.Generic.List{int}" />
         var xmlDocs = """
             <summary>Documentation for TestMethod</summary>
             <param name="arg1">Documentation for arg1</param>

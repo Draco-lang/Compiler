@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
@@ -477,15 +479,15 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // TODO: see - , which is in <see cref="TestClass" />, which inherits <see cref="System.Object" />
         var xmlDocs = """
-              <summary>Documentation for TestMethod</summary>
-              <param name="arg1">Documentation for arg1</param>
-              <param name="arg2">Documentation for arg2</param>
-              <code>
-              var x = 0;
-              void Foo(int z) { }
-              </code>
-              <returns>
-                <paramref name="arg1" /> added to <paramref name="arg2" /></returns>
+            <summary>Documentation for TestMethod</summary>
+            <param name="arg1">Documentation for arg1</param>
+            <param name="arg2">Documentation for arg2</param>
+            <code>
+            var x = 0;
+            void Foo(int z) { }
+            </code>
+            <returns>
+            <paramref name="arg1" /> added to <paramref name="arg2" /></returns>
             """;
 
         var xmlStream = new MemoryStream();
@@ -524,7 +526,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             [arg1](arg1) added to [arg2](arg2)
             """;
 
-        var resultXml = methodSym.Documentation.ToXml().ToString();
+        var resultXml = PrettyXml(methodSym.Documentation.ToXml());
         var resultMd = methodSym.Documentation.ToMarkdown();
 
         // Assert
@@ -535,5 +537,25 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             </documentation>
             """, resultXml, ignoreLineEndingDifferences: true);
         Assert.Equal(mdDocs, resultMd, ignoreLineEndingDifferences: true);
+    }
+
+    private static string PrettyXml(XElement element)
+    {
+        var stringBuilder = new StringBuilder();
+
+        var settings = new XmlWriterSettings()
+        {
+            OmitXmlDeclaration = true,
+            Indent = true,
+            IndentChars = string.Empty,
+            NewLineOnAttributes = false,
+        };
+
+        using (var xmlWriter = XmlWriter.Create(stringBuilder, settings))
+        {
+            element.Save(xmlWriter);
+        }
+
+        return stringBuilder.ToString();
     }
 }

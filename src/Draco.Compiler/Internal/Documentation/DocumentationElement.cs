@@ -47,11 +47,7 @@ internal record class ParamrefDocumentationElement(string ParameterName) : SeeDo
 
 internal record class CodeDocumentationElement(string Code, string Lang) : DocumentationElement
 {
-    public override string ToMarkdown() => $"""
-        ```{this.Lang}
-        {this.Code}
-        ```
-        """;
+    public override string ToMarkdown() => $"```{this.Lang}{this.Code}```";
 
     public override XNode ToXml() => new XElement("code", this.Code);
 }

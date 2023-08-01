@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
 using System.Xml;
 
 namespace Draco.Compiler.Internal.Documentation;
@@ -61,7 +59,7 @@ internal static class XmlDocumentationExtractor
         "#text" => new RawTextDocumentationElement(node.InnerText),
         "see" => new SeeDocumentationElement(node.Attributes?["cref"]?.Value ?? string.Empty),
         "paramref" => new ParamrefDocumentationElement(node.Attributes?["name"]?.Value ?? string.Empty),
-        "code" => new CodeDocumentationElement(string.Join(Environment.NewLine, node.InnerXml.ReplaceLineEndings("\n").Split('\n').Select(x => x.TrimStart())), "cs"),
+        "code" => new CodeDocumentationElement(node.InnerXml, "cs"),
         _ => new RawTextDocumentationElement(node.InnerText),
     };
 

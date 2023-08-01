@@ -139,7 +139,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
             if (!SymbolEqualityComparer.Default.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
             if (this.Parameters[i].IsVariadic != function.Parameters[i].IsVariadic) return false;
         }
-        return this.ReturnType.IsBaseTypeOrSameType(function.ReturnType);
+        return SymbolEqualityComparer.Default.IsBaseOf(this.ReturnType, function.ReturnType);
     }
 
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

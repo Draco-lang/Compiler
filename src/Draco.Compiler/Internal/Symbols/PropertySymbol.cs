@@ -40,7 +40,7 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
     {
         if (other is not PropertySymbol prop) return false;
         if (this.Name != prop.Name) return false;
-        return this.Type.IsBaseTypeOrSameType(prop.Type);
+        return SymbolEqualityComparer.Default.IsBaseOf(this.Type, prop.Type);
     }
 
     public override PropertySymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

@@ -87,22 +87,6 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         return builder.ToImmutable();
     }
 
-    /// <summary>
-    /// Checks if <paramref name="other"/> is same type as this <see cref="TypeSymbol"/> or if it is among the bases of this <see cref="TypeSymbol"/>.
-    /// </summary>
-    /// <param name="other">The <see cref="TypeSymbol"/> to check.</param>
-    /// <returns>True, if <paramref name="other"/> is same type as this <see cref="TypeSymbol"/> or if it is among the bases of this <see cref="TypeSymbol"/>, otherwise false.</returns>
-    public bool IsBaseTypeOrSameType(TypeSymbol other)
-    {
-        if (SymbolEqualityComparer.Default.Equals(this, other)) return true;
-        foreach (var baseType in this.ImmediateBaseTypes)
-        {
-            if (SymbolEqualityComparer.Default.Equals(baseType, other)) return true;
-            if (baseType.IsBaseTypeOrSameType(other)) return true;
-        }
-        return false;
-    }
-
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>

@@ -33,7 +33,7 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
-        if (this.TryDequeue<MemberConstraint>(out var member, m => !m.Accessed.Substitution.IsTypeVariable))
+        if (this.TryDequeue<MemberConstraint>(out var member, m => m.Accessed.IsGroundType))
         {
             this.HandleRule(member, diagnostics);
             return true;

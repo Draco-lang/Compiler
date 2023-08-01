@@ -44,6 +44,8 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     private PropertySymbol? @override;
     private bool overrideNeedsBuild = true;
 
+    public override bool IsExplicitOverride => this.Accessors.Any(x => x.IsExplicitOverride);
+
     public override Symbol ContainingSymbol { get; }
 
     /// <summary>

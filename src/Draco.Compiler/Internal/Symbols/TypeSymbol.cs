@@ -45,8 +45,14 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// <summary>
     /// All of the base types of this type (<see cref="ImmediateBaseTypes"/>, their base types, their base types and so on)
     /// </summary>
-    public ImmutableArray<TypeSymbol> BaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
-    private ImmutableArray<TypeSymbol> baseTypes;
+    public IEnumerable<TypeSymbol> BaseTypes
+    {
+        get
+        {
+            yield return this;
+            foreach (var t in this.ImmediateBaseTypes.SelectMany(b => b.BaseTypes)) yield return t;
+        }
+    }
 
     /// <summary>
     /// The members defined directly in this type doesn't include members from <see cref="ImmediateBaseTypes"/>.
@@ -78,18 +84,6 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
             if (overridable.Override is not null) ignore.Add(overridable.Override);
         }
         return builder.ToImmutable();
-    }
-
-    private ImmutableArray<TypeSymbol> BuildBaseTypes()
-    {
-        var result = ImmutableArray.CreateBuilder<TypeSymbol>();
-        result.Add(this);
-        foreach (var baseType in this.ImmediateBaseTypes)
-        {
-            result.Add(baseType);
-            result.AddRange(baseType.BaseTypes);
-        }
-        return result.ToImmutable();
     }
 
     /// <summary>

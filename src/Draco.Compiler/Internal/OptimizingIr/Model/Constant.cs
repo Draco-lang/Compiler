@@ -13,6 +13,8 @@ internal readonly record struct Constant(object? Value) : IOperand
     public TypeSymbol? Type => this.Value switch
     {
         int => IntrinsicSymbols.Int32,
+        double => IntrinsicSymbols.Float64,
+        char => IntrinsicSymbols.Char,
         bool => IntrinsicSymbols.Bool,
         string => IntrinsicSymbols.String,
         _ => throw new System.InvalidOperationException(),

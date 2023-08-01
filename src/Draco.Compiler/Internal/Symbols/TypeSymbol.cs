@@ -59,8 +59,11 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
 
-    public T? GetOverriddenSymbol<T>(T @override) where T : Symbol =>
-        this.BaseTypes.SelectMany(x => x.DefinedMembers).OfType<T>().FirstOrDefault(x => x.SignatureEquals(@override));
+    public T? GetOverriddenSymbol<T>(T @override)
+        where T : Symbol => this.BaseTypes
+        .SelectMany(x => x.DefinedMembers)
+        .OfType<T>()
+        .FirstOrDefault(x => x.SignatureEquals(@override));
 
     private ImmutableArray<Symbol> BuildMembers()
     {

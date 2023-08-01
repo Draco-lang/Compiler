@@ -26,7 +26,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsValueType => false;
 
     /// <summary>
-    /// True, if this type is interface.
+    /// True, if this type is an interface.
     /// </summary>
     public virtual bool IsInterface => false;
 

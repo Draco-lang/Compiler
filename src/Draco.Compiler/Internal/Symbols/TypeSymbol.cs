@@ -59,7 +59,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// </summary>
     public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
 
-    public sealed override IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
+    public override sealed IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     /// <summary>

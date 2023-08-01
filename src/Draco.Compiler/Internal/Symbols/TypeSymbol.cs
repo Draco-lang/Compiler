@@ -79,10 +79,10 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     }
 
     public T? GetOverriddenSymbol<T>(T @override)
-        where T : Symbol => this.BaseTypes
+        where T : Symbol, IOverridableSymbol => this.BaseTypes
         .SelectMany(x => x.DefinedMembers)
         .OfType<T>()
-        .FirstOrDefault(x => x.CanBeShadowedBy(@override));
+        .FirstOrDefault(x => x.CanBeOverriddenBy(@override));
 
     private ImmutableArray<Symbol> BuildMembers()
     {

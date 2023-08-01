@@ -92,7 +92,6 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         {
             if (ignore.Any(member.CanBeShadowedBy)) continue;
             ignore.Add(member);
-            if (member is IOverridableSymbol ov && ov.IsExplicitOverride) continue;
             builder.Add(member);
             if (member is not IOverridableSymbol overridable) continue;
             if (overridable.Override is not null) ignore.Add(overridable.Override);

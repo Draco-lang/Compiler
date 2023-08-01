@@ -44,7 +44,7 @@ internal readonly struct GenericContext : IReadOnlyDictionary<TypeParameterSymbo
             }
         }
         // Add the rest
-        substitutions.AddRange(other);
+        foreach (var (typeParam, type) in other) substitutions[typeParam] = type;
         // Done merging
         return new GenericContext(substitutions.ToImmutable());
     }

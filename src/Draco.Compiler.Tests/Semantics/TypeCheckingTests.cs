@@ -1859,14 +1859,13 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
-        var wellKnownTypes = new WellKnownTypes(compilation);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(wellKnownTypes.SystemObject, xSym.Type);
+        Assert.Equal(compilation.WellKnownTypes.SystemObject, xSym.Type);
     }
 
     [Fact]
@@ -1897,7 +1896,6 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
-        var wellKnownTypes = new WellKnownTypes(compilation);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
@@ -1905,7 +1903,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
-        Assert.Equal(wellKnownTypes.SystemString, xSym.Type);
+        Assert.Equal(compilation.WellKnownTypes.SystemString, xSym.Type);
     }
 
     [Fact]
@@ -2117,13 +2115,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
-        var wellKnownTypes = new WellKnownTypes(compilation);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(wellKnownTypes.SystemObject, xSym.Type);
+        Assert.Equal(compilation.WellKnownTypes.SystemObject, xSym.Type);
     }
 }

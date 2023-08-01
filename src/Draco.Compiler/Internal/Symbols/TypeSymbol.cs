@@ -43,7 +43,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual ImmutableArray<TypeSymbol> ImmediateBaseTypes => ImmutableArray<TypeSymbol>.Empty;
 
     /// <summary>
-    /// All of the base types of this type (<see cref="ImmediateBaseTypes"/>, their base types, their base types and so on)
+    /// All types that can be considered the base type of this one, including this type itself.
     /// </summary>
     public IEnumerable<TypeSymbol> BaseTypes
     {

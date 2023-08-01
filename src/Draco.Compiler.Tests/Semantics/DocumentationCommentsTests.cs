@@ -475,11 +475,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             null,
             BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
+        // TODO: see - , which is in <see cref="TestClass" />, which inherits <see cref="System.Object" />
         var xmlDocs = """
-              <summary>Documentation for TestMethod, which is in <see cref="TestClass" /></summary>
+              <summary>Documentation for TestMethod</summary>
               <param name="arg1">Documentation for arg1</param>
               <param name="arg2">Documentation for arg2</param>
-              <returns><paramref name="arg1"/> added to <paramref name="arg2"/></returns>
+              <code>
+              var x = 0;
+              void Foo(int z) { }
+              </code>
+              <returns>
+                <paramref name="arg1" /> added to <paramref name="arg2" /></returns>
             """;
 
         var xmlStream = new MemoryStream();
@@ -503,15 +509,23 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
         var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
 
+        // , which is in [TestClass](TestClass)
         var mdDocs = """
             # summary
-            Documentation for TestMethod, which is in [TestClass](TestClass)
+            Documentation for TestMethod
             # parameters
             - [arg1](arg1): Documentation for arg1
             - [arg2](arg2): Documentation for arg2
+            ```cs
+            var x = 0;
+            void Foo(int z) { }
+            ```
             # returns
             [arg1](arg1) added to [arg2](arg2)
             """;
+
+        var resultXml = methodSym.Documentation.ToXml().ToString();
+        var resultMd = methodSym.Documentation.ToMarkdown();
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -519,7 +533,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             <documentation>
             {xmlDocs}
             </documentation>
-            """, methodSym.Documentation.ToXml().ToString(), ignoreLineEndingDifferences: true);
-        Assert.Equal(mdDocs, methodSym.Documentation.ToMarkdown(), ignoreLineEndingDifferences: true);
+            """, resultXml, ignoreLineEndingDifferences: true);
+        Assert.Equal(mdDocs, resultMd, ignoreLineEndingDifferences: true);
     }
 }

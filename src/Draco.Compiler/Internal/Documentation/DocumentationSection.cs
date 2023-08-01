@@ -31,3 +31,9 @@ internal record class ParametersDocumentationSection(ImmutableArray<ParameterDoc
 
     public override object ToXml() => this.Elements.Select(x => x.ToXml());
 }
+
+internal record class CodeDocumentationSection(CodeDocumentationElement Code) : DocumentationSection("Code", ImmutableArray.Create<DocumentationElement>(Code))
+{
+    public override string ToMarkdown() => this.Code.ToMarkdown();
+    public override object ToXml() => this.Code.ToXml();
+}

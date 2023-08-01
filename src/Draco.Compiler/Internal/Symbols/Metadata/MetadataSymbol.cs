@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
@@ -69,7 +71,7 @@ internal static class MetadataSymbol
                 var memberType = reader.GetTypeReference((TypeReferenceHandle)member.Parent);
                 if (reader.GetString(memberType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
                 break;
-            default: throw new System.InvalidOperationException();
+            default: throw new InvalidOperationException();
             };
         }
         return null;
@@ -78,7 +80,8 @@ internal static class MetadataSymbol
     public static string GetDocumentation(MetadataAssemblySymbol assembly, string documentationName)
     {
         var root = assembly.AssemblyDocumentation.DocumentElement;
-        return root?.SelectSingleNode($"//member[@name='{documentationName}']")?.InnerXml ?? string.Empty;
+        var xml = root?.SelectSingleNode($"//member[@name='{documentationName}']")?.InnerXml ?? string.Empty;
+        return string.Join(Environment.NewLine, xml.ReplaceLineEndings("\n").Split('\n').Select(x => x.TrimStart()));
     }
 
     private static FunctionSymbol SynthetizeConstructor(

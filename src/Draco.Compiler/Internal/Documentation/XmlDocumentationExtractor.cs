@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using System.Xml;
 
 namespace Draco.Compiler.Internal.Documentation;
@@ -38,6 +40,12 @@ internal static class XmlDocumentationExtractor
             return new ParametersDocumentationSection(parameters.ToImmutable());
         }
 
+        if (node.Name == "code")
+        {
+            nextNode = node.NextSibling;
+            return new CodeDocumentationSection((CodeDocumentationElement)ExtractElement(node));
+        }
+
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
         foreach (XmlNode element in node.ChildNodes)
         {
@@ -50,10 +58,11 @@ internal static class XmlDocumentationExtractor
 
     private static DocumentationElement ExtractElement(XmlNode node) => node.LocalName switch
     {
-        "#text" => new RawTextDocumentationElement(node.InnerText.TrimStart()),
+        "#text" => new RawTextDocumentationElement(node.InnerText),
         "see" => new SeeDocumentationElement(node.Attributes?["cref"]?.Value ?? string.Empty),
         "paramref" => new ParamrefDocumentationElement(node.Attributes?["name"]?.Value ?? string.Empty),
-        _ => new RawTextDocumentationElement(node.InnerText.TrimStart()),
+        "code" => new CodeDocumentationElement(string.Join(Environment.NewLine, node.InnerXml.ReplaceLineEndings("\n").Split('\n').Select(x => x.TrimStart())), "cs"),
+        _ => new RawTextDocumentationElement(node.InnerText),
     };
 
     private static ParameterDocumentationElement ExtractParameter(XmlNode node)

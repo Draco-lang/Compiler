@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using System.Xml.Linq;
 
 namespace Draco.Compiler.Internal.Documentation;
@@ -42,4 +43,15 @@ internal record class ParamrefDocumentationElement(string ParameterName) : SeeDo
 {
     public override XElement ToXml() => new XElement("paramref",
         new XAttribute("name", this.ParameterName));
+}
+
+internal record class CodeDocumentationElement(string Code, string Lang) : DocumentationElement
+{
+    public override string ToMarkdown() => $"""
+        ```{this.Lang}
+        {this.Code}
+        ```
+        """;
+
+    public override XNode ToXml() => new XElement("code", this.Code);
 }

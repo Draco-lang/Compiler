@@ -16,22 +16,6 @@ internal sealed partial class ConstraintSolver
 {
     private readonly record struct OverloadCandidate(FunctionSymbol Symbol, CallScore Score);
 
-    private static bool IsBaseOf(TypeSymbol @base, TypeSymbol derived)
-    {
-        @base = @base.Substitution;
-        @derived = @derived.Substitution;
-
-        if (!@base.IsGroundType || !derived.IsGroundType) throw new InvalidOperationException();
-
-        // NOTE: Duplicate logic from unification
-        // TODO: Can we factor it out?
-        if (@base is NeverTypeSymbol or ErrorTypeSymbol) return true;
-        if (derived is NeverTypeSymbol or ErrorTypeSymbol) return true;
-
-        return SymbolEqualityComparer.Default.Equals(@base, derived)
-            || derived.ImmediateBaseTypes.Any(b => IsBaseOf(@base, b));
-    }
-
     private static FunctionTypeSymbol MakeMismatchedFunctionType(ImmutableArray<object> args, TypeSymbol returnType) => new(
         args
             .Select(a => new SynthetizedParameterSymbol(null, ExtractArgumentType(a)))
@@ -268,7 +252,7 @@ internal sealed partial class ConstraintSolver
         if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return FullScore;
 
         // Base type match is half score
-        if (IsBaseOf(paramType, argType)) return HalfScore;
+        if (SymbolEqualityComparer.Default.IsBaseOf(paramType, argType)) return HalfScore;
 
         // TODO: Unspecified what happens for generics
         // For now we require an exact match and score is the lowest score among generic args

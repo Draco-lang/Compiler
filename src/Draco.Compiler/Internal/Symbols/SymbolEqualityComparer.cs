@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -39,6 +40,24 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     private SymbolEqualityComparer(ComparerFlags flags)
     {
         this.flags = flags;
+    }
+
+    /// <summary>
+    /// Checks, if a type is a base of another.
+    /// </summary>
+    /// <param name="base">The type that is assumned to be the base of <paramref name="derived"/>.</param>
+    /// <param name="derived">The type that's assumed to be a subtype of <paramref name="base"/>.</param>
+    /// <returns>True, if <paramref name="base"/> is a base type of <paramref name="derived"/>.</returns>
+    public bool IsBaseOf(TypeSymbol @base, TypeSymbol derived)
+    {
+        if (@base is TypeVariable xTypeVar) @base = this.Unwrap(xTypeVar);
+        if (derived is TypeVariable yTypeVar) derived = this.Unwrap(yTypeVar);
+
+        if (@base is NeverTypeSymbol or ErrorTypeSymbol) return true;
+        if (derived is NeverTypeSymbol or ErrorTypeSymbol) return true;
+
+        return this.Equals(@base, derived)
+            || derived.BaseTypes.Contains(@base, this);
     }
 
     public bool Equals(Symbol? x, Symbol? y)

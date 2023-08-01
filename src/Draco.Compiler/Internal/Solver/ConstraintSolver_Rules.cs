@@ -155,7 +155,7 @@ internal sealed partial class ConstraintSolver
 
     private void HandleRule(AssignableConstraint constraint, DiagnosticBag diagnostics)
     {
-        if (!IsBaseOf(constraint.TargetType, constraint.AssignedType))
+        if (!SymbolEqualityComparer.Default.IsBaseOf(constraint.TargetType, constraint.AssignedType))
         {
             // Type-mismatch
             constraint.Diagnostic
@@ -173,7 +173,7 @@ internal sealed partial class ConstraintSolver
     {
         foreach (var type in constraint.AlternativeTypes)
         {
-            if (constraint.AlternativeTypes.All(t => IsBaseOf(type, t)))
+            if (constraint.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t)))
             {
                 // Found a good common type
                 this.Unify(constraint.CommonType, type);

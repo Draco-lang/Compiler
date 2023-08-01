@@ -69,14 +69,6 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     {
         var builder = ImmutableArray.CreateBuilder<Symbol>();
         var ignore = new List<Symbol>();
-        foreach (var member in this.DefinedMembers)
-        {
-            if (ignore.Any(member.SignatureEquals)) continue;
-            builder.Add(member);
-            ignore.Add(member);
-            if (member is not IOverridableSymbol overridable) continue;
-            if (overridable.Override is not null) ignore.Add(overridable.Override);
-        }
         foreach (var member in this.BaseTypes.Where(x => !x.IsInterface).SelectMany(x => x.DefinedMembers))
         {
             if (ignore.Any(member.SignatureEquals)) continue;
@@ -91,6 +83,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
         var result = ImmutableArray.CreateBuilder<TypeSymbol>();
+        result.Add(this);
         foreach (var baseType in this.ImmediateBaseTypes)
         {
             result.Add(baseType);

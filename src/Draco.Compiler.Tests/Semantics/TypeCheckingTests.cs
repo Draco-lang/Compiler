@@ -1907,7 +1907,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void SuplyDerivedTypeToBaseTypeParameter()
+    public void PassDerivedTypeToBaseTypeParameter()
     {
         // import System;
         // func foo()
@@ -1947,7 +1947,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void SuplyBaseTypeToDerivedTypeParameter()
+    public void PassBaseTypeToDerivedTypeParameter()
     {
         // import System;
         // func foo()
@@ -1991,13 +1991,13 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     public void BaseTypeArgumentOverloading()
     {
         // import System;
-        // func foo()
-        // {
-        //   var x = bar(Random());
+        // func foo() {
+        //     bar(Random());
+        //     bar(Object());
         // }
         //
-        // func bar(x: Object): string = "Hi";
-        // func bar(x: Random): int32 = 5;
+        // func bar(x: Object) {}
+        // func bar(x: Random) {}
 
         var main = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System"),
@@ -2006,19 +2006,23 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("x", null, CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random"))))))),
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))),
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
             FunctionDeclaration(
                 "bar",
                 ParameterList(Parameter("x", NameType("Object"))),
-                NameType("string"),
-                InlineFunctionBody(StringExpression("Hi"))),
+                null,
+                BlockFunctionBody()),
             FunctionDeclaration(
                 "bar",
                 ParameterList(Parameter("x", NameType("Random"))),
-                NameType("int32"),
-                InlineFunctionBody(LiteralExpression(5)))));
+                null,
+                BlockFunctionBody())));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var randomCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
+        var objectCallSyntax = main.FindInChildren<CallExpressionSyntax>(2);
+        var randomDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(2);
+        var objectDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(1);
 
         // Act
         var compilation = Compilation.Create(
@@ -2030,20 +2034,24 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+        var randomCallRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(randomCallSyntax));
+        var objectCallRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(objectCallSyntax));
+        var objectDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(objectDeclSyntax));
+        var randomDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(randomDeclSyntax));
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
+        Assert.False(SymbolEqualityComparer.Default.Equals(randomDeclSym, objectDeclSym));
+        Assert.True(SymbolEqualityComparer.Default.Equals(randomDeclSym, randomCallRefSym));
+        Assert.True(SymbolEqualityComparer.Default.Equals(objectDeclSym, objectCallRefSym));
     }
 
     [Fact]
     public void BaseTypeGenericsCall()
     {
         // import System;
-        // func foo()
-        // {
-        //   bar(Random(), Object(), Random());
+        // func foo() {
+        //     bar(Random(), Object(), Random());
         // }
         //
         // func bar<T>(x: T, y: T, z: T) { }
@@ -2055,11 +2063,18 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")), CallExpression(NameExpression("Object")), CallExpression(NameExpression("Random")))))),
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        CallExpression(NameExpression("Random")),
+                        CallExpression(NameExpression("Object")),
+                        CallExpression(NameExpression("Random")))))),
             FunctionDeclaration(
                 "bar",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("T")), Parameter("y", NameType("T")), Parameter("z", NameType("T"))),
+                ParameterList(
+                    Parameter("x", NameType("T")),
+                    Parameter("y", NameType("T")),
+                    Parameter("z", NameType("T"))),
                 null,
                 BlockFunctionBody())));
 
@@ -2091,9 +2106,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     public void IfStatementCommonTypeResult()
     {
         // import System;
-        // func foo()
-        // {
-        //   var x = if(true) Random() else Object();
+        // func foo() {
+        //     var x = if (true) Random() else Object();
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -2103,7 +2117,13 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("x", null, IfExpression(LiteralExpression(true), CallExpression(NameExpression("Random")), CallExpression(NameExpression("Object")))))))));
+                    DeclarationStatement(VariableDeclaration(
+                        "x",
+                        null,
+                        IfExpression(
+                            LiteralExpression(true),
+                            CallExpression(NameExpression("Random")),
+                            CallExpression(NameExpression("Object")))))))));
 
         var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
 

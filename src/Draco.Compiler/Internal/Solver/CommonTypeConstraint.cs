@@ -25,5 +25,5 @@ internal sealed class CommonTypeConstraint : Constraint<Unit>
         this.AlternativeTypes = alternativeTypes;
     }
 
-    public override string ToString() => $"CommonType({this.CommonType}, {string.Join(", ", this.AlternativeTypes)})";
+    public override string ToString() => $"CommonType({string.Join(", ", this.AlternativeTypes)}) => {this.CommonType}";
 }

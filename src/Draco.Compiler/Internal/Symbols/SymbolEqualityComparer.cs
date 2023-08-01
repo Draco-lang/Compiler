@@ -50,8 +50,8 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     /// <returns>True, if <paramref name="base"/> is a base type of <paramref name="derived"/>.</returns>
     public bool IsBaseOf(TypeSymbol @base, TypeSymbol derived)
     {
-        if (@base is TypeVariable xTypeVar) @base = this.Unwrap(xTypeVar);
-        if (derived is TypeVariable yTypeVar) derived = this.Unwrap(yTypeVar);
+        @base = this.Unwrap(@base);
+        derived = this.Unwrap(derived);
 
         if (@base is NeverTypeSymbol or ErrorTypeSymbol) return true;
         if (derived is NeverTypeSymbol or ErrorTypeSymbol) return true;
@@ -70,8 +70,8 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public bool Equals(TypeSymbol? x, TypeSymbol? y)
     {
-        if (x is TypeVariable xTypeVar) x = this.Unwrap(xTypeVar);
-        if (y is TypeVariable yTypeVar) y = this.Unwrap(yTypeVar);
+        x = this.Unwrap(x);
+        y = this.Unwrap(y);
 
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
@@ -113,7 +113,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public int GetHashCode([DisallowNull] TypeSymbol obj)
     {
-        if (obj is TypeVariable v) obj = this.Unwrap(v);
+        obj = this.Unwrap(obj);
 
         switch (obj)
         {
@@ -122,12 +122,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
         }
     }
 
-    /// <summary>
-    /// Unwraps the given type-variable.
-    /// </summary>
-    /// <param name="type">The type-variable to unwrap.</param>
-    /// <returns>The substitution of <paramref name="type"/>.</returns>
-    private TypeSymbol Unwrap(TypeVariable type)
+    private TypeSymbol Unwrap(TypeSymbol type)
     {
         var unwrappedType = type.Substitution;
         if (!this.flags.HasFlag(ComparerFlags.AllowTypeVariables) && unwrappedType.IsTypeVariable)

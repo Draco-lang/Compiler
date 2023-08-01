@@ -72,7 +72,7 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
     public bool CanBeOverriddenBy(IOverridableSymbol other)
     {
         if (other is not PropertySymbol prop) return false;
-        if (this.Name != prop.Name) return false;
+        if (!this.CanBeShadowedBy(prop)) return false;
         return SymbolEqualityComparer.Default.IsBaseOf(this.Type, prop.Type);
     }
 

@@ -56,8 +56,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
         if (@base is NeverTypeSymbol or ErrorTypeSymbol) return true;
         if (derived is NeverTypeSymbol or ErrorTypeSymbol) return true;
 
-        return this.Equals(@base, derived)
-            || derived.BaseTypes.Contains(@base, this);
+        return derived.BaseTypes.Contains(@base, this);
     }
 
     public bool Equals(Symbol? x, Symbol? y)

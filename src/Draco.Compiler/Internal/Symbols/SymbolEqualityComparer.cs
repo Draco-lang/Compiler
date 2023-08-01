@@ -121,8 +121,11 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
         }
     }
 
-    private TypeSymbol Unwrap(TypeSymbol type)
+    [return: NotNullIfNotNull(nameof(type))]
+    private TypeSymbol? Unwrap(TypeSymbol? type)
     {
+        if (type is null) return null;
+
         var unwrappedType = type.Substitution;
         if (!this.flags.HasFlag(ComparerFlags.AllowTypeVariables) && unwrappedType.IsTypeVariable)
         {

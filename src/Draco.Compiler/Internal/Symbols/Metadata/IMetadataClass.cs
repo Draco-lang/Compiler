@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
 /// <summary>

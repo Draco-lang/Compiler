@@ -14,7 +14,6 @@ internal readonly record struct Constant(object? Value) : IOperand
     {
         int => IntrinsicSymbols.Int32,
         double => IntrinsicSymbols.Float64,
-        char => IntrinsicSymbols.Char,
         bool => IntrinsicSymbols.Bool,
         string => IntrinsicSymbols.String,
         _ => throw new System.InvalidOperationException(),

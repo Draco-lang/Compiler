@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols.Generic;
@@ -25,13 +26,78 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsValueType => false;
 
     /// <summary>
+    /// True, if this type is an interface.
+    /// </summary>
+    public virtual bool IsInterface => false;
+
+    /// <summary>
     /// The substituted type of this one, in case this is a type variable.
     /// It's this instance itself, if not a type variable, or not substituted.
     /// </summary>
     public virtual TypeSymbol Substitution => this;
 
+    /// <summary>
+    /// The immediate base types of this type.
+    /// </summary>
+    public virtual ImmutableArray<TypeSymbol> ImmediateBaseTypes => ImmutableArray<TypeSymbol>.Empty;
+
+    /// <summary>
+    /// All types that can be considered the base type of this one, including this type itself.
+    /// The types are returned in a pre-order manner, starting from this type.
+    /// </summary>
+    public IEnumerable<TypeSymbol> BaseTypes
+    {
+        get
+        {
+            yield return this;
+            foreach (var t in this.ImmediateBaseTypes.SelectMany(b => b.BaseTypes)) yield return t;
+        }
+    }
+
+    /// <summary>
+    /// The members defined directly in this type doesn't include members from <see cref="ImmediateBaseTypes"/>.
+    /// </summary>
+    public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
+
+    public override sealed IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
+    private ImmutableArray<Symbol> members;
+
+    /// <summary>
+    /// All property accessors defined by this type.
+    /// </summary>
+    public IEnumerable<FunctionSymbol> DefinedPropertyAccessors =>
+        this.DefinedMembers.OfType<PropertySymbol>().SelectMany(p => p.Accessors);
+
     public override TypeSymbol? GenericDefinition => null;
     public bool IsStatic => true;
+
+    public override bool CanBeShadowedBy(Symbol other)
+    {
+        if (other is not TypeSymbol type) return false;
+        if (this.Name != other.Name) return false;
+        return this.GenericParameters.Length == other.GenericParameters.Length;
+    }
+
+    public T? GetOverriddenSymbol<T>(T @override)
+        where T : Symbol, IOverridableSymbol => this.BaseTypes
+        .SelectMany(x => x.DefinedMembers)
+        .OfType<T>()
+        .FirstOrDefault(x => x.CanBeOverriddenBy(@override));
+
+    private ImmutableArray<Symbol> BuildMembers()
+    {
+        var builder = ImmutableArray.CreateBuilder<Symbol>();
+        var ignore = new List<Symbol>();
+        foreach (var member in this.BaseTypes.SelectMany(x => x.DefinedMembers))
+        {
+            if (ignore.Any(member.CanBeShadowedBy)) continue;
+            ignore.Add(member);
+            builder.Add(member);
+            if (member is not IOverridableSymbol overridable) continue;
+            if (overridable.Override is not null) ignore.Add(overridable.Override);
+        }
+        return builder.ToImmutable();
+    }
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);

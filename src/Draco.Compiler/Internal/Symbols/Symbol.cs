@@ -143,6 +143,14 @@ internal abstract partial class Symbol
     public virtual ImmutableArray<TypeSymbol> GenericArguments => ImmutableArray<TypeSymbol>.Empty;
 
     /// <summary>
+    /// Checks if this symbol can be shadowed by <paramref name="other"/> symbol.
+    /// </summary>
+    /// <param name="other">The other symbol.</param>
+    /// <returns>True, if this symbol can be shadowed by <paramref name="other"/> symbol,
+    /// otherwise false.</returns>
+    public virtual bool CanBeShadowedBy(Symbol other) => this.Name == other.Name;
+
+    /// <summary>
     /// Instantiates this generic symbol with the given substitutions.
     /// </summary>
     /// <param name="containingSymbol">The symbol that should be considered the containing symbol.</param>

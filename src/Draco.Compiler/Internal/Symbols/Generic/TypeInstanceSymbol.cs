@@ -41,12 +41,16 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     private ImmutableArray<TypeSymbol> genericArguments;
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override IEnumerable<Symbol> Members =>
-        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
-    private ImmutableArray<Symbol> members;
+    public override IEnumerable<Symbol> DefinedMembers =>
+        InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildDefinedMembers);
+    private ImmutableArray<Symbol> definedMembers;
 
+    public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => this.GenericDefinition.ImmediateBaseTypes
+        .Select(x => x.GenericInstantiate(x.ContainingSymbol, this.Context))
+        .ToImmutableArray();
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;
+    public override bool IsInterface => this.GenericDefinition.IsInterface;
     public override string Name => this.GenericDefinition.Name;
 
     public override Symbol? ContainingSymbol { get; }
@@ -67,26 +71,11 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     }
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
-        (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);
+        base.GenericInstantiate(containingSymbol, arguments);
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context)
     {
         // We need to merge contexts
-        var substitutions = ImmutableDictionary.CreateBuilder<TypeParameterSymbol, TypeSymbol>();
-        substitutions.AddRange(this.Context);
-        // Go through existing substitutions and where we have X -> Y in the old, Y -> Z in the new,
-        // replace with X -> Z
-        foreach (var (typeParam, typeSubst) in this.Context)
-        {
-            if (typeSubst is not TypeParameterSymbol paramSubst) continue;
-            if (context.TryGetValue(paramSubst, out var prunedSubst))
-            {
-                substitutions[typeParam] = prunedSubst;
-            }
-        }
-        // Add the rest
-        substitutions.AddRange(context);
-        // Done merging
-        var newContext = new GenericContext(substitutions.ToImmutable());
+        var newContext = this.Context.Merge(context);
         return new TypeInstanceSymbol(containingSymbol, this.GenericDefinition, newContext);
     }
 
@@ -143,7 +132,7 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
         this.genericsNeedsBuild = false;
     }
 
-    private ImmutableArray<Symbol> BuildMembers() => this.GenericDefinition.Members
+    private ImmutableArray<Symbol> BuildDefinedMembers() => this.GenericDefinition.DefinedMembers
         .Select(m => m.GenericInstantiate(this, this.Context))
         .ToImmutableArray();
 }

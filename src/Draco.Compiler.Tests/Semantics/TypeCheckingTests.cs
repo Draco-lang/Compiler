@@ -217,10 +217,9 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
-        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
+        Assert.True(xSym.Type.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
-        Assert.False(xSym.Type.IsError);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -512,7 +511,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     // TODO: Unspecified if we want this
@@ -1788,7 +1787,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -1829,6 +1828,376 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+    }
+
+    [Fact]
+    public void AssignDerivedTypeToBaseType()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   var x: Object = Random();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", NameType("Object"), CallExpression(NameExpression("Random"))))))));
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(compilation.WellKnownTypes.SystemObject, xSym.Type);
+    }
+
+    [Fact]
+    public void AssignBaseTypeToDerivedType()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   var x: String = Object();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", NameType("String"), CallExpression(NameExpression("Object"))))))));
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+
+        // Assert
+        Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        Assert.Equal(compilation.WellKnownTypes.SystemString, xSym.Type);
+    }
+
+    [Fact]
+    public void PassDerivedTypeToBaseTypeParameter()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   bar(Random());
+        // }
+        //
+        // func bar(x: Object) { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("Object"))),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void PassBaseTypeToDerivedTypeParameter()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   bar(Object());
+        // }
+        //
+        // func bar(x: String) { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("String"))),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+    }
+
+    [Fact]
+    public void BaseTypeArgumentOverloading()
+    {
+        // import System;
+        // func foo() {
+        //     bar(Random());
+        //     bar(Object());
+        // }
+        //
+        // func bar(x: Object) {}
+        // func bar(x: Random) {}
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))),
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("Object"))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("Random"))),
+                null,
+                BlockFunctionBody())));
+
+        var randomCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
+        var objectCallSyntax = main.FindInChildren<CallExpressionSyntax>(2);
+        var randomDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(2);
+        var objectDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(1);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var randomCallRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(randomCallSyntax));
+        var objectCallRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(objectCallSyntax));
+        var objectDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(objectDeclSyntax));
+        var randomDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(randomDeclSyntax));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(SymbolEqualityComparer.Default.Equals(randomDeclSym, objectDeclSym));
+        Assert.True(SymbolEqualityComparer.Default.Equals(randomDeclSym, randomCallRefSym));
+        Assert.True(SymbolEqualityComparer.Default.Equals(objectDeclSym, objectCallRefSym));
+    }
+
+    [Fact]
+    public void BaseTypeGenericsCall()
+    {
+        // import System;
+        // func foo() {
+        //     bar(Random(), Object(), Random());
+        // }
+        //
+        // func bar<T>(x: T, y: T, z: T) { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        CallExpression(NameExpression("Random")),
+                        CallExpression(NameExpression("Object")),
+                        CallExpression(NameExpression("Random")))))),
+            FunctionDeclaration(
+                "bar",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    Parameter("x", NameType("T")),
+                    Parameter("y", NameType("T")),
+                    Parameter("z", NameType("T"))),
+                null,
+                BlockFunctionBody())));
+
+        var barCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var calledBarSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(barCallSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.True(calledBarSym.IsGenericInstance);
+        Assert.Single(calledBarSym.GenericArguments);
+        Assert.True(SymbolEqualityComparer.Default.Equals(
+            compilation.WellKnownTypes.SystemObject,
+            calledBarSym.GenericArguments[0]));
+    }
+
+    [Fact]
+    public void IfStatementCommonTypeResult()
+    {
+        // import System;
+        // func foo() {
+        //     var x = if (true) Random() else Object();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration(
+                        "x",
+                        null,
+                        IfExpression(
+                            LiteralExpression(true),
+                            CallExpression(NameExpression("Random")),
+                            CallExpression(NameExpression("Object")))))))));
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(compilation.WellKnownTypes.SystemObject, xSym.Type);
+    }
+
+    [Fact]
+    public void InferSwappedArrayElement()
+    {
+        // public func foo() {
+        //     var a = Array(5);
+        //     var b = Array(5);
+        //     a[0] = 1;
+        //     val tmp = a;
+        //     a = b;
+        //     b = tmp;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(NameExpression("Array"), LiteralExpression(5)))),
+                DeclarationStatement(VariableDeclaration(
+                    "b",
+                    null,
+                    CallExpression(NameExpression("Array"), LiteralExpression(5)))),
+                ExpressionStatement(BinaryExpression(
+                    IndexExpression(NameExpression("a"), LiteralExpression(0)),
+                    Assign,
+                    LiteralExpression(1))),
+                DeclarationStatement(ImmutableVariableDeclaration("tmp", null, NameExpression("a"))),
+                ExpressionStatement(BinaryExpression(NameExpression("a"), Assign, NameExpression("b"))),
+                ExpressionStatement(BinaryExpression(NameExpression("b"), Assign, NameExpression("tmp")))))));
+
+        var aDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var bDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var tmpDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(2);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main));
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDeclSyntax));
+        var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(bDeclSyntax));
+        var tmpSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(tmpDeclSyntax));
+
+        var intArrayType = IntrinsicSymbols.Array.GenericInstantiate(IntrinsicSymbols.Int32);
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, aSym.Type));
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, bSym.Type));
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, tmpSym.Type));
     }
 }

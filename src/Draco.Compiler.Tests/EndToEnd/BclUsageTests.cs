@@ -223,4 +223,30 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal("0", stringWriter.ToString());
     }
+
+    [Fact]
+    public void Enumerating()
+    {
+        var assembly = Compile("""
+            import System.Console;
+            import System.Linq.Enumerable;
+
+            public func main() {
+                val enumerable = Range(0, 10);
+                val enumerator = enumerable.GetEnumerator();
+                while(enumerator.MoveNext())
+                {
+                    Write(enumerator.Current);
+                }
+            }
+            """);
+        var stringWriter = new StringWriter();
+        _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("0123456789", stringWriter.ToString());
+    }
 }

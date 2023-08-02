@@ -20,10 +20,10 @@ public abstract class SemanticTestsBase
     private protected static TMember GetMemberSymbol<TMember>(Symbol parent, string memberName) where TMember : Symbol =>
         parent.Members.OfType<TMember>().Single(x => x.Name == memberName);
 
-    private protected static Symbol GetMetadataSymbol(Compilation compilation, string? @namespace, params string[] path)
+    private protected static Symbol GetMetadataSymbol(Compilation compilation, string? assemblyName, params string[] path)
     {
-        @namespace ??= string.Empty;
-        var asm = compilation.MetadataAssemblies.Values.Single(a => a.RootNamespace.Name == @namespace);
+        assemblyName ??= TestUtilities.DefaultAssemblyName;
+        var asm = compilation.MetadataAssemblies.Values.Single(a => a.AssemblyName.Name == assemblyName);
         return asm.RootNamespace.Lookup(path.ToImmutableArray()).First();
     }
 

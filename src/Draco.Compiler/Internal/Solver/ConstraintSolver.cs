@@ -194,7 +194,7 @@ internal sealed partial class ConstraintSolver
         first = first.Substitution;
         second = second.Substitution;
 
-        // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComprer, this is unification
+        // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComparer, this is unification
         if (ReferenceEquals(first, second)) return true;
 
         switch (first, second)

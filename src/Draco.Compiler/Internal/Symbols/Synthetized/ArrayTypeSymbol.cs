@@ -27,7 +27,7 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
 
-    public override IEnumerable<Symbol> Members => new[]
+    public override IEnumerable<Symbol> DefinedMembers => new[]
     {
         new ArrayLengthPropertySymbol(this) as Symbol,
         new ArrayIndexPropertySymbol(this),

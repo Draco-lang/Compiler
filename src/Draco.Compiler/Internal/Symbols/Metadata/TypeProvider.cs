@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -59,10 +60,25 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
     {
-        PrimitiveTypeCode.Boolean => IntrinsicSymbols.Bool,
-        PrimitiveTypeCode.Int32 => IntrinsicSymbols.Int32,
-        PrimitiveTypeCode.String => IntrinsicSymbols.String,
         PrimitiveTypeCode.Void => IntrinsicSymbols.Unit,
+
+        PrimitiveTypeCode.SByte => IntrinsicSymbols.Int8,
+        PrimitiveTypeCode.Int16 => IntrinsicSymbols.Int16,
+        PrimitiveTypeCode.Int32 => IntrinsicSymbols.Int32,
+        PrimitiveTypeCode.Int64 => IntrinsicSymbols.Int64,
+
+        PrimitiveTypeCode.Byte => IntrinsicSymbols.UInt8,
+        PrimitiveTypeCode.UInt16 => IntrinsicSymbols.UInt16,
+        PrimitiveTypeCode.UInt32 => IntrinsicSymbols.UInt32,
+        PrimitiveTypeCode.UInt64 => IntrinsicSymbols.UInt64,
+
+        PrimitiveTypeCode.Single => IntrinsicSymbols.Float32,
+        PrimitiveTypeCode.Double => IntrinsicSymbols.Float64,
+
+        PrimitiveTypeCode.Boolean => IntrinsicSymbols.Bool,
+        PrimitiveTypeCode.Char => IntrinsicSymbols.Char,
+
+        PrimitiveTypeCode.String => IntrinsicSymbols.String,
         PrimitiveTypeCode.Object => IntrinsicSymbols.Object,
         _ => UnknownType
     };
@@ -89,14 +105,30 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     }
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
+        var parts = new List<string>();
         var reference = reader.GetTypeReference(handle);
-        var resolutionScope = reference.ResolutionScope;
+        parts.Add(reader.GetString(reference.Name));
+        EntityHandle resolutionScope;
+        for (resolutionScope = reference.ResolutionScope; resolutionScope.Kind == HandleKind.TypeReference; resolutionScope = reference.ResolutionScope)
+        {
+            reference = reader.GetTypeReference((TypeReferenceHandle)resolutionScope);
+            parts.Add(reader.GetString(reference.Name));
+        }
+        var @namespace = reader.GetString(reference.Namespace);
+        if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.').Reverse());
+        parts.Reverse();
 
-        // TODO: Based on resolution scope, do the lookup
-        return UnknownType;
+        // TODO: If we don't have the assembly report error
+        var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
+        var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
+        return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
     }
-    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind) =>
-        UnknownType;
+    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
+    {
+        var specification = reader.GetTypeSpecification(handle);
+        return specification.DecodeSignature(this, genericContext);
+    }
+
     public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
     public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
     public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;

@@ -21,6 +21,18 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
+        if (this.TryDequeue<AssignableConstraint>(out var assignable, a => a.TargetType.IsGroundType && a.AssignedType.IsGroundType))
+        {
+            this.HandleRule(assignable, diagnostics);
+            return true;
+        }
+
+        if (this.TryDequeue<CommonTypeConstraint>(out var common, c => c.AlternativeTypes.All(t => t.IsGroundType)))
+        {
+            this.HandleRule(common, diagnostics);
+            return true;
+        }
+
         if (this.TryDequeue<MemberConstraint>(out var member, m => !m.Accessed.Substitution.IsTypeVariable))
         {
             this.HandleRule(member, diagnostics);
@@ -69,6 +81,55 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
+        if (this.TryDequeue<AssignableConstraint>(out assignable))
+        {
+            // See if there are other assignments
+            var assignmentsWithSameTarget = this
+                .Enumerate<AssignableConstraint>(a => SymbolEqualityComparer.AllowTypeVariables.Equals(assignable.TargetType, a.TargetType))
+                .ToList();
+            if (assignmentsWithSameTarget.Count == 0)
+            {
+                // TODO: Unconditional unification...
+                // No, assume same type
+                this.Unify(assignable.TargetType, assignable.AssignedType);
+                return true;
+            }
+
+            // There are multiple constraints targeting the same type
+            // Remove them
+            foreach (var a in assignmentsWithSameTarget) this.Remove(a);
+
+            // Create a common-type constraint for them
+            var commonType = this.AllocateTypeVariable();
+            var alternatives = assignmentsWithSameTarget
+                .Select(a => a.AssignedType)
+                .Append(assignable.AssignedType)
+                .ToImmutableArray();
+
+            // TODO: We forget diag info...
+            this.CommonType(commonType, alternatives);
+            // New assignable
+            this.Assignable(assignable.TargetType, commonType);
+            return true;
+        }
+
+        foreach (var common2 in this.Enumerate<CommonTypeConstraint>())
+        {
+            var commonTypeVars = common2.AlternativeTypes
+                .Where(t => t.Substitution.IsTypeVariable)
+                .ToImmutableArray();
+            var commonNonTypeVars = common2.AlternativeTypes
+                .Where(t => !t.Substitution.IsTypeVariable)
+                .ToImmutableArray();
+            if (commonNonTypeVars.Length != 1) continue;
+
+            // NOTE: We do NOT remove the constraint, will be resolved in a future iteration
+            // Only one non-type-var, the rest are type variables
+            var nonTypeVar = commonNonTypeVars[0];
+            foreach (var tv in commonTypeVars) this.Unify(tv, nonTypeVar);
+            return true;
+        }
+
         return false;
     }
 
@@ -107,6 +168,43 @@ internal sealed partial class ConstraintSolver
 
         // Successful unification
         constraint.Promise.Resolve(default);
+    }
+
+    private void HandleRule(AssignableConstraint constraint, DiagnosticBag diagnostics)
+    {
+        if (!SymbolEqualityComparer.Default.IsBaseOf(constraint.TargetType, constraint.AssignedType))
+        {
+            // Type-mismatch
+            constraint.Diagnostic
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(constraint.TargetType.Substitution, constraint.AssignedType.Substitution);
+            constraint.Promise.Fail(default, diagnostics);
+            return;
+        }
+
+        // Ok
+        constraint.Promise.Resolve(default);
+    }
+
+    private void HandleRule(CommonTypeConstraint constraint, DiagnosticBag diagnostics)
+    {
+        foreach (var type in constraint.AlternativeTypes)
+        {
+            if (constraint.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t)))
+            {
+                // Found a good common type
+                this.Unify(constraint.CommonType, type);
+                constraint.Promise.Resolve(default);
+                return;
+            }
+        }
+
+        // No common type
+        constraint.Diagnostic
+            .WithTemplate(TypeCheckingErrors.NoCommonType)
+            .WithFormatArgs(string.Join(", ", constraint.AlternativeTypes));
+        this.Unify(constraint.CommonType, IntrinsicSymbols.ErrorType);
+        constraint.Promise.Fail(default, diagnostics);
     }
 
     private void HandleRule(MemberConstraint constraint, DiagnosticBag diagnostics)

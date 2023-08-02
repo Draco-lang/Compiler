@@ -298,6 +298,7 @@ public sealed partial class SemanticModel : IBinderProvider
         }
 
         // Attempt to retrieve
+        // TODO: We are passing in the wrong node type here...
         this.TryGetBoundNode(syntax, typeof(BoundExpression), out var node);
         return (node as BoundExpression)?.Type?.ToApiSymbol();
     }

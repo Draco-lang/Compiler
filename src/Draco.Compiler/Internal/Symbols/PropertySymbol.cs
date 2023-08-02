@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
 
@@ -39,7 +38,7 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
         get
         {
             if (this.Getter is not null) return this.Getter.Parameters;
-            if (this.Setter is not null) return this.Setter.Parameters[..^1].ToImmutableArray();
+            if (this.Setter is not null) return this.Setter.Parameters[..^1];
             throw new System.InvalidOperationException();
         }
     }

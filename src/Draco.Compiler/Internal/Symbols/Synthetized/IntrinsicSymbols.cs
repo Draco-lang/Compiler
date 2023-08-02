@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Reflection;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Model;

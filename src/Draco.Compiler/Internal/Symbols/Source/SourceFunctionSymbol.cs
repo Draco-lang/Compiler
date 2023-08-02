@@ -60,14 +60,14 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         // Force binding of parameters, as the type is lazy too
         foreach (var param in this.Parameters.Cast<SourceParameterSymbol>()) param.Bind(binderProvider);
         this.BindReturnType(binderProvider);
-        this.BindBody(binderProvider);
+        var body = InterlockedUtils.InitializeNull(ref this.body, () => this.BindBody(binderProvider));
 
         // Check, if this function collides with any other overloads that are visible from here
         this.CheckForSameParameterOverloads(binderProvider);
 
         // Flow analysis
         ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
-        DefiniteAssignment.Analyze(this.Body, binderProvider.DiagnosticBag);
+        DefiniteAssignment.Analyze(body, binderProvider.DiagnosticBag);
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
     }
 

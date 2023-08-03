@@ -27,7 +27,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation));
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new XmlDocumentationExtractor(this.RawDocumentation, this).Extract());
     private SymbolDocumentation? documentation;
 
     public override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"T:{this.DocumentationFullName}"));

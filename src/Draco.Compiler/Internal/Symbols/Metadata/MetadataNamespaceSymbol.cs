@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -64,5 +65,22 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
 
         // Done
         return result.ToImmutable();
+    }
+
+    public Symbol? LookupByDocumentationName(string documentationName)
+    {
+        var parts = documentationName[2..].Split('.');
+        if (parts.Length == 0) return this;
+
+        var current = this as Symbol;
+        for (var i = 0; i < parts.Length - 1; ++i)
+        {
+            var part = parts[i];
+            current = current.Members
+                .Where(m => m.MetadataName == part && m is ModuleSymbol or TypeSymbol)
+                .Single();
+        }
+
+        return current.Members.SingleOrDefault(m => $"{m.DocumentationPrefix}{m.DocumentationFullName}" == documentationName);
     }
 }

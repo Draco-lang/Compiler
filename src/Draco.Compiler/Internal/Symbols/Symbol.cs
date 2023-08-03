@@ -114,6 +114,18 @@ internal abstract partial class Symbol
     public virtual string DocumentationFullName => this.MetadataFullName;
 
     /// <summary>
+    /// The documentationPrefix of this type.
+    /// </summary>
+    public string DocumentationPrefix => this switch
+    {
+        TypeSymbol => "T:",
+        FunctionSymbol => "M:",
+        PropertySymbol => "P:",
+        FieldSymbol => "F:",
+        _ => throw new System.InvalidOperationException(),
+    };
+
+    /// <summary>
     /// All the members within this symbol.
     /// </summary>
     public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();

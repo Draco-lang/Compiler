@@ -49,7 +49,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override Api.Semantics.Visibility Visibility => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation));
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new XmlDocumentationExtractor(this.RawDocumentation, this).Extract());
     private SymbolDocumentation? documentation;
 
     public override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"M:{this.DocumentationFullName}"));

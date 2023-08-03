@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
 using System.Xml.Linq;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Documentation;
 
@@ -20,29 +20,34 @@ internal sealed record class RawTextDocumentationElement(string RawText) : Docum
 }
 
 // TODO: Change ParameterName to have both Link and DisplayName
-internal sealed record class ParameterDocumentationElement(string ParameterName, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class ParameterDocumentationElement(ParamrefDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
-    public override string ToMarkdown() => $"- [{this.ParameterName}]({this.ParameterName}): {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
+    public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 
     public override XElement ToXml() => new XElement("param",
-        new XAttribute("name", this.ParameterName),
+        new XAttribute("name", this.ParameterLink.Parameter?.Name ?? string.Empty),
         this.Elements.Select(x => x.ToXml()));
 }
 
-internal record class SeeDocumentationElement(string Link, string DisplayText) : DocumentationElement
+internal record class SeeDocumentationElement(Symbol? ReferencedSymbol, string DisplayText) : DocumentationElement
 {
-    public SeeDocumentationElement(string Cref) : this(Cref, Cref) { }
+    private string? filePath = ReferencedSymbol?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
+    private string Link => this.filePath is null
+        ? string.Empty
+        : $"{this.filePath}#L{this.ReferencedSymbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
+
+    public SeeDocumentationElement(Symbol? Cref) : this(Cref, Cref?.Name ?? string.Empty) { }
 
     public override string ToMarkdown() => $"[{this.DisplayText}]({this.Link})";
 
     public override XElement ToXml() => new XElement("see",
-        new XAttribute("cref", this.Link));
+        new XAttribute("cref", this.ReferencedSymbol?.Name ?? string.Empty));
 }
 
-internal record class ParamrefDocumentationElement(string ParameterName) : SeeDocumentationElement(ParameterName)
+internal record class ParamrefDocumentationElement(Symbol? Parameter) : SeeDocumentationElement(Parameter)
 {
     public override XElement ToXml() => new XElement("paramref",
-        new XAttribute("name", this.ParameterName));
+        new XAttribute("name", this.Parameter?.Name ?? string.Empty));
 }
 
 internal record class CodeDocumentationElement(string Code, string Lang) : DocumentationElement

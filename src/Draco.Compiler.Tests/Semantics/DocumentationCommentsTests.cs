@@ -466,20 +466,23 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
     [Fact]
     public void XmlDocumentationExtractorTest()
     {
+        // import TestNamespace;
         // func main() {
         //   TestClass();
         // }
 
         // Arrange
-        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
-            "main",
-            ParameterList(),
-            null,
-            BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("TestNamespace"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
-        // TODO: see - , which is in <see cref="TestClass" />, which inherits <see cref="System.Collections.Generic.List{int}" />
+        // TODO: , random generic link <see cref="System.Collections.Generic.List{int}" />
         var xmlDocs = """
-            <summary>Documentation for TestMethod</summary>
+            <summary>Documentation for TestMethod, which is in <see cref="TestClass" /></summary>
             <param name="arg1">Documentation for arg1</param>
             <param name="arg2">Documentation for arg2</param>
             <code>
@@ -493,6 +496,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var xmlStream = new MemoryStream();
 
         var testRef = CompileCSharpToMetadataRef($$"""
+            namespace TestNamespace;
             public class TestClass
             {
                 {{CreateXmlDocComment(xmlDocs)}}
@@ -511,19 +515,18 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
         var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
 
-        // , which is in [TestClass](TestClass)
         var mdDocs = """
             # summary
-            Documentation for TestMethod
+            Documentation for TestMethod, which is in [TestClass]()
             # parameters
-            - [arg1](arg1): Documentation for arg1
-            - [arg2](arg2): Documentation for arg2
+            - [arg1](): Documentation for arg1
+            - [arg2](): Documentation for arg2
             ```cs
             var x = 0;
             void Foo(int z) { }
             ```
             # returns
-            [arg1](arg1) added to [arg2](arg2)
+            [arg1]() added to [arg2]()
             """;
 
         var resultXml = PrettyXml(methodSym.Documentation.ToXml());

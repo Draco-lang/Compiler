@@ -88,8 +88,19 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         var definition = reader.GetTypeDefinition(handle);
         if (definition.IsNested)
         {
-            // TODO
-            return UnknownType;
+            // Resolve declaring type
+            var declaringType = definition.GetDeclaringType();
+            var declaringSymbol = this.GetTypeFromDefinition(reader, declaringType, rawTypeKind);
+
+            // Search for this type by name and generic argument count
+            var nestedName = reader.GetString(definition.Name);
+            var nestedGenericArgc = definition.GetGenericParameters().Count;
+            var nestedSymbol = declaringSymbol
+                .DefinedMembers
+                .OfType<TypeSymbol>()
+                .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
+                .Single();
+            return nestedSymbol;
         }
 
         var assemblyName = reader

@@ -176,6 +176,22 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.State = breakState;
     }
 
+    public override void VisitForExpression(BoundForExpression node)
+    {
+        // First, the sequence is always evaluated
+        this.VisitExpression(node.Sequence);
+        // We join in with the continue label
+        this.LoopHead(node.ContinueLabel);
+        // Body does not necessarily run
+        var breakState = this.Clone(in this.State);
+        // We continue with the looping, run body
+        this.VisitExpression(node.Then);
+        // Loop back to continue
+        this.LoopTail(node.ContinueLabel);
+        // We continue with the break state
+        this.State = breakState;
+    }
+
     public override void VisitLabelStatement(BoundLabelStatement node)
     {
         // Look up the previously saved label state

@@ -80,7 +80,8 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
 
         PrimitiveTypeCode.String => IntrinsicSymbols.String,
         PrimitiveTypeCode.Object => IntrinsicSymbols.Object,
-        _ => UnknownType
+
+        _ => UnknownType,
     };
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {

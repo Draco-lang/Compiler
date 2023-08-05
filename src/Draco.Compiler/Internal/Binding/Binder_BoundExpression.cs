@@ -42,6 +42,7 @@ internal partial class Binder
         UntypedGotoExpression @goto => this.TypeGotoExpression(@goto, constraints, diagnostics),
         UntypedIfExpression @if => this.TypeIfExpression(@if, constraints, diagnostics),
         UntypedWhileExpression @while => this.TypeWhileExpression(@while, constraints, diagnostics),
+        UntypedForExpression @for => this.TypeForExpression(@for, constraints, diagnostics),
         UntypedCallExpression call => this.TypeCallExpression(call, constraints, diagnostics),
         UntypedIndirectCallExpression call => this.TypeIndirectCallExpression(call, constraints, diagnostics),
         UntypedAssignmentExpression assignment => this.TypeAssignmentExpression(assignment, constraints, diagnostics),
@@ -177,6 +178,24 @@ internal partial class Binder
         var typedCondition = this.TypeExpression(@while.Condition, constraints, diagnostics);
         var typedThen = this.TypeExpression(@while.Then, constraints, diagnostics);
         return new BoundWhileExpression(@while.Syntax, typedCondition, typedThen, @while.ContinueLabel, @while.BreakLabel);
+    }
+
+    private BoundExpression TypeForExpression(UntypedForExpression @for, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var iterator = constraints.GetTypedLocal(@for.Iterator, diagnostics);
+        var sequence = this.TypeExpression(@for.Sequence, constraints, diagnostics);
+        var then = this.TypeExpression(@for.Then, constraints, diagnostics);
+
+        return new BoundForExpression(
+            @for.Syntax,
+            iterator,
+            sequence,
+            then,
+            @for.ContinueLabel,
+            @for.BreakLabel,
+            @for.GetEnumerator.Result,
+            @for.MoveNext.Result,
+            @for.Current.Result);
     }
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)

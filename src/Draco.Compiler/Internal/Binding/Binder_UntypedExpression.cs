@@ -37,6 +37,7 @@ internal partial class Binder
         ReturnExpressionSyntax @return => this.BindReturnExpression(@return, constraints, diagnostics),
         IfExpressionSyntax @if => this.BindIfExpression(@if, constraints, diagnostics),
         WhileExpressionSyntax @while => this.BindWhileExpression(@while, constraints, diagnostics),
+        ForExpressionSyntax @for => this.BindForExpression(@for, constraints, diagnostics),
         CallExpressionSyntax call => this.BindCallExpression(call, constraints, diagnostics),
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
@@ -218,6 +219,91 @@ internal partial class Binder
             .First(sym => sym.Name == "break");
 
         return new UntypedWhileExpression(syntax, condition, then, continueLabel, breakLabel);
+    }
+
+    private UntypedExpression BindForExpression(ForExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var binder = this.GetBinder(syntax);
+
+        // Resolve iterator
+        var iterator = binder.DeclaredSymbols
+            .OfType<UntypedLocalSymbol>()
+            .Single();
+
+        var type = syntax.ElementType is null ? null : this.BindTypeToTypeSymbol(syntax.ElementType.Type, diagnostics);
+        var elementType = constraints.DeclareLocal(iterator, type);
+
+        var sequence = binder.BindExpression(syntax.Sequence, constraints, diagnostics);
+        var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
+
+        // Resolve labels
+        var continueLabel = binder.DeclaredSymbols
+            .OfType<LabelSymbol>()
+            .First(sym => sym.Name == "continue");
+        var breakLabel = binder.DeclaredSymbols
+            .OfType<LabelSymbol>()
+            .First(sym => sym.Name == "break");
+
+        // GetEnumerator
+        var getEnumeratorMethodsPromise = constraints.Member(sequence.TypeRequired, "GetEnumerator", out _);
+        // TODO: Configure
+        var exprPromise = constraints.Await(getEnumeratorMethodsPromise, UntypedExpression () =>
+        {
+            var getEnumeratorFunctions = getEnumeratorMethodsPromise.Result switch
+            {
+                OverloadSymbol o => o.Functions,
+                FunctionSymbol f => ImmutableArray.Create(f),
+                _ => throw new NotImplementedException(),
+            };
+            // TODO: Configure
+            var getEnumeratorPromise = constraints.Overload(
+                getEnumeratorFunctions,
+                ImmutableArray<object>.Empty,
+                out var enumeratorType);
+
+            // Look up MoveNext
+            var moveNextMethodsPromise = constraints.Member(enumeratorType, "MoveNext", out _);
+            // TODO: Configure
+            var moveNextPromise = constraints.Await(moveNextMethodsPromise, () =>
+            {
+                var moveNextFunctions = moveNextMethodsPromise.Result switch
+                {
+                    OverloadSymbol o => o.Functions,
+                    FunctionSymbol f => ImmutableArray.Create(f),
+                    _ => throw new NotImplementedException(),
+                };
+
+                // TODO: Configure
+                var moveNextPromise = constraints.Overload(
+                    moveNextFunctions,
+                    ImmutableArray<object>.Empty,
+                    out var moveNextReturnType);
+
+                // TODO: Configure
+                constraints.SameType(IntrinsicSymbols.Bool, moveNextReturnType);
+
+                return moveNextPromise;
+            }).Unwrap();
+
+            // Look up Current
+            // TODO: Configure
+            var currentPromise = constraints.Member(enumeratorType, "Current", out var currentType);
+
+            // TODO: Configure
+            constraints.Assignable(elementType, currentType);
+
+            return new UntypedForExpression(
+                syntax,
+                iterator,
+                sequence,
+                then,
+                continueLabel,
+                breakLabel,
+                getEnumeratorPromise,
+                moveNextPromise,
+                currentPromise);
+        });
+        return new UntypedDelayedExpression(syntax, exprPromise, IntrinsicSymbols.Unit);
     }
 
     private UntypedExpression BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

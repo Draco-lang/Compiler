@@ -99,6 +99,17 @@
     <Field Name="BreakLabel" Type="LabelSymbol" />
   </Node>
 
+  <Node Name="BoundForExpression" Base="BoundExpression">
+    <Field Name="Iterator" Type="LocalSymbol" />
+    <Field Name="Sequence" Type="BoundExpression" />
+    <Field Name="Then" Type="BoundExpression" />
+    <Field Name="ContinueLabel" Type="LabelSymbol" />
+    <Field Name="BreakLabel" Type="LabelSymbol" />
+    <Field Name="GetEnumerator" Type="FunctionSymbol" />
+    <Field Name="MoveNext" Type="FunctionSymbol" />
+    <Field Name="Current" Type="Symbol" />
+  </Node>
+
   <Node Name="BoundMemberExpression" Base="BoundExpression">
     <Field Name="Receiver" Type="BoundExpression" />
     <Field Name="Member" Type="Symbol" />

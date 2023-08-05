@@ -11,16 +11,22 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 internal sealed class UntypedLocalSymbol : Symbol, ISourceSymbol
 {
     public override Symbol ContainingSymbol { get; }
-    public override string Name => this.DeclaringSyntax.Name.Text;
+    public override string Name { get; }
+    public bool IsMutable { get; }
 
-    public override VariableDeclarationSyntax DeclaringSyntax { get; }
+    public override SyntaxNode DeclaringSyntax { get; }
 
-    public bool IsMutable => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVar;
-
-    public UntypedLocalSymbol(Symbol containingSymbol, VariableDeclarationSyntax syntax)
+    public UntypedLocalSymbol(Symbol containingSymbol, string name, bool isMutable, SyntaxNode declaringSyntax)
     {
         this.ContainingSymbol = containingSymbol;
-        this.DeclaringSyntax = syntax;
+        this.Name = name;
+        this.IsMutable = isMutable;
+        this.DeclaringSyntax = declaringSyntax;
+    }
+
+    public UntypedLocalSymbol(Symbol containingSymbol, VariableDeclarationSyntax syntax)
+        : this(containingSymbol, syntax.Name.Text, syntax.Keyword.Kind == TokenKind.KeywordVar, syntax)
+    {
     }
 
     public override ISymbol ToApiSymbol() => throw new NotSupportedException();

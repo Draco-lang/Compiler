@@ -11,5 +11,6 @@
   <Type Name="System.Object" Assembly="System.Runtime" Symbol="IntrinsicSymbols.Object" />
   <Type Name="System.Type" Assembly="System.Runtime" />
   <Type Name="System.Array" Assembly="System.Runtime" />
+  <Type Name="System.ValueType" Assembly="System.Runtime" />
 
 </WellKnownTypes>

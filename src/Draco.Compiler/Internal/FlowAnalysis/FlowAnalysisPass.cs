@@ -131,6 +131,7 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.labeledStates[continueLabel] = this.Clone(in this.State);
     }
 
+    // TODO: We might have a bug, we don't consider break labels
     private void LoopTail(LabelSymbol continueLabel)
     {
         var prevState = this.labeledStates[continueLabel];

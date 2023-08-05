@@ -352,7 +352,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         MetadataTypeSymbol type => this.GetOrAddTypeReference(
             assembly: this.AddAssemblyReference(type.Assembly),
             @namespace: GetNamespaceForSymbol(type),
-            name: type.Name),
+            name: type.MetadataName),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 

@@ -6,7 +6,6 @@ using System.Reflection.Metadata.Ecma335;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Microsoft.Win32;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;

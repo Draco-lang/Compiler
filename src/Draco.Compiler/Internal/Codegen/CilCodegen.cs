@@ -6,6 +6,7 @@ using System.Reflection.Metadata.Ecma335;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Microsoft.Win32;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;
@@ -407,6 +408,20 @@ internal sealed class CilCodegen
             break;
         case SymbolReference s when s.Symbol is ModuleSymbol module:
             this.InstructionEncoder.Token(this.GetHandle(module));
+            break;
+        case Address a:
+            switch (a.Operand)
+            {
+            case Local local:
+            {
+                var index = this.GetLocalIndex(local);
+                if (index is null) break;
+                this.InstructionEncoder.LoadLocalAddress(index.Value);
+                break;
+            }
+            default:
+                throw new NotImplementedException();
+            }
             break;
         case Constant c:
             switch (c.Value)

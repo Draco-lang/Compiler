@@ -186,9 +186,18 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     }
 
     // Manifesting an expression as an address
-    private IOperand CompileToAddress(BoundExpression receiver)
+    private IOperand CompileToAddress(BoundExpression expression)
     {
-        throw new System.NotImplementedException();
+        switch (expression)
+        {
+        case BoundLocalExpression local:
+        {
+            var localOperand = this.DefineLocal(local.Local);
+            return new Address(localOperand);
+        }
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(expression));
+        }
     }
 
     // Expressions /////////////////////////////////////////////////////////////

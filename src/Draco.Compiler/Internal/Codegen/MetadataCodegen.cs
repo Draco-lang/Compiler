@@ -183,7 +183,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.AddAssemblyReference(assembly);
 
         // Metadata types
-        case IMetadataSymbol metadataSymbol when metadataSymbol is TypeSymbol or MetadataStaticClassSymbol:
+        case IMetadataClass metadataSymbol:
             Debug.Assert(symbol.ContainingSymbol is not null);
             return this.GetOrAddTypeReference(
                 parent: this.GetContainerEntityHandle(symbol.ContainingSymbol),
@@ -363,8 +363,9 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private static string? GetNamespaceForSymbol(Symbol symbol) => symbol switch
     {
-        MetadataStaticClassSymbol staticClass => GetNamespaceForSymbol(staticClass.ContainingSymbol),
-        MetadataTypeSymbol type => GetNamespaceForSymbol(type.ContainingSymbol),
+        // NOTE: For nested classes we don't need a namespace
+        IMetadataClass mclass when mclass.ContainingSymbol is TypeSymbol => null,
+        IMetadataClass mclass => GetNamespaceForSymbol(mclass.ContainingSymbol),
         MetadataNamespaceSymbol ns => ns.FullName,
         _ when symbol.ContainingSymbol is not null => GetNamespaceForSymbol(symbol.ContainingSymbol),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),

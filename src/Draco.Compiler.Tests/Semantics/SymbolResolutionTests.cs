@@ -4109,6 +4109,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Equal("Derived.Clone", nonObjectSymbols.First().FullName);
     }
 
+    [Fact]
     public void InCodeModules()
     {
         // module Foo {

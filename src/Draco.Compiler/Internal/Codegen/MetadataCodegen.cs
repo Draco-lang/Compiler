@@ -177,8 +177,8 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
         // If we can translate a symbol to a metadata type, get the handle for that
         // This is because primitives are encoded differently as an entity handle
-        case Symbol when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(symbol, out var metadataSymbol):
-            return this.GetEntityHandle(metadataSymbol);
+        case MetadataBackedPrimitiveTypeSymbol metadataSymbol:
+            return this.GetEntityHandle(metadataSymbol.MetadataType);
 
         case MetadataAssemblySymbol assembly:
             return this.AddAssemblyReference(assembly);

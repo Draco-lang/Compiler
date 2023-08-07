@@ -3641,7 +3641,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(baseTypeSym.IsGenericDefinition);
         Assert.Same(parentTypeDecl, baseTypeSym.GenericDefinition);
         Assert.Single(baseTypeSym.GenericArguments);
-        Assert.Same(IntrinsicSymbols.Int32, baseTypeSym.GenericArguments[0]);
+        Assert.Same(compilation.IntrinsicSymbols.Int32, baseTypeSym.GenericArguments[0]);
     }
 
     [Fact]
@@ -3788,7 +3788,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(baseInterfaceSym.IsGenericDefinition);
         Assert.Same(parentInterfaceDecl, baseInterfaceSym.GenericDefinition);
         Assert.Single(baseInterfaceSym.GenericArguments);
-        Assert.Same(IntrinsicSymbols.Int32, baseInterfaceSym.GenericArguments[0]);
+        Assert.Same(compilation.IntrinsicSymbols.Int32, baseInterfaceSym.GenericArguments[0]);
     }
 
     [Fact]

@@ -1792,8 +1792,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;

@@ -14,9 +14,13 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class IntrinsicSymbols
 {
-    public TypeSymbol Never => NeverTypeSymbol.Instance;
-    public TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
-    public TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
+    // Types that never change
+
+    public static TypeSymbol Never => NeverTypeSymbol.Instance;
+    public static TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
+    public static TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
+
+    // Types backed by metadata potentially, nonstatic
 
     public TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
 

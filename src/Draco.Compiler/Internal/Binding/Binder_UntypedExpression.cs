@@ -160,7 +160,7 @@ internal partial class Binder
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints
-            .SameType(IntrinsicSymbols.Bool, condition.TypeRequired)
+            .SameType(this.IntrinsicSymbols.Bool, condition.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
 
@@ -198,7 +198,7 @@ internal partial class Binder
         var condition = binder.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints
-            .SameType(IntrinsicSymbols.Bool, condition.TypeRequired)
+            .SameType(this.IntrinsicSymbols.Bool, condition.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
 
@@ -360,11 +360,11 @@ internal partial class Binder
 
             // Both left and right must be bool
             constraints
-                .SameType(IntrinsicSymbols.Bool, left.TypeRequired)
+                .SameType(this.IntrinsicSymbols.Bool, left.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(syntax.Left.Location));
             constraints
-                .SameType(IntrinsicSymbols.Bool, right.TypeRequired)
+                .SameType(this.IntrinsicSymbols.Bool, right.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(syntax.Right.Location));
 
@@ -453,7 +453,7 @@ internal partial class Binder
             .WithLocation(syntax.Operator.Location));
         // For safety, we assume it has to be bool
         constraints
-            .SameType(IntrinsicSymbols.Bool, resultType)
+            .SameType(this.IntrinsicSymbols.Bool, resultType)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
 

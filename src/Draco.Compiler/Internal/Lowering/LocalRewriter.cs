@@ -285,7 +285,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         }
 
         // Fold them into conjunctions
-        var conjunction = comparisons.Aggregate((result, current) => AndExpression(result, current, this.IntrinsicSymbols.Bool));
+        var conjunction = comparisons.Aggregate((result, current) => AndExpression(result, current));
         // Desugar them, conjunctions can be desugared too
         conjunction = (BoundExpression)conjunction.Accept(this);
 

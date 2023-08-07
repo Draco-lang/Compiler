@@ -89,6 +89,16 @@ internal partial class UntypedReferenceErrorExpression
     public override TypeSymbol? Type => IntrinsicSymbols.ErrorType;
 }
 
+internal partial class UntypedAndExpression
+{
+    public override TypeSymbol Type => this.Left.TypeRequired;
+}
+
+internal partial class UntypedOrExpression
+{
+    public override TypeSymbol Type => this.Left.TypeRequired;
+}
+
 internal partial class UntypedAssignmentExpression
 {
     public override TypeSymbol Type => this.Left.Type;

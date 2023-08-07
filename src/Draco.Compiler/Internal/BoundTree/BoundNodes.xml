@@ -133,13 +133,11 @@
   <Node Name="BoundAndExpression" Base="BoundExpression">
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundOrExpression" Base="BoundExpression">
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundAssignmentExpression" Base="BoundExpression">
@@ -224,11 +222,13 @@
 
   <Node Name="BoundStringExpression" Base="BoundExpression">
     <Field Name="Parts" Type="ImmutableArray&lt;BoundStringPart&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundRelationalExpression" Base="BoundExpression">
     <Field Name="First" Type="BoundExpression" />
     <Field Name="Comparisons" Type="ImmutableArray&lt;BoundComparison&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundComparison" Base="BoundNode">

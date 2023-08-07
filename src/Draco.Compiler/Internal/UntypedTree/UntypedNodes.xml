@@ -107,13 +107,11 @@
   <Node Name="UntypedAndExpression" Base="UntypedExpression">
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedOrExpression" Base="UntypedExpression">
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedAssignmentExpression" Base="UntypedExpression">
@@ -177,11 +175,13 @@
 
   <Node Name="UntypedStringExpression" Base="UntypedExpression">
     <Field Name="Parts" Type="ImmutableArray&lt;UntypedStringPart&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedRelationalExpression" Base="UntypedExpression">
     <Field Name="First" Type="UntypedExpression" />
     <Field Name="Comparisons" Type="ImmutableArray&lt;UntypedComparison&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedComparison" Base="UntypedNode">

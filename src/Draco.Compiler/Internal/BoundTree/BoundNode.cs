@@ -125,6 +125,16 @@ internal partial class BoundReferenceErrorExpression
     public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
+internal partial class BoundAndExpression
+{
+    public override TypeSymbol Type => this.Left.TypeRequired;
+}
+
+internal partial class BoundOrExpression
+{
+    public override TypeSymbol Type => this.Left.TypeRequired;
+}
+
 internal partial class BoundAssignmentExpression
 {
     public override TypeSymbol Type => this.Left.Type;
@@ -151,7 +161,8 @@ internal partial class BoundArrayAccessExpression
 
 internal partial class BoundArrayLengthExpression
 {
-    public override TypeSymbol? Type => IntrinsicSymbols.Int32;
+    public override TypeSymbol? Type =>
+        (this.Array.TypeRequired.Substitution as ArrayTypeSymbol)?.IndexType;
 }
 
 internal partial class BoundCallExpression

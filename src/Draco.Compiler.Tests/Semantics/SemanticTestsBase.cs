@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 
@@ -9,6 +10,12 @@ namespace Draco.Compiler.Tests.Semantics;
 
 public abstract class SemanticTestsBase
 {
+    private protected static Compilation CreateCompilation(params SyntaxTree[] syntaxTrees) => Compilation.Create(
+        syntaxTrees: syntaxTrees.ToImmutableArray(),
+        metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+            .ToImmutableArray());
+
     private protected static TSymbol GetInternalSymbol<TSymbol>(ISymbol? symbol)
         where TSymbol : Symbol
     {

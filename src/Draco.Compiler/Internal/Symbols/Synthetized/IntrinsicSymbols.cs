@@ -33,7 +33,13 @@ internal sealed class IntrinsicSymbols
 
     public TypeSymbol Int8 { get; } = new PrimitiveTypeSymbol("int8", isValueType: true);
     public TypeSymbol Int16 { get; } = new PrimitiveTypeSymbol("int16", isValueType: true);
-    public TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", isValueType: true);
+
+    public TypeSymbol Int32 => InterlockedUtils.InitializeNull(ref this.int32, () => new MetadataBackedPrimitiveTypeSymbol(
+        "int32",
+        isValueType: true,
+        metadataType: this.WellKnownTypes.SystemInt32));
+    private TypeSymbol? int32;
+
     public TypeSymbol Int64 { get; } = new PrimitiveTypeSymbol("int64", isValueType: true);
 
     public TypeSymbol UInt8 { get; } = new PrimitiveTypeSymbol("uint8", isValueType: true);
@@ -47,8 +53,17 @@ internal sealed class IntrinsicSymbols
     public TypeSymbol Char { get; } = new PrimitiveTypeSymbol("char", isValueType: true);
     public TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
 
-    public TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
-    public TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
+    public TypeSymbol Object => InterlockedUtils.InitializeNull(ref this.@object, () => new MetadataBackedPrimitiveTypeSymbol(
+        "object",
+        isValueType: false,
+        metadataType: this.WellKnownTypes.SystemObject));
+    private TypeSymbol? @object;
+
+    public TypeSymbol String => InterlockedUtils.InitializeNull(ref this.@string, () => new MetadataBackedPrimitiveTypeSymbol(
+        "string",
+        isValueType: false,
+        metadataType: this.WellKnownTypes.SystemString));
+    private TypeSymbol? @string;
 
     public ArrayTypeSymbol Array { get; }
     public ArrayConstructorSymbol ArrayCtor { get; }
@@ -57,6 +72,8 @@ internal sealed class IntrinsicSymbols
         ref this.bool_not,
         () => this.Unary(TokenKind.KeywordNot, this.Bool, this.Bool, this.CodegenNot));
     private FunctionSymbol? bool_not;
+
+    private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
 
     private readonly Compilation compilation;
 

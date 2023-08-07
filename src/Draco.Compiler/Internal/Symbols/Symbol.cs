@@ -119,10 +119,11 @@ internal abstract partial class Symbol
     public string DocumentationPrefix => this switch
     {
         TypeSymbol => "T:",
+        ModuleSymbol => "T:",
         FunctionSymbol => "M:",
         PropertySymbol => "P:",
         FieldSymbol => "F:",
-        _ => throw new System.InvalidOperationException(),
+        _ => string.Empty,
     };
 
     /// <summary>

@@ -5,6 +5,7 @@ using System.Xml;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Documentation;
 
@@ -71,7 +72,7 @@ internal class XmlDocumentationExtractor
     private DocumentationElement ExtractElement(XmlNode node) => node.LocalName switch
     {
         "#text" => new RawTextDocumentationElement(node.InnerText),
-        "see" => new SeeDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty)),
+        "see" => new SeeDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false)),
         "paramref" => new ParamrefDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
         "code" => new CodeDocumentationElement(node.InnerXml, "cs"),
         _ => new RawTextDocumentationElement(node.InnerText),

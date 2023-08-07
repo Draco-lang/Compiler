@@ -480,9 +480,44 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 null,
                 BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
-        // TODO: , random generic link <see cref="System.Collections.Generic.List{int}" />
-        var xmlDocs = """
-            <summary>Documentation for TestMethod, which is in <see cref="TestClass" /></summary>
+        var originalDocs = """
+            <summary>Documentation for TestMethod, which is in <see cref="TestClass" />, random generic link <see cref="System.Collections.Generic.List{int}" /></summary>
+            <param name="arg1">Documentation for arg1</param>
+            <param name="arg2">Documentation for arg2</param>
+            <code>
+            var x = 0;
+            void Foo(int z) { }
+            </code>
+            <returns><paramref name="arg1" /> added to <paramref name="arg2" /></returns>
+            """;
+
+        var xmlStream = new MemoryStream();
+
+        var testRef = CompileCSharpToMetadataRef($$"""
+            namespace TestNamespace;
+            public class TestClass
+            {
+                {{CreateXmlDocComment(originalDocs)}}
+                public int TestMethod(int arg1, int arg2) => arg1 + arg2; 
+            }
+            """, xmlStream).DocumentationFromStream(xmlStream);
+
+        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
+        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+
+        var xmlGeneratedDocs= """
+            <summary>Documentation for TestMethod, which is in <see cref="T:TestNamespace.TestClass" />, random generic link <see cref="T:System.Collections.Generic.List`1" /></summary>
             <param name="arg1">Documentation for arg1</param>
             <param name="arg2">Documentation for arg2</param>
             <code>
@@ -493,31 +528,9 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             <paramref name="arg1" /> added to <paramref name="arg2" /></returns>
             """;
 
-        var xmlStream = new MemoryStream();
-
-        var testRef = CompileCSharpToMetadataRef($$"""
-            namespace TestNamespace;
-            public class TestClass
-            {
-                {{CreateXmlDocComment(xmlDocs)}}
-                public int TestMethod(int arg1, int arg2) => arg1 + arg2; 
-            }
-            """, xmlStream).DocumentationFromStream(xmlStream);
-
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
-
-        // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
-        var semanticModel = compilation.GetSemanticModel(tree);
-
-        var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
-
-        var mdDocs = """
+        var mdGeneratedDocs = """
             # summary
-            Documentation for TestMethod, which is in [TestClass]()
+            Documentation for TestMethod, which is in [TestNamespace.TestClass](), random generic link [System.Collections.Generic.List<T>]()
             # parameters
             - [arg1](): Documentation for arg1
             - [arg2](): Documentation for arg2
@@ -536,10 +549,10 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         Assert.Empty(semanticModel.Diagnostics);
         Assert.Equal($"""
             <documentation>
-            {xmlDocs}
+            {xmlGeneratedDocs}
             </documentation>
             """, resultXml, ignoreLineEndingDifferences: true);
-        Assert.Equal(mdDocs, resultMd, ignoreLineEndingDifferences: true);
+        Assert.Equal(mdGeneratedDocs, resultMd, ignoreLineEndingDifferences: true);
     }
 
     private static string PrettyXml(XElement element)

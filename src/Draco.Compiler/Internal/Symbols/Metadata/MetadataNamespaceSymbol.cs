@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -78,7 +79,8 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
             var part = parts[i];
             current = current.Members
                 .Where(m => m.MetadataName == part && m is ModuleSymbol or TypeSymbol)
-                .Single();
+                .SingleOrDefault();
+            if (current is null) return null;
         }
 
         return current.Members.SingleOrDefault(m => $"{m.DocumentationPrefix}{m.DocumentationFullName}" == documentationName);

@@ -36,15 +36,15 @@ internal record class SeeDocumentationElement(Symbol? ReferencedSymbol, string D
         ? string.Empty
         : $"{this.filePath}#L{this.ReferencedSymbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
 
-    public SeeDocumentationElement(Symbol? Cref) : this(Cref, Cref?.Name ?? string.Empty) { }
+    public SeeDocumentationElement(Symbol? Cref) : this(Cref, Cref?.FullName ?? string.Empty) { }
 
     public override string ToMarkdown() => $"[{this.DisplayText}]({this.Link})";
 
     public override XElement ToXml() => new XElement("see",
-        new XAttribute("cref", this.ReferencedSymbol?.Name ?? string.Empty));
+        new XAttribute("cref", $"{this.ReferencedSymbol?.DocumentationPrefix}{this.ReferencedSymbol?.DocumentationFullName}" ?? string.Empty));
 }
 
-internal record class ParamrefDocumentationElement(Symbol? Parameter) : SeeDocumentationElement(Parameter)
+internal record class ParamrefDocumentationElement(Symbol? Parameter) : SeeDocumentationElement(Parameter, Parameter?.Name ?? string.Empty)
 {
     public override XElement ToXml() => new XElement("paramref",
         new XAttribute("name", this.Parameter?.Name ?? string.Empty));

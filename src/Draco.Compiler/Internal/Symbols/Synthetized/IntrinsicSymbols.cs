@@ -67,6 +67,12 @@ internal sealed class IntrinsicSymbols
         this.ArrayCtor = new(1);
     }
 
+    public TypeSymbol InstantiateArray(TypeSymbol elementType, int rank = 1) => rank switch
+    {
+        1 => this.Array.GenericInstantiate(elementType),
+        int n => new ArrayTypeSymbol(n, this.Int32).GenericInstantiate(elementType),
+    };
+
     private ImmutableArray<Symbol> BuildAllSymbols() => typeof(IntrinsicSymbols)
         .GetProperties(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
         .Where(prop => prop.PropertyType.IsAssignableTo(typeof(Symbol)))

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -456,7 +457,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>
         this.DefineParameter(node.Parameter);
 
-    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
+    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value, node.TypeRequired);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
     public override IOperand VisitFieldExpression(BoundFieldExpression node)

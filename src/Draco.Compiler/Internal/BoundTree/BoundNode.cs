@@ -145,15 +145,6 @@ internal partial class BoundObjectCreationExpression
     public override TypeSymbol Type => this.ObjectType;
 }
 
-internal partial class BoundArrayCreationExpression
-{
-    public override TypeSymbol Type => this.Sizes.Length switch
-    {
-        1 => IntrinsicSymbols.Array.GenericInstantiate(this.ElementType),
-        int n => new ArrayTypeSymbol(n).GenericInstantiate(this.ElementType),
-    };
-}
-
 internal partial class BoundArrayAccessExpression
 {
     public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];

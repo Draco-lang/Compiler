@@ -112,7 +112,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
                     left: LocalLvalue(varArgs),
                     right: ArrayCreationExpression(
                         elementType: elementType,
-                        sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(varArgCount))))))
+                        sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(varArgCount)),
+                        type: this.IntrinsicSymbols.InstantiateArray(elementType)))))
                 .Concat(varArgAssignments)
                 .ToImmutableArray(),
             value: CallExpression(
@@ -387,7 +388,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
             local: arrayLocal,
             value: ArrayCreationExpression(
                 elementType: this.IntrinsicSymbols.Object,
-                sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(args.Count)))));
+                sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(args.Count)),
+                type: this.IntrinsicSymbols.InstantiateArray(this.IntrinsicSymbols.Object))));
 
         for (var i = 0; i < args.Count; i++)
         {

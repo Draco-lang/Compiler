@@ -155,6 +155,7 @@
   <Node Name="BoundArrayCreationExpression" Base="BoundExpression">
     <Field Name="ElementType" Type="TypeSymbol" />
     <Field Name="Sizes" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundArrayAccessExpression" Base="BoundExpression">

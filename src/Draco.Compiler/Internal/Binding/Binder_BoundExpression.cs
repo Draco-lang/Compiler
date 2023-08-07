@@ -79,7 +79,7 @@ internal partial class Binder
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);
 
     private BoundExpression TypeLiteralExpression(UntypedLiteralExpression literal, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundLiteralExpression(literal.Syntax, literal.Value);
+        new BoundLiteralExpression(literal.Syntax, literal.Value, literal.TypeRequired);
 
     private BoundExpression TypeStringExpression(UntypedStringExpression str, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         new BoundStringExpression(str.Syntax, str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray());
@@ -332,14 +332,14 @@ internal partial class Binder
     {
         var left = this.TypeExpression(and.Left, constraints, diagnostics);
         var right = this.TypeExpression(and.Right, constraints, diagnostics);
-        return new BoundAndExpression(and.Syntax, left, right);
+        return new BoundAndExpression(and.Syntax, left, right, this.IntrinsicSymbols.Bool);
     }
 
     private BoundExpression TypeOrExpression(UntypedOrExpression or, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.TypeExpression(or.Left, constraints, diagnostics);
         var right = this.TypeExpression(or.Right, constraints, diagnostics);
-        return new BoundOrExpression(or.Syntax, left, right);
+        return new BoundOrExpression(or.Syntax, left, right, this.IntrinsicSymbols.Bool);
     }
 
     private BoundExpression TypeMemberExpression(UntypedMemberExpression mem, ConstraintSolver constraints, DiagnosticBag diagnostics)

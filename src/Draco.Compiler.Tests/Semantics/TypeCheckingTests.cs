@@ -36,7 +36,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -241,7 +241,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -285,7 +285,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -587,8 +587,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
-        Assert.Equal(IntrinsicSymbols.Int32, ySym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, ySym.Type);
     }
 
     [Fact]
@@ -1082,8 +1082,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.String);
-        Assert.Equal(stringEmptySym.Type, IntrinsicSymbols.String);
+        Assert.Equal(compilation.IntrinsicSymbols.String, xSym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.String, stringEmptySym.Type);
     }
 
     [Fact]
@@ -1118,8 +1118,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
-        Assert.Equal(windowWidthSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, windowWidthSym.Type);
     }
 
     [Fact]
@@ -1156,8 +1156,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
-        Assert.Equal(indexSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, indexSym.Type);
     }
 
     [Fact]
@@ -1262,10 +1262,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.False(firstCalledSym.IsGenericDefinition);
         Assert.Same(identitySym, firstCalledSym.GenericDefinition);
         Assert.Single(firstCalledSym.GenericArguments);
-        Assert.Same(IntrinsicSymbols.Int32, firstCalledSym.GenericArguments[0]);
+        Assert.Same(compilation.IntrinsicSymbols.Int32, firstCalledSym.GenericArguments[0]);
 
-        Assert.Same(IntrinsicSymbols.Int32, aSym.Type);
-        Assert.Same(IntrinsicSymbols.String, bSym.Type);
+        Assert.Same(compilation.IntrinsicSymbols.Int32, aSym.Type);
+        Assert.Same(compilation.IntrinsicSymbols.String, bSym.Type);
         Assert.True(cSym.Type.IsError);
     }
 
@@ -1411,8 +1411,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.True(calledSym.IsGenericInstance);
         Assert.Single(calledSym.GenericArguments);
-        Assert.Equal(IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
-        Assert.Equal(IntrinsicSymbols.Int32, varSym.Type, SymbolEqualityComparer.Default);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, varSym.Type, SymbolEqualityComparer.Default);
     }
 
     [Fact]
@@ -1459,8 +1459,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.True(calledSym.IsGenericInstance);
         Assert.True(stackSym.IsGenericInstance);
-        Assert.Equal(IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
-        Assert.Equal(IntrinsicSymbols.Int32, stackSym.GenericArguments[0], SymbolEqualityComparer.Default);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, stackSym.GenericArguments[0], SymbolEqualityComparer.Default);
     }
 
     [Fact]

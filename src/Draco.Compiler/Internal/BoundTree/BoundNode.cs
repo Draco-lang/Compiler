@@ -153,7 +153,7 @@ internal partial class BoundArrayAccessExpression
 internal partial class BoundArrayLengthExpression
 {
     public override TypeSymbol? Type =>
-        (this.Array.TypeRequired.Substitution as ArrayTypeSymbol)?.IndexType;
+        (this.Array.TypeRequired.Substitution.GenericDefinition as ArrayTypeSymbol)?.IndexType;
 }
 
 internal partial class BoundCallExpression

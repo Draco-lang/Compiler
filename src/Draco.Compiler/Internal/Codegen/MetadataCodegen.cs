@@ -61,6 +61,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
 
     private WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
+    private IntrinsicSymbols IntrinsicSymbols => this.Compilation.IntrinsicSymbols;
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
@@ -585,7 +586,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     public void EncodeReturnType(ReturnTypeEncoder encoder, TypeSymbol type)
     {
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Unit)) { encoder.Void(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Unit)) { encoder.Void(); return; }
 
         this.EncodeSignatureType(encoder.Type(), type);
     }
@@ -601,24 +602,24 @@ internal sealed class MetadataCodegen : MetadataWriter
             return;
         }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Char)) { encoder.Char(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Char)) { encoder.Char(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int8)) { encoder.SByte(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int16)) { encoder.Int16(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int64)) { encoder.Int64(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int8)) { encoder.SByte(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int16)) { encoder.Int16(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int64)) { encoder.Int64(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.UInt8)) { encoder.Byte(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.UInt16)) { encoder.UInt16(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.UInt32)) { encoder.UInt32(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.UInt64)) { encoder.UInt64(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.UInt8)) { encoder.Byte(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.UInt16)) { encoder.UInt16(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.UInt32)) { encoder.UInt32(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.UInt64)) { encoder.UInt64(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Float32)) { encoder.Single(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Float32)) { encoder.Single(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Float64)) { encoder.Double(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Object)) { encoder.Object(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.String)) { encoder.String(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Object)) { encoder.Object(); return; }
 
         if (type.GenericArguments.Length > 0)
         {

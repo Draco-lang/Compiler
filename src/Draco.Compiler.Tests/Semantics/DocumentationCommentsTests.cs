@@ -480,6 +480,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 null,
                 BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
+        // TODO: Test type params
         var originalDocs = """
             <summary>Documentation for TestMethod, which is in <see cref="TestClass" />, random generic link <see cref="System.Collections.Generic.List{int}" /></summary>
             <param name="arg1">Documentation for arg1</param>

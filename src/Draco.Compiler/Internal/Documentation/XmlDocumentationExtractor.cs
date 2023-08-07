@@ -53,6 +53,17 @@ internal class XmlDocumentationExtractor
             return new ParametersDocumentationSection(parameters.ToImmutable());
         }
 
+        if (node.Name == "typeparam")
+        {
+            nextNode = node;
+            var typeParameters = ImmutableArray.CreateBuilder<TypeParameterDocumentationElement>();
+            for (; nextNode?.Name == "typeparam"; nextNode = nextNode.NextSibling)
+            {
+                typeParameters.Add(this.ExtractTypeParameter(nextNode));
+            }
+            return new TypeParametersDocumentationSection(typeParameters.ToImmutable());
+        }
+
         if (node.Name == "code")
         {
             nextNode = node.NextSibling;
@@ -74,6 +85,7 @@ internal class XmlDocumentationExtractor
         "#text" => new RawTextDocumentationElement(node.InnerText),
         "see" => new SeeDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false)),
         "paramref" => new ParamrefDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
+        "typeparamref" => new TypeParamrefDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
         "code" => new CodeDocumentationElement(node.InnerXml, "cs"),
         _ => new RawTextDocumentationElement(node.InnerText),
     };
@@ -89,6 +101,17 @@ internal class XmlDocumentationExtractor
         return new ParameterDocumentationElement(new ParamrefDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
     }
 
+    private TypeParameterDocumentationElement ExtractTypeParameter(XmlNode node)
+    {
+        Debug.Assert(node.Name == "typeparam");
+        var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
+        foreach (XmlNode child in node.ChildNodes)
+        {
+            elements.Add(this.ExtractElement(child));
+        }
+        return new TypeParameterDocumentationElement(new TypeParamrefDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
+    }
+
     private Symbol? GetSymbolFromDocumentationName(string documentationName) =>
         this.Assembly.Compilation.MetadataAssemblies.Values
             .Select(x => x.RootNamespace
@@ -98,4 +121,7 @@ internal class XmlDocumentationExtractor
 
     private ParameterSymbol? GetParameter(string paramName) =>
         (this.ContainingSymbol as FunctionSymbol)?.Parameters.FirstOrDefault(x => x.Name == paramName);
+
+    private TypeParameterSymbol? GetTypeParameter(string paramName) =>
+       (this.ContainingSymbol as FunctionSymbol)?.GenericParameters.FirstOrDefault(x => x.Name == paramName);
 }

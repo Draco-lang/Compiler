@@ -19,13 +19,21 @@ internal sealed record class RawTextDocumentationElement(string RawText) : Docum
     public override XText ToXml() => new XText(this.RawText);
 }
 
-// TODO: Change ParameterName to have both Link and DisplayName
 internal sealed record class ParameterDocumentationElement(ParamrefDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
     public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 
     public override XElement ToXml() => new XElement("param",
-        new XAttribute("name", this.ParameterLink.Parameter?.Name ?? string.Empty),
+        new XAttribute("name", this.ParameterLink.DisplayText),
+        this.Elements.Select(x => x.ToXml()));
+}
+
+internal sealed record class TypeParameterDocumentationElement(TypeParamrefDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+{
+    public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
+
+    public override XElement ToXml() => new XElement("typeparam",
+        new XAttribute("name", this.ParameterLink.DisplayText),
         this.Elements.Select(x => x.ToXml()));
 }
 
@@ -47,7 +55,13 @@ internal record class SeeDocumentationElement(Symbol? ReferencedSymbol, string D
 internal record class ParamrefDocumentationElement(Symbol? Parameter) : SeeDocumentationElement(Parameter, Parameter?.Name ?? string.Empty)
 {
     public override XElement ToXml() => new XElement("paramref",
-        new XAttribute("name", this.Parameter?.Name ?? string.Empty));
+        new XAttribute("name", this.DisplayText));
+}
+
+internal record class TypeParamrefDocumentationElement(Symbol? TypeParameter) : SeeDocumentationElement(TypeParameter, TypeParameter?.Name ?? string.Empty)
+{
+    public override XElement ToXml() => new XElement("typeparamref ",
+        new XAttribute("name", this.DisplayText));
 }
 
 internal record class CodeDocumentationElement(string Code, string Lang) : DocumentationElement

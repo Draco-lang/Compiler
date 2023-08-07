@@ -32,6 +32,17 @@ internal record class ParametersDocumentationSection(ImmutableArray<ParameterDoc
     public override object ToXml() => this.Elements.Select(x => x.ToXml());
 }
 
+internal record class TypeParametersDocumentationSection(ImmutableArray<TypeParameterDocumentationElement> TypeParameters) : DocumentationSection("TypeParameters", TypeParameters.Cast<DocumentationElement>().ToImmutableArray())
+{
+    public override string ToMarkdown() =>
+        $"""
+        # type parameters
+        {string.Join(Environment.NewLine, this.Elements.Select(x => x.ToMarkdown()))}
+        """;
+
+    public override object ToXml() => this.Elements.Select(x => x.ToXml());
+}
+
 internal record class CodeDocumentationSection(CodeDocumentationElement Code) : DocumentationSection("Code", ImmutableArray.Create<DocumentationElement>(Code))
 {
     public override string ToMarkdown() => this.Code.ToMarkdown();

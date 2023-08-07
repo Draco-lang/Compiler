@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Model;
@@ -11,39 +12,49 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// Intrinsic symbols.
 /// </summary>
-internal static class IntrinsicSymbols
+internal sealed class IntrinsicSymbols
 {
-    public static TypeSymbol Never => NeverTypeSymbol.Instance;
-    public static TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
-    public static TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
+    public TypeSymbol Never => NeverTypeSymbol.Instance;
+    public TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
+    public TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
 
-    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
+    public TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
 
-    public static TypeSymbol Int8 { get; } = new PrimitiveTypeSymbol("int8", isValueType: true);
-    public static TypeSymbol Int16 { get; } = new PrimitiveTypeSymbol("int16", isValueType: true);
-    public static TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", isValueType: true);
-    public static TypeSymbol Int64 { get; } = new PrimitiveTypeSymbol("int64", isValueType: true);
+    public TypeSymbol Int8 { get; } = new PrimitiveTypeSymbol("int8", isValueType: true);
+    public TypeSymbol Int16 { get; } = new PrimitiveTypeSymbol("int16", isValueType: true);
+    public TypeSymbol Int32 { get; } = new PrimitiveTypeSymbol("int32", isValueType: true);
+    public TypeSymbol Int64 { get; } = new PrimitiveTypeSymbol("int64", isValueType: true);
 
-    public static TypeSymbol UInt8 { get; } = new PrimitiveTypeSymbol("uint8", isValueType: true);
-    public static TypeSymbol UInt16 { get; } = new PrimitiveTypeSymbol("uint16", isValueType: true);
-    public static TypeSymbol UInt32 { get; } = new PrimitiveTypeSymbol("uint32", isValueType: true);
-    public static TypeSymbol UInt64 { get; } = new PrimitiveTypeSymbol("uint64", isValueType: true);
+    public TypeSymbol UInt8 { get; } = new PrimitiveTypeSymbol("uint8", isValueType: true);
+    public TypeSymbol UInt16 { get; } = new PrimitiveTypeSymbol("uint16", isValueType: true);
+    public TypeSymbol UInt32 { get; } = new PrimitiveTypeSymbol("uint32", isValueType: true);
+    public TypeSymbol UInt64 { get; } = new PrimitiveTypeSymbol("uint64", isValueType: true);
 
-    public static TypeSymbol Float32 { get; } = new PrimitiveTypeSymbol("float32", isValueType: true);
-    public static TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);
+    public TypeSymbol Float32 { get; } = new PrimitiveTypeSymbol("float32", isValueType: true);
+    public TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);
 
-    public static TypeSymbol Char { get; } = new PrimitiveTypeSymbol("char", isValueType: true);
-    public static TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
+    public TypeSymbol Char { get; } = new PrimitiveTypeSymbol("char", isValueType: true);
+    public TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
 
-    public static TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
-    public static TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
+    public TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
+    public TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
 
-    public static ArrayTypeSymbol Array { get; } = new(1);
-    public static ArrayConstructorSymbol ArrayCtor { get; } = new(1);
+    public ArrayTypeSymbol Array { get; } = new(1);
+    public ArrayConstructorSymbol ArrayCtor { get; } = new(1);
 
-    public static FunctionSymbol Bool_Not { get; } = Unary(TokenKind.KeywordNot, Bool, Bool, CodegenNot);
+    public FunctionSymbol Bool_Not => InterlockedUtils.InitializeNull(
+        ref this.bool_not,
+        () => Unary(TokenKind.KeywordNot, this.Bool, this.Bool, this.CodegenNot));
+    private FunctionSymbol? bool_not;
 
-    public static IEnumerable<Symbol> GenerateIntrinsicSymbols()
+    private readonly Compilation compilation;
+
+    public IntrinsicSymbols(Compilation compilation)
+    {
+        this.compilation = compilation;
+    }
+
+    public IEnumerable<Symbol> GenerateIntrinsicSymbols()
     {
         // Array types from 2D to 8D
         for (var i = 2; i <= 8; ++i)
@@ -57,30 +68,30 @@ internal static class IntrinsicSymbols
         // Numeric operators
         foreach (var type in new[]
         {
-            Int8, Int16, Int32, Int64,
-            UInt8, UInt16, UInt32, UInt64,
-            Float32, Float64,
+            this.Int8, this.Int16, this.Int32, this.Int64,
+            this.UInt8, this.UInt16, this.UInt32, this.UInt64,
+            this.Float32, this.Float64,
         })
         {
             // Comparison
-            yield return Comparison(TokenKind.Equal, type, type, CodegenEqual);
-            yield return Comparison(TokenKind.NotEqual, type, type, CodegenNotEqual);
-            yield return Comparison(TokenKind.GreaterThan, type, type, CodegenGreater);
-            yield return Comparison(TokenKind.LessThan, type, type, CodegenLess);
-            yield return Comparison(TokenKind.GreaterEqual, type, type, CodegenGreaterEqual);
-            yield return Comparison(TokenKind.LessEqual, type, type, CodegenLessEqual);
+            yield return Comparison(TokenKind.Equal, type, type, this.CodegenEqual);
+            yield return Comparison(TokenKind.NotEqual, type, type, this.CodegenNotEqual);
+            yield return Comparison(TokenKind.GreaterThan, type, type, this.CodegenGreater);
+            yield return Comparison(TokenKind.LessThan, type, type, this.CodegenLess);
+            yield return Comparison(TokenKind.GreaterEqual, type, type, this.CodegenGreaterEqual);
+            yield return Comparison(TokenKind.LessEqual, type, type, this.CodegenLessEqual);
 
             // Unary
-            yield return Unary(TokenKind.Plus, type, type, CodegenPlus);
-            yield return Unary(TokenKind.Minus, type, type, CodegenMinus);
+            yield return Unary(TokenKind.Plus, type, type, this.CodegenPlus);
+            yield return Unary(TokenKind.Minus, type, type, this.CodegenMinus);
 
             // Binary
-            yield return Binary(TokenKind.Plus, type, type, type, CodegenAdd);
-            yield return Binary(TokenKind.Minus, type, type, type, CodegenSub);
-            yield return Binary(TokenKind.Star, type, type, type, CodegenMul);
-            yield return Binary(TokenKind.Slash, type, type, type, CodegenDiv);
-            yield return Binary(TokenKind.KeywordMod, type, type, type, CodegenMod);
-            yield return Binary(TokenKind.KeywordRem, type, type, type, CodegenRem);
+            yield return Binary(TokenKind.Plus, type, type, type, this.CodegenAdd);
+            yield return Binary(TokenKind.Minus, type, type, type, this.CodegenSub);
+            yield return Binary(TokenKind.Star, type, type, type, this.CodegenMul);
+            yield return Binary(TokenKind.Slash, type, type, type, this.CodegenDiv);
+            yield return Binary(TokenKind.KeywordMod, type, type, type, this.CodegenMod);
+            yield return Binary(TokenKind.KeywordRem, type, type, type, this.CodegenRem);
         }
     }
 
@@ -105,38 +116,36 @@ internal static class IntrinsicSymbols
         TypeSymbol rightType,
         IrFunctionSymbol.CodegenDelegate codegen) =>
         IntrinsicFunctionSymbol.ComparisonOperator(token, leftType, rightType, codegen);
-    private static FunctionSymbol Function(string name, IEnumerable<TypeSymbol> paramTypes, TypeSymbol returnType) =>
-        new IntrinsicFunctionSymbol(name, paramTypes, returnType);
 
     // Codegen
 
-    private static void CodegenPlus(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenPlus(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // No-op
     }
 
-    private static void CodegenMinus(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenMinus(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Mul(target, operands[0], new Constant(-1)));
 
-    private static void CodegenNot(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenNot(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Equal(target, operands[0], new Constant(false)));
 
-    private static void CodegenAdd(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenAdd(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Add(target, operands[0], operands[1]));
 
-    private static void CodegenSub(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenSub(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Sub(target, operands[0], operands[1]));
 
-    private static void CodegenMul(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenMul(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Mul(target, operands[0], operands[1]));
 
-    private static void CodegenDiv(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenDiv(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Div(target, operands[0], operands[1]));
 
-    private static void CodegenRem(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenRem(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Rem(target, operands[0], operands[1]));
 
-    private static void CodegenMod(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenMod(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // a mod b
         //  <=>
@@ -148,44 +157,44 @@ internal static class IntrinsicSymbols
         codegen.Write(Rem(target, tmp1, operands[1]));
     }
 
-    private static void CodegenLess(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenLess(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Less(target, operands[0], operands[1]));
 
-    private static void CodegenGreater(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenGreater(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         // a > b
         //  <=>
         // b < a
         codegen.Write(Less(target, operands[1], operands[0]));
 
-    private static void CodegenLessEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenLessEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // a <= b
         //  <=>
         // (b < a) == false
-        var tmp = codegen.DefineRegister(Bool);
+        var tmp = codegen.DefineRegister(this.Bool);
         codegen.Write(Less(tmp, operands[1], operands[0]));
         codegen.Write(Equal(target, tmp, new Constant(false)));
     }
 
-    private static void CodegenGreaterEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenGreaterEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // a >= b
         //  <=>
         // (a < b) == false
-        var tmp = codegen.DefineRegister(Bool);
+        var tmp = codegen.DefineRegister(this.Bool);
         codegen.Write(Less(tmp, operands[0], operands[1]));
         codegen.Write(Equal(target, tmp, new Constant(false)));
     }
 
-    private static void CodegenEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Equal(target, operands[0], operands[1]));
 
-    private static void CodegenNotEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenNotEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // a != b
         //  <=>
         // (a == b) == false
-        var tmp = codegen.DefineRegister(Bool);
+        var tmp = codegen.DefineRegister(this.Bool);
         codegen.Write(Equal(tmp, operands[0], operands[1]));
         codegen.Write(Equal(target, tmp, new Constant(false)));
     }

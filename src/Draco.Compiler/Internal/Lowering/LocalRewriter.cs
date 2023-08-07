@@ -29,6 +29,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         BoundStatement Assignment);
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
+    private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
 
@@ -214,9 +215,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 LabelStatement(node.ContinueLabel),
                 ConditionalGotoStatement(
                     condition: UnaryExpression(
-                        @operator: IntrinsicSymbols.Bool_Not,
+                        @operator: this.IntrinsicSymbols.Bool_Not,
                         operand: condition,
-                        type: IntrinsicSymbols.Bool),
+                        type: this.IntrinsicSymbols.Bool),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
@@ -237,7 +238,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: node.Comparisons[0].Operator,
                 right: right,
-                type: IntrinsicSymbols.Bool);
+                type: this.IntrinsicSymbols.Bool);
         }
 
         // expr1 < expr2 == expr3 > expr4 != ...
@@ -271,7 +272,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: op,
                 right: right,
-                type: IntrinsicSymbols.Bool));
+                type: this.IntrinsicSymbols.Bool));
         }
 
         // Fold them into conjunctions
@@ -306,7 +307,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: right,
             @else: LiteralExpression(false),
-            type: IntrinsicSymbols.Bool);
+            type: this.IntrinsicSymbols.Bool);
         // If-expressions can be lowered too
         return result.Accept(this);
     }
@@ -326,7 +327,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: LiteralExpression(true),
             @else: right,
-            type: IntrinsicSymbols.Bool);
+            type: this.IntrinsicSymbols.Bool);
         // If-expressions can be lowered too
         return result.Accept(this);
     }
@@ -367,7 +368,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             }
         }
 
-        var arrayType = IntrinsicSymbols.Array.GenericInstantiate(IntrinsicSymbols.Object);
+        var arrayType = this.IntrinsicSymbols.Array.GenericInstantiate(this.IntrinsicSymbols.Object);
         var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
 
         var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
@@ -376,7 +377,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         arrayAssignmentBuilder.Add(LocalDeclaration(
             local: arrayLocal,
             value: ArrayCreationExpression(
-                elementType: IntrinsicSymbols.Object,
+                elementType: this.IntrinsicSymbols.Object,
                 sizes: ImmutableArray.Create<BoundExpression>(LiteralExpression(args.Count)))));
 
         for (var i = 0; i < args.Count; i++)

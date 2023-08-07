@@ -64,7 +64,7 @@ internal sealed class IntrinsicSymbols
     {
         this.compilation = compilation;
         this.Array = new(1, this.Int32);
-        this.ArrayCtor = new(1);
+        this.ArrayCtor = new(this.Array);
     }
 
     public TypeSymbol InstantiateArray(TypeSymbol elementType, int rank = 1) => rank switch
@@ -87,9 +87,10 @@ internal sealed class IntrinsicSymbols
         for (var i = 2; i <= 8; ++i)
         {
             // Type
-            yield return new ArrayTypeSymbol(i, this.Int32);
+            var arrayType = new ArrayTypeSymbol(i, this.Int32);
+            yield return arrayType;
             // Ctor
-            yield return new ArrayConstructorSymbol(i);
+            yield return new ArrayConstructorSymbol(arrayType);
         }
 
         // Numeric operators

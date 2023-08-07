@@ -22,14 +22,12 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType =>
-        InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
-    private TypeSymbol? returnType;
+    public override ArrayTypeSymbol ReturnType { get; }
 
     /// <summary>
     /// The rank of the array to construct.
     /// </summary>
-    public int Rank { get; }
+    public int Rank => this.ReturnType.Rank;
 
     /// <summary>
     /// The array element type.
@@ -42,24 +40,18 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
         InterlockedUtils.InitializeNull(ref this.body, this.BuildBody);
     private BoundStatement? body;
 
-    public ArrayConstructorSymbol(int rank)
+    public ArrayConstructorSymbol(ArrayTypeSymbol returnType)
     {
-        this.Rank = rank;
+        this.ReturnType = returnType;
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.Rank switch
     {
-        1 => ImmutableArray.Create(new SynthetizedParameterSymbol(this, "capacity", IntrinsicSymbols.Int32) as ParameterSymbol),
+        1 => ImmutableArray.Create(new SynthetizedParameterSymbol(this, "capacity", this.ReturnType.IndexType) as ParameterSymbol),
         int n => Enumerable
             .Range(1, n)
-            .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", IntrinsicSymbols.Int32) as ParameterSymbol)
+            .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", this.ReturnType.IndexType) as ParameterSymbol)
             .ToImmutableArray(),
-    };
-
-    private TypeSymbol BuildReturnType() => this.Rank switch
-    {
-        1 => IntrinsicSymbols.Array.GenericInstantiate(this.ElementType),
-        int n => new ArrayTypeSymbol(n).GenericInstantiate(this.ElementType),
     };
 
     private TypeParameterSymbol BuildElementType() => new SynthetizedTypeParameterSymbol(this, "T");
@@ -70,5 +62,6 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
             sizes: this.Parameters
                 .Select(ParameterExpression)
                 .Cast<BoundExpression>()
-                .ToImmutableArray())));
+                .ToImmutableArray(),
+            type: this.ReturnType)));
 }

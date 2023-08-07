@@ -58,8 +58,14 @@ internal partial class Binder
             value: UntypedUnitExpression.Default);
     }
 
-    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new UntypedLiteralExpression(syntax, syntax.Literal.Value);
+    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        if (!BinderFacts.TryGetLiteralType(syntax.Literal.Value, this.IntrinsicSymbols, out var literalType))
+        {
+            throw new InvalidOperationException("can not determine literal type");
+        }
+        return new UntypedLiteralExpression(syntax, syntax.Literal.Value, literalType);
+    }
 
     private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
@@ -112,7 +118,7 @@ internal partial class Binder
                 throw new ArgumentOutOfRangeException();
             }
         }
-        return new UntypedStringExpression(syntax, parts.ToImmutable());
+        return new UntypedStringExpression(syntax, parts.ToImmutable(), this.IntrinsicSymbols.String);
     }
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -429,7 +435,7 @@ internal partial class Binder
             prev = comparison.Next;
             comparisons.Add(comparison);
         }
-        return new UntypedRelationalExpression(syntax, first, comparisons.ToImmutable());
+        return new UntypedRelationalExpression(syntax, first, comparisons.ToImmutable(), this.IntrinsicSymbols.Bool);
     }
 
     private UntypedComparison BindComparison(

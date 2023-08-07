@@ -26,7 +26,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     }
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
-        new ArrayTypeSymbol(shape.Rank).GenericInstantiate(elementType);
+        new ArrayTypeSymbol(shape.Rank, this.IntrinsicSymbols.Int32).GenericInstantiate(elementType);
     public TypeSymbol GetSZArrayType(TypeSymbol elementType) =>
         this.IntrinsicSymbols.Array.GenericInstantiate(elementType);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
@@ -61,7 +61,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
     {
-        PrimitiveTypeCode.Void => this.IntrinsicSymbols.Unit,
+        PrimitiveTypeCode.Void => IntrinsicSymbols.Unit,
 
         PrimitiveTypeCode.SByte => this.IntrinsicSymbols.Int8,
         PrimitiveTypeCode.Int16 => this.IntrinsicSymbols.Int16,

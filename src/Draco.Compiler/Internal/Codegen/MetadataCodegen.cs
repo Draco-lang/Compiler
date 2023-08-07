@@ -586,7 +586,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     public void EncodeReturnType(ReturnTypeEncoder encoder, TypeSymbol type)
     {
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Unit)) { encoder.Void(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Unit)) { encoder.Void(); return; }
 
         this.EncodeSignatureType(encoder.Type(), type);
     }

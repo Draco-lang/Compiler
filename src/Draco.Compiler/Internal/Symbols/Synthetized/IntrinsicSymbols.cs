@@ -50,8 +50,8 @@ internal sealed class IntrinsicSymbols
     public TypeSymbol Object { get; } = new PrimitiveTypeSymbol("object", isValueType: false);
     public TypeSymbol String { get; } = new PrimitiveTypeSymbol("string", isValueType: false);
 
-    public ArrayTypeSymbol Array { get; } = new(1);
-    public ArrayConstructorSymbol ArrayCtor { get; } = new(1);
+    public ArrayTypeSymbol Array { get; }
+    public ArrayConstructorSymbol ArrayCtor { get; }
 
     public FunctionSymbol Bool_Not => InterlockedUtils.InitializeNull(
         ref this.bool_not,
@@ -63,6 +63,8 @@ internal sealed class IntrinsicSymbols
     public IntrinsicSymbols(Compilation compilation)
     {
         this.compilation = compilation;
+        this.Array = new(1, this.Int32);
+        this.ArrayCtor = new(1);
     }
 
     private ImmutableArray<Symbol> BuildAllSymbols() => typeof(IntrinsicSymbols)
@@ -79,7 +81,7 @@ internal sealed class IntrinsicSymbols
         for (var i = 2; i <= 8; ++i)
         {
             // Type
-            yield return new ArrayTypeSymbol(i);
+            yield return new ArrayTypeSymbol(i, this.Int32);
             // Ctor
             yield return new ArrayConstructorSymbol(i);
         }
@@ -144,10 +146,10 @@ internal sealed class IntrinsicSymbols
     }
 
     private void CodegenMinus(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
-        codegen.Write(Mul(target, operands[0], new Constant(-1)));
+        codegen.Write(Mul(target, operands[0], new Constant(-1, this.Int32)));
 
     private void CodegenNot(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
-        codegen.Write(Equal(target, operands[0], new Constant(false)));
+        codegen.Write(Equal(target, operands[0], new Constant(false, this.Bool)));
 
     private void CodegenAdd(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Add(target, operands[0], operands[1]));
@@ -192,7 +194,7 @@ internal sealed class IntrinsicSymbols
         // (b < a) == false
         var tmp = codegen.DefineRegister(this.Bool);
         codegen.Write(Less(tmp, operands[1], operands[0]));
-        codegen.Write(Equal(target, tmp, new Constant(false)));
+        codegen.Write(Equal(target, tmp, new Constant(false, this.Bool)));
     }
 
     private void CodegenGreaterEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
@@ -202,7 +204,7 @@ internal sealed class IntrinsicSymbols
         // (a < b) == false
         var tmp = codegen.DefineRegister(this.Bool);
         codegen.Write(Less(tmp, operands[0], operands[1]));
-        codegen.Write(Equal(target, tmp, new Constant(false)));
+        codegen.Write(Equal(target, tmp, new Constant(false, this.Bool)));
     }
 
     private void CodegenEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
@@ -215,6 +217,6 @@ internal sealed class IntrinsicSymbols
         // (a == b) == false
         var tmp = codegen.DefineRegister(this.Bool);
         codegen.Write(Equal(tmp, operands[0], operands[1]));
-        codegen.Write(Equal(target, tmp, new Constant(false)));
+        codegen.Write(Equal(target, tmp, new Constant(false, this.Bool)));
     }
 }

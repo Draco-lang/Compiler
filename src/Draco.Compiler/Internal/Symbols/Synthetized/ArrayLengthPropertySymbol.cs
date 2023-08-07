@@ -12,7 +12,7 @@ internal sealed class ArrayLengthPropertySymbol : PropertySymbol
     public override FunctionSymbol Getter { get; }
     public override FunctionSymbol? Setter => null;
 
-    public override TypeSymbol Type => IntrinsicSymbols.Int32;
+    public override TypeSymbol Type => this.ContainingSymbol.IndexType;
     public override ArrayTypeSymbol ContainingSymbol { get; }
 
     public override bool IsIndexer => false;
@@ -31,7 +31,7 @@ internal sealed class ArrayLengthPropertySymbol : PropertySymbol
 internal sealed class ArrayLengthGetSymbol : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters => ImmutableArray<ParameterSymbol>.Empty;
-    public override TypeSymbol ReturnType => IntrinsicSymbols.Int32;
+    public override TypeSymbol ReturnType => this.ContainingSymbol.IndexType;
     public override bool IsStatic => false;
 
     public override ArrayTypeSymbol ContainingSymbol { get; }

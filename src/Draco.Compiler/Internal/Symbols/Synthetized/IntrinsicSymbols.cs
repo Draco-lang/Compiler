@@ -27,10 +27,9 @@ internal sealed class IntrinsicSymbols
     public static TypeSymbol Never => NeverTypeSymbol.Instance;
     public static TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
     public static TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
+    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
 
     // Types backed by metadata potentially, nonstatic
-
-    public TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
 
     public TypeSymbol Int8 { get; } = new PrimitiveTypeSymbol("int8", isValueType: true);
     public TypeSymbol Int16 { get; } = new PrimitiveTypeSymbol("int16", isValueType: true);

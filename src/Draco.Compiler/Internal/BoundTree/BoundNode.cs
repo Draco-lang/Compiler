@@ -80,16 +80,6 @@ internal partial class BoundWhileExpression
     public override TypeSymbol Type => IntrinsicSymbols.Unit;
 }
 
-internal partial class BoundAndExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
-}
-
-internal partial class BoundOrExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
-}
-
 internal partial class BoundParameterExpression
 {
     public override TypeSymbol Type => this.Parameter.Type;
@@ -133,27 +123,6 @@ internal partial class BoundLocalExpression
 internal partial class BoundReferenceErrorExpression
 {
     public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
-}
-
-internal partial class BoundLiteralExpression
-{
-    public override TypeSymbol Type => this.Value switch
-    {
-        int => IntrinsicSymbols.Int32,
-        bool => IntrinsicSymbols.Bool,
-        string => IntrinsicSymbols.String,
-        _ => throw new System.InvalidOperationException(),
-    };
-}
-
-internal partial class BoundStringExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.String;
-}
-
-internal partial class BoundRelationalExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
 }
 
 internal partial class BoundAssignmentExpression

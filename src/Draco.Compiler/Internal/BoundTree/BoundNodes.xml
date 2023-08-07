@@ -133,11 +133,13 @@
   <Node Name="BoundAndExpression" Base="BoundExpression">
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundOrExpression" Base="BoundExpression">
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundAssignmentExpression" Base="BoundExpression">
@@ -217,6 +219,7 @@
 
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object?" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundStringExpression" Base="BoundExpression">

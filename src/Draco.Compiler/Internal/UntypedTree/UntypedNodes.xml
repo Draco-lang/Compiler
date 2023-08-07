@@ -107,11 +107,13 @@
   <Node Name="UntypedAndExpression" Base="UntypedExpression">
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedOrExpression" Base="UntypedExpression">
     <Field Name="Left" Type="UntypedExpression" />
     <Field Name="Right" Type="UntypedExpression" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedAssignmentExpression" Base="UntypedExpression">
@@ -170,6 +172,7 @@
 
   <Node Name="UntypedLiteralExpression" Base="UntypedExpression">
     <Field Name="Value" Type="object?" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="UntypedStringExpression" Base="UntypedExpression">

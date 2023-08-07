@@ -22,12 +22,14 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override ArrayTypeSymbol ReturnType { get; }
+    public override TypeSymbol ReturnType =>
+        InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
+    private TypeSymbol? returnType;
 
     /// <summary>
     /// The rank of the array to construct.
     /// </summary>
-    public int Rank => this.ReturnType.Rank;
+    public int Rank => this.genericArrayType.Rank;
 
     /// <summary>
     /// The array element type.
@@ -40,19 +42,23 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
         InterlockedUtils.InitializeNull(ref this.body, this.BuildBody);
     private BoundStatement? body;
 
-    public ArrayConstructorSymbol(ArrayTypeSymbol returnType)
+    private readonly ArrayTypeSymbol genericArrayType;
+
+    public ArrayConstructorSymbol(ArrayTypeSymbol genericArrayType)
     {
-        this.ReturnType = returnType;
+        this.genericArrayType = genericArrayType;
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.Rank switch
     {
-        1 => ImmutableArray.Create(new SynthetizedParameterSymbol(this, "capacity", this.ReturnType.IndexType) as ParameterSymbol),
+        1 => ImmutableArray.Create(new SynthetizedParameterSymbol(this, "capacity", this.genericArrayType.IndexType) as ParameterSymbol),
         int n => Enumerable
             .Range(1, n)
-            .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", this.ReturnType.IndexType) as ParameterSymbol)
+            .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", this.genericArrayType.IndexType) as ParameterSymbol)
             .ToImmutableArray(),
     };
+
+    private TypeSymbol BuildReturnType() => this.genericArrayType.GenericInstantiate(this.ElementType);
 
     private TypeParameterSymbol BuildElementType() => new SynthetizedTypeParameterSymbol(this, "T");
 

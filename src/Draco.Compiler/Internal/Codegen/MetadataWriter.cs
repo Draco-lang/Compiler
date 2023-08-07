@@ -20,7 +20,7 @@ internal abstract class MetadataWriter
 
     // Cache
     private readonly Dictionary<(string Name, Version Version), AssemblyReferenceHandle> assemblyReferences = new();
-    private readonly Dictionary<(EntityHandle Parent, string Namespace, string Name), TypeReferenceHandle> typeReferences = new();
+    private readonly Dictionary<(EntityHandle Parent, string? Namespace, string Name), TypeReferenceHandle> typeReferences = new();
     private readonly Dictionary<Uri, DocumentHandle> documentHandles = new();
 
     // Local state
@@ -136,12 +136,13 @@ internal abstract class MetadataWriter
         string? @namespace,
         string name)
     {
-        @namespace ??= string.Empty;
         if (!this.typeReferences.TryGetValue((parent, @namespace, name), out var handle))
         {
             handle = this.MetadataBuilder.AddTypeReference(
                 resolutionScope: parent,
-                @namespace: this.GetOrAddString(@namespace),
+                @namespace: @namespace is null
+                    ? default
+                    : this.GetOrAddString(@namespace),
                 name: this.GetOrAddString(name));
             this.typeReferences.Add((parent, @namespace, name), handle);
         }

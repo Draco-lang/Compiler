@@ -185,6 +185,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
+    // Manifesting an expression as an address
+    private IOperand CompileToAddress(BoundExpression expression)
+    {
+        switch (expression)
+        {
+        case BoundLocalExpression local:
+        {
+            var localOperand = this.DefineLocal(local.Local);
+            return new Address(localOperand);
+        }
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(expression));
+        }
+    }
+
     // Expressions /////////////////////////////////////////////////////////////
 
     public override IOperand VisitStringExpression(BoundStringExpression node) =>
@@ -215,7 +230,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
         else
         {
-            var receiver = this.Compile(node.Receiver);
+            var receiver = node.Receiver.TypeRequired.IsValueType
+                ? this.CompileToAddress(node.Receiver)
+                : this.Compile(node.Receiver);
             var args = node.Arguments.Select(this.Compile).ToList();
             var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);

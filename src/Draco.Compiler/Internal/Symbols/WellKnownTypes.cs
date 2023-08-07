@@ -9,7 +9,7 @@ using Draco.Compiler.Internal.Symbols.Synthetized;
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
-/// A colelction of well-known types that the compiler needs.
+/// A collection of well-known types that the compiler needs.
 /// </summary>
 internal sealed partial class WellKnownTypes
 {

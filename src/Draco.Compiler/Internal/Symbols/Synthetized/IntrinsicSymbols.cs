@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr;
@@ -14,6 +16,12 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class IntrinsicSymbols
 {
+    /// <summary>
+    /// A utility for all intrinsic symbols.
+    /// </summary>
+    public ImmutableArray<Symbol> AllSymbols => InterlockedUtils.InitializeDefault(ref this.allSymbols, this.BuildAllSymbols);
+    private ImmutableArray<Symbol> allSymbols;
+
     // Types that never change
 
     public static TypeSymbol Never => NeverTypeSymbol.Instance;
@@ -58,7 +66,15 @@ internal sealed class IntrinsicSymbols
         this.compilation = compilation;
     }
 
-    public IEnumerable<Symbol> GenerateIntrinsicSymbols()
+    private ImmutableArray<Symbol> BuildAllSymbols() => typeof(IntrinsicSymbols)
+        .GetProperties(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
+        .Where(prop => prop.PropertyType.IsAssignableTo(typeof(Symbol)))
+        .Select(prop => prop.GetValue(this))
+        .Cast<Symbol>()
+        .Concat(this.GenerateIntrinsicSymbols())
+        .ToImmutableArray();
+
+    private IEnumerable<Symbol> GenerateIntrinsicSymbols()
     {
         // Array types from 2D to 8D
         for (var i = 2; i <= 8; ++i)

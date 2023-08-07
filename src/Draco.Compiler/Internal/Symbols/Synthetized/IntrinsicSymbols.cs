@@ -55,7 +55,7 @@ internal sealed class IntrinsicSymbols
 
     public FunctionSymbol Bool_Not => InterlockedUtils.InitializeNull(
         ref this.bool_not,
-        () => Unary(TokenKind.KeywordNot, this.Bool, this.Bool, this.CodegenNot));
+        () => this.Unary(TokenKind.KeywordNot, this.Bool, this.Bool, this.CodegenNot));
     private FunctionSymbol? bool_not;
 
     private readonly Compilation compilation;
@@ -102,48 +102,48 @@ internal sealed class IntrinsicSymbols
         })
         {
             // Comparison
-            yield return Comparison(TokenKind.Equal, type, type, this.CodegenEqual);
-            yield return Comparison(TokenKind.NotEqual, type, type, this.CodegenNotEqual);
-            yield return Comparison(TokenKind.GreaterThan, type, type, this.CodegenGreater);
-            yield return Comparison(TokenKind.LessThan, type, type, this.CodegenLess);
-            yield return Comparison(TokenKind.GreaterEqual, type, type, this.CodegenGreaterEqual);
-            yield return Comparison(TokenKind.LessEqual, type, type, this.CodegenLessEqual);
+            yield return this.Comparison(TokenKind.Equal, type, type, this.CodegenEqual);
+            yield return this.Comparison(TokenKind.NotEqual, type, type, this.CodegenNotEqual);
+            yield return this.Comparison(TokenKind.GreaterThan, type, type, this.CodegenGreater);
+            yield return this.Comparison(TokenKind.LessThan, type, type, this.CodegenLess);
+            yield return this.Comparison(TokenKind.GreaterEqual, type, type, this.CodegenGreaterEqual);
+            yield return this.Comparison(TokenKind.LessEqual, type, type, this.CodegenLessEqual);
 
             // Unary
-            yield return Unary(TokenKind.Plus, type, type, this.CodegenPlus);
-            yield return Unary(TokenKind.Minus, type, type, this.CodegenMinus);
+            yield return this.Unary(TokenKind.Plus, type, type, this.CodegenPlus);
+            yield return this.Unary(TokenKind.Minus, type, type, this.CodegenMinus);
 
             // Binary
-            yield return Binary(TokenKind.Plus, type, type, type, this.CodegenAdd);
-            yield return Binary(TokenKind.Minus, type, type, type, this.CodegenSub);
-            yield return Binary(TokenKind.Star, type, type, type, this.CodegenMul);
-            yield return Binary(TokenKind.Slash, type, type, type, this.CodegenDiv);
-            yield return Binary(TokenKind.KeywordMod, type, type, type, this.CodegenMod);
-            yield return Binary(TokenKind.KeywordRem, type, type, type, this.CodegenRem);
+            yield return this.Binary(TokenKind.Plus, type, type, type, this.CodegenAdd);
+            yield return this.Binary(TokenKind.Minus, type, type, type, this.CodegenSub);
+            yield return this.Binary(TokenKind.Star, type, type, type, this.CodegenMul);
+            yield return this.Binary(TokenKind.Slash, type, type, type, this.CodegenDiv);
+            yield return this.Binary(TokenKind.KeywordMod, type, type, type, this.CodegenMod);
+            yield return this.Binary(TokenKind.KeywordRem, type, type, type, this.CodegenRem);
         }
     }
 
     // Operators
 
-    private static FunctionSymbol Unary(
+    private FunctionSymbol Unary(
         TokenKind token,
         TypeSymbol operandType,
         TypeSymbol returnType,
         IrFunctionSymbol.CodegenDelegate codegen) =>
         IntrinsicFunctionSymbol.UnaryOperator(token, operandType, returnType, codegen);
-    private static FunctionSymbol Binary(
+    private FunctionSymbol Binary(
         TokenKind token,
         TypeSymbol leftType,
         TypeSymbol rightType,
         TypeSymbol returnType,
         IrFunctionSymbol.CodegenDelegate codegen) =>
         IntrinsicFunctionSymbol.BinaryOperator(token, leftType, rightType, returnType, codegen);
-    private static FunctionSymbol Comparison(
+    private FunctionSymbol Comparison(
         TokenKind token,
         TypeSymbol leftType,
         TypeSymbol rightType,
         IrFunctionSymbol.CodegenDelegate codegen) =>
-        IntrinsicFunctionSymbol.ComparisonOperator(token, leftType, rightType, codegen);
+        IntrinsicFunctionSymbol.ComparisonOperator(token, leftType, rightType, this.Bool, codegen);
 
     // Codegen
 

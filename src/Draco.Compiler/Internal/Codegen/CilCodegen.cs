@@ -31,6 +31,7 @@ internal sealed class CilCodegen
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
     private WellKnownTypes WellKnownTypes => this.metadataCodegen.Compilation.WellKnownTypes;
+    private IntrinsicSymbols IntrinsicSymbols => this.metadataCodegen.Compilation.IntrinsicSymbols;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
@@ -64,7 +65,7 @@ internal sealed class CilCodegen
 
     private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
-        if (SymbolEqualityComparer.Default.Equals(operand.Type, IntrinsicSymbols.Unit)) return null;
+        if (SymbolEqualityComparer.Default.Equals(operand.Type, this.IntrinsicSymbols.Unit)) return null;
         if (!this.allocatedLocals.TryGetValue(operand, out var local))
         {
             local = new(operand, this.allocatedLocals.Count);

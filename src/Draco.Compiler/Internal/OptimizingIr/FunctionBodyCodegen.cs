@@ -197,7 +197,16 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             return new Address(localOperand);
         }
         default:
-            throw new System.ArgumentOutOfRangeException(nameof(expression));
+        {
+            // We allocate a local so we can take its address
+            var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
+            var localOperand = this.DefineLocal(local);
+            // Store the value in it
+            var value = this.Compile(expression);
+            this.Write(Store(localOperand, value));
+            // Take its address
+            return new Address(localOperand);
+        }
         }
     }
 

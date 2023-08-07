@@ -50,7 +50,10 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
         // Some empty defaults
         this.compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray<SyntaxTree>.Empty);
+            syntaxTrees: ImmutableArray<SyntaxTree>.Empty,
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
 
         this.completionService = new CompletionService();
         this.completionService.AddProvider(new KeywordCompletionProvider());

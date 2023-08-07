@@ -2192,7 +2192,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(bDeclSyntax));
         var tmpSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(tmpDeclSyntax));
 
-        var intArrayType = IntrinsicSymbols.Array.GenericInstantiate(IntrinsicSymbols.Int32);
+        var intArrayType = compilation.IntrinsicSymbols.InstantiateArray(compilation.IntrinsicSymbols.Int32);
 
         // Assert
         Assert.Empty(diags);

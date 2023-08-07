@@ -29,7 +29,6 @@
   <xs:complexType name="TypeType">
     <xs:attribute name="Name" type="xs:string" use="required" />
     <xs:attribute name="Assembly" type="xs:string" use="required" />
-    <xs:attribute name="Symbol" type="xs:string" use="optional" />
   </xs:complexType>
 
 </xs:schema>

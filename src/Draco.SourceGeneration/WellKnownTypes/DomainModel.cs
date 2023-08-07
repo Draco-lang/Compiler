@@ -23,7 +23,7 @@ public sealed class WellKnownTypes
             var name = type.Name;
             var assembly = assemblies.FirstOrDefault(a => a.Name == type.Assembly)
                         ?? throw new InvalidOperationException($"well-known type {name} references assembly {type.Assembly}, which is not found");
-            types.Add(new(name, assembly, type.Symbol));
+            types.Add(new(name, assembly));
         }
 
         return new(assemblies, types);
@@ -76,12 +76,10 @@ public sealed class WellKnownType
 {
     public string Name { get; }
     public WellKnownAssembly Assembly { get; }
-    public string? Symbol { get; set; }
 
-    public WellKnownType(string name, WellKnownAssembly assembly, string? symbol)
+    public WellKnownType(string name, WellKnownAssembly assembly)
     {
         this.Name = name;
         this.Assembly = assembly;
-        this.Symbol = symbol;
     }
 }

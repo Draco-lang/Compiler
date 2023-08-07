@@ -31,7 +31,4 @@ public sealed class XmlType
 
     [XmlAttribute]
     public string Assembly { get; set; } = string.Empty;
-
-    [XmlAttribute]
-    public string? Symbol { get; set; }
 }

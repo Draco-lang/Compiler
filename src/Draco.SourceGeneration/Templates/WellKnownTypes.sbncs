@@ -43,22 +43,5 @@ internal sealed partial class WellKnownTypes
                 {{end}})));
         private MetadataTypeSymbol? {{$field_name}};
     {{end}}
-
-    public bool TryTranslateIntrinsicToMetadataSymbol(
-        Symbol intrinsicSymbol,
-        [MaybeNullWhen(false)] out MetadataTypeSymbol metadataSymbol)
-    {
-        {{for $type in Types}}
-            {{if !$type.Symbol}}{{continue}}{{end}}
-            if (ReferenceEquals(intrinsicSymbol, {{$type.Symbol}}))
-            {
-                metadataSymbol = {{nameify($type.Name)}};
-                return true;
-            }
-        {{end}}
-
-        metadataSymbol = null;
-        return false;
-    }
 }
 #nullable restore

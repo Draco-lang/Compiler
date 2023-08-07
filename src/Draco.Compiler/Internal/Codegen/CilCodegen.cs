@@ -408,6 +408,20 @@ internal sealed class CilCodegen
         case SymbolReference s when s.Symbol is ModuleSymbol module:
             this.InstructionEncoder.Token(this.GetHandle(module));
             break;
+        case Address a:
+            switch (a.Operand)
+            {
+            case Local local:
+            {
+                var index = this.GetLocalIndex(local);
+                if (index is null) break;
+                this.InstructionEncoder.LoadLocalAddress(index.Value);
+                break;
+            }
+            default:
+                throw new NotImplementedException();
+            }
+            break;
         case Constant c:
             switch (c.Value)
             {

@@ -28,8 +28,10 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
     public override Symbol ContainingSymbol { get; }
-    // TODO: Is this correct?
-    public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
+
+    public override bool IsValueType => this.BaseTypes.Contains(
+        this.Assembly.Compilation.WellKnownTypes.SystemValueType,
+        SymbolEqualityComparer.Default);
 
     public override bool IsInterface => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
 

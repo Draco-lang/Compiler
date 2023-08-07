@@ -3,8 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
-namespace Draco.Compiler.Internal.Symbols;
-
 {{include 'Utils.sbncs'}}
 
 {{func nameify(name)}}
@@ -12,6 +10,9 @@ namespace Draco.Compiler.Internal.Symbols;
 {{end}}
 
 #nullable enable
+
+namespace Draco.Compiler.Internal.Symbols
+{
 internal sealed partial class WellKnownTypes
 {
     {{for $assembly in Assemblies}}
@@ -43,5 +44,29 @@ internal sealed partial class WellKnownTypes
                 {{end}})));
         private MetadataTypeSymbol? {{$field_name}};
     {{end}}
+}
+}
+
+namespace Draco.Compiler.Internal.Symbols.Synthetized
+{
+internal sealed partial class IntrinsicSymbols
+{
+    {{for $type in Types}}
+        {{$metadata_type_name = nameify($type.Name)}}
+
+        {{for $intrinsic in $type.Intrinsics}}
+            {{$prop_name = capitalize($intrinsic.Name)}}
+            {{$field_name = camel_case($prop_name)}}
+
+            public TypeSymbol {{$prop_name}} => InterlockedUtils.InitializeNull(
+                ref this.{{$field_name}},
+                () => new MetadataBackedPrimitiveTypeSymbol(
+                    name: "{{$intrinsic.Name}}",
+                    isValueType: {{$intrinsic.IsValueType}},
+                    metadataType: this.WellKnownTypes.{{$metadata_type_name}}));
+            private TypeSymbol? {{$field_name}};
+        {{end}}
+    {{end}}
+}
 }
 #nullable restore

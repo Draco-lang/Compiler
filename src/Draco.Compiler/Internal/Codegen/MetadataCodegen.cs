@@ -610,10 +610,10 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
         if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int64)) { encoder.Int64(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.UInt8)) { encoder.Byte(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.UInt16)) { encoder.UInt16(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.UInt32)) { encoder.UInt32(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.UInt64)) { encoder.UInt64(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint8)) { encoder.Byte(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint16)) { encoder.UInt16(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint32)) { encoder.UInt32(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint64)) { encoder.UInt64(); return; }
 
         if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Float32)) { encoder.Single(); return; }
         if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Float64)) { encoder.Double(); return; }

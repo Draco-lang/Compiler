@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// Intrinsic symbols.
 /// </summary>
-internal sealed class IntrinsicSymbols
+internal sealed partial class IntrinsicSymbols
 {
     /// <summary>
     /// A utility for all intrinsic symbols.
@@ -31,39 +31,7 @@ internal sealed class IntrinsicSymbols
 
     // Types backed by metadata potentially, nonstatic
 
-    public TypeSymbol Int8 { get; } = new PrimitiveTypeSymbol("int8", isValueType: true);
-    public TypeSymbol Int16 { get; } = new PrimitiveTypeSymbol("int16", isValueType: true);
-
-    public TypeSymbol Int32 => InterlockedUtils.InitializeNull(ref this.int32, () => new MetadataBackedPrimitiveTypeSymbol(
-        "int32",
-        isValueType: true,
-        metadataType: this.WellKnownTypes.SystemInt32));
-    private TypeSymbol? int32;
-
-    public TypeSymbol Int64 { get; } = new PrimitiveTypeSymbol("int64", isValueType: true);
-
-    public TypeSymbol UInt8 { get; } = new PrimitiveTypeSymbol("uint8", isValueType: true);
-    public TypeSymbol UInt16 { get; } = new PrimitiveTypeSymbol("uint16", isValueType: true);
-    public TypeSymbol UInt32 { get; } = new PrimitiveTypeSymbol("uint32", isValueType: true);
-    public TypeSymbol UInt64 { get; } = new PrimitiveTypeSymbol("uint64", isValueType: true);
-
-    public TypeSymbol Float32 { get; } = new PrimitiveTypeSymbol("float32", isValueType: true);
-    public TypeSymbol Float64 { get; } = new PrimitiveTypeSymbol("float64", isValueType: true);
-
     public TypeSymbol Char { get; } = new PrimitiveTypeSymbol("char", isValueType: true);
-    public TypeSymbol Bool { get; } = new PrimitiveTypeSymbol("bool", isValueType: true);
-
-    public TypeSymbol Object => InterlockedUtils.InitializeNull(ref this.@object, () => new MetadataBackedPrimitiveTypeSymbol(
-        "object",
-        isValueType: false,
-        metadataType: this.WellKnownTypes.SystemObject));
-    private TypeSymbol? @object;
-
-    public TypeSymbol String => InterlockedUtils.InitializeNull(ref this.@string, () => new MetadataBackedPrimitiveTypeSymbol(
-        "string",
-        isValueType: false,
-        metadataType: this.WellKnownTypes.SystemString));
-    private TypeSymbol? @string;
 
     public ArrayTypeSymbol Array { get; }
     public ArrayConstructorSymbol ArrayCtor { get; }
@@ -114,7 +82,7 @@ internal sealed class IntrinsicSymbols
         foreach (var type in new[]
         {
             this.Int8, this.Int16, this.Int32, this.Int64,
-            this.UInt8, this.UInt16, this.UInt32, this.UInt64,
+            this.Uint8, this.Uint16, this.Uint32, this.Uint64,
             this.Float32, this.Float64,
         })
         {

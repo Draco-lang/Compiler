@@ -516,7 +516,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
         var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
 
-        var xmlGeneratedDocs= """
+        var xmlGeneratedDocs = """
             <summary>Documentation for TestMethod, which is in <see cref="T:TestNamespace.TestClass" />, random generic link <see cref="T:System.Collections.Generic.List`1" /></summary>
             <param name="arg1">Documentation for arg1</param>
             <param name="arg2">Documentation for arg2</param>

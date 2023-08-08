@@ -322,9 +322,7 @@ public sealed class Compilation : IBinderProvider
     private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> BuildMetadataAssemblies() => this.MetadataReferences
         .ToImmutableDictionary(
             r => r,
-            r => r.Documentation is null
-                ? new MetadataAssemblySymbol(this, r.MetadataReader)
-                : new MetadataAssemblySymbol(this, r.MetadataReader, r.Documentation));
+            r => new MetadataAssemblySymbol(this, r.MetadataReader, r.Documentation));
     private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
         containingSymbol: null,
         name: string.Empty,

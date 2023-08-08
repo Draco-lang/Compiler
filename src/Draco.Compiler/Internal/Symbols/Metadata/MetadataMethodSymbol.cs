@@ -114,7 +114,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     private void BuildSignature()
     {
         // Decode signature
-       var decoder = new TypeProvider(this.Assembly.Compilation);
+        var decoder = new TypeProvider(this.Assembly.Compilation);
         var signature = this.methodDefinition.DecodeSignature(decoder, this);
 
         // Build parameters

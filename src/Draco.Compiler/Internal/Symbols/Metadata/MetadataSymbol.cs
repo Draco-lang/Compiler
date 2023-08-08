@@ -79,7 +79,7 @@ internal static class MetadataSymbol
 
     public static string GetDocumentation(MetadataAssemblySymbol assembly, string documentationName)
     {
-        var root = assembly.AssemblyDocumentation.DocumentElement;
+        var root = assembly.AssemblyDocumentation?.DocumentElement;
         var xml = root?.SelectSingleNode($"//member[@name='{documentationName}']")?.InnerXml ?? string.Empty;
         return string.Join(Environment.NewLine, xml.ReplaceLineEndings("\n").Split('\n').Select(x => x.TrimStart()));
     }

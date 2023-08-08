@@ -12,7 +12,7 @@ internal abstract record class DocumentationElement
     public abstract XNode ToXml();
 }
 
-internal sealed record class RawTextDocumentationElement(string RawText) : DocumentationElement
+internal sealed record class TextDocumentationElement(string RawText) : DocumentationElement
 {
     public override string ToMarkdown() => this.RawText;
 

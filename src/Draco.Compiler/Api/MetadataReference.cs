@@ -66,12 +66,7 @@ public abstract class MetadataReference
         public override MetadataReader MetadataReader { get; }
         public override XmlDocument? Documentation { get; }
 
-        public MetadataReaderReference(MetadataReader metadataReader)
-        {
-            this.MetadataReader = metadataReader;
-        }
-
-        public MetadataReaderReference(MetadataReader metadataReader, XmlDocument documentation)
+        public MetadataReaderReference(MetadataReader metadataReader, XmlDocument? documentation = null)
         {
             this.MetadataReader = metadataReader;
             this.Documentation = documentation;

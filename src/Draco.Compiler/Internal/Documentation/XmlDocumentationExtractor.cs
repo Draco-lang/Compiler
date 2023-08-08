@@ -8,7 +8,7 @@ using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Documentation;
 
-internal class XmlDocumentationExtractor
+internal sealed class XmlDocumentationExtractor
 {
     public string Xml { get; }
     public Symbol ContainingSymbol { get; }

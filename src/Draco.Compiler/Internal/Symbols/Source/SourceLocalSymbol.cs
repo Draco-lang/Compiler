@@ -1,5 +1,6 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Documentation;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -16,6 +17,9 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
     public override VariableDeclarationSyntax DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;
 
     public override bool IsMutable => this.untypedSymbol.IsMutable;
+
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.RawDocumentation, this).Extract());
+    private SymbolDocumentation? documentation;
 
     public override string RawDocumentation => this.DeclaringSyntax.Documentation;
 

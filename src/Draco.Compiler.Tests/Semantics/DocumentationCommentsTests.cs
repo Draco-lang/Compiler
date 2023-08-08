@@ -124,6 +124,49 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         Assert.Equal(string.Empty, labelSym.RawDocumentation);
     }
 
+    [Theory]
+    [InlineData("This is doc comment")]
+    [InlineData("""
+        This is
+        multiline doc comment
+        """)]
+    public void ModuleDocumentationComment(string docComment)
+    {
+        // /// This is doc comment
+        // module documentedModule{
+        //     public var Foo = 0;
+        // }
+        //
+        // func foo(){
+        //     var x = documentedModule.Foo;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            WithDocumentation(ModuleDeclaration(
+            "documentedModule",
+            VariableDeclaration(Api.Semantics.Visibility.Public, "Foo", null, LiteralExpression(0))),
+            docComment),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("documentedModule"), "Foo")))))));
+
+        var moduleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+
+        // Act
+        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var moduleSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(moduleRef));
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(docComment, moduleSym.RawDocumentation);
+    }
+
     [Fact]
     public void TypeDocumentationFromMetadata()
     {
@@ -480,7 +523,6 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 null,
                 BlockFunctionBody(ExpressionStatement(CallExpression(NameExpression("TestClass")))))));
 
-        // TODO: Test type params
         var originalDocs = """
             <summary>Documentation for TestMethod, which is in <see cref="TestClass" />, random generic link <see cref="System.Collections.Generic.List{int}" /></summary>
             <param name="arg1">Documentation for arg1</param>
@@ -558,6 +600,56 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             </documentation>
             """, resultXml, ignoreLineEndingDifferences: true);
         Assert.Equal(mdGeneratedDocs, resultMd, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void MarkdownDocumentationExtractorTest()
+    {
+        // Arrange
+        var originalDocs = """
+            # summary
+            Documentation for TestMethod, which is in [TestNamespace.TestClass](), random generic link [System.Collections.Generic.List<T>]()
+            # parameters
+            - [arg1](): Documentation for arg1
+            - [arg2](): Documentation for arg2
+            # type parameters
+            - [T](): Useless type param
+            ```cs
+            var x = 0;
+            void Foo(int z) { }
+            ```
+            # returns
+            [arg1]() added to [arg2](), [T]() is not used
+            """;
+
+        // /// documentation
+        // func TestMethod() { }
+
+        var tree = SyntaxTree.Create(CompilationUnit(
+            WithDocumentation(FunctionDeclaration(
+                "TestMethod",
+                ParameterList(),
+                null,
+                BlockFunctionBody()), originalDocs)));
+
+        var testMethodDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(tree),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var methodSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(testMethodDecl));
+
+        var resultMd = methodSym.Documentation.ToMarkdown();
+
+        // Assert
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal(originalDocs, resultMd);
+        Assert.Equal(methodSym.RawDocumentation, resultMd);
     }
 
     private static string PrettyXml(XElement element)

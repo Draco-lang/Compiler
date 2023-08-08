@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Declarations;
 
@@ -18,13 +19,16 @@ internal sealed class MergedModuleDeclaration : Declaration
     /// </summary>
     public SplitPath Path { get; }
 
+    public ContainerSyntax? Syntax { get; }
+
     private readonly ImmutableArray<SingleModuleDeclaration> declarations;
 
-    public MergedModuleDeclaration(string name, SplitPath path, ImmutableArray<SingleModuleDeclaration> declarations)
+    public MergedModuleDeclaration(string name, SplitPath path, ImmutableArray<SingleModuleDeclaration> declarations, ContainerSyntax? syntax = null)
         : base(name)
     {
         this.declarations = declarations;
         this.Path = path;
+        this.Syntax = syntax;
     }
 
     private ImmutableArray<Declaration> BuildChildren()
@@ -79,7 +83,10 @@ internal sealed class MergedModuleDeclaration : Declaration
             children.Add(new MergedModuleDeclaration(
                 name: group.Key.Last,
                 path: group.Key,
-                declarations: childDeclarations));
+                declarations: childDeclarations,
+                syntax: group.Count() == 1
+                    ? group.First().Syntax
+                    : null));
         }
         return children.ToImmutable();
     }

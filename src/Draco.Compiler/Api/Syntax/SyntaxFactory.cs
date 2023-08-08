@@ -118,6 +118,9 @@ public static partial class SyntaxFactory
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, SyntaxList<DeclarationSyntax> declarations) =>
         ModuleDeclaration(Module, Name(name), OpenBrace, declarations, CloseBrace);
 
+    public static ModuleDeclarationSyntax ModuleDeclaration(string name, params DeclarationSyntax[] declarations) =>
+        ModuleDeclaration(name, SyntaxList(declarations));
+
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
         Import,
         path.Aggregate(

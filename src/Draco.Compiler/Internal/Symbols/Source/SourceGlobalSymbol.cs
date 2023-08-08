@@ -3,6 +3,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.FlowAnalysis;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -54,6 +55,9 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
             }
         }
     }
+
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.RawDocumentation, this).Extract());
+    private SymbolDocumentation? documentation;
 
     public override string RawDocumentation => this.DeclaringSyntax.Documentation;
 

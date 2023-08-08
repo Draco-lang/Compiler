@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Documentation;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -26,7 +27,12 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public override SyntaxNode? DeclaringSyntax => null;
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.RawDocumentation, this).Extract());
+    private SymbolDocumentation? documentation;
+
+    public override string RawDocumentation => this.DeclaringSyntax?.Documentation ?? string.Empty;
+
+    public override SyntaxNode? DeclaringSyntax => (this.declaration as MergedModuleDeclaration)?.Syntax;
 
     private readonly Declaration declaration;
 
@@ -38,14 +44,6 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
         this.DeclaringCompilation = compilation;
         this.ContainingSymbol = containingSymbol;
         this.declaration = declaration;
-    }
-
-    public SourceModuleSymbol(
-        Compilation compilation,
-        Symbol? containingSymbol,
-        SingleModuleDeclaration declaration)
-        : this(compilation, containingSymbol, declaration as Declaration)
-    {
     }
 
     public SourceModuleSymbol(

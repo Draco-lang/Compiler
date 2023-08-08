@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection.Metadata;
+using Draco.Compiler.Internal.Documentation;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -26,6 +27,9 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     public override bool IsIndexer => this.Name == ((IMetadataClass)this.ContainingSymbol).DefaultMemberAttributeName;
 
     public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
+
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new XmlDocumentationExtractor(this.RawDocumentation, this).Extract());
+    private SymbolDocumentation? documentation;
 
     public override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this.Assembly, $"P:{this.DocumentationFullName}"));
     private string? rawDocumentation;

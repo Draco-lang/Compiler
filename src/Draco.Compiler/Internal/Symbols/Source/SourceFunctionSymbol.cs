@@ -67,6 +67,37 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
     }
 
+    private void CheckForSameParameterOverloads(IBinderProvider binderProvider)
+    {
+        var binder = binderProvider.GetBinder(this);
+        var discardBag = new DiagnosticBag();
+        var overloads = binder.LookupValueSymbol(this.Name, this.DeclaringSyntax, discardBag);
+        // If not found, do nothing
+        if (overloads.IsError) return;
+        // If this is the same instance, do nothing
+        if (ReferenceEquals(overloads, this)) return;
+        // Should not happen, but if not overload set, do nothing
+        if (overloads is not OverloadSymbol overloadSymbol) return;
+        // Check for same parameter types
+        foreach (var func in overloadSymbol.Functions)
+        {
+            if (ReferenceEquals(func, this)) continue;
+            if (!HasSameParameterTypes(func, this)) continue;
+
+            // Report
+            binderProvider.DiagnosticBag.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.IllegalOverloadDefinition,
+                location: this.DeclaringSyntax.Location,
+                formatArgs: this.Name,
+                relatedInformation: func.DeclaringSyntax is null
+                    ? ImmutableArray<DiagnosticRelatedInformation>.Empty
+                    : ImmutableArray.Create(DiagnosticRelatedInformation.Create(
+                        location: func.DeclaringSyntax.Location,
+                        format: "matching definition of {0}",
+                        formatArgs: func.Name))));
+        }
+    }
+
     private ImmutableArray<TypeParameterSymbol> BindGenericParametersIfNeeded(IBinderProvider binderProvider) =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, () => this.BindGenericParameters(binderProvider));
 
@@ -97,37 +128,6 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         }
 
         return genericParams.ToImmutable();
-    }
-
-    private void CheckForSameParameterOverloads(IBinderProvider binderProvider)
-    {
-        var binder = binderProvider.GetBinder(this);
-        var discardBag = new DiagnosticBag();
-        var overloads = binder.LookupValueSymbol(this.Name, this.DeclaringSyntax, discardBag);
-        // If not found, do nothing
-        if (overloads.IsError) return;
-        // If this is the same instance, do nothing
-        if (ReferenceEquals(overloads, this)) return;
-        // Should not happen, but if not overload set, do nothing
-        if (overloads is not OverloadSymbol overloadSymbol) return;
-        // Check for same parameter types
-        foreach (var func in overloadSymbol.Functions)
-        {
-            if (ReferenceEquals(func, this)) continue;
-            if (!HasSameParameterTypes(func, this)) continue;
-
-            // Report
-            binderProvider.DiagnosticBag.Add(Diagnostic.Create(
-                template: TypeCheckingErrors.IllegalOverloadDefinition,
-                location: this.DeclaringSyntax.Location,
-                formatArgs: this.Name,
-                relatedInformation: func.DeclaringSyntax is null
-                    ? ImmutableArray<DiagnosticRelatedInformation>.Empty
-                    : ImmutableArray.Create(DiagnosticRelatedInformation.Create(
-                        location: func.DeclaringSyntax.Location,
-                        format: "matching definition of {0}",
-                        formatArgs: func.Name))));
-        }
     }
 
     private ImmutableArray<ParameterSymbol> BindParametersIfNeeded(IBinderProvider binderProvider) =>

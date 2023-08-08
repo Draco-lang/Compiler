@@ -60,7 +60,7 @@ internal record class ParamrefDocumentationElement(Symbol? Parameter) : SeeDocum
 
 internal record class TypeParamrefDocumentationElement(Symbol? TypeParameter) : SeeDocumentationElement(TypeParameter, TypeParameter?.Name ?? string.Empty)
 {
-    public override XElement ToXml() => new XElement("typeparamref ",
+    public override XElement ToXml() => new XElement("typeparamref",
         new XAttribute("name", this.DisplayText));
 }
 

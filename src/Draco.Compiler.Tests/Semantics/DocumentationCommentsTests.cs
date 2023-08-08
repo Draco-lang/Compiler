@@ -485,11 +485,12 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             <summary>Documentation for TestMethod, which is in <see cref="TestClass" />, random generic link <see cref="System.Collections.Generic.List{int}" /></summary>
             <param name="arg1">Documentation for arg1</param>
             <param name="arg2">Documentation for arg2</param>
+            <typeparam name="T">Useless type param</typeparam>
             <code>
             var x = 0;
             void Foo(int z) { }
             </code>
-            <returns><paramref name="arg1" /> added to <paramref name="arg2" /></returns>
+            <returns><paramref name="arg1" /> added to <paramref name="arg2" />, <typeparamref name="T" /> is not used</returns>
             """;
 
         var xmlStream = new MemoryStream();
@@ -499,7 +500,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             public class TestClass
             {
                 {{CreateXmlDocComment(originalDocs)}}
-                public int TestMethod(int arg1, int arg2) => arg1 + arg2; 
+                public int TestMethod<T>(int arg1, int arg2) => arg1 + arg2; 
             }
             """, xmlStream).DocumentationFromStream(xmlStream);
 
@@ -521,12 +522,13 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             <summary>Documentation for TestMethod, which is in <see cref="T:TestNamespace.TestClass" />, random generic link <see cref="T:System.Collections.Generic.List`1" /></summary>
             <param name="arg1">Documentation for arg1</param>
             <param name="arg2">Documentation for arg2</param>
+            <typeparam name="T">Useless type param</typeparam>
             <code>
             var x = 0;
             void Foo(int z) { }
             </code>
             <returns>
-            <paramref name="arg1" /> added to <paramref name="arg2" /></returns>
+            <paramref name="arg1" /> added to <paramref name="arg2" />, <typeparamref name="T" /> is not used</returns>
             """;
 
         var mdGeneratedDocs = """
@@ -535,12 +537,14 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             # parameters
             - [arg1](): Documentation for arg1
             - [arg2](): Documentation for arg2
+            # type parameters
+            - [T](): Useless type param
             ```cs
             var x = 0;
             void Foo(int z) { }
             ```
             # returns
-            [arg1]() added to [arg2]()
+            [arg1]() added to [arg2](), [T]() is not used
             """;
 
         var resultXml = PrettyXml(methodSym.Documentation.ToXml());

@@ -109,7 +109,7 @@ internal class XmlDocumentationExtractor
         {
             elements.Add(this.ExtractElement(child));
         }
-        return new TypeParameterDocumentationElement(new TypeParamrefDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
+        return new TypeParameterDocumentationElement(new TypeParamrefDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
     }
 
     private Symbol? GetSymbolFromDocumentationName(string documentationName) =>

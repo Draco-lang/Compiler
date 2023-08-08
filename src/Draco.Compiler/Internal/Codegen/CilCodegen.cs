@@ -30,8 +30,6 @@ internal sealed class CilCodegen
         .Select(kv => kv.Value);
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
-    private WellKnownTypes WellKnownTypes => this.metadataCodegen.Compilation.WellKnownTypes;
-    private IntrinsicSymbols IntrinsicSymbols => this.metadataCodegen.Compilation.IntrinsicSymbols;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;

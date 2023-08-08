@@ -91,7 +91,7 @@ internal sealed class XmlDocumentationExtractor
     private DocumentationElement ExtractElement(XmlNode node) => node.LocalName switch
     {
         "#text" => new TextDocumentationElement(node.InnerText),
-        "see" => new SeeDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false)),
+        "see" => new SeeDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false)),
         "paramref" => new ParamrefDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
         "typeparamref" => new TypeParamrefDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
         "code" => new CodeDocumentationElement(node.InnerXml, "cs"),

@@ -1,3 +1,8 @@
+using System.Collections.Immutable;
+using System.Text;
+using System.Xml;
+using System.Xml.Linq;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
@@ -152,7 +157,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var moduleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var moduleSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(moduleRef));
@@ -183,14 +188,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var testRef = CompileCSharpToMetadataRef($$"""
             /// {{docs}}
             public class TestClass { }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -224,14 +232,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{docs}}
                 public class NestedTestClass { }
             }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -267,14 +278,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 // Just so i can use it in draco
                 public static int foo = 0;
             }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var @class = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(@class));
@@ -308,14 +322,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{docs}}
                 public void TestMethod(int arg1, string arg2) { }
             }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -352,14 +369,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{docs}}
                 public void TestMethod() { }
             }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -394,14 +414,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{docs}}
                 public int TestField = 5;
             }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -436,14 +459,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{docs}}
                 public int TestProperty { get; }
             }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -482,14 +508,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{methodDocs}}
                 public void TestMethod<U>(T arg1, T arg2, U arg3) { }
             }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var call = tree.FindInChildren<CallExpressionSyntax>(0);
 
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: ImmutableArray.Create(testRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(testRef)
+                .ToImmutableArray());
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -539,7 +568,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 {{CreateXmlDocComment(originalDocs)}}
                 public int TestMethod<T>(int arg1, int arg2) => arg1 + arg2; 
             }
-            """, xmlStream).DocumentationFromStream(xmlStream);
+            """, xmlStream: xmlStream).DocumentationFromStream(xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 

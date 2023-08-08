@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Documentation;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -33,7 +34,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     /// </summary>
     public IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declaration.DeclaringSyntaxes;
 
-    public override string RawDocumentation => this.DeclaringSyntax?.Documentation ?? string.Empty;
+    public override string RawDocumentation => this.DeclaringSyntaxes.SingleOrDefault()?.Documentation ?? string.Empty;
 
     private readonly Declaration declaration;
 

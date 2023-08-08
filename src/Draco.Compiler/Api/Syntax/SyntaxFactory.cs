@@ -120,9 +120,6 @@ public static partial class SyntaxFactory
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, params DeclarationSyntax[] declarations) =>
         ModuleDeclaration(name, declarations.AsEnumerable());
 
-    public static ModuleDeclarationSyntax ModuleDeclaration(string name, params DeclarationSyntax[] declarations) =>
-        ModuleDeclaration(name, SyntaxList(declarations));
-
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
         Import,
         path.Aggregate(

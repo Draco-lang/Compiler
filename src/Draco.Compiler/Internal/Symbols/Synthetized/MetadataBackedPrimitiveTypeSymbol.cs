@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Documentation;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -16,9 +17,12 @@ internal sealed class MetadataBackedPrimitiveTypeSymbol : PrimitiveTypeSymbol
     /// </summary>
     public TypeSymbol MetadataType { get; }
 
+    public override string MetadataName => this.MetadataType.MetadataName;
+    public override string MetadataFullName => this.MetadataType.MetadataFullName;
     public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => this.MetadataType.ImmediateBaseTypes;
     public override IEnumerable<Symbol> DefinedMembers => this.MetadataType.DefinedMembers;
-    public override string Documentation => this.MetadataType.Documentation;
+    public override SymbolDocumentation Documentation => this.MetadataType.Documentation;
+    public override string RawDocumentation => this.MetadataType.RawDocumentation;
 
     public MetadataBackedPrimitiveTypeSymbol(string name, bool isValueType, TypeSymbol metadataType)
         : base(name, isValueType)

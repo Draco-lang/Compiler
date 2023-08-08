@@ -24,6 +24,11 @@ internal abstract partial class Binder
     internal Compilation Compilation { get; }
 
     /// <summary>
+    /// Utility accessor for intrinsics.
+    /// </summary>
+    protected IntrinsicSymbols IntrinsicSymbols => this.Compilation.IntrinsicSymbols;
+
+    /// <summary>
     /// The parent binder of this one.
     /// </summary>
     internal Binder? Parent { get; }

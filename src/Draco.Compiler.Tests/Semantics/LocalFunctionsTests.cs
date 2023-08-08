@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
@@ -34,7 +32,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
         var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -70,7 +68,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("y", null, NameExpression("x"))))))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -104,7 +102,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
                         StringExpression("Hello"))))))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -132,7 +130,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
                 BlockFunctionBody()))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -165,7 +163,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("y", null, NameExpression("x"))))))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -213,7 +211,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
         var fooStringCall = tree.FindInChildren<CallExpressionSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = compilation.Diagnostics;
 
@@ -259,7 +257,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
                         body: BlockFunctionBody()))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 

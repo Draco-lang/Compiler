@@ -64,16 +64,6 @@ internal partial class UntypedWhileExpression
     public override TypeSymbol Type => IntrinsicSymbols.Unit;
 }
 
-internal partial class UntypedAndExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
-}
-
-internal partial class UntypedOrExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
-}
-
 internal partial class UntypedParameterExpression
 {
     public override TypeSymbol Type => this.Parameter.Type;
@@ -99,25 +89,14 @@ internal partial class UntypedReferenceErrorExpression
     public override TypeSymbol? Type => IntrinsicSymbols.ErrorType;
 }
 
-internal partial class UntypedLiteralExpression
+internal partial class UntypedAndExpression
 {
-    public override TypeSymbol Type => this.Value switch
-    {
-        int => IntrinsicSymbols.Int32,
-        bool => IntrinsicSymbols.Bool,
-        double => IntrinsicSymbols.Float64,
-        _ => throw new System.InvalidOperationException(),
-    };
+    public override TypeSymbol Type => this.Left.TypeRequired;
 }
 
-internal partial class UntypedStringExpression
+internal partial class UntypedOrExpression
 {
-    public override TypeSymbol? Type => IntrinsicSymbols.String;
-}
-
-internal partial class UntypedRelationalExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
+    public override TypeSymbol Type => this.Left.TypeRequired;
 }
 
 internal partial class UntypedAssignmentExpression

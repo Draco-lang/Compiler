@@ -6,7 +6,6 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using static Draco.Compiler.Tests.TestUtilities;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
@@ -69,7 +68,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x6 = tree.FindInChildren<VariableDeclarationSyntax>(5);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -129,7 +128,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x2ref = tree.FindInChildren<NameExpressionSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var symx0 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(x0));
@@ -185,7 +184,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var call3 = tree.FindInChildren<CallExpressionSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var symBar = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(barDecl));
@@ -232,7 +231,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var zRef = tree.FindInChildren<NameExpressionSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var symx = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
@@ -296,7 +295,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var wRefErr2 = tree.FindInChildren<NameExpressionSyntax>(4);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var x1SymDecl = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(x1Decl));
@@ -343,7 +342,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -379,7 +378,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -405,7 +404,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             BlockFunctionBody())));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -433,7 +432,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
@@ -469,7 +468,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var globalVarDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var varRefSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetReferencedSymbol(localVarDecl.Value!.Value));
@@ -505,7 +504,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelDeclSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetDeclaredSymbol(labelDecl));
@@ -547,7 +546,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelDeclSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetDeclaredSymbol(labelDecl));
@@ -574,7 +573,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xDeclSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
@@ -606,7 +605,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var fooDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(fooDecl));
@@ -635,7 +634,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
@@ -665,7 +664,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(labelRef));
@@ -695,7 +694,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(labelRef));
@@ -725,7 +724,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(labelRef));
@@ -757,7 +756,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var labelRefSym = semanticModel.GetReferencedSymbol(labelRef);
@@ -804,7 +803,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var outerBreakRef = tree.FindInChildren<GotoExpressionSyntax>(3).Target;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var outerContinueRefSym = GetInternalSymbol<LabelSymbol>(semanticModel.GetReferencedSymbol(outerContinueRef));
@@ -841,11 +840,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var moduleRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -886,11 +881,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var funcGroupRef = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -910,7 +901,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             ImportDeclaration("Nonexisting")));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -936,7 +927,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 DeclarationStatement(ImportDeclaration("Nonexisting"))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -964,11 +955,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var importPath = tree.FindInChildren<ImportPathSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1001,11 +988,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var importPath = tree.FindInChildren<ImportPathSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1034,11 +1017,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1070,11 +1049,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var varTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1344,7 +1319,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1379,7 +1357,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1744,8 +1725,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1775,8 +1755,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var paramTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1819,7 +1798,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1866,7 +1848,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1958,7 +1943,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2000,7 +1988,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2176,7 +2167,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2216,7 +2210,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2262,7 +2259,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2309,7 +2309,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2403,7 +2406,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2444,7 +2450,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2625,7 +2634,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3110,7 +3122,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3150,7 +3165,10 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: ImmutableArray.Create(fooRef));
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3427,8 +3445,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -3641,7 +3658,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(baseTypeSym.IsGenericDefinition);
         Assert.Same(parentTypeDecl, baseTypeSym.GenericDefinition);
         Assert.Single(baseTypeSym.GenericArguments);
-        Assert.Same(IntrinsicSymbols.Int32, baseTypeSym.GenericArguments[0]);
+        Assert.Same(compilation.IntrinsicSymbols.Int32, baseTypeSym.GenericArguments[0]);
     }
 
     [Fact]
@@ -3788,7 +3805,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(baseInterfaceSym.IsGenericDefinition);
         Assert.Same(parentInterfaceDecl, baseInterfaceSym.GenericDefinition);
         Assert.Single(baseInterfaceSym.GenericArguments);
-        Assert.Same(IntrinsicSymbols.Int32, baseInterfaceSym.GenericArguments[0]);
+        Assert.Same(compilation.IntrinsicSymbols.Int32, baseInterfaceSym.GenericArguments[0]);
     }
 
     [Fact]
@@ -4109,6 +4126,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Equal("Derived.Clone", nonObjectSymbols.First().FullName);
     }
 
+    [Fact]
     public void InCodeModules()
     {
         // module Foo {
@@ -4140,8 +4158,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var moduleRefSyntax = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;

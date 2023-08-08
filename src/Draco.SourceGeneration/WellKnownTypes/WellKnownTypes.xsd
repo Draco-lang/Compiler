@@ -27,9 +27,16 @@
   </xs:complexType>
 
   <xs:complexType name="TypeType">
+    <xs:sequence>
+      <xs:element name="Intrinsic" type="IntrinsicType" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
     <xs:attribute name="Name" type="xs:string" use="required" />
     <xs:attribute name="Assembly" type="xs:string" use="required" />
-    <xs:attribute name="Symbol" type="xs:string" use="optional" />
+  </xs:complexType>
+
+  <xs:complexType name="IntrinsicType">
+    <xs:attribute name="Name" type="xs:string" use="required" />
+    <xs:attribute name="IsValueType" type="xs:boolean" use="required" />
   </xs:complexType>
 
 </xs:schema>

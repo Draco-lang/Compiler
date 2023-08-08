@@ -185,6 +185,30 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
+    // Manifesting an expression as an address
+    private IOperand CompileToAddress(BoundExpression expression)
+    {
+        switch (expression)
+        {
+        case BoundLocalExpression local:
+        {
+            var localOperand = this.DefineLocal(local.Local);
+            return new Address(localOperand);
+        }
+        default:
+        {
+            // We allocate a local so we can take its address
+            var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
+            var localOperand = this.DefineLocal(local);
+            // Store the value in it
+            var value = this.Compile(expression);
+            this.Write(Store(localOperand, value));
+            // Take its address
+            return new Address(localOperand);
+        }
+        }
+    }
+
     // Expressions /////////////////////////////////////////////////////////////
 
     public override IOperand VisitStringExpression(BoundStringExpression node) =>
@@ -215,7 +239,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
         else
         {
-            var receiver = this.Compile(node.Receiver);
+            var receiver = node.Receiver.TypeRequired.IsValueType
+                ? this.CompileToAddress(node.Receiver)
+                : this.Compile(node.Receiver);
             var args = node.Arguments.Select(this.Compile).ToList();
             var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);
@@ -439,7 +465,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>
         this.DefineParameter(node.Parameter);
 
-    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
+    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value, node.TypeRequired);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
     public override IOperand VisitFieldExpression(BoundFieldExpression node)

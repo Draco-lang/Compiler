@@ -80,16 +80,6 @@ internal partial class BoundWhileExpression
     public override TypeSymbol Type => IntrinsicSymbols.Unit;
 }
 
-internal partial class BoundAndExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
-}
-
-internal partial class BoundOrExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
-}
-
 internal partial class BoundParameterExpression
 {
     public override TypeSymbol Type => this.Parameter.Type;
@@ -135,25 +125,14 @@ internal partial class BoundReferenceErrorExpression
     public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
 }
 
-internal partial class BoundLiteralExpression
+internal partial class BoundAndExpression
 {
-    public override TypeSymbol Type => this.Value switch
-    {
-        int => IntrinsicSymbols.Int32,
-        bool => IntrinsicSymbols.Bool,
-        string => IntrinsicSymbols.String,
-        _ => throw new System.InvalidOperationException(),
-    };
+    public override TypeSymbol Type => this.Left.TypeRequired;
 }
 
-internal partial class BoundStringExpression
+internal partial class BoundOrExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.String;
-}
-
-internal partial class BoundRelationalExpression
-{
-    public override TypeSymbol Type => IntrinsicSymbols.Bool;
+    public override TypeSymbol Type => this.Left.TypeRequired;
 }
 
 internal partial class BoundAssignmentExpression
@@ -166,15 +145,6 @@ internal partial class BoundObjectCreationExpression
     public override TypeSymbol Type => this.ObjectType;
 }
 
-internal partial class BoundArrayCreationExpression
-{
-    public override TypeSymbol Type => this.Sizes.Length switch
-    {
-        1 => IntrinsicSymbols.Array.GenericInstantiate(this.ElementType),
-        int n => new ArrayTypeSymbol(n).GenericInstantiate(this.ElementType),
-    };
-}
-
 internal partial class BoundArrayAccessExpression
 {
     public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
@@ -182,7 +152,8 @@ internal partial class BoundArrayAccessExpression
 
 internal partial class BoundArrayLengthExpression
 {
-    public override TypeSymbol? Type => IntrinsicSymbols.Int32;
+    public override TypeSymbol? Type =>
+        (this.Array.TypeRequired.Substitution.GenericDefinition as ArrayTypeSymbol)?.IndexType;
 }
 
 internal partial class BoundCallExpression

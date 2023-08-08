@@ -11,5 +11,5 @@ internal readonly record struct SymbolReference(Symbol Symbol) : IOperand
     public TypeSymbol? Type => (this.Symbol as ITypedSymbol)?.Type;
 
     public override string ToString() => this.ToOperandString();
-    public string ToOperandString() => this.Symbol.FullName;
+    public string ToOperandString() => $"[{this.Symbol.FullName}]";
 }

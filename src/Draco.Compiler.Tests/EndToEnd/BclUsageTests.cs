@@ -225,7 +225,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
     }
 
     [Fact]
-    public void Enumerating()
+    public void EnumeratingRange()
     {
         var assembly = Compile("""
             import System.Console;
@@ -248,5 +248,62 @@ public sealed class BclUsageTests : EndToEndTestsBase
             stdout: stringWriter);
 
         Assert.Equal("0123456789", stringWriter.ToString());
+    }
+
+    [Fact]
+    public void EnumeratingList()
+    {
+        var assembly = Compile("""
+            import System.Console;
+            import System.Collections.Generic;
+
+            public func main() {
+                val list = List();
+                list.Add(2);
+                list.Add(3);
+                list.Add(5);
+                val enumerator = list.GetEnumerator();
+                while(enumerator.MoveNext())
+                {
+                    Write(enumerator.Current);
+                }
+            }
+            """);
+        var stringWriter = new StringWriter();
+        _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "main",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("235", stringWriter.ToString());
+    }
+
+    [Fact]
+    public void StringifyInt()
+    {
+        var assembly = Compile("""
+            public func stringify(n: int32): string = n.ToString();
+            """);
+        var result = Invoke<string>(
+            assembly: assembly,
+            methodName: "stringify",
+            args: 123);
+
+        Assert.Equal("123", result);
+    }
+
+    [Fact]
+    public void ParseInt()
+    {
+        var assembly = Compile("""
+            public func parse(n: string): int32 = int32.Parse(n);
+            """);
+        var result = Invoke<int>(
+            assembly: assembly,
+            methodName: "parse",
+            args: "123");
+
+        Assert.Equal(123, result);
     }
 }

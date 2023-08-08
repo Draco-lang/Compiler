@@ -79,10 +79,13 @@ internal partial class Binder
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);
 
     private BoundExpression TypeLiteralExpression(UntypedLiteralExpression literal, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundLiteralExpression(literal.Syntax, literal.Value);
+        new BoundLiteralExpression(literal.Syntax, literal.Value, literal.TypeRequired);
 
     private BoundExpression TypeStringExpression(UntypedStringExpression str, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundStringExpression(str.Syntax, str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray());
+        new BoundStringExpression(
+            str.Syntax,
+            str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray(),
+            this.IntrinsicSymbols.String);
 
     private BoundStringPart TypeStringPart(UntypedStringPart part, ConstraintSolver constraints, DiagnosticBag diagnostics) => part switch
     {
@@ -318,7 +321,7 @@ internal partial class Binder
         var comparisons = rel.Comparisons
             .Select(cmp => this.TypeComparison(cmp, constraints, diagnostics))
             .ToImmutableArray();
-        return new BoundRelationalExpression(rel.Syntax, first, comparisons);
+        return new BoundRelationalExpression(rel.Syntax, first, comparisons, this.IntrinsicSymbols.Bool);
     }
 
     private BoundComparison TypeComparison(UntypedComparison cmp, ConstraintSolver constraints, DiagnosticBag diagnostics)

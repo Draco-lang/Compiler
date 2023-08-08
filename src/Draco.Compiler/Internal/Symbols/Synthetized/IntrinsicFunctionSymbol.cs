@@ -48,14 +48,16 @@ internal class IntrinsicFunctionSymbol : FunctionSymbol
     /// <param name="token">The <see cref="TokenKind"/> for the comparison operator.</param>
     /// <param name="leftType">The left operand type.</param>
     /// <param name="rightType">The right operand type.</param>
+    /// <param name="returnType">The return type of the comparison.</param>
     /// <param name="codegen">The code generation function.</param>
     /// <returns>The constructed function symbol.</returns>
     public static FunctionSymbol ComparisonOperator(
         TokenKind token,
         TypeSymbol leftType,
         TypeSymbol rightType,
+        TypeSymbol returnType,
         IrFunctionSymbol.CodegenDelegate codegen) =>
-        new IrFunctionSymbol(GetComparisonOperatorName(token), new[] { leftType, rightType }, IntrinsicSymbols.Bool, codegen);
+        new IrFunctionSymbol(GetComparisonOperatorName(token), new[] { leftType, rightType }, returnType, codegen);
 
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
 

@@ -29,7 +29,7 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
     /// <summary>
     /// The rank of the array to construct.
     /// </summary>
-    public int Rank { get; }
+    public int Rank => this.genericArrayType.Rank;
 
     /// <summary>
     /// The array element type.
@@ -42,25 +42,23 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
         InterlockedUtils.InitializeNull(ref this.body, this.BuildBody);
     private BoundStatement? body;
 
-    public ArrayConstructorSymbol(int rank)
+    private readonly ArrayTypeSymbol genericArrayType;
+
+    public ArrayConstructorSymbol(ArrayTypeSymbol genericArrayType)
     {
-        this.Rank = rank;
+        this.genericArrayType = genericArrayType;
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.Rank switch
     {
-        1 => ImmutableArray.Create(new SynthetizedParameterSymbol(this, "capacity", IntrinsicSymbols.Int32) as ParameterSymbol),
+        1 => ImmutableArray.Create(new SynthetizedParameterSymbol(this, "capacity", this.genericArrayType.IndexType) as ParameterSymbol),
         int n => Enumerable
             .Range(1, n)
-            .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", IntrinsicSymbols.Int32) as ParameterSymbol)
+            .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", this.genericArrayType.IndexType) as ParameterSymbol)
             .ToImmutableArray(),
     };
 
-    private TypeSymbol BuildReturnType() => this.Rank switch
-    {
-        1 => IntrinsicSymbols.Array.GenericInstantiate(this.ElementType),
-        int n => new ArrayTypeSymbol(n).GenericInstantiate(this.ElementType),
-    };
+    private TypeSymbol BuildReturnType() => this.genericArrayType.GenericInstantiate(this.ElementType);
 
     private TypeParameterSymbol BuildElementType() => new SynthetizedTypeParameterSymbol(this, "T");
 
@@ -70,5 +68,6 @@ internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
             sizes: this.Parameters
                 .Select(ParameterExpression)
                 .Cast<BoundExpression>()
-                .ToImmutableArray())));
+                .ToImmutableArray(),
+            type: this.ReturnType)));
 }

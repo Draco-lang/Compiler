@@ -52,8 +52,6 @@
   </xs:complexType>
 
   <xs:complexType name="TokenType">
-    <xs:sequence>
-    </xs:sequence>
     <xs:attribute name="Kind" type="xs:string" use="required" />
   </xs:complexType>
 

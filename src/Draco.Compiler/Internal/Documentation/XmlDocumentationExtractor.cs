@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Xml;
-using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -23,6 +22,15 @@ internal class XmlDocumentationExtractor
 
     public SymbolDocumentation Extract()
     {
+        // TODO: exception
+        //       para
+        //       list
+        //       c
+        //       see - not cref links
+        //       seealso
+        //       b ?
+        //       i ?
+
         var xml = $"""
             <documentation>
               {this.Xml}

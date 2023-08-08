@@ -14,6 +14,11 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
     public TypeParameterSymbol ElementType { get; }
 
     /// <summary>
+    /// The index type this array can be indexed with.
+    /// </summary>
+    public TypeSymbol IndexType { get; }
+
+    /// <summary>
     /// The rank of the array (number of dimensions).
     /// </summary>
     public int Rank { get; }
@@ -27,16 +32,17 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
 
-    public override IEnumerable<Symbol> Members => new[]
+    public override IEnumerable<Symbol> DefinedMembers => new[]
     {
         new ArrayLengthPropertySymbol(this) as Symbol,
         new ArrayIndexPropertySymbol(this),
     };
 
-    public ArrayTypeSymbol(int rank)
+    public ArrayTypeSymbol(int rank, TypeSymbol indexType)
     {
         this.ElementType = new SynthetizedTypeParameterSymbol(this, "T");
         this.Rank = rank;
+        this.IndexType = indexType;
     }
 
     public TypeSymbol GenericInstantiate(TypeSymbol elementType) =>

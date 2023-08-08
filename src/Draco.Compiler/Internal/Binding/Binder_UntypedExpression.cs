@@ -58,8 +58,14 @@ internal partial class Binder
             value: UntypedUnitExpression.Default);
     }
 
-    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new UntypedLiteralExpression(syntax, syntax.Literal.Value);
+    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        if (!BinderFacts.TryGetLiteralType(syntax.Literal.Value, this.IntrinsicSymbols, out var literalType))
+        {
+            throw new InvalidOperationException("can not determine literal type");
+        }
+        return new UntypedLiteralExpression(syntax, syntax.Literal.Value, literalType);
+    }
 
     private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
@@ -112,7 +118,7 @@ internal partial class Binder
                 throw new ArgumentOutOfRangeException();
             }
         }
-        return new UntypedStringExpression(syntax, parts.ToImmutable());
+        return new UntypedStringExpression(syntax, parts.ToImmutable(), this.IntrinsicSymbols.String);
     }
 
     private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -160,7 +166,7 @@ internal partial class Binder
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints
-            .SameType(IntrinsicSymbols.Bool, condition.TypeRequired)
+            .SameType(this.IntrinsicSymbols.Bool, condition.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
 
@@ -198,7 +204,7 @@ internal partial class Binder
         var condition = binder.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints
-            .SameType(IntrinsicSymbols.Bool, condition.TypeRequired)
+            .SameType(this.IntrinsicSymbols.Bool, condition.TypeRequired)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Location));
 
@@ -274,15 +280,17 @@ internal partial class Binder
             var promise = constraints.Await(mem.Member, UntypedExpression () =>
             {
                 var members = mem.Member.Result;
-                if (members.All(m => m is FunctionSymbol))
+                if (members is FunctionSymbol or OverloadSymbol)
                 {
                     // Overloaded member call
-                    var funcMembers = members
-                        .Cast<FunctionSymbol>()
-                        .ToImmutableArray();
-
+                    var functions = members switch
+                    {
+                        OverloadSymbol o => o.Functions,
+                        FunctionSymbol f => ImmutableArray.Create(f),
+                        _ => throw new InvalidOperationException(),
+                    };
                     var symbolPromise = constraints.Overload(
-                        funcMembers,
+                        functions,
                         args.Cast<object>().ToImmutableArray(),
                         out var resultType);
                     symbolPromise.ConfigureDiagnostic(diag => diag
@@ -291,7 +299,7 @@ internal partial class Binder
                     constraints.Unify(resultType, promisedType);
                     return new UntypedCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
                 }
-                else if (members.Length == 1)
+                else
                 {
                     var callPromise = constraints.Call(
                         method.TypeRequired,
@@ -302,13 +310,6 @@ internal partial class Binder
 
                     constraints.Unify(resultType, promisedType);
                     return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
-                }
-                else
-                {
-                    // NOTE: Can this happen?
-                    // Maybe it can on cascaded errors, like duplicate member definitions
-                    // TODO: Verify
-                    throw new NotImplementedException();
                 }
             });
             return new UntypedDelayedExpression(syntax, promise, promisedType);
@@ -365,11 +366,11 @@ internal partial class Binder
 
             // Both left and right must be bool
             constraints
-                .SameType(IntrinsicSymbols.Bool, left.TypeRequired)
+                .SameType(this.IntrinsicSymbols.Bool, left.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(syntax.Left.Location));
             constraints
-                .SameType(IntrinsicSymbols.Bool, right.TypeRequired)
+                .SameType(this.IntrinsicSymbols.Bool, right.TypeRequired)
                 .ConfigureDiagnostic(diag => diag
                     .WithLocation(syntax.Right.Location));
 
@@ -434,7 +435,7 @@ internal partial class Binder
             prev = comparison.Next;
             comparisons.Add(comparison);
         }
-        return new UntypedRelationalExpression(syntax, first, comparisons.ToImmutable());
+        return new UntypedRelationalExpression(syntax, first, comparisons.ToImmutable(), this.IntrinsicSymbols.Bool);
     }
 
     private UntypedComparison BindComparison(
@@ -458,7 +459,7 @@ internal partial class Binder
             .WithLocation(syntax.Operator.Location));
         // For safety, we assume it has to be bool
         constraints
-            .SameType(IntrinsicSymbols.Bool, resultType)
+            .SameType(this.IntrinsicSymbols.Bool, resultType)
             .ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.Operator.Location));
 
@@ -530,7 +531,7 @@ internal partial class Binder
                     template: SymbolResolutionErrors.NoGettableIndexerInType,
                     location: index.Location,
                     formatArgs: receiver.Type));
-                constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
+                constraints.Unify(returnType, IntrinsicSymbols.ErrorType);
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
             }
             var overloaded = constraints.Overload(
@@ -594,17 +595,19 @@ internal partial class Binder
             {
                 var members = member.Member.Result;
                 // Search for all function members with the same number of generic parameters
-                var withSameNoParams = members
-                    .OfType<FunctionSymbol>()
-                    .Where(f => f.GenericParameters.Length == args.Length)
-                    .ToImmutableArray();
+                var withSameNoParams = members switch
+                {
+                    OverloadSymbol o => o.Functions,
+                    FunctionSymbol f => ImmutableArray.Create(f),
+                    _ => ImmutableArray<FunctionSymbol>.Empty,
+                };
                 if (withSameNoParams.Length == 0)
                 {
                     // No generic functions with this number of parameters
                     diagnostics.Add(Diagnostic.Create(
                         template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
                         location: syntax.Location,
-                        formatArgs: new object[] { members[0].Name, args.Length }));
+                        formatArgs: new object[] { members.Name, args.Length }));
 
                     // Return a sentinel
                     // NOTE: Is this the right one to return?
@@ -616,11 +619,15 @@ internal partial class Binder
                     // Instantiate each possibility
                     var instantiatedFuncs = withSameNoParams
                         .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
-                        .Cast<Symbol>()
                         .ToImmutableArray();
+                    var overload = new OverloadSymbol(instantiatedFuncs);
 
                     // Wrap them back up in a member expression
-                    return new UntypedMemberExpression(syntax, member.Accessed, ConstraintPromise.FromResult(instantiatedFuncs), member.Type);
+                    return new UntypedMemberExpression(
+                        syntax,
+                        member.Accessed,
+                        ConstraintPromise.FromResult<Symbol>(overload),
+                        member.Type);
                 }
             });
             // NOTE: The generic function itself has no concrete type

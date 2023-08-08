@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -68,8 +67,12 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         this.Context = context;
     }
 
-    public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
-        throw new NotImplementedException();
+    public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context)
+    {
+        // We need to merge contexts
+        var newContext = this.Context.Merge(context);
+        return new FunctionInstanceSymbol(containingSymbol, this.GenericDefinition, newContext);
+    }
 
     public override string ToString()
     {

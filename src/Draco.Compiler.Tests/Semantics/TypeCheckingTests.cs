@@ -29,14 +29,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -57,14 +57,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -85,14 +85,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -115,14 +115,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -176,7 +176,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -210,17 +210,16 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
-        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
+        Assert.True(xSym.Type.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
-        Assert.False(xSym.Type.IsError);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -235,14 +234,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -257,14 +256,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -279,14 +278,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
     }
 
     [Fact]
@@ -301,7 +300,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -328,7 +327,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -356,7 +355,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(ReturnExpression(StringExpression("Hello")))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -378,7 +377,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             InlineFunctionBody(StringExpression("Hello")))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -403,7 +402,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(IfExpression(LiteralExpression(true), BlockExpression()))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -427,7 +426,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(IfExpression(LiteralExpression(1), BlockExpression()))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -452,7 +451,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(WhileExpression(LiteralExpression(true), BlockExpression()))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -476,7 +475,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(WhileExpression(LiteralExpression(1), BlockExpression()))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
@@ -506,13 +505,13 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         @else: StringExpression("Hello"))))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     // TODO: Unspecified if we want this
@@ -579,7 +578,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -588,8 +587,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(diags);
-        Assert.Equal(IntrinsicSymbols.Int32, xSym.Type);
-        Assert.Equal(IntrinsicSymbols.Int32, ySym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, ySym.Type);
     }
 
     [Fact]
@@ -613,7 +612,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -764,7 +763,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -811,7 +810,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -865,7 +864,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -904,7 +903,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 BlockFunctionBody())));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -936,7 +935,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 BlockFunctionBody())));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -967,7 +966,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         BlockFunctionBody()))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1030,7 +1029,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var fooBoolInMainRefSyntax = tree.FindInChildren<CallExpressionSyntax>(3).Function;
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1072,10 +1071,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var consoleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
-             syntaxTrees: ImmutableArray.Create(tree),
-             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes))).ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
@@ -1083,8 +1079,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.String);
-        Assert.Equal(stringEmptySym.Type, IntrinsicSymbols.String);
+        Assert.Equal(compilation.IntrinsicSymbols.String, xSym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.String, stringEmptySym.Type);
     }
 
     [Fact]
@@ -1108,10 +1104,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var consoleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
-             syntaxTrees: ImmutableArray.Create(tree),
-             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes))).ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
@@ -1119,8 +1112,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
-        Assert.Equal(windowWidthSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, windowWidthSym.Type);
     }
 
     [Fact]
@@ -1146,10 +1139,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var listRef = tree.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
-             syntaxTrees: ImmutableArray.Create(tree),
-             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes))).ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
@@ -1157,8 +1147,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(xSym.Type, IntrinsicSymbols.Int32);
-        Assert.Equal(indexSym.Type, IntrinsicSymbols.Int32);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, xSym.Type);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, indexSym.Type);
     }
 
     [Fact]
@@ -1180,7 +1170,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("a")))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1241,7 +1231,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var cSyntax = tree.FindInChildren<VariableDeclarationSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var identitySym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(identitySyntax));
@@ -1263,10 +1253,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.False(firstCalledSym.IsGenericDefinition);
         Assert.Same(identitySym, firstCalledSym.GenericDefinition);
         Assert.Single(firstCalledSym.GenericArguments);
-        Assert.Same(IntrinsicSymbols.Int32, firstCalledSym.GenericArguments[0]);
+        Assert.Same(compilation.IntrinsicSymbols.Int32, firstCalledSym.GenericArguments[0]);
 
-        Assert.Same(IntrinsicSymbols.Int32, aSym.Type);
-        Assert.Same(IntrinsicSymbols.String, bSym.Type);
+        Assert.Same(compilation.IntrinsicSymbols.Int32, aSym.Type);
+        Assert.Same(compilation.IntrinsicSymbols.String, bSym.Type);
         Assert.True(cSym.Type.IsError);
     }
 
@@ -1300,7 +1290,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                             LiteralExpression(0))))))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1329,8 +1319,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(GenericExpression(NameExpression("a"), NameType("int32"))))))));
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1354,11 +1343,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 GenericType(NameType("List"), NameType("int32"), NameType("int32")))));
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1399,8 +1384,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var calledSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(callSyntax.Function));
@@ -1412,8 +1396,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.True(calledSym.IsGenericInstance);
         Assert.Single(calledSym.GenericArguments);
-        Assert.Equal(IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
-        Assert.Equal(IntrinsicSymbols.Int32, varSym.Type, SymbolEqualityComparer.Default);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, varSym.Type, SymbolEqualityComparer.Default);
     }
 
     [Fact]
@@ -1443,11 +1427,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var calledSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(callSyntax.Function));
@@ -1460,8 +1440,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.True(calledSym.IsGenericInstance);
         Assert.True(stackSym.IsGenericInstance);
-        Assert.Equal(IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
-        Assert.Equal(IntrinsicSymbols.Int32, stackSym.GenericArguments[0], SymbolEqualityComparer.Default);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, calledSym.GenericArguments[0], SymbolEqualityComparer.Default);
+        Assert.Equal(compilation.IntrinsicSymbols.Int32, stackSym.GenericArguments[0], SymbolEqualityComparer.Default);
     }
 
     [Fact]
@@ -1487,11 +1467,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1544,8 +1520,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var genericIdentitySym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(genericIdentitySyntax));
@@ -1597,8 +1572,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0), LiteralExpression(0)))))));
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -1661,8 +1635,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var nonVariadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(nonVariadicFuncSyntax));
@@ -1730,8 +1703,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var nonVariadicFuncSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(nonVariadicFuncSyntax));
@@ -1780,15 +1752,14 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -1821,15 +1792,355 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
 
         // Assert
         Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+    }
+
+    [Fact]
+    public void AssignDerivedTypeToBaseType()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   var x: Object = Random();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", NameType("Object"), CallExpression(NameExpression("Random"))))))));
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(compilation.WellKnownTypes.SystemObject, xSym.Type);
+    }
+
+    [Fact]
+    public void AssignBaseTypeToDerivedType()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   var x: String = Object();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", NameType("String"), CallExpression(NameExpression("Object"))))))));
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+
+        // Assert
+        Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        Assert.Equal(compilation.WellKnownTypes.SystemString, xSym.Type);
+    }
+
+    [Fact]
+    public void PassDerivedTypeToBaseTypeParameter()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   bar(Random());
+        // }
+        //
+        // func bar(x: Object) { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("Object"))),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void PassBaseTypeToDerivedTypeParameter()
+    {
+        // import System;
+        // func foo()
+        // {
+        //   bar(Object());
+        // }
+        //
+        // func bar(x: String) { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("String"))),
+                null,
+                BlockFunctionBody())));
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+    }
+
+    [Fact]
+    public void BaseTypeArgumentOverloading()
+    {
+        // import System;
+        // func foo() {
+        //     bar(Random());
+        //     bar(Object());
+        // }
+        //
+        // func bar(x: Object) {}
+        // func bar(x: Random) {}
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))),
+                    ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("Object"))),
+                null,
+                BlockFunctionBody()),
+            FunctionDeclaration(
+                "bar",
+                ParameterList(Parameter("x", NameType("Random"))),
+                null,
+                BlockFunctionBody())));
+
+        var randomCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
+        var objectCallSyntax = main.FindInChildren<CallExpressionSyntax>(2);
+        var randomDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(2);
+        var objectDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(1);
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var randomCallRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(randomCallSyntax));
+        var objectCallRefSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(objectCallSyntax));
+        var objectDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(objectDeclSyntax));
+        var randomDeclSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(randomDeclSyntax));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(SymbolEqualityComparer.Default.Equals(randomDeclSym, objectDeclSym));
+        Assert.True(SymbolEqualityComparer.Default.Equals(randomDeclSym, randomCallRefSym));
+        Assert.True(SymbolEqualityComparer.Default.Equals(objectDeclSym, objectCallRefSym));
+    }
+
+    [Fact]
+    public void BaseTypeGenericsCall()
+    {
+        // import System;
+        // func foo() {
+        //     bar(Random(), Object(), Random());
+        // }
+        //
+        // func bar<T>(x: T, y: T, z: T) { }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(
+                        NameExpression("bar"),
+                        CallExpression(NameExpression("Random")),
+                        CallExpression(NameExpression("Object")),
+                        CallExpression(NameExpression("Random")))))),
+            FunctionDeclaration(
+                "bar",
+                GenericParameterList(GenericParameter("T")),
+                ParameterList(
+                    Parameter("x", NameType("T")),
+                    Parameter("y", NameType("T")),
+                    Parameter("z", NameType("T"))),
+                null,
+                BlockFunctionBody())));
+
+        var barCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var calledBarSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(barCallSyntax));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.True(calledBarSym.IsGenericInstance);
+        Assert.Single(calledBarSym.GenericArguments);
+        Assert.True(SymbolEqualityComparer.Default.Equals(
+            compilation.WellKnownTypes.SystemObject,
+            calledBarSym.GenericArguments[0]));
+    }
+
+    [Fact]
+    public void IfStatementCommonTypeResult()
+    {
+        // import System;
+        // func foo() {
+        //     var x = if (true) Random() else Object();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration(
+                        "x",
+                        null,
+                        IfExpression(
+                            LiteralExpression(true),
+                            CallExpression(NameExpression("Random")),
+                            CallExpression(NameExpression("Object")))))))));
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal(compilation.WellKnownTypes.SystemObject, xSym.Type);
+    }
+
+    [Fact]
+    public void InferSwappedArrayElement()
+    {
+        // public func foo() {
+        //     var a = Array(5);
+        //     var b = Array(5);
+        //     a[0] = 1;
+        //     val tmp = a;
+        //     a = b;
+        //     b = tmp;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(NameExpression("Array"), LiteralExpression(5)))),
+                DeclarationStatement(VariableDeclaration(
+                    "b",
+                    null,
+                    CallExpression(NameExpression("Array"), LiteralExpression(5)))),
+                ExpressionStatement(BinaryExpression(
+                    IndexExpression(NameExpression("a"), LiteralExpression(0)),
+                    Assign,
+                    LiteralExpression(1))),
+                DeclarationStatement(ImmutableVariableDeclaration("tmp", null, NameExpression("a"))),
+                ExpressionStatement(BinaryExpression(NameExpression("a"), Assign, NameExpression("b"))),
+                ExpressionStatement(BinaryExpression(NameExpression("b"), Assign, NameExpression("tmp")))))));
+
+        var aDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var bDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var tmpDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(2);
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDeclSyntax));
+        var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(bDeclSyntax));
+        var tmpSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(tmpDeclSyntax));
+
+        var intArrayType = compilation.IntrinsicSymbols.InstantiateArray(compilation.IntrinsicSymbols.Int32);
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, aSym.Type));
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, bSym.Type));
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, tmpSym.Type));
     }
 
     [Fact]

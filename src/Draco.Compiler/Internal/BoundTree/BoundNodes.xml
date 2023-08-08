@@ -155,6 +155,7 @@
   <Node Name="BoundArrayCreationExpression" Base="BoundExpression">
     <Field Name="ElementType" Type="TypeSymbol" />
     <Field Name="Sizes" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundArrayAccessExpression" Base="BoundExpression">
@@ -217,15 +218,18 @@
 
   <Node Name="BoundLiteralExpression" Base="BoundExpression">
     <Field Name="Value" Type="object?" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundStringExpression" Base="BoundExpression">
     <Field Name="Parts" Type="ImmutableArray&lt;BoundStringPart&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundRelationalExpression" Base="BoundExpression">
     <Field Name="First" Type="BoundExpression" />
     <Field Name="Comparisons" Type="ImmutableArray&lt;BoundComparison&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundComparison" Base="BoundNode">

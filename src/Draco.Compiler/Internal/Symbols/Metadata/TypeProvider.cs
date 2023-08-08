@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -15,6 +16,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", "<unknown>", false);
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
+    private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
 
@@ -24,9 +26,9 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     }
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
-        new ArrayTypeSymbol(shape.Rank).GenericInstantiate(elementType);
+        new ArrayTypeSymbol(shape.Rank, this.IntrinsicSymbols.Int32).GenericInstantiate(elementType);
     public TypeSymbol GetSZArrayType(TypeSymbol elementType) =>
-        IntrinsicSymbols.Array.GenericInstantiate(elementType);
+        this.IntrinsicSymbols.Array.GenericInstantiate(elementType);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
     public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments)
@@ -59,20 +61,47 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
     {
-        PrimitiveTypeCode.Boolean => IntrinsicSymbols.Bool,
-        PrimitiveTypeCode.Int32 => IntrinsicSymbols.Int32,
-        PrimitiveTypeCode.String => IntrinsicSymbols.String,
         PrimitiveTypeCode.Void => IntrinsicSymbols.Unit,
-        PrimitiveTypeCode.Object => IntrinsicSymbols.Object,
-        _ => UnknownType
+
+        PrimitiveTypeCode.SByte => this.IntrinsicSymbols.Int8,
+        PrimitiveTypeCode.Int16 => this.IntrinsicSymbols.Int16,
+        PrimitiveTypeCode.Int32 => this.IntrinsicSymbols.Int32,
+        PrimitiveTypeCode.Int64 => this.IntrinsicSymbols.Int64,
+
+        PrimitiveTypeCode.Byte => this.IntrinsicSymbols.Uint8,
+        PrimitiveTypeCode.UInt16 => this.IntrinsicSymbols.Uint16,
+        PrimitiveTypeCode.UInt32 => this.IntrinsicSymbols.Uint32,
+        PrimitiveTypeCode.UInt64 => this.IntrinsicSymbols.Uint64,
+
+        PrimitiveTypeCode.Single => this.IntrinsicSymbols.Float32,
+        PrimitiveTypeCode.Double => this.IntrinsicSymbols.Float64,
+
+        PrimitiveTypeCode.Boolean => this.IntrinsicSymbols.Bool,
+        PrimitiveTypeCode.Char => this.IntrinsicSymbols.Char,
+
+        PrimitiveTypeCode.String => this.IntrinsicSymbols.String,
+        PrimitiveTypeCode.Object => this.IntrinsicSymbols.Object,
+
+        _ => UnknownType,
     };
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
         var definition = reader.GetTypeDefinition(handle);
         if (definition.IsNested)
         {
-            // TODO
-            return UnknownType;
+            // Resolve declaring type
+            var declaringType = definition.GetDeclaringType();
+            var declaringSymbol = this.GetTypeFromDefinition(reader, declaringType, rawTypeKind);
+
+            // Search for this type by name and generic argument count
+            var nestedName = reader.GetString(definition.Name);
+            var nestedGenericArgc = definition.GetGenericParameters().Count;
+            var nestedSymbol = declaringSymbol
+                .DefinedMembers
+                .OfType<TypeSymbol>()
+                .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
+                .Single();
+            return nestedSymbol;
         }
 
         var assemblyName = reader
@@ -89,14 +118,30 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     }
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
+        var parts = new List<string>();
         var reference = reader.GetTypeReference(handle);
-        var resolutionScope = reference.ResolutionScope;
+        parts.Add(reader.GetString(reference.Name));
+        EntityHandle resolutionScope;
+        for (resolutionScope = reference.ResolutionScope; resolutionScope.Kind == HandleKind.TypeReference; resolutionScope = reference.ResolutionScope)
+        {
+            reference = reader.GetTypeReference((TypeReferenceHandle)resolutionScope);
+            parts.Add(reader.GetString(reference.Name));
+        }
+        var @namespace = reader.GetString(reference.Namespace);
+        if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.').Reverse());
+        parts.Reverse();
 
-        // TODO: Based on resolution scope, do the lookup
-        return UnknownType;
+        // TODO: If we don't have the assembly report error
+        var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
+        var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
+        return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
     }
-    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind) =>
-        UnknownType;
+    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
+    {
+        var specification = reader.GetTypeSpecification(handle);
+        return specification.DecodeSignature(this, genericContext);
+    }
+
     public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
     public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
     public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;

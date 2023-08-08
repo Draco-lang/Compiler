@@ -427,9 +427,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void GenericMemberMethodCall()
     {
-        var csReference = CompileCSharpToStream(
-            "Test.dll",
-            """
+        var csReference = CompileCSharpToStream("""
             public class IdentityProvider
             {
                 public T Identity<T>(T x) => x;
@@ -454,9 +452,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void PropertiesCompoundAssignment()
     {
-        var csReference = CompileCSharpToStream(
-            "Test.dll",
-            """
+        var csReference = CompileCSharpToStream("""
             public class FooTest
             {
                 public static int StaticProp { get; set; } = 5;
@@ -485,7 +481,6 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void MemberFields()
     {
         var csReference = CompileCSharpToStream(
-            "Test.dll",
             """
             public class FooTest
             {
@@ -513,7 +508,6 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     public void StaticFields()
     {
         var csReference = CompileCSharpToStream(
-            "Test.dll",
             """
             public class FooTest
             {

@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// A built-in primitive.
 /// </summary>
-internal sealed class PrimitiveTypeSymbol : TypeSymbol
+internal class PrimitiveTypeSymbol : TypeSymbol
 {
     public override Symbol? ContainingSymbol => null;
     public override string Name { get; }

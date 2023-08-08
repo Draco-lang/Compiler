@@ -79,10 +79,13 @@ internal partial class Binder
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);
 
     private BoundExpression TypeLiteralExpression(UntypedLiteralExpression literal, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundLiteralExpression(literal.Syntax, literal.Value);
+        new BoundLiteralExpression(literal.Syntax, literal.Value, literal.TypeRequired);
 
     private BoundExpression TypeStringExpression(UntypedStringExpression str, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundStringExpression(str.Syntax, str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray());
+        new BoundStringExpression(
+            str.Syntax,
+            str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray(),
+            this.IntrinsicSymbols.String);
 
     private BoundStringPart TypeStringPart(UntypedStringPart part, ConstraintSolver constraints, DiagnosticBag diagnostics) => part switch
     {
@@ -272,7 +275,7 @@ internal partial class Binder
                     : typedRight,
                 indices);
         }
-        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
+        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result is PropertySymbol pr)
         {
             var receiver = this.TypeExpression(mem.Accessed, constraints, diagnostics);
             var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);
@@ -318,7 +321,7 @@ internal partial class Binder
         var comparisons = rel.Comparisons
             .Select(cmp => this.TypeComparison(cmp, constraints, diagnostics))
             .ToImmutableArray();
-        return new BoundRelationalExpression(rel.Syntax, first, comparisons);
+        return new BoundRelationalExpression(rel.Syntax, first, comparisons, this.IntrinsicSymbols.Bool);
     }
 
     private BoundComparison TypeComparison(UntypedComparison cmp, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -346,7 +349,7 @@ internal partial class Binder
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var members = mem.Member.Result;
-        if (members.Length == 1 && members[0] is ITypedSymbol member)
+        if (members is ITypedSymbol member)
         {
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
             if (member is PropertySymbol prop)
@@ -370,7 +373,7 @@ internal partial class Binder
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
                 location: mem.Syntax?.Location,
-                formatArgs: members[0].Name));
+                formatArgs: members.Name));
             return new BoundUnexpectedExpression(mem.Syntax);
         }
     }

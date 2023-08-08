@@ -9,7 +9,6 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.Documentation;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -20,8 +19,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 {
     public override Compilation DeclaringCompilation { get; }
 
-    public override IEnumerable<Symbol> Members =>
-        InterlockedUtils.InitializeDefault(ref this.members, () => this.BindMembers(this.DeclaringCompilation!.GlobalDiagnosticBag));
+    public override IEnumerable<Symbol> Members => this.BindMembersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<Symbol> members;
 
     public override Symbol? ContainingSymbol { get; }
@@ -30,9 +28,12 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.RawDocumentation, this).Extract());
     private SymbolDocumentation? documentation;
 
-    public override string RawDocumentation => this.DeclaringSyntax?.Documentation ?? string.Empty;
+    /// <summary>
+    /// The syntaxes contributing to this module.
+    /// </summary>
+    public IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declaration.DeclaringSyntaxes;
 
-    public override SyntaxNode? DeclaringSyntax => (this.declaration as MergedModuleDeclaration)?.Syntax;
+    public override string RawDocumentation => this.DeclaringSyntax?.Documentation ?? string.Empty;
 
     private readonly Declaration declaration;
 
@@ -54,9 +55,13 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     {
     }
 
-    public void Bind(IBinderProvider binderProvider) => this.BindMembers(binderProvider.DiagnosticBag);
+    public void Bind(IBinderProvider binderProvider) =>
+        this.BindMembersIfNeeded(binderProvider);
 
-    private ImmutableArray<Symbol> BindMembers(DiagnosticBag diagnostics)
+    private ImmutableArray<Symbol> BindMembersIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeDefault(ref this.members, () => this.BindMembers(binderProvider));
+
+    private ImmutableArray<Symbol> BindMembers(IBinderProvider binderProvider)
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
@@ -76,7 +81,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
             // Illegal
             var syntax = member.DeclaringSyntax;
             Debug.Assert(syntax is not null);
-            diagnostics.Add(Diagnostic.Create(
+            binderProvider.DiagnosticBag.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalShadowing,
                 location: syntax.Location,
                 formatArgs: member.Name));

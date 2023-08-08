@@ -6,7 +6,7 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class CodeCompletionTests
+public sealed class CodeCompletionTests : SemanticTestsBase
 {
     private static void AssertCompletions(ImmutableArray<TextEdit> actual, params string[] expected) =>
         Assert.True(actual.Select(x => x.Text).ToHashSet().SetEquals(expected));
@@ -32,7 +32,7 @@ public sealed class CodeCompletionTests
         var source = SourceText.FromText(code);
         var tree = SyntaxTree.Parse(source);
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("gl"))).ToImmutableArray();
         AssertCompletions(completions, "global");
@@ -50,7 +50,7 @@ public sealed class CodeCompletionTests
         var source = SourceText.FromText(code);
         var tree = SyntaxTree.Parse(source);
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("lo"))).ToImmutableArray();
         AssertCompletions(completions, "local");
@@ -69,7 +69,7 @@ public sealed class CodeCompletionTests
         var source = SourceText.FromText(code);
         var tree = SyntaxTree.Parse(source);
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("so"))).ToImmutableArray();
         AssertCompletions(completions, "something");
@@ -85,7 +85,7 @@ public sealed class CodeCompletionTests
         var source = SourceText.FromText(code);
         var tree = SyntaxTree.Parse(source);
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("gl"))).ToImmutableArray();
         AssertCompletions(completions, "global");
@@ -102,7 +102,7 @@ public sealed class CodeCompletionTests
         var source = SourceText.FromText(code);
         var tree = SyntaxTree.Parse(source);
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("so"))).ToImmutableArray();
         AssertCompletions(completions, "something");

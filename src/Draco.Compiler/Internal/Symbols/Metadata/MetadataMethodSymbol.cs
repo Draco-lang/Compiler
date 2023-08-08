@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -45,9 +46,48 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     }
 
     public override bool IsMember => !this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
-    public override bool IsVirtual => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Virtual);
+    public override bool IsVirtual
+    {
+        get
+        {
+            if (this.ContainingSymbol is TypeSymbol { IsValueType: true }) return false;
+            return this.methodDefinition.Attributes.HasFlag(MethodAttributes.Virtual)
+                || this.Override is not null;
+        }
+    }
     public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
-    public override Api.Semantics.Visibility Visibility => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Api.Semantics.Visibility Visibility
+    {
+        get
+        {
+            // If this is an interface member, default to public
+            if (this.ContainingSymbol is TypeSymbol { IsInterface: true })
+            {
+                return Api.Semantics.Visibility.Public;
+            }
+
+            // Otherwise read flag from metadata
+            return this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public)
+                ? Api.Semantics.Visibility.Public
+                : Api.Semantics.Visibility.Internal;
+        }
+    }
+
+    public override FunctionSymbol? Override
+    {
+        get
+        {
+            if (!this.overrideNeedsBuild) return this.@override;
+            lock (this.overrideBuildLock)
+            {
+                if (this.overrideNeedsBuild) this.BuildOverride();
+                return this.@override;
+            }
+        }
+    }
+    private FunctionSymbol? @override;
+    private volatile bool overrideNeedsBuild = true;
+    private readonly object overrideBuildLock = new();
 
     public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new XmlDocumentationExtractor(this.RawDocumentation, this).Extract());
     private SymbolDocumentation? documentation;
@@ -131,5 +171,87 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         this.parameters = parameters.ToImmutable();
         // IMPORTANT: returnType is the build flag, needs to be written last
         Volatile.Write(ref this.returnType, signature.ReturnType);
+    }
+
+    private void BuildOverride()
+    {
+        var explicitOverride = this.GetExplicitOverride();
+        this.@override = this.ContainingSymbol is TypeSymbol type
+            ? explicitOverride ?? type.GetOverriddenSymbol(this)
+            : null;
+        // IMPORTANT: Write flag last
+        this.overrideNeedsBuild = false;
+    }
+
+    private FunctionSymbol? GetExplicitOverride()
+    {
+        var type = this.MetadataReader.GetTypeDefinition(this.methodDefinition.GetDeclaringType());
+        foreach (var impl in type.GetMethodImplementations())
+        {
+            var implementation = this.MetadataReader.GetMethodImplementation(impl);
+            var body = GetFunctionFromMetadata(implementation.MethodBody);
+
+            if (body is null) return null;
+
+            if (!implementation.MethodDeclaration.IsNil && body.CanBeOverriddenBy(this)) return GetFunctionFromMetadata(implementation.MethodDeclaration);
+        }
+        return null;
+
+        FunctionSymbol? GetFunctionFromMetadata(EntityHandle function) => function.Kind switch
+        {
+            HandleKind.MethodDefinition => this.GetFunctionFromDefinition((MethodDefinitionHandle)function),
+            HandleKind.MemberReference => this.GetFunctionFromReference((MemberReferenceHandle)function),
+            _ => throw new InvalidOperationException(),
+        };
+    }
+
+    private FunctionSymbol? GetFunctionFromDefinition(MethodDefinitionHandle methodDef)
+    {
+        var definition = this.MetadataReader.GetMethodDefinition(methodDef);
+        var name = this.MetadataReader.GetString(definition.Name);
+        var provider = new TypeProvider(this.Assembly.Compilation);
+        var signature = definition.DecodeSignature(provider, this);
+        var containingType = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
+        return GetFunctionWithSignature(containingType, name, signature);
+    }
+
+    private FunctionSymbol? GetFunctionFromReference(MemberReferenceHandle methodRef)
+    {
+        var reference = this.MetadataReader.GetMemberReference(methodRef);
+        var name = this.MetadataReader.GetString(reference.Name);
+        var provider = new TypeProvider(this.Assembly.Compilation);
+        var signature = reference.DecodeMethodSignature(provider, this);
+        var containingType = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
+        return GetFunctionWithSignature(containingType, name, signature);
+    }
+
+    private static FunctionSymbol? GetFunctionWithSignature(
+        TypeSymbol containingType,
+        string name,
+        MethodSignature<TypeSymbol> signature)
+    {
+        var functions = containingType.DefinedMembers
+            .OfType<FunctionSymbol>()
+            .Concat(containingType.DefinedPropertyAccessors);
+        foreach (var function in functions)
+        {
+            if (function.Name != name) continue;
+            if (SignaturesMatch(function, signature)) return function;
+        }
+        return null;
+    }
+
+    private static bool SignaturesMatch(FunctionSymbol function, MethodSignature<TypeSymbol> signature)
+    {
+        if (function.Parameters.Length != signature.ParameterTypes.Length) return false;
+        if (function.GenericParameters.Length != signature.GenericParameterCount) return false;
+        for (var i = 0; i < function.Parameters.Length; i++)
+        {
+            if (!SymbolEqualityComparer.Default.Equals(function.Parameters[i].Type, signature.ParameterTypes[i]))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }

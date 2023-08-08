@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
@@ -31,7 +29,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
@@ -61,7 +59,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -91,7 +89,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         _ = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
@@ -124,7 +122,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var mainDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         _ = GetInternalSymbol<SourceFunctionSymbol>(semanticModel.GetDeclaredSymbol(mainDecl));
@@ -158,11 +156,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
@@ -200,11 +194,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var writeLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
@@ -245,11 +235,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var systemSyntax = tree.FindInChildren<NameTypeSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var sbSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(memberTypeSyntax));
@@ -291,11 +277,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var errorSymbol = semanticModel.GetReferencedSymbol(memberExprSyntax);
@@ -336,11 +318,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var appendLineSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
@@ -378,11 +356,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var appendLineSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
@@ -413,11 +387,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var systemCollectionsGenericSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
@@ -455,11 +425,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var systemCollectionsGenericSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
@@ -492,11 +458,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var fooSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));

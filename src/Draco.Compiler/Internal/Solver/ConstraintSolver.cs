@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -11,14 +9,13 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
 /// Solves sets of <see cref="IConstraint"/>s for the type-system.
 /// </summary>
-internal sealed class ConstraintSolver
+internal sealed partial class ConstraintSolver
 {
     /// <summary>
     /// The context being inferred.
@@ -30,12 +27,8 @@ internal sealed class ConstraintSolver
     /// </summary>
     public string ContextName { get; }
 
-    // The raw constraints and their states
-    private readonly List<KeyValuePair<IConstraint, IEnumerator<SolveState>>> constraints = new();
-    // The constraints that were marked for removal
-    private readonly List<IConstraint> constraintsToRemove = new();
-    // The constraints that were queued for insertion
-    private readonly List<IConstraint> constraintsToAdd = new();
+    // The raw constraints
+    private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = new();
     // Type variable substitutions
@@ -52,172 +45,15 @@ internal sealed class ConstraintSolver
     }
 
     /// <summary>
-    /// Adds a same-type constraint to the solver.
-    /// </summary>
-    /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
-    /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
-    /// <returns>The promise for the constraint added.</returns>
-    public IConstraintPromise<Unit> SameType(TypeSymbol first, TypeSymbol second)
-    {
-        var constraint = new SameTypeConstraint(this, ImmutableArray.Create(first, second));
-        this.Add(constraint);
-        return constraint.Promise;
-    }
-
-    /// <summary>
-    /// Adds an assignable constraint to the solver.
-    /// </summary>
-    /// <param name="targetType">The type being assigned to.</param>
-    /// <param name="assignedType">The type assigned.</param>
-    /// <returns>The promise for the constraint added.</returns>
-    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType) =>
-        // TODO: Hack, this is temporary until we have other constraints
-        this.SameType(targetType, assignedType);
-
-    /// <summary>
-    /// Adds a common-type constraint to the solver.
-    /// </summary>
-    /// <param name="commonType">The common type of the provided alternative types.</param>
-    /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
-    /// <returns>The promise of the constraint added.</returns>
-    public IConstraintPromise<Unit> CommonType(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
-    {
-        // TODO: Hack, this is temporary until we have other constraints
-        var constraint = new SameTypeConstraint(this, alternativeTypes.Prepend(commonType).ToImmutableArray());
-        this.Add(constraint);
-        return constraint.Promise;
-    }
-
-    /// <summary>
-    /// Adds a member-constraint to the solver.
-    /// </summary>
-    /// <param name="accessedType">The accessed object type.</param>
-    /// <param name="memberName">The accessed member name.</param>
-    /// <param name="memberType">The type of the member.</param>
-    /// <returns>The promise of the accessed member symbol.</returns>
-    public IConstraintPromise<ImmutableArray<Symbol>> Member(TypeSymbol accessedType, string memberName, out TypeSymbol memberType)
-    {
-        memberType = this.AllocateTypeVariable();
-        var constraint = new MemberConstraint(this, accessedType, memberName, memberType);
-        this.Add(constraint);
-        return constraint.Promise;
-    }
-
-    /// <summary>
-    /// Adds a callability constraint to the solver.
-    /// </summary>
-    /// <param name="calledType">The called function type.</param>
-    /// <param name="args">The calling arguments.</param>
-    /// <param name="returnType">The return type.</param>
-    /// <returns>The promise of the constraint.</returns>
-    public IConstraintPromise<Unit> Call(
-        TypeSymbol calledType,
-        ImmutableArray<object> args,
-        out TypeSymbol returnType)
-    {
-        returnType = this.AllocateTypeVariable();
-        var constraint = new CallConstraint(this, calledType, args, returnType);
-        this.Add(constraint);
-        return constraint.Promise;
-    }
-
-    /// <summary>
-    /// Adds an overload constraint to the solver.
-    /// </summary>
-    /// <param name="functions">The functions to choose an overload from.</param>
-    /// <param name="args">The passed in arguments.</param>
-    /// <param name="returnType">The return type of the call.</param>
-    /// <returns>The promise for the resolved overload.</returns>
-    public IConstraintPromise<FunctionSymbol> Overload(
-        ImmutableArray<FunctionSymbol> functions,
-        ImmutableArray<object> args,
-        out TypeSymbol returnType)
-    {
-        returnType = this.AllocateTypeVariable();
-        var constraint = new OverloadConstraint(this, functions, args, returnType);
-        this.Add(constraint);
-        return constraint.Promise;
-    }
-
-    /// <summary>
-    /// Adds a constraint that waits before another one finishes.
-    /// </summary>
-    /// <typeparam name="TAwaitedResult">The awaited constraint result.</typeparam>
-    /// <typeparam name="TResult">The mapped result.</typeparam>
-    /// <param name="awaited">The awaited constraint.</param>
-    /// <param name="map">The function that maps the result of <paramref name="awaited"/>.</param>
-    /// <returns>The promise that is resolved, when <paramref name="awaited"/>.</returns>
-    public IConstraintPromise<TResult> Await<TAwaitedResult, TResult>(
-        IConstraintPromise<TAwaitedResult> awaited,
-        Func<TResult> map)
-    {
-        if (awaited.IsResolved)
-        {
-            // If resolved, don't bother with indirections
-            var constraint = map();
-            return ConstraintPromise.FromResult(constraint);
-        }
-        else
-        {
-            var constraint = new AwaitConstraint<TResult>(this, () => awaited.IsResolved, map);
-            this.Add(constraint);
-            return constraint.Promise;
-        }
-    }
-
-    /// <summary>
-    /// Adds a constraint, that waits until a type variable is substituted.
-    /// </summary>
-    /// <param name="original">The original type, usually a type variable.</param>
-    /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
-    /// <returns>The promise of the type symbol symbol.</returns>
-    public IConstraintPromise<TResult> Substituted<TResult>(TypeSymbol original, Func<TResult> map)
-    {
-        if (!original.IsTypeVariable)
-        {
-            var constraintPromise = map();
-            return ConstraintPromise.FromResult(constraintPromise);
-        }
-        else
-        {
-            var constraint = new AwaitConstraint<TResult>(this, () => !original.Substitution.IsTypeVariable, map);
-            this.Add(constraint);
-
-            var await = new AwaitConstraint<TResult>(this,
-                () => constraint.Promise.IsResolved && constraint.Promise.IsResolved,
-                () => constraint.Promise.Result);
-            this.Add(await);
-            return await.Promise;
-        }
-    }
-
-    /// <summary>
-    /// Adds the given constraint to the solver.
-    /// </summary>
-    /// <param name="constraint">The constraint to add.</param>
-    public void Add(IConstraint constraint) =>
-        this.constraintsToAdd.Add(constraint);
-
-    /// <summary>
-    /// Removes the given constraint from the solver.
-    /// </summary>
-    /// <param name="constraint">The constraint to remove.</param>
-    public void Remove(IConstraint constraint) =>
-        this.constraintsToRemove.Add(constraint);
-
-    /// <summary>
     /// Solves all diagnostics added to this solver.
     /// </summary>
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
-        while (true)
+        while (this.constraints.Count > 0)
         {
-            // Add and removal
-            this.AddAndRemoveConstraints(diagnostics);
-
-            // Pass through all constraints
-            if (!this.SolveOnce()) break;
+            // Apply rules once
+            if (!this.ApplyRules(diagnostics)) break;
         }
 
         // Check for uninferred locals
@@ -225,51 +61,6 @@ internal sealed class ConstraintSolver
 
         // And for failed inference
         this.CheckForIncompleteInference(diagnostics);
-    }
-
-    private int GetConstraintIndex(IConstraint constraint)
-    {
-        for (var i = 0; i < this.constraints.Count; ++i)
-        {
-            if (this.constraints[i].Key == constraint) return i;
-        }
-        return -1;
-    }
-
-    private void AddAndRemoveConstraints(DiagnosticBag diagnostics)
-    {
-        foreach (var r in this.constraintsToRemove)
-        {
-            var idx = this.GetConstraintIndex(r);
-            if (idx != -1) this.constraints.RemoveAt(idx);
-        }
-        foreach (var a in this.constraintsToAdd)
-        {
-            this.constraints.Add(new(a, a.Solve(diagnostics).GetEnumerator()));
-        }
-        this.constraintsToRemove.Clear();
-        this.constraintsToAdd.Clear();
-    }
-
-    private bool SolveOnce()
-    {
-        var advanced = false;
-        foreach (var (constraint, solve) in this.constraints)
-        {
-            while (true)
-            {
-                solve.MoveNext();
-                var state = solve.Current;
-                advanced = advanced || state != SolveState.Stale;
-                if (state is SolveState.AdvancedBreak or SolveState.Stale) break;
-                if (state == SolveState.Solved)
-                {
-                    this.Remove(constraint);
-                    break;
-                }
-            }
-        }
-        return advanced;
     }
 
     private void CheckForUninferredLocals(DiagnosticBag diagnostics)
@@ -301,7 +92,7 @@ internal sealed class ConstraintSolver
             formatArgs: this.ContextName));
 
         // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-        foreach (var (constraint, _) in this.constraints) constraint.FailSilently();
+        this.FailRemainingRules();
 
         // We also unify type variables with the error type
         foreach (var typeVar in this.typeVariables)
@@ -403,7 +194,7 @@ internal sealed class ConstraintSolver
         first = first.Substitution;
         second = second.Substitution;
 
-        // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComprer, this is unification
+        // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComparer, this is unification
         if (ReferenceEquals(first, second)) return true;
 
         switch (first, second)

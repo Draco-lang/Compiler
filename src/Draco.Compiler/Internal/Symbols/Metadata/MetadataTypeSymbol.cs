@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -12,9 +13,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadataClass
 {
-    public override IEnumerable<Symbol> Members =>
-        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
-    private ImmutableArray<Symbol> members;
+    public override IEnumerable<Symbol> DefinedMembers =>
+        InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
+    private ImmutableArray<Symbol> definedMembers;
 
     public override string Name => InterlockedUtils.InitializeNull(ref this.name, this.BuildName);
     private string? name;
@@ -34,8 +35,15 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     private string? rawDocumentation;
 
     public override Symbol ContainingSymbol { get; }
-    // TODO: Is this correct?
-    public override bool IsValueType => !this.typeDefinition.Attributes.HasFlag(TypeAttributes.Class);
+
+    public override bool IsValueType => this.BaseTypes.Contains(
+        this.Assembly.Compilation.WellKnownTypes.SystemValueType,
+        SymbolEqualityComparer.Default);
+
+    public override bool IsInterface => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
+
+    public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
+    private ImmutableArray<TypeSymbol> baseTypes;
 
     // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
@@ -44,7 +52,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public string? DefaultMemberAttributeName =>
-        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader));
+        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;
@@ -81,6 +89,32 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             result.Add(symbol);
         }
         return result.ToImmutableArray();
+    }
+
+    private ImmutableArray<TypeSymbol> BuildBaseTypes()
+    {
+        var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
+        var typeProvider = new TypeProvider(this.Assembly.Compilation);
+        if (!this.typeDefinition.BaseType.IsNil)
+        {
+            builder.Add(GetTypeFromMetadata(this.typeDefinition.BaseType));
+        }
+        foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
+        {
+            var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
+            if (interfaceDef.Interface.IsNil) continue;
+            builder.Add(GetTypeFromMetadata(interfaceDef.Interface));
+        }
+
+        return builder.ToImmutable();
+
+        TypeSymbol GetTypeFromMetadata(EntityHandle type) => type.Kind switch
+        {
+            HandleKind.TypeDefinition => typeProvider!.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)type, 0),
+            HandleKind.TypeReference => typeProvider!.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)type, 0),
+            HandleKind.TypeSpecification => typeProvider!.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)type, 0),
+            _ => throw new InvalidOperationException(),
+        };
     }
 
     private ImmutableArray<Symbol> BuildMembers()

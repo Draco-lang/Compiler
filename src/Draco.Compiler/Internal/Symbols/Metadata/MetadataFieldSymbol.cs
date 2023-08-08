@@ -19,7 +19,22 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     public override string Name => this.MetadataReader.GetString(this.fieldDefinition.Name);
 
-    public override Api.Semantics.Visibility Visibility => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Api.Semantics.Visibility Visibility
+    {
+        get
+        {
+            // If this is an interface member, default to public
+            if (this.ContainingSymbol is TypeSymbol { IsInterface: true })
+            {
+                return Api.Semantics.Visibility.Public;
+            }
+
+            // Otherwise read flag from metadata
+            return this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Public)
+                ? Api.Semantics.Visibility.Public
+                : Api.Semantics.Visibility.Internal;
+        }
+    }
 
     public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new XmlDocumentationExtractor(this.RawDocumentation, this).Extract());
     private SymbolDocumentation? documentation;

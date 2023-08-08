@@ -9,7 +9,7 @@ using DocumentDiagnosticReport = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RelatedFu
 
 namespace Draco.LanguageServer;
 
-internal partial class DracoLanguageServer : IPullDiagnostics
+internal partial class DracoLanguageServer : IDiagnostics
 {
     public DiagnosticRegistrationOptions DiagnosticRegistrationOptions => new()
     {

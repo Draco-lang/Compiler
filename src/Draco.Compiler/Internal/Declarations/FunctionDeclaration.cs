@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 
@@ -14,6 +15,14 @@ internal sealed class FunctionDeclaration : Declaration
     public FunctionDeclarationSyntax Syntax { get; }
 
     public override ImmutableArray<Declaration> Children => ImmutableArray<Declaration>.Empty;
+
+    public override IEnumerable<SyntaxNode> DeclaringSyntaxes
+    {
+        get
+        {
+            yield return this.Syntax;
+        }
+    }
 
     public FunctionDeclaration(FunctionDeclarationSyntax syntax)
         : base(syntax.Name.Text)

@@ -30,7 +30,6 @@ internal sealed class CilCodegen
         .Select(kv => kv.Value);
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
-    private WellKnownTypes WellKnownTypes => this.metadataCodegen.Compilation.WellKnownTypes;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
@@ -407,6 +406,20 @@ internal sealed class CilCodegen
             break;
         case SymbolReference s when s.Symbol is ModuleSymbol module:
             this.InstructionEncoder.Token(this.GetHandle(module));
+            break;
+        case Address a:
+            switch (a.Operand)
+            {
+            case Local local:
+            {
+                var index = this.GetLocalIndex(local);
+                if (index is null) break;
+                this.InstructionEncoder.LoadLocalAddress(index.Value);
+                break;
+            }
+            default:
+                throw new NotImplementedException();
+            }
             break;
         case Constant c:
             switch (c.Value)

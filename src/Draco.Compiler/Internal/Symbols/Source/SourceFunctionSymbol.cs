@@ -17,16 +17,13 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 {
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
-        InterlockedUtils.InitializeDefault(ref this.genericParameters, () => this.BindGenericParameters(this.DeclaringCompilation!.GlobalDiagnosticBag));
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.BindGenericParametersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override ImmutableArray<ParameterSymbol> Parameters =>
-        InterlockedUtils.InitializeDefault(ref this.parameters, () => this.BindParameters(this.DeclaringCompilation!.GlobalDiagnosticBag));
+    public override ImmutableArray<ParameterSymbol> Parameters => this.BindParametersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType =>
-        InterlockedUtils.InitializeNull(ref this.returnType, () => this.BindReturnType(this.DeclaringCompilation!));
+    public override TypeSymbol ReturnType => this.BindReturnTypeIfNeeded(this.DeclaringCompilation!);
     private TypeSymbol? returnType;
 
     public override Symbol ContainingSymbol { get; }
@@ -35,8 +32,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 
-    public BoundStatement Body =>
-        InterlockedUtils.InitializeNull(ref this.body, () => this.BindBody(this.DeclaringCompilation!));
+    public BoundStatement Body => this.BindBodyIfNeeded(this.DeclaringCompilation!);
     private BoundStatement? body;
 
     public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.RawDocumentation, this).Extract());
@@ -59,49 +55,20 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public void Bind(IBinderProvider binderProvider)
     {
-        this.BindGenericParameters(binderProvider.DiagnosticBag);
-        this.BindParameters(binderProvider.DiagnosticBag);
+        this.BindGenericParametersIfNeeded(binderProvider);
+        this.BindParametersIfNeeded(binderProvider);
         // Force binding of parameters, as the type is lazy too
         foreach (var param in this.Parameters.Cast<SourceParameterSymbol>()) param.Bind(binderProvider);
-        this.BindReturnType(binderProvider);
-        this.BindBody(binderProvider);
+        this.BindReturnTypeIfNeeded(binderProvider);
+        var body = this.BindBodyIfNeeded(binderProvider);
 
         // Check, if this function collides with any other overloads that are visible from here
         this.CheckForSameParameterOverloads(binderProvider);
 
         // Flow analysis
         ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
-        DefiniteAssignment.Analyze(this.Body, binderProvider.DiagnosticBag);
+        DefiniteAssignment.Analyze(body, binderProvider.DiagnosticBag);
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
-    }
-
-    private ImmutableArray<TypeParameterSymbol> BindGenericParameters(DiagnosticBag diagnostics)
-    {
-        // Simplest case if the function is not generic
-        if (this.DeclaringSyntax.Generics is null) return ImmutableArray<TypeParameterSymbol>.Empty;
-
-        var genericParamSyntaxes = this.DeclaringSyntax.Generics.Parameters.Values.ToList();
-        var genericParams = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
-
-        foreach (var genericParamSyntax in genericParamSyntaxes)
-        {
-            var paramName = genericParamSyntax.Name.Text;
-
-            var usedBefore = genericParams.Any(p => p.Name == paramName);
-            if (usedBefore)
-            {
-                // NOTE: We only report later duplicates, no need to report the first instance
-                diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.IllegalShadowing,
-                    location: genericParamSyntax.Location,
-                    formatArgs: paramName));
-            }
-
-            var genericParam = new SourceTypeParameterSymbol(this, genericParamSyntax);
-            genericParams.Add(genericParam);
-        }
-
-        return genericParams.ToImmutable();
     }
 
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)
@@ -135,7 +102,42 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         }
     }
 
-    private ImmutableArray<ParameterSymbol> BindParameters(DiagnosticBag diagnostics)
+    private ImmutableArray<TypeParameterSymbol> BindGenericParametersIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeDefault(ref this.genericParameters, () => this.BindGenericParameters(binderProvider));
+
+    private ImmutableArray<TypeParameterSymbol> BindGenericParameters(IBinderProvider binderProvider)
+    {
+        // Simplest case if the function is not generic
+        if (this.DeclaringSyntax.Generics is null) return ImmutableArray<TypeParameterSymbol>.Empty;
+
+        var genericParamSyntaxes = this.DeclaringSyntax.Generics.Parameters.Values.ToList();
+        var genericParams = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
+
+        foreach (var genericParamSyntax in genericParamSyntaxes)
+        {
+            var paramName = genericParamSyntax.Name.Text;
+
+            var usedBefore = genericParams.Any(p => p.Name == paramName);
+            if (usedBefore)
+            {
+                // NOTE: We only report later duplicates, no need to report the first instance
+                binderProvider.DiagnosticBag.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.IllegalShadowing,
+                    location: genericParamSyntax.Location,
+                    formatArgs: paramName));
+            }
+
+            var genericParam = new SourceTypeParameterSymbol(this, genericParamSyntax);
+            genericParams.Add(genericParam);
+        }
+
+        return genericParams.ToImmutable();
+    }
+
+    private ImmutableArray<ParameterSymbol> BindParametersIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeDefault(ref this.parameters, () => this.BindParameters(binderProvider));
+
+    private ImmutableArray<ParameterSymbol> BindParameters(IBinderProvider binderProvider)
     {
         var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
@@ -149,7 +151,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
             if (usedBefore)
             {
                 // NOTE: We only report later duplicates, no need to report the first instance
-                diagnostics.Add(Diagnostic.Create(
+                binderProvider.DiagnosticBag.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalShadowing,
                     location: parameterSyntax.Location,
                     formatArgs: parameterName));
@@ -157,7 +159,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
             if (parameterSyntax.Variadic is not null && i != parameterSyntaxes.Count - 1)
             {
-                diagnostics.Add(Diagnostic.Create(
+                binderProvider.DiagnosticBag.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.VariadicParameterNotLast,
                     location: parameterSyntax.Location,
                     formatArgs: parameterName));
@@ -170,6 +172,9 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         return parameters.ToImmutable();
     }
 
+    private TypeSymbol BindReturnTypeIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeNull(ref this.returnType, () => this.BindReturnType(binderProvider));
+
     private TypeSymbol BindReturnType(IBinderProvider binderProvider)
     {
         // If the return type is unspecified, it's assumed to be unit
@@ -179,6 +184,9 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindTypeToTypeSymbol(this.DeclaringSyntax.ReturnType.Type, binderProvider.DiagnosticBag);
     }
+
+    private BoundStatement BindBodyIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeNull(ref this.body, () => this.BindBody(binderProvider));
 
     private BoundStatement BindBody(IBinderProvider binderProvider)
     {

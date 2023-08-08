@@ -36,7 +36,7 @@ internal sealed partial class DracoLanguageServer : ICodeAction
                 Kind = CodeActionKind.QuickFix,
                 Edit = new WorkspaceEdit()
                 {
-                    Changes = new Dictionary<DocumentUri, IList<Lsp.Model.TextEdit>>()
+                    Changes = new Dictionary<DocumentUri, IList<Lsp.Model.ITextEdit>>()
                     {
                         { param.TextDocument.Uri, fix.Edits.Select(x => Translator.ToLsp(x)).ToList() }
                     }

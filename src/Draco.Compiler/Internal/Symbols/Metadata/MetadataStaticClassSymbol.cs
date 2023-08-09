@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 

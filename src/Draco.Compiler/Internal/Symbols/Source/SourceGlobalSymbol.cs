@@ -4,6 +4,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.FlowAnalysis;
 
 namespace Draco.Compiler.Internal.Symbols.Source;

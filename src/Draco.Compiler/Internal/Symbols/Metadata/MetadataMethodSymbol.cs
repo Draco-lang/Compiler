@@ -6,6 +6,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
 using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

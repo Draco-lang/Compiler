@@ -598,7 +598,6 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             """;
 
         var mdGeneratedDocs = """
-            # summary
             Documentation for TestMethod, which is in [TestNamespace.TestClass](), random generic link [System.Collections.Generic.List<T>]()
             # parameters
             - [arg1](): Documentation for arg1
@@ -631,7 +630,6 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
     {
         // Arrange
         var originalDocs = """
-            # summary
             Documentation for TestMethod, which is in [TestNamespace.TestClass](), random generic link [System.Collections.Generic.List<T>]()
             # parameters
             - [arg1](): Documentation for arg1

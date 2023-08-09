@@ -6,8 +6,11 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
-namespace Draco.Compiler.Internal.Documentation;
+namespace Draco.Compiler.Internal.Documentation.Extractors;
 
+/// <summary>
+/// Extracts XML into <see cref="SymbolDocumentation"/>.
+/// </summary>
 internal sealed class XmlDocumentationExtractor
 {
     public string Xml { get; }
@@ -20,6 +23,10 @@ internal sealed class XmlDocumentationExtractor
         this.ContainingSymbol = containingSymbol;
     }
 
+    /// <summary>
+    /// Extracts the <see cref="Xml"/>.
+    /// </summary>
+    /// <returns>The extracted XMl as <see cref="SymbolDocumentation"/>.</returns>
     public SymbolDocumentation Extract()
     {
         // TODO: exception
@@ -42,9 +49,7 @@ internal sealed class XmlDocumentationExtractor
         var sections = ImmutableArray.CreateBuilder<DocumentationSection>();
         var nextNode = null as XmlNode;
         for (; node is not null; node = nextNode)
-        {
             sections.Add(this.ExtractSection(node, out nextNode));
-        }
         return new SymbolDocumentation(sections.ToImmutable());
     }
 
@@ -55,9 +60,7 @@ internal sealed class XmlDocumentationExtractor
             nextNode = node;
             var parameters = ImmutableArray.CreateBuilder<ParameterDocumentationElement>();
             for (; nextNode?.Name == "param"; nextNode = nextNode.NextSibling)
-            {
                 parameters.Add(this.ExtractParameter(nextNode));
-            }
             return new ParametersDocumentationSection(parameters.ToImmutable());
         }
 
@@ -66,9 +69,7 @@ internal sealed class XmlDocumentationExtractor
             nextNode = node;
             var typeParameters = ImmutableArray.CreateBuilder<TypeParameterDocumentationElement>();
             for (; nextNode?.Name == "typeparam"; nextNode = nextNode.NextSibling)
-            {
                 typeParameters.Add(this.ExtractTypeParameter(nextNode));
-            }
             return new TypeParametersDocumentationSection(typeParameters.ToImmutable());
         }
 
@@ -80,12 +81,12 @@ internal sealed class XmlDocumentationExtractor
 
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
         foreach (XmlNode element in node.ChildNodes)
-        {
             elements.Add(this.ExtractElement(element));
-        }
 
         nextNode = node.NextSibling;
-        return new DocumentationSection(node.Name, elements.ToImmutable());
+        return node.Name == "summary"
+            ? new SummaryDocumentationSection(elements.ToImmutable())
+            : new DocumentationSection(node.Name, elements.ToImmutable());
     }
 
     private DocumentationElement ExtractElement(XmlNode node) => node.LocalName switch
@@ -103,9 +104,7 @@ internal sealed class XmlDocumentationExtractor
         Debug.Assert(node.Name == "param");
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
         foreach (XmlNode child in node.ChildNodes)
-        {
             elements.Add(this.ExtractElement(child));
-        }
         return new ParameterDocumentationElement(new ParamrefDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
     }
 
@@ -114,9 +113,7 @@ internal sealed class XmlDocumentationExtractor
         Debug.Assert(node.Name == "typeparam");
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
         foreach (XmlNode child in node.ChildNodes)
-        {
             elements.Add(this.ExtractElement(child));
-        }
         return new TypeParameterDocumentationElement(new TypeParamrefDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
     }
 

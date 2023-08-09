@@ -3,7 +3,6 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Runtime.CompilerServices;
 using System.Xml;
 
 namespace Draco.Compiler.Api;

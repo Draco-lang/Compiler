@@ -177,11 +177,4 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         // Done
         return result.ToImmutable();
     }
-
-    //private string BuildDocumentation()
-    //{
-    //    var root = this.Assembly.AssemblyDocumentation.DocumentElement;
-    //    var name = $"T:{this.MetadataName}";
-    //    return root?.SelectSingleNode($"//member[@name='{name}']")?.InnerXml ?? string.Empty;
-    //}
 }

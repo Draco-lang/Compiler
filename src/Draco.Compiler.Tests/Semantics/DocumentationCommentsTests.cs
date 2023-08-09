@@ -23,6 +23,26 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         return result.ToString();
     }
 
+    private static string PrettyXml(XElement element)
+    {
+        var stringBuilder = new StringBuilder();
+
+        var settings = new XmlWriterSettings()
+        {
+            OmitXmlDeclaration = true,
+            Indent = true,
+            IndentChars = string.Empty,
+            NewLineOnAttributes = false,
+        };
+
+        using (var xmlWriter = XmlWriter.Create(stringBuilder, settings))
+        {
+            element.Save(xmlWriter);
+        }
+
+        return stringBuilder.ToString();
+    }
+
     [Theory]
     [InlineData("This is doc comment")]
     [InlineData("""
@@ -672,25 +692,5 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         Assert.Empty(semanticModel.Diagnostics);
         Assert.Equal(originalDocs, resultMd);
         Assert.Equal(methodSym.RawDocumentation, resultMd);
-    }
-
-    private static string PrettyXml(XElement element)
-    {
-        var stringBuilder = new StringBuilder();
-
-        var settings = new XmlWriterSettings()
-        {
-            OmitXmlDeclaration = true,
-            Indent = true,
-            IndentChars = string.Empty,
-            NewLineOnAttributes = false,
-        };
-
-        using (var xmlWriter = XmlWriter.Create(stringBuilder, settings))
-        {
-            element.Save(xmlWriter);
-        }
-
-        return stringBuilder.ToString();
     }
 }

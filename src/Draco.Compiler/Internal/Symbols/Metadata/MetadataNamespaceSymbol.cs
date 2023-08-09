@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
-using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -68,6 +66,11 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
         return result.ToImmutable();
     }
 
+    /// <summary>
+    /// Looks up symbol by its documentation name.
+    /// </summary>
+    /// <param name="documentationName">The documentation name to lookup by.</param>
+    /// <returns>The looked up symbol, or null, if such symbol doesn't exist under this module symbol.</returns>
     public Symbol? LookupByDocumentationName(string documentationName)
     {
         var parts = documentationName[2..].Split('.');

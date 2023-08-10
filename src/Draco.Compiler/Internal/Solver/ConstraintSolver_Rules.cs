@@ -216,6 +216,14 @@ internal sealed partial class ConstraintSolver
             throw new InvalidOperationException("rule handling for member constraint called prematurely");
         }
 
+        // Don't propagate type errors
+        if (accessed.IsError)
+        {
+            this.Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
+            constraint.Promise.Resolve(UndefinedMemberSymbol.Instance);
+            return;
+        }
+
         // Not a type variable, we can look into members
         var membersWithName = accessed.InstanceMembers
             .Where(m => m.Name == constraint.MemberName)
@@ -228,9 +236,8 @@ internal sealed partial class ConstraintSolver
                 .WithTemplate(SymbolResolutionErrors.MemberNotFound)
                 .WithFormatArgs(constraint.MemberName, accessed);
             // We still provide a single error symbol
-            var errorSymbol = new UndefinedMemberSymbol();
             this.Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
-            constraint.Promise.Fail(errorSymbol, diagnostics);
+            constraint.Promise.Fail(UndefinedMemberSymbol.Instance, diagnostics);
             return;
         }
 

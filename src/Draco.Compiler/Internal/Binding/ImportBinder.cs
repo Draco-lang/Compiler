@@ -109,8 +109,7 @@ internal sealed class ImportBinder : Binder
                 // Don't cascade errors
                 if (parent.IsError)
                 {
-                    var symbol = new UndefinedMemberSymbol();
-                    parts!.Add(new(mem, symbol));
+                    parts!.Add(new(mem, UndefinedMemberSymbol.Instance));
                     return parent;
                 }
                 // Look up in parent
@@ -132,9 +131,8 @@ internal sealed class ImportBinder : Binder
                         template: SymbolResolutionErrors.MemberNotFound,
                         location: mem.Member.Location,
                         formatArgs: new[] { mem.Member.Text, parent.Name }));
-                    var symbol = new UndefinedMemberSymbol();
-                    parts!.Add(new(mem, symbol));
-                    return symbol;
+                    parts!.Add(new(mem, UndefinedMemberSymbol.Instance));
+                    return UndefinedMemberSymbol.Instance;
                 }
                 else
                 {
@@ -144,9 +142,8 @@ internal sealed class ImportBinder : Binder
                         location: mem.Location,
                         formatArgs: mem.Member.Text));
                     // NOTE: For now this result is fine
-                    var symbol = new UndefinedMemberSymbol();
-                    parts!.Add(new(mem, symbol));
-                    return symbol;
+                    parts!.Add(new(mem, UndefinedMemberSymbol.Instance));
+                    return UndefinedMemberSymbol.Instance;
                 }
             }
             default:

@@ -270,17 +270,22 @@ internal partial class Binder
                 FunctionSymbol f => ImmutableArray.Create(f),
                 _ => throw new NotImplementedException(),
             };
-            // TODO: Configure
+
             var getEnumeratorPromise = constraints.Overload(
                 getEnumeratorFunctions,
                 ImmutableArray<object>.Empty,
                 out var enumeratorType);
+            getEnumeratorPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Sequence.Location));
 
             // Look up MoveNext
             var moveNextMethodsPromise = constraints.Member(enumeratorType, "MoveNext", out _);
-            // TODO: Configure
+            moveNextMethodsPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Sequence.Location));
+
             var moveNextPromise = constraints.Await(moveNextMethodsPromise, () =>
             {
+                // TODO: Get rid of pattern
                 var moveNextFunctions = moveNextMethodsPromise.Result switch
                 {
                     OverloadSymbol o => o.Functions,
@@ -288,24 +293,28 @@ internal partial class Binder
                     _ => throw new NotImplementedException(),
                 };
 
-                // TODO: Configure
                 var moveNextPromise = constraints.Overload(
                     moveNextFunctions,
                     ImmutableArray<object>.Empty,
                     out var moveNextReturnType);
+                moveNextPromise.ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Sequence.Location));
 
-                // TODO: Configure
-                constraints.SameType(this.IntrinsicSymbols.Bool, moveNextReturnType);
+                var moveNextReturnsBoolPromise = constraints.SameType(this.IntrinsicSymbols.Bool, moveNextReturnType);
+                moveNextReturnsBoolPromise.ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Sequence.Location));
 
                 return moveNextPromise;
             }).Unwrap();
 
             // Look up Current
-            // TODO: Configure
             var currentPromise = constraints.Member(enumeratorType, "Current", out var currentType);
+            currentPromise.ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Sequence.Location));
 
-            // TODO: Configure
-            constraints.Assignable(elementType, currentType);
+            var elementAssignablePromise = constraints.Assignable(elementType, currentType);
+            elementAssignablePromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.ElementType?.Location ?? syntax.Iterator.Location));
 
             return new UntypedForExpression(
                 syntax,

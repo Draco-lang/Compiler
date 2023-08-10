@@ -772,11 +772,11 @@ internal partial class Binder
         case Symbol when symbol.IsError:
             return new UntypedReferenceErrorExpression(syntax, symbol);
         case ModuleSymbol module:
-            // NOTE: Hack, see the node above this method definition
+            // NOTE: Hack, see the note above this method definition
             this.BindModuleSyntaxToSymbol(syntax, module);
             return new UntypedModuleExpression(syntax, module);
         case TypeSymbol type:
-            // NOTE: Hack, see the node above this method definition
+            // NOTE: Hack, see the note above this method definition
             this.BindTypeSyntaxToSymbol(syntax, type);
             return new UntypedTypeExpression(syntax, type);
         case ParameterSymbol param:

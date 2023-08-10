@@ -271,6 +271,13 @@ internal partial class Binder
                 _ => ImmutableArray<FunctionSymbol>.Empty,
             };
 
+            // Don't propagate error
+            if (getEnumeratorFunctions.Length == 0)
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+
             var getEnumeratorPromise = constraints.Overload(
                 getEnumeratorFunctions,
                 ImmutableArray<object>.Empty,
@@ -292,6 +299,13 @@ internal partial class Binder
                     FunctionSymbol f => ImmutableArray.Create(f),
                     _ => ImmutableArray<FunctionSymbol>.Empty,
                 };
+
+                // Don't propagate error
+                if (moveNextFunctions.Length == 0)
+                {
+                    // TODO
+                    throw new NotImplementedException();
+                }
 
                 var moveNextPromise = constraints.Overload(
                     moveNextFunctions,

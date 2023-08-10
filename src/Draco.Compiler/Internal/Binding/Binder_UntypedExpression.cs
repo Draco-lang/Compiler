@@ -810,6 +810,7 @@ internal partial class Binder
     {
         IfExpressionSyntax @if => ExtractValueSyntax(@if.Then),
         WhileExpressionSyntax @while => ExtractValueSyntax(@while.Then),
+        ForExpressionSyntax @for => ExtractValueSyntax(@for.Then),
         BlockExpressionSyntax block => block.Value is null ? block : ExtractValueSyntax(block.Value),
         _ => syntax,
     };

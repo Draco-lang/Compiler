@@ -268,7 +268,7 @@ internal partial class Binder
             {
                 OverloadSymbol o => o.Functions,
                 FunctionSymbol f => ImmutableArray.Create(f),
-                _ => throw new NotImplementedException(),
+                _ => ImmutableArray<FunctionSymbol>.Empty,
             };
 
             var getEnumeratorPromise = constraints.Overload(
@@ -290,7 +290,7 @@ internal partial class Binder
                 {
                     OverloadSymbol o => o.Functions,
                     FunctionSymbol f => ImmutableArray.Create(f),
-                    _ => throw new NotImplementedException(),
+                    _ => ImmutableArray<FunctionSymbol>.Empty,
                 };
 
                 var moveNextPromise = constraints.Overload(

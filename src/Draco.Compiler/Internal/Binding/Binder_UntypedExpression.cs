@@ -240,7 +240,13 @@ internal partial class Binder
         var elementType = constraints.DeclareLocal(iterator, type);
 
         var sequence = binder.BindExpression(syntax.Sequence, constraints, diagnostics);
+
         var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
+        // Body must be unit
+        constraints
+            .SameType(IntrinsicSymbols.Unit, then.TypeRequired)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(ExtractValueSyntax(syntax.Then).Location));
 
         // Resolve labels
         var continueLabel = binder.DeclaredSymbols
@@ -286,7 +292,7 @@ internal partial class Binder
                     out var moveNextReturnType);
 
                 // TODO: Configure
-                constraints.SameType(IntrinsicSymbols.Bool, moveNextReturnType);
+                constraints.SameType(this.IntrinsicSymbols.Bool, moveNextReturnType);
 
                 return moveNextPromise;
             }).Unwrap();

@@ -258,9 +258,12 @@ internal partial class Binder
 
         // GetEnumerator
         var getEnumeratorMethodsPromise = constraints.Member(sequence.TypeRequired, "GetEnumerator", out _);
-        // TODO: Configure
+        getEnumeratorMethodsPromise.ConfigureDiagnostic(diag => diag
+            .WithLocation(syntax.Sequence.Location));
+
         var exprPromise = constraints.Await(getEnumeratorMethodsPromise, UntypedExpression () =>
         {
+            // TODO: Get rid of pattern
             var getEnumeratorFunctions = getEnumeratorMethodsPromise.Result switch
             {
                 OverloadSymbol o => o.Functions,

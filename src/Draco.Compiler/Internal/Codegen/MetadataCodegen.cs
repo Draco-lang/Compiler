@@ -61,6 +61,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
 
     private WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
+    private IntrinsicSymbols IntrinsicSymbols => this.Compilation.IntrinsicSymbols;
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
@@ -176,8 +177,8 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
         // If we can translate a symbol to a metadata type, get the handle for that
         // This is because primitives are encoded differently as an entity handle
-        case Symbol when this.WellKnownTypes.TryTranslateIntrinsicToMetadataSymbol(symbol, out var metadataSymbol):
-            return this.GetEntityHandle(metadataSymbol);
+        case MetadataBackedPrimitiveTypeSymbol metadataSymbol:
+            return this.GetEntityHandle(metadataSymbol.MetadataType);
 
         case MetadataAssemblySymbol assembly:
             return this.AddAssemblyReference(assembly);
@@ -601,24 +602,24 @@ internal sealed class MetadataCodegen : MetadataWriter
             return;
         }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Char)) { encoder.Char(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Char)) { encoder.Char(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int8)) { encoder.SByte(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int16)) { encoder.Int16(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Int64)) { encoder.Int64(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int8)) { encoder.SByte(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int16)) { encoder.Int16(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int64)) { encoder.Int64(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.UInt8)) { encoder.Byte(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.UInt16)) { encoder.UInt16(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.UInt32)) { encoder.UInt32(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.UInt64)) { encoder.UInt64(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint8)) { encoder.Byte(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint16)) { encoder.UInt16(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint32)) { encoder.UInt32(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint64)) { encoder.UInt64(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Float32)) { encoder.Single(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Float64)) { encoder.Double(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Float32)) { encoder.Single(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Float64)) { encoder.Double(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.String)) { encoder.String(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Object)) { encoder.Object(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.String)) { encoder.String(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Object)) { encoder.Object(); return; }
 
         if (type.GenericArguments.Length > 0)
         {

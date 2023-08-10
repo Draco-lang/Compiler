@@ -80,7 +80,7 @@ internal partial class Binder
 
         this.ConstraintReturnType(syntax.Value, value, constraints);
 
-        return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
+        return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax, value));
     }
 
     private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

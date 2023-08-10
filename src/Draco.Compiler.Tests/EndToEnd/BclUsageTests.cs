@@ -278,4 +278,32 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal("235", stringWriter.ToString());
     }
+
+    [Fact]
+    public void StringifyInt()
+    {
+        var assembly = Compile("""
+            public func stringify(n: int32): string = n.ToString();
+            """);
+        var result = Invoke<string>(
+            assembly: assembly,
+            methodName: "stringify",
+            args: 123);
+
+        Assert.Equal("123", result);
+    }
+
+    [Fact]
+    public void ParseInt()
+    {
+        var assembly = Compile("""
+            public func parse(n: string): int32 = int32.Parse(n);
+            """);
+        var result = Invoke<int>(
+            assembly: assembly,
+            methodName: "parse",
+            args: "123");
+
+        Assert.Equal(123, result);
+    }
 }

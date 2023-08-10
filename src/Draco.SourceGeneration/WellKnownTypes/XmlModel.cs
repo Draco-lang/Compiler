@@ -32,6 +32,16 @@ public sealed class XmlType
     [XmlAttribute]
     public string Assembly { get; set; } = string.Empty;
 
+    [XmlElement("Intrinsic")]
+    public List<XmlIntrinsic> Intrinsics { get; set; } = null!;
+}
+
+[XmlRoot(ElementName = "Intrinsic")]
+public sealed class XmlIntrinsic
+{
     [XmlAttribute]
-    public string? Symbol { get; set; }
+    public string Name { get; set; } = string.Empty;
+
+    [XmlAttribute]
+    public bool IsValueType { get; set; }
 }

@@ -78,8 +78,8 @@ public abstract class EndToEndTestsBase
     protected static TResult Invoke<TResult>(
         Assembly assembly,
         string methodName,
-        TextReader? stdin,
-        TextWriter? stdout,
+        TextReader? stdin = null,
+        TextWriter? stdout = null,
         string moduleName = CompilerConstants.DefaultModuleName,
         params object[] args)
     {

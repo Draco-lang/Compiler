@@ -29,12 +29,22 @@ internal partial class LocalRewriter : BoundTreeRewriter
         BoundStatement Assignment);
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
+    private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
 
     public LocalRewriter(Compilation compilation)
     {
         this.compilation = compilation;
+    }
+
+    private BoundLiteralExpression LiteralExpression(object? value)
+    {
+        if (!BinderFacts.TryGetLiteralType(value, this.IntrinsicSymbols, out var literalType))
+        {
+            throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        return BoundTreeFactory.LiteralExpression(value, literalType);
     }
 
     public override BoundNode VisitCallExpression(BoundCallExpression node)
@@ -86,7 +96,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 compoundOperator: null,
                 left: ArrayAccessLvalue(
                     array: LocalExpression(varArgs),
-                    indices: ImmutableArray.Create<BoundExpression>(LiteralExpression(i))),
+                    indices: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(i))),
                 right: n)) as BoundStatement);
 
         return BlockExpression(
@@ -102,7 +112,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
                     left: LocalLvalue(varArgs),
                     right: ArrayCreationExpression(
                         elementType: elementType,
-                        sizes: ImmutableArray.Create<BoundExpression>(LiteralExpression(varArgCount))))))
+                        sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(varArgCount)),
+                        type: this.IntrinsicSymbols.InstantiateArray(elementType)))))
                 .Concat(varArgAssignments)
                 .ToImmutableArray(),
             value: CallExpression(
@@ -214,9 +225,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 LabelStatement(node.ContinueLabel),
                 ConditionalGotoStatement(
                     condition: UnaryExpression(
-                        @operator: IntrinsicSymbols.Bool_Not,
+                        @operator: this.IntrinsicSymbols.Bool_Not,
                         operand: condition,
-                        type: IntrinsicSymbols.Bool),
+                        type: this.IntrinsicSymbols.Bool),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
@@ -303,7 +314,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: node.Comparisons[0].Operator,
                 right: right,
-                type: IntrinsicSymbols.Bool);
+                type: this.IntrinsicSymbols.Bool);
         }
 
         // expr1 < expr2 == expr3 > expr4 != ...
@@ -337,11 +348,11 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 left: left,
                 @operator: op,
                 right: right,
-                type: IntrinsicSymbols.Bool));
+                type: this.IntrinsicSymbols.Bool));
         }
 
         // Fold them into conjunctions
-        var conjunction = comparisons.Aggregate(AndExpression);
+        var conjunction = comparisons.Aggregate((result, current) => AndExpression(result, current));
         // Desugar them, conjunctions can be desugared too
         conjunction = (BoundExpression)conjunction.Accept(this);
 
@@ -371,8 +382,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
         var result = IfExpression(
             condition: left,
             then: right,
-            @else: LiteralExpression(false),
-            type: IntrinsicSymbols.Bool);
+            @else: this.LiteralExpression(false),
+            type: this.IntrinsicSymbols.Bool);
         // If-expressions can be lowered too
         return result.Accept(this);
     }
@@ -390,9 +401,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
         var result = IfExpression(
             condition: left,
-            then: LiteralExpression(true),
+            then: this.LiteralExpression(true),
             @else: right,
-            type: IntrinsicSymbols.Bool);
+            type: this.IntrinsicSymbols.Bool);
         // If-expressions can be lowered too
         return result.Accept(this);
     }
@@ -400,9 +411,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
     public override BoundNode VisitStringExpression(BoundStringExpression node)
     {
         // Empty string
-        if (node.Parts.Length == 0) return LiteralExpression(string.Empty);
+        if (node.Parts.Length == 0) return this.LiteralExpression(string.Empty);
         // A single string
-        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText singleText) return LiteralExpression(singleText.Text);
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText singleText) return this.LiteralExpression(singleText.Text);
         // A single interpolated part
         if (node.Parts.Length == 1 && node.Parts[0] is BoundStringInterpolation singleInterpolation)
         {
@@ -433,7 +444,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             }
         }
 
-        var arrayType = IntrinsicSymbols.Array.GenericInstantiate(IntrinsicSymbols.Object);
+        var arrayType = this.IntrinsicSymbols.Array.GenericInstantiate(this.IntrinsicSymbols.Object);
         var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
 
         var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
@@ -442,8 +453,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
         arrayAssignmentBuilder.Add(LocalDeclaration(
             local: arrayLocal,
             value: ArrayCreationExpression(
-                elementType: IntrinsicSymbols.Object,
-                sizes: ImmutableArray.Create<BoundExpression>(LiteralExpression(args.Count)))));
+                elementType: this.IntrinsicSymbols.Object,
+                sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(args.Count)),
+                type: this.IntrinsicSymbols.InstantiateArray(this.IntrinsicSymbols.Object))));
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -452,7 +464,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 compoundOperator: null,
                 left: ArrayAccessLvalue(
                     array: LocalExpression(arrayLocal),
-                    indices: ImmutableArray.Create<BoundExpression>(LiteralExpression(i))),
+                    indices: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(i))),
                 right: args[i])));
         }
 
@@ -469,7 +481,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 method: this.WellKnownTypes.SystemString_Format,
                 receiver: null,
                 arguments: ImmutableArray.Create<BoundExpression>(
-                    LiteralExpression(formatString.ToString()),
+                    this.LiteralExpression(formatString.ToString()),
                     LocalExpression(arrayLocal))));
 
         return result.Accept(this);

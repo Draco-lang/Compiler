@@ -12,17 +12,23 @@ public sealed class ScribanHelperFunctions : ScriptObject
     {
         "if", "else", "while", "for", "foreach",
         "params", "ref", "out", "operator",
-        "object",
+        "object", "bool", "string"
     };
 
     public static string EscapeKeyword(string name) => keywords.Contains(name)
         ? $"@{name}"
         : name;
 
+    public static string Capitalize(string str)
+    {
+        if (str.Length == 0) return str;
+        return $"{char.ToUpper(str[0])}{str[1..]}";
+    }
+
     public static string CamelCase(string str)
     {
         if (str.Length == 0) return str;
-        var result = $"{char.ToLower(str[0])}{str.Substring(1)}";
+        var result = $"{char.ToLower(str[0])}{str[1..]}";
         return EscapeKeyword(result);
     }
 

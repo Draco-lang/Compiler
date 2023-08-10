@@ -6,9 +6,50 @@
 
   <Assembly Name="System.Runtime" PublicKeyToken="b03f5f7f11d50a3a" />
 
-  <Type Name="System.Int32" Assembly="System.Runtime" Symbol="IntrinsicSymbols.Int32" />
-  <Type Name="System.String" Assembly="System.Runtime" Symbol="IntrinsicSymbols.String" />
-  <Type Name="System.Object" Assembly="System.Runtime" Symbol="IntrinsicSymbols.Object" />
+  <Type Name="System.Boolean" Assembly="System.Runtime">
+    <Intrinsic Name="bool" IsValueType="true" />
+  </Type>
+
+  <Type Name="System.SByte" Assembly="System.Runtime">
+    <Intrinsic Name="int8" IsValueType="true" />
+  </Type>
+  <Type Name="System.Int16" Assembly="System.Runtime">
+    <Intrinsic Name="int16" IsValueType="true" />
+  </Type>
+  <Type Name="System.Int32" Assembly="System.Runtime">
+    <Intrinsic Name="int32" IsValueType="true" />
+  </Type>
+  <Type Name="System.Int64" Assembly="System.Runtime">
+    <Intrinsic Name="int64" IsValueType="true" />
+  </Type>
+
+  <Type Name="System.Byte" Assembly="System.Runtime">
+    <Intrinsic Name="uint8" IsValueType="true" />
+  </Type>
+  <Type Name="System.UInt16" Assembly="System.Runtime">
+    <Intrinsic Name="uint16" IsValueType="true" />
+  </Type>
+  <Type Name="System.UInt32" Assembly="System.Runtime">
+    <Intrinsic Name="uint32" IsValueType="true" />
+  </Type>
+  <Type Name="System.UInt64" Assembly="System.Runtime">
+    <Intrinsic Name="uint64" IsValueType="true" />
+  </Type>
+
+  <Type Name="System.Single" Assembly="System.Runtime">
+    <Intrinsic Name="float32" IsValueType="true" />
+  </Type>
+  <Type Name="System.Double" Assembly="System.Runtime">
+    <Intrinsic Name="float64" IsValueType="true" />
+  </Type>
+
+  <Type Name="System.String" Assembly="System.Runtime">
+    <Intrinsic Name="string" IsValueType="false" />
+  </Type>
+  <Type Name="System.Object" Assembly="System.Runtime">
+    <Intrinsic Name="object" IsValueType="false" />
+  </Type>
+
   <Type Name="System.Type" Assembly="System.Runtime" />
   <Type Name="System.Array" Assembly="System.Runtime" />
   <Type Name="System.ValueType" Assembly="System.Runtime" />

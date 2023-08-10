@@ -274,8 +274,8 @@ internal partial class Binder
             // Don't propagate error
             if (getEnumeratorFunctions.Length == 0)
             {
-                // TODO
-                throw new NotImplementedException();
+                // NOTE: Is this the right one to return?
+                return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
             }
 
             var getEnumeratorPromise = constraints.Overload(
@@ -303,8 +303,7 @@ internal partial class Binder
                 // Don't propagate error
                 if (moveNextFunctions.Length == 0)
                 {
-                    // TODO
-                    throw new NotImplementedException();
+                    ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0));
                 }
 
                 var moveNextPromise = constraints.Overload(

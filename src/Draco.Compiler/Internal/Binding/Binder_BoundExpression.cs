@@ -186,6 +186,11 @@ internal partial class Binder
     private BoundExpression TypeForExpression(UntypedForExpression @for, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var iterator = constraints.GetTypedLocal(@for.Iterator, diagnostics);
+
+        // NOTE: Hack, see the note above this method definition
+        var iteratorSyntax = (@for.Syntax as ForExpressionSyntax)?.Iterator;
+        if (iteratorSyntax is not null) this.BindSyntaxToSymbol(iteratorSyntax, iterator);
+
         var sequence = this.TypeExpression(@for.Sequence, constraints, diagnostics);
         var then = this.TypeExpression(@for.Then, constraints, diagnostics);
 

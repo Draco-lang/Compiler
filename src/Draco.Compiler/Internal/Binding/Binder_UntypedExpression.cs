@@ -268,15 +268,8 @@ internal partial class Binder
             {
                 OverloadSymbol o => o.Functions,
                 FunctionSymbol f => ImmutableArray.Create(f),
-                _ => ImmutableArray<FunctionSymbol>.Empty,
+                _ => ImmutableArray.Create<FunctionSymbol>(new NoOverloadFunctionSymbol(0)),
             };
-
-            // Don't propagate error
-            if (getEnumeratorFunctions.Length == 0)
-            {
-                // NOTE: Is this the right one to return?
-                return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
-            }
 
             var getEnumeratorPromise = constraints.Overload(
                 getEnumeratorFunctions,
@@ -297,14 +290,8 @@ internal partial class Binder
                 {
                     OverloadSymbol o => o.Functions,
                     FunctionSymbol f => ImmutableArray.Create(f),
-                    _ => ImmutableArray<FunctionSymbol>.Empty,
+                    _ => ImmutableArray.Create<FunctionSymbol>(new NoOverloadFunctionSymbol(0)),
                 };
-
-                // Don't propagate error
-                if (moveNextFunctions.Length == 0)
-                {
-                    ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0));
-                }
 
                 var moveNextPromise = constraints.Overload(
                     moveNextFunctions,
@@ -772,7 +759,7 @@ internal partial class Binder
             return new UntypedReferenceErrorExpression(syntax, symbol);
         case ModuleSymbol module:
             // NOTE: Hack, see the note above this method definition
-            this.BindModuleSyntaxToSymbol(syntax, module);
+            this.BindSyntaxToSymbol(syntax, module);
             return new UntypedModuleExpression(syntax, module);
         case TypeSymbol type:
             // NOTE: Hack, see the note above this method definition

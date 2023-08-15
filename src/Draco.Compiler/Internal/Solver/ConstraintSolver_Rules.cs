@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
-    private bool ApplyRules(DiagnosticBag diagnostics)
+    private bool ApplyRules(DiagnosticBag? diagnostics)
     {
         if (this.TryDequeue<SameTypeConstraint>(out var sameType))
         {
@@ -135,19 +135,17 @@ internal sealed partial class ConstraintSolver
 
     private void FailRemainingRules()
     {
-        foreach (var constraint in this.constraints) this.FailRemainingRule(constraint);
-    }
-
-    private void FailRemainingRule(IConstraint constraint)
-    {
-        switch (constraint)
+        // We unify type variables with the error type
+        foreach (var typeVar in this.typeVariables)
         {
-        case CallConstraint call:
-            this.FailRule(call);
-            break;
-        case OverloadConstraint overload:
-            this.FailRule(overload);
-            break;
+            var unwrapped = typeVar.Substitution;
+            if (unwrapped is TypeVariable unwrappedTv) this.Unify(unwrappedTv, IntrinsicSymbols.UninferredType);
+        }
+
+        while (this.constraints.Count > 0)
+        {
+            // Apply rules once
+            if (!this.ApplyRules(null)) break;
         }
     }
 
@@ -170,7 +168,7 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.Resolve(default);
     }
 
-    private void HandleRule(AssignableConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(AssignableConstraint constraint, DiagnosticBag? diagnostics)
     {
         if (!SymbolEqualityComparer.Default.IsBaseOf(constraint.TargetType, constraint.AssignedType))
         {
@@ -186,7 +184,7 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.Resolve(default);
     }
 
-    private void HandleRule(CommonTypeConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(CommonTypeConstraint constraint, DiagnosticBag? diagnostics)
     {
         foreach (var type in constraint.AlternativeTypes)
         {
@@ -207,7 +205,7 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.Fail(default, diagnostics);
     }
 
-    private void HandleRule(MemberConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(MemberConstraint constraint, DiagnosticBag? diagnostics)
     {
         var accessed = constraint.Accessed.Substitution;
         // We can't advance on type variables
@@ -275,7 +273,7 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.Resolve(mappedValue);
     }
 
-    private void HandleRule(OverloadConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(OverloadConstraint constraint, DiagnosticBag? diagnostics)
     {
         var functionName = constraint.Candidates[0].Name;
         var functionsWithMatchingArgc = constraint.Candidates
@@ -361,7 +359,7 @@ internal sealed partial class ConstraintSolver
         }
     }
 
-    private void HandleRule(CallConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(CallConstraint constraint, DiagnosticBag? diagnostics)
     {
         var called = constraint.CalledType.Substitution;
         // We can't advance on type variables
@@ -433,13 +431,6 @@ internal sealed partial class ConstraintSolver
         {
             this.UnifyParameterWithArgument(param.Type, arg);
         }
-    }
-
-    private void FailRule(OverloadConstraint constraint)
-    {
-        this.Unify(constraint.ReturnType, IntrinsicSymbols.ErrorType);
-        var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
-        constraint.Promise.Fail(errorSymbol, null);
     }
 
     private void FailRule(CallConstraint constraint)

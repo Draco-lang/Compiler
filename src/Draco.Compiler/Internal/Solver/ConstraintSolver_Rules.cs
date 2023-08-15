@@ -149,7 +149,7 @@ internal sealed partial class ConstraintSolver
         }
     }
 
-    private void HandleRule(SameTypeConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(SameTypeConstraint constraint, DiagnosticBag? diagnostics)
     {
         for (var i = 1; i < constraint.Types.Length; ++i)
         {

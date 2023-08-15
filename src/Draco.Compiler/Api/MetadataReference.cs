@@ -53,7 +53,12 @@ public abstract class MetadataReference
         return new MetadataReaderReference(metadataReader);
     }
 
-    public MetadataReference DocumentationFromStream(Stream xmlStream)
+    /// <summary>
+    /// Adds xml documentation to this metadata reference.
+    /// </summary>
+    /// <param name="xmlStream">The stream with the xml documentation.</param>
+    /// <returns>New metadata reference containing xml documentation.</returns>
+    public MetadataReference WithDocumentation(Stream xmlStream)
     {
         var doc = new XmlDocument();
         doc.Load(xmlStream);

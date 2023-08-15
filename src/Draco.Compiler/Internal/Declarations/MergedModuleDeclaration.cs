@@ -22,16 +22,13 @@ internal sealed class MergedModuleDeclaration : Declaration
     /// </summary>
     public SplitPath Path { get; }
 
-    public ContainerSyntax? Syntax { get; }
-
     private readonly ImmutableArray<SingleModuleDeclaration> declarations;
 
-    public MergedModuleDeclaration(string name, SplitPath path, ImmutableArray<SingleModuleDeclaration> declarations, ContainerSyntax? syntax = null)
+    public MergedModuleDeclaration(string name, SplitPath path, ImmutableArray<SingleModuleDeclaration> declarations)
         : base(name)
     {
         this.declarations = declarations;
         this.Path = path;
-        this.Syntax = syntax;
     }
 
     private ImmutableArray<Declaration> BuildChildren()
@@ -86,10 +83,7 @@ internal sealed class MergedModuleDeclaration : Declaration
             children.Add(new MergedModuleDeclaration(
                 name: group.Key.Last,
                 path: group.Key,
-                declarations: childDeclarations,
-                syntax: group.Count() == 1
-                    ? group.First().Syntax
-                    : null));
+                declarations: childDeclarations));
         }
         return children.ToImmutable();
     }

@@ -105,9 +105,9 @@
     <Field Name="Then" Type="BoundExpression" />
     <Field Name="ContinueLabel" Type="LabelSymbol" />
     <Field Name="BreakLabel" Type="LabelSymbol" />
-    <Field Name="GetEnumerator" Type="FunctionSymbol" />
-    <Field Name="MoveNext" Type="FunctionSymbol" />
-    <Field Name="Current" Type="Symbol" />
+    <Field Name="GetEnumeratorMethod" Type="FunctionSymbol" />
+    <Field Name="MoveNextMethod" Type="FunctionSymbol" />
+    <Field Name="CurrentProperty" Type="Symbol" />
   </Node>
 
   <Node Name="BoundMemberExpression" Base="BoundExpression">

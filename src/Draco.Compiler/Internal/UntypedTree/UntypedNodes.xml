@@ -79,9 +79,9 @@
     <Field Name="Then" Type="UntypedExpression" />
     <Field Name="ContinueLabel" Type="LabelSymbol" />
     <Field Name="BreakLabel" Type="LabelSymbol" />
-    <Field Name="GetEnumerator" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
-    <Field Name="MoveNext" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
-    <Field Name="Current" Type="IConstraintPromise&lt;Symbol&gt;" />
+    <Field Name="GetEnumeratorMethod" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="MoveNextMethod" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="CurrentProperty" Type="IConstraintPromise&lt;Symbol&gt;" />
   </Node>
 
   <Node Name="UntypedCallExpression" Base="UntypedExpression">

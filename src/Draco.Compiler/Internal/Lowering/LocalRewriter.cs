@@ -263,10 +263,10 @@ internal partial class LocalRewriter : BoundTreeRewriter
         // Because of this, we do not need to lower each individual member here, they will be lowered
         // while rewriting the while loop
 
-        var enumerator = new SynthetizedLocalSymbol(node.GetEnumerator.ReturnType, false);
+        var enumerator = new SynthetizedLocalSymbol(node.GetEnumeratorMethod.ReturnType, false);
 
         // TODO: Decide if we want to enforce props, or fields are fine, ...
-        var currentProp = (PropertySymbol)node.Current;
+        var currentProp = (PropertySymbol)node.CurrentProperty;
         // TODO: If Current is a prop, check if it has a getter
         if (currentProp.Getter is null) throw new InvalidOperationException();
 
@@ -278,12 +278,12 @@ internal partial class LocalRewriter : BoundTreeRewriter
                     left: LocalLvalue(enumerator),
                     right: CallExpression(
                         receiver: node.Sequence,
-                        method: node.GetEnumerator,
+                        method: node.GetEnumeratorMethod,
                         arguments: ImmutableArray<BoundExpression>.Empty))),
                 ExpressionStatement(WhileExpression(
                     condition: CallExpression(
                         receiver: LocalExpression(enumerator),
-                        method: node.MoveNext,
+                        method: node.MoveNextMethod,
                         arguments: ImmutableArray<BoundExpression>.Empty),
                     then: BlockExpression(
                         locals: ImmutableArray.Create(node.Iterator),

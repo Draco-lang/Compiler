@@ -201,9 +201,9 @@ internal partial class Binder
             then,
             @for.ContinueLabel,
             @for.BreakLabel,
-            @for.GetEnumerator.Result,
-            @for.MoveNext.Result,
-            @for.Current.Result);
+            @for.GetEnumeratorMethod.Result,
+            @for.MoveNextMethod.Result,
+            @for.CurrentProperty.Result);
     }
 
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)

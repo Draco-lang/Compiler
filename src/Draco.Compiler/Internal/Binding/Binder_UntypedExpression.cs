@@ -310,7 +310,7 @@ internal partial class Binder
             // Look up Current
             var currentPromise = constraints.Member(enumeratorType, "Current", out var currentType);
             currentPromise.ConfigureDiagnostic(diag => diag
-                    .WithLocation(syntax.Sequence.Location));
+                .WithLocation(syntax.Sequence.Location));
 
             var elementAssignablePromise = constraints.Assignable(elementType, currentType);
             elementAssignablePromise.ConfigureDiagnostic(diag => diag

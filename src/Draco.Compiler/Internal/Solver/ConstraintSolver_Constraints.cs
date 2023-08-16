@@ -173,7 +173,10 @@ internal sealed partial class ConstraintSolver
         }
         else
         {
-            var constraint = new AwaitConstraint<TResult>(() => awaited.IsResolved, map);
+            var constraint = new AwaitConstraint<TResult>(
+                () => awaited.IsResolved,
+                map,
+                awaited.Constraint.Diagnostic);
             this.Add(constraint);
             return constraint.Promise;
         }

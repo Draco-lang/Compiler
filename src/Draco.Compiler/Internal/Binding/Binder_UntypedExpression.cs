@@ -263,13 +263,7 @@ internal partial class Binder
 
         var exprPromise = constraints.Await(getEnumeratorMethodsPromise, UntypedExpression () =>
         {
-            // TODO: Get rid of pattern
-            var getEnumeratorFunctions = getEnumeratorMethodsPromise.Result switch
-            {
-                OverloadSymbol o => o.Functions,
-                FunctionSymbol f => ImmutableArray.Create(f),
-                _ => ImmutableArray.Create<FunctionSymbol>(new NoOverloadFunctionSymbol(0)),
-            };
+            var getEnumeratorFunctions = GetFunctions(getEnumeratorMethodsPromise.Result);
 
             var getEnumeratorPromise = constraints.Overload(
                 getEnumeratorFunctions,
@@ -285,13 +279,7 @@ internal partial class Binder
 
             var moveNextPromise = constraints.Await(moveNextMethodsPromise, () =>
             {
-                // TODO: Get rid of pattern
-                var moveNextFunctions = moveNextMethodsPromise.Result switch
-                {
-                    OverloadSymbol o => o.Functions,
-                    FunctionSymbol f => ImmutableArray.Create(f),
-                    _ => ImmutableArray.Create<FunctionSymbol>(new NoOverloadFunctionSymbol(0)),
-                };
+                var moveNextFunctions = GetFunctions(moveNextMethodsPromise.Result);
 
                 var moveNextPromise = constraints.Overload(
                     moveNextFunctions,
@@ -387,12 +375,7 @@ internal partial class Binder
                 if (members is FunctionSymbol or OverloadSymbol)
                 {
                     // Overloaded member call
-                    var functions = members switch
-                    {
-                        OverloadSymbol o => o.Functions,
-                        FunctionSymbol f => ImmutableArray.Create(f),
-                        _ => throw new InvalidOperationException(),
-                    };
+                    var functions = GetFunctions(members);
                     var symbolPromise = constraints.Overload(
                         functions,
                         args.Cast<object>().ToImmutableArray(),
@@ -699,12 +682,7 @@ internal partial class Binder
             {
                 var members = member.Member.Result;
                 // Search for all function members with the same number of generic parameters
-                var withSameNoParams = members switch
-                {
-                    OverloadSymbol o => o.Functions,
-                    FunctionSymbol f => ImmutableArray.Create(f),
-                    _ => ImmutableArray<FunctionSymbol>.Empty,
-                };
+                var withSameNoParams = GetFunctions(members);
                 if (withSameNoParams.Length == 0)
                 {
                     // No generic functions with this number of parameters
@@ -789,7 +767,7 @@ internal partial class Binder
     {
         FunctionSymbol f => ImmutableArray.Create(f),
         OverloadSymbol o => o.Functions,
-        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+        _ => ImmutableArray<FunctionSymbol>.Empty,
     };
 
     private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch

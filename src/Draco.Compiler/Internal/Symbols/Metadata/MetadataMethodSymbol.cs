@@ -106,7 +106,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             var generics = this.GenericParameters.Length == 0
                 ? string.Empty
                 : $"``{this.GenericParameters.Length}";
-            return base.DocumentationFullName + generics + parametersJoined;
+            return $"{base.DocumentationFullName}{generics}{parametersJoined}";
         }
     }
 

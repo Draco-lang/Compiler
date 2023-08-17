@@ -147,11 +147,6 @@ internal abstract partial class Symbol
     public virtual IEnumerable<Symbol> InstanceMembers => this.Members.Where(x => x is IMemberSymbol mem && !mem.IsStatic);
 
     /// <summary>
-    /// The raw documentation attached to this symbol.
-    /// </summary>
-    public virtual string RawDocumentation => string.Empty;
-
-    /// <summary>
     /// The structured documentation attached to this symbol.
     /// </summary>
     public virtual SymbolDocumentation Documentation => SymbolDocumentation.Empty;

@@ -23,6 +23,12 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         return result.ToString();
     }
 
+    private static string AddDocumentationTag(string insideXml) => $"""
+            <documentation>
+            {insideXml}
+            </documentation>
+            """;
+
     private static string PrettyXml(XElement element)
     {
         var stringBuilder = new StringBuilder();
@@ -73,7 +79,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, funcSym.RawDocumentation);
+        Assert.Equal(docComment, funcSym.Documentation.ToMarkdown());
     }
 
     [Theory]
@@ -105,7 +111,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, xSym.RawDocumentation);
+        Assert.Equal(docComment, xSym.Documentation.ToMarkdown());
     }
 
     [Theory]
@@ -141,7 +147,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(string.Empty, labelSym.RawDocumentation);
+        Assert.Equal(string.Empty, labelSym.Documentation.ToMarkdown());
     }
 
     [Theory]
@@ -184,7 +190,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docComment, moduleSym.RawDocumentation);
+        Assert.Equal(docComment, moduleSym.Documentation.ToMarkdown());
     }
 
     [Fact]
@@ -225,7 +231,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, typeSym.RawDocumentation);
+        Assert.Equal(AddDocumentationTag(docs), PrettyXml(typeSym.Documentation.ToXml()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -270,7 +276,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, nestedTypeSym.RawDocumentation);
+        Assert.Equal(AddDocumentationTag(docs), PrettyXml(nestedTypeSym.Documentation.ToXml()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -315,7 +321,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, typeSym.RawDocumentation);
+        Assert.Equal(AddDocumentationTag(docs), PrettyXml(typeSym.Documentation.ToXml()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -360,7 +366,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, methodSym.RawDocumentation);
+        Assert.Equal(AddDocumentationTag(docs), PrettyXml(methodSym.Documentation.ToXml()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -407,7 +413,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, methodSym.RawDocumentation);
+        Assert.Equal(AddDocumentationTag(docs), PrettyXml(methodSym.Documentation.ToXml()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -452,7 +458,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, fieldSym.RawDocumentation);
+        Assert.Equal(AddDocumentationTag(docs), PrettyXml(fieldSym.Documentation.ToXml()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -497,7 +503,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(docs, propertySym.RawDocumentation);
+        Assert.Equal(AddDocumentationTag(docs), PrettyXml(propertySym.Documentation.ToXml()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -546,8 +552,8 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal(classDocs, typeSym.GenericDefinition?.RawDocumentation);
-        Assert.Equal(methodDocs, methodSym.GenericDefinition?.RawDocumentation);
+        Assert.Equal(AddDocumentationTag(classDocs), PrettyXml(typeSym.GenericDefinition!.Documentation.ToXml()), ignoreLineEndingDifferences: true);
+        Assert.Equal(AddDocumentationTag(methodDocs), PrettyXml(methodSym.GenericDefinition!.Documentation.ToXml()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -637,11 +643,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal($"""
-            <documentation>
-            {xmlGeneratedDocs}
-            </documentation>
-            """, resultXml, ignoreLineEndingDifferences: true);
+        Assert.Equal(AddDocumentationTag(xmlGeneratedDocs), resultXml, ignoreLineEndingDifferences: true);
         Assert.Equal(mdGeneratedDocs, resultMd, ignoreLineEndingDifferences: true);
     }
 
@@ -691,6 +693,6 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
         Assert.Equal(originalDocs, resultMd);
-        Assert.Equal(methodSym.RawDocumentation, resultMd);
+        Assert.Equal(methodSym.Documentation.ToMarkdown(), resultMd);
     }
 }

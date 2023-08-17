@@ -34,7 +34,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     /// </summary>
     public IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declaration.DeclaringSyntaxes;
 
-    public override string RawDocumentation => this.DeclaringSyntaxes.SingleOrDefault()?.Documentation ?? string.Empty;
+    private string RawDocumentation => this.DeclaringSyntaxes.SingleOrDefault()?.Documentation ?? string.Empty;
 
     private readonly Declaration declaration;
 

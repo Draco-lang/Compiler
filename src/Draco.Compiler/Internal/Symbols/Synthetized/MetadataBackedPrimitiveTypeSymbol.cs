@@ -22,7 +22,6 @@ internal sealed class MetadataBackedPrimitiveTypeSymbol : PrimitiveTypeSymbol
     public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => this.MetadataType.ImmediateBaseTypes;
     public override IEnumerable<Symbol> DefinedMembers => this.MetadataType.DefinedMembers;
     public override SymbolDocumentation Documentation => this.MetadataType.Documentation;
-    public override string RawDocumentation => this.MetadataType.RawDocumentation;
 
     public MetadataBackedPrimitiveTypeSymbol(string name, bool isValueType, TypeSymbol metadataType)
         : base(name, isValueType)

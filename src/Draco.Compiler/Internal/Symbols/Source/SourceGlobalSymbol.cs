@@ -21,10 +21,8 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.RawDocumentation, this).Extract());
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.DeclaringSyntax.Documentation, this).Extract());
     private SymbolDocumentation? documentation;
-
-    public override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
     // IMPORTANT: flag is type, needs to be written last
     // NOTE: We check the TYPE here, as value is nullable

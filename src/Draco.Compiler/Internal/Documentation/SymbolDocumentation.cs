@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using System.Xml.Linq;
 
 namespace Draco.Compiler.Internal.Documentation;
@@ -25,16 +27,68 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     /// Creates a markdown representation of this documentation.
     /// </summary>
     /// <returns>The documentation in markdown format.</returns>
-    public virtual string ToMarkdown() =>
-        string.Join(Environment.NewLine, this.Sections.Select(x => x.ToMarkdown()));
+    public virtual string ToMarkdown()
+    {
+        var builder = new StringBuilder();
+        for (int i = 0; i < this.Sections.Length; i++)
+        {
+            var section = this.Sections[i];
+            builder.Append(section switch
+            {
+                SummaryDocumentationSection => string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown())),
+
+                ParametersDocumentationSection =>
+                    $"""
+                    # parameters
+                    {string.Join(Environment.NewLine, section.Elements.Select(x => x.ToMarkdown()))}
+                    """,
+
+                TypeParametersDocumentationSection =>
+                    $"""
+                    # type parameters
+                    {string.Join(Environment.NewLine, section.Elements.Select(x => x.ToMarkdown()))}
+                    """,
+
+                CodeDocumentationSection code => code.Code.ToMarkdown(),
+
+                _ => $"""
+                     # {section.Name.ToLowerInvariant()}
+                     {string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown()))}
+                     """
+            });
+
+            // Newline after each section except the last one
+            if (i != this.Sections.Length - 1) builder.Append(Environment.NewLine);
+        }
+        return builder.ToString();
+    }
 
 
     /// <summary>
     /// Creates an XML representation of this documentation.
     /// </summary>
     /// <returns>The documentation in XML format, encapsulated by a <c>documentation</c> tag.</returns>
-    public virtual XElement ToXml() => new XElement("documentation",
-        this.Sections.Select(x => x.ToXml()));
+    public virtual XElement ToXml()
+    {
+        var sections = new List<XNode>();
+        foreach (var section in this.Sections)
+        {
+            switch (section)
+            {
+            case ParametersDocumentationSection:
+            case TypeParametersDocumentationSection:
+                sections.AddRange(section.Elements.Select(x => x.ToXml()));
+                break;
+            case CodeDocumentationSection code:
+                sections.Add(code.Code.ToXml());
+                break;
+            default:
+                sections.Add(new XElement(section.Name.ToLowerInvariant(), section.Elements.Select(x => x.ToXml())));
+                break;
+            }
+        }
+        return new XElement("documentation", sections);
+    }
 }
 
 /// <summary>

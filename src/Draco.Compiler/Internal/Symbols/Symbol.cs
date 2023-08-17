@@ -127,6 +127,11 @@ internal abstract partial class Symbol
     };
 
     /// <summary>
+    /// The <see cref="DocumentationFullName"/> with prepended <see cref="DocumentationPrefix"/>.
+    /// </summary>
+    public virtual string PrefixedDocumentationFullName => $"{this.DocumentationPrefix}{this.DocumentationFullName}";
+
+    /// <summary>
     /// All the members within this symbol.
     /// </summary>
     public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();

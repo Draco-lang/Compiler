@@ -79,7 +79,7 @@ internal record class SeeDocumentationElement(Symbol? ReferencedSymbol, string D
     public override string ToMarkdown() => $"[{this.DisplayText}]({this.Link})";
 
     public override XElement ToXml() => new XElement("see",
-        new XAttribute("cref", $"{this.ReferencedSymbol?.DocumentationPrefix}{this.ReferencedSymbol?.DocumentationFullName}" ?? string.Empty));
+        new XAttribute("cref", this.ReferencedSymbol?.PrefixedDocumentationFullName ?? string.Empty));
 }
 
 /// <summary>

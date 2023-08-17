@@ -99,7 +99,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     {
         get
         {
-            string parametersJoined = this.Parameters.Length == 0
+            var parametersJoined = this.Parameters.Length == 0
                 ? string.Empty
                 : $"({string.Join(",", this.Parameters.Select(x => x.Type.DocumentationFullName))})";
 

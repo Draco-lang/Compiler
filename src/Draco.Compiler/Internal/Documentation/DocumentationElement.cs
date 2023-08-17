@@ -39,7 +39,7 @@ internal sealed record class TextDocumentationElement(string Text) : Documentati
 /// </summary>
 /// <param name="ParameterLink">The link to given parameter.</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this parameter.</param>
-internal sealed record class ParameterDocumentationElement(ParamrefDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class ParameterDocumentationElement(SymbolReferenceDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
     public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 
@@ -53,7 +53,7 @@ internal sealed record class ParameterDocumentationElement(ParamrefDocumentation
 /// </summary>
 /// <param name="ParameterLink">The link to given type parameter.</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this type parameter.</param>
-internal sealed record class TypeParameterDocumentationElement(TypeParamrefDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class TypeParameterDocumentationElement(SymbolReferenceDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
     public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 
@@ -67,39 +67,26 @@ internal sealed record class TypeParameterDocumentationElement(TypeParamrefDocum
 /// </summary>
 /// <param name="ReferencedSymbol">The symbol that is linked.</param>
 /// <param name="DisplayText">The text that should be displayed in the link.</param>
-internal record class SeeDocumentationElement(Symbol? ReferencedSymbol, string DisplayText) : DocumentationElement
+internal record class SymbolReferenceDocumentationElement(Symbol? ReferencedSymbol, string DisplayText) : DocumentationElement
 {
     private string? filePath = ReferencedSymbol?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
     private string Link => this.filePath is null
         ? string.Empty
         : $"{this.filePath}#L{this.ReferencedSymbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
 
-    public SeeDocumentationElement(Symbol? Cref) : this(Cref, Cref?.FullName ?? string.Empty) { }
+    public SymbolReferenceDocumentationElement(Symbol? Cref) : this(Cref, Cref is ParameterSymbol or TypeParameterSymbol
+        ? Cref?.Name ?? string.Empty
+        : Cref?.FullName ?? string.Empty)
+    { }
 
     public override string ToMarkdown() => $"[{this.DisplayText}]({this.Link})";
 
-    public override XElement ToXml() => new XElement("see",
-        new XAttribute("cref", this.ReferencedSymbol?.PrefixedDocumentationFullName ?? string.Empty));
-}
-
-/// <summary>
-/// A reference to a parameter.
-/// </summary>
-/// <param name="Parameter">The parameter referenced.</param>
-internal record class ParamrefDocumentationElement(Symbol? Parameter) : SeeDocumentationElement(Parameter, Parameter?.Name ?? string.Empty)
-{
-    public override XElement ToXml() => new XElement("paramref",
-        new XAttribute("name", this.DisplayText));
-}
-
-/// <summary>
-/// A reference to a type parameter.
-/// </summary>
-/// <param name="TypeParameter">The type parameter referenced.</param>
-internal record class TypeParamrefDocumentationElement(Symbol? TypeParameter) : SeeDocumentationElement(TypeParameter, TypeParameter?.Name ?? string.Empty)
-{
-    public override XElement ToXml() => new XElement("typeparamref",
-        new XAttribute("name", this.DisplayText));
+    public override XElement ToXml() => this.ReferencedSymbol switch
+    {
+        ParameterSymbol => new XElement("paramref", new XAttribute("name", this.DisplayText)),
+        TypeParameterSymbol => new XElement("typeparamref", new XAttribute("name", this.DisplayText)),
+        _ => new XElement("see", new XAttribute("cref", this.ReferencedSymbol?.PrefixedDocumentationFullName ?? string.Empty)),
+    };
 }
 
 /// <summary>

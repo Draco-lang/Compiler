@@ -11,6 +11,7 @@ using Draco.Compiler.Api.CodeFixes;
 using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server;
+using Microsoft.Build.Evaluation;
 
 namespace Draco.LanguageServer;
 
@@ -72,6 +73,12 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
             .Select(x => SyntaxTree.Parse(SourceText.FromFile(x)))
             .ToImmutableArray();
+
+        var projectFile = Directory.GetFiles(rootPath, "*.dracoproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+
+        // TODO: Test if it works and than get the values
+        var project = new Project(projectFile);
+        var references = project.AllEvaluatedItems.FirstOrDefault(x => x.UnevaluatedInclude == "ReferencePathWithRefAssemblies");
 
         this.compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,

@@ -58,25 +58,25 @@ internal sealed class XmlDocumentationExtractor
         if (node.Name == "param")
         {
             nextNode = node;
-            var parameters = ImmutableArray.CreateBuilder<ParameterDocumentationElement>();
+            var parameters = ImmutableArray.CreateBuilder<DocumentationElement>();
             for (; nextNode?.Name == "param"; nextNode = nextNode.NextSibling)
                 parameters.Add(this.ExtractParameter(nextNode));
-            return new ParametersDocumentationSection(parameters.ToImmutable());
+            return new DocumentationSection(SectionKind.Parameters, parameters.ToImmutable());
         }
 
         if (node.Name == "typeparam")
         {
             nextNode = node;
-            var typeParameters = ImmutableArray.CreateBuilder<TypeParameterDocumentationElement>();
+            var typeParameters = ImmutableArray.CreateBuilder<DocumentationElement>();
             for (; nextNode?.Name == "typeparam"; nextNode = nextNode.NextSibling)
                 typeParameters.Add(this.ExtractTypeParameter(nextNode));
-            return new TypeParametersDocumentationSection(typeParameters.ToImmutable());
+            return new DocumentationSection(SectionKind.TypeParameters, typeParameters.ToImmutable());
         }
 
         if (node.Name == "code")
         {
             nextNode = node.NextSibling;
-            return new CodeDocumentationSection((CodeDocumentationElement)this.ExtractElement(node));
+            return new DocumentationSection(SectionKind.Code, ImmutableArray.Create(this.ExtractElement(node)));
         }
 
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
@@ -85,7 +85,7 @@ internal sealed class XmlDocumentationExtractor
 
         nextNode = node.NextSibling;
         return node.Name == "summary"
-            ? new SummaryDocumentationSection(elements.ToImmutable())
+            ? new DocumentationSection(SectionKind.Summary, elements.ToImmutable())
             : new DocumentationSection(node.Name, elements.ToImmutable());
     }
 

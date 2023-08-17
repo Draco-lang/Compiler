@@ -33,23 +33,23 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
         for (int i = 0; i < this.Sections.Length; i++)
         {
             var section = this.Sections[i];
-            builder.Append(section switch
+            builder.Append(section.Kind switch
             {
-                SummaryDocumentationSection => string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown())),
+                SectionKind.Summary => string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown())),
 
-                ParametersDocumentationSection =>
+                SectionKind.Parameters =>
                     $"""
                     # parameters
                     {string.Join(Environment.NewLine, section.Elements.Select(x => x.ToMarkdown()))}
                     """,
 
-                TypeParametersDocumentationSection =>
+                SectionKind.TypeParameters =>
                     $"""
                     # type parameters
                     {string.Join(Environment.NewLine, section.Elements.Select(x => x.ToMarkdown()))}
                     """,
 
-                CodeDocumentationSection code => code.Code.ToMarkdown(),
+                SectionKind.Code => section.Elements[0].ToMarkdown(),
 
                 _ => $"""
                      # {section.Name.ToLowerInvariant()}
@@ -73,14 +73,14 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
         var sections = new List<XNode>();
         foreach (var section in this.Sections)
         {
-            switch (section)
+            switch (section.Kind)
             {
-            case ParametersDocumentationSection:
-            case TypeParametersDocumentationSection:
+            case SectionKind.Parameters:
+            case SectionKind.TypeParameters:
                 sections.AddRange(section.Elements.Select(x => x.ToXml()));
                 break;
-            case CodeDocumentationSection code:
-                sections.Add(code.Code.ToXml());
+            case SectionKind.Code:
+                sections.Add(section.Elements[0].ToXml());
                 break;
             default:
                 sections.Add(new XElement(section.Name.ToLowerInvariant(), section.Elements.Select(x => x.ToXml())));

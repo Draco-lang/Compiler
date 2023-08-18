@@ -358,7 +358,9 @@ public sealed class CodeCompletionTests : SemanticTestsBase
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Empt"))).ToImmutableArray();
+        var completions = GetCompletions(tree, semanticModel, cursor)
+            .SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Empt", StringComparison.Ordinal)))
+            .ToImmutableArray();
         AssertCompletions(completions, "Empty");
     }
 
@@ -382,7 +384,9 @@ public sealed class CodeCompletionTests : SemanticTestsBase
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Empt"))).ToImmutableArray();
+        var completions = GetCompletions(tree, semanticModel, cursor)
+            .SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Empt", StringComparison.Ordinal)))
+            .ToImmutableArray();
         AssertCompletions(completions, "Empty");
     }
 

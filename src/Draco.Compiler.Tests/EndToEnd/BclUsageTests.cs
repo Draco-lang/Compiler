@@ -174,6 +174,24 @@ public sealed class BclUsageTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void FullyQualifiedSystemTupleConstruction()
+    {
+        var assembly = Compile("""
+            public func make(x: int32, y: int32): System.Tuple<int32, int32> =
+                System.Tuple(x, y);
+            """);
+
+        var t = Invoke<Tuple<int, int>>(
+            assembly: assembly,
+            methodName: "make",
+            args: new[] { 2, 3 },
+            stdin: null,
+            stdout: null);
+        Assert.Equal(2, t.Item1);
+        Assert.Equal(3, t.Item2);
+    }
+
+    [Fact]
     public void ListUsageWithPropertyAndIndexer()
     {
         var assembly = Compile("""

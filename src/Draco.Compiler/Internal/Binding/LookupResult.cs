@@ -155,7 +155,7 @@ internal sealed class LookupResult
         var genericArgs = GetGenericArguments(syntax);
         if (genericArgs is null) return;
 
-        this.symbols.RemoveWhere(s => s.GenericParameters.Length == genericArgs);
+        this.symbols.RemoveWhere(s => s.GenericParameters.Length != genericArgs);
     }
 
     private bool ReportUndefinedReferenceError(string name, SyntaxNode? syntax, DiagnosticBag diagnostics)

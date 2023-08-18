@@ -184,7 +184,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
         var t = Invoke<Tuple<int, int>>(
             assembly: assembly,
             methodName: "make",
-            args: new[] { 2, 3 },
+            args: new object[] { 2, 3 },
             stdin: null,
             stdout: null);
         Assert.Equal(2, t.Item1);

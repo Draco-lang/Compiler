@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -45,48 +46,30 @@ internal sealed class XmlDocumentationExtractor
             """;
         var doc = new XmlDocument();
         doc.LoadXml(xml);
-        var node = doc.DocumentElement!.FirstChild;
-        var sections = ImmutableArray.CreateBuilder<DocumentationSection>();
-        for (var nextNode = null as XmlNode; node is not null; node = nextNode)
-            sections.Add(this.ExtractSection(node, out nextNode));
-        return new SymbolDocumentation(sections.ToImmutable());
+
+        var raw = doc.DocumentElement!.ChildNodes
+            .Cast<XmlNode>()
+            .Select(this.ExtractSectionOrElement);
+
+        var sections = raw.OfType<DocumentationSection>().ToList();
+        var elements = raw.OfType<DocumentationElement>();
+
+        foreach (var grouped in elements.GroupBy(x => x.GetType()))
+        {
+            if (grouped.Key == typeof(ParameterDocumentationElement)) sections.Add(new DocumentationSection(SectionKind.Parameters, grouped.ToImmutableArray()));
+            else if (grouped.Key == typeof(TypeParameterDocumentationElement)) sections.Add(new DocumentationSection(SectionKind.TypeParameters, grouped.ToImmutableArray()));
+        }
+        return new SymbolDocumentation(sections.ToImmutableArray());
     }
 
-    private DocumentationSection ExtractSection(XmlNode node, out XmlNode? nextNode)
+    private object ExtractSectionOrElement(XmlNode node) => node.Name switch
     {
-        if (node.Name == "param")
-        {
-            nextNode = node;
-            var parameters = ImmutableArray.CreateBuilder<DocumentationElement>();
-            for (; nextNode?.Name == "param"; nextNode = nextNode.NextSibling)
-                parameters.Add(this.ExtractParameter(nextNode));
-            return new DocumentationSection(SectionKind.Parameters, parameters.ToImmutable());
-        }
-
-        if (node.Name == "typeparam")
-        {
-            nextNode = node;
-            var typeParameters = ImmutableArray.CreateBuilder<DocumentationElement>();
-            for (; nextNode?.Name == "typeparam"; nextNode = nextNode.NextSibling)
-                typeParameters.Add(this.ExtractTypeParameter(nextNode));
-            return new DocumentationSection(SectionKind.TypeParameters, typeParameters.ToImmutable());
-        }
-
-        if (node.Name == "code")
-        {
-            nextNode = node.NextSibling;
-            return new DocumentationSection(SectionKind.Code, ImmutableArray.Create(this.ExtractElement(node)));
-        }
-
-        var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
-        foreach (XmlNode element in node.ChildNodes)
-            elements.Add(this.ExtractElement(element));
-
-        nextNode = node.NextSibling;
-        return node.Name == "summary"
-            ? new DocumentationSection(SectionKind.Summary, elements.ToImmutable())
-            : new DocumentationSection(node.Name, elements.ToImmutable());
-    }
+        "param" => new ParameterDocumentationElement(new ReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), this.ExtractElementsFromNode(node)),
+        "typeparam" => new TypeParameterDocumentationElement(new ReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)), this.ExtractElementsFromNode(node)),
+        "code" => new DocumentationSection(SectionKind.Code, ImmutableArray.Create(this.ExtractElement(node))),
+        "summary" => new DocumentationSection(SectionKind.Summary, this.ExtractElementsFromNode(node)),
+        _ => new DocumentationSection(node.Name, this.ExtractElementsFromNode(node)),
+    };
 
     private DocumentationElement ExtractElement(XmlNode node) => node.LocalName switch
     {
@@ -96,26 +79,16 @@ internal sealed class XmlDocumentationExtractor
             : new ReferenceDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false), node.InnerText),
         "paramref" => new ReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
         "typeparamref" => new ReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
-        "code" => new CodeDocumentationElement(node.InnerXml.TrimStart('\r', '\n'), "cs"),
+        "code" => new CodeDocumentationElement(node.InnerXml.Trim('\r', '\n'), "cs"),
         _ => new TextDocumentationElement(node.InnerText),
     };
 
-    private ParameterDocumentationElement ExtractParameter(XmlNode node)
+    private ImmutableArray<DocumentationElement> ExtractElementsFromNode(XmlNode node)
     {
-        Debug.Assert(node.Name == "param");
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
         foreach (XmlNode child in node.ChildNodes)
             elements.Add(this.ExtractElement(child));
-        return new ParameterDocumentationElement(new ReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
-    }
-
-    private TypeParameterDocumentationElement ExtractTypeParameter(XmlNode node)
-    {
-        Debug.Assert(node.Name == "typeparam");
-        var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
-        foreach (XmlNode child in node.ChildNodes)
-            elements.Add(this.ExtractElement(child));
-        return new TypeParameterDocumentationElement(new ReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
+        return elements.ToImmutable();
     }
 
     private Symbol? GetSymbolFromDocumentationName(string documentationName) =>

@@ -2145,7 +2145,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
-    public void UndexerWitingOverloadedCall()
+    public void IndexerWitingOverloadedCall()
     {
         // import System;
         // func read_coords(): int32 {

@@ -353,8 +353,10 @@ internal partial class LocalRewriter : BoundTreeRewriter
         {
             // Lower the expression
             var arg = (BoundExpression)singleInterpolation.Value.Accept(this);
-            // TODO: Just call ToString on it
-            throw new System.NotImplementedException();
+            return CallExpression(
+                receiver: arg,
+                method: this.WellKnownTypes.SystemObject_ToString,
+                arguments: ImmutableArray<BoundExpression>.Empty);
         }
         // We need to desugar into string.Format("format string", array of args)
         // Build up interpolation string and lower interpolated expressions

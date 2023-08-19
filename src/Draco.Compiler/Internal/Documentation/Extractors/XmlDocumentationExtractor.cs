@@ -47,8 +47,7 @@ internal sealed class XmlDocumentationExtractor
         doc.LoadXml(xml);
         var node = doc.DocumentElement!.FirstChild;
         var sections = ImmutableArray.CreateBuilder<DocumentationSection>();
-        var nextNode = null as XmlNode;
-        for (; node is not null; node = nextNode)
+        for (var nextNode = null as XmlNode; node is not null; node = nextNode)
             sections.Add(this.ExtractSection(node, out nextNode));
         return new SymbolDocumentation(sections.ToImmutable());
     }
@@ -93,11 +92,11 @@ internal sealed class XmlDocumentationExtractor
     {
         "#text" => new TextDocumentationElement(node.InnerText),
         "see" => string.IsNullOrEmpty(node.InnerText)
-            ? new SymbolReferenceDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false))
-            : new SymbolReferenceDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false), node.InnerText),
-        "paramref" => new SymbolReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
-        "typeparamref" => new SymbolReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
-        "code" => new CodeDocumentationElement(node.InnerXml, "cs"),
+            ? new ReferenceDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false))
+            : new ReferenceDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false), node.InnerText),
+        "paramref" => new ReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
+        "typeparamref" => new ReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
+        "code" => new CodeDocumentationElement(node.InnerXml.TrimStart('\r', '\n'), "cs"),
         _ => new TextDocumentationElement(node.InnerText),
     };
 
@@ -107,7 +106,7 @@ internal sealed class XmlDocumentationExtractor
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
         foreach (XmlNode child in node.ChildNodes)
             elements.Add(this.ExtractElement(child));
-        return new ParameterDocumentationElement(new SymbolReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
+        return new ParameterDocumentationElement(new ReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
     }
 
     private TypeParameterDocumentationElement ExtractTypeParameter(XmlNode node)
@@ -116,7 +115,7 @@ internal sealed class XmlDocumentationExtractor
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
         foreach (XmlNode child in node.ChildNodes)
             elements.Add(this.ExtractElement(child));
-        return new TypeParameterDocumentationElement(new SymbolReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
+        return new TypeParameterDocumentationElement(new ReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)), elements.ToImmutable());
     }
 
     private Symbol? GetSymbolFromDocumentationName(string documentationName) =>

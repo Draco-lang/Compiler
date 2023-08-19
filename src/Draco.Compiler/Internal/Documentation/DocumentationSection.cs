@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Documentation;
 /// </summary>
 /// <param name="Name">The name of the section</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s this section contains.</param>
-internal record class DocumentationSection(string Name, ImmutableArray<DocumentationElement> Elements)
+internal sealed record class DocumentationSection(string Name, ImmutableArray<DocumentationElement> Elements)
 {
     private static Dictionary<SectionKind, string> wellKnownSections = new()
     {

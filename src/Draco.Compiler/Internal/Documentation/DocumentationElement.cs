@@ -39,7 +39,7 @@ internal sealed record class TextDocumentationElement(string Text) : Documentati
 /// </summary>
 /// <param name="ParameterLink">The link to given parameter.</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this parameter.</param>
-internal sealed record class ParameterDocumentationElement(SymbolReferenceDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class ParameterDocumentationElement(ReferenceDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
     public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 
@@ -53,7 +53,7 @@ internal sealed record class ParameterDocumentationElement(SymbolReferenceDocume
 /// </summary>
 /// <param name="ParameterLink">The link to given type parameter.</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this type parameter.</param>
-internal sealed record class TypeParameterDocumentationElement(SymbolReferenceDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class TypeParameterDocumentationElement(ReferenceDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
     public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 
@@ -67,14 +67,14 @@ internal sealed record class TypeParameterDocumentationElement(SymbolReferenceDo
 /// </summary>
 /// <param name="ReferencedSymbol">The symbol that is linked.</param>
 /// <param name="DisplayText">The text that should be displayed in the link.</param>
-internal record class SymbolReferenceDocumentationElement(Symbol? ReferencedSymbol, string DisplayText) : DocumentationElement
+internal sealed record class ReferenceDocumentationElement(Symbol? ReferencedSymbol, string DisplayText) : DocumentationElement
 {
     private string? filePath = ReferencedSymbol?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
     private string Link => this.filePath is null
         ? string.Empty
         : $"{this.filePath}#L{this.ReferencedSymbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
 
-    public SymbolReferenceDocumentationElement(Symbol? Cref) : this(Cref, Cref is ParameterSymbol or TypeParameterSymbol
+    public ReferenceDocumentationElement(Symbol? Cref) : this(Cref, Cref is ParameterSymbol or TypeParameterSymbol
         ? Cref?.Name ?? string.Empty
         : Cref?.FullName ?? string.Empty)
     { }
@@ -96,7 +96,11 @@ internal record class SymbolReferenceDocumentationElement(Symbol? ReferencedSymb
 /// <param name="Lang">The ID of the programming language this code is written in.</param>
 internal record class CodeDocumentationElement(string Code, string Lang) : DocumentationElement
 {
-    public override string ToMarkdown() => $"```{this.Lang}{this.Code}```";
+    public override string ToMarkdown() => $"""
+        ```{this.Lang}
+        {this.Code}
+        ```
+        """;
 
     public override XNode ToXml() => new XElement("code", this.Code);
 }

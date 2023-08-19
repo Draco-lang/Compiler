@@ -615,8 +615,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             <param name="arg1">Documentation for arg1</param>
             <param name="arg2">Documentation for arg2</param>
             <typeparam name="T">Useless type param</typeparam>
-            <code>
-            var x = 0;
+            <code>var x = 0;
             void Foo(int z) { }
             </code>
             <returns>

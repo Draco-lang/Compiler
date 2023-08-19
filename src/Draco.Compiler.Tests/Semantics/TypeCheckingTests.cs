@@ -1940,7 +1940,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]

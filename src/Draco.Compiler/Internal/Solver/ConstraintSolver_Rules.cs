@@ -335,9 +335,14 @@ internal sealed partial class ConstraintSolver
                     this.UnifyParameterWithArgument(param.Type, arg);
                 }
             }
-            // NOTE: Unification won't always be correct, especially not when subtyping arises
-            // In all cases, return type is simple
-            this.UnifyAsserted(constraint.ReturnType, chosen.ReturnType);
+            // In all cases, return type is simple, it's an assignment
+            var returnTypePromise = this.Assignable(constraint.ReturnType, chosen.ReturnType);
+            // TODO: This location config is horrible, we need that refactor SOON
+            if (constraint.Diagnostic.Location is not null)
+            {
+                returnTypePromise.ConfigureDiagnostic(diag => diag
+                    .WithLocation(constraint.Diagnostic.Location));
+            }
             // Resolve promise
             constraint.Promise.Resolve(chosen);
         }

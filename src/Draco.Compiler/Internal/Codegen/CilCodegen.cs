@@ -344,6 +344,17 @@ internal sealed class CilCodegen
             this.StoreLocal(arrLen.Target);
             break;
         }
+        case BoxInstruction box:
+        {
+            // Value to be boxed
+            this.EncodePush(box.Value);
+            // Box it
+            this.InstructionEncoder.OpCode(ILOpCode.Box);
+            this.EncodeToken(box.Value.Type!);
+            // Sore result
+            this.StoreLocal(box.Target);
+            break;
+        }
         default:
             throw new ArgumentOutOfRangeException(nameof(instruction));
         }

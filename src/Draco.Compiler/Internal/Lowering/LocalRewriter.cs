@@ -433,7 +433,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         // {
         //     var tmp = expr;
         //     property_set(tmp)
-        //     expr
+        //     tmp
         // }
 
         var receiver = node.Receiver is null ? null : (BoundExpression)node.Receiver.Accept(this);
@@ -451,7 +451,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 ExpressionStatement(CallExpression(
                     receiver: receiver,
                     method: setter,
-                    arguments: ImmutableArray.Create(value)))),
+                    arguments: ImmutableArray.Create(tmp.Reference)))),
             value: tmp.Reference);
 
         return result.Accept(this);

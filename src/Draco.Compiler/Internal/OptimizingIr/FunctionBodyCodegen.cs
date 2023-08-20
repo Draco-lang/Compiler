@@ -269,43 +269,41 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
         // TODO: Lots of duplication, we should merge these instructions...
-        if (node.Receiver is null)
+        var receiver = this.CompileReceiver(node);
+        var args = node.Arguments
+            .Zip(node.Method.Parameters)
+            .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
+            .ToList();
+        var callResult = this.DefineRegister(node.TypeRequired);
+        var proc = this.TranslateFunctionSymbol(node.Method);
+        if (receiver is null)
         {
-            var args = node.Arguments
-                .Zip(node.Method.Parameters)
-                .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
-                .ToList();
-            var callResult = this.DefineRegister(node.TypeRequired);
-            var proc = this.TranslateFunctionSymbol(node.Method);
             this.Write(Call(callResult, proc, args));
-            return isSetter ? args[^1] : callResult;
         }
         else
         {
-            IOperand receiver;
-            // Box receiver, if needed
-            if (node.Method.ContainingSymbol is TypeSymbol methodContainer
-             && NeedsBoxing(methodContainer, node.Receiver.TypeRequired))
-            {
-                receiver = this.Compile(node.Receiver);
-                var newReceiver = this.DefineRegister(methodContainer);
-                this.Write(Box(newReceiver, methodContainer, receiver));
-                receiver = newReceiver;
-            }
-            else
-            {
-                receiver = node.Receiver.TypeRequired.IsValueType
-                    ? this.CompileToAddress(node.Receiver)
-                    : this.Compile(node.Receiver);
-            }
-            var args = node.Arguments
-                .Zip(node.Method.Parameters)
-                .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
-                .ToList();
-            var callResult = this.DefineRegister(node.TypeRequired);
-            var proc = this.TranslateFunctionSymbol(node.Method);
             this.Write(MemberCall(callResult, proc, receiver, args));
-            return isSetter ? args[^1] : callResult;
+        }
+        return isSetter ? args[^1] : callResult;
+    }
+
+    private IOperand? CompileReceiver(BoundCallExpression call)
+    {
+        if (call.Receiver is null) return null;
+        // Box receiver, if needed
+        if (call.Method.ContainingSymbol is TypeSymbol methodContainer
+         && NeedsBoxing(methodContainer, call.Receiver.TypeRequired))
+        {
+            var valueReceiver = this.Compile(call.Receiver);
+            var receiver = this.DefineRegister(methodContainer);
+            this.Write(Box(receiver, methodContainer, valueReceiver));
+            return receiver;
+        }
+        else
+        {
+            return call.Receiver.TypeRequired.IsValueType
+                ? this.CompileToAddress(call.Receiver)
+                : this.Compile(call.Receiver);
         }
     }
 

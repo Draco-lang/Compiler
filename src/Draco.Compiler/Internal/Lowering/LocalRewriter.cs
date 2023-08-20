@@ -432,7 +432,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         //
         // {
         //     var tmp = expr;
-        //     property_set(tmp)
+        //     property_set(tmp);
         //     tmp
         // }
 

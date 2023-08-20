@@ -248,17 +248,8 @@ internal sealed class CilCodegen
             foreach (var index in storeElement.Indices) this.EncodePush(index);
             this.EncodePush(storeElement.Source);
 
-            var storedValueType = storeElement.Source.Type!.Substitution;
             // TODO: Not the prettiest...
             var targetStorageType = storeElement.TargetArray.Type!.Substitution.GenericArguments[0].Substitution;
-            var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
-
-            if (needsToBox)
-            {
-                // We need to box it
-                this.InstructionEncoder.OpCode(ILOpCode.Box);
-                this.EncodeToken(storeElement.Source.Type!);
-            }
 
             if (storeElement.Indices.Count == 1)
             {

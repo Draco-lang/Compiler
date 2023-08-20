@@ -82,14 +82,26 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return proc;
     }
 
+    private static bool NeedsBoxing(TypeSymbol targetType, TypeSymbol sourceType)
+    {
+        var targetIsValueType = targetType.Substitution.IsValueType;
+        var sourceIsValueType = sourceType.Substitution.IsValueType;
+        return !targetIsValueType && sourceIsValueType;
+    }
+
+    private static bool NeedsUnboxing(TypeSymbol targetType, TypeSymbol sourceType)
+    {
+        var targetIsValueType = targetType.Substitution.IsValueType;
+        var sourceIsValueType = sourceType.Substitution.IsValueType;
+        return targetIsValueType && !sourceIsValueType;
+    }
+
     public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
     {
         if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
 
-        var targetIsValueType = targetType.Substitution.IsValueType;
-        var sourceIsValueType = source.Type.Substitution.IsValueType;
-        var needsBox = !targetIsValueType && sourceIsValueType;
-        var needsUnbox = targetIsValueType && !sourceIsValueType;
+        var needsBox = NeedsBoxing(targetType, source.Type);
+        var needsUnbox = NeedsUnboxing(targetType, source.Type);
 
         if (needsBox)
         {
@@ -270,12 +282,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
         else
         {
-            var receiver = node.Receiver.TypeRequired.IsValueType
-                ? this.CompileToAddress(node.Receiver)
-                : this.Compile(node.Receiver);
-            if (node.Method.ContainingSymbol is TypeSymbol methodContainer)
+            IOperand receiver;
+            // Box receiver, if needed
+            if (node.Method.ContainingSymbol is TypeSymbol methodContainer
+             && NeedsBoxing(methodContainer, node.Receiver.TypeRequired))
             {
-                receiver = this.BoxIfNeeded(methodContainer, receiver);
+                receiver = this.Compile(node.Receiver);
+                var newReceiver = this.DefineRegister(methodContainer);
+                this.Write(Box(newReceiver, methodContainer, receiver));
+                receiver = newReceiver;
+            }
+            else
+            {
+                receiver = node.Receiver.TypeRequired.IsValueType
+                    ? this.CompileToAddress(node.Receiver)
+                    : this.Compile(node.Receiver);
             }
             var args = node.Arguments
                 .Zip(node.Method.Parameters)

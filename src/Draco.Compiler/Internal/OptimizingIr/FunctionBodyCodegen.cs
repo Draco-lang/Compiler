@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -81,6 +82,31 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return proc;
     }
 
+    public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
+    {
+        if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
+
+        var targetIsValueType = targetType.Substitution.IsValueType;
+        var sourceIsValueType = source.Type.Substitution.IsValueType;
+        var needsBox = !targetIsValueType && sourceIsValueType;
+        var needsUnbox = targetIsValueType && !sourceIsValueType;
+
+        if (needsBox)
+        {
+            var result = this.DefineRegister(targetType.Substitution);
+            this.Write(Box(result, targetType.Substitution, source));
+            return result;
+        }
+
+        if (needsUnbox)
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
+
+        return source;
+    }
+
     // Statements //////////////////////////////////////////////////////////////
 
     public override IOperand VisitSequencePointStatement(BoundSequencePointStatement node)
@@ -102,6 +128,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         if (node.Value is null) return default!;
 
         var right = this.Compile(node.Value);
+        right = this.BoxIfNeeded(node.Local.Type, right);
         var left = this.DefineLocal(node.Local);
         this.Write(Store(left, right));
 
@@ -229,9 +256,13 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
         var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
+        // TODO: Lots of duplication, we should merge these instructions...
         if (node.Receiver is null)
         {
-            var args = node.Arguments.Select(this.Compile).ToList();
+            var args = node.Arguments
+                .Zip(node.Method.Parameters)
+                .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
+                .ToList();
             var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);
             this.Write(Call(callResult, proc, args));
@@ -242,7 +273,14 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var receiver = node.Receiver.TypeRequired.IsValueType
                 ? this.CompileToAddress(node.Receiver)
                 : this.Compile(node.Receiver);
-            var args = node.Arguments.Select(this.Compile).ToList();
+            if (node.Method.ContainingSymbol is TypeSymbol methodContainer)
+            {
+                receiver = this.BoxIfNeeded(methodContainer, receiver);
+            }
+            var args = node.Arguments
+                .Zip(node.Method.Parameters)
+                .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
+                .ToList();
             var callResult = this.DefineRegister(node.TypeRequired);
             var proc = this.TranslateFunctionSymbol(node.Method);
             this.Write(MemberCall(callResult, proc, receiver, args));
@@ -339,7 +377,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
 
         // Patch
-        PatchStoreSource(leftStore, toStore);
+        this.PatchStoreSource(leftStore, node.Left.Type, toStore);
         this.Write(leftStore);
         return toStore;
     }
@@ -362,8 +400,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
-    private static void PatchStoreSource(IInstruction storeInstr, IOperand source)
+    private void PatchStoreSource(IInstruction storeInstr, TypeSymbol targetType, IOperand source)
     {
+        source = this.BoxIfNeeded(targetType, source);
         switch (storeInstr)
         {
         case StoreInstruction store:

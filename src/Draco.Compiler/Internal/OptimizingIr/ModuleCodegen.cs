@@ -49,6 +49,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
             // Compile it
             var value = bodyWithoutLocalFunctions.Accept(this.globalInitializer);
             // Store it
+            value = this.globalInitializer.BoxIfNeeded(global.Type, value);
             this.globalInitializer.Write(Store(global, value));
 
             // Compile the local functions

@@ -426,20 +426,35 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
     public override BoundNode VisitPropertySetExpression(BoundPropertySetExpression node)
     {
-        // property = x
+        // property = expr
         //
         // =>
         //
-        // property_set(x)
+        // {
+        //     var tmp = expr;
+        //     property_set(tmp)
+        //     expr
+        // }
 
         var receiver = node.Receiver is null ? null : (BoundExpression)node.Receiver.Accept(this);
         var setter = node.Setter;
         var value = (BoundExpression)node.Value.Accept(this);
 
-        return CallExpression(
-            receiver: receiver,
-            method: setter,
-            arguments: ImmutableArray.Create(value));
+        var tmp = this.StoreTemporary(value);
+
+        var result = BlockExpression(
+            locals: tmp.Symbol is null
+                ? ImmutableArray<LocalSymbol>.Empty
+                : ImmutableArray.Create(tmp.Symbol),
+            statements: ImmutableArray.Create(
+                tmp.Assignment,
+                ExpressionStatement(CallExpression(
+                    receiver: receiver,
+                    method: setter,
+                    arguments: ImmutableArray.Create(value)))),
+            value: tmp.Reference);
+
+        return result.Accept(this);
     }
 
     public override BoundNode VisitPropertyGetExpression(BoundPropertyGetExpression node)

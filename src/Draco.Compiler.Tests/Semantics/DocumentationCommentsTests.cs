@@ -612,28 +612,28 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlGeneratedDocs = """
             <summary>Documentation for TestMethod, which is in <see cref="T:TestNamespace.TestClass" />, random generic link <see cref="T:System.Collections.Generic.List`1" /></summary>
+            <param name="arg1">Documentation for arg1</param>
+            <param name="arg2">Documentation for arg2</param>
+            <typeparam name="T">Useless type param</typeparam>
             <code>var x = 0;
             void Foo(int z) { }</code>
             <returns>
             <paramref name="arg1" /> added to <paramref name="arg2" />, <typeparamref name="T" /> is not used</returns>
-            <param name="arg1">Documentation for arg1</param>
-            <param name="arg2">Documentation for arg2</param>
-            <typeparam name="T">Useless type param</typeparam>
             """;
 
         var mdGeneratedDocs = """
             Documentation for TestMethod, which is in [TestNamespace.TestClass](), random generic link [System.Collections.Generic.List<T>]()
+            # parameters
+            - [arg1](): Documentation for arg1
+            - [arg2](): Documentation for arg2
+            # type parameters
+            - [T](): Useless type param
             ```cs
             var x = 0;
             void Foo(int z) { }
             ```
             # returns
             [arg1]() added to [arg2](), [T]() is not used
-            # parameters
-            - [arg1](): Documentation for arg1
-            - [arg2](): Documentation for arg2
-            # type parameters
-            - [T](): Useless type param
             """;
 
         var resultXml = PrettyXml(methodSym.Documentation.ToXml());

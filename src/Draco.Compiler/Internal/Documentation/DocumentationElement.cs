@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Xml.Linq;
 using Draco.Compiler.Internal.Symbols;
 
@@ -39,12 +40,18 @@ internal sealed record class TextDocumentationElement(string Text) : Documentati
 /// </summary>
 /// <param name="ParameterLink">The link to given parameter.</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this parameter.</param>
-internal sealed record class ParameterDocumentationElement(ReferenceDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class ParameterDocumentationElement(ParameterSymbol? Parameter, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
-    public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
+    private readonly string name = Parameter?.Name ?? string.Empty;
+    private string? filePath = Parameter?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
+    private string Link => this.filePath is null
+        ? string.Empty
+        : $"{this.filePath}#L{this.Parameter?.DeclaringSyntax?.Location.Range?.Start.Line}";
+
+    public override string ToMarkdown() => $"- [{this.name}]({this.Link}): {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 
     public override XElement ToXml() => new XElement("param",
-        new XAttribute("name", this.ParameterLink.DisplayText),
+        new XAttribute("name", this.name),
         this.Elements.Select(x => x.ToXml()));
 }
 
@@ -53,12 +60,18 @@ internal sealed record class ParameterDocumentationElement(ReferenceDocumentatio
 /// </summary>
 /// <param name="ParameterLink">The link to given type parameter.</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this type parameter.</param>
-internal sealed record class TypeParameterDocumentationElement(ReferenceDocumentationElement ParameterLink, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class TypeParameterDocumentationElement(TypeParameterSymbol? TypeParameter, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
-    public override string ToMarkdown() => $"- {this.ParameterLink.ToMarkdown()}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
+    private readonly string name = TypeParameter?.Name ?? string.Empty;
+    private string? filePath = TypeParameter?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
+    private string Link => this.filePath is null
+        ? string.Empty
+        : $"{this.filePath}#L{this.TypeParameter?.DeclaringSyntax?.Location.Range?.Start.Line}";
+
+    public override string ToMarkdown() => $"- [{this.name}]({this.Link}): {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 
     public override XElement ToXml() => new XElement("typeparam",
-        new XAttribute("name", this.ParameterLink.DisplayText),
+        new XAttribute("name", this.name),
         this.Elements.Select(x => x.ToXml()));
 }
 
@@ -74,9 +87,9 @@ internal sealed record class ReferenceDocumentationElement(Symbol? ReferencedSym
         ? string.Empty
         : $"{this.filePath}#L{this.ReferencedSymbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
 
-    public ReferenceDocumentationElement(Symbol? Cref) : this(Cref, Cref is ParameterSymbol or TypeParameterSymbol
-        ? Cref?.Name ?? string.Empty
-        : Cref?.FullName ?? string.Empty)
+    public ReferenceDocumentationElement(Symbol? ReferencedSymbol) : this(ReferencedSymbol, ReferencedSymbol is ParameterSymbol or TypeParameterSymbol
+        ? ReferencedSymbol?.Name ?? string.Empty
+        : ReferencedSymbol?.FullName ?? string.Empty)
     { }
 
     public override string ToMarkdown() => $"[{this.DisplayText}]({this.Link})";
@@ -94,7 +107,7 @@ internal sealed record class ReferenceDocumentationElement(Symbol? ReferencedSym
 /// </summary>
 /// <param name="Code">The code.</param>
 /// <param name="Lang">The ID of the programming language this code is written in.</param>
-internal record class CodeDocumentationElement(string Code, string Lang) : DocumentationElement
+internal sealed record class CodeDocumentationElement(string Code, string Lang) : DocumentationElement
 {
     public override string ToMarkdown() => $"""
         ```{this.Lang}

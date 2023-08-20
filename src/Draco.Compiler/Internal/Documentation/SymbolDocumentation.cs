@@ -24,15 +24,21 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     public DocumentationSection? Summary => this.Sections.FirstOrDefault(x => x.Name.ToLower() == "summary");
 
     /// <summary>
+    /// The sections ordered conventionally.
+    /// </summary>
+    public ImmutableArray<DocumentationSection> OrderedSections => InterlockedUtils.InitializeDefault(ref this.orderedSections, () => this.Sections.OrderBy(x => (int)x.Kind).ToImmutableArray());
+    private ImmutableArray<DocumentationSection> orderedSections;
+
+    /// <summary>
     /// Creates a markdown representation of this documentation.
     /// </summary>
     /// <returns>The documentation in markdown format.</returns>
     public virtual string ToMarkdown()
     {
         var builder = new StringBuilder();
-        for (int i = 0; i < this.Sections.Length; i++)
+        for (int i = 0; i < this.OrderedSections.Length; i++)
         {
-            var section = this.Sections[i];
+            var section = this.OrderedSections[i];
             builder.Append(section.Kind switch
             {
                 SectionKind.Summary => string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown())),
@@ -58,7 +64,7 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
             });
 
             // Newline after each section except the last one
-            if (i != this.Sections.Length - 1) builder.Append(Environment.NewLine);
+            if (i != this.OrderedSections.Length - 1) builder.Append(Environment.NewLine);
         }
         return builder.ToString();
     }
@@ -71,7 +77,7 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     public virtual XElement ToXml()
     {
         var sections = new List<XNode>();
-        foreach (var section in this.Sections)
+        foreach (var section in this.OrderedSections)
         {
             switch (section.Kind)
             {

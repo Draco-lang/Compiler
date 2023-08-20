@@ -64,8 +64,8 @@ internal sealed class XmlDocumentationExtractor
 
     private object ExtractSectionOrElement(XmlNode node) => node.Name switch
     {
-        "param" => new ParameterDocumentationElement(new ReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)), this.ExtractElementsFromNode(node)),
-        "typeparam" => new TypeParameterDocumentationElement(new ReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)), this.ExtractElementsFromNode(node)),
+        "param" => new ParameterDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty), this.ExtractElementsFromNode(node)),
+        "typeparam" => new TypeParameterDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty), this.ExtractElementsFromNode(node)),
         "code" => new DocumentationSection(SectionKind.Code, ImmutableArray.Create(this.ExtractElement(node))),
         "summary" => new DocumentationSection(SectionKind.Summary, this.ExtractElementsFromNode(node)),
         _ => new DocumentationSection(node.Name, this.ExtractElementsFromNode(node)),

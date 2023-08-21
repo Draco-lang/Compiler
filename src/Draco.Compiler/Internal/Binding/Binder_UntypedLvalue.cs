@@ -133,6 +133,7 @@ internal partial class Binder
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }
             var overloaded = constraints.Overload(
+                "operator[]",
                 indexers,
                 args.Append(returnType as object).ToImmutableArray(),
                 // NOTE: We don't care about the return type, this is an lvalue

@@ -266,6 +266,7 @@ internal partial class Binder
             var getEnumeratorFunctions = GetFunctions(getEnumeratorMethodsPromise.Result);
 
             var getEnumeratorPromise = constraints.Overload(
+                "GetEnumerator",
                 getEnumeratorFunctions,
                 ImmutableArray<object>.Empty,
                 out var enumeratorType);
@@ -282,6 +283,7 @@ internal partial class Binder
                 var moveNextFunctions = GetFunctions(moveNextMethodsPromise.Result);
 
                 var moveNextPromise = constraints.Overload(
+                    "MoveNext",
                     moveNextFunctions,
                     ImmutableArray<object>.Empty,
                     out var moveNextReturnType);
@@ -353,6 +355,7 @@ internal partial class Binder
             // Simple overload
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
+                group.Functions[0].Name,
                 group.Functions,
                 args.Cast<object>().ToImmutableArray(),
                 out var resultType);
@@ -377,6 +380,7 @@ internal partial class Binder
                     // Overloaded member call
                     var functions = GetFunctions(members);
                     var symbolPromise = constraints.Overload(
+                        members.Name,
                         functions,
                         args.Cast<object>().ToImmutableArray(),
                         out var resultType);
@@ -422,6 +426,7 @@ internal partial class Binder
 
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
+            operatorName,
             GetFunctions(operatorSymbol),
             ImmutableArray.Create<object>(operand),
             out var resultType);
@@ -476,6 +481,7 @@ internal partial class Binder
 
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
+                operatorName,
                 GetFunctions(operatorSymbol),
                 ImmutableArray.Create<object>(left, right),
                 out var resultType);
@@ -501,6 +507,7 @@ internal partial class Binder
 
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
+                operatorName,
                 GetFunctions(operatorSymbol),
                 ImmutableArray.Create<object>(left, right),
                 out var resultType);
@@ -539,6 +546,7 @@ internal partial class Binder
         // NOTE: We know it must be bool, no need to pass it on to comparison
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
+            operatorName,
             GetFunctions(operatorSymbol),
             ImmutableArray.Create<object>(prev, right),
             out var resultType);
@@ -622,6 +630,7 @@ internal partial class Binder
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
             }
             var overloaded = constraints.Overload(
+                "operator[]",
                 indexers,
                 args.Cast<object>().ToImmutableArray(),
                 out var gotReturnType);

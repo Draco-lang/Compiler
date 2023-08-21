@@ -241,7 +241,14 @@ internal sealed partial class ConstraintSolver
         if (membersWithName.Length == 1)
         {
             // One member, we know what type the member type is
-            this.UnifyAsserted(((ITypedSymbol)membersWithName[0]).Type, constraint.MemberType);
+            var memberType = ((ITypedSymbol)membersWithName[0]).Type;
+            var assignablePromise = this.Assignable(constraint.MemberType, memberType);
+            // TODO: This location config is horrible, we need that refactor SOON
+            if (constraint.Diagnostic.Location is not null)
+            {
+                assignablePromise.ConfigureDiagnostic(diag => diag
+                    .WithLocation(constraint.Diagnostic.Location));
+            }
             constraint.Promise.Resolve(membersWithName[0]);
             return;
         }
@@ -274,7 +281,7 @@ internal sealed partial class ConstraintSolver
 
     private void HandleRule(OverloadConstraint constraint, DiagnosticBag? diagnostics)
     {
-        var functionName = constraint.Candidates[0].Name;
+        var functionName = constraint.Name;
         var functionsWithMatchingArgc = constraint.Candidates
             .Where(f => MatchesParameterCount(f, constraint.Arguments.Length))
             .ToList();

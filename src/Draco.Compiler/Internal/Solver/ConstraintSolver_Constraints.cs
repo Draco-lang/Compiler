@@ -138,17 +138,19 @@ internal sealed partial class ConstraintSolver
     /// <summary>
     /// Adds an overload constraint to the solver.
     /// </summary>
+    /// <param name="name">The function name the overload is created from.</param>
     /// <param name="functions">The functions to choose an overload from.</param>
     /// <param name="args">The passed in arguments.</param>
     /// <param name="returnType">The return type of the call.</param>
     /// <returns>The promise for the resolved overload.</returns>
     public IConstraintPromise<FunctionSymbol> Overload(
+        string name,
         ImmutableArray<FunctionSymbol> functions,
         ImmutableArray<object> args,
         out TypeSymbol returnType)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new OverloadConstraint(functions, args, returnType);
+        var constraint = new OverloadConstraint(name, functions, args, returnType);
         this.Add(constraint);
         return constraint.Promise;
     }

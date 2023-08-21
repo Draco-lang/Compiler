@@ -353,7 +353,6 @@ internal partial class LocalRewriter : BoundTreeRewriter
         {
             // Lower the expression
             var arg = (BoundExpression)singleInterpolation.Value.Accept(this);
-            // TODO: We need to BOX here if it's a value-type
             return CallExpression(
                 receiver: arg,
                 method: this.WellKnownTypes.SystemObject_ToString,

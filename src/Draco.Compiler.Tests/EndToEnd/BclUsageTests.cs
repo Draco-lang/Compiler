@@ -324,4 +324,22 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal(123, result);
     }
+
+    [Fact]
+    public void StringSplitting()
+    {
+        var assembly = Compile("""
+            import System;
+
+            public func foo(): string {
+                val parts = "1, 2, 3".Split(",", StringSplitOptions.TrimEntries);
+                return string.Join(";", parts);
+            }
+            """);
+        var result = Invoke<string>(
+            assembly: assembly,
+            methodName: "foo");
+
+        Assert.Equal("1;2;3", result);
+    }
 }

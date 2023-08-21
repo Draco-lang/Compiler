@@ -170,8 +170,32 @@ internal static class BinderFacts
         case bool:
             type = intrinsics.Bool;
             return true;
+        case byte:
+            type = intrinsics.Uint8;
+            return true;
+        case ushort:
+            type = intrinsics.Uint16;
+            return true;
+        case uint:
+            type = intrinsics.Uint32;
+            return true;
+        case ulong:
+            type = intrinsics.Uint64;
+            return true;
+        case sbyte:
+            type = intrinsics.Int8;
+            return true;
+        case short:
+            type = intrinsics.Int16;
+            return true;
         case int:
             type = intrinsics.Int32;
+            return true;
+        case long:
+            type = intrinsics.Int64;
+            return true;
+        case float:
+            type = intrinsics.Float32;
             return true;
         case double:
             type = intrinsics.Float64;

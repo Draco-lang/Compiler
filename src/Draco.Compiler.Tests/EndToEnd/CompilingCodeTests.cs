@@ -672,4 +672,15 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "get_result");
         Assert.Equal(24, x);
     }
+
+    [Fact]
+    public void SingleInterpolatedElement()
+    {
+        var assembly = Compile(""""
+            public func stringify(a: int32): string = "\{a}";
+            """");
+
+        var x = Invoke<string>(assembly, "stringify", 123);
+        Assert.Equal("123", x);
+    }
 }

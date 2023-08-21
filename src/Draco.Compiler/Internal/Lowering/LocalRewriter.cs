@@ -353,8 +353,10 @@ internal partial class LocalRewriter : BoundTreeRewriter
         {
             // Lower the expression
             var arg = (BoundExpression)singleInterpolation.Value.Accept(this);
-            // TODO: Just call ToString on it
-            throw new System.NotImplementedException();
+            return CallExpression(
+                receiver: arg,
+                method: this.WellKnownTypes.SystemObject_ToString,
+                arguments: ImmutableArray<BoundExpression>.Empty);
         }
         // We need to desugar into string.Format("format string", array of args)
         // Build up interpolation string and lower interpolated expressions
@@ -423,20 +425,35 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
     public override BoundNode VisitPropertySetExpression(BoundPropertySetExpression node)
     {
-        // property = x
+        // property = expr
         //
         // =>
         //
-        // property_set(x)
+        // {
+        //     var tmp = expr;
+        //     property_set(tmp);
+        //     tmp
+        // }
 
         var receiver = node.Receiver is null ? null : (BoundExpression)node.Receiver.Accept(this);
         var setter = node.Setter;
         var value = (BoundExpression)node.Value.Accept(this);
 
-        return CallExpression(
-            receiver: receiver,
-            method: setter,
-            arguments: ImmutableArray.Create(value));
+        var tmp = this.StoreTemporary(value);
+
+        var result = BlockExpression(
+            locals: tmp.Symbol is null
+                ? ImmutableArray<LocalSymbol>.Empty
+                : ImmutableArray.Create(tmp.Symbol),
+            statements: ImmutableArray.Create(
+                tmp.Assignment,
+                ExpressionStatement(CallExpression(
+                    receiver: receiver,
+                    method: setter,
+                    arguments: ImmutableArray.Create(tmp.Reference)))),
+            value: tmp.Reference);
+
+        return result.Accept(this);
     }
 
     public override BoundNode VisitPropertyGetExpression(BoundPropertyGetExpression node)

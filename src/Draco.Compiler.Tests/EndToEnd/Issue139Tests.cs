@@ -194,6 +194,9 @@ public sealed class Issue139Tests
         """")]
     [InlineData("public import Foo")]
     [InlineData("label:")]
+    [InlineData("""
+        func foo(): string = "\{0}";
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

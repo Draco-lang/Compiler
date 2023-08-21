@@ -343,7 +343,7 @@ internal partial class Binder
             {
                 // Retry binding with the resolved variant
                 var call = this.BindCallExpression(syntax, delayed.Promise.Result, args, constraints, diagnostics);
-                constraints.Unify(promisedType, call.TypeRequired);
+                constraints.UnifyAsserted(promisedType, call.TypeRequired);
                 return call;
             });
             return new UntypedDelayedExpression(syntax, promise, promisedType);
@@ -383,7 +383,7 @@ internal partial class Binder
                     symbolPromise.ConfigureDiagnostic(diag => diag
                         .WithLocation(syntax.Function.Location));
 
-                    constraints.Unify(resultType, promisedType);
+                    constraints.UnifyAsserted(resultType, promisedType);
                     return new UntypedCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
                 }
                 else
@@ -395,7 +395,7 @@ internal partial class Binder
                     callPromise.ConfigureDiagnostic(diag => diag
                         .WithLocation(syntax.Location));
 
-                    constraints.Unify(resultType, promisedType);
+                    constraints.UnifyAsserted(resultType, promisedType);
                     return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
                 }
             });
@@ -618,14 +618,14 @@ internal partial class Binder
                     template: SymbolResolutionErrors.NoGettableIndexerInType,
                     location: index.Location,
                     formatArgs: receiver.Type));
-                constraints.Unify(returnType, IntrinsicSymbols.ErrorType);
+                constraints.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
             }
             var overloaded = constraints.Overload(
                 indexers,
                 args.Cast<object>().ToImmutableArray(),
                 out var gotReturnType);
-            constraints.Unify(returnType, gotReturnType);
+            constraints.UnifyAsserted(returnType, gotReturnType);
             overloaded.ConfigureDiagnostic(diag => diag
                 .WithLocation(index.Location));
             return overloaded;

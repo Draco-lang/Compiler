@@ -1939,7 +1939,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -2141,5 +2141,42 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, aSym.Type));
         Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, bSym.Type));
         Assert.True(SymbolEqualityComparer.Default.Equals(intArrayType, tmpSym.Type));
+    }
+
+    [Fact]
+    public void IndexerWitingOverloadedCall()
+    {
+        // import System;
+        // func read_coords(): int32 {
+        //     val line = Console.ReadLine();
+        //     return int32.Parse(line[0]);
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            FunctionDeclaration(
+                "read_coords",
+                ParameterList(),
+                NameType("int32"),
+                BlockFunctionBody(
+                    DeclarationStatement(ImmutableVariableDeclaration(
+                        "line",
+                        null,
+                        CallExpression(MemberExpression(NameExpression("Console"), "ReadLine")))),
+                    ExpressionStatement(ReturnExpression(
+                        CallExpression(
+                            MemberExpression(NameExpression("int32"), "Parse"),
+                            IndexExpression(NameExpression("line"), LiteralExpression(0)))))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
     }
 }

@@ -11,6 +11,8 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 internal static class InstructionFactory
 {
     public static NopInstruction Nop() => new();
+    public static BoxInstruction Box(Register target, TypeSymbol boxedType, IOperand value) =>
+        new(target, boxedType, value);
     public static StoreInstruction Store(IOperand target, IOperand source) => new(target, source);
     public static StoreElementInstruction StoreElement(IOperand array, IEnumerable<IOperand> indices, IOperand source) =>
         new(array, indices, source);

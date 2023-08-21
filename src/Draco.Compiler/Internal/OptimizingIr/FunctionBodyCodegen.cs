@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -16,13 +18,16 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 {
+    private readonly Compilation compilation;
     private readonly Procedure procedure;
+
     private BasicBlock currentBasicBlock;
     private bool isDetached;
     private int blockIndex = 0;
 
-    public FunctionBodyCodegen(Procedure procedure)
+    public FunctionBodyCodegen(Compilation compilation, Procedure procedure)
     {
+        this.compilation = compilation;
         this.procedure = procedure;
         // NOTE: Attach block takes care of the null
         this.currentBasicBlock = default!;
@@ -75,10 +80,47 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var proc = this.procedure.DeclaringModule.DefineProcedure(func);
         if (!compiledAlready)
         {
-            var codegen = new FunctionBodyCodegen(proc);
+            var codegen = new FunctionBodyCodegen(this.compilation, proc);
             func.Body.Accept(codegen);
         }
         return proc;
+    }
+
+    private static bool NeedsBoxing(TypeSymbol targetType, TypeSymbol sourceType)
+    {
+        var targetIsValueType = targetType.Substitution.IsValueType;
+        var sourceIsValueType = sourceType.Substitution.IsValueType;
+        return !targetIsValueType && sourceIsValueType;
+    }
+
+    private static bool NeedsUnboxing(TypeSymbol targetType, TypeSymbol sourceType)
+    {
+        var targetIsValueType = targetType.Substitution.IsValueType;
+        var sourceIsValueType = sourceType.Substitution.IsValueType;
+        return targetIsValueType && !sourceIsValueType;
+    }
+
+    public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
+    {
+        if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
+
+        var needsBox = NeedsBoxing(targetType, source.Type);
+        var needsUnbox = NeedsUnboxing(targetType, source.Type);
+
+        if (needsBox)
+        {
+            var result = this.DefineRegister(targetType.Substitution);
+            this.Write(Box(result, targetType.Substitution, source));
+            return result;
+        }
+
+        if (needsUnbox)
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
+
+        return source;
     }
 
     // Statements //////////////////////////////////////////////////////////////
@@ -102,6 +144,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         if (node.Value is null) return default!;
 
         var right = this.Compile(node.Value);
+        right = this.BoxIfNeeded(node.Local.Type, right);
         var left = this.DefineLocal(node.Local);
         this.Write(Store(left, right));
 
@@ -228,25 +271,42 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
-        var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
-        if (node.Receiver is null)
+        // TODO: Lots of duplication, we should merge these instructions...
+        var receiver = this.CompileReceiver(node);
+        var args = node.Arguments
+            .Zip(node.Method.Parameters)
+            .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
+            .ToList();
+        var callResult = this.DefineRegister(node.TypeRequired);
+        var proc = this.TranslateFunctionSymbol(node.Method);
+        if (receiver is null)
         {
-            var args = node.Arguments.Select(this.Compile).ToList();
-            var callResult = this.DefineRegister(node.TypeRequired);
-            var proc = this.TranslateFunctionSymbol(node.Method);
             this.Write(Call(callResult, proc, args));
-            return isSetter ? args[^1] : callResult;
         }
         else
         {
-            var receiver = node.Receiver.TypeRequired.IsValueType
-                ? this.CompileToAddress(node.Receiver)
-                : this.Compile(node.Receiver);
-            var args = node.Arguments.Select(this.Compile).ToList();
-            var callResult = this.DefineRegister(node.TypeRequired);
-            var proc = this.TranslateFunctionSymbol(node.Method);
             this.Write(MemberCall(callResult, proc, receiver, args));
-            return isSetter ? args[^1] : callResult;
+        }
+        return callResult;
+    }
+
+    private IOperand? CompileReceiver(BoundCallExpression call)
+    {
+        if (call.Receiver is null) return null;
+        // Box receiver, if needed
+        if (call.Method.ContainingSymbol is TypeSymbol methodContainer
+         && NeedsBoxing(methodContainer, call.Receiver.TypeRequired))
+        {
+            var valueReceiver = this.Compile(call.Receiver);
+            var receiver = this.DefineRegister(methodContainer);
+            this.Write(Box(receiver, methodContainer, valueReceiver));
+            return receiver;
+        }
+        else
+        {
+            return call.Receiver.TypeRequired.IsValueType
+                ? this.CompileToAddress(call.Receiver)
+                : this.Compile(call.Receiver);
         }
     }
 
@@ -339,7 +399,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
 
         // Patch
-        PatchStoreSource(leftStore, toStore);
+        this.PatchStoreSource(leftStore, node.Left.Type, toStore);
         this.Write(leftStore);
         return toStore;
     }
@@ -362,8 +422,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
-    private static void PatchStoreSource(IInstruction storeInstr, IOperand source)
+    private void PatchStoreSource(IInstruction storeInstr, TypeSymbol targetType, IOperand source)
     {
+        source = this.BoxIfNeeded(targetType, source);
         switch (storeInstr)
         {
         case StoreInstruction store:
@@ -470,6 +531,19 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitFieldExpression(BoundFieldExpression node)
     {
+        // Check, if it's a literal we need to inline
+        var metadataField = ExtractMetadataField(node.Field);
+        if (metadataField is not null && metadataField.IsLiteral)
+        {
+            var defaultValue = metadataField.DefaultValue;
+            if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.IntrinsicSymbols, out var literalType))
+            {
+                throw new System.InvalidOperationException();
+            }
+            return new Constant(defaultValue, literalType);
+        }
+
+        // Regular static or nonstatic field
         var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(receiver is null
@@ -477,4 +551,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             : LoadField(result, receiver, node.Field));
         return result;
     }
+
+    private static MetadataFieldSymbol? ExtractMetadataField(FieldSymbol field) => field switch
+    {
+        MetadataFieldSymbol m => m,
+        FieldInstanceSymbol i => ExtractMetadataField(i.GenericDefinition),
+        _ => null,
+    };
 }

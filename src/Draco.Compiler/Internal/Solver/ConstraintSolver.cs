@@ -70,7 +70,7 @@ internal sealed partial class ConstraintSolver
             var unwrappedLocalType = localType.Substitution;
             if (unwrappedLocalType is TypeVariable typeVar)
             {
-                this.Unify(typeVar, IntrinsicSymbols.UninferredType);
+                this.UnifyAsserted(typeVar, IntrinsicSymbols.UninferredType);
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
                     location: local.DeclaringSyntax.Location,
@@ -177,12 +177,23 @@ internal sealed partial class ConstraintSolver
         this.substitutions.Add(var, type);
 
     /// <summary>
+    /// Unifies two types, asserting their success.
+    /// </summary>
+    /// <param name="first">The first type to unify.</param>
+    /// <param name="second">The second type to unify.</param>
+    public void UnifyAsserted(TypeSymbol first, TypeSymbol second)
+    {
+        if (this.Unify(first, second)) return;
+        throw new System.InvalidOperationException($"could not unify {first} and {second}");
+    }
+
+    /// <summary>
     /// Attempts to unify two types.
     /// </summary>
     /// <param name="first">The first type to unify.</param>
     /// <param name="second">The second type to unify.</param>
     /// <returns>True, if unification was successful, false otherwise.</returns>
-    public bool Unify(TypeSymbol first, TypeSymbol second)
+    private bool Unify(TypeSymbol first, TypeSymbol second)
     {
         first = first.Substitution;
         second = second.Substitution;

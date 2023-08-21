@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -73,6 +74,35 @@ internal static class MetadataSymbol
             };
         }
         return null;
+    }
+
+    public static object? DecodeConstant(Constant constant, MetadataReader metadataReader)
+    {
+        var blob = metadataReader.GetBlobBytes(constant.Value);
+        return constant.TypeCode switch
+        {
+            ConstantTypeCode.NullReference => null,
+
+            ConstantTypeCode.Boolean => BitConverter.ToBoolean(blob),
+            ConstantTypeCode.Char => BitConverter.ToChar(blob),
+
+            ConstantTypeCode.String => BitConverter.ToString(blob),
+
+            ConstantTypeCode.Byte => blob[0],
+            ConstantTypeCode.UInt16 => BitConverter.ToUInt16(blob),
+            ConstantTypeCode.UInt32 => BitConverter.ToUInt32(blob),
+            ConstantTypeCode.UInt64 => BitConverter.ToUInt64(blob),
+
+            ConstantTypeCode.SByte => (sbyte)blob[0],
+            ConstantTypeCode.Int16 => BitConverter.ToInt16(blob),
+            ConstantTypeCode.Int32 => BitConverter.ToInt32(blob),
+            ConstantTypeCode.Int64 => BitConverter.ToInt64(blob),
+
+            ConstantTypeCode.Single => BitConverter.ToSingle(blob),
+            ConstantTypeCode.Double => BitConverter.ToDouble(blob),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(constant)),
+        };
     }
 
     private static FunctionSymbol SynthetizeConstructor(

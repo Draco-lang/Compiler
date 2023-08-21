@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -17,13 +19,16 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 {
+    private readonly Compilation compilation;
     private readonly Procedure procedure;
+
     private BasicBlock currentBasicBlock;
     private bool isDetached;
     private int blockIndex = 0;
 
-    public FunctionBodyCodegen(Procedure procedure)
+    public FunctionBodyCodegen(Compilation compilation, Procedure procedure)
     {
+        this.compilation = compilation;
         this.procedure = procedure;
         // NOTE: Attach block takes care of the null
         this.currentBasicBlock = default!;
@@ -76,7 +81,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var proc = this.procedure.DeclaringModule.DefineProcedure(func);
         if (!compiledAlready)
         {
-            var codegen = new FunctionBodyCodegen(proc);
+            var codegen = new FunctionBodyCodegen(this.compilation, proc);
             func.Body.Accept(codegen);
         }
         return proc;
@@ -527,6 +532,19 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitFieldExpression(BoundFieldExpression node)
     {
+        // Check, if it's a literal we need to inline
+        var metadataField = ExtractMetadataField(node.Field);
+        if (metadataField is not null && metadataField.IsLiteral)
+        {
+            var defaultValue = metadataField.DefaultValue;
+            if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.IntrinsicSymbols, out var literalType))
+            {
+                throw new System.InvalidOperationException();
+            }
+            return new Constant(defaultValue, literalType);
+        }
+
+        // Regular static or nonstatic field
         var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(receiver is null
@@ -534,4 +552,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             : LoadField(result, receiver, node.Field));
         return result;
     }
+
+    private static MetadataFieldSymbol? ExtractMetadataField(FieldSymbol field) => field switch
+    {
+        MetadataFieldSymbol m => m,
+        FieldInstanceSymbol i => ExtractMetadataField(i.GenericDefinition),
+        _ => null,
+    };
 }

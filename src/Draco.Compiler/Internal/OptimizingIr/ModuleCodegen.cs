@@ -23,7 +23,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         this.compilation = compilation;
         this.module = module;
-        this.globalInitializer = new(module.GlobalInitializer);
+        this.globalInitializer = new(this.compilation, module.GlobalInitializer);
         this.emitSequencePoints = emitSequencePoints;
     }
 
@@ -70,7 +70,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // Yank out potential local functions and closures
         var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
         // Compile it
-        var bodyCodegen = new FunctionBodyCodegen(procedure);
+        var bodyCodegen = new FunctionBodyCodegen(this.compilation, procedure);
         bodyWithoutLocalFunctions.Accept(bodyCodegen);
 
         // Compile the local functions

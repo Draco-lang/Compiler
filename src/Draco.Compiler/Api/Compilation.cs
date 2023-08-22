@@ -280,8 +280,11 @@ public sealed class Compilation : IBinderProvider
             compilation: this,
             emitSequencePoints: pdbStream is not null);
         // Optimize the IR
-        // TODO: Options for optimization
-        OptimizationPipeline.Instance.Apply(assembly);
+        {
+            using var _ = this.Begin("Optimization");
+            // TODO: Options for optimization
+            OptimizationPipeline.Instance.Apply(assembly);
+        }
 
         // Write the IR, if needed
         if (irStream is not null)
@@ -292,7 +295,11 @@ public sealed class Compilation : IBinderProvider
         }
 
         // Generate CIL and PDB
-        if (peStream is not null) MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
+        if (peStream is not null)
+        {
+            using var _ = this.Begin("MetadataCodegen");
+            MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
+        }
 
         // TODO
         {

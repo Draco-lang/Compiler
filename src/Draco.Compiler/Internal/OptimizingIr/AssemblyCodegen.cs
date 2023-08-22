@@ -19,6 +19,7 @@ internal sealed partial class AssemblyCodegen
         Compilation compilation,
         bool emitSequencePoints)
     {
+        using var _ = compilation.Begin("IR Codegen");
         var assemblyCodegen = new AssemblyCodegen(compilation);
         var moduleCodegen = new ModuleCodegen(compilation, assemblyCodegen.assembly.RootModule, emitSequencePoints);
         compilation.SourceModule.Accept(moduleCodegen);

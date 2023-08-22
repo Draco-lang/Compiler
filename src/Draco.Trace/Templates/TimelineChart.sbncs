@@ -24,7 +24,7 @@
             y="{{message.Height * 30 + 15}}px"
             dominant-baseline="middle"
             text-anchor="middle"
-            fill="white"
+            fill="black"
             class="event-name">
             {{message.Message}}
         </text>

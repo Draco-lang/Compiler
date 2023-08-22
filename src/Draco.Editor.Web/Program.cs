@@ -12,6 +12,7 @@ namespace Draco.Editor.Web;
 public partial class Program
 {
     private static string code = null!;
+    private static Compilation? compilation = null;
 
     public static void Main()
     {
@@ -31,8 +32,6 @@ public partial class Program
         }
     }
 
-    private static ImmutableArray<MetadataReference>? references;
-
     private static ImmutableArray<MetadataReference> BuildReferences()
     {
         var thisAssembly = typeof(Program).Assembly;
@@ -50,12 +49,19 @@ public partial class Program
     {
         try
         {
-            var refs = references ??= BuildReferences();
+            var newTree = SyntaxTree.Parse(code);
 
-            var tree = SyntaxTree.Parse(code);
-            var compilation = Compilation.Create(
-                syntaxTrees: ImmutableArray.Create(tree),
-                metadataReferences: refs);
+            if (compilation is null)
+            {
+                compilation = Compilation.Create(
+                    syntaxTrees: ImmutableArray.Create(newTree),
+                    metadataReferences: BuildReferences());
+            }
+            else
+            {
+                var oldTree = compilation.SyntaxTrees.Single();
+                compilation = compilation.UpdateSyntaxTree(oldTree, newTree);
+            }
             RunScript(compilation);
         }
         catch (Exception e)

@@ -5,4 +5,15 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Scriban.Signed" Version="5.5.2" />
+  </ItemGroup>
+  
+  <!-- Embed all Scriban template files -->
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\**\*.*">
+      <LogicalName>Templates.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

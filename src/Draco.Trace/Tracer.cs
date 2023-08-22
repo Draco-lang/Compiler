@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -8,9 +9,12 @@ namespace Draco.Trace;
 
 public sealed class Tracer
 {
-    internal IReadOnlyList<TraceMessage> Messages => this.Messages;
-
     private readonly ConcurrentQueue<TraceMessage> messages = new();
+
+    internal TraceModel ToScribanModel() => new(this.messages
+        .GroupBy(m => m.Thread)
+        .Select(g => new ThreadTraceModel(g.Key, g.ToList()))
+        .ToList());
 
     public void Event(string message) =>
         this.messages.Enqueue(CreateMessage(TraceKind.Event, message));
@@ -23,6 +27,13 @@ public sealed class Tracer
 
     internal void End() =>
         this.messages.Enqueue(CreateMessage(TraceKind.End));
+
+    public void RenderTimeline(Stream stream, CancellationToken cancellationToken)
+    {
+        var writer = new StreamWriter(stream);
+        writer.Write(ScribanRenderer.Render("TimelineChart.sbncs", this.ToScribanModel(), cancellationToken));
+        writer.Flush();
+    }
 
     private static TraceMessage CreateMessage(
         TraceKind kind,

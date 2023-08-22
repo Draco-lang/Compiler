@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
@@ -292,6 +293,12 @@ public sealed class Compilation : IBinderProvider
 
         // Generate CIL and PDB
         if (peStream is not null) MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
+
+        // TODO
+        {
+            using var traceWriter = File.OpenWrite(@"C:/TMP/test.svg");
+            this.tracer.RenderTimeline(traceWriter, CancellationToken.None);
+        }
 
         return new(
             Success: true,

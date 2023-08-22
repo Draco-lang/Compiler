@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<svg height="1280" width="720">
+    {{$y = 0}}
+    {{for $thread in Threads}}
+        {{for $message in $thread.Messages}}
+            <text x="0" y="{{y}}" class="small">{{$message.Message}}</text>
+        {{end}}
+    {{end}}
+</svg>
+
+</body>
+</html>

@@ -10,13 +10,15 @@
         height="30px"
         rx="5"
         ry="5"
-        fill="hsl({{120 - 120 * message.RelativeSpanPercentage}}, 100%, 50%)" />
+        fill="hsl({{120 - 120 * message.RelativeSpanPercentage}}, 100%, 50%)"
+        onmouseover="onEventHover(this)" />
     <text
         x="{{(message.AbsoluteStartPercentage + message.AbsoluteSpanPercentage / 2) * 100}}%"
         y="{{message.Height * 30 + 15}}px"
         dominant-baseline="middle"
         text-anchor="middle"
-        fill="white">
+        fill="white"
+        class="event-name">
         {{message.Message}}
     </text>
     {{for $child in message.Children}}
@@ -24,12 +26,34 @@
     {{end}}
 {{end}}
 
-<svg height="1280" width="720" xmlns="http://www.w3.org/2000/svg">
+<svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg">
     {{for $thread in Threads}}
         {{for $message in $thread.Messages}}
             {{render_message($message)}}
         {{end}}
     {{end}}
+
+    <text
+        x="0"
+        y="100%"
+        text-anchor="start"
+        alignment-baseline="baseline"
+        fill="black"
+        id="hovered-event-text"
+        class="event-name" />
+
+    <style>
+        .event-name {
+            pointer-events: none;
+        }
+    </style>
+
+    <script>
+        function onEventHover(rect) {
+            const hoveredText = document.getElementById("hovered-event-text");
+            hoveredText.textContent = rect.nextElementSibling.textContent;
+        }
+    </script>
 </svg>
 
 </body>

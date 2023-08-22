@@ -19,7 +19,7 @@
             onmouseover="onEventHover(this)"
             class="event-rect" />
         <text
-            x="{{(message.AbsoluteStartPercentage + message.AbsoluteSpanPercentage / 2) * 100}}%"
+            x="50%"
             y="{{message.Height * 30 + 15}}px"
             dominant-baseline="middle"
             text-anchor="middle"

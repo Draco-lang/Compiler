@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -7,6 +8,8 @@ namespace Draco.Trace;
 
 public sealed class Tracer
 {
+    internal IReadOnlyList<TraceMessage> Messages => this.Messages;
+
     private readonly ConcurrentQueue<TraceMessage> messages = new();
 
     public void Event(string message) =>

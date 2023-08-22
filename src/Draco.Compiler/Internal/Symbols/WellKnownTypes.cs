@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
@@ -46,18 +48,26 @@ internal sealed partial class WellKnownTypes
 
     public MetadataTypeSymbol GetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)
     {
+        using var _ = this.compilation.Begin($"GetTypeFromAssembly({name}, {string.Join(".", path)})");
+
         var assembly = this.GetAssemblyWithAssemblyName(name);
         return this.GetTypeFromAssembly(assembly, path);
     }
 
-    public MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
-        assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
+    public MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path)
+    {
+        using var _ = this.compilation.Begin($"GetTypeFromAssembly({assembly.Name}, {string.Join(".", path)})");
+
+        return assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
+    }
 
     private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>
         this.compilation.MetadataAssemblies.Values.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
 
     private MetadataAssemblySymbol GetAssemblyWithNameAndToken(string name, byte[] token)
     {
+        using var _ = this.compilation.Begin($"GetAssemblyWithNameAndToken({name})");
+
         var assemblyName = new AssemblyName() { Name = name };
         assemblyName.SetPublicKeyToken(token);
         return this.compilation.MetadataAssemblies.Values

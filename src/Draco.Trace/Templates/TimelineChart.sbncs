@@ -36,9 +36,7 @@
 
 <svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg" id="root-svg">
     {{for $thread in Threads}}
-        {{for $message in $thread.Messages}}
-            {{render_message($message)}}
-        {{end}}
+        {{render_message($thread.Root)}}
     {{end}}
 
     <text

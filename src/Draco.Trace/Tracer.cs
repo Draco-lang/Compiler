@@ -19,7 +19,7 @@ public sealed class Tracer
         {
             var thread = new ThreadModel(result, group.Key);
             result.Threads.Add(thread);
-            var parent = null as MessageModel;
+            var parent = thread.Root;
 
             MessageModel AddMessage(string message, DateTime startTime)
             {
@@ -29,8 +29,7 @@ public sealed class Tracer
                     StartTime = startTime,
                     EndTime = startTime,
                 };
-                if (parent is null) thread!.Messages.Add(model);
-                else parent.Children.Add(model);
+                parent!.Children.Add(model);
                 return model;
             }
 
@@ -52,6 +51,11 @@ public sealed class Tracer
                     throw new InvalidOperationException();
                 }
             }
+
+            // Fix root parent data
+            parent.Message = string.Empty;
+            parent.StartTime = parent.Children[0].StartTime;
+            parent.EndTime = parent.Children[^1].EndTime;
         }
         return result;
     }

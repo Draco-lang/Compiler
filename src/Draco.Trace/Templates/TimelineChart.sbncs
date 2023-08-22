@@ -54,7 +54,7 @@
         }
 
         .event-rect:hover {
-            filter: brightness(2);
+            filter: opacity(80%);
         }
     </style>
 

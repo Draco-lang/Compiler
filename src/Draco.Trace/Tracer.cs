@@ -13,7 +13,12 @@ public sealed class Tracer
 
     internal TraceModel ToScribanModel() => new(this.messages
         .GroupBy(m => m.Thread)
-        .Select(g => new ThreadTraceModel(g.Key, g.ToList()))
+        .Select(g => new ThreadTraceModel(
+            Thread: g.Key,
+            Messages: g
+                .OrderBy(m => m.TimeStamp)
+                .Select(m => new MessageTraceModel(m))
+                .ToList()))
         .ToList());
 
     public void Event(string message) =>

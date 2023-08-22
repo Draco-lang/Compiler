@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -74,8 +75,10 @@ internal abstract partial class Binder
 
     public virtual BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
+        using var _ = this.Compilation.Begin($"Binder.BindFunction({function})");
+
         var functionName = function.DeclaringSyntax.Name.Text;
-        var constraints = new ConstraintSolver(function.DeclaringSyntax, $"function {functionName}");
+        var constraints = new ConstraintSolver(this.Compilation, function.DeclaringSyntax, $"function {functionName}");
         var untypedStatement = this.BindStatement(function.DeclaringSyntax.Body, constraints, diagnostics);
         constraints.Solve(diagnostics);
         var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
@@ -84,8 +87,10 @@ internal abstract partial class Binder
 
     public virtual (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
+        using var _ = this.Compilation.Begin($"Binder.BindGlobal({global})");
+
         var globalName = global.DeclaringSyntax.Name.Text;
-        var constraints = new ConstraintSolver(global.DeclaringSyntax, $"global {globalName}");
+        var constraints = new ConstraintSolver(this.Compilation, global.DeclaringSyntax, $"global {globalName}");
 
         var typeSyntax = global.DeclaringSyntax.Type;
         var valueSyntax = global.DeclaringSyntax.Value;

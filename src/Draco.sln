@@ -42,6 +42,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Dap", "Draco.Dap\Drac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.DebugAdapter", "Draco.DebugAdapter\Draco.DebugAdapter.csproj", "{9CEC6FB5-720F-42D7-BB74-A3E11A750522}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Trace", "Draco.Trace\Draco.Trace.csproj", "{71F8817D-36C7-4CE3-BACC-7F0D5417B54E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -145,6 +147,12 @@ Global
 		{9CEC6FB5-720F-42D7-BB74-A3E11A750522}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{9CEC6FB5-720F-42D7-BB74-A3E11A750522}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CEC6FB5-720F-42D7-BB74-A3E11A750522}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71F8817D-36C7-4CE3-BACC-7F0D5417B54E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71F8817D-36C7-4CE3-BACC-7F0D5417B54E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71F8817D-36C7-4CE3-BACC-7F0D5417B54E}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{71F8817D-36C7-4CE3-BACC-7F0D5417B54E}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{71F8817D-36C7-4CE3-BACC-7F0D5417B54E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71F8817D-36C7-4CE3-BACC-7F0D5417B54E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

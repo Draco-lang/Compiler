@@ -16,6 +16,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Trace;
 using ModuleSymbol = Draco.Compiler.Internal.Symbols.ModuleSymbol;
 
 namespace Draco.Compiler.Api;
@@ -140,6 +141,8 @@ public sealed class Compilation : IBinderProvider
 
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
+
+    private readonly Tracer tracer = new();
 
     // Main ctor with all state
     private Compilation(
@@ -290,10 +293,16 @@ public sealed class Compilation : IBinderProvider
         // Generate CIL and PDB
         if (peStream is not null) MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
 
+        // TODO: Temporary
+        this.tracer.Dump();
+
         return new(
             Success: true,
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
+
+    internal void Event(string message) => this.tracer.Event(message);
+    internal IDisposable Begin(string message) => this.tracer.Begin(message);
 
     internal ModuleSymbol GetModuleForSyntaxTree(SyntaxTree tree)
     {

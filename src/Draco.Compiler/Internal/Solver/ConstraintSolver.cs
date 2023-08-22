@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -38,8 +39,11 @@ internal sealed partial class ConstraintSolver
     // All locals that have a typed variant constructed
     private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
 
-    public ConstraintSolver(SyntaxNode context, string contextName)
+    private readonly Compilation compilation;
+
+    public ConstraintSolver(Compilation compilation, SyntaxNode context, string contextName)
     {
+        this.compilation = compilation;
         this.Context = context;
         this.ContextName = contextName;
     }
@@ -50,6 +54,8 @@ internal sealed partial class ConstraintSolver
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
+        using var _ = this.compilation.Begin($"ConstraintSolver.Solve()");
+
         while (this.constraints.Count > 0)
         {
             // Apply rules once

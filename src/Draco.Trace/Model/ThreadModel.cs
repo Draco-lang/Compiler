@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Draco.Trace.Model;
 
-internal sealed class ThreadModel
+internal sealed class ThreadModel : ITimeSpanned
 {
     public TraceModel Trace { get; }
     public Thread Thread { get; }

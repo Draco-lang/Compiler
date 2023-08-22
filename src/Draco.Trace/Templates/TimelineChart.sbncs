@@ -3,27 +3,34 @@
 <body>
 
 {{func render_message(message)}}
-    <rect
-        x="{{message.AbsoluteStartPercentage * 100}}%"
-        y="{{message.Height * 30}}px"
-        width="{{message.AbsoluteSpanPercentage * 100}}%"
-        height="30px"
-        rx="5"
-        ry="5"
-        fill="hsl({{120 - 120 * message.RelativeSpanPercentage}}, 100%, 50%)"
-        onmouseover="onEventHover(this)" />
-    <text
-        x="{{(message.AbsoluteStartPercentage + message.AbsoluteSpanPercentage / 2) * 100}}%"
-        y="{{message.Height * 30 + 15}}px"
-        dominant-baseline="middle"
-        text-anchor="middle"
-        fill="white"
-        class="event-name">
-        {{message.Message}}
-    </text>
-    {{for $child in message.Children}}
-        {{render_message($child)}}
-    {{end}}
+    <svg
+        x="{{message.RelativeStartPercentage * 100}}%"
+        y="0"
+        width="{{message.RelativeSpanPercentage * 100}}%"
+        height="100%">
+        <rect
+            x="0"
+            y="{{message.Height * 30}}px"
+            width="100%"
+            height="30px"
+            rx="5"
+            ry="5"
+            fill="hsl({{120 - 120 * message.RelativeSpanPercentage}}, 100%, 50%)"
+            onmouseover="onEventHover(this)"
+            class="event-rect" />
+        <text
+            x="{{(message.AbsoluteStartPercentage + message.AbsoluteSpanPercentage / 2) * 100}}%"
+            y="{{message.Height * 30 + 15}}px"
+            dominant-baseline="middle"
+            text-anchor="middle"
+            fill="white"
+            class="event-name">
+            {{message.Message}}
+        </text>
+        {{for $child in message.Children}}
+            {{render_message($child)}}
+        {{end}}
+    </svg>
 {{end}}
 
 <svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg">
@@ -45,6 +52,10 @@
     <style>
         .event-name {
             pointer-events: none;
+        }
+
+        .event-rect:hover {
+            filter: brightness(2);
         }
     </style>
 

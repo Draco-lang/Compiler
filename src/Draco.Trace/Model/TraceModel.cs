@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Draco.Trace.Model;
 
-internal sealed class TraceModel
+internal sealed class TraceModel : ITimeSpanned
 {
     public IList<ThreadModel> Threads { get; } = new List<ThreadModel>();
 

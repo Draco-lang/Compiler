@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Draco.Trace.Model;
 
-internal sealed class MessageModel
+internal sealed class MessageModel : ITimeSpanned
 {
     public TraceModel Trace => this.Thread.Trace;
     public ThreadModel Thread { get; }
@@ -24,7 +24,11 @@ internal sealed class MessageModel
     public double AbsoluteStartPercentage => (this.StartTime - this.Trace.StartTime).TotalSeconds / this.Trace.TimeSpan.TotalSeconds;
     public double AbsoluteEndPercentage => (this.EndTime - this.Trace.StartTime).TotalSeconds / this.Trace.TimeSpan.TotalSeconds;
 
-    public double RelativeSpanPercentage => this.TimeSpan.TotalSeconds / (this.Parent?.TimeSpan.TotalSeconds ?? this.Trace.TimeSpan.TotalSeconds);
+    public double RelativeSpanPercentage => this.TimeSpan.TotalSeconds / this.Enclosing.TimeSpan.TotalSeconds;
+    public double RelativeStartPercentage => (this.StartTime - this.Enclosing.StartTime).TotalSeconds / this.Enclosing.TimeSpan.TotalSeconds;
+    public double RelativeEndPercentage => (this.EndTime - this.Enclosing.StartTime).TotalSeconds / this.Enclosing.TimeSpan.TotalSeconds;
+
+    private ITimeSpanned Enclosing => this.Parent as ITimeSpanned ?? this.Thread;
 
     public MessageModel(ThreadModel thread, MessageModel? parent)
     {

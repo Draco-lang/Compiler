@@ -24,6 +24,8 @@ internal sealed class MessageModel
     public double AbsoluteStartPercentage => (this.StartTime - this.Trace.StartTime).TotalSeconds / this.Trace.TimeSpan.TotalSeconds;
     public double AbsoluteEndPercentage => (this.EndTime - this.Trace.StartTime).TotalSeconds / this.Trace.TimeSpan.TotalSeconds;
 
+    public double RelativeSpanPercentage => this.TimeSpan.TotalSeconds / (this.Parent?.TimeSpan.TotalSeconds ?? this.Trace.TimeSpan.TotalSeconds);
+
     public MessageModel(ThreadModel thread, MessageModel? parent)
     {
         this.Thread = thread;

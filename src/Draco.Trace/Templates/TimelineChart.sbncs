@@ -10,7 +10,7 @@
         height="30px"
         rx="5"
         ry="5"
-        fill="red" />
+        fill="hsl({{120 - 120 * message.RelativeSpanPercentage}}, 100%, 50%)" />
     <text
         x="{{(message.AbsoluteStartPercentage + message.AbsoluteSpanPercentage / 2) * 100}}%"
         y="{{message.Height * 30 + 15}}px"

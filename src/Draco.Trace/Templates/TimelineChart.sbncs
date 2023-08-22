@@ -17,6 +17,7 @@
             ry="5"
             fill="hsl({{120 - 120 * message.RelativeSpanPercentage}}, 100%, 50%)"
             onmouseover="onEventHover(this)"
+            onclick="onEventClick(this)"
             class="event-rect" />
         <text
             x="50%"
@@ -33,7 +34,7 @@
     </svg>
 {{end}}
 
-<svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg">
+<svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg" id="root-svg">
     {{for $thread in Threads}}
         {{for $message in $thread.Messages}}
             {{render_message($message)}}
@@ -63,6 +64,25 @@
         function onEventHover(rect) {
             const hoveredText = document.getElementById("hovered-event-text");
             hoveredText.textContent = rect.nextElementSibling.textContent;
+        }
+
+        function onEventClick(rect) {
+            const group = rect.parentElement;
+            maximize(group);
+        }
+
+        function isGroupSvg(group) {
+            if (!group) return false;
+            return group.tagName === "svg" &amp;&amp; group.id !== "root-svg";
+        }
+
+        function maximize(group) {
+            if (!isGroupSvg(group)) return;
+
+            group.setAttribute("x", "0");
+            group.setAttribute("width", "100%");
+
+            maximize(group.parentElement);
         }
     </script>
 </svg>

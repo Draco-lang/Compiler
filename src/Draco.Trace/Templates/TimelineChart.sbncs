@@ -2,12 +2,32 @@
 <html>
 <body>
 
+{{func render_message(message)}}
+    <rect
+        x="{{message.AbsoluteStartPercentage * 100}}%"
+        y="{{message.Height * 30}}px"
+        width="{{message.AbsoluteSpanPercentage * 100}}%"
+        height="30px"
+        rx="5"
+        ry="5"
+        fill="red" />
+    <text
+        x="{{(message.AbsoluteStartPercentage + message.AbsoluteSpanPercentage / 2) * 100}}%"
+        y="{{message.Height * 30 + 15}}px"
+        dominant-baseline="middle"
+        text-anchor="middle"
+        fill="white">
+        {{message.Message}}
+    </text>
+    {{for $child in message.Children}}
+        {{render_message($child)}}
+    {{end}}
+{{end}}
+
 <svg height="1280" width="720" xmlns="http://www.w3.org/2000/svg">
-    {{$y = 10}}
     {{for $thread in Threads}}
         {{for $message in $thread.Messages}}
-            <text x="0" y="{{$y}}" class="small">{{$message.Message}}</text>
-            {{$y += 20}}
+            {{render_message($message)}}
         {{end}}
     {{end}}
 </svg>

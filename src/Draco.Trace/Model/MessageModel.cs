@@ -16,6 +16,14 @@ internal sealed class MessageModel
     public DateTime EndTime { get; set; }
     public IList<MessageModel> Children { get; } = new List<MessageModel>();
 
+    public int Height => (this.Parent?.Height ?? 0) + 1;
+
+    public TimeSpan TimeSpan => this.EndTime - this.StartTime;
+
+    public double AbsoluteSpanPercentage => this.TimeSpan.TotalSeconds / this.Trace.TimeSpan.TotalSeconds;
+    public double AbsoluteStartPercentage => (this.StartTime - this.Trace.StartTime).TotalSeconds / this.Trace.TimeSpan.TotalSeconds;
+    public double AbsoluteEndPercentage => (this.EndTime - this.Trace.StartTime).TotalSeconds / this.Trace.TimeSpan.TotalSeconds;
+
     public MessageModel(ThreadModel thread, MessageModel? parent)
     {
         this.Thread = thread;

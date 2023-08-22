@@ -25,6 +25,7 @@ public sealed class Tracer
             {
                 var model = new MessageModel(thread!, parent)
                 {
+                    Message = message,
                     StartTime = startTime,
                     EndTime = startTime,
                 };

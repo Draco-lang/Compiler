@@ -9,7 +9,20 @@ namespace Draco.Trace;
 
 internal sealed record class TraceModel(IReadOnlyList<ThreadTraceModel> Threads);
 
-internal sealed record class ThreadTraceModel(Thread Thread, IReadOnlyList<MessageTraceModel> Messages);
+internal sealed class ThreadTraceModel
+{
+    public Thread Thread { get; }
+    public IReadOnlyList<MessageTraceModel> Messages { get; }
+
+    private readonly TraceModel traceModel;
+
+    public ThreadTraceModel(TraceModel traceModel, Thread thread, IReadOnlyList<MessageTraceModel> messages)
+    {
+        this.traceModel = traceModel;
+        this.Thread = thread;
+        this.Messages = messages;
+    }
+}
 
 internal sealed class MessageTraceModel
 {
@@ -19,10 +32,12 @@ internal sealed class MessageTraceModel
 
     public string Message => this.message.Message;
 
+    private readonly ThreadTraceModel threadTraceModel;
     private readonly TraceMessage message;
 
-    public MessageTraceModel(TraceMessage message)
+    public MessageTraceModel(ThreadTraceModel threadTraceModel, TraceMessage message)
     {
+        this.threadTraceModel = threadTraceModel;
         this.message = message;
     }
 }

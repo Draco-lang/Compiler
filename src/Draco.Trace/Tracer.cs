@@ -11,15 +11,26 @@ public sealed class Tracer
 {
     private readonly ConcurrentQueue<TraceMessage> messages = new();
 
-    internal TraceModel ToScribanModel() => new(this.messages
-        .GroupBy(m => m.Thread)
-        .Select(g => new ThreadTraceModel(
-            Thread: g.Key,
-            Messages: g
-                .OrderBy(m => m.TimeStamp)
-                .Select(m => new MessageTraceModel(m))
-                .ToList()))
-        .ToList());
+    internal TraceModel ToScribanModel()
+    {
+        var threadModels = new List<ThreadTraceModel>();
+        var result = new TraceModel(threadModels);
+
+        foreach (var group in this.messages.GroupBy(m => m.Thread))
+        {
+            var messages = new List<MessageTraceModel>();
+            var threadModel = new ThreadTraceModel(result, group.Key, messages);
+            threadModels.Add(threadModel);
+
+            foreach (var message in group.OrderBy(m => m.TimeStamp))
+            {
+                messages.Add(new MessageTraceModel(threadModel, message));
+            }
+
+        }
+
+        return result;
+    }
 
     public void Event(string message) =>
         this.messages.Enqueue(CreateMessage(TraceKind.Event, message));

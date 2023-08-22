@@ -61,6 +61,9 @@
     </style>
 
     <script>
+        const markedSet = new Set();
+        var undoList = [];
+
         function onEventHover(rect) {
             const hoveredText = document.getElementById("hovered-event-text");
             hoveredText.textContent = rect.nextElementSibling.textContent;
@@ -68,21 +71,73 @@
 
         function onEventClick(rect) {
             const group = rect.parentElement;
-            maximize(group);
+
+            markedSet.clear();
+            for (const undo of undoList) {
+                undo();
+            }
+            undoList = [];
+
+            maximizeChain(group);
         }
 
-        function isGroupSvg(group) {
+        function markGroupSvg(group) {
             if (!group) return false;
+            if (markedSet.has(group)) return false;
+            markedSet.add(group);
             return group.tagName === "svg" &amp;&amp; group.id !== "root-svg";
         }
 
-        function maximize(group) {
-            if (!isGroupSvg(group)) return;
+        function addToUndo(group) {
+            const oldX = group.getAttribute("x");
+            const oldWidth = group.getAttribute("width");
+
+            undoList.push(() => {
+                group.setAttribute("x", oldX);
+                group.setAttribute("width", oldWidth);
+            });
+        }
+
+        function maximizeChain(group) {
+            if (!markGroupSvg(group)) return;
+
+            maximizeGroup(group);
+            maximizeChain(group.parentElement);
+            minimizeAround(group);
+        }
+
+        function maximizeGroup(group) {
+            addToUndo(group);
 
             group.setAttribute("x", "0");
             group.setAttribute("width", "100%");
+        }
 
-            maximize(group.parentElement);
+        function minimizeAround(group) {
+            minimizeChainLeft(group.previousElementSibling);
+            minimizeChainRight(group.nextElementSibling);
+        }
+
+        function minimizeChainLeft(group) {
+            if (!markGroupSvg(group)) return;
+
+            minimizeGroup(group);
+            minimizeChainLeft(group.previousElementSibling);
+            minimizeChainLeft(group.parentElement);
+        }
+
+        function minimizeChainRight(group) {
+            if (!markGroupSvg(group)) return;
+
+            minimizeGroup(group);
+            minimizeChainRight(group.nextElementSibling);
+            minimizeChainRight(group.parentElement);
+        }
+
+        function minimizeGroup(group) {
+            addToUndo(group);
+
+            group.setAttribute("width", "0%");
         }
     </script>
 </svg>

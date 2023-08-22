@@ -293,9 +293,6 @@ public sealed class Compilation : IBinderProvider
         // Generate CIL and PDB
         if (peStream is not null) MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
 
-        // TODO: Temporary
-        this.tracer.Dump();
-
         return new(
             Success: true,
             Diagnostics: ImmutableArray<Diagnostic>.Empty);

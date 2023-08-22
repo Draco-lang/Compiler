@@ -2,11 +2,12 @@
 <html>
 <body>
 
-<svg height="1280" width="720">
-    {{$y = 0}}
+<svg height="1280" width="720" xmlns="http://www.w3.org/2000/svg">
+    {{$y = 10}}
     {{for $thread in Threads}}
         {{for $message in $thread.Messages}}
-            <text x="0" y="{{y}}" class="small">{{$message.Message}}</text>
+            <text x="0" y="{{$y}}" class="small">{{$message.Message}}</text>
+            {{$y += 20}}
         {{end}}
     {{end}}
 </svg>

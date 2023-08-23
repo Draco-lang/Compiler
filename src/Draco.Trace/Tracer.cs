@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -10,6 +11,8 @@ namespace Draco.Trace;
 
 public sealed class Tracer
 {
+    private static readonly Stopwatch stopwatch = Stopwatch.StartNew();
+
     private readonly ConcurrentQueue<TraceMessage> messages = new();
 
     internal TraceModel ToScribanModel()
@@ -21,7 +24,7 @@ public sealed class Tracer
             result.Threads.Add(thread);
             var parent = thread.Root;
 
-            MessageModel AddMessage(string message, DateTime startTime)
+            MessageModel AddMessage(string message, TimeSpan startTime)
             {
                 var model = new MessageModel(thread!, parent)
                 {
@@ -84,6 +87,6 @@ public sealed class Tracer
         string? message = null) => new(
         Kind: kind,
         Thread: Thread.CurrentThread,
-        TimeStamp: DateTime.Now,
+        TimeStamp: stopwatch.Elapsed,
         Message: message ?? string.Empty);
 }

@@ -6,5 +6,5 @@ namespace Draco.Trace;
 internal readonly record struct TraceMessage(
     TraceKind Kind,
     Thread Thread,
-    DateTime TimeStamp,
+    TimeSpan TimeStamp,
     string Message);

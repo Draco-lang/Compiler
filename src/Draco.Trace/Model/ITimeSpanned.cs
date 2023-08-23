@@ -8,7 +8,7 @@ namespace Draco.Trace.Model;
 
 internal interface ITimeSpanned
 {
-    public DateTime StartTime { get; }
-    public DateTime EndTime { get; }
+    public TimeSpan StartTime { get; }
+    public TimeSpan EndTime { get; }
     public TimeSpan TimeSpan { get; }
 }

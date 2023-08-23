@@ -12,8 +12,8 @@ internal sealed class MessageModel : ITimeSpanned
     public ThreadModel Thread { get; }
     public MessageModel? Parent { get; }
     public string Message { get; set; } = string.Empty;
-    public DateTime StartTime { get; set; }
-    public DateTime EndTime { get; set; }
+    public TimeSpan StartTime { get; set; }
+    public TimeSpan EndTime { get; set; }
     public IList<MessageModel> Children { get; } = new List<MessageModel>();
 
     public int Height => (this.Parent?.Height ?? 0) + 1;

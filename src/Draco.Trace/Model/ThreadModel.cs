@@ -13,8 +13,8 @@ internal sealed class ThreadModel : ITimeSpanned
     public Thread Thread { get; }
     public MessageModel Root { get; }
 
-    public DateTime StartTime => this.Root.StartTime;
-    public DateTime EndTime => this.Root.EndTime;
+    public TimeSpan StartTime => this.Root.StartTime;
+    public TimeSpan EndTime => this.Root.EndTime;
     public TimeSpan TimeSpan => this.EndTime - this.StartTime;
 
     public ThreadModel(TraceModel trace, Thread thread)

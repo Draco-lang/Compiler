@@ -59,8 +59,28 @@
     </style>
 
     <script>
+        const rootSvg = document.getElementById("root-svg");
+
         const markedSet = new Set();
-        var undoList = [];
+        let undoList = [];
+
+        let horizontalScale = 1;
+        let horizontalOffset = 0;
+
+        rootSvg.addEventListener('wheel', (e) => {
+            e.preventDefault();
+
+            const scaleFactor = 1.2;
+            const delta = e.wheelDelta ? e.wheelDelta : -e.deltaY;
+            const scale = delta > 0 ? scaleFactor : 1 / scaleFactor;
+
+            const offsetPercentage = (e.clientX - horizontalOffset) / (1280 * horizontalScale);
+            horizontalOffset -= offsetPercentage * 1280 * (scale - 1) * horizontalScale;
+            horizontalScale *= scale;
+
+            rootSvg.setAttribute("width", horizontalScale * 1280);
+            rootSvg.setAttribute("transform", `translate(${horizontalOffset} 0)`);
+        });
 
         function onEventHover(rect) {
             const hoveredText = document.getElementById("hovered-event-text");

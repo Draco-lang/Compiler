@@ -151,8 +151,8 @@
     </script>
 </svg>
 
-<p display="block" id="hovered-event-text"></p>
-<p display="block" id="hovered-event-timespan"></p>
+<p id="hovered-event-text"></p>
+<p id="hovered-event-timespan"></p>
 
 </body>
 </html>

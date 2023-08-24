@@ -303,7 +303,7 @@ public sealed class Compilation : IBinderProvider
 
         // TODO
         {
-            using var traceWriter = File.OpenWrite(@"C:/TMP/test.svg");
+            using var traceWriter = File.OpenWrite(@"C:/TMP/test.html");
             this.tracer.RenderTimeline(traceWriter, CancellationToken.None);
         }
 

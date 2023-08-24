@@ -28,6 +28,8 @@ internal sealed class MessageModel : ITimeSpanned
     public double RelativeStartPercentage => (this.StartTime - this.Enclosing.StartTime).TotalSeconds / this.Enclosing.TimeSpan.TotalSeconds;
     public double RelativeEndPercentage => (this.EndTime - this.Enclosing.StartTime).TotalSeconds / this.Enclosing.TimeSpan.TotalSeconds;
 
+    public double TimeSpanInMilliseconds => this.TimeSpan.TotalMilliseconds;
+
     private ITimeSpanned Enclosing => this.Parent as ITimeSpanned ?? this.Thread;
 
     public MessageModel(ThreadModel thread, MessageModel? parent)

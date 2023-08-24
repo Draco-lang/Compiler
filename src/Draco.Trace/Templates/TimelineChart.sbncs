@@ -18,7 +18,8 @@
             fill="hsl({{120 - 120 * message.RelativeSpanPercentage}}, 100%, 50%)"
             onmouseover="onEventHover(this)"
             onclick="onEventClick(this)"
-            class="event-rect" />
+            class="event-rect"
+            data-timespan="{{message.TimeSpanInMilliseconds}}" />
         <text
             x="50%"
             y="{{message.Height * 30 + 15}}px"
@@ -34,16 +35,12 @@
     </svg>
 {{end}}
 
-<svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg" id="root-svg">
+<svg width="1280" height="720" display="block" xmlns="http://www.w3.org/2000/svg" id="root-svg">
     {{for $thread in Threads}}
         {{render_message($thread.Root)}}
     {{end}}
 
     <style>
-        .event-name {
-            pointer-events: none;
-        }
-
         .event-rect:hover {
             filter: opacity(80%);
         }
@@ -75,7 +72,10 @@
 
         function onEventHover(rect) {
             const hoveredText = document.getElementById("hovered-event-text");
+            const hoveredSpan = document.getElementById("hovered-event-timespan");
+
             hoveredText.textContent = rect.nextElementSibling.textContent;
+            hoveredSpan.textContent = `${rect.dataset.timespan} ms`;
         }
 
         function onEventClick(rect) {
@@ -151,7 +151,8 @@
     </script>
 </svg>
 
-<p id="hovered-event-text" class="event-name"></p>
+<p display="block" id="hovered-event-text"></p>
+<p display="block" id="hovered-event-timespan"></p>
 
 </body>
 </html>

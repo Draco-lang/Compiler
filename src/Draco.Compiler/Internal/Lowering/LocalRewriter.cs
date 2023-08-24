@@ -265,9 +265,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
         var enumerator = new SynthetizedLocalSymbol(node.GetEnumeratorMethod.ReturnType, false);
 
-        // TODO: Decide if we want to enforce props, or fields are fine, ...
+        // NOTE: Checked during binding
         var currentProp = (PropertySymbol)node.CurrentProperty;
-        // TODO: If Current is a prop, check if it has a getter
         if (currentProp.Getter is null) throw new InvalidOperationException();
 
         var result = BlockExpression(

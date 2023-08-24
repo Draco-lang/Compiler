@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -60,6 +61,12 @@ internal sealed partial class ConstraintSolver
         if (this.TryDequeue<AwaitConstraint<IConstraintPromise<FunctionSymbol>>>(out var wait4, w => w.Awaited()))
         {
             this.HandleRule(wait4);
+            return true;
+        }
+
+        if (this.TryDequeue<AwaitConstraint<Unit>>(out var wait5, w => w.Awaited()))
+        {
+            this.HandleRule(wait5);
             return true;
         }
 

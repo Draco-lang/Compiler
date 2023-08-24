@@ -4170,4 +4170,31 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(SymbolEqualityComparer.Default.Equals(moduleDefSymbol, moduleRefSymbol));
         Assert.Empty(diags);
     }
+
+    [Fact]
+    public void ForeachSequenceHasNoGetEnumerator()
+    {
+        // func main() {
+        //     for (i in 0) {}
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(ForExpression("i", LiteralExpression(0), BlockExpression()))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+    }
 }

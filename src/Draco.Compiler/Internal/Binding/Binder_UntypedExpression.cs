@@ -11,6 +11,7 @@ using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -263,8 +264,24 @@ internal partial class Binder
 
         var exprPromise = constraints.Await(getEnumeratorMethodsPromise, UntypedExpression () =>
         {
-            var getEnumeratorFunctions = GetFunctions(getEnumeratorMethodsPromise.Result);
+            var getEnumeratorResult = getEnumeratorMethodsPromise.Result;
+            if (getEnumeratorResult.IsError)
+            {
+                constraints.UnifyAsserted(elementType, IntrinsicSymbols.ErrorType);
+                return new UntypedForExpression(
+                    syntax,
+                    iterator,
+                    sequence,
+                    then,
+                    continueLabel,
+                    breakLabel,
+                    ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol),
+                    ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol),
+                    ConstraintPromise.FromResult(UndefinedMemberSymbol.Instance as Symbol));
+            }
 
+            // Look up the overload
+            var getEnumeratorFunctions = GetFunctions(getEnumeratorResult);
             var getEnumeratorPromise = constraints.Overload(
                 "GetEnumerator",
                 getEnumeratorFunctions,
@@ -305,6 +322,25 @@ internal partial class Binder
             var elementAssignablePromise = constraints.Assignable(elementType, currentType);
             elementAssignablePromise.ConfigureDiagnostic(diag => diag
                 .WithLocation(syntax.ElementType?.Location ?? syntax.Iterator.Location));
+
+            // Current needs to be a gettable property
+            constraints.Await(currentPromise, () =>
+            {
+                var current = currentPromise.Result;
+
+                // Don't propagate error
+                if (current.IsError) return default(Unit);
+
+                if (current is not PropertySymbol propSymbol || propSymbol.Getter is null)
+                {
+                    diagnostics.Add(Diagnostic.Create(
+                        template: SymbolResolutionErrors.NotGettableProperty,
+                        location: syntax.Sequence.Location,
+                        formatArgs: current.Name));
+                }
+
+                return default;
+            });
 
             return new UntypedForExpression(
                 syntax,

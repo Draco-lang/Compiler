@@ -42,6 +42,8 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     private ImmutableArray<Symbol> BuildMembers()
     {
+        using var _ = this.Assembly.Compilation.Begin($"MetadataStaticClassSymbol({this.Name}).BuildMembers");
+
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // Nested types

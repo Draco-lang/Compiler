@@ -62,6 +62,8 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
 
     private MetadataNamespaceSymbol BuildRootNamespace()
     {
+        using var _ = this.Compilation.Begin($"MetadataAssemblySymbol({this.Name}).BuildRootNamespace");
+
         var rootNamespaceDefinition = this.MetadataReader.GetNamespaceDefinitionRoot();
         return new MetadataNamespaceSymbol(
             containingSymbol: this,

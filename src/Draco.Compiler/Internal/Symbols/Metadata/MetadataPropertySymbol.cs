@@ -67,6 +67,8 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private MetadataPropertyAccessorSymbol? BuildGetter()
     {
+        using var _ = this.Assembly.Compilation.Begin($"MetadataPropertySymbol({this.Name}).BuildGetter");
+
         var accessors = this.propertyDefinition.GetAccessors();
         if (accessors.Getter.IsNil) return null;
         var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
@@ -75,6 +77,8 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private MetadataPropertyAccessorSymbol? BuildSetter()
     {
+        using var _ = this.Assembly.Compilation.Begin($"MetadataPropertySymbol({this.Name}).BuildSetter");
+
         var accessors = this.propertyDefinition.GetAccessors();
         if (accessors.Setter.IsNil) return null;
         var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
@@ -83,6 +87,8 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private void BuildOverride()
     {
+        using var _ = this.Assembly.Compilation.Begin($"MetadataPropertySymbol({this.Name}).BuildOverride");
+
         var explicitOverride = this.GetExplicitOverride();
         this.@override = this.ContainingSymbol is TypeSymbol type
             ? explicitOverride ?? type.GetOverriddenSymbol(this)

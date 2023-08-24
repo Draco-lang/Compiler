@@ -4202,7 +4202,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void ForeachEnumeratorHasNoMoveNext()
     {
         // func foo() {
-        //     for (i in Seq.GetEnumerator()) {}
+        //     for (i in Seq()) {}
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -4213,13 +4213,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(ForExpression(
                         "i",
-                        CallExpression(MemberExpression(NameExpression("Seq"), "GetEnumerator")),
+                        CallExpression(NameExpression("Seq")),
                         BlockExpression()))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public static class Seq
+            public class Seq
             {
-                public static TestEnumerator GetEnumerator() => default;
+                public TestEnumerator GetEnumerator() => default;
             }
 
             public struct TestEnumerator
@@ -4249,7 +4249,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     public void ForeachEnumeratorHasNoCurrentProperty()
     {
         // func foo() {
-        //     for (i in Seq.GetEnumerator()) {}
+        //     for (i in Seq()) {}
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
@@ -4260,13 +4260,13 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(ForExpression(
                         "i",
-                        CallExpression(MemberExpression(NameExpression("Seq"), "GetEnumerator")),
+                        CallExpression(NameExpression("Seq")),
                         BlockExpression()))))));
 
         var fooRef = CompileCSharpToMetadataRef("""
-            public static class Seq
+            public class Seq
             {
-                public static TestEnumerator GetEnumerator() => default;
+                public TestEnumerator GetEnumerator() => default;
             }
 
             public struct TestEnumerator
@@ -4291,6 +4291,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NotGettableProperty);
     }
 }

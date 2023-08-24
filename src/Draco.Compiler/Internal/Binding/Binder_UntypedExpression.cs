@@ -297,7 +297,15 @@ internal partial class Binder
 
             var moveNextPromise = constraints.Await(moveNextMethodsPromise, () =>
             {
-                var moveNextFunctions = GetFunctions(moveNextMethodsPromise.Result);
+                var moveNextResult = moveNextMethodsPromise.Result;
+
+                // Don't propagate errors
+                if (moveNextResult.IsError)
+                {
+                    return ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol);
+                }
+
+                var moveNextFunctions = GetFunctions(moveNextResult);
 
                 var moveNextPromise = constraints.Overload(
                     "MoveNext",

@@ -103,6 +103,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     private ImmutableArray<TypeParameterSymbol> BindGenericParameters(IBinderProvider binderProvider)
     {
+        using var _ = this.DeclaringCompilation?.Begin($"SourceFunctionSymbol({this.Name}).BindGenericParameters");
+
         // Simplest case if the function is not generic
         if (this.DeclaringSyntax.Generics is null) return ImmutableArray<TypeParameterSymbol>.Empty;
 
@@ -135,6 +137,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     private ImmutableArray<ParameterSymbol> BindParameters(IBinderProvider binderProvider)
     {
+        using var _ = this.DeclaringCompilation?.Begin($"SourceFunctionSymbol({this.Name}).BindParameters");
+
         var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
@@ -173,6 +177,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     private TypeSymbol BindReturnType(IBinderProvider binderProvider)
     {
+        using var _ = this.DeclaringCompilation?.Begin($"SourceFunctionSymbol({this.Name}).BindReturnType");
+
         // If the return type is unspecified, it's assumed to be unit
         if (this.DeclaringSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
 
@@ -186,6 +192,8 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     private BoundStatement BindBody(IBinderProvider binderProvider)
     {
+        using var _ = this.DeclaringCompilation?.Begin($"SourceFunctionSymbol({this.Name}).BindBody");
+
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Body);
         return binder.BindFunction(this, binderProvider.DiagnosticBag);
     }

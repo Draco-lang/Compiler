@@ -39,15 +39,6 @@
         {{render_message($thread.Root)}}
     {{end}}
 
-    <text
-        x="0"
-        y="100%"
-        text-anchor="start"
-        alignment-baseline="baseline"
-        fill="black"
-        id="hovered-event-text"
-        class="event-name" />
-
     <style>
         .event-name {
             pointer-events: none;
@@ -159,6 +150,8 @@
         }
     </script>
 </svg>
+
+<p id="hovered-event-text" class="event-name"></p>
 
 </body>
 </html>

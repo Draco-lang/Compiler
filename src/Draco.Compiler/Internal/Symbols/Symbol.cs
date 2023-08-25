@@ -109,29 +109,6 @@ internal abstract partial class Symbol
     }
 
     /// <summary>
-    /// The full name used to retrieve documentation from metadata.
-    /// </summary>
-    public virtual string DocumentationFullName => this.MetadataFullName;
-
-    /// <summary>
-    /// The documentationPrefix of this type.
-    /// </summary>
-    public string DocumentationPrefix => this switch
-    {
-        TypeSymbol => "T:",
-        ModuleSymbol => "T:",
-        FunctionSymbol => "M:",
-        PropertySymbol => "P:",
-        FieldSymbol => "F:",
-        _ => string.Empty,
-    };
-
-    /// <summary>
-    /// The <see cref="DocumentationFullName"/> with prepended <see cref="DocumentationPrefix"/>.
-    /// </summary>
-    public virtual string PrefixedDocumentationFullName => $"{this.DocumentationPrefix}{this.DocumentationFullName}";
-
-    /// <summary>
     /// All the members within this symbol.
     /// </summary>
     public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();

@@ -8,23 +8,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract class TypeParameterSymbol : TypeSymbol
 {
-    public override string DocumentationFullName
-    {
-        get
-        {
-            var index = this.ContainingSymbol?.GenericParameters.IndexOf(this);
-            if (index is null || index.Value == -1) return base.DocumentationFullName;
-            return this.ContainingSymbol switch
-            {
-                TypeSymbol => $"`{index.Value}",
-                FunctionSymbol => $"``{index.Value}",
-                _ => base.DocumentationFullName,
-            };
-        }
-    }
-
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
-        (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);
+        base.GenericInstantiate(containingSymbol, arguments);
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) => context.TryGetValue(this, out var type)
         ? type
         : this;

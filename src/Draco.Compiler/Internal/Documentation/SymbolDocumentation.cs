@@ -36,7 +36,7 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     public virtual string ToMarkdown()
     {
         var builder = new StringBuilder();
-        for (int i = 0; i < this.OrderedSections.Length; i++)
+        for (var i = 0; i < this.OrderedSections.Length; i++)
         {
             var section = this.OrderedSections[i];
             builder.Append(section.Kind switch

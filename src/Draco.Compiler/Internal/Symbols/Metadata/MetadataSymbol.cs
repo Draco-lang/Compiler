@@ -87,4 +87,56 @@ internal static class MetadataSymbol
     private static FunctionSymbol SynthetizeConstructor(
         MetadataTypeSymbol type,
         MethodDefinition ctorMethod) => new SynthetizedMetadataConstructorSymbol(type, ctorMethod);
+
+    /// <summary>
+    /// Gets the full name of a <paramref name="symbol"/> used to retrieve documentation from metadata.
+    /// </summary>
+    /// <param name="symbol">The symbol to get documentation name of.</param>
+    /// <returns>The documentation name, or empty string, if <paramref name="symbol"/> is null.</returns>
+    public static string GetDocumentationName(Symbol? symbol) => symbol switch
+    {
+        FunctionSymbol function => GetFunctionDocumentationName(function),
+        TypeParameterSymbol typeParam => GetTypeParameterDocumentationName(typeParam),
+        null => string.Empty,
+        _ => symbol.MetadataFullName,
+    };
+
+    /// <summary>
+    /// The documentation name of <paramref name="symbol"/> with prepended documentation prefix.
+    /// </summary>
+    /// <param name="symbol">The symbol to get prefixed documentation name of.</param>
+    /// <returns>The prefixed documentation name, or empty string, if <paramref name="symbol"/> is null..</returns>
+    public static string GetPrefixedDocumentationName(Symbol? symbol) => $"{symbol switch
+    {
+        TypeSymbol => "T:",
+        ModuleSymbol => "T:",
+        FunctionSymbol => "M:",
+        PropertySymbol => "P:",
+        FieldSymbol => "F:",
+        _ => string.Empty,
+    }}{GetDocumentationName(symbol)}";
+
+    private static string GetFunctionDocumentationName(FunctionSymbol function)
+    {
+        var parametersJoined = function.Parameters.Length == 0
+                ? string.Empty
+                : $"({string.Join(",", function.Parameters.Select(x => GetDocumentationName(x.Type)))})";
+
+        var generics = function.GenericParameters.Length == 0
+            ? string.Empty
+            : $"``{function.GenericParameters.Length}";
+        return $"{function.MetadataFullName}{generics}{parametersJoined}";
+    }
+
+    private static string GetTypeParameterDocumentationName(TypeParameterSymbol typeParameter)
+    {
+        var index = typeParameter.ContainingSymbol?.GenericParameters.IndexOf(typeParameter);
+        if (index is null || index.Value == -1) return typeParameter.MetadataFullName;
+        return typeParameter.ContainingSymbol switch
+        {
+            TypeSymbol => $"`{index.Value}",
+            FunctionSymbol => $"``{index.Value}",
+            _ => typeParameter.MetadataFullName,
+        };
+    }
 }

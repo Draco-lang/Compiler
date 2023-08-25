@@ -86,6 +86,6 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
             if (current is null) return null;
         }
 
-        return current.Members.SingleOrDefault(m => m.PrefixedDocumentationFullName == documentationName);
+        return current.Members.SingleOrDefault(m => MetadataSymbol.GetPrefixedDocumentationName(m) == documentationName);
     }
 }

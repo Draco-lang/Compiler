@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Xml.Linq;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Metadata;
 
 namespace Draco.Compiler.Internal.Documentation;
 
@@ -98,7 +99,7 @@ internal sealed record class ReferenceDocumentationElement(Symbol? ReferencedSym
     {
         ParameterSymbol => new XElement("paramref", new XAttribute("name", this.DisplayText)),
         TypeParameterSymbol => new XElement("typeparamref", new XAttribute("name", this.DisplayText)),
-        _ => new XElement("see", new XAttribute("cref", this.ReferencedSymbol?.PrefixedDocumentationFullName ?? string.Empty)),
+        _ => new XElement("see", new XAttribute("cref", MetadataSymbol.GetPrefixedDocumentationName(this.ReferencedSymbol))),
     };
 }
 

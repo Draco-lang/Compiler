@@ -34,7 +34,7 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {
-        using var _trace = this.DeclaringCompilation?.Begin($"SourceParameterSymbol({this.Name}).BindType");
+        using var _trace = this.DeclaringCompilation?.TraceBegin($"SourceParameterSymbol({this.Name}).BindType");
 
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Type);
         var diagnostics = binderProvider.DiagnosticBag;

@@ -38,7 +38,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (globalSymbol is not SourceGlobalSymbol sourceGlobal) return;
 
-        using var _ = this.compilation.Begin($"CompileGlobal({globalSymbol.Name})");
+        using var _ = this.compilation.TraceBegin($"CompileGlobal({globalSymbol.Name})");
         var global = this.module.DefineGlobal(sourceGlobal);
 
         // If there's a value, compile it
@@ -62,7 +62,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
-        using var _ = this.compilation.Begin($"CompileFunction({functionSymbol.Name})");
+        using var _ = this.compilation.TraceBegin($"CompileFunction({functionSymbol.Name})");
 
         // Add procedure, define parameters
         var procedure = this.module.DefineProcedure(functionSymbol);
@@ -98,16 +98,16 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     private BoundNode RewriteBody(BoundNode body)
     {
-        using var _ = this.compilation.Begin("RewriteBody");
+        using var _ = this.compilation.TraceBegin("RewriteBody");
         // If needed, inject sequence points
         if (this.emitSequencePoints)
         {
-            using var _2 = this.compilation.Begin("SequencePointInjector");
+            using var _2 = this.compilation.TraceBegin("SequencePointInjector");
             body = SequencePointInjector.Inject(body);
         }
         // Desugar it
         {
-            using var _2 = this.compilation.Begin("LocalRewriter");
+            using var _2 = this.compilation.TraceBegin("LocalRewriter");
             return body.Accept(new LocalRewriter(this.compilation));
         }
     }

@@ -115,7 +115,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
     {
-        using var _ = this.Assembly.Compilation.Begin($"MetadataMethodSymbol({this.Name}).BuildGenericParameters");
+        using var _ = this.Assembly.Compilation.TraceBegin($"MetadataMethodSymbol({this.Name}).BuildGenericParameters");
 
         var genericParamsHandle = this.methodDefinition.GetGenericParameters();
         if (genericParamsHandle.Count == 0) return ImmutableArray<TypeParameterSymbol>.Empty;
@@ -132,7 +132,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     private void BuildSignature()
     {
-        using var _ = this.Assembly.Compilation.Begin($"MetadataMethodSymbol({this.Name}).BuildSignature");
+        using var _ = this.Assembly.Compilation.TraceBegin($"MetadataMethodSymbol({this.Name}).BuildSignature");
 
         // Decode signature
         var decoder = new TypeProvider(this.Assembly.Compilation);
@@ -156,7 +156,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     private void BuildOverride()
     {
-        using var _ = this.Assembly.Compilation.Begin($"MetadataMethodSymbol({this.Name}).BuildOverride");
+        using var _ = this.Assembly.Compilation.TraceBegin($"MetadataMethodSymbol({this.Name}).BuildOverride");
 
         var explicitOverride = this.GetExplicitOverride();
         this.@override = this.ContainingSymbol is TypeSymbol type

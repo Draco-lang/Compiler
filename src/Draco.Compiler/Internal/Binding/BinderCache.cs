@@ -28,7 +28,7 @@ internal sealed class BinderCache
     /// <returns>The binder for <paramref name="syntax"/>.</returns>
     public Binder GetBinder(SyntaxNode syntax)
     {
-        using var _ = this.compilation.Begin($"GetBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.TraceBegin($"GetBinder({syntax.Position}, {syntax.Green.Width})");
 
         var scopeDefiningAncestor = BinderFacts.GetScopeDefiningAncestor(syntax);
         Debug.Assert(scopeDefiningAncestor is not null);
@@ -49,7 +49,7 @@ internal sealed class BinderCache
 
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
-        using var _ = this.compilation.Begin($"BuildCompilationUnitBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.TraceBegin($"BuildCompilationUnitBinder({syntax.Position}, {syntax.Green.Width})");
 
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         binder = new ModuleBinder(binder, this.compilation.RootModule);
@@ -60,7 +60,7 @@ internal sealed class BinderCache
 
     private Binder BuildModuleBinder(ModuleDeclarationSyntax syntax)
     {
-        using var _ = this.compilation.Begin($"BuildModuleBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.TraceBegin($"BuildModuleBinder({syntax.Position}, {syntax.Green.Width})");
 
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -77,7 +77,7 @@ internal sealed class BinderCache
 
     private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)
     {
-        using var _ = this.compilation.Begin($"BuildFunctionDeclarationBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.TraceBegin($"BuildFunctionDeclarationBinder({syntax.Position}, {syntax.Green.Width})");
 
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -94,7 +94,7 @@ internal sealed class BinderCache
 
     private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax)
     {
-        using var _ = this.compilation.Begin($"BuildFunctionBodyBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.TraceBegin($"BuildFunctionBodyBinder({syntax.Position}, {syntax.Green.Width})");
 
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -105,7 +105,7 @@ internal sealed class BinderCache
 
     private Binder BuildLocalBinder(BlockExpressionSyntax syntax)
     {
-        using var _ = this.compilation.Begin($"BuildLocalBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.TraceBegin($"BuildLocalBinder({syntax.Position}, {syntax.Green.Width})");
 
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -116,7 +116,7 @@ internal sealed class BinderCache
 
     private Binder BuildLoopBinder(SyntaxNode syntax)
     {
-        using var _ = this.compilation.Begin($"BuildLoopBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.TraceBegin($"BuildLoopBinder({syntax.Position}, {syntax.Green.Width})");
 
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);

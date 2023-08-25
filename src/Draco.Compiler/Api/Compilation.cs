@@ -47,18 +47,21 @@ public sealed class Compilation : IBinderProvider
     /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
+    /// <param name="enableTracing">True, if tracing should be enabled during compilation.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences = null,
         string? rootModulePath = null,
         string? outputPath = null,
-        string? assemblyName = null) => new(
+        string? assemblyName = null,
+        bool enableTracing = false) => new(
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
         rootModulePath: rootModulePath,
         outputPath: outputPath,
-        assemblyName: assemblyName);
+        assemblyName: assemblyName,
+        tracer: enableTracing ? new() : null);
 
     /// <summary>
     /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
@@ -143,7 +146,7 @@ public sealed class Compilation : IBinderProvider
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
 
-    private readonly Tracer tracer = new();
+    private readonly Tracer? tracer;
 
     // Main ctor with all state
     private Compilation(
@@ -158,7 +161,8 @@ public sealed class Compilation : IBinderProvider
         DeclarationTable? declarationTable = null,
         WellKnownTypes? wellKnownTypes = null,
         IntrinsicSymbols? intrinsicSymbols = null,
-        BinderCache? binderCache = null)
+        BinderCache? binderCache = null,
+        Tracer? tracer = null)
     {
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
@@ -172,6 +176,7 @@ public sealed class Compilation : IBinderProvider
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
         this.IntrinsicSymbols = intrinsicSymbols ?? new IntrinsicSymbols(this);
         this.binderCache = binderCache ?? new BinderCache(this);
+        this.tracer = tracer;
     }
 
     /// <summary>
@@ -224,7 +229,9 @@ public sealed class Compilation : IBinderProvider
             // Just a cache
             intrinsicSymbols: this.IntrinsicSymbols,
             // TODO: We could definitely carry on info here, invalidating the correct things
-            binderCache: null);
+            binderCache: null,
+            // We inherit the tracer
+            tracer: this.tracer);
     }
 
     /// <summary>
@@ -281,7 +288,7 @@ public sealed class Compilation : IBinderProvider
             emitSequencePoints: pdbStream is not null);
         // Optimize the IR
         {
-            using var _ = this.Begin("Optimization");
+            using var _ = this.TraceBegin("Optimization");
             // TODO: Options for optimization
             OptimizationPipeline.Instance.Apply(assembly);
         }
@@ -297,14 +304,8 @@ public sealed class Compilation : IBinderProvider
         // Generate CIL and PDB
         if (peStream is not null)
         {
-            using var _ = this.Begin("MetadataCodegen");
+            using var _ = this.TraceBegin("MetadataCodegen");
             MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
-        }
-
-        // TODO
-        {
-            using var traceWriter = File.OpenWrite(@"C:/TMP/test.html");
-            this.tracer.RenderTimeline(traceWriter, CancellationToken.None);
         }
 
         return new(
@@ -312,8 +313,8 @@ public sealed class Compilation : IBinderProvider
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
 
-    internal void Event(string message) => this.tracer.Event(message);
-    internal IDisposable Begin(string message) => this.tracer.Begin(message);
+    internal void TraceEvent(string message) => this.tracer?.Event(message);
+    internal IDisposable? TraceBegin(string message) => this.tracer?.Begin(message);
 
     internal ModuleSymbol GetModuleForSyntaxTree(SyntaxTree tree)
     {

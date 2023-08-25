@@ -313,6 +313,19 @@ public sealed class Compilation : IBinderProvider
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
 
+    /// <summary>
+    /// Writes the timeline diagram as an interactive HTML page to the given stream.
+    /// </summary>
+    /// <param name="stream">The stream to write the diagram to.</param>
+    public void TraceTimelineDiagram(Stream? stream)
+    {
+        if (this.tracer is null) return;
+        if (stream is null) return;
+
+        this.tracer.RenderTimeline(stream, CancellationToken.None);
+        stream.Flush();
+    }
+
     internal void TraceEvent(string message) => this.tracer?.Event(message);
     internal IDisposable? TraceBegin(string message) => this.tracer?.Begin(message);
 

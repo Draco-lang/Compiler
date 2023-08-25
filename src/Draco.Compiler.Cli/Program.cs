@@ -100,7 +100,7 @@ internal class Program
             irCommand,
             symbolsCommand,
             declarationsCommand,
-            formatCommand
+            formatCommand,
         };
     }
 

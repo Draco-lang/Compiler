@@ -8,12 +8,13 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
-    private bool ApplyRules(DiagnosticBag diagnostics)
+    private bool ApplyRules(DiagnosticBag? diagnostics)
     {
         if (this.TryDequeue<SameTypeConstraint>(out var sameType))
         {
@@ -60,6 +61,12 @@ internal sealed partial class ConstraintSolver
         if (this.TryDequeue<AwaitConstraint<IConstraintPromise<FunctionSymbol>>>(out var wait4, w => w.Awaited()))
         {
             this.HandleRule(wait4);
+            return true;
+        }
+
+        if (this.TryDequeue<AwaitConstraint<Unit>>(out var wait5, w => w.Awaited()))
+        {
+            this.HandleRule(wait5);
             return true;
         }
 
@@ -134,23 +141,21 @@ internal sealed partial class ConstraintSolver
 
     private void FailRemainingRules()
     {
-        foreach (var constraint in this.constraints) this.FailRemainingRule(constraint);
-    }
-
-    private void FailRemainingRule(IConstraint constraint)
-    {
-        switch (constraint)
+        // We unify type variables with the error type
+        foreach (var typeVar in this.typeVariables)
         {
-        case CallConstraint call:
-            this.FailRule(call);
-            break;
-        case OverloadConstraint overload:
-            this.FailRule(overload);
-            break;
+            var unwrapped = typeVar.Substitution;
+            if (unwrapped is TypeVariable unwrappedTv) this.UnifyAsserted(unwrappedTv, IntrinsicSymbols.UninferredType);
+        }
+
+        while (this.constraints.Count > 0)
+        {
+            // Apply rules once
+            if (!this.ApplyRules(null)) break;
         }
     }
 
-    private void HandleRule(SameTypeConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(SameTypeConstraint constraint, DiagnosticBag? diagnostics)
     {
         for (var i = 1; i < constraint.Types.Length; ++i)
         {
@@ -169,7 +174,7 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.Resolve(default);
     }
 
-    private void HandleRule(AssignableConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(AssignableConstraint constraint, DiagnosticBag? diagnostics)
     {
         if (!SymbolEqualityComparer.Default.IsBaseOf(constraint.TargetType, constraint.AssignedType))
         {
@@ -185,7 +190,7 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.Resolve(default);
     }
 
-    private void HandleRule(CommonTypeConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(CommonTypeConstraint constraint, DiagnosticBag? diagnostics)
     {
         foreach (var type in constraint.AlternativeTypes)
         {
@@ -206,13 +211,21 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.Fail(default, diagnostics);
     }
 
-    private void HandleRule(MemberConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(MemberConstraint constraint, DiagnosticBag? diagnostics)
     {
         var accessed = constraint.Accessed.Substitution;
         // We can't advance on type variables
         if (accessed.IsTypeVariable)
         {
             throw new InvalidOperationException("rule handling for member constraint called prematurely");
+        }
+
+        // Don't propagate type errors
+        if (accessed.IsError)
+        {
+            this.Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
+            constraint.Promise.Resolve(UndefinedMemberSymbol.Instance);
+            return;
         }
 
         // Not a type variable, we can look into members
@@ -227,16 +240,22 @@ internal sealed partial class ConstraintSolver
                 .WithTemplate(SymbolResolutionErrors.MemberNotFound)
                 .WithFormatArgs(constraint.MemberName, accessed);
             // We still provide a single error symbol
-            var errorSymbol = new UndefinedMemberSymbol();
             this.UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
-            constraint.Promise.Fail(errorSymbol, diagnostics);
+            constraint.Promise.Fail(UndefinedMemberSymbol.Instance, diagnostics);
             return;
         }
 
         if (membersWithName.Length == 1)
         {
             // One member, we know what type the member type is
-            this.UnifyAsserted(((ITypedSymbol)membersWithName[0]).Type, constraint.MemberType);
+            var memberType = ((ITypedSymbol)membersWithName[0]).Type;
+            var assignablePromise = this.Assignable(constraint.MemberType, memberType);
+            // TODO: This location config is horrible, we need that refactor SOON
+            if (constraint.Diagnostic.Location is not null)
+            {
+                assignablePromise.ConfigureDiagnostic(diag => diag
+                    .WithLocation(constraint.Diagnostic.Location));
+            }
             constraint.Promise.Resolve(membersWithName[0]);
             return;
         }
@@ -267,9 +286,9 @@ internal sealed partial class ConstraintSolver
         constraint.Promise.Resolve(mappedValue);
     }
 
-    private void HandleRule(OverloadConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(OverloadConstraint constraint, DiagnosticBag? diagnostics)
     {
-        var functionName = constraint.Candidates[0].Name;
+        var functionName = constraint.Name;
         var functionsWithMatchingArgc = constraint.Candidates
             .Where(f => MatchesParameterCount(f, constraint.Arguments.Length))
             .ToList();
@@ -358,7 +377,7 @@ internal sealed partial class ConstraintSolver
         }
     }
 
-    private void HandleRule(CallConstraint constraint, DiagnosticBag diagnostics)
+    private void HandleRule(CallConstraint constraint, DiagnosticBag? diagnostics)
     {
         var called = constraint.CalledType.Substitution;
         // We can't advance on type variables
@@ -430,13 +449,6 @@ internal sealed partial class ConstraintSolver
         {
             this.UnifyParameterWithArgument(param.Type, arg);
         }
-    }
-
-    private void FailRule(OverloadConstraint constraint)
-    {
-        this.UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
-        var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
-        constraint.Promise.Fail(errorSymbol, null);
     }
 
     private void FailRule(CallConstraint constraint)

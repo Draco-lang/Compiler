@@ -1,4 +1,5 @@
 using System;
+using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -17,6 +18,16 @@ internal sealed class AwaitConstraint<TResult> : Constraint<TResult>
     /// The mapping function that runs when <see cref="Awaited"/> is true.
     /// </summary>
     public Func<TResult> Map { get; }
+
+    public AwaitConstraint(
+        Func<bool> awaited,
+        Func<TResult> map,
+        Diagnostic.Builder diagnostic)
+        : base(diagnostic)
+    {
+        this.Awaited = awaited;
+        this.Map = map;
+    }
 
     public AwaitConstraint(Func<bool> awaited, Func<TResult> map)
     {

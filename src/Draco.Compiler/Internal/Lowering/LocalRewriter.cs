@@ -237,6 +237,71 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return result.Accept(this);
     }
 
+    public override BoundNode VisitForExpression(BoundForExpression node)
+    {
+        // TODO: Once we have try-finally and a way to do checked casts, fix this
+        //  1. Wrap in try-finally
+        //  2. Call Dispose in finally block, if enumerator is IDisposable
+
+        // for (i in sequence)
+        // {
+        //     body...
+        // }
+        //
+        // =>
+        //
+        // {
+        //     val enumerator = sequence.GetEnumerator();
+        //     while (enumerator.MoveNext()) {
+        //         i = enumerator.Current;
+        //         body...
+        //     }
+        // }
+        //
+        // NOTE: For loops are desugared into while loops,
+        // which are then desugared again using the existing lowering step
+        // Because of this, we do not need to lower each individual member here, they will be lowered
+        // while rewriting the while loop
+
+        var enumerator = new SynthetizedLocalSymbol(node.GetEnumeratorMethod.ReturnType, false);
+
+        // NOTE: Checked during binding
+        var currentProp = (PropertySymbol)node.CurrentProperty;
+        if (currentProp.Getter is null) throw new InvalidOperationException();
+
+        var result = BlockExpression(
+            locals: ImmutableArray.Create<LocalSymbol>(enumerator),
+            statements: ImmutableArray.Create<BoundStatement>(
+                ExpressionStatement(AssignmentExpression(
+                    compoundOperator: null,
+                    left: LocalLvalue(enumerator),
+                    right: CallExpression(
+                        receiver: node.Sequence,
+                        method: node.GetEnumeratorMethod,
+                        arguments: ImmutableArray<BoundExpression>.Empty))),
+                ExpressionStatement(WhileExpression(
+                    condition: CallExpression(
+                        receiver: LocalExpression(enumerator),
+                        method: node.MoveNextMethod,
+                        arguments: ImmutableArray<BoundExpression>.Empty),
+                    then: BlockExpression(
+                        locals: ImmutableArray.Create(node.Iterator),
+                        statements: ImmutableArray.Create<BoundStatement>(
+                            ExpressionStatement(AssignmentExpression(
+                                compoundOperator: null,
+                                left: LocalLvalue(node.Iterator),
+                                right: PropertyGetExpression(
+                                    receiver: LocalExpression(enumerator),
+                                    getter: currentProp.Getter))),
+                            ExpressionStatement(node.Then)),
+                        value: BoundUnitExpression.Default),
+                    continueLabel: node.ContinueLabel,
+                    breakLabel: node.BreakLabel))),
+            value: BoundUnitExpression.Default);
+        // Desugaring the while-loop
+        return result.Accept(this);
+    }
+
     public override BoundNode VisitRelationalExpression(BoundRelationalExpression node)
     {
         // In case there are only two operands, don't do any of the optimizations below

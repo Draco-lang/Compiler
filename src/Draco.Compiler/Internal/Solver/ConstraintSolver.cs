@@ -93,13 +93,6 @@ internal sealed partial class ConstraintSolver
 
         // To avoid major trip-ups later, we resolve all constraints to some sentinel value
         this.FailRemainingRules();
-
-        // We also unify type variables with the error type
-        foreach (var typeVar in this.typeVariables)
-        {
-            var unwrapped = typeVar.Substitution;
-            if (unwrapped is TypeVariable unwrappedTv) this.UnifyAsserted(unwrappedTv, IntrinsicSymbols.UninferredType);
-        }
     }
 
     /// <summary>

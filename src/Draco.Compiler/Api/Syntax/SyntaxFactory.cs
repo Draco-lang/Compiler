@@ -257,6 +257,29 @@ public static partial class SyntaxFactory
         CloseParen,
         body);
 
+    public static ForExpressionSyntax ForExpression(
+        string iterator,
+        TypeSyntax? elementType,
+        ExpressionSyntax sequence,
+        ExpressionSyntax body) => ForExpression(
+        For,
+        OpenParen,
+        Name(iterator),
+        elementType is null ? null : TypeSpecifier(Colon, elementType),
+        In,
+        sequence,
+        CloseParen,
+        body);
+
+    public static ForExpressionSyntax ForExpression(
+        string iterator,
+        ExpressionSyntax sequence,
+        ExpressionSyntax body) => ForExpression(
+        iterator,
+        null,
+        sequence,
+        body);
+
     public static CallExpressionSyntax CallExpression(
         ExpressionSyntax called,
         IEnumerable<ExpressionSyntax> args) => CallExpression(
@@ -318,6 +341,8 @@ public static partial class SyntaxFactory
     public static SyntaxToken Return { get; } = MakeToken(TokenKind.KeywordReturn);
     public static SyntaxToken If { get; } = MakeToken(TokenKind.KeywordIf);
     public static SyntaxToken While { get; } = MakeToken(TokenKind.KeywordWhile);
+    public static SyntaxToken For { get; } = MakeToken(TokenKind.KeywordFor);
+    public static SyntaxToken In { get; } = MakeToken(TokenKind.KeywordIn);
     public static SyntaxToken Else { get; } = MakeToken(TokenKind.KeywordElse);
     public static SyntaxToken Var { get; } = MakeToken(TokenKind.KeywordVar);
     public static SyntaxToken Val { get; } = MakeToken(TokenKind.KeywordVal);

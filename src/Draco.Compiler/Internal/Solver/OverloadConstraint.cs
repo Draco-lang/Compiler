@@ -11,6 +11,11 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     private readonly record struct Candidate(FunctionSymbol Symbol, CallScore Score);
 
     /// <summary>
+    /// The function name.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
     /// The candidate functions to search among.
     /// </summary>
     public ImmutableArray<FunctionSymbol> Candidates { get; }
@@ -26,10 +31,12 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     public TypeSymbol ReturnType { get; }
 
     public OverloadConstraint(
+        string name,
         ImmutableArray<FunctionSymbol> candidates,
         ImmutableArray<object> arguments,
         TypeSymbol returnType)
     {
+        this.Name = name;
         this.Candidates = candidates;
         this.Arguments = arguments;
         this.ReturnType = returnType;

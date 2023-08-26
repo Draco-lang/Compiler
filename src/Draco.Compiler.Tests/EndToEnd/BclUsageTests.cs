@@ -342,4 +342,46 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal("1;2;3", result);
     }
+
+    [Fact]
+    public void ForLoopSumming()
+    {
+        var assembly = Compile("""
+            import System.Collections.Generic;
+
+            public func sum(ns: IEnumerable<int32>): int32 {
+                var s = 0;
+                for (n in ns) s += n;
+                return s;
+            }
+            """);
+        var result = Invoke<int>(
+            assembly: assembly,
+            methodName: "sum",
+            args: new[] { 1, 1, 2, 3, 5, 8, 13 });
+
+        Assert.Equal(33, result);
+    }
+
+    [Fact]
+    public void ForLoopPrinting()
+    {
+        var assembly = Compile("""
+            import System.Collections.Generic;
+            import System.Console;
+
+            public func log(ns: IEnumerable<int32>) {
+                for (n in ns) Write(n);
+            }
+            """);
+        var stringWriter = new StringWriter();
+        _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "log",
+            args: new[] { 1, 1, 2, 3, 5, 8, 13 },
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("11235813", stringWriter.ToString());
+    }
 }

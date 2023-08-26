@@ -50,7 +50,7 @@ internal static class ConstraintPromise
 
         public void Resolve(TResult result) =>
             throw new InvalidOperationException("can not resolve an already solved constraint");
-        public void Fail(TResult result, DiagnosticBag? diagnostics) =>
+        public void Fail(TResult result) =>
             throw new InvalidOperationException("can not resolve an already solved constraint");
     }
 
@@ -83,15 +83,7 @@ internal static class ConstraintPromise
         }
 
         public void Resolve(TResult result) => this.Result = result;
-        public void Fail(TResult result, DiagnosticBag? diagnostics)
-        {
-            this.Result = result;
-            if (diagnostics is not null)
-            {
-                var diag = this.Constraint.Diagnostic.Build();
-                diagnostics.Add(diag);
-            }
-        }
+        public void Fail(TResult result) => this.Result = result;
     }
 
     private sealed class UnwrapConstraintPromise<TResult> : IConstraintPromise<TResult>
@@ -110,6 +102,6 @@ internal static class ConstraintPromise
         }
 
         public void Resolve(TResult result) => throw new NotSupportedException("can not resolve unwrap promise");
-        public void Fail(TResult result, DiagnosticBag? diagnostics) => throw new NotSupportedException("can not fail unwrap promise");
+        public void Fail(TResult result) => throw new NotSupportedException("can not fail unwrap promise");
     }
 }

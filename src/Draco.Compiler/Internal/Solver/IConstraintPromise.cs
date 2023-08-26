@@ -48,6 +48,5 @@ internal interface IConstraintPromise<TResult> : IConstraintPromise
     /// Fails this constraint, reporting the error.
     /// </summary>
     /// <param name="result">The result for the failure.</param>
-    /// <param name="diagnostics">The diagnostics to report to, if needed.</param>
-    public void Fail(TResult result, DiagnosticBag? diagnostics);
+    public void Fail(TResult result);
 }

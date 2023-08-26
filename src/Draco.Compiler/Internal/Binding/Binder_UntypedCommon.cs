@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
@@ -14,13 +15,13 @@ internal partial class Binder
         var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
         Debug.Assert(containingFunction is not null);
         var returnTypeSyntax = (containingFunction as SourceFunctionSymbol)?.DeclaringSyntax?.ReturnType?.Type;
-        constraints
-            .Assignable(containingFunction.ReturnType, returnValue.TypeRequired)
-            .ConfigureDiagnostic(diag => diag
-                .WithLocation(returnSyntax.Location)
-                .WithRelatedInformation(
+        constraints.Assignable(
+            containingFunction.ReturnType,
+            returnValue.TypeRequired,
+            ConstraintLocator.Syntax(returnSyntax)
+                .WithRelatedInformation(DiagnosticRelatedInformation.Create(
                     format: "return type declared to be {0}",
                     formatArgs: containingFunction.ReturnType,
-                    location: returnTypeSyntax?.Location));
+                    location: returnTypeSyntax?.Location)));
     }
 }

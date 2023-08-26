@@ -46,6 +46,14 @@ internal abstract class ConstraintLocator
     /// <param name="diagnostic">The diagnostic builder to help the location for.</param>
     public abstract void Locate(Diagnostic.Builder diagnostic);
 
+    /// <summary>
+    /// Wraps the constraint locator to provide additional information.
+    /// </summary>
+    /// <param name="relatedInformation">The related information to append.</param>
+    /// <returns>The wrapped locator.</returns>
+    public ConstraintLocator WithRelatedInformation(DiagnosticRelatedInformation relatedInformation) =>
+        new WithRelatedInfoConstraintLocator(this, relatedInformation);
+
     private sealed class NullConstraintLocator : ConstraintLocator
     {
         public override void Locate(Diagnostic.Builder diagnostic) { }
@@ -75,5 +83,25 @@ internal abstract class ConstraintLocator
 
         public override void Locate(Diagnostic.Builder diagnostic) =>
             this.constraint.Locator.Locate(diagnostic);
+    }
+
+    private sealed class WithRelatedInfoConstraintLocator : ConstraintLocator
+    {
+        private readonly ConstraintLocator underlying;
+        private DiagnosticRelatedInformation relatedInfo;
+
+        public WithRelatedInfoConstraintLocator(
+            ConstraintLocator underlying,
+            DiagnosticRelatedInformation relatedInfo)
+        {
+            this.underlying = underlying;
+            this.relatedInfo = relatedInfo;
+        }
+
+        public override void Locate(Diagnostic.Builder diagnostic)
+        {
+            this.underlying.Locate(diagnostic);
+            diagnostic.WithRelatedInformation(this.relatedInfo);
+        }
     }
 }

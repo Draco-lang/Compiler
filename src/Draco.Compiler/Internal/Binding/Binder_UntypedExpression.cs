@@ -176,22 +176,20 @@ internal partial class Binder
 
         // Then and else must be compatible types
         var resultType = constraints.AllocateTypeVariable();
-        constraints
-            .CommonType(resultType, ImmutableArray.Create(then.TypeRequired, @else.TypeRequired))
-            .ConfigureDiagnostic(diag =>
-            {
-                // The location will point at the else value, assuming that the latter expression is
-                // the offending one
-                // If there is no else clause, we just point at the then clause
-                diag.WithLocation(syntax.Else is null
-                    ? ExtractValueSyntax(syntax.Then).Location
-                    : ExtractValueSyntax(syntax.Else.Expression).Location);
+        constraints.CommonType(
+            resultType,
+            ImmutableArray.Create(then.TypeRequired, @else.TypeRequired),
+            // The location will point at the else value, assuming that the latter expression is
+            // the offending one
+            // If there is no else clause, we just point at the then clause
+            ConstraintLocator.Syntax(syntax.Else is null
+                ? ExtractValueSyntax(syntax.Then)
+                : ExtractValueSyntax(syntax.Else.Expression))
+            .WithRelatedInformation(DiagnosticRelatedInformation.Create(
+                format: "the other branch is inferred to be {0}",
+                formatArgs: then.TypeRequired,
                 // If there is an else clause, we annotate the then clause as related info
-                diag.WithRelatedInformation(
-                    format: "the other branch is inferred to be {0}",
-                    formatArgs: then.TypeRequired,
-                    location: ExtractValueSyntax(syntax.Then).Location);
-            });
+                location: ExtractValueSyntax(syntax.Then).Location)));
 
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
     }

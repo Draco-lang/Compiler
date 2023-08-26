@@ -22,14 +22,19 @@ internal sealed class AwaitConstraint<TResult> : Constraint<TResult>
     public AwaitConstraint(
         Func<bool> awaited,
         Func<TResult> map,
-        Diagnostic.Builder diagnostic)
-        : base(diagnostic)
+        Diagnostic.Builder diagnostic,
+        ConstraintLocator locator)
+        : base(diagnostic, locator)
     {
         this.Awaited = awaited;
         this.Map = map;
     }
 
-    public AwaitConstraint(Func<bool> awaited, Func<TResult> map)
+    public AwaitConstraint(
+        Func<bool> awaited,
+        Func<TResult> map,
+        ConstraintLocator locator)
+        : base(locator)
     {
         this.Awaited = awaited;
         this.Map = map;

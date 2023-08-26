@@ -15,6 +15,11 @@ namespace Draco.Compiler.Internal.Solver;
 internal abstract class ConstraintLocator
 {
     /// <summary>
+    /// A constraint locator not providing any information.
+    /// </summary>
+    public static ConstraintLocator Null { get; } = new NullConstraintLocator();
+
+    /// <summary>
     /// Creates a simple syntactic locator.
     /// </summary>
     /// <param name="syntax">The syntax node to connect the location to.</param>
@@ -26,6 +31,11 @@ internal abstract class ConstraintLocator
     /// </summary>
     /// <param name="diagnostic">The diagnostic builder to help the location for.</param>
     public abstract void Locate(Diagnostic.Builder diagnostic);
+
+    private sealed class NullConstraintLocator : ConstraintLocator
+    {
+        public override void Locate(Diagnostic.Builder diagnostic) { }
+    }
 
     private sealed class SyntaxConstraintLocator : ConstraintLocator
     {

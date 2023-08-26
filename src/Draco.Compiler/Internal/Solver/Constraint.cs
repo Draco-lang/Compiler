@@ -11,15 +11,17 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
     public IConstraintPromise<TResult> Promise { get; }
     IConstraintPromise IConstraint.Promise => this.Promise;
     public Diagnostic.Builder Diagnostic { get; }
+    public ConstraintLocator Locator { get; }
 
-    protected Constraint(Diagnostic.Builder diagnostic)
+    protected Constraint(Diagnostic.Builder diagnostic, ConstraintLocator locator)
     {
         this.Promise = ConstraintPromise.Create(this);
         this.Diagnostic = diagnostic;
+        this.Locator = locator;
     }
 
-    protected Constraint()
-        : this(new())
+    protected Constraint(ConstraintLocator locator)
+        : this(new(), locator)
     {
     }
 

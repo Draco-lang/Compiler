@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
@@ -68,10 +69,11 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
     /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
+    /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public IConstraintPromise<Unit> SameType(TypeSymbol first, TypeSymbol second)
+    public IConstraintPromise<Unit> SameType(TypeSymbol first, TypeSymbol second, SyntaxNode syntax)
     {
-        var constraint = new SameTypeConstraint(ImmutableArray.Create(first, second));
+        var constraint = new SameTypeConstraint(ImmutableArray.Create(first, second), ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -81,10 +83,11 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="targetType">The type being assigned to.</param>
     /// <param name="assignedType">The type assigned.</param>
+    /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType)
+    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, SyntaxNode syntax)
     {
-        var constraint = new AssignableConstraint(targetType, assignedType);
+        var constraint = new AssignableConstraint(targetType, assignedType, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -94,10 +97,14 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="commonType">The common type of the provided alternative types.</param>
     /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
+    /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise of the constraint added.</returns>
-    public IConstraintPromise<Unit> CommonType(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
+    public IConstraintPromise<Unit> CommonType(
+        TypeSymbol commonType,
+        ImmutableArray<TypeSymbol> alternativeTypes,
+        SyntaxNode syntax)
     {
-        var constraint = new CommonTypeConstraint(commonType, alternativeTypes);
+        var constraint = new CommonTypeConstraint(commonType, alternativeTypes, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -108,11 +115,16 @@ internal sealed partial class ConstraintSolver
     /// <param name="accessedType">The accessed object type.</param>
     /// <param name="memberName">The accessed member name.</param>
     /// <param name="memberType">The type of the member.</param>
+    /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise of the accessed member symbol.</returns>
-    public IConstraintPromise<Symbol> Member(TypeSymbol accessedType, string memberName, out TypeSymbol memberType)
+    public IConstraintPromise<Symbol> Member(
+        TypeSymbol accessedType,
+        string memberName,
+        out TypeSymbol memberType,
+        SyntaxNode syntax)
     {
         memberType = this.AllocateTypeVariable();
-        var constraint = new MemberConstraint(accessedType, memberName, memberType);
+        var constraint = new MemberConstraint(accessedType, memberName, memberType, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -123,14 +135,16 @@ internal sealed partial class ConstraintSolver
     /// <param name="calledType">The called function type.</param>
     /// <param name="args">The calling arguments.</param>
     /// <param name="returnType">The return type.</param>
+    /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise of the constraint.</returns>
     public IConstraintPromise<Unit> Call(
         TypeSymbol calledType,
         ImmutableArray<object> args,
-        out TypeSymbol returnType)
+        out TypeSymbol returnType,
+        SyntaxNode syntax)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new CallConstraint(calledType, args, returnType);
+        var constraint = new CallConstraint(calledType, args, returnType, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -142,15 +156,17 @@ internal sealed partial class ConstraintSolver
     /// <param name="functions">The functions to choose an overload from.</param>
     /// <param name="args">The passed in arguments.</param>
     /// <param name="returnType">The return type of the call.</param>
+    /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise for the resolved overload.</returns>
     public IConstraintPromise<FunctionSymbol> Overload(
         string name,
         ImmutableArray<FunctionSymbol> functions,
         ImmutableArray<object> args,
-        out TypeSymbol returnType)
+        out TypeSymbol returnType,
+        SyntaxNode syntax)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new OverloadConstraint(name, functions, args, returnType);
+        var constraint = new OverloadConstraint(name, functions, args, returnType, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -189,8 +205,12 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="original">The original type, usually a type variable.</param>
     /// <param name="map">Function that executes once the <paramref name="original"/> is substituted.</param>
+    /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise of the type symbol symbol.</returns>
-    public IConstraintPromise<TResult> Substituted<TResult>(TypeSymbol original, Func<TResult> map)
+    public IConstraintPromise<TResult> Substituted<TResult>(
+        TypeSymbol original,
+        Func<TResult> map,
+        SyntaxNode syntax)
     {
         if (!original.IsTypeVariable)
         {
@@ -199,7 +219,8 @@ internal sealed partial class ConstraintSolver
         }
         else
         {
-            var constraint = new AwaitConstraint<TResult>(() => !original.Substitution.IsTypeVariable, map);
+            var constraint = new AwaitConstraint<TResult>(
+                () => !original.Substitution.IsTypeVariable, map, ConstraintLocator.Syntax(syntax));
             this.Add(constraint);
             return constraint.Promise;
         }

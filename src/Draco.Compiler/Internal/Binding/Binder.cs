@@ -100,10 +100,7 @@ internal abstract partial class Binder
         // Add assignability constraint, if needed
         if (untypedValue is not null)
         {
-            constraints
-                .Assignable(declaredType, untypedValue.TypeRequired)
-                .ConfigureDiagnostic(diag => diag
-                    .WithLocation(global.DeclaringSyntax.Value!.Value.Location));
+            constraints.Assignable(declaredType, untypedValue.TypeRequired, global.DeclaringSyntax.Value!.Value);
         }
 
         // Solve

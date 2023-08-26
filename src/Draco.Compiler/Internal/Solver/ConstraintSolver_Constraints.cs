@@ -85,9 +85,12 @@ internal sealed partial class ConstraintSolver
     /// <param name="assignedType">The type assigned.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, SyntaxNode syntax)
+    public IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, SyntaxNode syntax) =>
+        this.Assignable(targetType, assignedType, ConstraintLocator.Syntax(syntax));
+
+    private IConstraintPromise<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, ConstraintLocator locator)
     {
-        var constraint = new AssignableConstraint(targetType, assignedType, ConstraintLocator.Syntax(syntax));
+        var constraint = new AssignableConstraint(targetType, assignedType, locator);
         this.Add(constraint);
         return constraint.Promise;
     }
@@ -102,9 +105,14 @@ internal sealed partial class ConstraintSolver
     public IConstraintPromise<Unit> CommonType(
         TypeSymbol commonType,
         ImmutableArray<TypeSymbol> alternativeTypes,
-        SyntaxNode syntax)
+        SyntaxNode syntax) => this.CommonType(commonType, alternativeTypes, ConstraintLocator.Syntax(syntax));
+
+    private IConstraintPromise<Unit> CommonType(
+        TypeSymbol commonType,
+        ImmutableArray<TypeSymbol> alternativeTypes,
+        ConstraintLocator locator)
     {
-        var constraint = new CommonTypeConstraint(commonType, alternativeTypes, ConstraintLocator.Syntax(syntax));
+        var constraint = new CommonTypeConstraint(commonType, alternativeTypes, locator);
         this.Add(constraint);
         return constraint.Promise;
     }

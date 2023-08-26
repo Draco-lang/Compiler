@@ -112,10 +112,9 @@ internal sealed partial class ConstraintSolver
                 .Append(assignable.AssignedType)
                 .ToImmutableArray();
 
-            // TODO: We forget diag info...
-            this.CommonType(commonType, alternatives);
             // New assignable
-            this.Assignable(assignable.TargetType, commonType);
+            this.CommonType(commonType, alternatives, ConstraintLocator.Constraint(assignable));
+            this.Assignable(assignable.TargetType, commonType, ConstraintLocator.Constraint(assignable));
             return true;
         }
 
@@ -253,8 +252,7 @@ internal sealed partial class ConstraintSolver
         {
             // One member, we know what type the member type is
             var memberType = ((ITypedSymbol)membersWithName[0]).Type;
-            // TODO: inherit location
-            var assignablePromise = this.Assignable(constraint.MemberType, memberType);
+            var assignablePromise = this.Assignable(constraint.MemberType, memberType, ConstraintLocator.Constraint(constraint));
             constraint.Promise.Resolve(membersWithName[0]);
             return;
         }
@@ -355,8 +353,7 @@ internal sealed partial class ConstraintSolver
                 }
             }
             // In all cases, return type is simple, it's an assignment
-            // TODO: inherit location
-            var returnTypePromise = this.Assignable(constraint.ReturnType, chosen.ReturnType);
+            var returnTypePromise = this.Assignable(constraint.ReturnType, chosen.ReturnType, ConstraintLocator.Constraint(constraint));
             // Resolve promise
             constraint.Promise.Resolve(chosen);
         }

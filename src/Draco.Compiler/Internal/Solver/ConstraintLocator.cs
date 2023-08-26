@@ -27,11 +27,18 @@ internal abstract class ConstraintLocator
     public static ConstraintLocator Syntax(SyntaxNode syntax) => new SyntaxConstraintLocator(syntax);
 
     /// <summary>
+    /// Creates a constraint locator based on anonter constraint.
+    /// </summary>
+    /// <param name="constraint">The constraint to base the locator on.</param>
+    /// <returns>The locator that will point point wherever the locator of the constraint would point to.</returns>
+    public static ConstraintLocator Constraint(IConstraint constraint) => new ReferenceConstraintLocator(constraint);
+
+    /// <summary>
     /// Creates a constraint locator based on a constraint promise.
     /// </summary>
     /// <param name="promise">The promise to base the locator on.</param>
     /// <returns>The locator that will point point wherever the locator of the promises constraint would point to.</returns>
-    public static ConstraintLocator Promise(IConstraintPromise promise) => new PromiseConstraintLocator(promise);
+    public static ConstraintLocator Promise(IConstraintPromise promise) => Constraint(promise.Constraint);
 
     /// <summary>
     /// Locates information for the constraint.
@@ -57,16 +64,16 @@ internal abstract class ConstraintLocator
             diagnostic.WithLocation(this.syntax.Location);
     }
 
-    private sealed class PromiseConstraintLocator : ConstraintLocator
+    private sealed class ReferenceConstraintLocator : ConstraintLocator
     {
-        private readonly IConstraintPromise promise;
+        private readonly IConstraint constraint;
 
-        public PromiseConstraintLocator(IConstraintPromise promise)
+        public ReferenceConstraintLocator(IConstraint constraint)
         {
-            this.promise = promise;
+            this.constraint = constraint;
         }
 
         public override void Locate(Diagnostic.Builder diagnostic) =>
-            this.promise.Constraint.Locator.Locate(diagnostic);
+            this.constraint.Locator.Locate(diagnostic);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Syntax;
@@ -280,6 +281,12 @@ public static partial class SyntaxFactory
         sequence,
         body);
 
+    public static RelationalExpressionSyntax RelationalExpression(
+        ExpressionSyntax left,
+        params (SyntaxToken Operator, ExpressionSyntax Right)[] comparisons) => RelationalExpression(
+        left,
+        SyntaxList(comparisons.Select(cmp => ComparisonElement(cmp.Operator, cmp.Right))));
+
     public static CallExpressionSyntax CallExpression(
         ExpressionSyntax called,
         IEnumerable<ExpressionSyntax> args) => CallExpression(
@@ -317,7 +324,9 @@ public static partial class SyntaxFactory
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) => IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 
     public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(Return, value);
-    public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(Name(label)));
+    public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(label));
+
+    public static NameLabelSyntax NameLabel(string label) => NameLabel(Name(label));
 
     public static NameTypeSyntax NameType(string name) => NameType(Name(name));
     public static NameExpressionSyntax NameExpression(string name) => NameExpression(Name(name));

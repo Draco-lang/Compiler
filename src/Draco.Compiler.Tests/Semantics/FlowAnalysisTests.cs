@@ -571,4 +571,44 @@ public sealed class FlowAnalysisTests : SemanticTestsBase
         Assert.Single(diags);
         AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
+
+    [Fact]
+    public void GotoInAssignmentValue()
+    {
+        // func foo(a: int32, b: int32) {    
+        //     val x = if (a < b) 1 else goto end;
+        // end:
+        //     val y = x;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(
+                    Parameter("a", NameType("int32")),
+                    Parameter("b", NameType("int32"))),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration(
+                        "x",
+                        null,
+                        IfExpression(
+                            RelationalExpression(
+                                NameExpression("a"), (LessThan, NameExpression("b"))),
+                            LiteralExpression(1),
+                            GotoExpression("end")))),
+                    DeclarationStatement(LabelDeclaration("end")),
+                    DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
+    }
 }

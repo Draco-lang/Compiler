@@ -13,11 +13,6 @@ internal interface IConstraint
     public IConstraintPromise Promise { get; }
 
     /// <summary>
-    /// The builder for the <see cref="Api.Diagnostics.Diagnostic"/>.
-    /// </summary>
-    public Diagnostic.Builder Diagnostic { get; }
-
-    /// <summary>
     /// The locator for the constraint.
     /// </summary>
     public ConstraintLocator Locator { get; }

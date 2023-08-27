@@ -57,6 +57,18 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
     /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
+    /// <summary>
+    /// True, if this is a literal that cannot be referenced as a field, but needs to be inlined as a value.
+    /// This is the case for enum members.
+    /// </summary>
+    public bool IsLiteral => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal);
+
+    /// <summary>
+    /// The default value of this field.
+    /// </summary>
+    public object? DefaultValue => InterlockedUtils.InitializeMaybeNull(ref this.defaultValue, this.BuildDefaultValue);
+    private object? defaultValue;
+
     private readonly FieldDefinition fieldDefinition;
 
     public MetadataFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition)
@@ -70,5 +82,14 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
         // Decode signature
         var decoder = new TypeProvider(this.Assembly.Compilation);
         return this.fieldDefinition.DecodeSignature(decoder, this);
+    }
+
+    private object? BuildDefaultValue()
+    {
+        var constantHandle = this.fieldDefinition.GetDefaultValue();
+        if (constantHandle.IsNil) return null;
+
+        var constant = this.MetadataReader.GetConstant(constantHandle);
+        return MetadataSymbol.DecodeConstant(constant, this.MetadataReader);
     }
 }

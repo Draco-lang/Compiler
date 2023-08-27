@@ -22,6 +22,9 @@ public sealed class KeywordCompletionProvider : CompletionProvider
     private static ImmutableArray<CompletionItem> GetExpressionKeywords(SyntaxRange range) => ImmutableArray.Create(
         CompletionItem.Create("if", range, CompletionKind.Keyword),
         CompletionItem.Create("while", range, CompletionKind.Keyword),
+        CompletionItem.Create("for", range, CompletionKind.Keyword),
+        // TODO: Is this the right context?
+        // CompletionItem.Create("in", range, CompletionKind.Keyword),
         CompletionItem.Create("return", range, CompletionKind.Keyword),
         CompletionItem.Create("goto", range, CompletionKind.Keyword),
         CompletionItem.Create("and", range, CompletionKind.Keyword),

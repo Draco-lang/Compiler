@@ -4170,4 +4170,127 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(SymbolEqualityComparer.Default.Equals(moduleDefSymbol, moduleRefSymbol));
         Assert.Empty(diags);
     }
+
+    [Fact]
+    public void ForeachSequenceHasNoGetEnumerator()
+    {
+        // func main() {
+        //     for (i in 0) {}
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(ForExpression("i", LiteralExpression(0), BlockExpression()))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+    }
+
+    [Fact]
+    public void ForeachEnumeratorHasNoMoveNext()
+    {
+        // func foo() {
+        //     for (i in Seq()) {}
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(ForExpression(
+                        "i",
+                        CallExpression(NameExpression("Seq")),
+                        BlockExpression()))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class Seq
+            {
+                public TestEnumerator GetEnumerator() => default;
+            }
+
+            public struct TestEnumerator
+            {
+                public int Current => 0;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+    }
+
+    [Fact]
+    public void ForeachEnumeratorHasNoCurrentProperty()
+    {
+        // func foo() {
+        //     for (i in Seq()) {}
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(ForExpression(
+                        "i",
+                        CallExpression(NameExpression("Seq")),
+                        BlockExpression()))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            public class Seq
+            {
+                public TestEnumerator GetEnumerator() => default;
+            }
+
+            public struct TestEnumerator
+            {
+                public int Current;
+
+                public bool MoveNext() => true;
+            }
+            """);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, SymbolResolutionErrors.NotGettableProperty);
+    }
 }

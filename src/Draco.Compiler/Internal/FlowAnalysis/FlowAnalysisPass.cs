@@ -131,6 +131,7 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.labeledStates[continueLabel] = this.Clone(in this.State);
     }
 
+    // TODO: We might have a bug, we don't consider break labels
     private void LoopTail(LabelSymbol continueLabel)
     {
         var prevState = this.labeledStates[continueLabel];
@@ -166,6 +167,22 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
         this.LoopHead(node.ContinueLabel);
         // Condition always gets evaluated
         this.VisitExpression(node.Condition);
+        // Body does not necessarily run
+        var breakState = this.Clone(in this.State);
+        // We continue with the looping, run body
+        this.VisitExpression(node.Then);
+        // Loop back to continue
+        this.LoopTail(node.ContinueLabel);
+        // We continue with the break state
+        this.State = breakState;
+    }
+
+    public override void VisitForExpression(BoundForExpression node)
+    {
+        // First, the sequence is always evaluated
+        this.VisitExpression(node.Sequence);
+        // We join in with the continue label
+        this.LoopHead(node.ContinueLabel);
         // Body does not necessarily run
         var breakState = this.Clone(in this.State);
         // We continue with the looping, run body

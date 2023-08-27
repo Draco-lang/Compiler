@@ -15,7 +15,7 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
     public override Symbol ContainingSymbol => this.untypedSymbol.ContainingSymbol;
     public override string Name => this.untypedSymbol.Name;
 
-    public override VariableDeclarationSyntax DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;
+    public override SyntaxNode DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;
 
     public override bool IsMutable => this.untypedSymbol.IsMutable;
 

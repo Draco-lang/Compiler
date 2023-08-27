@@ -174,6 +174,24 @@ public sealed class BclUsageTests : EndToEndTestsBase
     }
 
     [Fact]
+    public void FullyQualifiedSystemTupleConstruction()
+    {
+        var assembly = Compile("""
+            public func make(x: int32, y: int32): System.Tuple<int32, int32> =
+                System.Tuple(x, y);
+            """);
+
+        var t = Invoke<Tuple<int, int>>(
+            assembly: assembly,
+            methodName: "make",
+            args: new object[] { 2, 3 },
+            stdin: null,
+            stdout: null);
+        Assert.Equal(2, t.Item1);
+        Assert.Equal(3, t.Item2);
+    }
+
+    [Fact]
     public void ListUsageWithPropertyAndIndexer()
     {
         var assembly = Compile("""
@@ -305,5 +323,65 @@ public sealed class BclUsageTests : EndToEndTestsBase
             args: "123");
 
         Assert.Equal(123, result);
+    }
+
+    [Fact]
+    public void StringSplitting()
+    {
+        var assembly = Compile("""
+            import System;
+
+            public func foo(): string {
+                val parts = "1, 2, 3".Split(",", StringSplitOptions.TrimEntries);
+                return string.Join(";", parts);
+            }
+            """);
+        var result = Invoke<string>(
+            assembly: assembly,
+            methodName: "foo");
+
+        Assert.Equal("1;2;3", result);
+    }
+
+    [Fact]
+    public void ForLoopSumming()
+    {
+        var assembly = Compile("""
+            import System.Collections.Generic;
+
+            public func sum(ns: IEnumerable<int32>): int32 {
+                var s = 0;
+                for (n in ns) s += n;
+                return s;
+            }
+            """);
+        var result = Invoke<int>(
+            assembly: assembly,
+            methodName: "sum",
+            args: new[] { 1, 1, 2, 3, 5, 8, 13 });
+
+        Assert.Equal(33, result);
+    }
+
+    [Fact]
+    public void ForLoopPrinting()
+    {
+        var assembly = Compile("""
+            import System.Collections.Generic;
+            import System.Console;
+
+            public func log(ns: IEnumerable<int32>) {
+                for (n in ns) Write(n);
+            }
+            """);
+        var stringWriter = new StringWriter();
+        _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "log",
+            args: new[] { 1, 1, 2, 3, 5, 8, 13 },
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("11235813", stringWriter.ToString());
     }
 }

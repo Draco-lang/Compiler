@@ -11,6 +11,7 @@ using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -37,6 +38,7 @@ internal partial class Binder
         ReturnExpressionSyntax @return => this.BindReturnExpression(@return, constraints, diagnostics),
         IfExpressionSyntax @if => this.BindIfExpression(@if, constraints, diagnostics),
         WhileExpressionSyntax @while => this.BindWhileExpression(@while, constraints, diagnostics),
+        ForExpressionSyntax @for => this.BindForExpression(@for, constraints, diagnostics),
         CallExpressionSyntax call => this.BindCallExpression(call, constraints, diagnostics),
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
@@ -226,6 +228,142 @@ internal partial class Binder
         return new UntypedWhileExpression(syntax, condition, then, continueLabel, breakLabel);
     }
 
+    private UntypedExpression BindForExpression(ForExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var binder = this.GetBinder(syntax);
+
+        // Resolve iterator
+        var iterator = binder.DeclaredSymbols
+            .OfType<UntypedLocalSymbol>()
+            .Single();
+
+        var type = syntax.ElementType is null ? null : this.BindTypeToTypeSymbol(syntax.ElementType.Type, diagnostics);
+        var elementType = constraints.DeclareLocal(iterator, type);
+
+        var sequence = binder.BindExpression(syntax.Sequence, constraints, diagnostics);
+
+        var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
+        // Body must be unit
+        constraints
+            .SameType(IntrinsicSymbols.Unit, then.TypeRequired)
+            .ConfigureDiagnostic(diag => diag
+                .WithLocation(ExtractValueSyntax(syntax.Then).Location));
+
+        // Resolve labels
+        var continueLabel = binder.DeclaredSymbols
+            .OfType<LabelSymbol>()
+            .First(sym => sym.Name == "continue");
+        var breakLabel = binder.DeclaredSymbols
+            .OfType<LabelSymbol>()
+            .First(sym => sym.Name == "break");
+
+        // GetEnumerator
+        var getEnumeratorMethodsPromise = constraints.Member(sequence.TypeRequired, "GetEnumerator", out _);
+        getEnumeratorMethodsPromise.ConfigureDiagnostic(diag => diag
+            .WithLocation(syntax.Sequence.Location));
+
+        var exprPromise = constraints.Await(getEnumeratorMethodsPromise, UntypedExpression () =>
+        {
+            var getEnumeratorResult = getEnumeratorMethodsPromise.Result;
+            if (getEnumeratorResult.IsError)
+            {
+                constraints.UnifyAsserted(elementType, IntrinsicSymbols.ErrorType);
+                return new UntypedForExpression(
+                    syntax,
+                    iterator,
+                    sequence,
+                    then,
+                    continueLabel,
+                    breakLabel,
+                    ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol),
+                    ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol),
+                    ConstraintPromise.FromResult(UndefinedMemberSymbol.Instance as Symbol));
+            }
+
+            // Look up the overload
+            var getEnumeratorFunctions = GetFunctions(getEnumeratorResult);
+            var getEnumeratorPromise = constraints.Overload(
+                "GetEnumerator",
+                getEnumeratorFunctions,
+                ImmutableArray<object>.Empty,
+                out var enumeratorType);
+            getEnumeratorPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Sequence.Location));
+
+            // Look up MoveNext
+            var moveNextMethodsPromise = constraints.Member(enumeratorType, "MoveNext", out _);
+            moveNextMethodsPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Sequence.Location));
+
+            var moveNextPromise = constraints.Await(moveNextMethodsPromise, () =>
+            {
+                var moveNextResult = moveNextMethodsPromise.Result;
+
+                // Don't propagate errors
+                if (moveNextResult.IsError)
+                {
+                    return ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol);
+                }
+
+                var moveNextFunctions = GetFunctions(moveNextResult);
+
+                var moveNextPromise = constraints.Overload(
+                    "MoveNext",
+                    moveNextFunctions,
+                    ImmutableArray<object>.Empty,
+                    out var moveNextReturnType);
+                moveNextPromise.ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Sequence.Location));
+
+                var moveNextReturnsBoolPromise = constraints.SameType(this.IntrinsicSymbols.Bool, moveNextReturnType);
+                moveNextReturnsBoolPromise.ConfigureDiagnostic(diag => diag
+                    .WithLocation(syntax.Sequence.Location));
+
+                return moveNextPromise;
+            }).Unwrap();
+
+            // Look up Current
+            var currentPromise = constraints.Member(enumeratorType, "Current", out var currentType);
+            currentPromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.Sequence.Location));
+
+            var elementAssignablePromise = constraints.Assignable(elementType, currentType);
+            elementAssignablePromise.ConfigureDiagnostic(diag => diag
+                .WithLocation(syntax.ElementType?.Location ?? syntax.Iterator.Location));
+
+            // Current needs to be a gettable property
+            constraints.Await(currentPromise, () =>
+            {
+                var current = currentPromise.Result;
+
+                // Don't propagate error
+                if (current.IsError) return default(Unit);
+
+                if (current is not PropertySymbol propSymbol || propSymbol.Getter is null)
+                {
+                    diagnostics.Add(Diagnostic.Create(
+                        template: SymbolResolutionErrors.NotGettableProperty,
+                        location: syntax.Sequence.Location,
+                        formatArgs: current.Name));
+                }
+
+                return default;
+            });
+
+            return new UntypedForExpression(
+                syntax,
+                iterator,
+                sequence,
+                then,
+                continueLabel,
+                breakLabel,
+                getEnumeratorPromise,
+                moveNextPromise,
+                currentPromise);
+        });
+        return new UntypedDelayedExpression(syntax, exprPromise, IntrinsicSymbols.Unit);
+    }
+
     private UntypedExpression BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var method = this.BindExpression(syntax.Function, constraints, diagnostics);
@@ -251,7 +389,7 @@ internal partial class Binder
             {
                 // Retry binding with the resolved variant
                 var call = this.BindCallExpression(syntax, delayed.Promise.Result, args, constraints, diagnostics);
-                constraints.Unify(promisedType, call.TypeRequired);
+                constraints.UnifyAsserted(promisedType, call.TypeRequired);
                 return call;
             });
             return new UntypedDelayedExpression(syntax, promise, promisedType);
@@ -261,6 +399,7 @@ internal partial class Binder
             // Simple overload
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
+                group.Functions[0].Name,
                 group.Functions,
                 args.Cast<object>().ToImmutableArray(),
                 out var resultType);
@@ -283,20 +422,16 @@ internal partial class Binder
                 if (members is FunctionSymbol or OverloadSymbol)
                 {
                     // Overloaded member call
-                    var functions = members switch
-                    {
-                        OverloadSymbol o => o.Functions,
-                        FunctionSymbol f => ImmutableArray.Create(f),
-                        _ => throw new InvalidOperationException(),
-                    };
+                    var functions = GetFunctions(members);
                     var symbolPromise = constraints.Overload(
+                        members.Name,
                         functions,
                         args.Cast<object>().ToImmutableArray(),
                         out var resultType);
                     symbolPromise.ConfigureDiagnostic(diag => diag
                         .WithLocation(syntax.Function.Location));
 
-                    constraints.Unify(resultType, promisedType);
+                    constraints.UnifyAsserted(resultType, promisedType);
                     return new UntypedCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
                 }
                 else
@@ -308,7 +443,7 @@ internal partial class Binder
                     callPromise.ConfigureDiagnostic(diag => diag
                         .WithLocation(syntax.Location));
 
-                    constraints.Unify(resultType, promisedType);
+                    constraints.UnifyAsserted(resultType, promisedType);
                     return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
                 }
             });
@@ -335,6 +470,7 @@ internal partial class Binder
 
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
+            operatorName,
             GetFunctions(operatorSymbol),
             ImmutableArray.Create<object>(operand),
             out var resultType);
@@ -389,6 +525,7 @@ internal partial class Binder
 
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
+                operatorName,
                 GetFunctions(operatorSymbol),
                 ImmutableArray.Create<object>(left, right),
                 out var resultType);
@@ -414,6 +551,7 @@ internal partial class Binder
 
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
+                operatorName,
                 GetFunctions(operatorSymbol),
                 ImmutableArray.Create<object>(left, right),
                 out var resultType);
@@ -452,6 +590,7 @@ internal partial class Binder
         // NOTE: We know it must be bool, no need to pass it on to comparison
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
+            operatorName,
             GetFunctions(operatorSymbol),
             ImmutableArray.Create<object>(prev, right),
             out var resultType);
@@ -531,14 +670,15 @@ internal partial class Binder
                     template: SymbolResolutionErrors.NoGettableIndexerInType,
                     location: index.Location,
                     formatArgs: receiver.Type));
-                constraints.Unify(returnType, IntrinsicSymbols.ErrorType);
+                constraints.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
             }
             var overloaded = constraints.Overload(
+                "operator[]",
                 indexers,
                 args.Cast<object>().ToImmutableArray(),
                 out var gotReturnType);
-            constraints.Unify(returnType, gotReturnType);
+            constraints.UnifyAsserted(returnType, gotReturnType);
             overloaded.ConfigureDiagnostic(diag => diag
                 .WithLocation(index.Location));
             return overloaded;
@@ -595,12 +735,7 @@ internal partial class Binder
             {
                 var members = member.Member.Result;
                 // Search for all function members with the same number of generic parameters
-                var withSameNoParams = members switch
-                {
-                    OverloadSymbol o => o.Functions,
-                    FunctionSymbol f => ImmutableArray.Create(f),
-                    _ => ImmutableArray<FunctionSymbol>.Empty,
-                };
+                var withSameNoParams = GetFunctions(members);
                 if (withSameNoParams.Length == 0)
                 {
                     // No generic functions with this number of parameters
@@ -654,11 +789,11 @@ internal partial class Binder
         case Symbol when symbol.IsError:
             return new UntypedReferenceErrorExpression(syntax, symbol);
         case ModuleSymbol module:
-            // NOTE: Hack, see the node above this method definition
-            this.BindModuleSyntaxToSymbol(syntax, module);
+            // NOTE: Hack, see the note above this method definition
+            this.BindSyntaxToSymbol(syntax, module);
             return new UntypedModuleExpression(syntax, module);
         case TypeSymbol type:
-            // NOTE: Hack, see the node above this method definition
+            // NOTE: Hack, see the note above this method definition
             this.BindTypeSyntaxToSymbol(syntax, type);
             return new UntypedTypeExpression(syntax, type);
         case ParameterSymbol param:
@@ -685,13 +820,14 @@ internal partial class Binder
     {
         FunctionSymbol f => ImmutableArray.Create(f),
         OverloadSymbol o => o.Functions,
-        _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
+        _ => ImmutableArray<FunctionSymbol>.Empty,
     };
 
     private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch
     {
         IfExpressionSyntax @if => ExtractValueSyntax(@if.Then),
         WhileExpressionSyntax @while => ExtractValueSyntax(@while.Then),
+        ForExpressionSyntax @for => ExtractValueSyntax(@for.Then),
         BlockExpressionSyntax block => block.Value is null ? block : ExtractValueSyntax(block.Value),
         _ => syntax,
     };

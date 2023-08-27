@@ -77,16 +77,45 @@ internal static class MetadataSymbol
         return null;
     }
 
+    public static object? DecodeConstant(Constant constant, MetadataReader metadataReader)
+    {
+        var blob = metadataReader.GetBlobBytes(constant.Value);
+        return constant.TypeCode switch
+        {
+            ConstantTypeCode.NullReference => null,
+
+            ConstantTypeCode.Boolean => BitConverter.ToBoolean(blob),
+            ConstantTypeCode.Char => BitConverter.ToChar(blob),
+
+            ConstantTypeCode.String => BitConverter.ToString(blob),
+
+            ConstantTypeCode.Byte => blob[0],
+            ConstantTypeCode.UInt16 => BitConverter.ToUInt16(blob),
+            ConstantTypeCode.UInt32 => BitConverter.ToUInt32(blob),
+            ConstantTypeCode.UInt64 => BitConverter.ToUInt64(blob),
+
+            ConstantTypeCode.SByte => (sbyte)blob[0],
+            ConstantTypeCode.Int16 => BitConverter.ToInt16(blob),
+            ConstantTypeCode.Int32 => BitConverter.ToInt32(blob),
+            ConstantTypeCode.Int64 => BitConverter.ToInt64(blob),
+
+            ConstantTypeCode.Single => BitConverter.ToSingle(blob),
+            ConstantTypeCode.Double => BitConverter.ToDouble(blob),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(constant)),
+        };
+    }
+
+    private static FunctionSymbol SynthetizeConstructor(
+        MetadataTypeSymbol type,
+        MethodDefinition ctorMethod) => new SynthetizedMetadataConstructorSymbol(type, ctorMethod);
+
     public static string GetDocumentation(MetadataAssemblySymbol assembly, string documentationName)
     {
         var root = assembly.AssemblyDocumentation?.DocumentElement;
         var xml = root?.SelectSingleNode($"//member[@name='{documentationName}']")?.InnerXml ?? string.Empty;
         return string.Join(Environment.NewLine, xml.ReplaceLineEndings("\n").Split('\n').Select(x => x.TrimStart()));
     }
-
-    private static FunctionSymbol SynthetizeConstructor(
-        MetadataTypeSymbol type,
-        MethodDefinition ctorMethod) => new SynthetizedMetadataConstructorSymbol(type, ctorMethod);
 
     /// <summary>
     /// Gets the full name of a <paramref name="symbol"/> used to retrieve documentation from metadata.

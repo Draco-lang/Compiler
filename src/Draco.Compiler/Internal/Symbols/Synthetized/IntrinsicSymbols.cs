@@ -33,8 +33,11 @@ internal sealed partial class IntrinsicSymbols
 
     public TypeSymbol Char { get; } = new PrimitiveTypeSymbol("char", isValueType: true);
 
-    public ArrayTypeSymbol Array { get; }
-    public ArrayConstructorSymbol ArrayCtor { get; }
+    public ArrayTypeSymbol Array => InterlockedUtils.InitializeNull(ref this.array, () => new(1, this.Int32));
+    private ArrayTypeSymbol? array;
+
+    public ArrayConstructorSymbol ArrayCtor => InterlockedUtils.InitializeNull(ref this.arrayCtor, () => new(this.Array));
+    private ArrayConstructorSymbol? arrayCtor;
 
     public FunctionSymbol Bool_Not => InterlockedUtils.InitializeNull(
         ref this.bool_not,
@@ -48,8 +51,6 @@ internal sealed partial class IntrinsicSymbols
     public IntrinsicSymbols(Compilation compilation)
     {
         this.compilation = compilation;
-        this.Array = new(1, this.Int32);
-        this.ArrayCtor = new(this.Array);
     }
 
     public TypeSymbol InstantiateArray(TypeSymbol elementType, int rank = 1) => rank switch

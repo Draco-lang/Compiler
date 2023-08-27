@@ -19,9 +19,9 @@ internal partial class Binder
             containingFunction.ReturnType,
             returnValue.TypeRequired,
             ConstraintLocator.Syntax(returnSyntax)
-                .WithRelatedInformation(DiagnosticRelatedInformation.Create(
+                .WithRelatedInformation(
                     format: "return type declared to be {0}",
                     formatArgs: containingFunction.ReturnType,
-                    location: returnTypeSyntax?.Location)));
+                    location: returnTypeSyntax?.Location));
     }
 }

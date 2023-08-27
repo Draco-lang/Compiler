@@ -54,6 +54,21 @@ internal abstract class ConstraintLocator
     public ConstraintLocator WithRelatedInformation(DiagnosticRelatedInformation relatedInformation) =>
         new WithRelatedInfoConstraintLocator(this, relatedInformation);
 
+    /// <summary>
+    /// Wraps the constraint locator to provide additional information.
+    /// </summary>
+    /// <param name="location">The location of the related information.</param>
+    /// <param name="format">The format message.</param>
+    /// <param name="formatArgs">The format arguments.</param>
+    /// <returns>The wrapped locator.</returns>
+    public ConstraintLocator WithRelatedInformation(
+        Location? location,
+        string format,
+        params object?[] formatArgs) => this.WithRelatedInformation(DiagnosticRelatedInformation.Create(
+        location: location,
+        format: format,
+        formatArgs: formatArgs));
+
     private sealed class NullConstraintLocator : ConstraintLocator
     {
         public override void Locate(Diagnostic.Builder diagnostic) { }

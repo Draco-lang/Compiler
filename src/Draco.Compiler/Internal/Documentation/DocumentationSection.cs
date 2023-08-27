@@ -6,27 +6,28 @@ namespace Draco.Compiler.Internal.Documentation;
 /// <summary>
 /// Represents a section of the documentation.
 /// </summary>
-/// <param name="Name">The name of the section</param>
-/// <param name="Elements">The <see cref="DocumentationElement"/>s this section contains.</param>
-internal sealed record class DocumentationSection(string Name, ImmutableArray<DocumentationElement> Elements)
+internal sealed class DocumentationSection
 {
+    public string? Name { get; }
+    public ImmutableArray<DocumentationElement> Elements { get; }
+
     public SectionKind Kind => this.kind ?? SectionKind.Other;
     private SectionKind? kind;
 
-    public DocumentationSection(SectionKind sectionKind, ImmutableArray<DocumentationElement> Elements)
-        : this(sectionKind switch
-        {
-            SectionKind.Summary => "summary",
-            SectionKind.Parameters => "parameters",
-            SectionKind.TypeParameters => "type parameters",
-            SectionKind.Code => "code",
-            _ => "unknown section",
-        }, Elements)
+    public DocumentationSection(SectionKind sectionKind, ImmutableArray<DocumentationElement> elements)
     {
         this.kind = sectionKind;
+        this.Elements = elements;
+    }
+
+    public DocumentationSection(string name, ImmutableArray<DocumentationElement> elements)
+    {
+        this.Name = name;
+        this.Elements = elements;
     }
 }
 
+// Note: The values of the sections are used for ordering from smallest to highest
 internal enum SectionKind
 {
     Summary = 1,

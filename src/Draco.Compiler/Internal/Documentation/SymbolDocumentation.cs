@@ -21,7 +21,7 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     /// <summary>
     /// The summary documentation section.
     /// </summary>
-    public DocumentationSection? Summary => this.Sections.FirstOrDefault(x => x.Name.ToLower() == "summary");
+    public DocumentationSection? Summary => this.Sections.FirstOrDefault(x => x.Name?.ToLower() == "summary");
 
     /// <summary>
     /// The sections ordered conventionally.
@@ -58,7 +58,7 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
                 SectionKind.Code => section.Elements[0].ToMarkdown(),
 
                 _ => $"""
-                     # {section.Name.ToLowerInvariant()}
+                     # {section.Name?.ToLowerInvariant()}
                      {string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown()))}
                      """
             });
@@ -81,6 +81,9 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
         {
             switch (section.Kind)
             {
+            case SectionKind.Summary:
+                sections.Add(new XElement("summary", section.Elements.Select(x => x.ToXml())));
+                break;
             case SectionKind.Parameters:
             case SectionKind.TypeParameters:
                 sections.AddRange(section.Elements.Select(x => x.ToXml()));
@@ -89,7 +92,8 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
                 sections.Add(section.Elements[0].ToXml());
                 break;
             default:
-                sections.Add(new XElement(section.Name.ToLowerInvariant(), section.Elements.Select(x => x.ToXml())));
+                // Note: The "Unknown" is for soft failing as string.Empty would throw
+                sections.Add(new XElement(section.Name?.ToLowerInvariant() ?? "Unknown", section.Elements.Select(x => x.ToXml())));
                 break;
             }
         }

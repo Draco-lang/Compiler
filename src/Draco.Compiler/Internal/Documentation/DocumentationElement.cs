@@ -36,43 +36,38 @@ internal sealed record class TextDocumentationElement(string Text) : Documentati
     public override XText ToXml() => new XText(this.Text);
 }
 
+internal abstract record class SymbolDocumentationElement(Symbol? Symbol, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+{
+    protected string Name => this.Symbol?.Name ?? string.Empty;
+    protected string? FilePath => this.Symbol?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
+    protected string Link => this.FilePath is null
+        ? string.Empty
+        : $"{this.FilePath}#L{this.Symbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
+
+    public override string ToMarkdown() => $"- [{this.Name}]({this.Link}): {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
+}
+
 /// <summary>
 /// A single parameter.
 /// </summary>
-/// <param name="ParameterLink">The link to given parameter.</param>
+/// <param name="Parameter">The parameter symbol.</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this parameter.</param>
-internal sealed record class ParameterDocumentationElement(ParameterSymbol? Parameter, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class ParameterDocumentationElement(ParameterSymbol? Parameter, ImmutableArray<DocumentationElement> Elements) : SymbolDocumentationElement(Parameter, Elements)
 {
-    private readonly string name = Parameter?.Name ?? string.Empty;
-    private string? filePath = Parameter?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
-    private string Link => this.filePath is null
-        ? string.Empty
-        : $"{this.filePath}#L{this.Parameter?.DeclaringSyntax?.Location.Range?.Start.Line}";
-
-    public override string ToMarkdown() => $"- [{this.name}]({this.Link}): {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
-
     public override XElement ToXml() => new XElement("param",
-        new XAttribute("name", this.name),
+        new XAttribute("name", this.Name),
         this.Elements.Select(x => x.ToXml()));
 }
 
 /// <summary>
 /// A single type parameter.
 /// </summary>
-/// <param name="ParameterLink">The link to given type parameter.</param>
+/// <param name="TypeParameter">The type parameter symbol.</param>
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this type parameter.</param>
-internal sealed record class TypeParameterDocumentationElement(TypeParameterSymbol? TypeParameter, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
+internal sealed record class TypeParameterDocumentationElement(TypeParameterSymbol? TypeParameter, ImmutableArray<DocumentationElement> Elements) : SymbolDocumentationElement(TypeParameter, Elements)
 {
-    private readonly string name = TypeParameter?.Name ?? string.Empty;
-    private string? filePath = TypeParameter?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
-    private string Link => this.filePath is null
-        ? string.Empty
-        : $"{this.filePath}#L{this.TypeParameter?.DeclaringSyntax?.Location.Range?.Start.Line}";
-
-    public override string ToMarkdown() => $"- [{this.name}]({this.Link}): {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
-
     public override XElement ToXml() => new XElement("typeparam",
-        new XAttribute("name", this.name),
+        new XAttribute("name", this.Name),
         this.Elements.Select(x => x.ToXml()));
 }
 

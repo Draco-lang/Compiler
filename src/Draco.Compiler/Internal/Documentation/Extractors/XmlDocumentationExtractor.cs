@@ -94,7 +94,7 @@ internal sealed class XmlDocumentationExtractor
     private Symbol? GetSymbolFromDocumentationName(string documentationName) =>
         this.Assembly.Compilation.MetadataAssemblies.Values
             .Select(x => x.RootNamespace
-            .LookupByDocumentationName(documentationName))
+            .LookupByPrefixedDocumentationName(documentationName))
             .OfType<Symbol>()
             .FirstOrDefault();
 
@@ -102,5 +102,5 @@ internal sealed class XmlDocumentationExtractor
         (this.ContainingSymbol as FunctionSymbol)?.Parameters.FirstOrDefault(x => x.Name == paramName);
 
     private TypeParameterSymbol? GetTypeParameter(string paramName) =>
-       (this.ContainingSymbol as FunctionSymbol)?.GenericParameters.FirstOrDefault(x => x.Name == paramName);
+        (this.ContainingSymbol as FunctionSymbol)?.GenericParameters.FirstOrDefault(x => x.Name == paramName);
 }

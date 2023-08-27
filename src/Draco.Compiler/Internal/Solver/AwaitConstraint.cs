@@ -1,5 +1,4 @@
 using System;
-using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Solver;
 

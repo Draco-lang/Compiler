@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Solver;
 

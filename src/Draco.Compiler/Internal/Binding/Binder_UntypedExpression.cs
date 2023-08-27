@@ -185,11 +185,11 @@ internal partial class Binder
             ConstraintLocator.Syntax(syntax.Else is null
                 ? ExtractValueSyntax(syntax.Then)
                 : ExtractValueSyntax(syntax.Else.Expression))
-            .WithRelatedInformation(
-                format: "the other branch is inferred to be {0}",
-                formatArgs: then.TypeRequired,
-                // If there is an else clause, we annotate the then clause as related info
-                location: ExtractValueSyntax(syntax.Then).Location));
+                .WithRelatedInformation(
+                    format: "the other branch is inferred to be {0}",
+                    formatArgs: then.TypeRequired,
+                    // If there is an else clause, we annotate the then clause as related info
+                    location: ExtractValueSyntax(syntax.Then).Location));
 
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
     }

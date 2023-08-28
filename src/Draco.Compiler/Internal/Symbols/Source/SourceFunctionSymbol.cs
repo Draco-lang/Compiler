@@ -36,7 +36,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     public BoundStatement Body => this.BindBodyIfNeeded(this.DeclaringCompilation!);
     private BoundStatement? body;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.DeclaringSyntax.Documentation, this).Extract());
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MarkdownDocumentationExtractor.Extract(this.DeclaringSyntax.Documentation, this));
     private SymbolDocumentation? documentation;
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)

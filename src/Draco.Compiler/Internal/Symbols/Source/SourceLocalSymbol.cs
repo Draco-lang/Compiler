@@ -19,7 +19,7 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
 
     public override bool IsMutable => this.untypedSymbol.IsMutable;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.DeclaringSyntax.Documentation, this).Extract());
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MarkdownDocumentationExtractor.Extract(this.DeclaringSyntax.Documentation, this));
     private SymbolDocumentation? documentation;
 
     private readonly UntypedLocalSymbol untypedSymbol;

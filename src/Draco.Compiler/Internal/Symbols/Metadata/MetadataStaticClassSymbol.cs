@@ -22,7 +22,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new XmlDocumentationExtractor(this.RawDocumentation, this).Extract());
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation, this));
     private SymbolDocumentation? documentation;
 
     private string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this.Assembly, MetadataSymbol.GetPrefixedDocumentationName(this)));

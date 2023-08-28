@@ -26,7 +26,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new MarkdownDocumentationExtractor(this.RawDocumentation, this).Extract());
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MarkdownDocumentationExtractor.Extract(this.RawDocumentation, this));
     private SymbolDocumentation? documentation;
 
     /// <summary>
@@ -34,7 +34,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     /// </summary>
     public IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declaration.DeclaringSyntaxes;
 
-    private string RawDocumentation => this.DeclaringSyntaxes.SingleOrDefault()?.Documentation ?? string.Empty;
+    private string RawDocumentation => this.DeclaringSyntaxes.Where(x => !string.IsNullOrEmpty(x.Documentation)).SingleOrDefault()?.Documentation ?? string.Empty;
 
     private readonly Declaration declaration;
 

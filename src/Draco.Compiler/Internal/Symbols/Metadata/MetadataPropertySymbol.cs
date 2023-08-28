@@ -45,7 +45,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     private volatile bool overrideNeedsBuild = true;
     private readonly object overrideBuildLock = new();
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => new XmlDocumentationExtractor(this.RawDocumentation, this).Extract());
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation, this));
     private SymbolDocumentation? documentation;
 
     private string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this.Assembly, MetadataSymbol.GetPrefixedDocumentationName(this)));

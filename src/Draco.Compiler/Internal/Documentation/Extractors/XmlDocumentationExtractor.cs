@@ -18,17 +18,24 @@ internal sealed class XmlDocumentationExtractor
     public Symbol ContainingSymbol { get; }
     public MetadataAssemblySymbol Assembly => this.ContainingSymbol.AncestorChain.OfType<MetadataAssemblySymbol>().First();
 
-    public XmlDocumentationExtractor(string xml, Symbol containingSymbol)
+    private XmlDocumentationExtractor(string xml, Symbol containingSymbol)
     {
         this.Xml = xml;
         this.ContainingSymbol = containingSymbol;
     }
 
     /// <summary>
+    /// Extracts the <paramref name="xml"/>.
+    /// </summary>
+    /// <returns>The extracted XMl as <see cref="SymbolDocumentation"/>.</returns>
+    public static SymbolDocumentation Extract(string xml, Symbol containingSymbol) =>
+        new XmlDocumentationExtractor(xml, containingSymbol).Extract();
+
+    /// <summary>
     /// Extracts the <see cref="Xml"/>.
     /// </summary>
     /// <returns>The extracted XMl as <see cref="SymbolDocumentation"/>.</returns>
-    public SymbolDocumentation Extract()
+    private SymbolDocumentation Extract()
     {
         // TODO: exception
         //       para

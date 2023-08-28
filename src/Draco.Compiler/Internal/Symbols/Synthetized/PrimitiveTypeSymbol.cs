@@ -15,10 +15,8 @@ internal class PrimitiveTypeSymbol : TypeSymbol
     public override bool IsValueType { get; }
 
     public PrimitiveTypeSymbol(string name, bool isValueType)
+        : this(name, name, isValueType)
     {
-        this.Name = name;
-        this.IsValueType = isValueType;
-        this.MetadataFullName = name;
     }
 
     public PrimitiveTypeSymbol(string name, string metadataFullName, bool isValueType)

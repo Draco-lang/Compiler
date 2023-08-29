@@ -27,7 +27,9 @@ internal sealed class CallConstraint : Constraint<Unit>
     public CallConstraint(
         TypeSymbol calledType,
         ImmutableArray<object> arguments,
-        TypeSymbol returnType)
+        TypeSymbol returnType,
+        ConstraintLocator locator)
+        : base(locator)
     {
         this.CalledType = calledType;
         this.Arguments = arguments;

@@ -1,5 +1,4 @@
 using System;
-using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -22,14 +21,8 @@ internal sealed class AwaitConstraint<TResult> : Constraint<TResult>
     public AwaitConstraint(
         Func<bool> awaited,
         Func<TResult> map,
-        Diagnostic.Builder diagnostic)
-        : base(diagnostic)
-    {
-        this.Awaited = awaited;
-        this.Map = map;
-    }
-
-    public AwaitConstraint(Func<bool> awaited, Func<TResult> map)
+        ConstraintLocator locator)
+        : base(locator)
     {
         this.Awaited = awaited;
         this.Map = map;

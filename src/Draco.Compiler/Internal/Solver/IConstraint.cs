@@ -1,5 +1,3 @@
-using Draco.Compiler.Api.Diagnostics;
-
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
@@ -13,9 +11,9 @@ internal interface IConstraint
     public IConstraintPromise Promise { get; }
 
     /// <summary>
-    /// The builder for the <see cref="Api.Diagnostics.Diagnostic"/>.
+    /// The locator for the constraint.
     /// </summary>
-    public Diagnostic.Builder Diagnostic { get; }
+    public ConstraintLocator Locator { get; }
 }
 
 /// <summary>

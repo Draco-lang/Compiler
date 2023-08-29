@@ -34,7 +34,10 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     /// </summary>
     public IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declaration.DeclaringSyntaxes;
 
-    private string RawDocumentation => this.DeclaringSyntaxes.Where(x => !string.IsNullOrEmpty(x.Documentation)).FirstOrDefault()?.Documentation ?? string.Empty;
+    private string RawDocumentation => this.DeclaringSyntaxes
+        .Select(syntax => syntax.Documentation)
+        .Where(doc => !string.IsNullOrEmpty(doc))
+        .FirstOrDefault()?.Documentation ?? string.Empty;
 
     private readonly Declaration declaration;
 

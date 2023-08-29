@@ -92,7 +92,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation, this));
     private SymbolDocumentation? documentation;
 
-    private string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this.Assembly, MetadataSymbol.GetPrefixedDocumentationName(this)));
+    private string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this));
     private string? rawDocumentation;
 
     public override Symbol ContainingSymbol { get; }

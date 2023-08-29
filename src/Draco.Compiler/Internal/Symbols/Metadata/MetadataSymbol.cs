@@ -110,8 +110,16 @@ internal static class MetadataSymbol
         MetadataTypeSymbol type,
         MethodDefinition ctorMethod) => new SynthetizedMetadataConstructorSymbol(type, ctorMethod);
 
-    public static string GetDocumentation(MetadataAssemblySymbol assembly, string documentationName)
+    /// <summary>
+    /// Gets documentation for given <paramref name="symbol"/>.
+    /// </summary>
+    /// <param name="symbol">The <see cref="Symbol"/> to get documentation for.</param>
+    /// <returns>The documentation, or empty string, if no documentation was found.</returns>
+    public static string GetDocumentation(Symbol symbol)
     {
+        var assembly = symbol.AncestorChain.OfType<MetadataAssemblySymbol>().FirstOrDefault();
+        if (assembly is null) return string.Empty;
+        var documentationName = GetPrefixedDocumentationName(symbol);
         var root = assembly.AssemblyDocumentation?.DocumentElement;
         var xml = root?.SelectSingleNode($"//member[@name='{documentationName}']")?.InnerXml ?? string.Empty;
         return string.Join(Environment.NewLine, xml.ReplaceLineEndings("\n").Split('\n').Select(x => x.TrimStart()));

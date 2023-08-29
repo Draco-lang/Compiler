@@ -37,7 +37,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     private string RawDocumentation => this.DeclaringSyntaxes
         .Select(syntax => syntax.Documentation)
         .Where(doc => !string.IsNullOrEmpty(doc))
-        .FirstOrDefault()?.Documentation ?? string.Empty;
+        .FirstOrDefault() ?? string.Empty;
 
     private readonly Declaration declaration;
 

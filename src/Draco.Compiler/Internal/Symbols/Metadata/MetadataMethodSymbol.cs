@@ -89,10 +89,10 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     private volatile bool overrideNeedsBuild = true;
     private readonly object overrideBuildLock = new();
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation, this));
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
-    private string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this));
+    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
     public override Symbol ContainingSymbol { get; }
@@ -239,4 +239,10 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         }
         return true;
     }
+
+    private SymbolDocumentation BuildDocumentation() =>
+        XmlDocumentationExtractor.Extract(this);
+
+    private string BuildRawDocumentation() =>
+        MetadataSymbol.GetDocumentation(this);
 }

@@ -9,6 +9,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.FlowAnalysis;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
@@ -36,8 +37,10 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     public BoundStatement Body => this.BindBodyIfNeeded(this.DeclaringCompilation!);
     private BoundStatement? body;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => MarkdownDocumentationExtractor.Extract(this.DeclaringSyntax.Documentation, this));
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
+
+    internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
@@ -207,4 +210,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
         return true;
     }
+
+    private SymbolDocumentation BuildDocumentation() =>
+        MarkdownDocumentationExtractor.Extract(this);
 }

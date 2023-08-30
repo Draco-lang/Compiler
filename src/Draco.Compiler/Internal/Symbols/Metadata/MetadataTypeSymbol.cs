@@ -29,10 +29,10 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation, this));
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
-    private string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this));
+    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
     public override Symbol ContainingSymbol { get; }
@@ -177,4 +177,10 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         // Done
         return result.ToImmutable();
     }
+
+    private SymbolDocumentation BuildDocumentation() =>
+        XmlDocumentationExtractor.Extract(this);
+
+    private string BuildRawDocumentation() =>
+        MetadataSymbol.GetDocumentation(this);
 }

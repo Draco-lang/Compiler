@@ -20,8 +20,8 @@ internal sealed class MarkdownDocumentationExtractor
     /// Extracts the <paramref name="markdown"/>.
     /// </summary>
     /// <returns>The extracted markdown as <see cref="SymbolDocumentation"/>.</returns>
-    public static SymbolDocumentation Extract(string markdown, Symbol containingSymbol) =>
-        new MarkdownDocumentationExtractor(markdown, containingSymbol).Extract();
+    public static SymbolDocumentation Extract(Symbol containingSymbol) =>
+        new MarkdownDocumentationExtractor(containingSymbol.RawDocumentation, containingSymbol).Extract();
 
     /// <summary>
     /// Extracts the <see cref="Markdown"/>.

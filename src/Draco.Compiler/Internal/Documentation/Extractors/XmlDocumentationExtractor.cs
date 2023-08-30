@@ -28,8 +28,8 @@ internal sealed class XmlDocumentationExtractor
     /// Extracts the <paramref name="xml"/>.
     /// </summary>
     /// <returns>The extracted XMl as <see cref="SymbolDocumentation"/>.</returns>
-    public static SymbolDocumentation Extract(string xml, Symbol containingSymbol) =>
-        new XmlDocumentationExtractor(xml, containingSymbol).Extract();
+    public static SymbolDocumentation Extract(Symbol containingSymbol) =>
+        new XmlDocumentationExtractor(containingSymbol.RawDocumentation, containingSymbol).Extract();
 
     /// <summary>
     /// Extracts the <see cref="Xml"/>.

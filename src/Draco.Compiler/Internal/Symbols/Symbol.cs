@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -127,6 +128,11 @@ internal abstract partial class Symbol
     /// The structured documentation attached to this symbol.
     /// </summary>
     public virtual SymbolDocumentation Documentation => SymbolDocumentation.Empty;
+
+    /// <summary>
+    /// The documentation of symbol as raw xml or markdown;
+    /// </summary>
+    internal virtual string RawDocumentation => string.Empty;
 
     /// <summary>
     /// The visibility of this symbol.

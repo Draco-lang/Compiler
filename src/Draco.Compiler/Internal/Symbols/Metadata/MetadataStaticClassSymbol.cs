@@ -22,10 +22,10 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, () => XmlDocumentationExtractor.Extract(this.RawDocumentation, this));
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
-    private string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, () => MetadataSymbol.GetDocumentation(this));
+    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
     public override Symbol ContainingSymbol { get; }
@@ -110,4 +110,10 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
         // Done
         return result.ToImmutable();
     }
+
+    private SymbolDocumentation BuildDocumentation() =>
+        XmlDocumentationExtractor.Extract(this);
+
+    private string BuildRawDocumentation() =>
+        MetadataSymbol.GetDocumentation(this);
 }

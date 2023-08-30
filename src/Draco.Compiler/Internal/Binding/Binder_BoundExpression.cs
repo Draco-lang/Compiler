@@ -302,7 +302,7 @@ internal partial class Binder
         else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result is PropertySymbol pr)
         {
             var receiver = this.TypeExpression(mem.Accessed, constraints, diagnostics);
-            var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);
+            var setter = GetSetterSymbol(assignment.Syntax, pr, diagnostics);
             return new BoundPropertySetExpression(
                 assignment.Syntax,
                 receiver,
@@ -385,7 +385,7 @@ internal partial class Binder
                 }
                 else
                 {
-                    var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
+                    var getter = GetGetterSymbol(mem.Syntax, prop, diagnostics);
                     return new BoundPropertyGetExpression(mem.Syntax, left, getter);
                 }
             }
@@ -418,7 +418,7 @@ internal partial class Binder
         ImmutableArray<BoundExpression> args,
         DiagnosticBag diagnostics)
     {
-        var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
+        var getter = GetGetterSymbol(syntax, prop, diagnostics);
         var getterCall = new BoundCallExpression(null, receiver, getter, args);
         return new BoundBinaryExpression(syntax, compoundOperator, getterCall, right, right.TypeRequired);
     }

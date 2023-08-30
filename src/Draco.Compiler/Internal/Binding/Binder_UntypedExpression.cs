@@ -760,7 +760,7 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldExpression(syntax, null, field);
         case PropertySymbol prop:
-            var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
+            var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new UntypedPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
             return new UntypedFunctionGroupExpression(syntax, ImmutableArray.Create(func));

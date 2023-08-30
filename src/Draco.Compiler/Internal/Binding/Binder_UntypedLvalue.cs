@@ -150,7 +150,7 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldLvalue(syntax, null, field);
         case PropertySymbol prop:
-            var setter = this.GetSetterSymbol(syntax, prop, diagnostics);
+            var setter = GetSetterSymbol(syntax, prop, diagnostics);
             return new UntypedPropertySetLvalue(syntax, null, setter);
         default:
             // NOTE: The error is already reported

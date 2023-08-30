@@ -156,8 +156,8 @@ internal static class MetadataSymbol
     private static string GetFunctionDocumentationName(FunctionSymbol function)
     {
         var parametersJoined = function.Parameters.Length == 0
-                ? string.Empty
-                : $"({string.Join(",", function.Parameters.Select(x => GetDocumentationName(x.Type)))})";
+            ? string.Empty
+            : $"({string.Join(",", function.Parameters.Select(x => GetDocumentationName(x.Type)))})";
 
         var generics = function.GenericParameters.Length == 0
             ? string.Empty

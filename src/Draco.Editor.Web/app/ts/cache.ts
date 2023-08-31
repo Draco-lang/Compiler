@@ -1,5 +1,5 @@
 import { blobToBase64 } from './helpers.js';
-
+import { buildDate } from './metadata.js';
 const elements = [];
 
 export function getDownloadViewElement() {
@@ -15,8 +15,28 @@ export function getDownloadViewElement() {
 }
 
 export async function downloadAssemblies(cfg: unknown) {
+    try {
+        const cache = await caches.open('assembly-cache');
+        const result = await cache.match('appBuildDate');
+        const cachedDate = await result.text();
+        console.log('Current build: '+ buildDate+' cache build: '+cachedDate);
+
+        if (result == null || cachedDate != buildDate) {
+            console.log('Cache nuked.');
+            await caches.delete('assembly-cache');
+        }
+    } catch (e) {
+        console.log('Could not open cache: ', e);
+    }
+    try {
+        const cache = await caches.open('assembly-cache');
+        await cache.put('appBuildDate', new Response(buildDate));
+
+    } catch (e) {
+        console.log('Could not open cache: ', e);
+    }
     const assets = cfg['assets'];
-    if (assets != null)  {
+    if (assets != null) {
         const promises = assets.map(async (asset) => {
             if (asset['buffer'] == null) {
                 await downloadAssembly(cfg['assemblyRootFolder'], asset);
@@ -40,9 +60,9 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
     } catch (e) {
         console.log('Could not open cache: ', e);
     }
-    console.log('Cache miss:'+dlPath);
+    console.log('Cache miss:' + dlPath);
     setDownloadViewVisible(true);
-    const progresses = elements.map( (element) => {
+    const progresses = elements.map((element) => {
         const progressContainer = document.createElement('div');
         const progressText = document.createElement('span');
         progressText.classList.add('monaco-editor');
@@ -55,7 +75,7 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
         return progress;
     });
     const assemblyBlob = await progressFetch(dlPath + '/' + asset['name'], (loaded, total) => {
-        progresses.forEach(progress=> {
+        progresses.forEach(progress => {
             progress.max = total;
             progress.value = loaded;
         });
@@ -66,7 +86,7 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
     if (cache != null) {
         await cache.put(asset['name'], response);
     }
-    progresses.forEach(progress=> {
+    progresses.forEach(progress => {
         progress.parentElement.remove();
     });
 }
@@ -75,7 +95,7 @@ function wait(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-async function progressFetch(url: string, onProgress: (loaded: number, total: number) => void) : Promise<Blob> {
+async function progressFetch(url: string, onProgress: (loaded: number, total: number) => void): Promise<Blob> {
     const response = await fetch(url);
     const contentLength = response.headers.get('content-length');
     const total = parseInt(contentLength, 10);
@@ -85,7 +105,7 @@ async function progressFetch(url: string, onProgress: (loaded: number, total: nu
         async start(controller) {
             const reader = response.body.getReader();
             while (true) {
-                const {done, value} = await reader.read();
+                const { done, value } = await reader.read();
                 if (done) break;
                 loaded += value.byteLength;
                 onProgress(loaded, total);

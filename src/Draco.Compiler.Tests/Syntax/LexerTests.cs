@@ -1250,20 +1250,17 @@ public sealed class LexerTests
     public void TestHelloWorld()
     {
         var text = """
-            from System.Console import { WriteLine };
+            import System.Console;
 
             func main() = WriteLine("Hello, World!");
             """;
         this.Lex(text);
 
-        this.AssertNextToken(TokenKind.KeywordFrom, "from");
+        this.AssertNextToken(TokenKind.KeywordImport, "import");
         this.AssertNextToken(TokenKind.Identifier, "System", "System");
         this.AssertNextToken(TokenKind.Dot, ".");
         this.AssertNextToken(TokenKind.Identifier, "Console", "Console");
         this.AssertNextToken(TokenKind.KeywordImport, "import");
-        this.AssertNextToken(TokenKind.CurlyOpen, "{");
-        this.AssertNextToken(TokenKind.Identifier, "WriteLine", "WriteLine");
-        this.AssertNextToken(TokenKind.CurlyClose, "}");
         this.AssertNextToken(TokenKind.Semicolon, ";");
         this.AssertNextToken(TokenKind.KeywordFunc, "func");
         this.AssertNextToken(TokenKind.Identifier, "main", "main");

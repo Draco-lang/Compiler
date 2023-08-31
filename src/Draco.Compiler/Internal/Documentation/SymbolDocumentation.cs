@@ -43,22 +43,16 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
             {
                 SectionKind.Summary => string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown())),
 
-                SectionKind.Parameters =>
+                SectionKind.Parameters or SectionKind.TypeParameters =>
                     $"""
-                    # parameters
-                    {string.Join(Environment.NewLine, section.Elements.Select(x => x.ToMarkdown()))}
-                    """,
-
-                SectionKind.TypeParameters =>
-                    $"""
-                    # type parameters
+                    # {section.Name}
                     {string.Join(Environment.NewLine, section.Elements.Select(x => x.ToMarkdown()))}
                     """,
 
                 SectionKind.Code => section.Elements[0].ToMarkdown(),
 
                 _ => $"""
-                     # {section.Name?.ToLowerInvariant()}
+                     # {section.Name}
                      {string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown()))}
                      """
             });
@@ -93,7 +87,7 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
                 break;
             default:
                 // Note: The "Unknown" is for soft failing as string.Empty would throw
-                sections.Add(new XElement(section.Name?.ToLowerInvariant() ?? "Unknown", section.Elements.Select(x => x.ToXml())));
+                sections.Add(new XElement(section.Name, section.Elements.Select(x => x.ToXml())));
                 break;
             }
         }

@@ -143,7 +143,9 @@ internal static class MetadataSymbol
     /// </summary>
     /// <param name="symbol">The symbol to get prefixed documentation name of.</param>
     /// <returns>The prefixed documentation name, or empty string, if <paramref name="symbol"/> is null..</returns>
-    public static string GetPrefixedDocumentationName(Symbol? symbol) => $"{symbol switch
+    public static string GetPrefixedDocumentationName(Symbol? symbol) => $"{GetDocumentationPrefix(symbol)}{GetDocumentationName(symbol)}";
+
+    private static string GetDocumentationPrefix(Symbol? symbol) => symbol switch
     {
         TypeSymbol => "T:",
         ModuleSymbol => "T:",
@@ -151,7 +153,7 @@ internal static class MetadataSymbol
         PropertySymbol => "P:",
         FieldSymbol => "F:",
         _ => string.Empty,
-    }}{GetDocumentationName(symbol)}";
+    };
 
     private static string GetFunctionDocumentationName(FunctionSymbol function)
     {

@@ -7,15 +7,6 @@ namespace Draco.Compiler.Internal.Documentation.Extractors;
 /// </summary>
 internal sealed class MarkdownDocumentationExtractor
 {
-    public string Markdown { get; }
-    public Symbol ContainingSymbol { get; }
-
-    private MarkdownDocumentationExtractor(string markdown, Symbol containingSymbol)
-    {
-        this.Markdown = markdown;
-        this.ContainingSymbol = containingSymbol;
-    }
-
     /// <summary>
     /// Extracts the <paramref name="markdown"/>.
     /// </summary>
@@ -23,9 +14,18 @@ internal sealed class MarkdownDocumentationExtractor
     public static SymbolDocumentation Extract(Symbol containingSymbol) =>
         new MarkdownDocumentationExtractor(containingSymbol.RawDocumentation, containingSymbol).Extract();
 
+    private readonly string markdown;
+    private readonly Symbol containingSymbol;
+
+    private MarkdownDocumentationExtractor(string markdown, Symbol containingSymbol)
+    {
+        this.markdown = markdown;
+        this.containingSymbol = containingSymbol;
+    }
+
     /// <summary>
-    /// Extracts the <see cref="Markdown"/>.
+    /// Extracts the <see cref="markdown"/>.
     /// </summary>
     /// <returns>The extracted markdown as <see cref="SymbolDocumentation"/>.</returns>
-    private SymbolDocumentation Extract() => new MarkdownSymbolDocumentation(this.Markdown);
+    private SymbolDocumentation Extract() => new MarkdownSymbolDocumentation(this.markdown);
 }

@@ -14,16 +14,6 @@ namespace Draco.Compiler.Internal.Documentation.Extractors;
 /// </summary>
 internal sealed class XmlDocumentationExtractor
 {
-    public string Xml { get; }
-    public Symbol ContainingSymbol { get; }
-    public MetadataAssemblySymbol Assembly => this.ContainingSymbol.AncestorChain.OfType<MetadataAssemblySymbol>().First();
-
-    private XmlDocumentationExtractor(string xml, Symbol containingSymbol)
-    {
-        this.Xml = xml;
-        this.ContainingSymbol = containingSymbol;
-    }
-
     /// <summary>
     /// Extracts the <paramref name="xml"/>.
     /// </summary>
@@ -31,8 +21,18 @@ internal sealed class XmlDocumentationExtractor
     public static SymbolDocumentation Extract(Symbol containingSymbol) =>
         new XmlDocumentationExtractor(containingSymbol.RawDocumentation, containingSymbol).Extract();
 
+    private readonly string xml;
+    private readonly Symbol containingSymbol;
+    private MetadataAssemblySymbol Assembly => this.containingSymbol.AncestorChain.OfType<MetadataAssemblySymbol>().First();
+
+    private XmlDocumentationExtractor(string xml, Symbol containingSymbol)
+    {
+        this.xml = xml;
+        this.containingSymbol = containingSymbol;
+    }
+
     /// <summary>
-    /// Extracts the <see cref="Xml"/>.
+    /// Extracts the <see cref="xml"/>.
     /// </summary>
     /// <returns>The extracted XMl as <see cref="SymbolDocumentation"/>.</returns>
     private SymbolDocumentation Extract()
@@ -48,7 +48,7 @@ internal sealed class XmlDocumentationExtractor
 
         var xml = $"""
             <documentation>
-              {this.Xml}
+              {this.xml}
             </documentation>
             """;
         var doc = new XmlDocument();
@@ -93,8 +93,7 @@ internal sealed class XmlDocumentationExtractor
     private ImmutableArray<DocumentationElement> ExtractElementsFromNode(XmlNode node)
     {
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
-        foreach (XmlNode child in node.ChildNodes)
-            elements.Add(this.ExtractElement(child));
+        foreach (XmlNode child in node.ChildNodes) elements.Add(this.ExtractElement(child));
         return elements.ToImmutable();
     }
 
@@ -105,8 +104,8 @@ internal sealed class XmlDocumentationExtractor
             .FirstOrDefault();
 
     private ParameterSymbol? GetParameter(string paramName) =>
-        (this.ContainingSymbol as FunctionSymbol)?.Parameters.FirstOrDefault(x => x.Name == paramName);
+        (this.containingSymbol as FunctionSymbol)?.Parameters.FirstOrDefault(x => x.Name == paramName);
 
     private TypeParameterSymbol? GetTypeParameter(string paramName) =>
-        (this.ContainingSymbol as FunctionSymbol)?.GenericParameters.FirstOrDefault(x => x.Name == paramName);
+        (this.containingSymbol as FunctionSymbol)?.GenericParameters.FirstOrDefault(x => x.Name == paramName);
 }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Draco.Compiler.Internal.Documentation;
@@ -8,22 +7,45 @@ namespace Draco.Compiler.Internal.Documentation;
 /// </summary>
 internal sealed class DocumentationSection
 {
-    public string? Name { get; }
+    public string Name { get; }
     public SectionKind Kind { get; }
     public ImmutableArray<DocumentationElement> Elements { get; }
 
-    public DocumentationSection(SectionKind kind, ImmutableArray<DocumentationElement> elements)
+    private DocumentationSection(SectionKind kind, string name, ImmutableArray<DocumentationElement> elements)
     {
         this.Kind = kind;
+        this.Name = name.ToLowerInvariant();
         this.Elements = elements;
     }
 
-    public DocumentationSection(string name, ImmutableArray<DocumentationElement> elements)
+    public DocumentationSection(SectionKind kind, ImmutableArray<DocumentationElement> elements)
+        : this(kind, GetSectionName(kind), elements)
     {
-        this.Name = name;
-        this.Kind = SectionKind.Other;
-        this.Elements = elements;
+        // NOTE: GetSectionName throws on Other
     }
+
+    public DocumentationSection(string name, ImmutableArray<DocumentationElement> elements)
+        : this(GetSectionKind(name), name, elements)
+    {
+    }
+
+    private static string GetSectionName(SectionKind kind) => kind switch
+    {
+        SectionKind.Summary => "summary",
+        SectionKind.Parameters => "parameters",
+        SectionKind.TypeParameters => "type parameters",
+        SectionKind.Code => "code",
+        _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
+    };
+
+    private static SectionKind GetSectionKind(string? name) => name switch
+    {
+        "summary" => SectionKind.Summary,
+        "parameters" => SectionKind.Parameters,
+        "type parameters" => SectionKind.TypeParameters,
+        "code" => SectionKind.Code,
+        _ => SectionKind.Other,
+    };
 }
 
 // Note: The values of the sections are used for ordering from smallest to highest

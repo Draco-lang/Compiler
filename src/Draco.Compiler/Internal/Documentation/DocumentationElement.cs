@@ -36,6 +36,11 @@ internal sealed record class TextDocumentationElement(string Text) : Documentati
     public override XText ToXml() => new XText(this.Text);
 }
 
+/// <summary>
+/// Any kind of symbol reference.
+/// </summary>
+/// <param name="Symbol">The referenced symbol.</param>
+/// <param name="Elements">The inner <see cref="DocumentationElement"/>s of this <see cref="SymbolDocumentationElement"/>.</param>
 internal abstract record class SymbolDocumentationElement(Symbol? Symbol, ImmutableArray<DocumentationElement> Elements) : DocumentationElement
 {
     protected string Name => this.Symbol?.Name ?? string.Empty;
@@ -76,17 +81,27 @@ internal sealed record class TypeParameterDocumentationElement(TypeParameterSymb
 /// </summary>
 /// <param name="ReferencedSymbol">The symbol that is linked.</param>
 /// <param name="DisplayText">The text that should be displayed in the link.</param>
-internal sealed record class ReferenceDocumentationElement(Symbol? ReferencedSymbol, string DisplayText) : DocumentationElement
+internal sealed record class ReferenceDocumentationElement : DocumentationElement
 {
-    private string? filePath = ReferencedSymbol?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
-    private string Link => this.filePath is null
-        ? string.Empty
-        : $"{this.filePath}#L{this.ReferencedSymbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
+    public Symbol? ReferencedSymbol { get; }
+    public string DisplayText { get; }
 
-    public ReferenceDocumentationElement(Symbol? ReferencedSymbol) : this(ReferencedSymbol, ReferencedSymbol is ParameterSymbol or TypeParameterSymbol
-        ? ReferencedSymbol?.Name ?? string.Empty
-        : ReferencedSymbol?.FullName ?? string.Empty)
-    { }
+    private string? FilePath => this.ReferencedSymbol?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
+    private string Link => this.FilePath is null
+        ? string.Empty
+        : $"{this.FilePath}#L{this.ReferencedSymbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
+
+    public ReferenceDocumentationElement(Symbol? referencedSymbol, string? displayText = null)
+    {
+        this.ReferencedSymbol = referencedSymbol;
+        this.DisplayText = displayText ?? GetDisplayText(referencedSymbol);
+    }
+
+    private static string GetDisplayText(Symbol? symbol) => symbol switch
+    {
+        ParameterSymbol or TypeParameterSymbol => symbol?.Name ?? string.Empty,
+        _ => symbol?.FullName ?? string.Empty,
+    };
 
     public override string ToMarkdown() => $"[{this.DisplayText}]({this.Link})";
 

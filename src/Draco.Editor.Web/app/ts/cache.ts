@@ -24,14 +24,9 @@ export async function downloadAssemblies(cfg: unknown) {
         if (result == null || cachedDate != buildDate) {
             console.log('Cache nuked.');
             await caches.delete('assembly-cache');
+            const newCache = await caches.open('assembly-cache');
+            await newCache.put('appBuildDate', new Response(buildDate));
         }
-    } catch (e) {
-        console.log('Could not open cache: ', e);
-    }
-    try {
-        const cache = await caches.open('assembly-cache');
-        await cache.put('appBuildDate', new Response(buildDate));
-
     } catch (e) {
         console.log('Could not open cache: ', e);
     }

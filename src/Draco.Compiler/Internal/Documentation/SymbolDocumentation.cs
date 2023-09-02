@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Documentation;
 /// Represents documentation for a <see cref="Symbols.Symbol"/>.
 /// </summary>
 /// <param name="Sections">The <see cref="DocumentationSection"/>s this documentation contains.</param>
-internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> Sections)
+internal record class SymbolDocumentation
 {
     /// <summary>
     /// Empty documentation;
@@ -21,13 +21,20 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     /// <summary>
     /// The summary documentation section.
     /// </summary>
-    public DocumentationSection? Summary => this.Sections.FirstOrDefault(x => x.Name?.ToLower() == "summary");
+    public DocumentationSection? Summary => this.unorderedSections.FirstOrDefault(x => x.Name?.ToLower() == "summary");
 
     /// <summary>
     /// The sections ordered conventionally.
     /// </summary>
-    public ImmutableArray<DocumentationSection> OrderedSections => InterlockedUtils.InitializeDefault(ref this.orderedSections, () => this.Sections.OrderBy(x => (int)x.Kind).ToImmutableArray());
-    private ImmutableArray<DocumentationSection> orderedSections;
+    public ImmutableArray<DocumentationSection> Sections => InterlockedUtils.InitializeDefault(ref this.sections, this.BuildOrderedSections);
+    private ImmutableArray<DocumentationSection> sections;
+
+    private readonly ImmutableArray<DocumentationSection> unorderedSections;
+
+    public SymbolDocumentation(ImmutableArray<DocumentationSection> sections)
+    {
+        this.unorderedSections = sections;
+    }
 
     /// <summary>
     /// Creates a markdown representation of this documentation.
@@ -36,9 +43,9 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     public virtual string ToMarkdown()
     {
         var builder = new StringBuilder();
-        for (var i = 0; i < this.OrderedSections.Length; i++)
+        for (var i = 0; i < this.Sections.Length; i++)
         {
-            var section = this.OrderedSections[i];
+            var section = this.Sections[i];
             builder.Append(section.Kind switch
             {
                 SectionKind.Summary => string.Join(string.Empty, section.Elements.Select(x => x.ToMarkdown())),
@@ -58,7 +65,7 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
             });
 
             // Newline after each section except the last one
-            if (i != this.OrderedSections.Length - 1) builder.Append(Environment.NewLine);
+            if (i != this.Sections.Length - 1) builder.Append(Environment.NewLine);
         }
         return builder.ToString();
     }
@@ -71,7 +78,7 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
     public virtual XElement ToXml()
     {
         var sections = new List<XNode>();
-        foreach (var section in this.OrderedSections)
+        foreach (var section in this.Sections)
         {
             switch (section.Kind)
             {
@@ -93,6 +100,9 @@ internal record class SymbolDocumentation(ImmutableArray<DocumentationSection> S
         }
         return new XElement("documentation", sections);
     }
+
+    private ImmutableArray<DocumentationSection> BuildOrderedSections() =>
+        this.unorderedSections.OrderBy(x => (int)x.Kind).ToImmutableArray();
 }
 
 /// <summary>

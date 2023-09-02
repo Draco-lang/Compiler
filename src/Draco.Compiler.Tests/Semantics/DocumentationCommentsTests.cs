@@ -624,10 +624,10 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var mdGeneratedDocs = """
             Documentation for TestMethod, which is in [TestNamespace.TestClass](), random generic link [System.Collections.Generic.List<T>]()
             # parameters
-            - [arg1](): Documentation for arg1
-            - [arg2](): Documentation for arg2
+            - arg1: Documentation for arg1
+            - arg2: Documentation for arg2
             # type parameters
-            - [T](): Useless type param
+            - T: Useless type param
             ```cs
             var x = 0;
             void Foo(int z) { }
@@ -652,10 +652,10 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
         var originalDocs = """
             Documentation for TestMethod, which is in [TestNamespace.TestClass](), random generic link [System.Collections.Generic.List<T>]()
             # parameters
-            - [arg1](): Documentation for arg1
-            - [arg2](): Documentation for arg2
+            - arg1: Documentation for arg1
+            - arg2: Documentation for arg2
             # type parameters
-            - [T](): Useless type param
+            - T: Useless type param
             ```cs
             var x = 0;
             void Foo(int z) { }

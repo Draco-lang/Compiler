@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.Documentation.Extractors;
 internal sealed class XmlDocumentationExtractor
 {
     /// <summary>
-    /// Extracts the <paramref name="xml"/>.
+    /// Extracts the xml documentation from <paramref name="containingSymbol"/>.
     /// </summary>
     /// <returns>The extracted XMl as <see cref="SymbolDocumentation"/>.</returns>
     public static SymbolDocumentation Extract(Symbol containingSymbol) =>

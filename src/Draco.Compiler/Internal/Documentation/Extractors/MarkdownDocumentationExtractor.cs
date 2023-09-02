@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Documentation.Extractors;
 internal sealed class MarkdownDocumentationExtractor
 {
     /// <summary>
-    /// Extracts the <paramref name="markdown"/>.
+    /// Extracts the markdown documentation from <paramref name="containingSymbol"/>.
     /// </summary>
     /// <returns>The extracted markdown as <see cref="SymbolDocumentation"/>.</returns>
     public static SymbolDocumentation Extract(Symbol containingSymbol) =>

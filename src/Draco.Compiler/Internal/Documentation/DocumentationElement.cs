@@ -45,11 +45,12 @@ internal abstract record class SymbolDocumentationElement(Symbol? Symbol, Immuta
 {
     protected string Name => this.Symbol?.Name ?? string.Empty;
     protected string? FilePath => this.Symbol?.DeclaringSyntax?.Location.SourceText.Path?.LocalPath;
-    protected string Link => this.FilePath is null
+    // Note: For future when we will probably want to optionally return link to the param
+    public string Link => this.FilePath is null
         ? string.Empty
         : $"{this.FilePath}#L{this.Symbol?.DeclaringSyntax?.Location.Range?.Start.Line}";
 
-    public override string ToMarkdown() => $"- [{this.Name}]({this.Link}): {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
+    public override string ToMarkdown() => $"- {this.Name}: {string.Join("", this.Elements.Select(x => x.ToMarkdown()))}";
 }
 
 /// <summary>

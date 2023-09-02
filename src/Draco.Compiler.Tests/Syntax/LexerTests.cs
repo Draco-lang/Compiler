@@ -1260,7 +1260,6 @@ public sealed class LexerTests
         this.AssertNextToken(TokenKind.Identifier, "System", "System");
         this.AssertNextToken(TokenKind.Dot, ".");
         this.AssertNextToken(TokenKind.Identifier, "Console", "Console");
-        this.AssertNextToken(TokenKind.KeywordImport, "import");
         this.AssertNextToken(TokenKind.Semicolon, ";");
         this.AssertNextToken(TokenKind.KeywordFunc, "func");
         this.AssertNextToken(TokenKind.Identifier, "main", "main");

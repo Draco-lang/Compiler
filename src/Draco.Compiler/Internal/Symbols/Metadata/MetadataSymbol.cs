@@ -142,7 +142,7 @@ internal static class MetadataSymbol
     /// The documentation name of <paramref name="symbol"/> with prepended documentation prefix.
     /// </summary>
     /// <param name="symbol">The symbol to get prefixed documentation name of.</param>
-    /// <returns>The prefixed documentation name, or empty string, if <paramref name="symbol"/> is null..</returns>
+    /// <returns>The prefixed documentation name, or empty string, if <paramref name="symbol"/> is null.</returns>
     public static string GetPrefixedDocumentationName(Symbol? symbol) => $"{GetDocumentationPrefix(symbol)}{GetDocumentationName(symbol)}";
 
     private static string GetDocumentationPrefix(Symbol? symbol) => symbol switch

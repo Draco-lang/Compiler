@@ -139,7 +139,8 @@ internal static class MetadataSymbol
     };
 
     /// <summary>
-    /// The documentation name of <paramref name="symbol"/> with prepended documentation prefix.
+    /// The documentation name of <paramref name="symbol"/> with prepended documentation prefix, documentation prefix specifies the type of symbol the documentation name represents.
+    /// For example <see cref="TypeSymbol"/> has the prefix "T:".
     /// </summary>
     /// <param name="symbol">The symbol to get prefixed documentation name of.</param>
     /// <returns>The prefixed documentation name, or empty string, if <paramref name="symbol"/> is null.</returns>

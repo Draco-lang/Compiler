@@ -81,9 +81,7 @@ internal sealed class XmlDocumentationExtractor
     private DocumentationElement ExtractElement(XmlNode node) => node.LocalName switch
     {
         "#text" => new TextDocumentationElement(node.InnerText),
-        "see" => string.IsNullOrEmpty(node.InnerText)
-            ? new ReferenceDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false))
-            : new ReferenceDocumentationElement(this.GetSymbolFromDocumentationName(node.Attributes?["cref"]?.Value ?? string.Empty) ?? new PrimitiveTypeSymbol(node.Attributes?["cref"]?.Value[2..] ?? string.Empty, false), node.InnerText),
+        "see" => this.ConstructReference(node),
         "paramref" => new ReferenceDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
         "typeparamref" => new ReferenceDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty)),
         "code" => new CodeDocumentationElement(node.InnerXml.Trim('\r', '\n'), "cs"),
@@ -95,6 +93,15 @@ internal sealed class XmlDocumentationExtractor
         var elements = ImmutableArray.CreateBuilder<DocumentationElement>();
         foreach (XmlNode child in node.ChildNodes) elements.Add(this.ExtractElement(child));
         return elements.ToImmutable();
+    }
+
+    private ReferenceDocumentationElement ConstructReference(XmlNode node)
+    {
+        var cref = node.Attributes?["cref"]?.Value;
+        var symbol = this.GetSymbolFromDocumentationName(cref ?? string.Empty)
+            // NOTE: The first two characters of the link is the documentation prefix
+            ?? new PrimitiveTypeSymbol(cref?[2..] ?? string.Empty, false);
+        return new ReferenceDocumentationElement(symbol, string.IsNullOrEmpty(node.InnerText) ? null : node.InnerText);
     }
 
     private Symbol? GetSymbolFromDocumentationName(string documentationName) =>

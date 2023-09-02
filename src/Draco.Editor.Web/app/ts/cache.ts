@@ -1,5 +1,6 @@
 import { blobToBase64 } from './helpers.js';
 import { buildDate } from './metadata.js';
+
 const elements = [];
 
 export function getDownloadViewElement() {

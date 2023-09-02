@@ -111,7 +111,7 @@ internal static class MetadataSymbol
         MethodDefinition ctorMethod) => new SynthetizedMetadataConstructorSymbol(type, ctorMethod);
 
     /// <summary>
-    /// Gets documentation for given <paramref name="symbol"/>.
+    /// Gets the documentation XML as text for the given <paramref name="symbol"/>.
     /// </summary>
     /// <param name="symbol">The <see cref="Symbol"/> to get documentation for.</param>
     /// <returns>The documentation, or empty string, if no documentation was found.</returns>

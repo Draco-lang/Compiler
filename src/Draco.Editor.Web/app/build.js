@@ -9,6 +9,7 @@ import JSON5 from 'json5';
 import YAML from 'yaml';
 import { defineConfig, build as viteBuild } from 'vite';
 import { convertTheme } from './theme-converter.js';
+import { esbuildPluginVersionInjector } from 'esbuild-plugin-version-injector';
 // This file manage the build process of the webapp.
 
 const distDir = '../wwwroot';
@@ -84,7 +85,13 @@ await build({
         '.png': 'dataurl'
     },
     inject: ['ts/process.ts'],
-    plugins: [wasmPlugin],
+    plugins: [wasmPlugin,
+        esbuildPluginVersionInjector(
+            {
+                versionOrCurrentDate: 'current-date',
+                filter: /metadata.ts$/,
+            })
+    ],
     external: ['dotnet.wasm']
 });
 

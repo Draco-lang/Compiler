@@ -20,7 +20,7 @@ export async function downloadAssemblies(cfg: unknown) {
         const cache = await caches.open('assembly-cache');
         const result = await cache.match('appBuildDate');
         const cachedDate = await result.text();
-        console.log('Current build: '+ buildDate+' cache build: '+cachedDate);
+        console.log(`Current build: ${buildDate} cache build: ${cachedDate}`);
 
         if (result == null || cachedDate != buildDate) {
             console.log('Cache nuked.');
@@ -56,7 +56,7 @@ async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {
     } catch (e) {
         console.log('Could not open cache: ', e);
     }
-    console.log('Cache miss:' + dlPath);
+    console.log(`Cache miss: ${dlPath}`);
     setDownloadViewVisible(true);
     const progresses = elements.map((element) => {
         const progressContainer = document.createElement('div');

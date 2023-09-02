@@ -130,7 +130,7 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
             // Note: TokenKind.Comma is exception, in case it is in label declaration, it is handeled outside of this function
             TokenKind.Assign or TokenKind.Colon or TokenKind.Comma or TokenKind.Equal or
             TokenKind.GreaterEqual or TokenKind.GreaterThan or TokenKind.InterpolationStart or
-            TokenKind.KeywordAnd or TokenKind.KeywordFrom or TokenKind.KeywordImport or
+            TokenKind.KeywordAnd or TokenKind.KeywordImport or
             TokenKind.KeywordMod or TokenKind.KeywordNot or TokenKind.KeywordOr or
             TokenKind.KeywordRem or TokenKind.LessEqual or TokenKind.LessThan or
             TokenKind.Minus or TokenKind.MinusAssign or TokenKind.NotEqual or
@@ -193,7 +193,7 @@ internal sealed class SyntaxTreeFormatter : SyntaxRewriter
                 { lastToken: TokenKind.KeywordVal or TokenKind.KeywordVar, nextToken: TokenKind.Colon } =>
                     SetTrivia(newToken, noSpaceTrivia, noSpaceTrivia),
                 {
-                    lastToken: TokenKind.KeywordFrom or TokenKind.KeywordVal or TokenKind.KeywordVar or TokenKind.Colon,
+                    lastToken: TokenKind.KeywordVal or TokenKind.KeywordVar or TokenKind.Colon,
                     nextToken: TokenKind.Semicolon or TokenKind.Assign or TokenKind.PlusAssign or
                     TokenKind.MinusAssign or TokenKind.Slash or TokenKind.StarAssign
                 } => SetTrivia(newToken, noSpaceTrivia, oneSpaceTrivia),

@@ -1402,4 +1402,32 @@
       A pattern.
     </Documentation>
   </AbstractNode>
+
+  <Node Name="LiteralPatternSyntax" Base="PatternSyntax">
+    <Documentation>
+      A literal pattern.
+    </Documentation>
+
+    <Field Name="Literal" Type="SyntaxToken">
+      <Documentation>
+        The literal token representing the value.
+      </Documentation>
+
+      <Token Kind="LiteralInteger" />
+    </Field>
+  </Node>
+
+  <Node Name="DiscardPatternSyntax" Base="PatternSyntax">
+    <Documentation>
+      A pattern matching anything, discarding the value.
+    </Documentation>
+
+    <Field Name="Discard" Type="SyntaxToken">
+      <Documentation>
+        The underscore signaling the discard.
+      </Documentation>
+
+      <Token Kind="KeywordDiscard" />
+    </Field>
+  </Node>
 </Tree>

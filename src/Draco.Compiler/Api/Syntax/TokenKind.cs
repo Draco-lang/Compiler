@@ -81,6 +81,11 @@ public enum TokenKind
     KeywordAnd,
 
     /// <summary>
+    /// The keyword '_'.
+    /// </summary>
+    KeywordDiscard,
+
+    /// <summary>
     /// The keyword 'else'.
     /// </summary>
     KeywordElse,

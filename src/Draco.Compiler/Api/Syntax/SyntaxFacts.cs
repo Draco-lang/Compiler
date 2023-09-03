@@ -16,6 +16,7 @@ public static class SyntaxFacts
         TokenKind.EndOfInput => string.Empty,
         TokenKind.InterpolationEnd => "}",
         TokenKind.KeywordAnd => "and",
+        TokenKind.KeywordDiscard => "_",
         TokenKind.KeywordElse => "else",
         TokenKind.KeywordFalse => "false",
         TokenKind.KeywordFor => "for",

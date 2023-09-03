@@ -320,6 +320,7 @@ internal sealed class Lexer
             // TODO: Any better/faster way?
             var tokenKind = ident switch
             {
+                var _ when ident.Span.SequenceEqual("_") => TokenKind.KeywordDiscard,
                 var _ when ident.Span.SequenceEqual("and") => TokenKind.KeywordAnd,
                 var _ when ident.Span.SequenceEqual("else") => TokenKind.KeywordElse,
                 var _ when ident.Span.SequenceEqual("false") => TokenKind.KeywordFalse,

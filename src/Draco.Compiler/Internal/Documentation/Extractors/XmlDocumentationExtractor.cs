@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Xml;
-using System.Xml.Linq;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;

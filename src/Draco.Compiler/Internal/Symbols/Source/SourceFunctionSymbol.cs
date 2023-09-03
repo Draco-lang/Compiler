@@ -9,7 +9,6 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.FlowAnalysis;
-using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Source;

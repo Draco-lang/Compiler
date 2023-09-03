@@ -126,6 +126,11 @@ public enum TokenKind
     KeywordInternal,
 
     /// <summary>
+    /// The keyword 'match'.
+    /// </summary>
+    KeywordMatch,
+
+    /// <summary>
     /// The keyword 'mod'.
     /// </summary>
     KeywordMod,

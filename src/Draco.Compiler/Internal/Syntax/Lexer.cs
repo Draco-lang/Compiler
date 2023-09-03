@@ -329,6 +329,7 @@ internal sealed class Lexer
                 var _ when ident.Span.SequenceEqual("import") => TokenKind.KeywordImport,
                 var _ when ident.Span.SequenceEqual("in") => TokenKind.KeywordIn,
                 var _ when ident.Span.SequenceEqual("internal") => TokenKind.KeywordInternal,
+                var _ when ident.Span.SequenceEqual("match") => TokenKind.KeywordMatch,
                 var _ when ident.Span.SequenceEqual("mod") => TokenKind.KeywordMod,
                 var _ when ident.Span.SequenceEqual("module") => TokenKind.KeywordModule,
                 var _ when ident.Span.SequenceEqual("not") => TokenKind.KeywordNot,

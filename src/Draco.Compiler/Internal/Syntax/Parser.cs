@@ -184,6 +184,7 @@ internal sealed class Parser
         TokenKind.KeywordFunc,
         TokenKind.KeywordGoto,
         TokenKind.KeywordIf,
+        TokenKind.KeywordMatch,
         TokenKind.KeywordNot,
         TokenKind.KeywordReturn,
         TokenKind.KeywordTrue,
@@ -313,6 +314,7 @@ internal sealed class Parser
         case TokenKind.KeywordIf:
         case TokenKind.KeywordWhile:
         case TokenKind.KeywordFor:
+        case TokenKind.KeywordMatch:
         {
             var expr = this.ParseControlFlowExpression(ControlFlowContext.Stmt);
             return new ExpressionStatementSyntax(expr, null);
@@ -669,13 +671,15 @@ internal sealed class Parser
         Debug.Assert(peekKind is TokenKind.CurlyOpen
                               or TokenKind.KeywordIf
                               or TokenKind.KeywordWhile
-                              or TokenKind.KeywordFor);
+                              or TokenKind.KeywordFor
+                              or TokenKind.KeywordMatch);
         return peekKind switch
         {
             TokenKind.CurlyOpen => this.ParseBlockExpression(ctx),
             TokenKind.KeywordIf => this.ParseIfExpression(ctx),
             TokenKind.KeywordWhile => this.ParseWhileExpression(ctx),
             TokenKind.KeywordFor => this.ParseForExpression(ctx),
+            TokenKind.KeywordMatch => this.ParseMatchExpression(ctx),
             _ => throw new InvalidOperationException(),
         };
     }
@@ -743,6 +747,7 @@ internal sealed class Parser
             case TokenKind.KeywordIf:
             case TokenKind.KeywordWhile:
             case TokenKind.KeywordFor:
+            case TokenKind.KeywordMatch:
             {
                 var expr = this.ParseControlFlowExpression(ctx);
                 if (ctx == ControlFlowContext.Expr && this.Peek() == TokenKind.CurlyClose)
@@ -821,6 +826,61 @@ internal sealed class Parser
         }
 
         return new(ifKeyword, openParen, condition, closeParen, thenBody, elsePart);
+    }
+
+    /// <summary>
+    /// Parses an match-expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="MatchExpressionSyntax"/>.</returns>
+    private MatchExpressionSyntax ParseMatchExpression(ControlFlowContext ctx)
+    {
+        var matchKeyword = this.Expect(TokenKind.KeywordMatch);
+        var openParen = this.Expect(TokenKind.ParenOpen);
+        var matchedValue = this.ParseExpression();
+        var closeParen = this.Expect(TokenKind.ParenClose);
+        var openBrace = this.Expect(TokenKind.CurlyOpen);
+
+        var matchArms = SyntaxList.CreateBuilder<MatchArmSyntax>();
+        SyntaxToken? closeBrace;
+        while (!this.Matches(TokenKind.CurlyClose, out closeBrace))
+        {
+            matchArms.Add(this.ParseMatchArm(ctx));
+        }
+
+        return new(matchKeyword, openParen, matchedValue, closeParen, openBrace, matchArms.ToSyntaxList(), closeBrace);
+    }
+
+    /// <summary>
+    /// Parses a single match arm.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="MatchArmSyntax"/>.</returns>
+    private MatchArmSyntax ParseMatchArm(ControlFlowContext ctx)
+    {
+        var pattern = this.ParsePattern();
+
+        GuardClauseSyntax? guardClause = null;
+        if (this.Peek() == TokenKind.KeywordIf) guardClause = this.ParseGuardClause();
+
+        var arrow = this.Expect(TokenKind.Arrow);
+        var value = this.ParseExpression();
+        var semicolon = this.Expect(TokenKind.Semicolon);
+
+        return new(pattern, guardClause, arrow, value, semicolon);
+    }
+
+    /// <summary>
+    /// Parses a guard clause.
+    /// </summary>
+    /// <returns>The parsed <see cref="GuardClauseSyntax"/>.</returns>
+    private GuardClauseSyntax ParseGuardClause()
+    {
+        var ifKeyword = this.Expect(TokenKind.KeywordIf);
+        var openParen = this.Expect(TokenKind.ParenOpen);
+        var condition = this.ParseExpression();
+        var closeParen = this.Expect(TokenKind.ParenClose);
+        return new(ifKeyword, openParen, condition, closeParen);
     }
 
     /// <summary>
@@ -1029,6 +1089,7 @@ internal sealed class Parser
         case TokenKind.KeywordIf:
         case TokenKind.KeywordWhile:
         case TokenKind.KeywordFor:
+        case TokenKind.KeywordMatch:
             return this.ParseControlFlowExpression(ControlFlowContext.Expr);
         default:
         {
@@ -1188,6 +1249,18 @@ internal sealed class Parser
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
     }
+
+    /// <summary>
+    /// Parses a pattern.
+    /// </summary>
+    /// <returns>The parsed <see cref="PatternSyntax"/>.</returns>
+    private PatternSyntax ParsePattern() => this.Peek() switch
+    {
+        TokenKind.LiteralInteger => new LiteralPatternSyntax(this.Advance()),
+        TokenKind.KeywordDiscard => new DiscardPatternSyntax(this.Advance()),
+        // TODO: synchronize
+        _ => throw new NotImplementedException("parse error"),
+    };
 
     /// <summary>
     /// Checks, if a given syntax can be followed by a generic argument list.

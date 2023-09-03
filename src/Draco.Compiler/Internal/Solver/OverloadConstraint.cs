@@ -34,7 +34,9 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
         string name,
         ImmutableArray<FunctionSymbol> candidates,
         ImmutableArray<object> arguments,
-        TypeSymbol returnType)
+        TypeSymbol returnType,
+        ConstraintLocator locator)
+        : base(locator)
     {
         this.Name = name;
         this.Candidates = candidates;

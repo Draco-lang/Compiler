@@ -19,7 +19,11 @@ internal sealed class CommonTypeConstraint : Constraint<Unit>
     /// </summary>
     public ImmutableArray<TypeSymbol> AlternativeTypes { get; }
 
-    public CommonTypeConstraint(TypeSymbol commonType, ImmutableArray<TypeSymbol> alternativeTypes)
+    public CommonTypeConstraint(
+        TypeSymbol commonType,
+        ImmutableArray<TypeSymbol> alternativeTypes,
+        ConstraintLocator locator)
+        : base(locator)
     {
         this.CommonType = commonType;
         this.AlternativeTypes = alternativeTypes;

@@ -19,7 +19,6 @@ public static class SyntaxFacts
         TokenKind.KeywordElse => "else",
         TokenKind.KeywordFalse => "false",
         TokenKind.KeywordFor => "for",
-        TokenKind.KeywordFrom => "from",
         TokenKind.KeywordFunc => "func",
         TokenKind.KeywordGoto => "goto",
         TokenKind.KeywordIf => "if",

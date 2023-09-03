@@ -100,10 +100,7 @@ internal abstract partial class Binder
         // Add assignability constraint, if needed
         if (untypedValue is not null)
         {
-            constraints
-                .Assignable(declaredType, untypedValue.TypeRequired)
-                .ConfigureDiagnostic(diag => diag
-                    .WithLocation(global.DeclaringSyntax.Value!.Value.Location));
+            constraints.Assignable(declaredType, untypedValue.TypeRequired, global.DeclaringSyntax.Value!.Value);
         }
 
         // Solve
@@ -138,7 +135,7 @@ internal abstract partial class Binder
     internal virtual void BindSyntaxToSymbol(SyntaxNode syntax, Symbol module) { }
     internal virtual void BindTypeSyntaxToSymbol(SyntaxNode syntax, TypeSymbol type) { }
 
-    private FunctionSymbol GetGetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    private static FunctionSymbol GetGetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
     {
         var result = prop.Getter;
         if (result is null)
@@ -152,7 +149,7 @@ internal abstract partial class Binder
         return result;
     }
 
-    private FunctionSymbol GetSetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    private static FunctionSymbol GetSetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
     {
         var result = prop.Setter;
         if (result is null)

@@ -96,11 +96,6 @@ public enum TokenKind
     KeywordFor,
 
     /// <summary>
-    /// The keyword 'from'.
-    /// </summary>
-    KeywordFrom,
-
-    /// <summary>
     /// The keyword 'func'.
     /// </summary>
     KeywordFunc,

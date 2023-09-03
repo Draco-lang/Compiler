@@ -14,10 +14,10 @@ internal partial class Binder
         var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
         Debug.Assert(containingFunction is not null);
         var returnTypeSyntax = (containingFunction as SourceFunctionSymbol)?.DeclaringSyntax?.ReturnType?.Type;
-        constraints
-            .Assignable(containingFunction.ReturnType, returnValue.TypeRequired)
-            .ConfigureDiagnostic(diag => diag
-                .WithLocation(returnSyntax.Location)
+        constraints.Assignable(
+            containingFunction.ReturnType,
+            returnValue.TypeRequired,
+            ConstraintLocator.Syntax(returnSyntax)
                 .WithRelatedInformation(
                     format: "return type declared to be {0}",
                     formatArgs: containingFunction.ReturnType,

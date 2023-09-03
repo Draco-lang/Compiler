@@ -7,6 +7,12 @@ namespace Draco.Compiler.Api.Diagnostics;
 public sealed partial class Diagnostic
 {
     /// <summary>
+    /// Constructs a new builder for diagnostics.
+    /// </summary>
+    /// <returns>A new, empty diagnostic builder.</returns>
+    public static Builder CreateBuilder() => new();
+
+    /// <summary>
     /// A builder type for <see cref="Diagnostic"/>.
     /// </summary>
     public sealed class Builder
@@ -15,6 +21,10 @@ public sealed partial class Diagnostic
         public object?[]? FormatArgs { get; private set; }
         public Location? Location { get; private set; }
         public ImmutableArray<DiagnosticRelatedInformation>.Builder? RelatedInformation { get; private set; }
+
+        internal Builder()
+        {
+        }
 
         /// <summary>
         /// Attempts to build a <see cref="Diagnostic"/>, if at least <see cref="Template"/> is filled.

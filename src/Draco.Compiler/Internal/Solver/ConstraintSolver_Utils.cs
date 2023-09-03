@@ -62,12 +62,11 @@ internal sealed partial class ConstraintSolver
 
     private void UnifyParameterWithArgument(TypeSymbol paramType, object argument)
     {
-        var promise = this.Assignable(paramType, ExtractArgumentType(argument));
         var syntax = ExtractSyntax(argument);
-        if (syntax is not null)
-        {
-            promise.ConfigureDiagnostic(diag => diag.WithLocation(syntax.Location));
-        }
+        var promise = this.Assignable(
+            paramType,
+            ExtractArgumentType(argument),
+            syntax is null ? ConstraintLocator.Null : ConstraintLocator.Syntax(syntax));
     }
 
     private static bool MatchesParameterCount(FunctionSymbol function, int argc)

@@ -314,4 +314,9 @@ public enum TokenKind
     /// '...'.
     /// </summary>
     Ellipsis,
+
+    /// <summary>
+    /// '->'.
+    /// </summary>
+    Arrow,
 }

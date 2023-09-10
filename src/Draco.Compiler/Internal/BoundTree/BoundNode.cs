@@ -204,3 +204,8 @@ internal partial class BoundPattern
 {
     public abstract TypeSymbol Type { get; }
 }
+
+internal partial class BoundDiscardPattern
+{
+    public override TypeSymbol Type => IntrinsicSymbols.Never;
+}

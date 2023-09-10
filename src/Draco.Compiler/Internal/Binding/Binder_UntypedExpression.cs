@@ -46,6 +46,7 @@ internal partial class Binder
         MemberExpressionSyntax maccess => this.BindMemberExpression(maccess, constraints, diagnostics),
         GenericExpressionSyntax gen => this.BindGenericExpression(gen, constraints, diagnostics),
         IndexExpressionSyntax index => this.BindIndexExpression(index, constraints, diagnostics),
+        MatchExpressionSyntax match => this.BindMatchExpression(match, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -734,6 +735,33 @@ internal partial class Binder
             // NOTE: Is this the right one to return?
             return new UntypedReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
         }
+    }
+
+    private UntypedExpression BindMatchExpression(MatchExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var matchedValue = this.BindExpression(syntax.MatchedValue, constraints, diagnostics);
+
+        var arms = ImmutableArray.CreateBuilder<UntypedMatchArm>();
+        var armValueTypes = ImmutableArray.CreateBuilder<TypeSymbol>();
+
+        foreach (var armSyntax in syntax.MatchArms)
+        {
+            var pattern = this.BindPattern(armSyntax.Pattern, constraints, diagnostics);
+            constraints.Assignable(pattern.Type, matchedValue.TypeRequired, armSyntax.Pattern);
+
+            var guard = armSyntax.GuardClause is null
+                ? null
+                : this.BindExpression(armSyntax.GuardClause.Condition, constraints, diagnostics);
+            var value = this.BindExpression(armSyntax.Value, constraints, diagnostics);
+            armValueTypes.Add(value.TypeRequired);
+
+            arms.Add(new(armSyntax, pattern, guard, value));
+        }
+
+        var commonType = constraints.AllocateTypeVariable();
+        constraints.CommonType(commonType, armValueTypes.ToImmutable(), syntax);
+
+        return new UntypedMatchExpression(syntax, matchedValue, arms.ToImmutable(), commonType);
     }
 
     private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)

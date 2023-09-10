@@ -142,3 +142,8 @@ internal partial class UntypedPattern
 {
     public abstract TypeSymbol Type { get; }
 }
+
+internal partial class UntypedDiscardPattern
+{
+    public override TypeSymbol Type => IntrinsicSymbols.Never;
+}

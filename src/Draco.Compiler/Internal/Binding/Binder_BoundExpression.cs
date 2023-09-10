@@ -52,6 +52,7 @@ internal partial class Binder
         UntypedAndExpression and => this.TypeAndExpression(and, constraints, diagnostics),
         UntypedOrExpression or => this.TypeOrExpression(or, constraints, diagnostics),
         UntypedMemberExpression mem => this.TypeMemberExpression(mem, constraints, diagnostics),
+        UntypedMatchExpression match => this.TypeMatchExpression(match, constraints, diagnostics),
         UntypedDelayedExpression delay => this.TypeDelayedExpression(delay, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(expression)),
     };
@@ -400,6 +401,25 @@ internal partial class Binder
                 formatArgs: members.Name));
             return new BoundUnexpectedExpression(mem.Syntax);
         }
+    }
+
+    private BoundExpression TypeMatchExpression(UntypedMatchExpression match, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var matchedValue = this.TypeExpression(match.MatchedValue, constraints, diagnostics);
+
+        var arms = ImmutableArray.CreateBuilder<BoundMatchArm>();
+        foreach (var arm in match.MatchArms)
+        {
+            var pattern = this.TypePattern(arm.Pattern, constraints, diagnostics);
+            var guard = arm.Guard is null
+                ? null
+                : this.TypeExpression(arm.Guard, constraints, diagnostics);
+            var value = this.TypeExpression(arm.Value, constraints, diagnostics);
+
+            arms.Add(new(arm.Syntax, pattern, guard, value));
+        }
+
+        return new BoundMatchExpression(match.Syntax, matchedValue, arms.ToImmutable(), match.TypeRequired);
     }
 
     private BoundExpression TypeDelayedExpression(UntypedDelayedExpression delay, ConstraintSolver constraints, DiagnosticBag diagnostics)

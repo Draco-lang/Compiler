@@ -305,7 +305,6 @@
   <!-- Patterns -->
 
   <Node Name="BoundDiscardPattern" Base="BoundPattern">
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundLiteralPattern" Base="BoundPattern">

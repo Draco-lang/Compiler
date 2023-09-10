@@ -426,6 +426,10 @@ internal sealed class CilCodegen
         case Constant c:
             switch (c.Value)
             {
+            case null:
+                // TODO: Probably not the correct way to encode null
+                this.InstructionEncoder.LoadConstantI4(0);
+                break;
             case int i:
                 this.InstructionEncoder.LoadConstantI4(i);
                 break;

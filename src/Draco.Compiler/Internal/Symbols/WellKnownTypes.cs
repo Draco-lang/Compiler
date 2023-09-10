@@ -25,6 +25,17 @@ internal sealed partial class WellKnownTypes
     private MetadataMethodSymbol? object_ToString;
 
     /// <summary>
+    /// object.Equals(object? o1, object? o2).
+    /// </summary>
+    public MetadataMethodSymbol SystemObject_Equals => InterlockedUtils.InitializeNull(
+        ref this.object_Equals,
+        () => this.SystemObject
+            .Members
+            .OfType<MetadataMethodSymbol>()
+            .Single(m => m.Name == "Equals" && m.Parameters.Length == 2));
+    private MetadataMethodSymbol? object_Equals;
+
+    /// <summary>
     /// string.Format(string formatString, object[] args).
     /// </summary>
     public MetadataMethodSymbol SystemString_Format => InterlockedUtils.InitializeNull(

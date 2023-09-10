@@ -197,3 +197,10 @@ internal partial class BoundArrayAccessLvalue
 {
     public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
 }
+
+// Patterns
+
+internal partial class BoundPattern
+{
+    public abstract TypeSymbol Type { get; }
+}

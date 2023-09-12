@@ -47,7 +47,7 @@ public sealed class Compilation : IBinderProvider
     /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
-    /// <param name="enableTracing">True, if tracing should be enabled during compilation.</param>
+    /// <param name="tracer">The tracer to use.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
@@ -55,13 +55,13 @@ public sealed class Compilation : IBinderProvider
         string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null,
-        bool enableTracing = false) => new(
+        Tracer? tracer = null) => new(
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
         rootModulePath: rootModulePath,
         outputPath: outputPath,
         assemblyName: assemblyName,
-        tracer: enableTracing ? new() : null);
+        tracer: tracer ?? Tracer.Null);
 
     /// <summary>
     /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.

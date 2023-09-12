@@ -12,6 +12,11 @@ namespace Draco.Trace;
 public sealed class Tracer
 {
     /// <summary>
+    /// A tracer that does not trace.
+    /// </summary>
+    public static Tracer Null { get; } = Create(isEnabled: false);
+
+    /// <summary>
     /// Constructs a new <see cref="Tracer"/> for tracing events.
     /// </summary>
     /// <param name="isEnabled">True, if the tracer should be enabled.</param>

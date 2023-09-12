@@ -11,9 +11,26 @@ namespace Draco.Trace;
 
 public sealed class Tracer
 {
+    /// <summary>
+    /// Constructs a new <see cref="Tracer"/> for tracing events.
+    /// </summary>
+    /// <param name="isEnabled">True, if the tracer should be enabled.</param>
+    /// <returns>The constructed <see cref="Tracer"/>.</returns>
+    public static Tracer Create(bool isEnabled) => new(isEnabled);
+
     private static readonly Stopwatch stopwatch = Stopwatch.StartNew();
 
+    /// <summary>
+    /// True, if this tracer is enabled.
+    /// </summary>
+    public bool IsEnabled { get; }
+
     private readonly ConcurrentQueue<TraceMessage> messages = new();
+
+    private Tracer(bool isEnabled)
+    {
+        this.IsEnabled = isEnabled;
+    }
 
     internal TraceModel ToScribanModel()
     {
@@ -64,16 +81,22 @@ public sealed class Tracer
     }
 
     public void Event(string message) =>
-        this.messages.Enqueue(CreateMessage(TraceKind.Event, message));
+        this.EnqueueMessage(CreateMessage(TraceKind.Event, message));
 
     public IDisposable Begin(string message)
     {
-        this.messages.Enqueue(CreateMessage(TraceKind.Begin, message));
+        this.EnqueueMessage(CreateMessage(TraceKind.Begin, message));
         return new TraceEnd(this);
     }
 
     internal void End() =>
-        this.messages.Enqueue(CreateMessage(TraceKind.End));
+        this.EnqueueMessage(CreateMessage(TraceKind.End));
+
+    private void EnqueueMessage(TraceMessage message)
+    {
+        if (!this.IsEnabled) return;
+        this.messages.Enqueue(message);
+    }
 
     public void RenderTimeline(Stream stream, CancellationToken cancellationToken)
     {

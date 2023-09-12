@@ -119,7 +119,8 @@ internal static class BinderFacts
         or ModuleDeclarationSyntax
         or FunctionBodySyntax
         or BlockExpressionSyntax
-        or WhileExpressionSyntax;
+        or WhileExpressionSyntax
+        or ForExpressionSyntax;
 
     /// <summary>
     /// Checks, if a given syntax node defines a symbol.

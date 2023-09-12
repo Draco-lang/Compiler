@@ -1,3 +1,4 @@
+using System;
 using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -10,11 +11,20 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
 {
     public IConstraintPromise<TResult> Promise { get; }
     IConstraintPromise IConstraint.Promise => this.Promise;
-    public Diagnostic.Builder Diagnostic { get; } = new();
+    public ConstraintLocator Locator { get; }
 
-    protected Constraint()
+    protected Constraint(ConstraintLocator locator)
     {
         this.Promise = ConstraintPromise.Create(this);
+        this.Locator = locator;
+    }
+
+    public Diagnostic.Builder BuildDiagnostic(Action<Diagnostic.Builder> config)
+    {
+        var builder = Diagnostic.CreateBuilder();
+        config(builder);
+        this.Locator.Locate(builder);
+        return builder;
     }
 
     public override abstract string ToString();

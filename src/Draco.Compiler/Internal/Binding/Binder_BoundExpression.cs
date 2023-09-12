@@ -42,6 +42,7 @@ internal partial class Binder
         UntypedGotoExpression @goto => this.TypeGotoExpression(@goto, constraints, diagnostics),
         UntypedIfExpression @if => this.TypeIfExpression(@if, constraints, diagnostics),
         UntypedWhileExpression @while => this.TypeWhileExpression(@while, constraints, diagnostics),
+        UntypedForExpression @for => this.TypeForExpression(@for, constraints, diagnostics),
         UntypedCallExpression call => this.TypeCallExpression(call, constraints, diagnostics),
         UntypedIndirectCallExpression call => this.TypeIndirectCallExpression(call, constraints, diagnostics),
         UntypedAssignmentExpression assignment => this.TypeAssignmentExpression(assignment, constraints, diagnostics),
@@ -182,6 +183,29 @@ internal partial class Binder
         return new BoundWhileExpression(@while.Syntax, typedCondition, typedThen, @while.ContinueLabel, @while.BreakLabel);
     }
 
+    private BoundExpression TypeForExpression(UntypedForExpression @for, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var iterator = constraints.GetTypedLocal(@for.Iterator, diagnostics);
+
+        // NOTE: Hack, see the note above this method definition
+        var iteratorSyntax = (@for.Syntax as ForExpressionSyntax)?.Iterator;
+        if (iteratorSyntax is not null) this.BindSyntaxToSymbol(iteratorSyntax, iterator);
+
+        var sequence = this.TypeExpression(@for.Sequence, constraints, diagnostics);
+        var then = this.TypeExpression(@for.Then, constraints, diagnostics);
+
+        return new BoundForExpression(
+            @for.Syntax,
+            iterator,
+            sequence,
+            then,
+            @for.ContinueLabel,
+            @for.BreakLabel,
+            @for.GetEnumeratorMethod.Result,
+            @for.MoveNextMethod.Result,
+            @for.CurrentProperty.Result);
+    }
+
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = call.Receiver is null ? null : this.TypeExpression(call.Receiver, constraints, diagnostics);
@@ -278,7 +302,7 @@ internal partial class Binder
         else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result is PropertySymbol pr)
         {
             var receiver = this.TypeExpression(mem.Accessed, constraints, diagnostics);
-            var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);
+            var setter = GetSetterSymbol(assignment.Syntax, pr, diagnostics);
             return new BoundPropertySetExpression(
                 assignment.Syntax,
                 receiver,
@@ -361,7 +385,7 @@ internal partial class Binder
                 }
                 else
                 {
-                    var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
+                    var getter = GetGetterSymbol(mem.Syntax, prop, diagnostics);
                     return new BoundPropertyGetExpression(mem.Syntax, left, getter);
                 }
             }
@@ -394,7 +418,7 @@ internal partial class Binder
         ImmutableArray<BoundExpression> args,
         DiagnosticBag diagnostics)
     {
-        var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
+        var getter = GetGetterSymbol(syntax, prop, diagnostics);
         var getterCall = new BoundCallExpression(null, receiver, getter, args);
         return new BoundBinaryExpression(syntax, compoundOperator, getterCall, right, right.TypeRequired);
     }

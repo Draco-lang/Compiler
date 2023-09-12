@@ -7,6 +7,11 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 /// </summary>
 internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol, IMemberSymbol
 {
+    /// <summary>
+    /// A singleton instance to use.
+    /// </summary>
+    public static UndefinedMemberSymbol Instance { get; } = new();
+
     public override bool IsError => true;
 
     public override Symbol? ContainingSymbol => null;
@@ -14,6 +19,10 @@ internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol, IMemberSymbo
     public TypeSymbol Type => IntrinsicSymbols.ErrorType;
 
     public bool IsStatic => true;
+
+    private UndefinedMemberSymbol()
+    {
+    }
 
     public override Api.Semantics.ISymbol ToApiSymbol() => new Api.Semantics.AnySymbol(this);
 

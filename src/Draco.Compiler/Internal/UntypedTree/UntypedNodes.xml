@@ -73,6 +73,17 @@
     <Field Name="BreakLabel" Type="LabelSymbol" />
   </Node>
 
+  <Node Name="UntypedForExpression" Base="UntypedExpression">
+    <Field Name="Iterator" Type="UntypedLocalSymbol" />
+    <Field Name="Sequence" Type="UntypedExpression" />
+    <Field Name="Then" Type="UntypedExpression" />
+    <Field Name="ContinueLabel" Type="LabelSymbol" />
+    <Field Name="BreakLabel" Type="LabelSymbol" />
+    <Field Name="GetEnumeratorMethod" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="MoveNextMethod" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />
+    <Field Name="CurrentProperty" Type="IConstraintPromise&lt;Symbol&gt;" />
+  </Node>
+
   <Node Name="UntypedCallExpression" Base="UntypedExpression">
     <Field Name="Receiver" Type="UntypedExpression?" />
     <Field Name="Method" Type="IConstraintPromise&lt;FunctionSymbol&gt;" />

@@ -44,6 +44,7 @@ internal sealed class BinderCache
         FunctionBodySyntax body => this.BuildFunctionBodyBinder(body),
         BlockExpressionSyntax block => this.BuildLocalBinder(block),
         WhileExpressionSyntax loop => this.BuildLoopBinder(loop),
+        ForExpressionSyntax loop => this.BuildLoopBinder(loop),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -120,7 +121,11 @@ internal sealed class BinderCache
 
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);
-        return new LoopBinder(parent, syntax);
+        return syntax switch
+        {
+            ForExpressionSyntax @for => new ForLoopBinder(parent, @for),
+            _ => new LoopBinder(parent, syntax),
+        };
     }
 
     /// <summary>

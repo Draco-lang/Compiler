@@ -18,7 +18,11 @@ internal sealed class AwaitConstraint<TResult> : Constraint<TResult>
     /// </summary>
     public Func<TResult> Map { get; }
 
-    public AwaitConstraint(Func<bool> awaited, Func<TResult> map)
+    public AwaitConstraint(
+        Func<bool> awaited,
+        Func<TResult> map,
+        ConstraintLocator locator)
+        : base(locator)
     {
         this.Awaited = awaited;
         this.Map = map;

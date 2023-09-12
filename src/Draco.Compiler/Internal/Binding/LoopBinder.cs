@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Binds the break and continue labels in the loop body.
 /// </summary>
-internal sealed class LoopBinder : Binder
+internal class LoopBinder : Binder
 {
     /// <summary>
     /// The break label.

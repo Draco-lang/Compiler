@@ -29,8 +29,12 @@ internal partial class DracoLanguageServer : IRename
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var cursorPosition = Translator.ToCompiler(param.Position);
 
+        // TODO: Consider adding an API that allows for right-inclusive subtree iteration
+        var cursorRange = cursorPosition.Column == 0
+            ? new SyntaxRange(cursorPosition, 1)
+            : new SyntaxRange(new SyntaxPosition(Line: cursorPosition.Line, Column: cursorPosition.Column - 1), 1);
         var referencedSymbol = syntaxTree
-            .TraverseSubtreesAtPosition(cursorPosition)
+            .TraverseSubtreesIntersectingRange(cursorRange)
             .Select(symbol => semanticModel.GetReferencedSymbol(symbol) ?? semanticModel.GetDeclaredSymbol(symbol))
             .LastOrDefault(symbol => symbol is not null);
         if (referencedSymbol is null) return Task.FromResult<WorkspaceEdit?>(null);
@@ -93,6 +97,8 @@ internal partial class DracoLanguageServer : IRename
         NameExpressionSyntax n => RenameToken(n.Name, name),
         NameTypeSyntax n => RenameToken(n.Name, name),
         NameLabelSyntax n => RenameToken(n.Name, name),
+        SyntaxToken t when t.Parent is ForExpressionSyntax @for
+                        && @for.Iterator == t => RenameToken(t, name),
         _ => throw new ArgumentOutOfRangeException(nameof(original)),
     };
 

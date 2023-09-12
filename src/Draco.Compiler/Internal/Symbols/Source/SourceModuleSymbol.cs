@@ -67,7 +67,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 
     private ImmutableArray<Symbol> BindMembers(IBinderProvider binderProvider)
     {
-        using var _ = this.DeclaringCompilation?.TraceBegin($"SourceModuleSymbol({this.Name}).BindMembers");
+        using var _ = this.DeclaringCompilation?.Tracer.Begin($"SourceModuleSymbol({this.Name}).BindMembers");
 
         var result = ImmutableArray.CreateBuilder<Symbol>();
 

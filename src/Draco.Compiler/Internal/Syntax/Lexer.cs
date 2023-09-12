@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Utilities;
+using Draco.Trace;
 using DiagnosticTemplate = Draco.Compiler.Api.Diagnostics.DiagnosticTemplate;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -102,11 +103,13 @@ internal sealed class Lexer
     private readonly List<SyntaxDiagnosticInfo> diagnosticBuilder = new();
 
     private readonly SyntaxDiagnosticTable diagnostics;
+    private readonly Tracer tracer;
 
-    public Lexer(ISourceReader sourceReader, SyntaxDiagnosticTable diagnostics)
+    public Lexer(ISourceReader sourceReader, SyntaxDiagnosticTable diagnostics, Tracer tracer)
     {
         this.SourceReader = sourceReader;
         this.diagnostics = diagnostics;
+        this.tracer = tracer;
         this.PushMode(ModeKind.Normal, 0);
     }
 
@@ -116,6 +119,8 @@ internal sealed class Lexer
     /// <returns>The <see cref="SyntaxToken"/> read.</returns>
     public SyntaxToken Lex()
     {
+        using var _ = this.tracer.Begin("Lex");
+
         this.tokenBuilder.Clear();
         this.valueBuilder.Clear();
         this.diagnosticBuilder.Clear();

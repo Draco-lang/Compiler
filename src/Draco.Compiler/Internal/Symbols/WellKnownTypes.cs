@@ -48,7 +48,7 @@ internal sealed partial class WellKnownTypes
 
     public MetadataTypeSymbol GetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)
     {
-        using var _ = this.compilation.TraceBegin($"GetTypeFromAssembly({name}, {string.Join(".", path)})");
+        using var _ = this.compilation.Tracer.Begin($"GetTypeFromAssembly({name}, {string.Join(".", path)})");
 
         var assembly = this.GetAssemblyWithAssemblyName(name);
         return this.GetTypeFromAssembly(assembly, path);
@@ -56,7 +56,7 @@ internal sealed partial class WellKnownTypes
 
     public MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path)
     {
-        using var _ = this.compilation.TraceBegin($"GetTypeFromAssembly({assembly.Name}, {string.Join(".", path)})");
+        using var _ = this.compilation.Tracer.Begin($"GetTypeFromAssembly({assembly.Name}, {string.Join(".", path)})");
 
         return assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
     }
@@ -66,7 +66,7 @@ internal sealed partial class WellKnownTypes
 
     private MetadataAssemblySymbol GetAssemblyWithNameAndToken(string name, byte[] token)
     {
-        using var _ = this.compilation.TraceBegin($"GetAssemblyWithNameAndToken({name})");
+        using var _ = this.compilation.Tracer.Begin($"GetAssemblyWithNameAndToken({name})");
 
         var assemblyName = new AssemblyName() { Name = name };
         assemblyName.SetPublicKeyToken(token);

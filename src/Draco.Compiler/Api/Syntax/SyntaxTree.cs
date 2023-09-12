@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Syntax.Rewriting;
+using Draco.Trace;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -30,22 +31,28 @@ public sealed class SyntaxTree
     /// </summary>
     /// <param name="source">The source to parse.</param>
     /// <param name="path">The path this tree comes from.</param>
+    /// <param name="tracer">The tracer to use for parsing.</param>
     /// <returns>The parsed tree.</returns>
-    public static SyntaxTree Parse(string source, string? path = null) =>
-        Parse(path is null ? SourceText.FromText(source.AsMemory()) : SourceText.FromText(new Uri(path), source.AsMemory()));
+    public static SyntaxTree Parse(string source, string? path = null, Tracer? tracer = null) => Parse(
+        source: path is null
+            ? SourceText.FromText(source.AsMemory())
+            : SourceText.FromText(new Uri(path), source.AsMemory()),
+        tracer: tracer);
 
     /// <summary>
     /// Parses the given <see cref="Syntax.SourceText"/> into a <see cref="SyntaxTree"/>.
     /// </summary>
     /// <param name="source">The source to parse.</param>
+    /// <param name="tracer">The tracer to use for parsing.</param>
     /// <returns>The parsed tree.</returns>
-    public static SyntaxTree Parse(SourceText source)
+    public static SyntaxTree Parse(SourceText source, Tracer? tracer = null)
     {
+        tracer ??= Tracer.Null;
         var diags = new SyntaxDiagnosticTable();
         var srcReader = source.SourceReader;
-        var lexer = new Lexer(srcReader, diags);
+        var lexer = new Lexer(srcReader, diags, tracer);
         var tokenSource = TokenSource.From(lexer);
-        var parser = new Parser(tokenSource, diags);
+        var parser = new Parser(tokenSource, diags, tracer);
         var cu = parser.ParseCompilationUnit();
         return new(source, cu, diags);
     }

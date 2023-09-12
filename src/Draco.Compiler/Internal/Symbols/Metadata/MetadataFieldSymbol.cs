@@ -79,7 +79,7 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     private TypeSymbol BuildType()
     {
-        using var _ = this.Assembly.Compilation.TraceBegin($"MetadataFieldSymbol({this.Name}).BuildType");
+        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataFieldSymbol({this.Name}).BuildType");
 
         // Decode signature
         var decoder = new TypeProvider(this.Assembly.Compilation);
@@ -88,7 +88,7 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     private object? BuildDefaultValue()
     {
-        using var _ = this.Assembly.Compilation.TraceBegin($"MetadataFieldSymbol({this.Name}).BuildDefaultValue");
+        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataFieldSymbol({this.Name}).BuildDefaultValue");
 
         var constantHandle = this.fieldDefinition.GetDefaultValue();
         if (constantHandle.IsNil) return null;

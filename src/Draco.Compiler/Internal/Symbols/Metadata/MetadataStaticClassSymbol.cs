@@ -50,7 +50,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     private ImmutableArray<Symbol> BuildMembers()
     {
-        using var _ = this.Assembly.Compilation.TraceBegin($"MetadataStaticClassSymbol({this.Name}).BuildMembers");
+        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataStaticClassSymbol({this.Name}).BuildMembers");
 
         var result = ImmutableArray.CreateBuilder<Symbol>();
 

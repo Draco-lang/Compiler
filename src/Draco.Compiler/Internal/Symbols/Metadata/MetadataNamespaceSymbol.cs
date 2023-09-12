@@ -35,7 +35,7 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
 
     private ImmutableArray<Symbol> BuildMembers()
     {
-        using var _ = this.Assembly.Compilation.TraceBegin($"MetadataNamespaceSymbol({this.Name}).BuildMembers");
+        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataNamespaceSymbol({this.Name}).BuildMembers");
 
         var result = ImmutableArray.CreateBuilder<Symbol>();
 

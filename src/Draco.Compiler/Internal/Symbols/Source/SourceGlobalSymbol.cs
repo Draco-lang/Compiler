@@ -71,7 +71,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 
     private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValue(IBinderProvider binderProvider)
     {
-        using var _ = this.DeclaringCompilation?.TraceBegin($"SourceGlobalSymbol({this.Name}).BindTypeAndValue");
+        using var _ = this.DeclaringCompilation?.Tracer.Begin($"SourceGlobalSymbol({this.Name}).BindTypeAndValue");
 
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindGlobal(this, binderProvider.DiagnosticBag);

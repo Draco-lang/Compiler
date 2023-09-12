@@ -97,6 +97,11 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     public string AssemblyName { get; }
 
+    /// <summary>
+    /// The tracer object tracing in this compilation.
+    /// </summary>
+    public Tracer Tracer { get; }
+
     // TODO: Currently this does NOT include the sources, which might make merging same package names
     // invalid between metadata and source. For now we don't care.
     /// <summary>
@@ -146,8 +151,6 @@ public sealed class Compilation : IBinderProvider
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
 
-    private readonly Tracer? tracer;
-
     // Main ctor with all state
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
@@ -169,6 +172,7 @@ public sealed class Compilation : IBinderProvider
         this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
+        this.Tracer = tracer ?? Tracer.Null;
         this.rootModule = rootModule;
         this.metadataAssemblies = metadataAssemblies;
         this.sourceModule = sourceModule;
@@ -176,7 +180,6 @@ public sealed class Compilation : IBinderProvider
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
         this.IntrinsicSymbols = intrinsicSymbols ?? new IntrinsicSymbols(this);
         this.binderCache = binderCache ?? new BinderCache(this);
-        this.tracer = tracer;
     }
 
     /// <summary>
@@ -231,7 +234,7 @@ public sealed class Compilation : IBinderProvider
             // TODO: We could definitely carry on info here, invalidating the correct things
             binderCache: null,
             // We inherit the tracer
-            tracer: this.tracer);
+            tracer: this.Tracer);
     }
 
     /// <summary>
@@ -288,7 +291,7 @@ public sealed class Compilation : IBinderProvider
             emitSequencePoints: pdbStream is not null);
         // Optimize the IR
         {
-            using var _ = this.TraceBegin("Optimization");
+            using var _ = this.Tracer.Begin("Optimization");
             // TODO: Options for optimization
             OptimizationPipeline.Instance.Apply(assembly);
         }
@@ -304,7 +307,7 @@ public sealed class Compilation : IBinderProvider
         // Generate CIL and PDB
         if (peStream is not null)
         {
-            using var _ = this.TraceBegin("MetadataCodegen");
+            using var _ = this.Tracer.Begin("MetadataCodegen");
             MetadataCodegen.Generate(this, assembly, peStream, pdbStream);
         }
 
@@ -312,22 +315,6 @@ public sealed class Compilation : IBinderProvider
             Success: true,
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
     }
-
-    /// <summary>
-    /// Writes the timeline diagram as an interactive HTML page to the given stream.
-    /// </summary>
-    /// <param name="stream">The stream to write the diagram to.</param>
-    public void TraceTimelineDiagram(Stream? stream)
-    {
-        if (this.tracer is null) return;
-        if (stream is null) return;
-
-        this.tracer.RenderTimeline(stream, CancellationToken.None);
-        stream.Flush();
-    }
-
-    internal void TraceEvent(string message) => this.tracer?.Event(message);
-    internal IDisposable? TraceBegin(string message) => this.tracer?.Begin(message);
 
     internal ModuleSymbol GetModuleForSyntaxTree(SyntaxTree tree)
     {

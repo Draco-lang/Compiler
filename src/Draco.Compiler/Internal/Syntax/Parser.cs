@@ -6,6 +6,7 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Trace;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -199,11 +200,13 @@ internal sealed class Parser
 
     private readonly ITokenSource tokenSource;
     private readonly SyntaxDiagnosticTable diagnostics;
+    private readonly Tracer tracer;
 
-    public Parser(ITokenSource tokenSource, SyntaxDiagnosticTable diagnostics)
+    public Parser(ITokenSource tokenSource, SyntaxDiagnosticTable diagnostics, Tracer tracer)
     {
         this.tokenSource = tokenSource;
         this.diagnostics = diagnostics;
+        this.tracer = tracer;
     }
 
     /// <summary>
@@ -236,6 +239,8 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="CompilationUnitSyntax"/>.</returns>
     public CompilationUnitSyntax ParseCompilationUnit()
     {
+        using var _ = this.tracer.Begin("ParseCompilationUnit");
+
         var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
         while (this.Peek() != TokenKind.EndOfInput) decls.Add(this.ParseDeclaration());
         var end = this.Expect(TokenKind.EndOfInput);

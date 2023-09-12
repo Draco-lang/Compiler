@@ -75,7 +75,7 @@ internal abstract partial class Binder
 
     public virtual BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
-        using var _ = this.Compilation.TraceBegin($"Binder.BindFunction({function.Name})");
+        using var _ = this.Compilation.Tracer.Begin($"Binder.BindFunction({function.Name})");
 
         var functionName = function.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(this.Compilation, function.DeclaringSyntax, $"function {functionName}");
@@ -87,7 +87,7 @@ internal abstract partial class Binder
 
     public virtual (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
-        using var _ = this.Compilation.TraceBegin($"Binder.BindGlobal({global.Name})");
+        using var _ = this.Compilation.Tracer.Begin($"Binder.BindGlobal({global.Name})");
 
         var globalName = global.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(this.Compilation, global.DeclaringSyntax, $"global {globalName}");

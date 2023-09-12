@@ -427,8 +427,7 @@ internal sealed class CilCodegen
             switch (c.Value)
             {
             case null:
-                // TODO: Probably not the correct way to encode null
-                this.InstructionEncoder.LoadConstantI4(0);
+                this.InstructionEncoder.OpCode(ILOpCode.Ldnull);
                 break;
             case int i:
                 this.InstructionEncoder.LoadConstantI4(i);

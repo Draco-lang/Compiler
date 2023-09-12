@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -46,13 +47,14 @@ public sealed class Tracer
             result.Threads.Add(thread);
             var parent = thread.Root;
 
-            MessageModel AddMessage(string message, TimeSpan startTime)
+            MessageModel AddMessage(string message, TimeSpan startTime, ImmutableArray<object?> parameters)
             {
                 var model = new MessageModel(thread!, parent)
                 {
                     Message = message,
                     StartTime = startTime,
                     EndTime = startTime,
+                    Parameters = parameters,
                 };
                 parent!.Children.Add(model);
                 return model;
@@ -63,13 +65,14 @@ public sealed class Tracer
                 switch (message.Kind)
                 {
                 case TraceKind.Event:
-                    AddMessage(message.Message, message.TimeStamp);
+                    AddMessage(message.Message, message.TimeStamp, message.Parameters);
                     break;
                 case TraceKind.Begin:
-                    parent = AddMessage(message.Message, message.TimeStamp);
+                    parent = AddMessage(message.Message, message.TimeStamp, message.Parameters);
                     break;
                 case TraceKind.End:
                     parent!.EndTime = message.TimeStamp;
+                    parent!.Result = message.Result;
                     parent = parent.Parent;
                     break;
                 default:
@@ -85,17 +88,19 @@ public sealed class Tracer
         return result;
     }
 
-    public void Event(string message) =>
-        this.EnqueueMessage(CreateMessage(TraceKind.Event, message));
+    public void Event(string message, ImmutableArray<object?>? parameters = null, object? result = null) =>
+        this.EnqueueMessage(CreateMessage(TraceKind.Event, message, parameters: parameters, result: result));
 
-    public IDisposable Begin(string message)
+    public TraceEnd Begin(string message, ImmutableArray<object?>? parameters = null)
     {
-        this.EnqueueMessage(CreateMessage(TraceKind.Begin, message));
+        if (!this.IsEnabled) return TraceEnd.Null;
+
+        this.EnqueueMessage(CreateMessage(TraceKind.Begin, message, parameters: parameters));
         return new TraceEnd(this);
     }
 
-    internal void End() =>
-        this.EnqueueMessage(CreateMessage(TraceKind.End));
+    public void End(object? result = null) =>
+        this.EnqueueMessage(CreateMessage(TraceKind.End, result: result));
 
     private void EnqueueMessage(TraceMessage message)
     {
@@ -112,9 +117,13 @@ public sealed class Tracer
 
     private static TraceMessage CreateMessage(
         TraceKind kind,
-        string? message = null) => new(
+        string? message = null,
+        ImmutableArray<object?>? parameters = null,
+        object? result = null) => new(
         Kind: kind,
         Thread: Thread.CurrentThread,
         TimeStamp: stopwatch.Elapsed,
-        Message: message ?? string.Empty);
+        Message: message ?? string.Empty,
+        Parameters: parameters ?? ImmutableArray<object?>.Empty,
+        Result: result);
 }

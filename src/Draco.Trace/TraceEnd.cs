@@ -2,7 +2,18 @@ using System;
 
 namespace Draco.Trace;
 
-internal sealed record class TraceEnd(Tracer Tracer) : IDisposable
+public sealed class TraceEnd : IDisposable
 {
-    public void Dispose() => this.Tracer.End();
+    public static TraceEnd Null { get; } = new(Tracer.Null);
+
+    public object? Result { get; set; }
+
+    private readonly Tracer tracer;
+
+    internal TraceEnd(Tracer tracer)
+    {
+        this.tracer = tracer;
+    }
+
+    public void Dispose() => this.tracer.End(result: this.Result);
 }

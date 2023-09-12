@@ -1,6 +1,7 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Fuzzer.Generators;
+using Draco.Trace;
 
 namespace Draco.Fuzzer.Components;
 
@@ -16,7 +17,7 @@ internal sealed class LexerFuzzer : ComponentFuzzerBase<string>
 
     protected override void NextEpochInternal(string input)
     {
-        var lexer = new Lexer(SourceReader.From(input), new SyntaxDiagnosticTable());
+        var lexer = new Lexer(SourceReader.From(input), new SyntaxDiagnosticTable(), tracer: Tracer.Null);
         while (true)
         {
             var token = lexer.Lex();

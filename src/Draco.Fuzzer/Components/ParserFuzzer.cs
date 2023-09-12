@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Fuzzer.Generators;
+using Draco.Trace;
 
 namespace Draco.Fuzzer.Components;
 
@@ -20,8 +21,8 @@ internal sealed class ParserFuzzer : ComponentFuzzerBase<ImmutableArray<SyntaxTo
         // we stringify the tokens and re-lex them
         var diags = new SyntaxDiagnosticTable();
         var source = string.Join(string.Empty, input.Select(t => t.ToCode()));
-        var lexer = new Lexer(SourceReader.From(source), diags);
-        new Parser(TokenSource.From(lexer), diags).ParseCompilationUnit();
+        var lexer = new Lexer(SourceReader.From(source), diags, tracer: Tracer.Null);
+        new Parser(TokenSource.From(lexer), diags, tracer: Tracer.Null).ParseCompilationUnit();
     }
 
     protected override void NextMutationInternal(ImmutableArray<SyntaxToken> oldInput, ImmutableArray<SyntaxToken> newInput) =>

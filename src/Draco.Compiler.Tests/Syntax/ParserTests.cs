@@ -1,4 +1,5 @@
 using Draco.Compiler.Internal.Syntax;
+using Draco.Trace;
 using TokenKind = Draco.Compiler.Api.Syntax.TokenKind;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -12,9 +13,9 @@ public sealed class ParserTests
         where T : SyntaxNode
     {
         var srcReader = SourceReader.From(text);
-        var lexer = new Lexer(srcReader, this.diagnostics);
+        var lexer = new Lexer(srcReader, this.diagnostics, tracer: Tracer.Null);
         var tokenSource = TokenSource.From(lexer);
-        var parser = new Parser(tokenSource, this.diagnostics);
+        var parser = new Parser(tokenSource, this.diagnostics, tracer: Tracer.Null);
         this.treeEnumerator = func(parser).PreOrderTraverse().GetEnumerator();
     }
 

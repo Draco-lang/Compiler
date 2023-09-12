@@ -1,6 +1,7 @@
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Trace;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -15,7 +16,7 @@ public sealed class LexerTests
     private void Lex(string text)
     {
         var source = SourceReader.From(text);
-        var lexer = new Lexer(source, this.diagnostics);
+        var lexer = new Lexer(source, this.diagnostics, tracer: Tracer.Null);
         this.tokenEnumerator = LexImpl(lexer).GetEnumerator();
     }
 

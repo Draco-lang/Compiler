@@ -19,7 +19,8 @@
             onmouseover="onEventHover(this)"
             onclick="onEventClick(this)"
             class="event-rect"
-            data-timespan="{{message.TimeSpanInMilliseconds}}" />
+            data-timespan="{{message.TimeSpanInMilliseconds}}"
+            data-result="{{html.escape(message.Result)}}" />
         <text
             x="50%"
             y="{{message.Height * 30 + 15}}px"
@@ -73,9 +74,11 @@
         function onEventHover(rect) {
             const hoveredText = document.getElementById("hovered-event-text");
             const hoveredSpan = document.getElementById("hovered-event-timespan");
+            const hoveredResult = document.getElementById("hovered-event-result");
 
             hoveredText.textContent = rect.nextElementSibling.textContent;
-            hoveredSpan.textContent = `${rect.dataset.timespan} ms`;
+            hoveredSpan.textContent = `Took: ${rect.dataset.timespan} ms`;
+            hoveredResult.textContent = `Result: ${rect.dataset.result}`;
         }
 
         function onEventClick(rect) {
@@ -153,6 +156,7 @@
 
 <p id="hovered-event-text"></p>
 <p id="hovered-event-timespan"></p>
+<p id="hovered-event-result"></p>
 
 </body>
 </html>

@@ -119,7 +119,7 @@ internal sealed class Lexer
     /// <returns>The <see cref="SyntaxToken"/> read.</returns>
     public SyntaxToken Lex()
     {
-        using var _ = this.tracer.Begin("Lex");
+        using var trace = this.tracer.Begin("Lex");
 
         this.tokenBuilder.Clear();
         this.valueBuilder.Clear();
@@ -157,6 +157,8 @@ internal sealed class Lexer
         var token = this.tokenBuilder.Build();
         // Associate diagnostics, if needed
         if (this.diagnosticBuilder.Count > 0) this.diagnostics.AddRange(token, this.diagnosticBuilder);
+
+        trace.Result = token.Text;
         return token;
     }
 

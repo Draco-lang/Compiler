@@ -38,7 +38,7 @@ public sealed class Tracer
         this.IsEnabled = isEnabled;
     }
 
-    internal TraceModel ToScribanModel()
+    internal TraceModel ToStructuredModel()
     {
         var result = new TraceModel();
         foreach (var group in this.messages.GroupBy(m => m.Thread))
@@ -111,7 +111,7 @@ public sealed class Tracer
     public void RenderTimeline(Stream stream, CancellationToken cancellationToken)
     {
         var writer = new StreamWriter(stream);
-        writer.Write(ScribanRenderer.Render("TimelineChart.sbncs", this.ToScribanModel(), cancellationToken));
+        writer.Write(ScribanRenderer.Render("TimelineChart.sbncs", this.ToStructuredModel(), cancellationToken));
         writer.Flush();
     }
 

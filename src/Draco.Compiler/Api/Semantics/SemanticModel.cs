@@ -57,7 +57,7 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <returns>All <see cref="Diagnostic"/>s for <see cref="Tree"/>.</returns>
     private ImmutableArray<Diagnostic> GetDiagnostics(SourceSpan? span = null)
     {
-        using var _trace = this.compilation.Tracer.Begin("GetDiagnostics");
+        using var _trace = this.compilation.Tracer.Begin();
 
         var syntaxNodes = span is null
             ? this.Tree.PreOrderTraverse()

@@ -54,7 +54,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
-        using var _ = this.compilation.Tracer.Begin($"ConstraintSolver.Solve()");
+        using var _ = this.compilation.Tracer.Begin("ConstraintSolver.Solve");
 
         while (this.constraints.Count > 0)
         {

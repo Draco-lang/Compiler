@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Draco.Trace.Model;
 
@@ -91,7 +92,7 @@ public sealed class Tracer
     public void Event(string message, ImmutableArray<object?>? parameters = null, object? result = null) =>
         this.EnqueueMessage(CreateMessage(TraceKind.Event, message, parameters: parameters, result: result));
 
-    public TraceEnd Begin(string message, ImmutableArray<object?>? parameters = null)
+    public TraceEnd Begin([CallerMemberName] string message = "", ImmutableArray<object?>? parameters = null)
     {
         if (!this.IsEnabled) return TraceEnd.Null;
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Xml;
@@ -70,7 +71,7 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
 
     private MetadataNamespaceSymbol BuildRootNamespace()
     {
-        using var _ = this.Compilation.Tracer.Begin($"MetadataAssemblySymbol({this.Name}).BuildRootNamespace");
+        using var _ = this.Compilation.Tracer.Begin(parameters: ImmutableArray.Create<object?>(this.Name));
 
         var rootNamespaceDefinition = this.MetadataReader.GetNamespaceDefinitionRoot();
         return new MetadataNamespaceSymbol(

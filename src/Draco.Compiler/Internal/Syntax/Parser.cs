@@ -239,7 +239,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="CompilationUnitSyntax"/>.</returns>
     public CompilationUnitSyntax ParseCompilationUnit()
     {
-        using var _ = this.tracer.Begin("ParseCompilationUnit");
+        using var _ = this.tracer.Begin();
 
         var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
         while (this.Peek() != TokenKind.EndOfInput) decls.Add(this.ParseDeclaration());

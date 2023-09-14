@@ -79,7 +79,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
     {
-        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataTypeSymbol({this.Name}).BuildGenericParameters");
+        using var _ = this.Assembly.Compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var genericParamsHandle = this.typeDefinition.GetGenericParameters();
         if (genericParamsHandle.Count == 0) return ImmutableArray<TypeParameterSymbol>.Empty;
@@ -96,7 +97,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
-        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataTypeSymbol({this.Name}).BuildBaseTypes");
+        using var _ = this.Assembly.Compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
         var typeProvider = new TypeProvider(this.Assembly.Compilation);
@@ -124,7 +126,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private ImmutableArray<Symbol> BuildMembers()
     {
-        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataTypeSymbol({this.Name}).BuildMembers");
+        using var _ = this.Assembly.Compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var result = ImmutableArray.CreateBuilder<Symbol>();
 

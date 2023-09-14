@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols.Source;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -28,7 +30,8 @@ internal sealed class BinderCache
     /// <returns>The binder for <paramref name="syntax"/>.</returns>
     public Binder GetBinder(SyntaxNode syntax)
     {
-        using var _ = this.compilation.Tracer.Begin($"GetBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(syntax.Position, syntax.Green.Width));
 
         var scopeDefiningAncestor = BinderFacts.GetScopeDefiningAncestor(syntax);
         Debug.Assert(scopeDefiningAncestor is not null);
@@ -50,7 +53,8 @@ internal sealed class BinderCache
 
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
-        using var _ = this.compilation.Tracer.Begin($"BuildCompilationUnitBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(syntax.Position, syntax.Green.Width));
 
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         binder = new ModuleBinder(binder, this.compilation.RootModule);
@@ -61,7 +65,8 @@ internal sealed class BinderCache
 
     private Binder BuildModuleBinder(ModuleDeclarationSyntax syntax)
     {
-        using var _ = this.compilation.Tracer.Begin($"BuildModuleBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(syntax.Position, syntax.Green.Width));
 
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -78,7 +83,8 @@ internal sealed class BinderCache
 
     private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)
     {
-        using var _ = this.compilation.Tracer.Begin($"BuildFunctionDeclarationBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(syntax.Position, syntax.Green.Width));
 
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -95,7 +101,8 @@ internal sealed class BinderCache
 
     private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax)
     {
-        using var _ = this.compilation.Tracer.Begin($"BuildFunctionBodyBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(syntax.Position, syntax.Green.Width));
 
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -106,7 +113,8 @@ internal sealed class BinderCache
 
     private Binder BuildLocalBinder(BlockExpressionSyntax syntax)
     {
-        using var _ = this.compilation.Tracer.Begin($"BuildLocalBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(syntax.Position, syntax.Green.Width));
 
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -117,7 +125,8 @@ internal sealed class BinderCache
 
     private Binder BuildLoopBinder(SyntaxNode syntax)
     {
-        using var _ = this.compilation.Tracer.Begin($"BuildLoopBinder({syntax.Position}, {syntax.Green.Width})");
+        using var _ = this.compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(syntax.Position, syntax.Green.Width));
 
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);

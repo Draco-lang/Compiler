@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -71,7 +72,8 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 
     private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValue(IBinderProvider binderProvider)
     {
-        using var _ = this.DeclaringCompilation?.Tracer.Begin($"SourceGlobalSymbol({this.Name}).BindTypeAndValue");
+        using var _ = this.DeclaringCompilation?.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindGlobal(this, binderProvider.DiagnosticBag);

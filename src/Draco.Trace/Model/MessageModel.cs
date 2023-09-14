@@ -15,7 +15,7 @@ internal sealed class MessageModel : ITimeSpanned
     public string Message { get; set; } = string.Empty;
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
-    public ImmutableArray<object?> Parameters { get; set; }
+    public ImmutableArray<object?> Parameters { get; set; } = ImmutableArray<object?>.Empty;
     public object? Result { get; set; }
     public IList<MessageModel> Children { get; } = new List<MessageModel>();
 

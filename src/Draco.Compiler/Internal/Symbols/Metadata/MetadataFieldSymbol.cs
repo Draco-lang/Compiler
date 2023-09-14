@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -79,7 +80,8 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     private TypeSymbol BuildType()
     {
-        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataFieldSymbol({this.Name}).BuildType");
+        using var _ = this.Assembly.Compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         // Decode signature
         var decoder = new TypeProvider(this.Assembly.Compilation);
@@ -88,7 +90,8 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     private object? BuildDefaultValue()
     {
-        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataFieldSymbol({this.Name}).BuildDefaultValue");
+        using var _ = this.Assembly.Compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var constantHandle = this.fieldDefinition.GetDefaultValue();
         if (constantHandle.IsNil) return null;

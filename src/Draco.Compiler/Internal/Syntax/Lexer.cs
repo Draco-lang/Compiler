@@ -119,7 +119,7 @@ internal sealed class Lexer
     /// <returns>The <see cref="SyntaxToken"/> read.</returns>
     public SyntaxToken Lex()
     {
-        using var trace = this.tracer.Begin("Lex");
+        using var trace = this.tracer.Begin();
 
         this.tokenBuilder.Clear();
         this.valueBuilder.Clear();

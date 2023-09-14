@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.BoundTree;
@@ -38,7 +39,8 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (globalSymbol is not SourceGlobalSymbol sourceGlobal) return;
 
-        using var _ = this.compilation.Tracer.Begin($"CompileGlobal({globalSymbol.Name})");
+        using var _ = this.compilation.Tracer.Begin("CompileGlobal",
+            parameters: ImmutableArray.Create<object?>(globalSymbol.Name));
         var global = this.module.DefineGlobal(sourceGlobal);
 
         // If there's a value, compile it
@@ -62,7 +64,8 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
-        using var _ = this.compilation.Tracer.Begin($"CompileFunction({functionSymbol.Name})");
+        using var _ = this.compilation.Tracer.Begin("CompileFunction",
+            parameters: ImmutableArray.Create<object?>(functionSymbol.Name));
 
         // Add procedure, define parameters
         var procedure = this.module.DefineProcedure(functionSymbol);
@@ -98,7 +101,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     private BoundNode RewriteBody(BoundNode body)
     {
-        using var _ = this.compilation.Tracer.Begin("RewriteBody");
+        using var _ = this.compilation.Tracer.Begin();
         // If needed, inject sequence points
         if (this.emitSequencePoints)
         {

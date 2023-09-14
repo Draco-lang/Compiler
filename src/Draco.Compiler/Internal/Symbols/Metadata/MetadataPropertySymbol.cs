@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Internal.Documentation;
@@ -75,7 +76,8 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private MetadataPropertyAccessorSymbol? BuildGetter()
     {
-        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataPropertySymbol({this.Name}).BuildGetter");
+        using var _ = this.Assembly.Compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var accessors = this.propertyDefinition.GetAccessors();
         if (accessors.Getter.IsNil) return null;
@@ -85,7 +87,8 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private MetadataPropertyAccessorSymbol? BuildSetter()
     {
-        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataPropertySymbol({this.Name}).BuildSetter");
+        using var _ = this.Assembly.Compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var accessors = this.propertyDefinition.GetAccessors();
         if (accessors.Setter.IsNil) return null;
@@ -95,7 +98,8 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private void BuildOverride()
     {
-        using var _ = this.Assembly.Compilation.Tracer.Begin($"MetadataPropertySymbol({this.Name}).BuildOverride");
+        using var _ = this.Assembly.Compilation.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var explicitOverride = this.GetExplicitOverride();
         this.@override = this.ContainingSymbol is TypeSymbol type

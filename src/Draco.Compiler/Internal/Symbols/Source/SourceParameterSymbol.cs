@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -34,7 +35,8 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
 
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {
-        using var _trace = this.DeclaringCompilation?.Tracer.Begin($"SourceParameterSymbol({this.Name}).BindType");
+        using var _trace = this.DeclaringCompilation?.Tracer.Begin(
+            parameters: ImmutableArray.Create<object?>(this.Name));
 
         var binder = binderProvider.GetBinder(this.DeclaringSyntax.Type);
         var diagnostics = binderProvider.DiagnosticBag;

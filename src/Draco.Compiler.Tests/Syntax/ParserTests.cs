@@ -1802,4 +1802,52 @@ public sealed class ParserTests
             }
         }
     }
+
+    [Fact]
+    public void TestVariableWithFunctionType()
+    {
+        this.ParseDeclaration("""
+            var x: (int32, int32)->int32 = foo
+            """);
+
+        this.N<VariableDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordVar);
+            this.T(TokenKind.Identifier, "x");
+            this.N<TypeSpecifierSyntax>();
+            {
+                this.T(TokenKind.Colon);
+                this.N<FunctionTypeSyntax>();
+                {
+                    this.T(TokenKind.ParenOpen);
+                    this.N<SeparatedSyntaxList<TypeSyntax>>();
+                    {
+                        this.N<NameTypeSyntax>();
+                        {
+                            this.T(TokenKind.Identifier, "int32");
+                        }
+                        this.T(TokenKind.Comma);
+                        this.N<NameTypeSyntax>();
+                        {
+                            this.T(TokenKind.Identifier, "int32");
+                        }
+                    }
+                    this.T(TokenKind.ParenClose);
+                    this.T(TokenKind.Arrow);
+                    this.N<NameTypeSyntax>();
+                    {
+                        this.T(TokenKind.Identifier, "int32");
+                    }
+                }
+            }
+            this.N<ValueSpecifierSyntax>();
+            {
+                this.T(TokenKind.Assign);
+                this.N<NameExpressionSyntax>();
+                {
+                    this.T(TokenKind.Identifier, "foo");
+                }
+            }
+        }
+    }
 }

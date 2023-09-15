@@ -1,18 +1,11 @@
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data;
-using System.Linq;
-using Draco.Compiler.Internal.Binding;
-using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Error;
 
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
 /// A constraint representing that a type needs to have a given member.
 /// </summary>
-internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
+internal sealed class MemberConstraint : Constraint<Symbol>
 {
     /// <summary>
     /// The accessed symbol type.
@@ -29,8 +22,12 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
     /// </summary>
     public TypeSymbol MemberType { get; }
 
-    public MemberConstraint(ConstraintSolver solver, TypeSymbol accessed, string memberName, TypeSymbol memberType)
-        : base(solver)
+    public MemberConstraint(
+        TypeSymbol accessed,
+        string memberName,
+        TypeSymbol memberType,
+        ConstraintLocator locator)
+        : base(locator)
     {
         this.Accessed = accessed;
         this.MemberName = memberName;
@@ -38,48 +35,4 @@ internal sealed class MemberConstraint : Constraint<ImmutableArray<Symbol>>
     }
 
     public override string ToString() => $"Member({this.Accessed}, {this.MemberName})";
-
-    public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
-    {
-    start:
-        var accessed = this.Accessed.Substitution;
-        // We can't advance on type variables
-        if (accessed.IsTypeVariable)
-        {
-            yield return SolveState.Stale;
-            goto start;
-        }
-
-        // Not a type variable, we can look into members
-        var membersWithName = accessed.InstanceMembers
-            .Where(m => m.Name == this.MemberName)
-            .ToImmutableArray();
-
-        if (membersWithName.Length == 0)
-        {
-            // No such member, error
-            this.Diagnostic
-                .WithTemplate(SymbolResolutionErrors.MemberNotFound)
-                .WithFormatArgs(this.MemberName, this.Accessed.Substitution);
-            // We still provide a single error symbol
-            var errorSymbol = new UndefinedMemberSymbol();
-            this.Unify(this.MemberType, new ErrorTypeSymbol("<error>"));
-            this.Promise.Fail(ImmutableArray.Create<Symbol>(errorSymbol), diagnostics);
-            yield return SolveState.Solved;
-        }
-        else if (membersWithName.Length == 1)
-        {
-            // One member, we know what type the member type is
-            this.Unify(((ITypedSymbol)membersWithName[0]).Type, this.MemberType);
-            this.Promise.Resolve(membersWithName);
-            yield return SolveState.Solved;
-        }
-        else
-        {
-            // More than one, the member constraint is fine with multiple members but we don't know the member type
-            this.Unify(this.MemberType, new ErrorTypeSymbol("<error>"));
-            this.Promise.Resolve(membersWithName);
-            yield return SolveState.Solved;
-        }
-    }
 }

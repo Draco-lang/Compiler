@@ -1,5 +1,7 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -13,11 +15,14 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
     public override Symbol ContainingSymbol => this.untypedSymbol.ContainingSymbol;
     public override string Name => this.untypedSymbol.Name;
 
-    public override VariableDeclarationSyntax DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;
+    public override SyntaxNode DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;
 
     public override bool IsMutable => this.untypedSymbol.IsMutable;
 
-    public override string Documentation => this.DeclaringSyntax.Documentation;
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    private SymbolDocumentation? documentation;
+
+    internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
     private readonly UntypedLocalSymbol untypedSymbol;
 
@@ -28,4 +33,7 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
     }
 
     public void Bind(IBinderProvider binderProvider) { }
+
+    private SymbolDocumentation BuildDocumentation() =>
+        MarkdownDocumentationExtractor.Extract(this);
 }

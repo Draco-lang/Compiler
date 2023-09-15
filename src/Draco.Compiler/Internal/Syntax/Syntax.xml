@@ -818,6 +818,63 @@
     </Field>
   </Node>
 
+  <Node Name="ForExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A for-expression.
+    </Documentation>
+
+    <Field Name="ForKeyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword 'for'.
+      </Documentation>
+
+      <Token Kind="KeywordFor" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the iterator.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="Iterator" Type="SyntaxToken">
+      <Documentation>
+        The iterator variable name.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="ElementType" Type="TypeSpecifierSyntax?">
+      <Documentation>
+        The optional type of the sequence elements.
+      </Documentation>
+    </Field>
+    <Field Name="InKeyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword 'in'.
+      </Documentation>
+
+      <Token Kind="KeywordIn" />
+    </Field>
+    <Field Name="Sequence" Type="ExpressionSyntax">
+      <Documentation>
+        The expression of the sequence we are iterating over.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the iterator.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="Then" Type="ExpressionSyntax">
+      <Documentation>
+        The portion evaluated repeatedly, substituting each element in the sequence for the iterator variable.
+      </Documentation>
+    </Field>
+  </Node>
+
   <Node Name="GotoExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
       A goto-expression.

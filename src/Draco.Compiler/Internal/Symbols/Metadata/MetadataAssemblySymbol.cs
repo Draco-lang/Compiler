@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Xml;
 using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -11,6 +13,11 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members => this.RootNamespace.Members;
+
+    /// <summary>
+    /// The version of this assembly.
+    /// </summary>
+    public Version Version => this.assemblyDefinition.Version;
 
     /// <summary>
     /// The root namespace of this assembly.
@@ -37,6 +44,11 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     public MetadataReader MetadataReader { get; }
 
     /// <summary>
+    /// XmlDocument containing documentation for this assembly.
+    /// </summary>
+    public XmlDocument? AssemblyDocumentation { get; }
+
+    /// <summary>
     /// The compilation this assembly belongs to.
     /// </summary>
     public Compilation Compilation { get; }
@@ -46,12 +58,14 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
 
     public MetadataAssemblySymbol(
         Compilation compilation,
-        MetadataReader metadataReader)
+        MetadataReader metadataReader,
+        XmlDocument? documentation)
     {
         this.Compilation = compilation;
         this.MetadataReader = metadataReader;
         this.moduleDefinition = metadataReader.GetModuleDefinition();
         this.assemblyDefinition = metadataReader.GetAssemblyDefinition();
+        this.AssemblyDocumentation = documentation;
     }
 
     private MetadataNamespaceSymbol BuildRootNamespace()

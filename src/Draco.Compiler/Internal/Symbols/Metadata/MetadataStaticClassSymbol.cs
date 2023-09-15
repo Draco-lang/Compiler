@@ -3,6 +3,8 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -20,6 +22,12 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    private SymbolDocumentation? documentation;
+
+    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
+    private string? rawDocumentation;
+
     public override Symbol ContainingSymbol { get; }
 
     // NOTE: thread-safety does not matter, same instance
@@ -29,7 +37,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public string? DefaultMemberAttributeName =>
-        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.DeclaringCompilation!, this.MetadataReader));
+        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;
@@ -102,4 +110,10 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
         // Done
         return result.ToImmutable();
     }
+
+    private SymbolDocumentation BuildDocumentation() =>
+        XmlDocumentationExtractor.Extract(this);
+
+    private string BuildRawDocumentation() =>
+        MetadataSymbol.GetDocumentation(this);
 }

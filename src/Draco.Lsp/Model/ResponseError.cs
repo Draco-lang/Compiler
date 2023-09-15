@@ -9,7 +9,7 @@ internal sealed class ResponseError
     [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public required int Code { get; set; }
 
-    [JsonPropertyName("result")]
+    [JsonPropertyName("message")]
     [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public required string Message { get; set; }
 

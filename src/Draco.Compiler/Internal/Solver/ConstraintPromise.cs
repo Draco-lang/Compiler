@@ -1,6 +1,4 @@
 using System;
-using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -50,12 +48,8 @@ internal static class ConstraintPromise
 
         public void Resolve(TResult result) =>
             throw new InvalidOperationException("can not resolve an already solved constraint");
-        public void Fail(TResult result, DiagnosticBag? diagnostics) =>
+        public void Fail(TResult result) =>
             throw new InvalidOperationException("can not resolve an already solved constraint");
-
-        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure) => this;
-        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
-            this.ConfigureDiagnostic(configure);
     }
 
     private sealed class ResolvableConstraintPromise<TResult> : IConstraintPromise<TResult>
@@ -86,24 +80,8 @@ internal static class ConstraintPromise
             this.Constraint = constraint;
         }
 
-        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
-        {
-            configure(this.Constraint.Diagnostic);
-            return this;
-        }
-        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
-            this.ConfigureDiagnostic(configure);
-
         public void Resolve(TResult result) => this.Result = result;
-        public void Fail(TResult result, DiagnosticBag? diagnostics)
-        {
-            this.Result = result;
-            if (diagnostics is not null)
-            {
-                var diag = this.Constraint.Diagnostic.Build();
-                diagnostics.Add(diag);
-            }
-        }
+        public void Fail(TResult result) => this.Result = result;
     }
 
     private sealed class UnwrapConstraintPromise<TResult> : IConstraintPromise<TResult>
@@ -121,15 +99,7 @@ internal static class ConstraintPromise
             this.underlying = underlying;
         }
 
-        public IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure)
-        {
-            this.underlying.ConfigureDiagnostic(configure);
-            return this;
-        }
-        IConstraintPromise IConstraintPromise.ConfigureDiagnostic(Action<Diagnostic.Builder> configure) =>
-            this.ConfigureDiagnostic(configure);
-
         public void Resolve(TResult result) => throw new NotSupportedException("can not resolve unwrap promise");
-        public void Fail(TResult result, DiagnosticBag? diagnostics) => throw new NotSupportedException("can not fail unwrap promise");
+        public void Fail(TResult result) => throw new NotSupportedException("can not fail unwrap promise");
     }
 }

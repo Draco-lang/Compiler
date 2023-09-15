@@ -3,7 +3,9 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -90,6 +92,23 @@ internal abstract partial class Symbol
     }
 
     /// <summary>
+    /// The fully qualified metadata name of this symbol.
+    /// </summary>
+    public virtual string MetadataFullName
+    {
+        get
+        {
+            var parentFullName = this.ContainingSymbol is not MetadataAssemblySymbol
+                ? this.ContainingSymbol?.MetadataFullName
+                : null;
+
+            return string.IsNullOrWhiteSpace(parentFullName)
+                ? this.MetadataName
+                : $"{parentFullName}.{this.MetadataName}";
+        }
+    }
+
+    /// <summary>
     /// All the members within this symbol.
     /// </summary>
     public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();
@@ -105,9 +124,14 @@ internal abstract partial class Symbol
     public virtual IEnumerable<Symbol> InstanceMembers => this.Members.Where(x => x is IMemberSymbol mem && !mem.IsStatic);
 
     /// <summary>
-    /// Documentation attached to this symbol.
+    /// The structured documentation attached to this symbol.
     /// </summary>
-    public virtual string Documentation => string.Empty;
+    public virtual SymbolDocumentation Documentation => SymbolDocumentation.Empty;
+
+    /// <summary>
+    /// The documentation of symbol as raw xml or markdown;
+    /// </summary>
+    internal virtual string RawDocumentation => string.Empty;
 
     /// <summary>
     /// The visibility of this symbol.
@@ -141,6 +165,14 @@ internal abstract partial class Symbol
     /// The generic arguments that this symbol was instantiated with.
     /// </summary>
     public virtual ImmutableArray<TypeSymbol> GenericArguments => ImmutableArray<TypeSymbol>.Empty;
+
+    /// <summary>
+    /// Checks if this symbol can be shadowed by <paramref name="other"/> symbol.
+    /// </summary>
+    /// <param name="other">The other symbol.</param>
+    /// <returns>True, if this symbol can be shadowed by <paramref name="other"/> symbol,
+    /// otherwise false.</returns>
+    public virtual bool CanBeShadowedBy(Symbol other) => this.Name == other.Name;
 
     /// <summary>
     /// Instantiates this generic symbol with the given substitutions.

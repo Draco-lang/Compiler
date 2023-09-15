@@ -1,5 +1,4 @@
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -8,16 +7,9 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// A constant value.
 /// </summary>
 /// <param name="Value">The constant value.</param>
-internal readonly record struct Constant(object? Value) : IOperand
+/// <param name="Type">The type of the constant.</param>
+internal readonly record struct Constant(object? Value, TypeSymbol? Type) : IOperand
 {
-    public TypeSymbol? Type => this.Value switch
-    {
-        int => IntrinsicSymbols.Int32,
-        bool => IntrinsicSymbols.Bool,
-        string => IntrinsicSymbols.String,
-        _ => throw new System.InvalidOperationException(),
-    };
-
     public override string ToString() => this.ToOperandString();
     public string ToOperandString() => this.Value switch
     {

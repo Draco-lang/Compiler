@@ -91,9 +91,9 @@ public enum TokenKind
     KeywordFalse,
 
     /// <summary>
-    /// The keyword 'from'.
+    /// The keyword 'for'.
     /// </summary>
-    KeywordFrom,
+    KeywordFor,
 
     /// <summary>
     /// The keyword 'func'.
@@ -114,6 +114,11 @@ public enum TokenKind
     /// The keyword 'import'.
     /// </summary>
     KeywordImport,
+
+    /// <summary>
+    /// The keyword 'in'.
+    /// </summary>
+    KeywordIn,
 
     /// <summary>
     /// The keyword 'internal'.

@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -15,15 +11,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class IntrinsicsBinder : Binder
 {
-    private static ImmutableArray<Symbol> IntrinsicSymbols { get; } = typeof(IntrinsicSymbols)
-        .GetProperties(BindingFlags.Public | BindingFlags.Static)
-        .Where(prop => prop.PropertyType.IsAssignableTo(typeof(Symbol)))
-        .Select(prop => prop.GetValue(null))
-        .Cast<Symbol>()
-        .Concat(Symbols.Synthetized.IntrinsicSymbols.GenerateIntrinsicSymbols())
-        .ToImmutableArray();
-
-    public override IEnumerable<Symbol> DeclaredSymbols => IntrinsicSymbols;
+    public override IEnumerable<Symbol> DeclaredSymbols => this.IntrinsicSymbols.AllSymbols;
 
     public IntrinsicsBinder(Compilation compilation)
         : base(compilation)
@@ -37,7 +25,7 @@ internal sealed class IntrinsicsBinder : Binder
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {
-        foreach (var symbol in IntrinsicSymbols)
+        foreach (var symbol in this.DeclaredSymbols)
         {
             if (symbol.Name != name) continue;
             if (!allowSymbol(symbol)) continue;

@@ -1,4 +1,7 @@
+using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -15,13 +18,16 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 {
+    private readonly Compilation compilation;
     private readonly Procedure procedure;
+
     private BasicBlock currentBasicBlock;
     private bool isDetached;
     private int blockIndex = 0;
 
-    public FunctionBodyCodegen(Procedure procedure)
+    public FunctionBodyCodegen(Compilation compilation, Procedure procedure)
     {
+        this.compilation = compilation;
         this.procedure = procedure;
         // NOTE: Attach block takes care of the null
         this.currentBasicBlock = default!;
@@ -63,7 +69,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     private Global DefineGlobal(GlobalSymbol global) => this.GetDefiningModule(global).DefineGlobal(global);
     private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
-    private Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
+
+    public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
     private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
     {
@@ -73,10 +80,47 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var proc = this.procedure.DeclaringModule.DefineProcedure(func);
         if (!compiledAlready)
         {
-            var codegen = new FunctionBodyCodegen(proc);
+            var codegen = new FunctionBodyCodegen(this.compilation, proc);
             func.Body.Accept(codegen);
         }
         return proc;
+    }
+
+    private static bool NeedsBoxing(TypeSymbol targetType, TypeSymbol sourceType)
+    {
+        var targetIsValueType = targetType.Substitution.IsValueType;
+        var sourceIsValueType = sourceType.Substitution.IsValueType;
+        return !targetIsValueType && sourceIsValueType;
+    }
+
+    private static bool NeedsUnboxing(TypeSymbol targetType, TypeSymbol sourceType)
+    {
+        var targetIsValueType = targetType.Substitution.IsValueType;
+        var sourceIsValueType = sourceType.Substitution.IsValueType;
+        return targetIsValueType && !sourceIsValueType;
+    }
+
+    public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
+    {
+        if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
+
+        var needsBox = NeedsBoxing(targetType, source.Type);
+        var needsUnbox = NeedsUnboxing(targetType, source.Type);
+
+        if (needsBox)
+        {
+            var result = this.DefineRegister(targetType.Substitution);
+            this.Write(Box(result, targetType.Substitution, source));
+            return result;
+        }
+
+        if (needsUnbox)
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
+
+        return source;
     }
 
     // Statements //////////////////////////////////////////////////////////////
@@ -100,6 +144,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         if (node.Value is null) return default!;
 
         var right = this.Compile(node.Value);
+        right = this.BoxIfNeeded(node.Local.Type, right);
         var left = this.DefineLocal(node.Local);
         this.Write(Store(left, right));
 
@@ -183,6 +228,30 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
+    // Manifesting an expression as an address
+    private IOperand CompileToAddress(BoundExpression expression)
+    {
+        switch (expression)
+        {
+        case BoundLocalExpression local:
+        {
+            var localOperand = this.DefineLocal(local.Local);
+            return new Address(localOperand);
+        }
+        default:
+        {
+            // We allocate a local so we can take its address
+            var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
+            var localOperand = this.DefineLocal(local);
+            // Store the value in it
+            var value = this.Compile(expression);
+            this.Write(Store(localOperand, value));
+            // Take its address
+            return new Address(localOperand);
+        }
+        }
+    }
+
     // Expressions /////////////////////////////////////////////////////////////
 
     public override IOperand VisitStringExpression(BoundStringExpression node) =>
@@ -202,23 +271,42 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
-        var isSetter = node.Method is IPropertyAccessorSymbol p && p.Property.Setter == node.Method;
-        if (node.Receiver is null)
+        // TODO: Lots of duplication, we should merge these instructions...
+        var receiver = this.CompileReceiver(node);
+        var args = node.Arguments
+            .Zip(node.Method.Parameters)
+            .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
+            .ToList();
+        var callResult = this.DefineRegister(node.TypeRequired);
+        var proc = this.TranslateFunctionSymbol(node.Method);
+        if (receiver is null)
         {
-            var args = node.Arguments.Select(this.Compile).ToList();
-            var callResult = this.DefineRegister(node.TypeRequired);
-            var proc = this.TranslateFunctionSymbol(node.Method);
             this.Write(Call(callResult, proc, args));
-            return isSetter ? args[^1] : callResult;
         }
         else
         {
-            var receiver = this.Compile(node.Receiver);
-            var args = node.Arguments.Select(this.Compile).ToList();
-            var callResult = this.DefineRegister(node.TypeRequired);
-            var proc = this.TranslateFunctionSymbol(node.Method);
             this.Write(MemberCall(callResult, proc, receiver, args));
-            return isSetter ? args[^1] : callResult;
+        }
+        return callResult;
+    }
+
+    private IOperand? CompileReceiver(BoundCallExpression call)
+    {
+        if (call.Receiver is null) return null;
+        // Box receiver, if needed
+        if (call.Method.ContainingSymbol is TypeSymbol methodContainer
+         && NeedsBoxing(methodContainer, call.Receiver.TypeRequired))
+        {
+            var valueReceiver = this.Compile(call.Receiver);
+            var receiver = this.DefineRegister(methodContainer);
+            this.Write(Box(receiver, methodContainer, valueReceiver));
+            return receiver;
+        }
+        else
+        {
+            return call.Receiver.TypeRequired.IsValueType
+                ? this.CompileToAddress(call.Receiver)
+                : this.Compile(call.Receiver);
         }
     }
 
@@ -299,15 +387,19 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // Patch
             PatchLoadTarget(leftLoad, leftValue);
             this.Write(leftLoad);
-            if (IsAdd(node.CompoundOperator)) this.Write(Add(tmp, leftValue, right));
-            else if (IsSub(node.CompoundOperator)) this.Write(Sub(tmp, leftValue, right));
-            else if (IsMul(node.CompoundOperator)) this.Write(Mul(tmp, leftValue, right));
-            else if (IsDiv(node.CompoundOperator)) this.Write(Div(tmp, leftValue, right));
-            else throw new System.NotImplementedException();
+            if (node.CompoundOperator is IrFunctionSymbol irFunction)
+            {
+                irFunction.Codegen(this, tmp, ImmutableArray.Create(leftValue, right));
+            }
+            else
+            {
+                // TOO
+                throw new System.NotImplementedException();
+            }
         }
 
         // Patch
-        PatchStoreSource(leftStore, toStore);
+        this.PatchStoreSource(leftStore, node.Left.Type, toStore);
         this.Write(leftStore);
         return toStore;
     }
@@ -330,8 +422,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
-    private static void PatchStoreSource(IInstruction storeInstr, IOperand source)
+    private void PatchStoreSource(IInstruction storeInstr, TypeSymbol targetType, IOperand source)
     {
+        source = this.BoxIfNeeded(targetType, source);
         switch (storeInstr)
         {
         case StoreInstruction store:
@@ -353,11 +446,15 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var sub = node.Operand.Accept(this);
         var target = this.DefineRegister(node.TypeRequired);
 
-        if (IsNot(node.Operator)) this.Write(Equal(target, sub, new Constant(false)));
-        else if (IsPlus(node.Operator)) { /* no-op */ }
-        else if (IsMinus(node.Operator)) this.Write(Mul(target, sub, new Constant(-1)));
-        // TODO
-        else throw new System.NotImplementedException();
+        if (node.Operator is IrFunctionSymbol irFunction)
+        {
+            irFunction.Codegen(this, target, ImmutableArray.Create(sub));
+        }
+        else
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
 
         return target;
     }
@@ -368,78 +465,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var right = this.Compile(node.Right);
         var target = this.DefineRegister(node.TypeRequired);
 
-        if (IsAdd(node.Operator))
+        if (node.Operator is IrFunctionSymbol irFunction)
         {
-            this.Write(Add(target, left, right));
-        }
-        else if (IsSub(node.Operator))
-        {
-            this.Write(Sub(target, left, right));
-        }
-        else if (IsMul(node.Operator))
-        {
-            this.Write(Mul(target, left, right));
-        }
-        else if (IsDiv(node.Operator))
-        {
-            this.Write(Div(target, left, right));
-        }
-        else if (IsRem(node.Operator))
-        {
-            this.Write(Rem(target, left, right));
-        }
-        else if (IsMod(node.Operator))
-        {
-            // a mod b
-            //  <=>
-            // (a rem b + b) rem b
-            var tmp1 = this.DefineRegister(node.TypeRequired);
-            var tmp2 = this.DefineRegister(node.TypeRequired);
-            this.Write(Rem(tmp1, left, right));
-            this.Write(Add(tmp2, tmp1, right));
-            this.Write(Rem(target, tmp1, right));
-        }
-        else if (IsLess(node.Operator))
-        {
-            this.Write(Less(target, left, right));
-        }
-        else if (IsGreater(node.Operator))
-        {
-            // a > b
-            //  <=>
-            // b < a
-            this.Write(Less(target, right, left));
-        }
-        else if (IsLessEqual(node.Operator))
-        {
-            // a <= b
-            //  <=>
-            // (b < a) == false
-            var tmp = this.DefineRegister(node.TypeRequired);
-            this.Write(Less(tmp, right, left));
-            this.Write(Equal(target, tmp, new Constant(false)));
-        }
-        else if (IsGreaterEqual(node.Operator))
-        {
-            // a >= b
-            //  <=>
-            // (a < b) == false
-            var tmp = this.DefineRegister(node.TypeRequired);
-            this.Write(Less(tmp, left, right));
-            this.Write(Equal(target, tmp, new Constant(false)));
-        }
-        else if (IsEqual(node.Operator))
-        {
-            this.Write(Equal(target, left, right));
-        }
-        else if (IsNotEqual(node.Operator))
-        {
-            // a != b
-            //  <=>
-            // (a == b) == false
-            var tmp = this.DefineRegister(node.TypeRequired);
-            this.Write(Equal(tmp, left, right));
-            this.Write(Equal(target, tmp, new Constant(false)));
+            irFunction.Codegen(this, target, ImmutableArray.Create(left, right));
         }
         else
         {
@@ -498,11 +526,24 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitParameterExpression(BoundParameterExpression node) =>
         this.DefineParameter(node.Parameter);
 
-    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value);
+    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value, node.TypeRequired);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
     public override IOperand VisitFieldExpression(BoundFieldExpression node)
     {
+        // Check, if it's a literal we need to inline
+        var metadataField = ExtractMetadataField(node.Field);
+        if (metadataField is not null && metadataField.IsLiteral)
+        {
+            var defaultValue = metadataField.DefaultValue;
+            if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.IntrinsicSymbols, out var literalType))
+            {
+                throw new System.InvalidOperationException();
+            }
+            return new Constant(defaultValue, literalType);
+        }
+
+        // Regular static or nonstatic field
         var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(receiver is null
@@ -511,37 +552,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    // TODO: Do something with this block
-
-    private static bool IsEqual(Symbol op) => op == IntrinsicSymbols.Int32_Equal
-                                           || op == IntrinsicSymbols.Float64_Equal;
-    private static bool IsNotEqual(Symbol op) => op == IntrinsicSymbols.Int32_NotEqual
-                                              || op == IntrinsicSymbols.Float64_NotEqual;
-    private static bool IsLess(Symbol op) => op == IntrinsicSymbols.Int32_LessThan
-                                          || op == IntrinsicSymbols.Float64_LessThan;
-    private static bool IsLessEqual(Symbol op) => op == IntrinsicSymbols.Int32_LessEqual
-                                               || op == IntrinsicSymbols.Float64_LessEqual;
-    private static bool IsGreater(Symbol op) => op == IntrinsicSymbols.Int32_GreaterThan
-                                             || op == IntrinsicSymbols.Float64_GreaterThan;
-    private static bool IsGreaterEqual(Symbol op) => op == IntrinsicSymbols.Int32_GreaterEqual
-                                                  || op == IntrinsicSymbols.Float64_GreaterEqual;
-
-    private static bool IsNot(Symbol op) => op == IntrinsicSymbols.Bool_Not;
-    private static bool IsPlus(Symbol op) => op == IntrinsicSymbols.Int32_Plus
-                                          || op == IntrinsicSymbols.Float64_Plus;
-    private static bool IsMinus(Symbol op) => op == IntrinsicSymbols.Int32_Minus
-                                           || op == IntrinsicSymbols.Float64_Minus;
-
-    private static bool IsAdd(Symbol op) => op == IntrinsicSymbols.Int32_Add
-                                         || op == IntrinsicSymbols.Float64_Add;
-    private static bool IsSub(Symbol op) => op == IntrinsicSymbols.Int32_Sub
-                                         || op == IntrinsicSymbols.Float64_Sub;
-    private static bool IsMul(Symbol op) => op == IntrinsicSymbols.Int32_Mul
-                                         || op == IntrinsicSymbols.Float64_Mul;
-    private static bool IsDiv(Symbol op) => op == IntrinsicSymbols.Int32_Div
-                                         || op == IntrinsicSymbols.Float64_Div;
-    private static bool IsRem(Symbol op) => op == IntrinsicSymbols.Int32_Rem
-                                         || op == IntrinsicSymbols.Float64_Rem;
-    private static bool IsMod(Symbol op) => op == IntrinsicSymbols.Int32_Mod
-                                         || op == IntrinsicSymbols.Float64_Mod;
+    private static MetadataFieldSymbol? ExtractMetadataField(FieldSymbol field) => field switch
+    {
+        MetadataFieldSymbol m => m,
+        FieldInstanceSymbol i => ExtractMetadataField(i.GenericDefinition),
+        _ => null,
+    };
 }

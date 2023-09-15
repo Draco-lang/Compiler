@@ -31,12 +31,21 @@ public sealed class LanguageServerConnection
     private int lastMessageId = 0;
     private readonly ConcurrentDictionary<OneOf<int, string>, CancellationTokenSource> pendingIncomingRequests = new();
 
-    private static readonly JsonSerializerOptions jsonOptions = new()
+    private static readonly JsonSerializerOptions jsonSerializerOptions = new()
     {
         Converters =
         {
             new TupleConverter(),
             new UriConverter(),
+        }
+    };
+    private static readonly JsonSerializerOptions jsonDeserializerOptions = new()
+    {
+        Converters =
+        {
+            new TupleConverter(),
+            new UriConverter(),
+            new ModelInterfaceConverter(),
         }
     };
 
@@ -227,7 +236,7 @@ public sealed class LanguageServerConnection
                     buffer = buffer.Slice(reader.Position, reader.Position);
 
                     var jsonReader = new Utf8JsonReader(utf8Json);
-                    message = JsonSerializer.Deserialize<LspMessage>(ref jsonReader, jsonOptions);
+                    message = JsonSerializer.Deserialize<LspMessage>(ref jsonReader, jsonDeserializerOptions);
                     return true;
                 }
                 else
@@ -270,7 +279,7 @@ public sealed class LanguageServerConnection
 
         void WriteData()
         {
-            var response = JsonSerializer.SerializeToUtf8Bytes(message, jsonOptions);
+            var response = JsonSerializer.SerializeToUtf8Bytes(message, jsonSerializerOptions);
 
             var ContentLengthHeader = "Content-Length: "u8;
             var TwoNewLines = "\r\n\r\n"u8;
@@ -385,7 +394,7 @@ public sealed class LanguageServerConnection
             {
                 try
                 {
-                    args.Add(@params.Value.Deserialize(handler.DeclaredParamsType, jsonOptions));
+                    args.Add(@params.Value.Deserialize(handler.DeclaredParamsType, jsonDeserializerOptions));
                 }
                 catch (JsonException ex)
                 {
@@ -495,7 +504,7 @@ public sealed class LanguageServerConnection
         }
         else
         {
-            responseMessage.Result = JsonSerializer.SerializeToElement(response.As<object>(), jsonOptions);
+            responseMessage.Result = JsonSerializer.SerializeToElement(response.As<object>(), jsonSerializerOptions);
         }
 
         return responseMessage;
@@ -541,7 +550,7 @@ public sealed class LanguageServerConnection
 
     public void PostNotification(string method, object? @params)
     {
-        var serializedParams = JsonSerializer.SerializeToElement(@params, jsonOptions);
+        var serializedParams = JsonSerializer.SerializeToElement(@params, jsonSerializerOptions);
         this.outgoingMessages.Post(new NotificationMessage
         {
             Jsonrpc = "2.0",
@@ -554,7 +563,7 @@ public sealed class LanguageServerConnection
     {
         var id = Interlocked.Increment(ref this.lastMessageId);
 
-        var serializedParams = JsonSerializer.SerializeToElement(@params, jsonOptions);
+        var serializedParams = JsonSerializer.SerializeToElement(@params, jsonSerializerOptions);
         this.outgoingMessages.Post(new RequestMessage
         {
             Jsonrpc = "2.0",
@@ -587,7 +596,7 @@ public sealed class LanguageServerConnection
             response = responseMessage.Result;
         };
 
-        return response.Deserialize<TResponse>(jsonOptions);
+        return response.Deserialize<TResponse>(jsonDeserializerOptions);
     }
 
     public void Shutdown() => this.shutdownTokenSource.Cancel();

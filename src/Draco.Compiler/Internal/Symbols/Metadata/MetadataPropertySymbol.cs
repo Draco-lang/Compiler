@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Reflection.Metadata;
+using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -26,6 +28,28 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     public override bool IsIndexer => this.Name == ((IMetadataClass)this.ContainingSymbol).DefaultMemberAttributeName;
 
     public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
+
+    public override PropertySymbol? Override
+    {
+        get
+        {
+            if (!this.overrideNeedsBuild) return this.@override;
+            lock (this.overrideBuildLock)
+            {
+                if (this.overrideNeedsBuild) this.BuildOverride();
+                return this.@override;
+            }
+        }
+    }
+    private PropertySymbol? @override;
+    private volatile bool overrideNeedsBuild = true;
+    private readonly object overrideBuildLock = new();
+
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    private SymbolDocumentation? documentation;
+
+    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
+    private string? rawDocumentation;
 
     public override Symbol ContainingSymbol { get; }
 
@@ -64,4 +88,29 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
         var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
         return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, setter, this);
     }
+
+    private void BuildOverride()
+    {
+        var explicitOverride = this.GetExplicitOverride();
+        this.@override = this.ContainingSymbol is TypeSymbol type
+            ? explicitOverride ?? type.GetOverriddenSymbol(this)
+            : null;
+        // IMPORTANT: Write flag last
+        this.overrideNeedsBuild = false;
+    }
+
+    private PropertySymbol? GetExplicitOverride()
+    {
+        var accessor = this.Getter ?? this.Setter;
+        if (accessor is null) throw new InvalidOperationException();
+
+        if (accessor.Override is not null) return (accessor.Override as IPropertyAccessorSymbol)?.Property;
+        return null;
+    }
+
+    private SymbolDocumentation BuildDocumentation() =>
+        XmlDocumentationExtractor.Extract(this);
+
+    private string BuildRawDocumentation() =>
+        MetadataSymbol.GetDocumentation(this);
 }

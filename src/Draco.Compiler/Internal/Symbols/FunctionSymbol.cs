@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents a free-function.
 /// </summary>
-internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSymbol
+internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSymbol, IOverridableSymbol
 {
     /// <summary>
     /// Retrieves the name for the unary operator that is referenced by a given token.
@@ -100,6 +100,8 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     public TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
+    public virtual Symbol? Override => null;
+
     public override string ToString()
     {
         var result = new StringBuilder();
@@ -109,6 +111,27 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         result.AppendJoin(", ", this.Parameters);
         result.Append($"): {this.ReturnType}");
         return result.ToString();
+    }
+
+    public override bool CanBeShadowedBy(Symbol other)
+    {
+        if (other is not FunctionSymbol function) return false;
+        if (this.Name != function.Name) return false;
+        if (this.GenericParameters.Length != function.GenericParameters.Length) return false;
+        if (this.Parameters.Length != function.Parameters.Length) return false;
+        for (var i = 0; i < this.Parameters.Length; i++)
+        {
+            if (!SymbolEqualityComparer.AllowTypeVariables.Equals(this.Parameters[i].Type, function.Parameters[i].Type)) return false;
+            if (this.Parameters[i].IsVariadic != function.Parameters[i].IsVariadic) return false;
+        }
+        return true;
+    }
+
+    public bool CanBeOverriddenBy(IOverridableSymbol other)
+    {
+        if (other is not FunctionSymbol function) return false;
+        if (!this.CanBeShadowedBy(function)) return false;
+        return SymbolEqualityComparer.AllowTypeVariables.IsBaseOf(this.ReturnType, function.ReturnType);
     }
 
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

@@ -23,7 +23,14 @@ public sealed class WellKnownTypes
             var name = type.Name;
             var assembly = assemblies.FirstOrDefault(a => a.Name == type.Assembly)
                         ?? throw new InvalidOperationException($"well-known type {name} references assembly {type.Assembly}, which is not found");
-            types.Add(new(name, assembly, type.Symbol));
+            var wellKnownType = new WellKnownType(name, assembly);
+            types.Add(wellKnownType);
+
+            foreach (var intrinsic in type.Intrinsics)
+            {
+                var assocIntrinsic = new AssociatedIntrinsic(intrinsic.Name, intrinsic.IsValueType, wellKnownType);
+                wellKnownType.Intrinsics.Add(assocIntrinsic);
+            }
         }
 
         return new(assemblies, types);
@@ -76,12 +83,25 @@ public sealed class WellKnownType
 {
     public string Name { get; }
     public WellKnownAssembly Assembly { get; }
-    public string? Symbol { get; set; }
+    public IList<AssociatedIntrinsic> Intrinsics { get; } = new List<AssociatedIntrinsic>();
 
-    public WellKnownType(string name, WellKnownAssembly assembly, string? symbol)
+    public WellKnownType(string name, WellKnownAssembly assembly)
     {
         this.Name = name;
         this.Assembly = assembly;
-        this.Symbol = symbol;
+    }
+}
+
+public sealed class AssociatedIntrinsic
+{
+    public string Name { get; }
+    public bool IsValueType { get; }
+    public WellKnownType MetadataType { get; }
+
+    public AssociatedIntrinsic(string name, bool isValueType, WellKnownType metadataType)
+    {
+        this.Name = name;
+        this.IsValueType = isValueType;
+        this.MetadataType = metadataType;
     }
 }

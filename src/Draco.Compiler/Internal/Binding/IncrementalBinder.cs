@@ -84,8 +84,8 @@ public sealed partial class SemanticModel
             this.BindSymbol(syntax, () => base.BindType(syntax, diagnostics));
 
         // TODO: Hack
-        internal override void BindModuleSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.ModuleSymbol module) =>
-            this.semanticModel.symbolMap[syntax] = module;
+        internal override void BindSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.Symbol symbol) =>
+            this.semanticModel.symbolMap[syntax] = symbol;
 
         internal override void BindTypeSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.TypeSymbol type)
         {

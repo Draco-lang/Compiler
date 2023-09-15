@@ -6,10 +6,11 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
 
+[ClientCapability("TextDocument.Completion")]
 public interface ICodeCompletion
 {
-    [Capability(nameof(ServerCapabilities.CompletionProvider))]
-    public CompletionOptions? Capability => null;
+    [ServerCapability(nameof(ServerCapabilities.CompletionProvider))]
+    public ICompletionOptions Capability => this.CompletionRegistrationOptions;
 
     [RegistrationOptions("textDocument/completion")]
     public CompletionRegistrationOptions CompletionRegistrationOptions { get; }

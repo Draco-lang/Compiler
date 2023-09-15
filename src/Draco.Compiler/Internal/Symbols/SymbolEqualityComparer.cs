@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -16,6 +17,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     {
         None = 0,
         EquateGenericParameters = 1 << 0,
+        AllowTypeVariables = 1 << 1,
     }
 
     /// <summary>
@@ -28,11 +30,33 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     /// </summary>
     public static SymbolEqualityComparer SignatureMatch { get; } = new(ComparerFlags.EquateGenericParameters);
 
+    /// <summary>
+    /// A symbol equality comparer that equates type variables that are referentially equal.
+    /// </summary>
+    public static SymbolEqualityComparer AllowTypeVariables { get; } = new(ComparerFlags.AllowTypeVariables);
+
     private readonly ComparerFlags flags;
 
     private SymbolEqualityComparer(ComparerFlags flags)
     {
         this.flags = flags;
+    }
+
+    /// <summary>
+    /// Checks, if a type is a base of another.
+    /// </summary>
+    /// <param name="base">The type that is assumned to be the base of <paramref name="derived"/>.</param>
+    /// <param name="derived">The type that's assumed to be a subtype of <paramref name="base"/>.</param>
+    /// <returns>True, if <paramref name="base"/> is a base type of <paramref name="derived"/>.</returns>
+    public bool IsBaseOf(TypeSymbol @base, TypeSymbol derived)
+    {
+        @base = this.Unwrap(@base);
+        derived = this.Unwrap(derived);
+
+        if (@base is NeverTypeSymbol or ErrorTypeSymbol) return true;
+        if (derived is NeverTypeSymbol or ErrorTypeSymbol) return true;
+
+        return derived.BaseTypes.Contains(@base, this);
     }
 
     public bool Equals(Symbol? x, Symbol? y)
@@ -45,8 +69,8 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public bool Equals(TypeSymbol? x, TypeSymbol? y)
     {
-        if (x is TypeVariable xTypeVar) x = Unwrap(xTypeVar);
-        if (y is TypeVariable yTypeVar) y = Unwrap(yTypeVar);
+        x = this.Unwrap(x);
+        y = this.Unwrap(y);
 
         if (ReferenceEquals(x, y)) return true;
         if (x is null || y is null) return false;
@@ -88,7 +112,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public int GetHashCode([DisallowNull] TypeSymbol obj)
     {
-        if (obj is TypeVariable v) obj = Unwrap(v);
+        obj = this.Unwrap(obj);
 
         switch (obj)
         {
@@ -97,15 +121,16 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
         }
     }
 
-    /// <summary>
-    /// Unwraps the given type-variable.
-    /// </summary>
-    /// <param name="type">The type-variable to unwrap.</param>
-    /// <returns>The substitution of <paramref name="type"/>.</returns>
-    private static TypeSymbol Unwrap(TypeVariable type)
+    [return: NotNullIfNotNull(nameof(type))]
+    private TypeSymbol? Unwrap(TypeSymbol? type)
     {
+        if (type is null) return null;
+
         var unwrappedType = type.Substitution;
-        if (unwrappedType.IsTypeVariable) throw new InvalidOperationException("could not unwrap type variable");
+        if (!this.flags.HasFlag(ComparerFlags.AllowTypeVariables) && unwrappedType.IsTypeVariable)
+        {
+            throw new InvalidOperationException("could not unwrap type variable");
+        }
         return unwrappedType;
     }
 }

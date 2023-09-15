@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Draco.Compiler.Internal.Diagnostics;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -21,27 +19,14 @@ internal sealed class AwaitConstraint<TResult> : Constraint<TResult>
     public Func<TResult> Map { get; }
 
     public AwaitConstraint(
-        ConstraintSolver solver,
         Func<bool> awaited,
-        Func<TResult> map)
-        : base(solver)
+        Func<TResult> map,
+        ConstraintLocator locator)
+        : base(locator)
     {
         this.Awaited = awaited;
         this.Map = map;
     }
 
     public override string ToString() => $"Await({this.Awaited})";
-
-    public override IEnumerable<SolveState> Solve(DiagnosticBag diagnostics)
-    {
-        // Wait until resolved
-        while (!this.Awaited()) yield return SolveState.Stale;
-
-        // We can resolve the awaited promise
-        var mappedValue = this.Map();
-
-        // Resolve this promise
-        this.Promise.Resolve(mappedValue);
-        yield return SolveState.Solved;
-    }
 }

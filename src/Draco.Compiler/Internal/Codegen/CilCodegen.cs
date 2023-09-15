@@ -30,7 +30,6 @@ internal sealed class CilCodegen
         .Select(kv => kv.Value);
 
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
-    private WellKnownTypes WellKnownTypes => this.metadataCodegen.Compilation.WellKnownTypes;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
@@ -249,17 +248,8 @@ internal sealed class CilCodegen
             foreach (var index in storeElement.Indices) this.EncodePush(index);
             this.EncodePush(storeElement.Source);
 
-            var storedValueType = storeElement.Source.Type!.Substitution;
             // TODO: Not the prettiest...
             var targetStorageType = storeElement.TargetArray.Type!.Substitution.GenericArguments[0].Substitution;
-            var needsToBox = storedValueType.IsValueType && !targetStorageType.IsValueType;
-
-            if (needsToBox)
-            {
-                // We need to box it
-                this.InstructionEncoder.OpCode(ILOpCode.Box);
-                this.EncodeToken(storeElement.Source.Type!);
-            }
 
             if (storeElement.Indices.Count == 1)
             {
@@ -354,6 +344,17 @@ internal sealed class CilCodegen
             this.StoreLocal(arrLen.Target);
             break;
         }
+        case BoxInstruction box:
+        {
+            // Value to be boxed
+            this.EncodePush(box.Value);
+            // Box it
+            this.InstructionEncoder.OpCode(ILOpCode.Box);
+            this.EncodeToken(box.Value.Type!);
+            // Sore result
+            this.StoreLocal(box.Target);
+            break;
+        }
         default:
             throw new ArgumentOutOfRangeException(nameof(instruction));
         }
@@ -407,6 +408,20 @@ internal sealed class CilCodegen
             break;
         case SymbolReference s when s.Symbol is ModuleSymbol module:
             this.InstructionEncoder.Token(this.GetHandle(module));
+            break;
+        case Address a:
+            switch (a.Operand)
+            {
+            case Local local:
+            {
+                var index = this.GetLocalIndex(local);
+                if (index is null) break;
+                this.InstructionEncoder.LoadLocalAddress(index.Value);
+                break;
+            }
+            default:
+                throw new NotImplementedException();
+            }
             break;
         case Constant c:
             switch (c.Value)

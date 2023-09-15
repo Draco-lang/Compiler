@@ -173,4 +173,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "the variadic parameter {0} must be last in the parameter list",
         code: Code(18));
+
+    /// <summary>
+    /// The member is not a gettable property.
+    /// </summary>
+    public static readonly DiagnosticTemplate NotGettableProperty = DiagnosticTemplate.Create(
+        title: "not a gettable property",
+        severity: DiagnosticSeverity.Error,
+        format: "the member {0} must be a gettable property",
+        code: Code(19));
 }

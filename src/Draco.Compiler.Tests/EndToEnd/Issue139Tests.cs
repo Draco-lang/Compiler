@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Declarations;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
@@ -194,6 +195,9 @@ public sealed class Issue139Tests
         """")]
     [InlineData("public import Foo")]
     [InlineData("label:")]
+    [InlineData("""
+        func foo(): string = "\{0}";
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {
@@ -205,5 +209,11 @@ public sealed class Issue139Tests
                 .ToImmutableArray());
         _ = compilation.Diagnostics.ToList();
         compilation.Emit(peStream: new MemoryStream());
+    }
+
+    [Fact]
+    public void EmptyDeclarationTableDoesNotCrash()
+    {
+        _ = DeclarationTable.Empty;
     }
 }

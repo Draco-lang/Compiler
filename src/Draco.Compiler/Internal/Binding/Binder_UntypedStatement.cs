@@ -80,7 +80,7 @@ internal partial class Binder
 
         this.ConstraintReturnType(syntax.Value, value, constraints);
 
-        return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax.Value, value));
+        return new UntypedExpressionStatement(syntax, new UntypedReturnExpression(syntax, value));
     }
 
     private UntypedStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -107,10 +107,7 @@ internal partial class Binder
         if (value is not null)
         {
             // It has to be assignable
-            constraints
-                .Assignable(declaredType, value.TypeRequired)
-                .ConfigureDiagnostic(diag => diag
-                    .WithLocation(syntax.Value!.Value.Location));
+            constraints.Assignable(declaredType, value.TypeRequired, syntax.Value!.Value);
         }
 
         return new UntypedLocalDeclaration(syntax, localSymbol, value);

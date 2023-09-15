@@ -24,6 +24,11 @@ internal abstract partial class Binder
     internal Compilation Compilation { get; }
 
     /// <summary>
+    /// Utility accessor for intrinsics.
+    /// </summary>
+    protected IntrinsicSymbols IntrinsicSymbols => this.Compilation.IntrinsicSymbols;
+
+    /// <summary>
     /// The parent binder of this one.
     /// </summary>
     internal Binder? Parent { get; }
@@ -95,10 +100,7 @@ internal abstract partial class Binder
         // Add assignability constraint, if needed
         if (untypedValue is not null)
         {
-            constraints
-                .Assignable(declaredType, untypedValue.TypeRequired)
-                .ConfigureDiagnostic(diag => diag
-                    .WithLocation(global.DeclaringSyntax.Value!.Value.Location));
+            constraints.Assignable(declaredType, untypedValue.TypeRequired, global.DeclaringSyntax.Value!.Value);
         }
 
         // Solve
@@ -129,10 +131,11 @@ internal abstract partial class Binder
     // We essentially use this to notify incremental binder that a left-hand side of a module or a type access
     // will be erased, won't be present in the bound tree.
     // Once we start modeling module member access without throwing it away, we can get rid of it.
-    internal virtual void BindModuleSyntaxToSymbol(SyntaxNode syntax, ModuleSymbol module) { }
+    // In addition, this is used by for-loops too to associate the iterator with its symbol
+    internal virtual void BindSyntaxToSymbol(SyntaxNode syntax, Symbol module) { }
     internal virtual void BindTypeSyntaxToSymbol(SyntaxNode syntax, TypeSymbol type) { }
 
-    private FunctionSymbol GetGetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    private static FunctionSymbol GetGetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
     {
         var result = prop.Getter;
         if (result is null)
@@ -146,7 +149,7 @@ internal abstract partial class Binder
         return result;
     }
 
-    private FunctionSymbol GetSetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
+    private static FunctionSymbol GetSetterSymbol(SyntaxNode? syntax, PropertySymbol prop, DiagnosticBag diags)
     {
         var result = prop.Setter;
         if (result is null)

@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -82,9 +83,7 @@ internal partial class Binder
         else
         {
             // Value, add constraint
-            var promise = constraints.Member(left.TypeRequired, memberName, out var memberType);
-            promise.ConfigureDiagnostic(diag => diag
-                .WithLocation(syntax.Location));
+            var promise = constraints.Member(left.TypeRequired, memberName, out var memberType, syntax);
             return new UntypedMemberLvalue(syntax, left, promise, memberType);
         }
     }
@@ -99,14 +98,14 @@ internal partial class Binder
         return new UntypedIllegalLvalue(syntax);
     }
 
-    private UntypedLvalue BindIndexLvalue(IndexExpressionSyntax index, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private UntypedLvalue BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var receiver = this.BindExpression(index.Indexed, constraints, diagnostics);
+        var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
         if (receiver is UntypedReferenceErrorExpression err)
         {
-            return new UntypedIllegalLvalue(index);
+            return new UntypedIllegalLvalue(syntax);
         }
-        var args = index.IndexList.Values
+        var args = syntax.IndexList.Values
             .Select(x => this.BindExpression(x, constraints, diagnostics))
             .ToImmutableArray();
         var returnType = constraints.AllocateTypeVariable();
@@ -126,25 +125,22 @@ internal partial class Binder
             {
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.NoSettableIndexerInType,
-                    location: index.Location,
+                    location: syntax.Location,
                     formatArgs: receiverType));
-                constraints.Unify(returnType, new ErrorTypeSymbol("<error>"));
+                constraints.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }
             var overloaded = constraints.Overload(
+                "operator[]",
                 indexers,
                 args.Append(returnType as object).ToImmutableArray(),
-                out var gotReturnType);
-            constraints.Unify(returnType, gotReturnType);
-            overloaded.ConfigureDiagnostic(diag => diag
-                .WithLocation(index.Location));
+                // NOTE: We don't care about the return type, this is an lvalue
+                out _,
+                syntax);
             return overloaded;
-        }).Unwrap();
+        }, syntax).Unwrap();
 
-        promise.ConfigureDiagnostic(diag => diag
-            .WithLocation(index.Location));
-
-        return new UntypedIndexSetLvalue(index, receiver, promise, args, returnType);
+        return new UntypedIndexSetLvalue(syntax, receiver, promise, args, returnType);
     }
 
     private UntypedLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -154,7 +150,7 @@ internal partial class Binder
         case FieldSymbol field:
             return new UntypedFieldLvalue(syntax, null, field);
         case PropertySymbol prop:
-            var setter = this.GetSetterSymbol(syntax, prop, diagnostics);
+            var setter = GetSetterSymbol(syntax, prop, diagnostics);
             return new UntypedPropertySetLvalue(syntax, null, setter);
         default:
             // NOTE: The error is already reported

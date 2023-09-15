@@ -119,7 +119,8 @@ internal static class BinderFacts
         or ModuleDeclarationSyntax
         or FunctionBodySyntax
         or BlockExpressionSyntax
-        or WhileExpressionSyntax;
+        or WhileExpressionSyntax
+        or ForExpressionSyntax;
 
     /// <summary>
     /// Checks, if a given syntax node defines a symbol.
@@ -151,4 +152,61 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="node"/> must not reference a type.</returns>
     public static bool SyntaxMustNotReferenceTypes(SyntaxNode node) =>
         node.Parent is CallExpressionSyntax || (node.Parent is GenericExpressionSyntax && node.Parent.Parent is CallExpressionSyntax);
+
+    /// <summary>
+    /// Checks, if a literal value has a corresponding type.
+    /// </summary>
+    /// <param name="value">The literal value.</param>
+    /// <param name="intrinsics">The intrinsics from the compilation.</param>
+    /// <param name="type">The type of the literal, if could be determined.</param>
+    /// <returns>True, if the <paramref name="type"/> of <paramref name="value"/> could be determined,
+    /// false otherwise.</returns>
+    public static bool TryGetLiteralType(
+        object? value,
+        IntrinsicSymbols intrinsics,
+        [MaybeNullWhen(false)] out TypeSymbol type)
+    {
+        switch (value)
+        {
+        case bool:
+            type = intrinsics.Bool;
+            return true;
+        case byte:
+            type = intrinsics.Uint8;
+            return true;
+        case ushort:
+            type = intrinsics.Uint16;
+            return true;
+        case uint:
+            type = intrinsics.Uint32;
+            return true;
+        case ulong:
+            type = intrinsics.Uint64;
+            return true;
+        case sbyte:
+            type = intrinsics.Int8;
+            return true;
+        case short:
+            type = intrinsics.Int16;
+            return true;
+        case int:
+            type = intrinsics.Int32;
+            return true;
+        case long:
+            type = intrinsics.Int64;
+            return true;
+        case float:
+            type = intrinsics.Float32;
+            return true;
+        case double:
+            type = intrinsics.Float64;
+            return true;
+        case string:
+            type = intrinsics.String;
+            return true;
+        default:
+            type = null;
+            return false;
+        }
+    }
 }

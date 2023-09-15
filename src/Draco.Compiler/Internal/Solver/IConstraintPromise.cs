@@ -1,7 +1,3 @@
-using System;
-using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Internal.Diagnostics;
-
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
@@ -20,13 +16,6 @@ internal interface IConstraintPromise
     /// True, if this promise is resolved, either ba succeeding or failing.
     /// </summary>
     public bool IsResolved { get; }
-
-    /// <summary>
-    /// Configures the diagnostic messages for the constraint of this promise in case it fails.
-    /// </summary>
-    /// <param name="configure">The configuration function.</param>
-    /// <returns>The promise instance.</returns>
-    public IConstraintPromise ConfigureDiagnostic(Action<Diagnostic.Builder> configure);
 }
 
 /// <summary>
@@ -55,11 +44,5 @@ internal interface IConstraintPromise<TResult> : IConstraintPromise
     /// Fails this constraint, reporting the error.
     /// </summary>
     /// <param name="result">The result for the failure.</param>
-    /// <param name="diagnostics">The diagnostics to report to, if needed.</param>
-    public void Fail(TResult result, DiagnosticBag? diagnostics);
-
-    /// <summary>
-    /// <see cref="IConstraintPromise.ConfigureDiagnostic(Action{Diagnostic.Builder})"/>.
-    /// </summary>
-    public new IConstraintPromise<TResult> ConfigureDiagnostic(Action<Diagnostic.Builder> configure);
+    public void Fail(TResult result);
 }

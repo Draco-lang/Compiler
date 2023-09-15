@@ -115,8 +115,10 @@ public static partial class SyntaxFactory
     public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
         CompilationUnit(SyntaxList(decls), EndOfInput);
 
-    public static ModuleDeclarationSyntax ModuleDeclaration(string name, SyntaxList<DeclarationSyntax> declarations) =>
-        ModuleDeclaration(Module, Name(name), OpenBrace, declarations, CloseBrace);
+    public static ModuleDeclarationSyntax ModuleDeclaration(string name, IEnumerable<DeclarationSyntax> declarations) =>
+        ModuleDeclaration(Module, Name(name), OpenBrace, SyntaxList(declarations), CloseBrace);
+    public static ModuleDeclarationSyntax ModuleDeclaration(string name, params DeclarationSyntax[] declarations) =>
+        ModuleDeclaration(name, declarations.AsEnumerable());
 
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
         Import,
@@ -255,6 +257,29 @@ public static partial class SyntaxFactory
         CloseParen,
         body);
 
+    public static ForExpressionSyntax ForExpression(
+        string iterator,
+        TypeSyntax? elementType,
+        ExpressionSyntax sequence,
+        ExpressionSyntax body) => ForExpression(
+        For,
+        OpenParen,
+        Name(iterator),
+        elementType is null ? null : TypeSpecifier(Colon, elementType),
+        In,
+        sequence,
+        CloseParen,
+        body);
+
+    public static ForExpressionSyntax ForExpression(
+        string iterator,
+        ExpressionSyntax sequence,
+        ExpressionSyntax body) => ForExpression(
+        iterator,
+        null,
+        sequence,
+        body);
+
     public static CallExpressionSyntax CallExpression(
         ExpressionSyntax called,
         IEnumerable<ExpressionSyntax> args) => CallExpression(
@@ -316,6 +341,8 @@ public static partial class SyntaxFactory
     public static SyntaxToken Return { get; } = MakeToken(TokenKind.KeywordReturn);
     public static SyntaxToken If { get; } = MakeToken(TokenKind.KeywordIf);
     public static SyntaxToken While { get; } = MakeToken(TokenKind.KeywordWhile);
+    public static SyntaxToken For { get; } = MakeToken(TokenKind.KeywordFor);
+    public static SyntaxToken In { get; } = MakeToken(TokenKind.KeywordIn);
     public static SyntaxToken Else { get; } = MakeToken(TokenKind.KeywordElse);
     public static SyntaxToken Var { get; } = MakeToken(TokenKind.KeywordVar);
     public static SyntaxToken Val { get; } = MakeToken(TokenKind.KeywordVal);

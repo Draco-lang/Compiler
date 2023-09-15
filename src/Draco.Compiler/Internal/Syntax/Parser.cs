@@ -204,6 +204,7 @@ internal sealed class Parser
         TokenKind.KeywordReturn,
         TokenKind.KeywordTrue,
         TokenKind.KeywordWhile,
+        TokenKind.KeywordFor,
         TokenKind.ParenOpen,
         TokenKind.CurlyOpen,
         TokenKind.BracketOpen,
@@ -327,6 +328,7 @@ internal sealed class Parser
         case TokenKind.CurlyOpen:
         case TokenKind.KeywordIf:
         case TokenKind.KeywordWhile:
+        case TokenKind.KeywordFor:
         {
             var expr = this.ParseControlFlowExpression(ControlFlowContext.Stmt);
             return new ExpressionStatementSyntax(expr, null);
@@ -706,12 +708,14 @@ internal sealed class Parser
         var peekKind = this.Peek();
         Debug.Assert(peekKind is TokenKind.CurlyOpen
                               or TokenKind.KeywordIf
-                              or TokenKind.KeywordWhile);
+                              or TokenKind.KeywordWhile
+                              or TokenKind.KeywordFor);
         return peekKind switch
         {
             TokenKind.CurlyOpen => this.ParseBlockExpression(ctx),
             TokenKind.KeywordIf => this.ParseIfExpression(ctx),
             TokenKind.KeywordWhile => this.ParseWhileExpression(ctx),
+            TokenKind.KeywordFor => this.ParseForExpression(ctx),
             _ => throw new InvalidOperationException(),
         };
     }
@@ -778,6 +782,7 @@ internal sealed class Parser
             case TokenKind.CurlyOpen:
             case TokenKind.KeywordIf:
             case TokenKind.KeywordWhile:
+            case TokenKind.KeywordFor:
             {
                 var expr = this.ParseControlFlowExpression(ctx);
                 if (ctx == ControlFlowContext.Expr && this.Peek() == TokenKind.CurlyClose)
@@ -871,6 +876,26 @@ internal sealed class Parser
         var closeParen = this.Expect(TokenKind.ParenClose);
         var body = this.ParseControlFlowBody(ctx);
         return new(whileKeyword, openParen, condition, closeParen, body);
+    }
+
+    /// <summary>
+    /// Parses a for-expression.
+    /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
+    /// <returns>The parsed <see cref="ForExpressionSyntax"/>.</returns>
+    private ForExpressionSyntax ParseForExpression(ControlFlowContext ctx)
+    {
+        // for (i: T in seq) { ... }
+        var forKeyword = this.Expect(TokenKind.KeywordFor);
+        var openParen = this.Expect(TokenKind.ParenOpen);
+        var iterator = this.Expect(TokenKind.Identifier);
+        TypeSpecifierSyntax? elementType = null;
+        if (this.Peek() == TokenKind.Colon) elementType = this.ParseTypeSpecifier();
+        var inKeyword = this.Expect(TokenKind.KeywordIn);
+        var sequence = this.ParseExpression();
+        var closeParen = this.Expect(TokenKind.ParenClose);
+        var body = this.ParseControlFlowBody(ctx);
+        return new(forKeyword, openParen, iterator, elementType, inKeyword, sequence, closeParen, body);
     }
 
     /// <summary>
@@ -1043,6 +1068,7 @@ internal sealed class Parser
         case TokenKind.CurlyOpen:
         case TokenKind.KeywordIf:
         case TokenKind.KeywordWhile:
+        case TokenKind.KeywordFor:
             return this.ParseControlFlowExpression(ControlFlowContext.Expr);
         default:
         {

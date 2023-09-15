@@ -6,10 +6,11 @@ using Draco.Lsp.Model;
 
 namespace Draco.Lsp.Server.Language;
 
+[ClientCapability("TextDocument.Definition")]
 public interface IGotoDefinition
 {
-    [Capability(nameof(ServerCapabilities.DefinitionProvider))]
-    public DefinitionOptions? Capability => null;
+    [ServerCapability(nameof(ServerCapabilities.DefinitionProvider))]
+    public IDefinitionOptions Capability => this.GotoDefinitionRegistrationOptions;
 
     [RegistrationOptions("textDocument/definition")]
     public DefinitionRegistrationOptions GotoDefinitionRegistrationOptions { get; }

@@ -42,6 +42,7 @@ internal partial class Binder
         UntypedGotoExpression @goto => this.TypeGotoExpression(@goto, constraints, diagnostics),
         UntypedIfExpression @if => this.TypeIfExpression(@if, constraints, diagnostics),
         UntypedWhileExpression @while => this.TypeWhileExpression(@while, constraints, diagnostics),
+        UntypedForExpression @for => this.TypeForExpression(@for, constraints, diagnostics),
         UntypedCallExpression call => this.TypeCallExpression(call, constraints, diagnostics),
         UntypedIndirectCallExpression call => this.TypeIndirectCallExpression(call, constraints, diagnostics),
         UntypedAssignmentExpression assignment => this.TypeAssignmentExpression(assignment, constraints, diagnostics),
@@ -79,10 +80,13 @@ internal partial class Binder
         unit.Syntax is null ? BoundUnitExpression.Default : new BoundUnitExpression(unit.Syntax);
 
     private BoundExpression TypeLiteralExpression(UntypedLiteralExpression literal, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundLiteralExpression(literal.Syntax, literal.Value);
+        new BoundLiteralExpression(literal.Syntax, literal.Value, literal.TypeRequired);
 
     private BoundExpression TypeStringExpression(UntypedStringExpression str, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-        new BoundStringExpression(str.Syntax, str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray());
+        new BoundStringExpression(
+            str.Syntax,
+            str.Parts.Select(p => this.TypeStringPart(p, constraints, diagnostics)).ToImmutableArray(),
+            this.IntrinsicSymbols.String);
 
     private BoundStringPart TypeStringPart(UntypedStringPart part, ConstraintSolver constraints, DiagnosticBag diagnostics) => part switch
     {
@@ -179,6 +183,29 @@ internal partial class Binder
         return new BoundWhileExpression(@while.Syntax, typedCondition, typedThen, @while.ContinueLabel, @while.BreakLabel);
     }
 
+    private BoundExpression TypeForExpression(UntypedForExpression @for, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var iterator = constraints.GetTypedLocal(@for.Iterator, diagnostics);
+
+        // NOTE: Hack, see the note above this method definition
+        var iteratorSyntax = (@for.Syntax as ForExpressionSyntax)?.Iterator;
+        if (iteratorSyntax is not null) this.BindSyntaxToSymbol(iteratorSyntax, iterator);
+
+        var sequence = this.TypeExpression(@for.Sequence, constraints, diagnostics);
+        var then = this.TypeExpression(@for.Then, constraints, diagnostics);
+
+        return new BoundForExpression(
+            @for.Syntax,
+            iterator,
+            sequence,
+            then,
+            @for.ContinueLabel,
+            @for.BreakLabel,
+            @for.GetEnumeratorMethod.Result,
+            @for.MoveNextMethod.Result,
+            @for.CurrentProperty.Result);
+    }
+
     private BoundExpression TypeCallExpression(UntypedCallExpression call, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = call.Receiver is null ? null : this.TypeExpression(call.Receiver, constraints, diagnostics);
@@ -272,10 +299,10 @@ internal partial class Binder
                     : typedRight,
                 indices);
         }
-        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result[0] is PropertySymbol pr)
+        else if (assignment.Left is UntypedMemberLvalue mem && mem.Member.Result is PropertySymbol pr)
         {
             var receiver = this.TypeExpression(mem.Accessed, constraints, diagnostics);
-            var setter = this.GetSetterSymbol(assignment.Syntax, pr, diagnostics);
+            var setter = GetSetterSymbol(assignment.Syntax, pr, diagnostics);
             return new BoundPropertySetExpression(
                 assignment.Syntax,
                 receiver,
@@ -318,7 +345,7 @@ internal partial class Binder
         var comparisons = rel.Comparisons
             .Select(cmp => this.TypeComparison(cmp, constraints, diagnostics))
             .ToImmutableArray();
-        return new BoundRelationalExpression(rel.Syntax, first, comparisons);
+        return new BoundRelationalExpression(rel.Syntax, first, comparisons, this.IntrinsicSymbols.Bool);
     }
 
     private BoundComparison TypeComparison(UntypedComparison cmp, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -346,7 +373,7 @@ internal partial class Binder
     {
         var left = this.TypeExpression(mem.Accessed, constraints, diagnostics);
         var members = mem.Member.Result;
-        if (members.Length == 1 && members[0] is ITypedSymbol member)
+        if (members is ITypedSymbol member)
         {
             if (member is FieldSymbol field) return new BoundFieldExpression(mem.Syntax, left, field);
             if (member is PropertySymbol prop)
@@ -358,7 +385,7 @@ internal partial class Binder
                 }
                 else
                 {
-                    var getter = this.GetGetterSymbol(mem.Syntax, prop, diagnostics);
+                    var getter = GetGetterSymbol(mem.Syntax, prop, diagnostics);
                     return new BoundPropertyGetExpression(mem.Syntax, left, getter);
                 }
             }
@@ -370,7 +397,7 @@ internal partial class Binder
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
                 location: mem.Syntax?.Location,
-                formatArgs: members[0].Name));
+                formatArgs: members.Name));
             return new BoundUnexpectedExpression(mem.Syntax);
         }
     }
@@ -391,7 +418,7 @@ internal partial class Binder
         ImmutableArray<BoundExpression> args,
         DiagnosticBag diagnostics)
     {
-        var getter = this.GetGetterSymbol(syntax, prop, diagnostics);
+        var getter = GetGetterSymbol(syntax, prop, diagnostics);
         var getterCall = new BoundCallExpression(null, receiver, getter, args);
         return new BoundBinaryExpression(syntax, compoundOperator, getterCall, right, right.TypeRequired);
     }

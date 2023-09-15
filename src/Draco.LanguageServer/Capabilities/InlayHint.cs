@@ -51,6 +51,23 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                     Label = $": {varType}",
                 });
             }
+            else if (config.VariableTypes && node is ForExpressionSyntax @for)
+            {
+                if (@for.ElementType is not null) continue;
+
+                var symbol = semanticModel.GetDeclaredSymbol(@for.Iterator);
+                if (symbol is not IVariableSymbol varSymbol) continue;
+
+                var varType = varSymbol.Type;
+                var position = @for.Iterator.Range.End;
+
+                inlayHints.Add(new InlayHint()
+                {
+                    Position = Translator.ToLsp(position),
+                    Kind = InlayHintKind.Type,
+                    Label = $": {varType}",
+                });
+            }
             else if (config.ParameterNames && node is CallExpressionSyntax call)
             {
                 var symbol = semanticModel.GetReferencedSymbol(call.Function);

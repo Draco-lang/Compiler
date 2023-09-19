@@ -18,17 +18,13 @@ public class LexerBenchmarks : FolderBenchmarkBase
     {
     }
 
-    [GlobalSetup]
-    public void Setup()
+    [Benchmark]
+    public void Lex()
     {
         var sourceReader = SourceReader.From(this.Input.Code);
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
         this.lexer = new Lexer(sourceReader, syntaxDiagnostics);
-    }
 
-    [Benchmark]
-    public void Lex()
-    {
         while (true)
         {
             var token = this.lexer.Lex();

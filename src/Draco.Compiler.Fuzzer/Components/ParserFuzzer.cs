@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Fuzzer.Generators;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Trace;
 
 namespace Draco.Compiler.Fuzzer.Components;
 

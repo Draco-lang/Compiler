@@ -1,6 +1,7 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Fuzzer.Generators;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Trace;
 
 namespace Draco.Compiler.Fuzzer.Components;
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Trace;
 using CompilationUnitSyntax = Draco.Compiler.Internal.Syntax.CompilationUnitSyntax;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
@@ -31,7 +32,7 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
     {
         var sourceReader = SourceReader.From(this.Input.Code);
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
-        this.lexer = new Lexer(sourceReader, syntaxDiagnostics);
+        this.lexer = new Lexer(sourceReader, syntaxDiagnostics, tracer: Tracer.Null);
     }
 
     [IterationSetup(Target = nameof(Parse))]
@@ -39,7 +40,7 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
     {
         var tokenSource = TokenSource.From(this.tokens.AsMemory());
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
-        this.parser = new Parser(tokenSource, syntaxDiagnostics);
+        this.parser = new Parser(tokenSource, syntaxDiagnostics, tracer: Tracer.Null);
     }
 
     [IterationSetup(Target = nameof(ParseWithStreamingLexer))]
@@ -48,10 +49,10 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
 
         var sourceReader = SourceReader.From(this.Input.Code);
-        this.lexer = new Lexer(sourceReader, syntaxDiagnostics);
+        this.lexer = new Lexer(sourceReader, syntaxDiagnostics, tracer: Tracer.Null);
 
         var tokenSource = TokenSource.From(this.lexer);
-        this.parser = new Parser(tokenSource, syntaxDiagnostics);
+        this.parser = new Parser(tokenSource, syntaxDiagnostics, tracer: Tracer.Null);
     }
 
     [Benchmark]
@@ -79,7 +80,7 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
     {
         var sourceReader = SourceReader.From(parameter.Code);
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
-        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
+        var lexer = new Lexer(sourceReader, syntaxDiagnostics, tracer: Tracer.Null);
 
         var result = new List<SyntaxToken>();
 

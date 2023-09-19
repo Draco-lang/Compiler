@@ -2,9 +2,9 @@ using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
-using Draco.Fuzzer.Generators;
+using Draco.Compiler.Fuzzer.Generators;
 
-namespace Draco.Fuzzer.Components;
+namespace Draco.Compiler.Fuzzer.Components;
 
 /// <summary>
 /// Fuzzes the compiler end-to-end.

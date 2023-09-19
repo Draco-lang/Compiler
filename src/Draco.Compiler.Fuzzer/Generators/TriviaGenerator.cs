@@ -1,7 +1,7 @@
 using Draco.Compiler.Api.Syntax;
 using SyntaxTrivia = Draco.Compiler.Internal.Syntax.SyntaxTrivia;
 
-namespace Draco.Fuzzer.Generators;
+namespace Draco.Compiler.Fuzzer.Generators;
 
 /// <summary>
 /// Generates a random valid syntax trivia.

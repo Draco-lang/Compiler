@@ -9,13 +9,21 @@ namespace Draco.Compiler.Benchmarks;
 
 public class E2eBenchmarks : FolderBenchmarkBase
 {
+    private MemoryStream peStream = null!;
+
     public E2eBenchmarks()
         : base("e2e")
     {
     }
 
+    [IterationSetup]
+    public void Setup()
+    {
+        this.peStream = new();
+    }
+
     [Benchmark]
-    public void Compile()
+    public EmitResult Compile()
     {
         var syntaxTree = SyntaxTree.Parse(this.Input.Code, Path.GetFullPath(this.Input.Path));
         var compilation = Compilation.Create(
@@ -23,7 +31,6 @@ public class E2eBenchmarks : FolderBenchmarkBase
             metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
-        var peStream = new MemoryStream();
-        _ = compilation.Emit(peStream: peStream);
+        return compilation.Emit(peStream: this.peStream);
     }
 }

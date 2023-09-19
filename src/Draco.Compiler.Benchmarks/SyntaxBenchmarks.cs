@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
+using CompilationUnitSyntax = Draco.Compiler.Internal.Syntax.CompilationUnitSyntax;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Benchmarks;
@@ -11,56 +12,70 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
 {
     private SyntaxToken[] tokens = null!;
 
+    private Lexer lexer = null!;
+    private Parser parser = null!;
+
     public SyntaxBenchmarks()
         : base("syntax")
     {
     }
 
     [GlobalSetup]
-    public void Setup()
+    public void GlobalSetup()
     {
-        this.tokens = Lex(this.Input);
+        this.tokens = LexFromBenchmarkParameter(this.Input);
     }
 
-    [Benchmark]
-    public void Lex()
+    [IterationSetup(Targets = new[] { nameof(Lex) })]
+    public void LexSetup()
     {
         var sourceReader = SourceReader.From(this.Input.Code);
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
-        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
-
-        while (true)
-        {
-            var token = lexer.Lex();
-            if (token.Kind == TokenKind.EndOfInput) break;
-        }
+        this.lexer = new Lexer(sourceReader, syntaxDiagnostics);
     }
 
-    [Benchmark]
-    public void Parse()
+    [IterationSetup(Targets = new[] { nameof(Parse) })]
+    public void ParseSetup()
     {
         var tokenSource = TokenSource.From(this.tokens.AsMemory());
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
-        var parser = new Parser(tokenSource, syntaxDiagnostics);
-
-        _ = parser.ParseCompilationUnit();
+        this.parser = new Parser(tokenSource, syntaxDiagnostics);
     }
 
-    [Benchmark]
-    public void ParseWithStreamingLexer()
+    [IterationSetup(Targets = new[] { nameof(ParseWithStreamingLexer) })]
+    public void ParseWithStreamingLexerSetup()
     {
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
 
         var sourceReader = SourceReader.From(this.Input.Code);
-        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
+        this.lexer = new Lexer(sourceReader, syntaxDiagnostics);
 
-        var tokenSource = TokenSource.From(lexer);
-        var parser = new Parser(tokenSource, syntaxDiagnostics);
-
-        _ = parser.ParseCompilationUnit();
+        var tokenSource = TokenSource.From(this.lexer);
+        this.parser = new Parser(tokenSource, syntaxDiagnostics);
     }
 
-    private static SyntaxToken[] Lex(SourceCodeParameter parameter)
+    [Benchmark]
+    public int Lex()
+    {
+        var count = 0;
+        while (true)
+        {
+            var token = this.lexer.Lex();
+            ++count;
+            if (token.Kind == TokenKind.EndOfInput) break;
+        }
+        return count;
+    }
+
+    [Benchmark]
+    public object Parse() =>
+        this.parser.ParseCompilationUnit();
+
+    [Benchmark]
+    public object ParseWithStreamingLexer() =>
+        this.parser.ParseCompilationUnit();
+
+    private static SyntaxToken[] LexFromBenchmarkParameter(SourceCodeParameter parameter)
     {
         var sourceReader = SourceReader.From(parameter.Code);
         var syntaxDiagnostics = new SyntaxDiagnosticTable();

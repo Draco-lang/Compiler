@@ -11,10 +11,8 @@ namespace Draco.Compiler.Benchmarks;
 
 public class LexerBenchmarks : FolderBenchmarkBase
 {
-    private Lexer lexer = null!;
-
     public LexerBenchmarks()
-        : base("lexer")
+        : base("syntax")
     {
     }
 
@@ -23,11 +21,11 @@ public class LexerBenchmarks : FolderBenchmarkBase
     {
         var sourceReader = SourceReader.From(this.Input.Code);
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
-        this.lexer = new Lexer(sourceReader, syntaxDiagnostics);
+        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
 
         while (true)
         {
-            var token = this.lexer.Lex();
+            var token = lexer.Lex();
             if (token.Kind == TokenKind.EndOfInput) break;
         }
     }

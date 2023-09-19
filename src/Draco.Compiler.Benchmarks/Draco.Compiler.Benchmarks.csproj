@@ -6,6 +6,17 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Copy benchmark inputs -->
+  <ItemGroup>
+    <Content Include="benchmarks\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.8" />
   </ItemGroup>

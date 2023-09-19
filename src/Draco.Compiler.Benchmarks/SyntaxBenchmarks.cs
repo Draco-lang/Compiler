@@ -26,7 +26,7 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
         this.tokens = LexFromBenchmarkParameter(this.Input);
     }
 
-    [IterationSetup(Targets = new[] { nameof(Lex) })]
+    [IterationSetup(Target = nameof(Lex))]
     public void LexSetup()
     {
         var sourceReader = SourceReader.From(this.Input.Code);
@@ -34,7 +34,7 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
         this.lexer = new Lexer(sourceReader, syntaxDiagnostics);
     }
 
-    [IterationSetup(Targets = new[] { nameof(Parse) })]
+    [IterationSetup(Target = nameof(Parse))]
     public void ParseSetup()
     {
         var tokenSource = TokenSource.From(this.tokens.AsMemory());
@@ -42,7 +42,7 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
         this.parser = new Parser(tokenSource, syntaxDiagnostics);
     }
 
-    [IterationSetup(Targets = new[] { nameof(ParseWithStreamingLexer) })]
+    [IterationSetup(Target = nameof(ParseWithStreamingLexer))]
     public void ParseWithStreamingLexerSetup()
     {
         var syntaxDiagnostics = new SyntaxDiagnosticTable();

@@ -1,7 +1,7 @@
 using System.CommandLine;
-using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Fuzzer.Components;
 using Draco.Compiler.Fuzzer.Generators;
+using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Fuzzer;
 

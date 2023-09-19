@@ -10,11 +10,11 @@ using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Benchmarks;
 
-public class ParserBenchmarks : FolderBenchmarkBase
+public class SyntaxBenchmarks : FolderBenchmarkBase
 {
     private SyntaxToken[] tokens = null!;
 
-    public ParserBenchmarks()
+    public SyntaxBenchmarks()
         : base("syntax")
     {
     }
@@ -23,6 +23,20 @@ public class ParserBenchmarks : FolderBenchmarkBase
     public void Setup()
     {
         this.tokens = Lex(this.Input);
+    }
+
+    [Benchmark]
+    public void Lex()
+    {
+        var sourceReader = SourceReader.From(this.Input.Code);
+        var syntaxDiagnostics = new SyntaxDiagnosticTable();
+        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
+
+        while (true)
+        {
+            var token = lexer.Lex();
+            if (token.Kind == TokenKind.EndOfInput) break;
+        }
     }
 
     [Benchmark]

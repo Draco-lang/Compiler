@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.8" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net70" Version="1.4.1" />
   </ItemGroup>
 
 </Project>

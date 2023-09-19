@@ -1,4 +1,4 @@
-namespace Draco.Fuzzer.Generators;
+namespace Draco.Compiler.Fuzzer.Generators;
 
 /// <summary>
 /// Character set constants.

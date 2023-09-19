@@ -3,7 +3,7 @@ using Draco.Compiler.Api.Syntax;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 using SyntaxTrivia = Draco.Compiler.Internal.Syntax.SyntaxTrivia;
 
-namespace Draco.Fuzzer.Generators;
+namespace Draco.Compiler.Fuzzer.Generators;
 
 /// <summary>
 /// Generates a random valid token.

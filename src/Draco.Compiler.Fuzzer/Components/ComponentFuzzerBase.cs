@@ -1,6 +1,6 @@
-using Draco.Fuzzer.Generators;
+using Draco.Compiler.Fuzzer.Generators;
 
-namespace Draco.Fuzzer.Components;
+namespace Draco.Compiler.Fuzzer.Components;
 
 /// <summary>
 /// Utility base-class for component fuzzers.

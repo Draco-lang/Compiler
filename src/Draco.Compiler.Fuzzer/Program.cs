@@ -1,9 +1,9 @@
 using System.CommandLine;
 using Draco.Compiler.Internal.Syntax;
-using Draco.Fuzzer.Components;
-using Draco.Fuzzer.Generators;
+using Draco.Compiler.Fuzzer.Components;
+using Draco.Compiler.Fuzzer.Generators;
 
-namespace Draco.Fuzzer;
+namespace Draco.Compiler.Fuzzer;
 
 internal static class Program
 {

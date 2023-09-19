@@ -1,9 +1,8 @@
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Fuzzer.Generators;
 using Draco.Compiler.Internal.Syntax;
-using Draco.Fuzzer.Generators;
-using Draco.Trace;
 
-namespace Draco.Fuzzer.Components;
+namespace Draco.Compiler.Fuzzer.Components;
 
 /// <summary>
 /// Fuzzes the lexer.

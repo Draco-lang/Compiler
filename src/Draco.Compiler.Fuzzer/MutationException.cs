@@ -1,4 +1,4 @@
-namespace Draco.Fuzzer;
+namespace Draco.Compiler.Fuzzer;
 
 /// <summary>
 /// Represents an exception coming from an incremental change.

@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Draco.Fuzzer.Generators;
+namespace Draco.Compiler.Fuzzer.Generators;
 
 /// <summary>
 /// An <see cref="IGenerator{T}"/> that generates a sequence based on another generator.

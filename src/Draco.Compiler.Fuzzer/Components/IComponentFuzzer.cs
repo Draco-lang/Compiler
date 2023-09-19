@@ -1,4 +1,4 @@
-namespace Draco.Fuzzer.Components;
+namespace Draco.Compiler.Fuzzer.Components;
 
 /// <summary>
 /// Represents the fuzzer of a compiler component.

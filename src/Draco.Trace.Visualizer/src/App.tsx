@@ -1,8 +1,8 @@
 import React from 'react';
-import BarChart from './BarChart'
+import TimelineGraph from './TimelineGraph'
 
 function App() {
-  return ( <BarChart /> );
+  return ( <TimelineGraph /> );
 }
 
 export default App;

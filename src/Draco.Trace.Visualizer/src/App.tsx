@@ -1,11 +1,8 @@
 import React from 'react';
+import BarChart from './BarChart'
 
 function App() {
-  return (
-    <p>
-      Hello, React.
-    </p>
-  );
+  return ( <BarChart /> );
 }
 
 export default App;

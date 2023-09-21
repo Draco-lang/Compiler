@@ -81,15 +81,19 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
     const zoom = d3
         .zoom()
         .on('zoom', e => {
+            const transition = d3
+                .transition()
+                .duration(100);
             const {k, x, y} = e.transform;
-            console.log(`x = ${x}, k = ${k}`);
             svg
                 .selectAll('g')
                 .select('rect')
+                .transition(transition)
                 .attr('transform', `translate(${x} 0) scale(${k} 1)`);
             svg
                 .selectAll('g')
                 .select('text')
+                .transition(transition)
                 .attr('transform', (node: any) => {
                     let target = node.target || node;
                     return `translate(${x + (k - 1) * ((target.x0 + target.x1) / 2)} 0)`;
@@ -98,7 +102,7 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
 
     svg.call(zoom as any);
 
-    allRects.on('click', function (svg, node) {
+    allRects.on('click', function (element, node) {
         focus(node);
 
         const transition = d3

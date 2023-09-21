@@ -26,7 +26,7 @@ const TimelineGraph = (props: Props) => {
             .attr('height', height);
 
         const messageHierarchy = d3.hierarchy(toTimelineMessage(data.rootMessage), getTimelineChildren);
-        messageHierarchy.each(node => (node as any).value = getTimeSpan(node.data));
+        messageHierarchy.sum(node => node.children && node.children.length > 0 ? 0 : getTimeSpan(node));
 
         const partitionLayout = d3
             .partition<TimelineMessageModel>()
@@ -93,6 +93,15 @@ function toTimelineMessage(msg: MessageModel): TimelineMessageModel {
 }
 
 function getTimelineChildren(msg: MessageModel): TimelineMessageModel[] {
+    function makePlaceholder(startTime: number, endTime: number): TimelineMessageModel {
+        return {
+            name: '',
+            startTime,
+            endTime,
+            isPlaceholder: true,
+        };
+    }
+
     if (!msg.children || msg.children.length === 0) return [];
 
     const result = [];
@@ -100,12 +109,7 @@ function getTimelineChildren(msg: MessageModel): TimelineMessageModel[] {
     // Check the gap between first child and parent
     if (msg.startTime < msg.children[0].startTime) {
         // Push placeholder
-        result.push({
-            name: '',
-            startTime: msg.startTime,
-            endTime: msg.children[0].startTime,
-            isPlaceholder: true,
-        });
+        result.push(makePlaceholder(msg.startTime, msg.children[0].startTime));
     }
 
     for (let i = 0; i < msg.children.length; ++i) {
@@ -126,6 +130,12 @@ function getTimelineChildren(msg: MessageModel): TimelineMessageModel[] {
                 });
             }
         }
+    }
+
+    // Check the gap between last child and parent
+    if (msg.children[msg.children.length - 1].endTime < msg.endTime) {
+        // Push placeholder
+        result.push(makePlaceholder(msg.children[msg.children.length - 1].endTime, msg.endTime));
     }
 
     return result;

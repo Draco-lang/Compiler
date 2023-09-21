@@ -1,5 +1,4 @@
 import * as d3 from "d3";
-import * as d3scale from "d3-scale";
 import React from "react";
 import { MessageModel, ThreadModel, TraceModel } from "./Model";
 

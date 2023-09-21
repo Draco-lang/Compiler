@@ -44,10 +44,10 @@ const TimelineGraph = (props: Props) => {
 
         allNodes
             .append('rect')
-            .attr('x', node => (node as any).x0)
-            .attr('y', node => height - (node as any).y1)
-            .attr('width', node => (node as any).x1 - (node as any).x0)
-            .attr('height', node => (node as any).y1 - (node as any).y0)
+            .attr('x', (node: any) => node.x0)
+            .attr('y', (node: any) => height - node.y1)
+            .attr('width', (node: any) => node.x1 - node.x0)
+            .attr('height', (node: any) => node.y1 - node.y0)
             .attr('fill', node => {
                 if (node.data.isPlaceholder) return 'transparent';
                 const fillPercentage = node.parent
@@ -66,8 +66,8 @@ const TimelineGraph = (props: Props) => {
             .attr('color', 'black')
             .attr('dominant-baseline', 'middle')
             .attr('text-anchor', 'middle')
-            .attr('x', node => (node as any).x0 + ((node as any).x1 - (node as any).x0) / 2)
-            .attr('y', node => height - (node as any).y1 + ((node as any).y1 - (node as any).y0) / 2);
+            .attr('x', (node: any) => node.x0 + (node.x1 - node.x0) / 2)
+            .attr('y', (node: any) => height - node.y1 + (node.y1 - node.y0) / 2);
     }, [data, width, height]);
 
     return (

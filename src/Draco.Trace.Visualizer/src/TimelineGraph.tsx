@@ -33,22 +33,22 @@ const TimelineGraph = (props: Props) => {
             .size([width, height])
             .padding(2);
 
-        partitionLayout(messageHierarchy);
+        let laidOutMessages = partitionLayout(messageHierarchy);
 
         const colorScale = d3.interpolateHsl('green', 'red');
 
         const allNodes = svg
             .selectAll('g')
-            .data(messageHierarchy.descendants())
+            .data(laidOutMessages.descendants())
             .enter()
             .append('g');
 
         allNodes
             .append('rect')
-            .attr('x', (node: any) => node.x0)
-            .attr('y', (node: any) => height - node.y1)
-            .attr('width', (node: any) => node.x1 - node.x0)
-            .attr('height', (node: any) => node.y1 - node.y0)
+            .attr('x', node => node.x0)
+            .attr('y', node => height - node.y1)
+            .attr('width', node => node.x1 - node.x0)
+            .attr('height', node => node.y1 - node.y0)
             .attr('fill', node => {
                 if (node.data.isPlaceholder) return 'transparent';
                 const fillPercentage = node.parent
@@ -59,7 +59,7 @@ const TimelineGraph = (props: Props) => {
 
         const wideNodes = allNodes
             .filter(node => !node.data.isPlaceholder)
-            .filter(node => (node as any).x1 - (node as any).x0 > 5);
+            .filter(node => node.x1 - node.x0 > 5);
 
         wideNodes
             .append('text')
@@ -67,11 +67,22 @@ const TimelineGraph = (props: Props) => {
             .attr('color', 'black')
             .attr('dominant-baseline', 'middle')
             .attr('text-anchor', 'middle')
-            .attr('x', (node: any) => node.x0 + (node.x1 - node.x0) / 2)
-            .attr('y', (node: any) => height - node.y1 + (node.y1 - node.y0) / 2);
+            .attr('x', node => node.x0 + (node.x1 - node.x0) / 2)
+            .attr('y', node => height - node.y1 + (node.y1 - node.y0) / 2);
 
         allNodes.on('click', (svg, node) => {
             console.log(node.data.name);
+
+            const parent = node.parent;
+            if (!parent) return;
+            if (!parent.children) return;
+
+            for (let child of parent.children) {
+                if (child === node) continue;
+
+                child.data.startTime = 0;
+                child.data.endTime = 0;
+            }
         });
     }, [data, width, height]);
 

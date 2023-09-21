@@ -5,3 +5,5 @@ obj
 *.user
 **/Properties/launchSettings.json
 **/testenvironments.json
+
+/src/Draco.Trace.Visualizer/dist/

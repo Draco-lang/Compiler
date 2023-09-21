@@ -58,7 +58,7 @@ internal static class MetadataSymbol
         foreach (var attributeHandle in typeDefinition.GetCustomAttributes())
         {
             var attribute = reader.GetCustomAttribute(attributeHandle);
-            var typeProvider = new TypeProvider(compilation!);
+            var typeProvider = compilation.TypeProvider;
             switch (attribute.Constructor.Kind)
             {
             case HandleKind.MethodDefinition:

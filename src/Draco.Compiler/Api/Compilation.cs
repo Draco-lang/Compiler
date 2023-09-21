@@ -134,6 +134,11 @@ public sealed class Compilation : IBinderProvider
     internal WellKnownTypes WellKnownTypes { get; }
 
     /// <summary>
+    /// The type provider used for metadata references.
+    /// </summary>
+    internal TypeProvider TypeProvider { get; }
+
+    /// <summary>
     /// Intrinsicly defined symbols for the compilation.
     /// </summary>
     internal IntrinsicSymbols IntrinsicSymbols { get; }
@@ -153,6 +158,7 @@ public sealed class Compilation : IBinderProvider
         ModuleSymbol? sourceModule = null,
         DeclarationTable? declarationTable = null,
         WellKnownTypes? wellKnownTypes = null,
+        TypeProvider? typeProvider = null,
         IntrinsicSymbols? intrinsicSymbols = null,
         BinderCache? binderCache = null)
     {
@@ -166,6 +172,7 @@ public sealed class Compilation : IBinderProvider
         this.sourceModule = sourceModule;
         this.declarationTable = declarationTable;
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
+        this.TypeProvider = typeProvider ?? new TypeProvider(this);
         this.IntrinsicSymbols = intrinsicSymbols ?? new IntrinsicSymbols(this);
         this.binderCache = binderCache ?? new BinderCache(this);
     }

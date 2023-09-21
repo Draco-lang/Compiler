@@ -70,19 +70,20 @@ const TimelineGraph = (props: Props) => {
             .attr('x', node => node.x0 + (node.x1 - node.x0) / 2)
             .attr('y', node => height - node.y1 + (node.y1 - node.y0) / 2);
 
-        allNodes.on('click', (svg, node) => {
-            console.log(node.data.name);
-
-            const parent = node.parent;
-            if (!parent) return;
-            if (!parent.children) return;
-
-            for (let child of parent.children) {
-                if (child === node) continue;
-
-                child.data.startTime = 0;
-                child.data.endTime = 0;
-            }
+        allNodes.on('click', function (svg, node) {
+            d3
+                .select(this)
+                .select('rect')
+                .transition()
+                .duration(500)
+                .attr('width', (d: any) => width)
+                .attr('x', (d: any) => 0);
+            d3
+                .select(this)
+                .select('text')
+                .transition()
+                .duration(500)
+                .attr('x', (d: any) => width / 2);
         });
     }, [data, width, height]);
 

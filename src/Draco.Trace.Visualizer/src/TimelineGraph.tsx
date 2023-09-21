@@ -224,7 +224,7 @@ function getTimelineChildren(msg: MessageModel): TimelineMessageModel[] {
 
     if (!msg.children || msg.children.length === 0) return [];
 
-    const result = [];
+    const result = new Array<TimelineMessageModel>();
 
     // Check the gap between first child and parent
     if (msg.startTime < msg.children[0].startTime) {

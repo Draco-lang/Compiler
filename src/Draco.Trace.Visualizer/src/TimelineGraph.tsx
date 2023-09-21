@@ -6,6 +6,8 @@ type Props = {
     width: number;
     height: number;
     data: ThreadModel;
+    startColor?: any;
+    endColor?: any;
 };
 
 interface TimelineMessageModel extends MessageModel {
@@ -16,10 +18,8 @@ const TimelineGraph = (props: Props) => {
     const domRef = React.useRef(null);
 
     const [data, setData] = React.useState(props.data);
-    const [width, setWidth] = React.useState(props.width);
-    const [height, setHeight] = React.useState(props.height);
 
-    React.useEffect(() => buildGraph(domRef, props), [data, width, height]);
+    React.useEffect(() => buildGraph(domRef, props), [data]);
 
     return (
         <svg ref={domRef}>
@@ -31,7 +31,8 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
     const svg = d3
         .select(domRef.current)
         .attr('width', props.width)
-        .attr('height', props.height);
+        .attr('height', props.height)
+        .attr('cursor', 'grab');
 
     const messageHierarchy = d3.hierarchy(toTimelineMessage(props.data.rootMessage), getTimelineChildren);
     messageHierarchy.sum(node => node.children && node.children.length > 0 ? 0 : getTimeSpan(node));
@@ -43,7 +44,7 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
 
     let laidOutMessages = partitionLayout(messageHierarchy);
 
-    const colorScale = d3.interpolateHsl('green', 'red');
+    const colorScale = d3.interpolateHsl(props.startColor || 'green', props.endColor || 'red');
 
     // Groups of rect and text
     const allGroups = svg
@@ -76,6 +77,26 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
         .attr('text-anchor', 'middle')
         .attr('x', node => node.x0 + (node.x1 - node.x0) / 2)
         .attr('y', node => props.height - node.y1 + (node.y1 - node.y0) / 2);
+
+    const zoom = d3
+        .zoom()
+        .on('zoom', e => {
+            const {k, x, y} = e.transform;
+            console.log(`x = ${x}, k = ${k}`);
+            svg
+                .selectAll('g')
+                .select('rect')
+                .attr('transform', `translate(${x} 0) scale(${k} 1)`);
+            svg
+                .selectAll('g')
+                .select('text')
+                .attr('x', (node: any) => {
+                    let target = node.target || node;
+                    return node.x0 * k + x + (node.x1 - node.x0) * k / 2;
+                });
+        });
+
+    svg.call(zoom as any);
 
     allRects.on('click', function (svg, node) {
         focus(node);

@@ -100,15 +100,33 @@ function focus(node: d3.HierarchyRectangularNode<TimelineMessageModel>) {
         };
     }
 
+    function scaleUpChild(node: d3.HierarchyRectangularNode<TimelineMessageModel>, parent: any) {
+        const parentSpan = getTimeSpan(parent.data);
+        const startPercent = (node.data.startTime - parent.data.startTime) / parentSpan;
+        const endPercent = (node.data.endTime - parent.data.startTime) / parentSpan;
+        const parentSize = parent.target.x1 - parent.target.x0;
+
+        resize(node, parent.target.x0 + startPercent * parentSize, parent.target.x0 + endPercent * parentSize);
+
+        if (node.children) {
+            for (let child of node.children) scaleUpChild(child, node);
+        }
+    }
+
     // Find root
     let root = node;
     while (root.parent) root = root.parent;
 
     // Walk up the ancestry chain, expand
     let current = node;
-    while (current.parent) {
+    while (current) {
         resize(current, root.x0, root.x1);
-        current = current.parent;
+        current = current.parent!;
+    }
+
+    // Walk down, scale up children
+    if (node.children) {
+        for (let child of node.children) scaleUpChild(child, node);
     }
 }
 

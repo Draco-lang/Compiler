@@ -90,9 +90,9 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
             svg
                 .selectAll('g')
                 .select('text')
-                .attr('x', (node: any) => {
+                .attr('transform', (node: any) => {
                     let target = node.target || node;
-                    return node.x0 * k + x + (node.x1 - node.x0) * k / 2;
+                    return `translate(${x + (k - 1) * ((target.x0 + target.x1) / 2)} 0)`;
                 });
         });
 

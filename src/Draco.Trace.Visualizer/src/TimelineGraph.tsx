@@ -40,7 +40,8 @@ const TimelineGraph = (props: Props) => {
         const allNodes = svg
             .selectAll('g')
             .data(messageHierarchy.descendants())
-            .join('g');
+            .enter()
+            .append('g');
 
         allNodes
             .append('rect')

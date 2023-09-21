@@ -37,10 +37,13 @@ const TimelineGraph = (props: Props) => {
 
         const colorScale = d3.interpolateHsl('green', 'red');
 
-        svg
-            .selectAll('rect')
+        const allNodes = svg
+            .selectAll('g')
             .data(messageHierarchy.descendants())
-            .join('rect')
+            .join('g');
+
+        allNodes
+            .append('rect')
             .attr('x', node => (node as any).x0)
             .attr('y', node => height - (node as any).y1)
             .attr('width', node => (node as any).x1 - (node as any).x0)
@@ -52,6 +55,19 @@ const TimelineGraph = (props: Props) => {
                     : 1;
                 return colorScale(fillPercentage);
             });
+
+        const wideNodes = allNodes
+            .filter(node => !node.data.isPlaceholder)
+            .filter(node => (node as any).x1 - (node as any).x0 > 5);
+
+        wideNodes
+            .append('text')
+            .text(node => node.data.name)
+            .attr('color', 'black')
+            .attr('dominant-baseline', 'middle')
+            .attr('text-anchor', 'middle')
+            .attr('x', node => (node as any).x0 + ((node as any).x1 - (node as any).x0) / 2)
+            .attr('y', node => height - (node as any).y1 + ((node as any).y1 - (node as any).y0) / 2);
     }, [data, width, height]);
 
     return (

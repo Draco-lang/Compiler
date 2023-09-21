@@ -36,7 +36,7 @@ const TimelineGraph = (props: Props) => {
 
         partitionLayout(messageHierarchy);
 
-        const colorScale = d3scale.scaleLinear([0, 1], ['green', 'red']);
+        const colorScale = d3.interpolateHsl('green', 'red');
 
         svg
             .selectAll('rect')

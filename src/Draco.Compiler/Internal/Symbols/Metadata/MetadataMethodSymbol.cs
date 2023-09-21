@@ -145,8 +145,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             parameters: ImmutableArray.Create<object?>(this.Name));
 
         // Decode signature
-        var decoder = new TypeProvider(this.Assembly.Compilation);
-        var signature = this.methodDefinition.DecodeSignature(decoder, this);
+        var signature = this.methodDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
 
         // Build parameters
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
@@ -203,7 +202,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     {
         var definition = this.MetadataReader.GetMethodDefinition(methodDef);
         var name = this.MetadataReader.GetString(definition.Name);
-        var provider = new TypeProvider(this.Assembly.Compilation);
+        var provider = this.Assembly.Compilation.TypeProvider;
         var signature = definition.DecodeSignature(provider, this);
         var containingType = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
         return GetFunctionWithSignature(containingType, name, signature);
@@ -213,7 +212,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     {
         var reference = this.MetadataReader.GetMemberReference(methodRef);
         var name = this.MetadataReader.GetString(reference.Name);
-        var provider = new TypeProvider(this.Assembly.Compilation);
+        var provider = this.Assembly.Compilation.TypeProvider;
         var signature = reference.DecodeMethodSignature(provider, this);
         var containingType = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
         return GetFunctionWithSignature(containingType, name, signature);

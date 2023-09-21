@@ -19,6 +19,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
+    private readonly Dictionary<EntityHandle, TypeSymbol> cache = new();
 
     public TypeProvider(Compilation compilation)
     {
@@ -86,6 +87,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     };
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
+        if (this.cache.ContainsKey(handle)) return this.cache[handle];
         var definition = reader.GetTypeDefinition(handle);
         if (definition.IsNested)
         {
@@ -101,6 +103,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
                 .OfType<TypeSymbol>()
                 .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
                 .Single();
+            this.cache[handle] = nestedSymbol;
             return nestedSymbol;
         }
 
@@ -114,10 +117,14 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
         var path = fullName.Split('.').ToImmutableArray();
 
-        return this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
+        var result = this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
+        this.cache[handle] = result;
+        return result;
     }
+
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
+        if (this.cache.ContainsKey(handle)) return this.cache[handle];
         var parts = new List<string>();
         var reference = reader.GetTypeReference(handle);
         parts.Add(reader.GetString(reference.Name));
@@ -134,12 +141,17 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         // TODO: If we don't have the assembly report error
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
         var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
-        return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
+        var result = assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
+        this.cache[handle] = result;
+        return result;
     }
+
+    // TODO: Should we cache this as well? doesn't seem to have any effect
     public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
     {
         var specification = reader.GetTypeSpecification(handle);
-        return specification.DecodeSignature(this, genericContext);
+        var result = specification.DecodeSignature(this, genericContext);
+        return result;
     }
 
     public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;

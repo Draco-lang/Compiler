@@ -101,7 +101,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             parameters: ImmutableArray.Create<object?>(this.Name));
 
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
-        var typeProvider = new TypeProvider(this.Assembly.Compilation);
+        var typeProvider = this.Assembly.Compilation.TypeProvider;
         if (!this.typeDefinition.BaseType.IsNil)
         {
             builder.Add(GetTypeFromMetadata(this.typeDefinition.BaseType));

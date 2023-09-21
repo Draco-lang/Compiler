@@ -69,6 +69,10 @@ const TimelineGraph = (props: Props) => {
             .attr('text-anchor', 'middle')
             .attr('x', (node: any) => node.x0 + (node.x1 - node.x0) / 2)
             .attr('y', (node: any) => height - node.y1 + (node.y1 - node.y0) / 2);
+
+        allNodes.on('click', (svg, node) => {
+            console.log(node.data.name);
+        });
     }, [data, width, height]);
 
     return (

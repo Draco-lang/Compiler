@@ -85,12 +85,22 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
             .duration(500);
         allRects
             .transition(transition)
-            .attr('x', (node: any) => node.target ? node.target.x0 : node.x0)
-            .attr('width', (node: any) => node.target ? (node.target.x1 - node.target.x0) : (node.x1 - node.x0));
+            .attr('x', (node: any) => node.target.x0)
+            .attr('width', (node: any) => node.target.x1 - node.target.x0);
+        allTexts
+            .transition(transition)
+            .attr('x', (node: any) => node.target.x0 + (node.target.x1 - node.target.x0) / 2);
     });
 }
 
 function focus(node: d3.HierarchyRectangularNode<TimelineMessageModel>) {
+    function cleanse(node: any) {
+        (node as any).target = null;
+        if (node.children) {
+            for (let child of node.children) cleanse(child);
+        }
+    }
+
     function resize(node: d3.HierarchyRectangularNode<TimelineMessageModel>, x0: number, x1: number) {
         (node as any).target = {
             x0,
@@ -117,6 +127,39 @@ function focus(node: d3.HierarchyRectangularNode<TimelineMessageModel>) {
     let root = node;
     while (root.parent) root = root.parent;
 
+    function collapseLeft(node: d3.HierarchyRectangularNode<TimelineMessageModel>) {
+        resize(node, root.x0, root.x0);
+        if (node.children) {
+            for (let child of node.children) collapseLeft(child);
+        }
+    }
+
+    function collapseRight(node: d3.HierarchyRectangularNode<TimelineMessageModel>) {
+        resize(node, root.x1, root.x1);
+        if (node.children) {
+            for (let child of node.children) collapseRight(child);
+        }
+    }
+
+    function collapseRemaining(node: any) {
+        if (!node.children) return;
+
+        let isLeft = true;
+        for (let child of node.children) {
+            if (child.target) {
+                isLeft = false;
+                collapseRemaining(child);
+                continue;
+            }
+
+            if (isLeft) collapseLeft(child);
+            else collapseRight(child);
+        }
+    }
+
+    // Cleanse target transforms
+    cleanse(root);
+
     // Walk up the ancestry chain, expand
     let current = node;
     while (current) {
@@ -128,6 +171,9 @@ function focus(node: d3.HierarchyRectangularNode<TimelineMessageModel>) {
     if (node.children) {
         for (let child of node.children) scaleUpChild(child, node);
     }
+
+    // Collapse everything else
+    collapseRemaining(root);
 }
 
 function getTimeSpan(msg: MessageModel): number {

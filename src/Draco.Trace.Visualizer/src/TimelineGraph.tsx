@@ -25,9 +25,8 @@ const TimelineGraph = (props: Props) => {
             .attr('width', width)
             .attr('height', height);
 
-        const messageHierarchy = d3
-            .hierarchy(toTimelineMessage(data.rootMessage), getTimelineChildren)
-            .sum(msg => msg.endTime - msg.startTime);
+        const messageHierarchy = d3.hierarchy(toTimelineMessage(data.rootMessage), getTimelineChildren);
+        messageHierarchy.each(node => (node as any).value = node.data.endTime - node.data.startTime);
 
         const partitionLayout = d3
             .partition<TimelineMessageModel>()

@@ -90,12 +90,10 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
             svg
                 .selectAll('g')
                 .select('rect')
-                .transition(transition)
                 .attr('transform', `translate(${x} 0) scale(${k} 1)`);
             svg
                 .selectAll('g')
                 .select('text')
-                .transition(transition)
                 .attr('transform', (node: any) => {
                     return `translate(${x + (k - 1) * ((node.visualBounds.x0 + node.visualBounds.x1) / 2)} 0)`;
                 });

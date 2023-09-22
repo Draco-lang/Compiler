@@ -55,6 +55,35 @@ export interface HierarchicalBarGraphNode<TData> {
 }
 
 /**
+ * Represents a completed layout for a hierarchical bar graph.
+ */
+export class HierarchicalBarGraphLayout<TData> {
+    /**
+     * The root node.
+     */
+    root: HierarchicalBarGraphNode<TData>;
+
+    constructor(root: HierarchicalBarGraphNode<TData>) {
+        this.root = root;
+    }
+
+    /**
+     * Retrieves all descendants of this hierarchy.
+     * @returns All descendants of this layout.
+     */
+    descendants(): Iterable<HierarchicalBarGraphNode<TData>> {
+        function* recurse(current: HierarchicalBarGraphNode<TData>): Iterable<HierarchicalBarGraphNode<TData>> {
+            yield current;
+            for (let child of current.children) {
+                yield* recurse(child);
+            }
+        }
+
+        return recurse(this.root);
+    }
+}
+
+/**
  * The settings to use for a timeline layout.
  * @template TData The associated data type for the nodes.
  */
@@ -95,7 +124,7 @@ export type TimelineLayoutSettings<TData> = {
  * @param root The root node to start the layout from.
  * @param settings The settings to use for the layout.
  */
-export function layoutTimeline<TData>(root: TData, settings: TimelineLayoutSettings<TData>): HierarchicalBarGraphNode<TData> {
+export function layoutTimeline<TData>(root: TData, settings: TimelineLayoutSettings<TData>): HierarchicalBarGraphLayout<TData> {
     const [width, height] = settings.size;
     const horizontalPadding = settings.padding?.[0] ?? 0;
     const horizontalPadding2 = horizontalPadding / 2;
@@ -118,8 +147,8 @@ export function layoutTimeline<TData>(root: TData, settings: TimelineLayoutSetti
         const bounds: BoundingBox = {
             x0: xOffset[0] + startPercentage * availableSpace + horizontalPadding2,
             x1: xOffset[0] + endPercentage * availableSpace - horizontalPadding2,
-            y0: yOffset - barHeight,
-            y1: yOffset,
+            y0: yOffset,
+            y1: yOffset + barHeight,
         };
         const node: HierarchicalBarGraphNode<TData> = {
             data: current,
@@ -130,22 +159,22 @@ export function layoutTimeline<TData>(root: TData, settings: TimelineLayoutSetti
         };
 
         for (let child of settings.getChildren(current)) {
-            const childNode = layoutTimelineImpl(child, node, yOffset - barHeight - verticalPadding, [node.bounds.x0, node.bounds.x1]);
+            const childNode = layoutTimelineImpl(child, node, yOffset + barHeight + verticalPadding, [node.bounds.x0, node.bounds.x1]);
             children.push(childNode);
         }
 
         return node;
     }
 
-    return layoutTimelineImpl(root, undefined, height, [0, width]);
+    const rootNode = layoutTimelineImpl(root, undefined, 0, [0, width]);
+    return new HierarchicalBarGraphLayout<TData>(rootNode);
 }
 
-function clearVisualBounds<TData>(node: HierarchicalBarGraphNode<TData>) {
-    (node as any).visualBounds = undefined;
-    for (let child of node.children) clearVisualBounds(child);
-}
-
-function focusVisualsOnNode<TData>(node: HierarchicalBarGraphNode<TData>) {
+/**
+ * Focuses the given node, collapsing every other hierarchy.
+ * @param node The node to focus on
+ */
+export function focusVisualsOnNode<TData>(node: HierarchicalBarGraphNode<TData>) {
     function resize(node: HierarchicalBarGraphNode<TData>, x0: number, x1: number) {
         const sourceBounds = node.visualBounds ?? node.bounds;
         node.visualBounds = {
@@ -220,4 +249,9 @@ function focusVisualsOnNode<TData>(node: HierarchicalBarGraphNode<TData>) {
 
     // Collapse everything else
     collapseRemaining(root);
+}
+
+function clearVisualBounds<TData>(node: HierarchicalBarGraphNode<TData>) {
+    (node as any).visualBounds = undefined;
+    for (let child of node.children) clearVisualBounds(child);
 }

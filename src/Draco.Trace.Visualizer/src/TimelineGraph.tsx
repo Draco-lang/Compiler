@@ -15,8 +15,9 @@ const TimelineGraph = (props: Props) => {
     const domRef = React.useRef(null);
 
     const [data, setData] = React.useState(props.data);
+    const transform = React.useRef(d3.zoomIdentity);
 
-    React.useEffect(() => buildGraph(domRef, props), [data]);
+    React.useEffect(() => buildGraph(domRef, props, transform), [data]);
 
     return (
         <svg ref={domRef}>
@@ -24,7 +25,7 @@ const TimelineGraph = (props: Props) => {
     );
 };
 
-function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
+function buildGraph(domRef: React.MutableRefObject<null>, props: Props, currentTransform: React.MutableRefObject<d3.ZoomTransform>) {
     const svg = d3
         .select(domRef.current)
         .attr('width', props.width)
@@ -87,13 +88,17 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
                 .transition()
                 .duration(100);
             const {k, x, y} = e.transform;
+            currentTransform.current = e.transform;
+            console.log(`A) k=${k}, x=${x}`);
             svg
                 .selectAll('g')
                 .select('rect')
+                .transition(transition)
                 .attr('transform', `translate(${x} 0) scale(${k} 1)`);
             svg
                 .selectAll('g')
                 .select('text')
+                .transition(transition)
                 .attr('transform', (node: any) => {
                     return `translate(${x + (k - 1) * ((node.visualBounds.x0 + node.visualBounds.x1) / 2)} 0)`;
                 });
@@ -102,7 +107,7 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
     svg.call(zoom as any);
 
     let lastFocused: HierarchicalBarGraphNode<MessageModel> | undefined = undefined;
-    allRects.on('click', function (element, node) {
+    allRects.on('click', (element, node) => {
         if (lastFocused === node) {
             // Focus on root
             focusVisualsOnNode(laidOutMessages.root);
@@ -113,6 +118,8 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
             lastFocused = node;
         }
 
+        const {k, x, y} = currentTransform.current;
+        console.log(`B) k=${k}, x=${x}`);
         const transition = d3
             .transition()
             .duration(500);
@@ -122,7 +129,10 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
             .attr('width', (node: any) => node.visualBounds.x1 - node.visualBounds.x0);
         allTexts
             .transition(transition)
-            .attr('x', (node: any) => node.visualBounds.x0 + (node.visualBounds.x1 - node.visualBounds.x0) / 2);
+            .attr('x', (node: any) => node.visualBounds.x0 + (node.visualBounds.x1 - node.visualBounds.x0) / 2)
+            .attr('transform', (node: any) => {
+                return `translate(${x + (k - 1) * ((node.visualBounds.x0 + node.visualBounds.x1) / 2)} 0)`;
+            });
     });
 }
 

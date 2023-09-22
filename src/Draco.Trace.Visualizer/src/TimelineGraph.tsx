@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import React from "react";
 import { MessageModel, ThreadModel, TraceModel } from "./Model";
-import { TimelineLayoutSettings, focusVisualsOnNode, layoutTimeline } from "./graph_utils";
+import { HierarchicalBarGraphNode, TimelineLayoutSettings, focusVisualsOnNode, layoutTimeline } from "./graph_utils";
 
 type Props = {
     width: number;
@@ -103,8 +103,17 @@ function buildGraph(domRef: React.MutableRefObject<null>, props: Props) {
 
     svg.call(zoom as any);
 
+    let lastFocused: HierarchicalBarGraphNode<MessageModel> | undefined = undefined;
     allRects.on('click', function (element, node) {
-        focusVisualsOnNode(node);
+        if (lastFocused === node) {
+            // Focus on root
+            focusVisualsOnNode(laidOutMessages.root);
+            lastFocused = undefined;
+        }
+        else {
+            focusVisualsOnNode(node);
+            lastFocused = node;
+        }
 
         const transition = d3
             .transition()

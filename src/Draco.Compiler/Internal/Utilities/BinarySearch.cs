@@ -26,8 +26,10 @@ internal static class BinarySearch
         ReadOnlySpan<TItem> items,
         TKey searchedKey,
         Func<TItem, TKey> keySelector,
-        IComparer<TKey> keyComparer)
+        IComparer<TKey>? keyComparer = null)
     {
+        keyComparer ??= Comparer<TKey>.Default;
+
         var size = items.Length;
         var left = 0;
         var right = size;

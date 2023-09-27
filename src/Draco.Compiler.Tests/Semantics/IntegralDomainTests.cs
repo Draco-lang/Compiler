@@ -81,4 +81,16 @@ public sealed class IntegralDomainTests
         Assert.False(d.IsEmpty);
         Assert.Equal(0, d.SampleValue());
     }
+
+    [Fact]
+    public void RemovingNeighbors()
+    {
+        var d = Interval(-10, 10);
+
+        d.SubtractPattern(LiteralPattern(1, null!));
+        d.SubtractPattern(LiteralPattern(-1, null!));
+        d.SubtractPattern(LiteralPattern(0, null!));
+
+        Assert.Equal("[-10; -1) U (1; 10]", d.ToString());
+    }
 }

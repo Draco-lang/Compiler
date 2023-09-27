@@ -25,6 +25,12 @@ internal abstract class ValueDomain
         throw new ArgumentOutOfRangeException(nameof(type));
     }
 
+    // TODO: Docs
+    public static string ToDisplayString(BoundPattern pattern) => pattern switch
+    {
+        _ => throw new ArgumentOutOfRangeException(nameof(pattern)),
+    };
+
     /// <summary>
     /// True, if this domain has been emptied.
     /// </summary>

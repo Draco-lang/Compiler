@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.FlowAnalysis.Domain;
 
@@ -12,6 +14,17 @@ namespace Draco.Compiler.Internal.FlowAnalysis.Domain;
 /// </summary>
 internal abstract class ValueDomain
 {
+    // TODO: Docs
+    public static ValueDomain CreateDomain(IntrinsicSymbols intrinsics, TypeSymbol type)
+    {
+        if (SymbolEqualityComparer.Default.Equals(type, intrinsics.Int32))
+        {
+            return new IntegralDomain<int>(type, int.MinValue, int.MaxValue);
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(type));
+    }
+
     /// <summary>
     /// Removes the given pattern from the domain.
     /// </summary>

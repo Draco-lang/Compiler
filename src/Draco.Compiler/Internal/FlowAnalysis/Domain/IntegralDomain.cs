@@ -32,14 +32,27 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
     private readonly TInteger minValue;
     private readonly TInteger maxValue;
     // inclusive - inclusive
-    private readonly List<(TInteger From, TInteger To)> subtracted = new();
+    private readonly List<(TInteger From, TInteger To)> subtracted;
 
-    public IntegralDomain(TypeSymbol backingType, TInteger minValue, TInteger maxValue)
+    private IntegralDomain(
+        TypeSymbol backingType,
+        TInteger minValue,
+        TInteger maxValue,
+        List<(TInteger From, TInteger To)> subtracted)
     {
         this.backingType = backingType;
         this.minValue = minValue;
         this.maxValue = maxValue;
+        this.subtracted = subtracted;
     }
+
+    public IntegralDomain(TypeSymbol backingType, TInteger minValue, TInteger maxValue)
+        : this(backingType, minValue, maxValue, new())
+    {
+    }
+
+    public override ValueDomain Clone() =>
+        new IntegralDomain<TInteger>(this.backingType, this.minValue, this.maxValue, this.subtracted.ToList());
 
     public override void Subtract(BoundPattern pattern)
     {

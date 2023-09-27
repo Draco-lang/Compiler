@@ -31,6 +31,12 @@ internal abstract class ValueDomain
     public abstract bool IsEmpty { get; }
 
     /// <summary>
+    /// Clones this domain.
+    /// </summary>
+    /// <returns>The clone of this domain.</returns>
+    public abstract ValueDomain Clone();
+
+    /// <summary>
     /// Removes the given pattern from the domain.
     /// </summary>
     /// <param name="pattern">The pattern to remove.</param>

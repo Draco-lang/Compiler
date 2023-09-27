@@ -17,7 +17,8 @@ namespace Draco.Compiler.Internal.FlowAnalysis.Domain;
 /// </summary>
 /// <typeparam name="TInteger">The integral value type.</typeparam>
 internal sealed class IntegralDomain<TInteger> : ValueDomain
-    where TInteger : IComparisonOperators<TInteger, TInteger, bool>,
+    where TInteger : struct,
+                     IComparisonOperators<TInteger, TInteger, bool>,
                      IAdditionOperators<TInteger, TInteger, TInteger>,
                      ISubtractionOperators<TInteger, TInteger, TInteger>,
                      IAdditiveIdentity<TInteger, TInteger>,
@@ -54,7 +55,7 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
     public override ValueDomain Clone() =>
         new IntegralDomain<TInteger>(this.backingType, this.minValue, this.maxValue, this.subtracted.ToList());
 
-    public override void Subtract(BoundPattern pattern)
+    public override void SubtractPattern(BoundPattern pattern)
     {
         switch (pattern)
         {
@@ -62,7 +63,7 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
             // Subtract everything
             this.SubtractRange(this.minValue, this.maxValue);
             break;
-        case BoundLiteralPattern litPattern when litPattern.Type is TInteger num:
+        case BoundLiteralPattern litPattern when litPattern.Value is TInteger num:
             // Subtract singular value
             this.SubtractRange(num, num);
             break;
@@ -71,7 +72,13 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         }
     }
 
-    public override BoundPattern? Sample()
+    public override BoundPattern? SamplePattern()
+    {
+        var sample = this.SampleValue();
+        return sample is null ? null : this.ToPattern(sample.Value);
+    }
+
+    public TInteger? SampleValue()
     {
         // Special case: entire domain covered
         if (this.IsEmpty) return null;
@@ -81,15 +88,15 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         var (index, found) = BinarySearch.Search(span, TInteger.AdditiveIdentity, i => i.From);
 
         // If not found, we can just return the identity
-        if (!found) return this.ToPattern(TInteger.AdditiveIdentity);
+        if (!found) return TInteger.AdditiveIdentity;
 
         // Otherwise, we need to return one of the endpoints
         if (span[index].To == this.maxValue)
         {
             // Edge, return the one below
-            return this.ToPattern(span[index].From - TInteger.MultiplicativeIdentity);
+            return span[index].From - TInteger.MultiplicativeIdentity;
         }
-        return this.ToPattern(span[index].To + TInteger.MultiplicativeIdentity);
+        return span[index].To + TInteger.MultiplicativeIdentity;
     }
 
     public override string ToString()

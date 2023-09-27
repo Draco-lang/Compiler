@@ -46,14 +46,14 @@ internal abstract class ValueDomain
     /// Removes the given pattern from the domain.
     /// </summary>
     /// <param name="pattern">The pattern to remove.</param>
-    public abstract void Subtract(BoundPattern pattern);
+    public abstract void SubtractPattern(BoundPattern pattern);
 
     /// <summary>
     /// Retrieves a sample value from the domain that has not been covered yet.
     /// </summary>
     /// <returns>A pattern representing an uncovered value, or null, if the domain has been emptied
     /// or it cannot provide a value (because the domain is open for example).</returns>
-    public abstract BoundPattern? Sample();
+    public abstract BoundPattern? SamplePattern();
 
     public override abstract string ToString();
 }

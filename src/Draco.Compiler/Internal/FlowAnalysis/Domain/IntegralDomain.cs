@@ -92,6 +92,20 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         return this.ToPattern(span[index].To + TInteger.MultiplicativeIdentity);
     }
 
+    public override string ToString()
+    {
+        if (this.IsEmpty) return "empty";
+
+        var parts = new List<string>();
+        if (this.subtracted[0].From != this.minValue) parts.Add($"[{this.minValue}; {this.subtracted[0].From})");
+        for (var i = 0; i < this.subtracted.Count - 1; ++i)
+        {
+            parts.Add($"({this.subtracted[i].To}; {this.subtracted[i + 1].From})");
+        }
+        if (this.subtracted[^1].To != this.maxValue) parts.Add($"({this.subtracted[^1].To}; {this.maxValue}]");
+        return string.Join(" U ", parts);
+    }
+
     private void SubtractRange(TInteger from, TInteger to)
     {
         var span = (ReadOnlySpan<(TInteger From, TInteger To)>)CollectionsMarshal.AsSpan(this.subtracted);

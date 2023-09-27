@@ -54,4 +54,6 @@ internal abstract class ValueDomain
     /// <returns>A pattern representing an uncovered value, or null, if the domain has been emptied
     /// or it cannot provide a value (because the domain is open for example).</returns>
     public abstract BoundPattern? Sample();
+
+    public override abstract string ToString();
 }

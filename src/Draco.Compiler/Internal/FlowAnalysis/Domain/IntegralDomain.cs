@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis.Domain;
@@ -22,13 +23,15 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
                      IAdditiveIdentity<TInteger, TInteger>,
                      IMultiplicativeIdentity<TInteger, TInteger>
 {
+    private readonly TypeSymbol backingType;
     private readonly TInteger minValue;
     private readonly TInteger maxValue;
     // inclusive - inclusive
     private readonly List<(TInteger From, TInteger To)> subtracted = new();
 
-    public IntegralDomain(TInteger minValue, TInteger maxValue)
+    public IntegralDomain(TypeSymbol backingType, TInteger minValue, TInteger maxValue)
     {
+        this.backingType = backingType;
         this.minValue = minValue;
         this.maxValue = maxValue;
     }
@@ -65,15 +68,15 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         var (index, found) = BinarySearch.Search(span, TInteger.AdditiveIdentity, i => i.From);
 
         // If not found, we can just return the identity
-        if (!found) return ToPattern(TInteger.AdditiveIdentity);
+        if (!found) return this.ToPattern(TInteger.AdditiveIdentity);
 
         // Otherwise, we need to return one of the endpoints
         if (span[index].To == this.maxValue)
         {
             // Edge, return the one below
-            return ToPattern(span[index].From - TInteger.MultiplicativeIdentity);
+            return this.ToPattern(span[index].From - TInteger.MultiplicativeIdentity);
         }
-        return ToPattern(span[index].To + TInteger.MultiplicativeIdentity);
+        return this.ToPattern(span[index].To + TInteger.MultiplicativeIdentity);
     }
 
     private void SubtractRange(TInteger from, TInteger to)
@@ -102,6 +105,6 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         this.subtracted.Insert(startIndex, (from, to));
     }
 
-    private static BoundPattern ToPattern(TInteger integer) =>
-        throw new NotImplementedException();
+    private BoundPattern ToPattern(TInteger integer) =>
+        new BoundLiteralPattern(null, integer, this.backingType);
 }

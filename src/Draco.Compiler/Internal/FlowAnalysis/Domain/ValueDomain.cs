@@ -26,6 +26,11 @@ internal abstract class ValueDomain
     }
 
     /// <summary>
+    /// True, if this domain has been emptied.
+    /// </summary>
+    public abstract bool IsEmpty { get; }
+
+    /// <summary>
     /// Removes the given pattern from the domain.
     /// </summary>
     /// <param name="pattern">The pattern to remove.</param>
@@ -34,6 +39,7 @@ internal abstract class ValueDomain
     /// <summary>
     /// Retrieves a sample value from the domain that has not been covered yet.
     /// </summary>
-    /// <returns>A pattern representing an uncovered value, or null, if the domain has been emptied.</returns>
+    /// <returns>A pattern representing an uncovered value, or null, if the domain has been emptied
+    /// or it cannot provide a value (because the domain is open for example).</returns>
     public abstract BoundPattern? Sample();
 }

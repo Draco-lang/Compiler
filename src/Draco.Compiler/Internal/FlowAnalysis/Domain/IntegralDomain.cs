@@ -23,6 +23,11 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
                      IAdditiveIdentity<TInteger, TInteger>,
                      IMultiplicativeIdentity<TInteger, TInteger>
 {
+    public override bool IsEmpty =>
+            this.subtracted.Count == 1
+         && this.subtracted[0].From == this.minValue
+         && this.subtracted[0].To == this.maxValue;
+
     private readonly TypeSymbol backingType;
     private readonly TInteger minValue;
     private readonly TInteger maxValue;
@@ -56,12 +61,7 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
     public override BoundPattern? Sample()
     {
         // Special case: entire domain covered
-        if (this.subtracted.Count == 1
-         && this.subtracted[0].From == this.minValue
-         && this.subtracted[0].To == this.maxValue)
-        {
-            return null;
-        }
+        if (this.IsEmpty) return null;
 
         // Search to the closest zero
         var span = (ReadOnlySpan<(TInteger From, TInteger To)>)CollectionsMarshal.AsSpan(this.subtracted);

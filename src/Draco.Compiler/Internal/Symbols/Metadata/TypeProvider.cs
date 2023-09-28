@@ -37,6 +37,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         if (ReferenceEquals(genericType, UnknownType)) return UnknownType;
         return genericType.GenericInstantiate(genericType.ContainingSymbol, typeArguments);
     }
+
     public TypeSymbol GetGenericMethodParameter(Symbol genericContext, int index)
     {
         var methodAncestor = genericContext.AncestorChain
@@ -47,6 +48,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
             ? methodAncestor.GenericParameters[index]
             : methodAncestor.GenericDefinition!.GenericParameters[index];
     }
+
     public TypeSymbol GetGenericTypeParameter(Symbol genericContext, int index)
     {
         var typeAncestor = genericContext.AncestorChain
@@ -57,6 +59,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
             ? typeAncestor.GenericParameters[index]
             : typeAncestor.GenericDefinition!.GenericParameters[index];
     }
+
     public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => UnknownType;
     public TypeSymbol GetPinnedType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
@@ -85,6 +88,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
 
         _ => UnknownType,
     };
+
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
         if (this.cache.ContainsKey(handle)) return this.cache[handle];

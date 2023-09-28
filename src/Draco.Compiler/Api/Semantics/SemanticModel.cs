@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal;
@@ -61,6 +62,7 @@ public sealed partial class SemanticModel : IBinderProvider
             ? this.Tree.PreOrderTraverse()
             : this.Tree.TraverseSubtreesIntersectingSpan(span.Value);
 
+        var tasks = new List<Task>();
         var addedImportBinders = new HashSet<ImportBinder>();
 
         foreach (var syntaxNode in syntaxNodes)
@@ -81,17 +83,20 @@ public sealed partial class SemanticModel : IBinderProvider
             case CompilationUnitSyntax:
             case FunctionDeclarationSyntax:
             {
-                containingSymbol?.Bind(this);
+                tasks.Add(Task.Run(() => containingSymbol?.Bind(this)));
                 break;
             }
             // NOTE: Only globals need binding
             case VariableDeclarationSyntax when containingSymbol is SourceModuleSymbol containingModule:
             {
-                // We need to search for this global
-                var globalSymbol = containingModule.Members
-                    .OfType<SourceGlobalSymbol>()
-                    .Single(s => s.DeclaringSyntax == syntaxNode);
-                globalSymbol.Bind(this);
+                tasks.Add(Task.Run(() =>
+                {
+                    // We need to search for this global
+                    var globalSymbol = containingModule.Members
+                        .OfType<SourceGlobalSymbol>()
+                        .Single(s => s.DeclaringSyntax == syntaxNode);
+                    globalSymbol.Bind(this);
+                }));
                 break;
             }
             case ImportDeclarationSyntax:
@@ -110,6 +115,7 @@ public sealed partial class SemanticModel : IBinderProvider
             }
         }
 
+        Task.WaitAll(tasks.ToArray());
         return this.DiagnosticBag.ToImmutableArray();
     }
 

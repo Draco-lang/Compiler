@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -97,39 +98,42 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         var key = new CacheKey(reader, handle);
         if (!this.cache.TryGetValue(key, out var type))
         {
-            var definition = reader.GetTypeDefinition(handle);
-            if (definition.IsNested)
-            {
-                // Resolve declaring type
-                var declaringType = definition.GetDeclaringType();
-                var declaringSymbol = this.GetTypeFromDefinition(reader, declaringType, rawTypeKind);
-
-                // Search for this type by name and generic argument count
-                var nestedName = reader.GetString(definition.Name);
-                var nestedGenericArgc = definition.GetGenericParameters().Count;
-                type = declaringSymbol
-                    .DefinedMembers
-                    .OfType<TypeSymbol>()
-                    .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
-                    .Single();
-                goto caching;
-            }
-
-            var assemblyName = reader
-                .GetAssemblyDefinition()
-                .GetAssemblyName();
-
-            // Type path
-            var @namespace = reader.GetString(definition.Namespace);
-            var name = reader.GetString(definition.Name);
-            var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
-            var path = fullName.Split('.').ToImmutableArray();
-
-            type = this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
-        caching:
+            type = this.BuildTypeFromDefinition(reader, handle, rawTypeKind);
             this.cache.Add(key, type);
         }
         return type;
+    }
+
+    private TypeSymbol BuildTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
+    {
+        var definition = reader.GetTypeDefinition(handle);
+        if (definition.IsNested)
+        {
+            // Resolve declaring type
+            var declaringType = definition.GetDeclaringType();
+            var declaringSymbol = this.GetTypeFromDefinition(reader, declaringType, rawTypeKind);
+
+            // Search for this type by name and generic argument count
+            var nestedName = reader.GetString(definition.Name);
+            var nestedGenericArgc = definition.GetGenericParameters().Count;
+            return declaringSymbol
+                .DefinedMembers
+                .OfType<TypeSymbol>()
+                .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
+                .Single();
+        }
+
+        var assemblyName = reader
+            .GetAssemblyDefinition()
+            .GetAssemblyName();
+
+        // Type path
+        var @namespace = reader.GetString(definition.Namespace);
+        var name = reader.GetString(definition.Name);
+        var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
+        var path = fullName.Split('.').ToImmutableArray();
+
+        return this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
     }
 
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)

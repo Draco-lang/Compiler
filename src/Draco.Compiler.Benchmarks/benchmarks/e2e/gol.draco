@@ -1,0 +1,78 @@
+import System.Console;
+import System.Linq.Enumerable;
+
+val width = 80;
+val height = 40;
+
+func render(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func in_bounds(x: int32, y: int32): bool =
+        0 <= x < width 
+    and 0 <= y < height;
+
+func count_neighbors(x: int32, y: int32, map: Array2D<bool>): int32 {
+    func count_cell(x: int32, y: int32, map: Array2D<bool>): int32 =
+        if (in_bounds(x, y) and map[x, y]) 1
+        else 0;
+
+    var n = 0;
+    n += count_cell(x - 1, y - 1, map);
+    n += count_cell(x - 1, y, map);
+    n += count_cell(x - 1, y + 1, map);
+    n += count_cell(x, y - 1, map);
+    n += count_cell(x, y + 1, map);
+    n += count_cell(x + 1, y - 1, map);
+    n += count_cell(x + 1, y, map);
+    n += count_cell(x + 1, y + 1, map);
+    return n;
+}
+
+func tick(front: Array2D<bool>, back: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            // Any live cell with two or three live neighbours survives.
+            // Any dead cell with three live neighbours becomes a live cell.
+            // All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+            val neighbors = count_neighbors(x, y, front);
+            back[x, y] =
+                if (front[x, y]) 2 <= neighbors <= 3
+                else if (neighbors == 3) true
+                else false;
+        }
+        WriteLine();
+    }
+}
+
+public func main() {
+    var front = Array2D(width, height);
+    var back = Array2D(width, height);
+
+    // Glider
+    front[3, 3] = true;
+    front[4, 4] = true;
+    front[4, 5] = true;
+    front[3, 5] = true;
+    front[2, 5] = true;
+
+    while (true) {
+        tick(front, back);
+
+        Clear();
+        render(front);
+
+        // Swap
+        val temp = front;
+        front = back;
+        back = temp;
+        
+        System.Threading.Thread.Sleep(200);
+    }
+}

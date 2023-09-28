@@ -107,13 +107,12 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
                 // Search for this type by name and generic argument count
                 var nestedName = reader.GetString(definition.Name);
                 var nestedGenericArgc = definition.GetGenericParameters().Count;
-                var nestedSymbol = declaringSymbol
+                type = declaringSymbol
                     .DefinedMembers
                     .OfType<TypeSymbol>()
                     .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
                     .Single();
-                this.cache[key] = nestedSymbol;
-                return nestedSymbol;
+                goto caching;
             }
 
             var assemblyName = reader
@@ -127,6 +126,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
             var path = fullName.Split('.').ToImmutableArray();
 
             type = this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
+        caching:
             this.cache.Add(key, type);
         }
         return type;

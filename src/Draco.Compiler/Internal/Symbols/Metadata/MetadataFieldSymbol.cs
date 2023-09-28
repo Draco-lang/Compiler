@@ -77,12 +77,8 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
         this.fieldDefinition = fieldDefinition;
     }
 
-    private TypeSymbol BuildType()
-    {
-        // Decode signature
-        var decoder = new TypeProvider(this.Assembly.Compilation);
-        return this.fieldDefinition.DecodeSignature(decoder, this);
-    }
+    private TypeSymbol BuildType() =>
+        this.fieldDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
 
     private object? BuildDefaultValue()
     {

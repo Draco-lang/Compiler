@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -12,6 +14,8 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>, ICustomAttributeTypeProvider<TypeSymbol>
 {
+    private readonly record struct CacheKey(MetadataReader Reader, EntityHandle Handle);
+
     // TODO: We return a special error type for now to swallow errors
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
 
@@ -19,6 +23,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
+    private readonly Dictionary<CacheKey, TypeSymbol> cache = new();
 
     public TypeProvider(Compilation compilation)
     {
@@ -36,6 +41,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         if (ReferenceEquals(genericType, UnknownType)) return UnknownType;
         return genericType.GenericInstantiate(genericType.ContainingSymbol, typeArguments);
     }
+
     public TypeSymbol GetGenericMethodParameter(Symbol genericContext, int index)
     {
         var methodAncestor = genericContext.AncestorChain
@@ -46,6 +52,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
             ? methodAncestor.GenericParameters[index]
             : methodAncestor.GenericDefinition!.GenericParameters[index];
     }
+
     public TypeSymbol GetGenericTypeParameter(Symbol genericContext, int index)
     {
         var typeAncestor = genericContext.AncestorChain
@@ -56,6 +63,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
             ? typeAncestor.GenericParameters[index]
             : typeAncestor.GenericDefinition!.GenericParameters[index];
     }
+
     public TypeSymbol GetModifiedType(TypeSymbol modifier, TypeSymbol unmodifiedType, bool isRequired) => UnknownType;
     public TypeSymbol GetPinnedType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
@@ -84,7 +92,19 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
 
         _ => UnknownType,
     };
+
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
+    {
+        var key = new CacheKey(reader, handle);
+        if (!this.cache.TryGetValue(key, out var type))
+        {
+            type = this.BuildTypeFromDefinition(reader, handle, rawTypeKind);
+            this.cache.Add(key, type);
+        }
+        return type;
+    }
+
+    private TypeSymbol BuildTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
         var definition = reader.GetTypeDefinition(handle);
         if (definition.IsNested)
@@ -96,12 +116,11 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
             // Search for this type by name and generic argument count
             var nestedName = reader.GetString(definition.Name);
             var nestedGenericArgc = definition.GetGenericParameters().Count;
-            var nestedSymbol = declaringSymbol
+            return declaringSymbol
                 .DefinedMembers
                 .OfType<TypeSymbol>()
                 .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
                 .Single();
-            return nestedSymbol;
         }
 
         var assemblyName = reader
@@ -116,7 +135,19 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
 
         return this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
     }
+
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
+    {
+        var key = new CacheKey(reader, handle);
+        if (!this.cache.TryGetValue(key, out var type))
+        {
+            type = this.BuildTypeFromReference(reader, handle, rawTypeKind);
+            this.cache.Add(key, type);
+        }
+        return type;
+    }
+
+    private TypeSymbol BuildTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
         var parts = new List<string>();
         var reference = reader.GetTypeReference(handle);
@@ -136,6 +167,8 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
     }
+
+    // TODO: Should we cache this as well? doesn't seem to have any effect
     public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
     {
         var specification = reader.GetTypeSpecification(handle);

@@ -222,6 +222,10 @@ public sealed class Compilation : IBinderProvider
             // Or we keep it as long as metadata refs don't change?
             // Just a cache
             wellKnownTypes: this.WellKnownTypes,
+            // TODO: We might want to change the compilation of type provider?
+            // Or we keep it as long as metadata refs don't change?
+            // Just a cache
+            typeProvider: this.TypeProvider,
             // TODO: We might want to change the compilation of intrinsic-symbols?
             // Or we keep it as long as metadata refs don't change?
             // Just a cache

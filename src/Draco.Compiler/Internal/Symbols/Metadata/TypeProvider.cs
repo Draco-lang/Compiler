@@ -95,72 +95,75 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
         var key = new CacheKey(reader, handle);
-        if (this.cache.ContainsKey(key)) return this.cache[key];
-        var definition = reader.GetTypeDefinition(handle);
-        if (definition.IsNested)
+        if (!this.cache.TryGetValue(key, out var type))
         {
-            // Resolve declaring type
-            var declaringType = definition.GetDeclaringType();
-            var declaringSymbol = this.GetTypeFromDefinition(reader, declaringType, rawTypeKind);
+            var definition = reader.GetTypeDefinition(handle);
+            if (definition.IsNested)
+            {
+                // Resolve declaring type
+                var declaringType = definition.GetDeclaringType();
+                var declaringSymbol = this.GetTypeFromDefinition(reader, declaringType, rawTypeKind);
 
-            // Search for this type by name and generic argument count
-            var nestedName = reader.GetString(definition.Name);
-            var nestedGenericArgc = definition.GetGenericParameters().Count;
-            var nestedSymbol = declaringSymbol
-                .DefinedMembers
-                .OfType<TypeSymbol>()
-                .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
-                .Single();
-            this.cache[key] = nestedSymbol;
-            return nestedSymbol;
+                // Search for this type by name and generic argument count
+                var nestedName = reader.GetString(definition.Name);
+                var nestedGenericArgc = definition.GetGenericParameters().Count;
+                var nestedSymbol = declaringSymbol
+                    .DefinedMembers
+                    .OfType<TypeSymbol>()
+                    .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
+                    .Single();
+                this.cache[key] = nestedSymbol;
+                return nestedSymbol;
+            }
+
+            var assemblyName = reader
+                .GetAssemblyDefinition()
+                .GetAssemblyName();
+
+            // Type path
+            var @namespace = reader.GetString(definition.Namespace);
+            var name = reader.GetString(definition.Name);
+            var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
+            var path = fullName.Split('.').ToImmutableArray();
+
+            type = this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
+            this.cache.Add(key, type);
         }
-
-        var assemblyName = reader
-            .GetAssemblyDefinition()
-            .GetAssemblyName();
-
-        // Type path
-        var @namespace = reader.GetString(definition.Namespace);
-        var name = reader.GetString(definition.Name);
-        var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
-        var path = fullName.Split('.').ToImmutableArray();
-
-        var result = this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
-        this.cache[key] = result;
-        return result;
+        return type;
     }
 
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
         var key = new CacheKey(reader, handle);
-        if (this.cache.ContainsKey(key)) return this.cache[key];
-        var parts = new List<string>();
-        var reference = reader.GetTypeReference(handle);
-        parts.Add(reader.GetString(reference.Name));
-        EntityHandle resolutionScope;
-        for (resolutionScope = reference.ResolutionScope; resolutionScope.Kind == HandleKind.TypeReference; resolutionScope = reference.ResolutionScope)
+        if (!this.cache.TryGetValue(key, out var type))
         {
-            reference = reader.GetTypeReference((TypeReferenceHandle)resolutionScope);
+            var parts = new List<string>();
+            var reference = reader.GetTypeReference(handle);
             parts.Add(reader.GetString(reference.Name));
-        }
-        var @namespace = reader.GetString(reference.Namespace);
-        if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.').Reverse());
-        parts.Reverse();
+            EntityHandle resolutionScope;
+            for (resolutionScope = reference.ResolutionScope; resolutionScope.Kind == HandleKind.TypeReference; resolutionScope = reference.ResolutionScope)
+            {
+                reference = reader.GetTypeReference((TypeReferenceHandle)resolutionScope);
+                parts.Add(reader.GetString(reference.Name));
+            }
+            var @namespace = reader.GetString(reference.Namespace);
+            if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.').Reverse());
+            parts.Reverse();
 
-        // TODO: If we don't have the assembly report error
-        var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
-        var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
-        var result = assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
-        this.cache[key] = result;
-        return result;
+            // TODO: If we don't have the assembly report error
+            var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
+            var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
+            type = assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
+            this.cache.Add(key, type);
+        }
+        return type;
     }
 
     // TODO: Should we cache this as well? doesn't seem to have any effect
     public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
     {
         var specification = reader.GetTypeSpecification(handle);
-        var result = specification.DecodeSignature(this, genericContext);
-        return result;
+        return specification.DecodeSignature(this, genericContext);
     }
 
     public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -12,6 +13,8 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>, ICustomAttributeTypeProvider<TypeSymbol>
 {
+    private readonly record struct CacheKey(MetadataReader Reader, EntityHandle Handle);
+
     // TODO: We return a special error type for now to swallow errors
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
 
@@ -19,7 +22,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
-    private readonly Dictionary<EntityHandle, TypeSymbol> cache = new();
+    private readonly Dictionary<CacheKey, TypeSymbol> cache = new();
 
     public TypeProvider(Compilation compilation)
     {
@@ -91,7 +94,8 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
 
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
-        if (this.cache.ContainsKey(handle)) return this.cache[handle];
+        var key = new CacheKey(reader, handle);
+        if (this.cache.ContainsKey(key)) return this.cache[key];
         var definition = reader.GetTypeDefinition(handle);
         if (definition.IsNested)
         {
@@ -107,7 +111,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
                 .OfType<TypeSymbol>()
                 .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
                 .Single();
-            this.cache[handle] = nestedSymbol;
+            this.cache[key] = nestedSymbol;
             return nestedSymbol;
         }
 
@@ -122,13 +126,14 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         var path = fullName.Split('.').ToImmutableArray();
 
         var result = this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
-        this.cache[handle] = result;
+        this.cache[key] = result;
         return result;
     }
 
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
-        if (this.cache.ContainsKey(handle)) return this.cache[handle];
+        var key = new CacheKey(reader, handle);
+        if (this.cache.ContainsKey(key)) return this.cache[key];
         var parts = new List<string>();
         var reference = reader.GetTypeReference(handle);
         parts.Add(reader.GetString(reference.Name));
@@ -146,7 +151,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
         var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         var result = assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
-        this.cache[handle] = result;
+        this.cache[key] = result;
         return result;
     }
 

@@ -141,26 +141,31 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
         var key = new CacheKey(reader, handle);
         if (!this.cache.TryGetValue(key, out var type))
         {
-            var parts = new List<string>();
-            var reference = reader.GetTypeReference(handle);
-            parts.Add(reader.GetString(reference.Name));
-            EntityHandle resolutionScope;
-            for (resolutionScope = reference.ResolutionScope; resolutionScope.Kind == HandleKind.TypeReference; resolutionScope = reference.ResolutionScope)
-            {
-                reference = reader.GetTypeReference((TypeReferenceHandle)resolutionScope);
-                parts.Add(reader.GetString(reference.Name));
-            }
-            var @namespace = reader.GetString(reference.Namespace);
-            if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.').Reverse());
-            parts.Reverse();
-
-            // TODO: If we don't have the assembly report error
-            var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
-            var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
-            type = assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
+            type = this.BuildTypeFromReference(reader, handle, rawTypeKind);
             this.cache.Add(key, type);
         }
         return type;
+    }
+
+    private TypeSymbol BuildTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
+    {
+        var parts = new List<string>();
+        var reference = reader.GetTypeReference(handle);
+        parts.Add(reader.GetString(reference.Name));
+        EntityHandle resolutionScope;
+        for (resolutionScope = reference.ResolutionScope; resolutionScope.Kind == HandleKind.TypeReference; resolutionScope = reference.ResolutionScope)
+        {
+            reference = reader.GetTypeReference((TypeReferenceHandle)resolutionScope);
+            parts.Add(reader.GetString(reference.Name));
+        }
+        var @namespace = reader.GetString(reference.Namespace);
+        if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.').Reverse());
+        parts.Reverse();
+
+        // TODO: If we don't have the assembly report error
+        var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
+        var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
+        return assembly.RootNamespace.Lookup(parts.ToImmutableArray()).OfType<TypeSymbol>().Single();
     }
 
     // TODO: Should we cache this as well? doesn't seem to have any effect

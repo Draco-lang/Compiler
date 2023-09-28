@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
@@ -45,13 +46,16 @@ public sealed class Compilation : IBinderProvider
     /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
+    /// <param name="useMultithreading">True, if multithreading should be used.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences = null,
         string? rootModulePath = null,
         string? outputPath = null,
-        string? assemblyName = null) => new(
+        string? assemblyName = null,
+        bool useMultithreading = true) => new(
+        useMultithreading: useMultithreading,
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
         rootModulePath: rootModulePath,
@@ -66,6 +70,11 @@ public sealed class Compilation : IBinderProvider
         .SelectMany(model => model.Diagnostics)
         .Concat(this.GlobalDiagnosticBag)
         .ToImmutableArray();
+
+    /// <summary>
+    /// True, if threading is utilized by the compilation.
+    /// </summary>
+    public bool UseMultithreading { get; }
 
     /// <summary>
     /// The trees that are being compiled.
@@ -148,6 +157,7 @@ public sealed class Compilation : IBinderProvider
 
     // Main ctor with all state
     private Compilation(
+        bool useMultithreading,
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences,
         string? rootModulePath = null,
@@ -162,6 +172,7 @@ public sealed class Compilation : IBinderProvider
         IntrinsicSymbols? intrinsicSymbols = null,
         BinderCache? binderCache = null)
     {
+        this.UseMultithreading = useMultithreading;
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
         this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
@@ -205,6 +216,7 @@ public sealed class Compilation : IBinderProvider
         }
 
         return new Compilation(
+            useMultithreading: this.UseMultithreading,
             syntaxTrees: newSyntaxTrees.ToImmutable(),
             metadataReferences: this.MetadataReferences,
             rootModulePath: this.RootModulePath,
@@ -304,6 +316,31 @@ public sealed class Compilation : IBinderProvider
         return new(
             Success: true,
             Diagnostics: ImmutableArray<Diagnostic>.Empty);
+    }
+
+    internal Task RunOnThread(Action action)
+    {
+        if (this.UseMultithreading)
+        {
+            return Task.Run(action);
+        }
+        else
+        {
+            action();
+            return Task.CompletedTask;
+        }
+    }
+
+    internal Task<T> RunOnThread<T>(Func<T> func)
+    {
+        if (this.UseMultithreading)
+        {
+            return Task.Run(func);
+        }
+        else
+        {
+            return Task.FromResult(func());
+        }
     }
 
     internal ModuleSymbol GetModuleForSyntaxTree(SyntaxTree tree)

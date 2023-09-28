@@ -83,13 +83,13 @@ public sealed partial class SemanticModel : IBinderProvider
             case CompilationUnitSyntax:
             case FunctionDeclarationSyntax:
             {
-                tasks.Add(Task.Run(() => containingSymbol?.Bind(this)));
+                tasks.Add(this.compilation.RunOnThread(() => containingSymbol?.Bind(this)));
                 break;
             }
             // NOTE: Only globals need binding
             case VariableDeclarationSyntax when containingSymbol is SourceModuleSymbol containingModule:
             {
-                tasks.Add(Task.Run(() =>
+                tasks.Add(this.compilation.RunOnThread(() =>
                 {
                     // We need to search for this global
                     var globalSymbol = containingModule.Members

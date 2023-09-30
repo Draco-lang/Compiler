@@ -1,0 +1,325 @@
+import System.Console;
+import System.Linq.Enumerable;
+
+val width = 80;
+val height = 40;
+
+func render1(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render2(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render3(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render4(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render5(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render6(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render7(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render8(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render9(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render10(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render11(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render12(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render13(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render14(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render15(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render16(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render17(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render18(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render19(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render20(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render21(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render22(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render23(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render24(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render25(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render26(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render27(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render28(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render29(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render30(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render31(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}
+
+func render32(map: Array2D<bool>) {
+    for (y in Range(0, height)) {
+        for (x in Range(0, width)) {
+            val cell = map[x, y];
+            Write(if (cell) "o" else " ");
+        }
+        WriteLine();
+    }
+}

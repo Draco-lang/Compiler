@@ -30,7 +30,10 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
     /// </summary>
     /// <param name="From">The lower bound (inclusive).</param>
     /// <param name="To">The upper bound (inclusive).</param>
-    private readonly record struct Interval(TInteger From, TInteger To);
+    private readonly record struct Interval(TInteger From, TInteger To)
+    {
+        public override string ToString() => $"[{this.From}; {this.To}]";
+    }
 
     public override bool IsEmpty =>
             this.subtracted.Count == 1
@@ -191,10 +194,16 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
     private BoundPattern ToPattern(TInteger integer) =>
         new BoundLiteralPattern(null, integer, this.backingType);
 
-    private static bool Intersects(Interval a, Interval b) => !AreDisjunct(a, b);
-    private static bool AreDisjunct(Interval a, Interval b) =>
-           a.From > b.To + TInteger.MultiplicativeIdentity
-        || a.To + TInteger.MultiplicativeIdentity > b.From;
+    private static bool Intersects(Interval a, Interval b) =>
+           Touches(a, b)
+        || Contains(a, b.From)
+        || Contains(a, b.To)
+        || Contains(b, a.From)
+        || Contains(b, a.To);
+    private static bool Contains(Interval iv, TInteger n) => iv.From <= n && n <= iv.To;
+    private static bool Touches(Interval a, Interval b) =>
+           a.To + TInteger.MultiplicativeIdentity == b.From
+        || b.To + TInteger.MultiplicativeIdentity == a.From;
     private static TInteger Min(TInteger a, TInteger b) => a > b ? b : a;
     private static TInteger Max(TInteger a, TInteger b) => a > b ? a : b;
 }

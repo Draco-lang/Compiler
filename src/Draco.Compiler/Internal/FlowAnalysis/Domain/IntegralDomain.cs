@@ -24,6 +24,13 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
                      IAdditiveIdentity<TInteger, TInteger>,
                      IMultiplicativeIdentity<TInteger, TInteger>
 {
+    /// <summary>
+    /// A continuous interval of integral values.
+    /// </summary>
+    /// <param name="From">The lower bound (inclusive).</param>
+    /// <param name="To">The upper bound (inclusive).</param>
+    private readonly record struct Interval(TInteger From, TInteger To);
+
     public override bool IsEmpty =>
             this.subtracted.Count == 1
          && this.subtracted[0].From == this.minValue
@@ -32,14 +39,13 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
     private readonly TypeSymbol backingType;
     private readonly TInteger minValue;
     private readonly TInteger maxValue;
-    // inclusive - inclusive
-    private readonly List<(TInteger From, TInteger To)> subtracted;
+    private readonly List<Interval> subtracted;
 
     private IntegralDomain(
         TypeSymbol backingType,
         TInteger minValue,
         TInteger maxValue,
-        List<(TInteger From, TInteger To)> subtracted)
+        List<Interval> subtracted)
     {
         this.backingType = backingType;
         this.minValue = minValue;
@@ -83,26 +89,13 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         // Special case: entire domain covered
         if (this.IsEmpty) return null;
 
-        // Search to the closest zero
-        var span = (ReadOnlySpan<(TInteger From, TInteger To)>)CollectionsMarshal.AsSpan(this.subtracted);
-        var (index, found) = BinarySearch.Search(span, TInteger.AdditiveIdentity, i => i.From);
-
-        // TODO: Not correct
-        // If not found, we can just return the identity
-        if (!found) return TInteger.AdditiveIdentity;
-
-        // Otherwise, we need to return one of the endpoints
-        if (span[index].To == this.maxValue)
-        {
-            // Edge, return the one below
-            return span[index].From - TInteger.MultiplicativeIdentity;
-        }
-        return span[index].To + TInteger.MultiplicativeIdentity;
+        // TODO
+        throw new NotImplementedException();
     }
 
     public override string ToString()
     {
-        if (this.IsEmpty) return "empty";
+        if (this.IsEmpty) return $"[{this.minValue}; {this.maxValue}]";
 
         var parts = new List<string>();
         if (this.subtracted[0].From != this.minValue) parts.Add($"[{this.minValue}; {this.subtracted[0].From})");
@@ -116,30 +109,15 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
 
     private void SubtractRange(TInteger from, TInteger to)
     {
-        var span = (ReadOnlySpan<(TInteger From, TInteger To)>)CollectionsMarshal.AsSpan(this.subtracted);
+        if (from > to) throw new ArgumentOutOfRangeException(nameof(to), "from must be less than or equal to to");
 
-        var (startIndex, startMatch) = BinarySearch.Search(span, from, i => i.To);
-        var (endIndex, endMatch) = BinarySearch.Search(span, to, i => i.From);
+        var span = (ReadOnlySpan<Interval>)CollectionsMarshal.AsSpan(this.subtracted);
 
-        // TODO: NOT CORRECT
-        // Merge sides
-        if (startIndex > 0 && span[startIndex - 1].To + TInteger.MultiplicativeIdentity == from)
-        {
-            --startIndex;
-            from = span[startIndex].From;
-        }
-        // TODO: NOT CORRECT
-        if (endIndex < span.Length - 1 && span[endIndex + 1].From == to + TInteger.MultiplicativeIdentity)
-        {
-            ++endIndex;
-            to = span[endIndex].To;
-        }
+        var (startIndex, startMatch) = BinarySearch.Search(span, from, i => i.From);
+        var (endIndex, endMatch) = BinarySearch.Search(span, to, i => i.To);
 
-        // Remove overlapping
-        this.subtracted.RemoveRange(startIndex, endIndex - startIndex);
-
-        // Insert new range
-        this.subtracted.Insert(startIndex, (from, to));
+        // TODO
+        throw new NotImplementedException();
     }
 
     private BoundPattern ToPattern(TInteger integer) =>

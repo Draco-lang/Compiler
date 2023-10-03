@@ -119,7 +119,7 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         var span = (ReadOnlySpan<(TInteger From, TInteger To)>)CollectionsMarshal.AsSpan(this.subtracted);
 
         var (startIndex, startMatch) = BinarySearch.Search(span, from, i => i.To);
-        var (endIndex, _) = BinarySearch.Search(span, to, i => i.From);
+        var (endIndex, endMatch) = BinarySearch.Search(span, to, i => i.From);
 
         // TODO: NOT CORRECT
         // Merge sides

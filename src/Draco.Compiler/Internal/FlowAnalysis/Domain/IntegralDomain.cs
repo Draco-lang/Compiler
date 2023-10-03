@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -89,8 +90,23 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         // Special case: entire domain covered
         if (this.IsEmpty) return null;
 
-        // TODO
-        throw new NotImplementedException();
+        // Search for one around zero
+        var span = (ReadOnlySpan<Interval>)CollectionsMarshal.AsSpan(this.subtracted);
+        var (index, _) = BinarySearch.Search(span, TInteger.AdditiveIdentity, i => i.From);
+
+        // NOTE: This is a very stupid implementation, but hopefully better than working out the edge cases
+        const int surroundCheck = 1;
+        var min = Math.Max(index - surroundCheck, 0);
+        var max = Math.Min(index + surroundCheck, span.Length - 1);
+        for (var i = max; i >= min; --i)
+        {
+            var interval = span[i];
+            if (interval.To != this.maxValue) return interval.To + TInteger.MultiplicativeIdentity;
+            if (interval.From != this.minValue) return interval.From - TInteger.MultiplicativeIdentity;
+        }
+
+        // NOTE: Should never happen
+        return null;
     }
 
     public override string ToString()
@@ -112,14 +128,73 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
         if (from > to) throw new ArgumentOutOfRangeException(nameof(to), "from must be less than or equal to to");
 
         var span = (ReadOnlySpan<Interval>)CollectionsMarshal.AsSpan(this.subtracted);
+        var newInterval = new Interval(from, to);
 
-        var (startIndex, startMatch) = BinarySearch.Search(span, from, i => i.From);
-        var (endIndex, endMatch) = BinarySearch.Search(span, to, i => i.To);
+        if (span.Length == 0)
+        {
+            // Simple, first addition
+            this.subtracted.Add(new(from, to));
+            return;
+        }
 
-        // TODO
-        throw new NotImplementedException();
+        var (startIndex, _) = BinarySearch.Search(span, from, i => i.From);
+        var (endIndex, _) = BinarySearch.Search(span, to, i => i.To);
+
+        // NOTE: This is a very stupid implementation, but hopefully better than working out the edge cases
+        const int surroundCheck = 1;
+        var startErase = -1;
+        var endErase = -1;
+        // Start
+        {
+            var min = Math.Max(startIndex - surroundCheck, 0);
+            var max = Math.Min(startIndex + surroundCheck, span.Length - 1);
+            for (var i = min; i <= max; ++i)
+            {
+                if (!Intersects(span[i], newInterval)) continue;
+                startErase = i;
+                break;
+            }
+        }
+        // End
+        {
+            var max = Math.Min(endIndex + surroundCheck, span.Length - 1);
+            var min = Math.Max(endIndex - surroundCheck, 0);
+            for (var i = max; i >= min; --i)
+            {
+                if (!Intersects(span[i], newInterval)) continue;
+                endErase = i;
+                break;
+            }
+        }
+
+        // If negative, no need to erase
+        if (startErase < 0)
+        {
+            Debug.Assert(startIndex == endIndex);
+            Debug.Assert(endErase < 0);
+            this.subtracted.Insert(startIndex, newInterval);
+            return;
+        }
+
+        Debug.Assert(endErase >= 0);
+
+        // Expand from and to as needed
+        from = Min(from, span[startErase].From);
+        to = Max(to, span[endErase].To);
+
+        // Erase
+        this.subtracted.RemoveRange(startErase, endErase - startErase + 1);
+        // Insert
+        this.subtracted.Insert(startErase, new(from, to));
     }
 
     private BoundPattern ToPattern(TInteger integer) =>
         new BoundLiteralPattern(null, integer, this.backingType);
+
+    private static bool Intersects(Interval a, Interval b) => !AreDisjunct(a, b);
+    private static bool AreDisjunct(Interval a, Interval b) =>
+           a.From > b.To + TInteger.MultiplicativeIdentity
+        || a.To + TInteger.MultiplicativeIdentity > b.From;
+    private static TInteger Min(TInteger a, TInteger b) => a > b ? b : a;
+    private static TInteger Max(TInteger a, TInteger b) => a > b ? a : b;
 }

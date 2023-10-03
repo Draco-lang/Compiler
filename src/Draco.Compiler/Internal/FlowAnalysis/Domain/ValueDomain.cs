@@ -10,7 +10,12 @@ namespace Draco.Compiler.Internal.FlowAnalysis.Domain;
 /// </summary>
 internal abstract class ValueDomain
 {
-    // TODO: Docs
+    /// <summary>
+    /// Creates a domain for the given <paramref name="type"/>.
+    /// </summary>
+    /// <param name="intrinsics">The intrinsics for the compilation.</param>
+    /// <param name="type">The type to create the domain for.</param>
+    /// <returns>The domain representing <paramref name="type"/>.</returns>
     public static ValueDomain CreateDomain(IntrinsicSymbols intrinsics, TypeSymbol type)
     {
         if (SymbolEqualityComparer.Default.Equals(type, intrinsics.Int32))
@@ -21,7 +26,11 @@ internal abstract class ValueDomain
         throw new ArgumentOutOfRangeException(nameof(type));
     }
 
-    // TODO: Docs
+    /// <summary>
+    /// Stringifies the given <paramref name="pattern"/> to a user-readable format.
+    /// </summary>
+    /// <param name="pattern">The pattern to stringify.</param>
+    /// <returns>The user-readable form of <paramref name="pattern"/>.</returns>
     public static string ToDisplayString(BoundPattern pattern) => pattern switch
     {
         _ => throw new ArgumentOutOfRangeException(nameof(pattern)),

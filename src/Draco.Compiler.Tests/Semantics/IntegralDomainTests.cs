@@ -93,4 +93,22 @@ public sealed class IntegralDomainTests
 
         Assert.Equal("[-10; -1) U (1; 10]", d.ToString());
     }
+
+    [Fact]
+    public void RemovingBetweenRemovedIntervals()
+    {
+        var d = Interval(0, 10);
+
+        d.SubtractPattern(LiteralPattern(1, null!));
+        d.SubtractPattern(LiteralPattern(2, null!));
+
+        d.SubtractPattern(LiteralPattern(4, null!));
+        d.SubtractPattern(LiteralPattern(5, null!));
+
+        Assert.Equal("[0; 1) U (2; 4) U (5; 10]", d.ToString());
+
+        d.SubtractPattern(LiteralPattern(3, null!));
+
+        Assert.Equal("[0; 1) U (5; 10]", d.ToString());
+    }
 }

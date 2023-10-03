@@ -4,9 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
@@ -114,7 +111,7 @@ internal sealed class IntegralDomain<TInteger> : ValueDomain
 
     public override string ToString()
     {
-        if (this.IsEmpty) return $"[{this.minValue}; {this.maxValue}]";
+        if (this.IsEmpty) return "empty";
 
         var parts = new List<string>();
         if (this.subtracted[0].From != this.minValue) parts.Add($"[{this.minValue}; {this.subtracted[0].From})");

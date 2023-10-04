@@ -40,45 +40,61 @@ internal sealed class DecisionTree<TAction>
         /// <summary>
         /// The parent node of this one.
         /// </summary>
-        public virtual Node? Parent => null;
-
-        /// <summary>
-        /// The index of the row this node originated from in the parent.
-        /// </summary>
-        public virtual int? ParentRowIndex => null;
+        public abstract Node? Parent { get; }
 
         /// <summary>
         /// True, if this is an action node, meaning that there is a match.
         /// </summary>
-        public virtual bool IsAction => false;
+        public abstract bool IsAction { get; }
 
         /// <summary>
-        /// The action that's associated with the node.
+        /// The arm that's associated with the node.
         /// </summary>
         [MemberNotNullWhen(true, nameof(IsAction))]
-        public virtual TAction? Action => default;
+        public abstract Arm? Arm { get; }
 
         /// <summary>
         /// True, if this is a failure node.
         /// </summary>
-        public virtual bool IsFail => false;
+        public abstract bool IsFail { get; }
 
         /// <summary>
         /// The counterexample of this node, if it's a failure node and a counterexample could be produced.
         /// The counterexample in this case means a pattern that was not covered.
         /// </summary>
-        public virtual BoundPattern? Counterexample => null;
+        public abstract BoundPattern? Counterexample { get; }
 
         /// <summary>
         /// The expression being matched on, if any.
         /// </summary>
-        public virtual BoundExpression? MatchedOn => null;
+        public abstract BoundExpression? MatchedOn { get; }
 
         /// <summary>
         /// The child nodes of this one, associated to the pattern to match to take the route to the child.
         /// </summary>
-        public virtual ImmutableArray<KeyValuePair<BoundPattern, Node>> Children =>
-            ImmutableArray<KeyValuePair<BoundPattern, Node>>.Empty;
+        public abstract ImmutableArray<KeyValuePair<BoundPattern, Node>> Children { get; }
+    }
+
+    private sealed class MutableNode : Node
+    {
+        // Observers
+        public override Node? Parent { get; }
+        public override bool IsAction => this.Arm is not null;
+        public override Arm? Arm => this.MatchingArm;
+        public override bool IsFail => this.PatternMatrix.Count == 0;
+        public override BoundPattern? Counterexample => throw new NotImplementedException();
+        public override BoundExpression? MatchedOn => throw new NotImplementedException();
+        public override ImmutableArray<KeyValuePair<BoundPattern, Node>> Children =>
+            this.builtChildren ??= this.MutableChildren.ToImmutableArray();
+        private ImmutableArray<KeyValuePair<BoundPattern, Node>>? builtChildren;
+
+        // Mutators
+        public List<BoundExpression> Arguments { get; }
+        public List<int> ArgumentOrder { get; }
+        public List<List<BoundPattern>> PatternMatrix { get; }
+        public List<Arm> Arms { get; }
+        public Arm? MatchingArm { get; set; }
+        public List<KeyValuePair<BoundPattern, Node>> MutableChildren { get; }
     }
 
     /// <summary>

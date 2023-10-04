@@ -27,16 +27,6 @@ internal abstract class ValueDomain
     }
 
     /// <summary>
-    /// Stringifies the given <paramref name="pattern"/> to a user-readable format.
-    /// </summary>
-    /// <param name="pattern">The pattern to stringify.</param>
-    /// <returns>The user-readable form of <paramref name="pattern"/>.</returns>
-    public static string ToDisplayString(BoundPattern pattern) => pattern switch
-    {
-        _ => throw new ArgumentOutOfRangeException(nameof(pattern)),
-    };
-
-    /// <summary>
     /// True, if this domain has been emptied.
     /// </summary>
     public abstract bool IsEmpty { get; }

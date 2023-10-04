@@ -40,7 +40,7 @@ internal sealed partial class AssemblyCodegen
     {
         // Set the entry point, in case we have one
         var mainProcedure = (Procedure?)this.assembly.RootModule.Procedures.Values
-            .FirstOrDefault(p => p.Name == CompilerConstants.EntryPointName);
+            .FirstOrDefault(p => p.Name == Constants.EntryPointName);
         this.assembly.EntryPoint = mainProcedure;
     }
 }

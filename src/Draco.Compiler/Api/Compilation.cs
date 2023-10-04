@@ -16,6 +16,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 using ModuleSymbol = Draco.Compiler.Internal.Symbols.ModuleSymbol;
 
 namespace Draco.Compiler.Api;

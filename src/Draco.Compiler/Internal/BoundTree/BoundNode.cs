@@ -207,5 +207,6 @@ internal partial class BoundPattern
 
 internal partial class BoundDiscardPattern
 {
+    public static BoundDiscardPattern Default { get; } = new(null);
     public override TypeSymbol Type => IntrinsicSymbols.Never;
 }

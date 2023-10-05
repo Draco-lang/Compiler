@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -79,6 +80,14 @@ internal sealed class DecisionTree<TAction>
         /// </summary>
         public abstract ImmutableArray<KeyValuePair<BoundPattern, Node>> Children { get; }
     }
+
+    /// <summary>
+    /// A method that builds the accessor expression for a given expression and its member.
+    /// </summary>
+    /// <param name="value">The expression to build the accessor for.</param>
+    /// <param name="member">The accessed member.</param>
+    /// <returns>An expression that accesses the given member of the given value.</returns>
+    public delegate BoundExpression BuildAccessorDelegate(BoundExpression value, object? member);
 
     private sealed class MutableNode : Node
     {
@@ -176,7 +185,11 @@ internal sealed class DecisionTree<TAction>
                 .Select(a => a.Action)
                 .ToList());
         // Wrap in the tree
-        var tree = new DecisionTree<TAction>(intrinsicSymbols, root);
+        var tree = new DecisionTree<TAction>(
+            intrinsicSymbols,
+            // TODO
+            (expr, mem) => throw new NotImplementedException(),
+            root);
         // Build it
         tree.Build(root);
         return tree;
@@ -217,11 +230,13 @@ internal sealed class DecisionTree<TAction>
     public BoundPattern? UncoveredExample => throw new NotImplementedException();
 
     private readonly IntrinsicSymbols intrinsicSymbols;
+    private readonly BuildAccessorDelegate buildAccessor;
 
-    private DecisionTree(IntrinsicSymbols intrinsicSymbols, MutableNode root)
+    private DecisionTree(IntrinsicSymbols intrinsicSymbols, BuildAccessorDelegate buildAccessor, MutableNode root)
     {
         this.intrinsicSymbols = intrinsicSymbols;
         this.mutableRoot = root;
+        this.buildAccessor = buildAccessor;
     }
 
     private void Build(MutableNode node)
@@ -258,20 +273,53 @@ internal sealed class DecisionTree<TAction>
         foreach (var pat in coveredPatterns)
         {
             // Specialize to the pattern
-            this.Specialize(node, pat);
+            var child = this.Specialize(node, pat);
             // We covered the value, subtract
             uncoveredDomain.SubtractPattern(pat);
+            // Add as child
+            node.Children.Add(new(pat, child));
         }
 
         // If not complete, do defaulting
-        if (!uncoveredDomain.IsEmpty) this.Default(node);
+        if (!uncoveredDomain.IsEmpty)
+        {
+            var @default = this.Default(node);
+            // Add as child
+            node.Children.Add(new(BoundDiscardPattern.Default, @default));
+        }
 
         // Recurse to children
         foreach (var (_, child) in node.MutableChildren) this.Build(child);
     }
 
-    private MutableNode Specialize(MutableNode node, BoundPattern specializer) =>
-        throw new NotImplementedException();
+    private MutableNode Specialize(MutableNode node, BoundPattern specializer)
+    {
+        var remainingRows = new List<List<BoundPattern>>();
+        var remainingActions = new List<TAction>();
+        foreach (var (row, action) in node.PatternMatrix.Zip(node.Actions))
+        {
+            var exploded = TryExplode(specializer, row[0]);
+            if (exploded is null) continue;
+
+            var newRow = exploded.Concat(row.Skip(1)).ToList();
+            if (newRow.Count == 0) newRow.Add(BoundDiscardPattern.Default);
+
+            remainingRows.Add(newRow);
+            remainingActions.Add(action);
+        }
+
+        var newArguments = Enumerable
+            .Range(0, remainingRows[0].Count - node.PatternMatrix[0].Count + 1)
+            .Select(i => this.buildAccessor(node.Arguments[0], i))
+            .Concat(node.Arguments.Skip(1))
+            .ToList();
+
+        return new MutableNode(
+            parent: node,
+            arguments: newArguments,
+            patternMatrix: remainingRows,
+            actions: remainingActions);
+    }
 
     private MutableNode Default(MutableNode node) =>
         throw new NotImplementedException();

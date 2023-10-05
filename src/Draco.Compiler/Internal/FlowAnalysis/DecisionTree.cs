@@ -252,7 +252,6 @@ internal sealed class DecisionTree<TAction>
             .ToHashSet(SpecializationComparer.Instance);
 
         // Track if there are any uncovered values in this domain
-        // TODO
         var uncoveredDomain = ValueDomain.CreateDomain(this.intrinsicSymbols, node.PatternMatrix[0][0].Type);
 
         // Specialize for each of these cases
@@ -291,5 +290,13 @@ internal sealed class DecisionTree<TAction>
     {
         BoundDiscardPattern => true,
         _ => false,
+    };
+
+    private static ImmutableArray<BoundPattern>? TryExplode(BoundPattern specializer, BoundPattern toExplode) => (specializer, toExplode) switch
+    {
+        (BoundDiscardPattern, _) => throw new ArgumentOutOfRangeException(nameof(specializer)),
+        (BoundLiteralPattern, BoundDiscardPattern) => ImmutableArray<BoundPattern>.Empty,
+        (BoundLiteralPattern lit1, BoundLiteralPattern lit2) when Equals(lit1.Value, lit2.Value) => ImmutableArray<BoundPattern>.Empty,
+        _ => null,
     };
 }

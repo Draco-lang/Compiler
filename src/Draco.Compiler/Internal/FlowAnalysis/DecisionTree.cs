@@ -7,9 +7,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.FlowAnalysis.Domain;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
+
+// TODO: CONSIDER GUARDS
 
 /// <summary>
 /// Represents a decision tree computed for a match expression.
@@ -144,6 +147,8 @@ internal sealed class DecisionTree<TAction>
 
         public int GetHashCode([DisallowNull] BoundPattern obj) => obj switch
         {
+            BoundDiscardPattern => typeof(BoundDiscardPattern).GetHashCode(),
+            BoundLiteralPattern lit => lit.Value?.GetHashCode() ?? 0,
             _ => throw new ArgumentOutOfRangeException(nameof(obj)),
         };
     }
@@ -151,10 +156,14 @@ internal sealed class DecisionTree<TAction>
     /// <summary>
     /// Builds a decision tree from the given data.
     /// </summary>
+    /// <param name="intrinsicSymbols">The intrinsic symbols of the compilation.</param>
     /// <param name="matchedValue">The matched value.</param>
     /// <param name="arms">The arms of the match.</param>
     /// <returns>The constructed decision tree.</returns>
-    public static DecisionTree<TAction> Build(BoundExpression matchedValue, ImmutableArray<Arm> arms)
+    public static DecisionTree<TAction> Build(
+        IntrinsicSymbols intrinsicSymbols,
+        BoundExpression matchedValue,
+        ImmutableArray<Arm> arms)
     {
         // Construct root
         var root = new MutableNode(
@@ -167,7 +176,7 @@ internal sealed class DecisionTree<TAction>
                 .Select(a => a.Action)
                 .ToList());
         // Wrap in the tree
-        var tree = new DecisionTree<TAction>(root);
+        var tree = new DecisionTree<TAction>(intrinsicSymbols, root);
         // Build it
         tree.Build(root);
         return tree;
@@ -207,8 +216,11 @@ internal sealed class DecisionTree<TAction>
     /// </summary>
     public BoundPattern? UncoveredExample => throw new NotImplementedException();
 
-    private DecisionTree(MutableNode root)
+    private readonly IntrinsicSymbols intrinsicSymbols;
+
+    private DecisionTree(IntrinsicSymbols intrinsicSymbols, MutableNode root)
     {
+        this.intrinsicSymbols = intrinsicSymbols;
         this.mutableRoot = root;
     }
 
@@ -241,7 +253,7 @@ internal sealed class DecisionTree<TAction>
 
         // Track if there are any uncovered values in this domain
         // TODO
-        var uncoveredDomain = ValueDomain.CreateDomain(null!, node.PatternMatrix[0][0].Type);
+        var uncoveredDomain = ValueDomain.CreateDomain(this.intrinsicSymbols, node.PatternMatrix[0][0].Type);
 
         // Specialize for each of these cases
         foreach (var pat in coveredPatterns)
@@ -277,6 +289,7 @@ internal sealed class DecisionTree<TAction>
 
     private static bool MatchesEverything(BoundPattern pattern) => pattern switch
     {
-        _ => throw new ArgumentOutOfRangeException(nameof(pattern)),
+        BoundDiscardPattern => true,
+        _ => false,
     };
 }

@@ -22,7 +22,7 @@ internal sealed partial class LocalRewriter
             .Select(a => new DecisionTree<BoundMatchArm>.Arm(a.Pattern, a))
             .ToImmutableArray();
         // From that we build the decision tree
-        var decisionTree = DecisionTree<BoundMatchArm>.Build(node.MatchedValue, arms);
+        var decisionTree = DecisionTree<BoundMatchArm>.Build(this.IntrinsicSymbols, node.MatchedValue, arms);
 
         // TODO: use it
 

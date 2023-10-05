@@ -342,10 +342,10 @@ internal sealed class DecisionTree<TAction>
         {
             // Specialize to the pattern
             var child = this.Specialize(node, pat);
-            // We covered the value, subtract
-            uncoveredDomain.SubtractPattern(pat);
             // Add as child
             node.Children.Add(new(pat, child));
+            // We covered the value, subtract
+            uncoveredDomain.SubtractPattern(pat);
         }
 
         // If not complete, do defaulting

@@ -154,8 +154,24 @@ internal sealed class DecisionTree<TAction>
     /// <param name="matchedValue">The matched value.</param>
     /// <param name="arms">The arms of the match.</param>
     /// <returns>The constructed decision tree.</returns>
-    public static DecisionTree<TAction> Build(BoundExpression matchedValue, ImmutableArray<Arm> arms) =>
-        throw new NotImplementedException();
+    public static DecisionTree<TAction> Build(BoundExpression matchedValue, ImmutableArray<Arm> arms)
+    {
+        // Construct root
+        var root = new MutableNode(
+            parent: null,
+            arguments: new List<BoundExpression> { matchedValue },
+            patternMatrix: arms
+                .Select(a => new List<BoundPattern> { a.Pattern })
+                .ToList(),
+            actions: arms
+                .Select(a => a.Action)
+                .ToList());
+        // Wrap in the tree
+        var tree = new DecisionTree<TAction>(root);
+        // Build it
+        tree.Build(root);
+        return tree;
+    }
 
     /// <summary>
     /// Stringifies the given <paramref name="pattern"/> to a user-readable format.

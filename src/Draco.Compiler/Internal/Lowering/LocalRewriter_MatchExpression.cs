@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
@@ -14,20 +15,16 @@ internal sealed partial class LocalRewriter
 {
     public override BoundNode VisitMatchExpression(BoundMatchExpression node)
     {
-        // match (matchedExpr) {
-        //     pattern1 if (guard1) -> value1;
-        //     pattern2 if (guard2) -> value2;
-        //     ...
-        // }
-        //
-        // =>
-        //
-        // {
-        //     val tmp = matchedExpr;
-        //     if (matches-pattern1(tmp) and guard1) value1
-        //     else if (matches-pattern2(tmp) and guard2) value2
-        //     ...
-        // }
+        // TODO: Elaborate on what we do here
+
+        // We build up the relevant arms
+        var arms = node.MatchArms
+            .Select(a => new DecisionTree<BoundMatchArm>.Arm(a.Pattern, a))
+            .ToImmutableArray();
+        // From that we build the decision tree
+        var decisionTree = DecisionTree<BoundMatchArm>.Build(node.MatchedValue, arms);
+
+        // TODO: use it
 
         // Evaluate the matched value as a local to not duplicate side-effects
         var matchedValue = (BoundExpression)node.MatchedValue.Accept(this);

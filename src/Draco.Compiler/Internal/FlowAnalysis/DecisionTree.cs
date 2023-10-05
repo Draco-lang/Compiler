@@ -163,8 +163,7 @@ internal sealed class DecisionTree<TAction>
         public Arm? ActionArm { get; set; }
         public TAction? Action => this.ActionArm?.Action;
         public bool IsFail => this.PatternMatrix.Count == 0;
-        // TODO
-        public BoundPattern? NotCovered => throw new NotImplementedException();
+        public BoundPattern? NotCovered { get; set; }
         public BoundExpression MatchedValue => this.Arguments[0];
         public List<KeyValuePair<BoundPattern, INode>> Children { get; } = new();
         IReadOnlyList<KeyValuePair<BoundPattern, INode>> INode.Children => this.Children;
@@ -354,6 +353,8 @@ internal sealed class DecisionTree<TAction>
             var @default = this.Default(node);
             // Add as child
             node.Children.Add(new(BoundDiscardPattern.Default, @default));
+            // If it's a failure node, add counterexample
+            if (@default.IsFail) @default.NotCovered = uncoveredDomain.SamplePattern();
         }
 
         // Recurse to children

@@ -139,7 +139,7 @@ repository:
       match: '[><=!]=?'
       # Control keywords that build up expressions
     - name: keyword.control.draco
-      match: \b(if|else|while|for|in|return|goto)\b
+      match: \b(if|else|while|for|in|return|goto|match)\b
     - include: '#call-expression'
       # Variable name
     - name: variable.other.draco

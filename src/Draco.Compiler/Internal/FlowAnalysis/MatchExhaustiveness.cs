@@ -57,11 +57,13 @@ internal sealed class MatchExhaustiveness : BoundTreeVisitor
 
         foreach (var (covers, redundant) in decisionTree.Redundancies)
         {
-            // TODO: Add prev case
             // Report
             this.diagnostics.Add(Diagnostic.Create(
                 template: FlowAnalysisErrors.MatchPatternAlreadyHandled,
-                location: redundant.Syntax?.Location));
+                location: redundant.Syntax?.Location,
+                relatedInformation: ImmutableArray.Create(DiagnosticRelatedInformation.Create(
+                    location: covers.Syntax?.Location,
+                    "the case covering this one can be found here"))));
         }
     }
 }

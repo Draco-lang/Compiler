@@ -277,7 +277,7 @@ internal sealed class DecisionTree<TAction>
             // We covered the value, subtract
             uncoveredDomain.SubtractPattern(pat);
             // Add as child
-            node.Children.Add(new(pat, child));
+            node.MutableChildren.Add(new(pat, child));
         }
 
         // If not complete, do defaulting
@@ -285,7 +285,7 @@ internal sealed class DecisionTree<TAction>
         {
             var @default = this.Default(node);
             // Add as child
-            node.Children.Add(new(BoundDiscardPattern.Default, @default));
+            node.MutableChildren.Add(new(BoundDiscardPattern.Default, @default));
         }
 
         // Recurse to children

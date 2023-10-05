@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -269,6 +270,15 @@ internal sealed class DecisionTree<TAction>
         _ => null,
     };
 
+    // TODO: Doc
+    private static BoundPattern? ConstructUnhandledPattern(INode node)
+    {
+        if (node.NotCovered is null) return null;
+
+        // TODO: Wrap in parent
+        return node.NotCovered;
+    }
+
     /// <summary>
     /// The root node of this tree.
     /// </summary>
@@ -291,7 +301,12 @@ internal sealed class DecisionTree<TAction>
     /// <summary>
     /// An example of an unhandled pattern, if any.
     /// </summary>
-    public BoundPattern? UnhandledExample => throw new NotImplementedException();
+    public BoundPattern? UnhandledExample => GraphTraversal
+        .DepthFirst(this.Root, n => n.Children.Select(c => c.Value))
+        .Where(n => n.IsFail)
+        .Select(ConstructUnhandledPattern)
+        .OfType<BoundPattern>()
+        .FirstOrDefault();
 
     private readonly IntrinsicSymbols intrinsicSymbols;
     private readonly HashSet<TAction> usedActions = new();

@@ -69,7 +69,7 @@ public sealed partial class Diagnostic
             return this;
         }
 
-        public Builder WithLocation(Location location)
+        public Builder WithLocation(Location? location)
         {
             this.Location = location;
             return this;

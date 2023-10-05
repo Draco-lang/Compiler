@@ -48,11 +48,19 @@ internal sealed class MatchExhaustiveness : BoundTreeVisitor
 
         if (!decisionTree.IsExhaustive)
         {
-            // TODO: Add example
             // Report
-            this.diagnostics.Add(Diagnostic.Create(
-                template: FlowAnalysisErrors.NonExhaustiveMatchExpression,
-                location: node.Syntax?.Location));
+            var diagBuilder = Diagnostic.CreateBuilder()
+                .WithTemplate(FlowAnalysisErrors.NonExhaustiveMatchExpression)
+                .WithLocation(node.Syntax?.Location);
+            var example = decisionTree.UnhandledExample;
+            if (example is not null)
+            {
+                diagBuilder.WithRelatedInformation(DiagnosticRelatedInformation.Create(
+                    location: node.Syntax?.Location,
+                    format: "for example, the pattern {0} is not handled",
+                    formatArgs: DecisionTree.ToDisplayString(example)));
+            }
+            this.diagnostics.Add(diagBuilder.Build());
         }
 
         foreach (var (covers, redundant) in decisionTree.Redundancies)

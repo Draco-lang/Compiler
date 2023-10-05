@@ -19,10 +19,10 @@ internal sealed partial class LocalRewriter
 
         // We build up the relevant arms
         var arms = node.MatchArms
-            .Select(a => new DecisionTree<BoundMatchArm>.Arm(a.Pattern, a))
+            .Select(a => DecisionTree.Arm(a.Pattern, a.Guard, a))
             .ToImmutableArray();
         // From that we build the decision tree
-        var decisionTree = DecisionTree<BoundMatchArm>.Build(this.IntrinsicSymbols, node.MatchedValue, arms);
+        var decisionTree = DecisionTree.Build(this.IntrinsicSymbols, node.MatchedValue, arms);
 
         // TODO: use it
 

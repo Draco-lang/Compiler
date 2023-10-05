@@ -18,7 +18,31 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// </summary>
 internal static class DecisionTree
 {
-    // TODO
+    /// <summary>
+    /// Builds a decision tree from the given data.
+    /// </summary>
+    /// <typeparam name="TAction">The action type.</typeparam>
+    /// <param name="intrinsicSymbols">The intrinsic symbols of the compilation.</param>
+    /// <param name="matchedValue">The matched value.</param>
+    /// <param name="arms">The arms of the match.</param>
+    /// <returns>The constructed decision tree.</returns>
+    public static DecisionTree<TAction> Build<TAction>(
+        IntrinsicSymbols intrinsicSymbols,
+        BoundExpression matchedValue,
+        ImmutableArray<DecisionTree<TAction>.Arm> arms)
+        where TAction : class =>
+        DecisionTree<TAction>.Build(intrinsicSymbols, matchedValue, arms);
+
+    /// <summary>
+    /// Utility for constructing an arm for a decision tree.
+    /// </summary>
+    /// <typeparam name="TAction">The action type.</typeparam>
+    /// <param name="pattern">The arm pattern.</param>
+    /// <param name="guard">The guard expression, if any.</param>
+    /// <param name="action">The associated action.</param>
+    /// <returns>The constructed decision tree arm.</returns>
+    public static DecisionTree<TAction>.Arm Arm<TAction>(BoundPattern pattern, BoundExpression? guard, TAction action)
+        where TAction : class => new(pattern, guard, action);
 
     /// <summary>
     /// Stringifies the given <paramref name="pattern"/> to a user-readable format.
@@ -40,7 +64,33 @@ internal static class DecisionTree
 /// </summary>
 /// <typeparam name="TAction">The action type being performed, when a branch is matched.</typeparam>
 internal sealed class DecisionTree<TAction>
+    where TAction : class
 {
+    /// <summary>
+    /// Builds a decision tree from the given data.
+    /// </summary>
+    /// <param name="intrinsicSymbols">The intrinsic symbols of the compilation.</param>
+    /// <param name="matchedValue">The matched value.</param>
+    /// <param name="arms">The arms of the match.</param>
+    /// <returns>The constructed decision tree.</returns>
+    public static DecisionTree<TAction> Build(IntrinsicSymbols intrinsicSymbols, BoundExpression matchedValue, ImmutableArray<Arm> arms)
+    {
+        // Construct root
+        var root = new Node(
+            parent: null,
+            arguments: new List<BoundExpression> { matchedValue },
+            patternMatrix: arms
+                .Select(a => new List<BoundPattern> { a.Pattern })
+                .ToList(),
+            actionArms: arms.ToList());
+        // Wrap in the tree
+        var tree = new DecisionTree<TAction>(intrinsicSymbols, root);
+        // Build it
+        tree.Build(root);
+        // Done
+        return tree;
+    }
+
     /// <summary>
     /// A single arm in the match construct.
     /// </summary>
@@ -79,6 +129,12 @@ internal sealed class DecisionTree<TAction>
         public Arm? ActionArm { get; }
 
         /// <summary>
+        /// The action that's associated with the node, in case it's a leaf.
+        /// </summary>
+        [MemberNotNullWhen(true, nameof(IsAction))]
+        public TAction? Action { get; }
+
+        /// <summary>
         /// True, if this is a failure node.
         /// </summary>
         public bool IsFail { get; }
@@ -105,7 +161,8 @@ internal sealed class DecisionTree<TAction>
         public INode? Parent { get; }
         public bool IsAction => this.ActionArm is not null;
         public Arm? ActionArm { get; set; }
-        public bool IsFail => this.Children.Count == 0;
+        public TAction? Action => this.ActionArm?.Action;
+        public bool IsFail => this.PatternMatrix.Count == 0;
         // TODO
         public BoundPattern? NotCovered => throw new NotImplementedException();
         public BoundExpression MatchedValue => this.Arguments[0];
@@ -222,6 +279,18 @@ internal sealed class DecisionTree<TAction>
     /// </summary>
     public IReadOnlySet<Redundance> Redundancies => this.redundancies;
     private HashSet<Redundance> redundancies = new();
+
+    /// <summary>
+    /// True, if this tree is exhaustive.
+    /// </summary>
+    public bool IsExhaustive => GraphTraversal
+        .DepthFirst(this.Root, n => n.Children.Select(c => c.Value))
+        .All(n => !n.IsFail);
+
+    /// <summary>
+    /// An example of an unhandled pattern, if any.
+    /// </summary>
+    public BoundPattern? UnhandledExample => throw new NotImplementedException();
 
     private readonly IntrinsicSymbols intrinsicSymbols;
 

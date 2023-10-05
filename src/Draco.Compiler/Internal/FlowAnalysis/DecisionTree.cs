@@ -87,6 +87,8 @@ internal sealed class DecisionTree<TAction>
         var tree = new DecisionTree<TAction>(intrinsicSymbols, root);
         // Build it
         tree.Build(root);
+        // Cleanup
+        tree.CleanUpRedundancies();
         // Done
         return tree;
     }
@@ -292,6 +294,7 @@ internal sealed class DecisionTree<TAction>
     public BoundPattern? UnhandledExample => throw new NotImplementedException();
 
     private readonly IntrinsicSymbols intrinsicSymbols;
+    private readonly HashSet<TAction> usedActions = new();
 
     private DecisionTree(IntrinsicSymbols intrinsicSymbols, Node root)
     {
@@ -313,11 +316,14 @@ internal sealed class DecisionTree<TAction>
         if (node.PatternMatrix[0].All(MatchesEverything))
         {
             // This is a succeeding node, set the performed action
-            node.ActionArm = node.ActionArms[0];
-            // The remaining ones are redundant
+            var takenAction = node.ActionArms[0];
+            node.ActionArm = takenAction;
+            this.usedActions.Add(takenAction.Action);
+            // The remaining ones are registered as redundant
             for (var i = 1; i < node.PatternMatrix.Count; ++i)
             {
-                this.redundancies.Add(new(node.ActionArms[0].Action, node.ActionArms[i].Action));
+                // Note, that this is not true redundancy, later cases can still use these
+                this.redundancies.Add(new(takenAction.Action, node.ActionArms[i].Action));
             }
             return;
         }
@@ -359,6 +365,14 @@ internal sealed class DecisionTree<TAction>
 
         // Recurse to children
         foreach (var (_, child) in node.Children) this.Build((Node)child);
+    }
+
+    /// <summary>
+    /// Cleans up the redundancy info, removing false positives.
+    /// </summary>
+    private void CleanUpRedundancies()
+    {
+        this.redundancies.RemoveWhere(r => this.usedActions.Contains(r.Uselesss));
     }
 
     /// <summary>

@@ -66,6 +66,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
         DefiniteAssignment.Analyze(body, binderProvider.DiagnosticBag);
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+        MatchExhaustiveness.Analyze(this, this.DeclaringCompilation!.IntrinsicSymbols, binderProvider.DiagnosticBag);
     }
 
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)

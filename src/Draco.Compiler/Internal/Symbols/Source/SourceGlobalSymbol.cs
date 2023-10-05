@@ -44,6 +44,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         // Flow analysis
         if (value is not null) DefiniteAssignment.Analyze(value, binderProvider.DiagnosticBag);
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+        MatchExhaustiveness.Analyze(this, this.DeclaringCompilation!.IntrinsicSymbols, binderProvider.DiagnosticBag);
     }
 
     private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValueIfNeeded(IBinderProvider binderProvider)

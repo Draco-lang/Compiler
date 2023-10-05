@@ -13,7 +13,25 @@ using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
-// TODO: CONSIDER GUARDS
+/// <summary>
+/// Utilities for building a decision tree.
+/// </summary>
+internal static class DecisionTree
+{
+    // TODO
+
+    /// <summary>
+    /// Stringifies the given <paramref name="pattern"/> to a user-readable format.
+    /// </summary>
+    /// <param name="pattern">The pattern to stringify.</param>
+    /// <returns>The user-readable form of <paramref name="pattern"/>.</returns>
+    public static string ToDisplayString(BoundPattern pattern) => pattern switch
+    {
+        BoundDiscardPattern => "_",
+        BoundLiteralPattern lit => lit.Value?.ToString() ?? "null",
+        _ => throw new ArgumentOutOfRangeException(nameof(pattern)),
+    };
+}
 
 /// <summary>
 /// Represents a decision tree computed for a match expression.
@@ -27,96 +45,96 @@ internal sealed class DecisionTree<TAction>
     /// A single arm in the match construct.
     /// </summary>
     /// <param name="Pattern">The matched pattern.</param>
+    /// <param name="Guard">The guard of the arm, if any.</param>
     /// <param name="Action">The taken action if <paramref name="Pattern"/> matches.</param>
-    public readonly record struct Arm(BoundPattern Pattern, TAction Action);
+    public readonly record struct Arm(BoundPattern Pattern, BoundExpression? Guard, TAction Action);
 
     /// <summary>
     /// Represents a redundancy.
     /// </summary>
-    /// <param name="CoveredBy">The action that covers the <paramref name="Redundant"/> one already.</param>
-    /// <param name="Redundant">The action that is redundant, because <paramref name="CoveredBy"/> already
+    /// <param name="CoveredBy">The action that covers the <paramref name="Uselesss"/> one already.</param>
+    /// <param name="Uselesss">The action that is redundant or useless, because <paramref name="CoveredBy"/> already
     /// matches.</param>
-    public readonly record struct Redundance(TAction CoveredBy, TAction Redundant);
+    public readonly record struct Redundance(TAction CoveredBy, TAction Uselesss);
 
     /// <summary>
     /// A single node in the decision tree.
     /// </summary>
-    public abstract class Node
+    public interface INode
     {
         /// <summary>
-        /// The parent node of this one.
+        /// The parent node of this one, if any.
         /// </summary>
-        public abstract Node? Parent { get; }
+        public INode? Parent { get; }
 
         /// <summary>
         /// True, if this is an action node, meaning that there is a match.
         /// </summary>
-        public abstract bool IsAction { get; }
+        public bool IsAction { get; }
 
         /// <summary>
-        /// The action that's associated with the node, in case it's a leaf.
+        /// The action arm that's associated with the node, in case it's a leaf.
         /// </summary>
         [MemberNotNullWhen(true, nameof(IsAction))]
-        public abstract TAction? Action { get; }
+        public Arm? ActionArm { get; }
 
         /// <summary>
         /// True, if this is a failure node.
         /// </summary>
-        public abstract bool IsFail { get; }
+        public bool IsFail { get; }
 
         /// <summary>
-        /// The counterexample of this node, if it's a failure node and a counterexample could be produced.
-        /// The counterexample in this case means a pattern that was not covered.
+        /// An example pattern that this node did not cover.
         /// </summary>
-        public abstract BoundPattern? Counterexample { get; }
+        public BoundPattern? NotCovered { get; }
 
         /// <summary>
-        /// The expression being matched on, if any.
+        /// The expression being matched on.
         /// </summary>
-        public abstract BoundExpression? MatchedOn { get; }
+        public BoundExpression MatchedValue { get; }
 
         /// <summary>
         /// The child nodes of this one, associated to the pattern to match to take the route to the child.
         /// </summary>
-        public abstract ImmutableArray<KeyValuePair<BoundPattern, Node>> Children { get; }
+        public IReadOnlyList<KeyValuePair<BoundPattern, INode>> Children { get; }
     }
 
-    /// <summary>
-    /// A method that builds the accessor expression for a given expression and its member.
-    /// </summary>
-    /// <param name="value">The expression to build the accessor for.</param>
-    /// <param name="member">The accessed member.</param>
-    /// <returns>An expression that accesses the given member of the given value.</returns>
-    public delegate BoundExpression BuildAccessorDelegate(BoundExpression value, object? member);
-
-    private sealed class MutableNode : Node
+    // A mutable node implementation
+    private sealed class Node : INode
     {
-        // Observers
-        public override Node? Parent { get; }
-        public override bool IsAction => this.Action is not null;
-        public override TAction? Action => this.MutableAction;
-        public override bool IsFail => this.PatternMatrix.Count == 0;
-        public override BoundPattern? Counterexample => throw new NotImplementedException();
-        public override BoundExpression? MatchedOn => throw new NotImplementedException();
-        public override ImmutableArray<KeyValuePair<BoundPattern, Node>> Children =>
-            this.builtChildren ??= this.MutableChildren
-                .Select(n => new KeyValuePair<BoundPattern, Node>(n.Key, n.Value))
-                .ToImmutableArray();
-        private ImmutableArray<KeyValuePair<BoundPattern, Node>>? builtChildren;
+        public INode? Parent { get; }
+        public bool IsAction => this.ActionArm is not null;
+        public Arm? ActionArm { get; set; }
+        public bool IsFail => this.Children.Count == 0;
+        // TODO
+        public BoundPattern? NotCovered => throw new NotImplementedException();
+        public BoundExpression MatchedValue => this.Arguments[0];
+        public List<KeyValuePair<BoundPattern, INode>> Children { get; } = new();
+        IReadOnlyList<KeyValuePair<BoundPattern, INode>> INode.Children => this.Children;
 
-        // Mutators
         public List<BoundExpression> Arguments { get; }
         public List<int> ArgumentOrder { get; }
         public List<List<BoundPattern>> PatternMatrix { get; }
-        public List<TAction> Actions { get; }
-        public TAction? MutableAction { get; set; }
-        public List<KeyValuePair<BoundPattern, MutableNode>> MutableChildren { get; } = new();
+        public List<Arm> ActionArms { get; }
 
-        public MutableNode(
-            Node? parent,
+        public int FirstColumnWithRefutableEntry
+        {
+            get
+            {
+                for (var col = 0; col < this.PatternMatrix[0].Count; ++col)
+                {
+                    if (this.PatternMatrix.Any(row => !MatchesEverything(row[col]))) return col;
+                }
+
+                throw new InvalidOperationException("the matrix only contains irrefutable entries");
+            }
+        }
+
+        public Node(
+            INode? parent,
             List<BoundExpression> arguments,
             List<List<BoundPattern>> patternMatrix,
-            List<TAction> actions)
+            List<Arm> actionArms)
         {
             this.Parent = parent;
             this.Arguments = arguments;
@@ -124,7 +142,7 @@ internal sealed class DecisionTree<TAction>
                 .Range(0, this.Arguments.Count)
                 .ToList();
             this.PatternMatrix = patternMatrix;
-            this.Actions = actions;
+            this.ActionArms = actionArms;
         }
 
         public void SwapColumns(int i, int j)
@@ -143,6 +161,9 @@ internal sealed class DecisionTree<TAction>
     /// </summary>
     private sealed class SpecializationComparer : IEqualityComparer<BoundPattern>
     {
+        /// <summary>
+        /// A singleton instance that can be used.
+        /// </summary>
         public static SpecializationComparer Instance { get; } = new();
 
         private SpecializationComparer()
@@ -151,112 +172,90 @@ internal sealed class DecisionTree<TAction>
 
         public bool Equals(BoundPattern? x, BoundPattern? y) => (x, y) switch
         {
-            _ => throw new ArgumentOutOfRangeException(paramName: null, message: "unhandled pair of patterns"),
+            (BoundDiscardPattern, BoundDiscardPattern) => true,
+            (BoundLiteralPattern lit1, BoundLiteralPattern lit2) => Equals(lit1.Value, lit2.Value),
+            _ => false,
         };
 
         public int GetHashCode([DisallowNull] BoundPattern obj) => obj switch
         {
-            BoundDiscardPattern => typeof(BoundDiscardPattern).GetHashCode(),
+            BoundDiscardPattern => 0,
             BoundLiteralPattern lit => lit.Value?.GetHashCode() ?? 0,
             _ => throw new ArgumentOutOfRangeException(nameof(obj)),
         };
     }
 
     /// <summary>
-    /// Builds a decision tree from the given data.
+    /// Checks, if the given pattern matches any value, making it irrefutable.
     /// </summary>
-    /// <param name="intrinsicSymbols">The intrinsic symbols of the compilation.</param>
-    /// <param name="matchedValue">The matched value.</param>
-    /// <param name="arms">The arms of the match.</param>
-    /// <returns>The constructed decision tree.</returns>
-    public static DecisionTree<TAction> Build(
-        IntrinsicSymbols intrinsicSymbols,
-        BoundExpression matchedValue,
-        ImmutableArray<Arm> arms)
+    /// <param name="pattern">The pattern to check.</param>
+    /// <returns>True, if <paramref name="pattern"/> matches any possible value.</returns>
+    private static bool MatchesEverything(BoundPattern pattern) => pattern switch
     {
-        // Construct root
-        var root = new MutableNode(
-            parent: null,
-            arguments: new List<BoundExpression> { matchedValue },
-            patternMatrix: arms
-                .Select(a => new List<BoundPattern> { a.Pattern })
-                .ToList(),
-            actions: arms
-                .Select(a => a.Action)
-                .ToList());
-        // Wrap in the tree
-        var tree = new DecisionTree<TAction>(
-            intrinsicSymbols,
-            // TODO
-            (expr, mem) => throw new NotImplementedException(),
-            root);
-        // Build it
-        tree.Build(root);
-        return tree;
-    }
+        BoundDiscardPattern => true,
+        _ => false,
+    };
 
     /// <summary>
-    /// Stringifies the given <paramref name="pattern"/> to a user-readable format.
+    /// Attempts to explode a pattern with its arguments for specialization.
     /// </summary>
-    /// <param name="pattern">The pattern to stringify.</param>
-    /// <returns>The user-readable form of <paramref name="pattern"/>.</returns>
-    public static string ToDisplayString(BoundPattern pattern) => pattern switch
+    /// <param name="specializer">The specializing pattern.</param>
+    /// <param name="toExplode">The pattern to explode.</param>
+    /// <returns>The exploded arguments of <paramref name="toExplode"/> if it can be specialized by
+    /// <paramref name="specializer"/>, null otherwise.</returns>
+    private static ImmutableArray<BoundPattern>? TryExplode(BoundPattern specializer, BoundPattern toExplode) => (specializer, toExplode) switch
     {
-        _ => throw new ArgumentOutOfRangeException(nameof(pattern)),
+        (BoundDiscardPattern, _) => throw new ArgumentOutOfRangeException(nameof(specializer)),
+        (BoundLiteralPattern, BoundDiscardPattern) => ImmutableArray<BoundPattern>.Empty,
+        (BoundLiteralPattern lit1, BoundLiteralPattern lit2) when Equals(lit1.Value, lit2.Value) => ImmutableArray<BoundPattern>.Empty,
+        _ => null,
     };
 
     /// <summary>
     /// The root node of this tree.
     /// </summary>
-    public Node Root => this.mutableRoot;
-    private readonly MutableNode mutableRoot;
+    public INode Root => this.root;
+    private readonly Node root;
 
     /// <summary>
     /// All redundancies in the tree.
     /// </summary>
-    public ImmutableArray<Redundance> Redundancies => this.redundancies.ToImmutable();
-    private readonly ImmutableArray<Redundance>.Builder redundancies = ImmutableArray.CreateBuilder<Redundance>();
-
-    /// <summary>
-    /// True, if this tree is exhaustive.
-    /// </summary>
-    public bool IsExhaustive => GraphTraversal
-        .DepthFirst(this.Root, n => n.Children.Select(c => c.Value))
-        .All(n => !n.IsFail);
-
-    /// <summary>
-    /// An example of an uncovered pattern, if any.
-    /// </summary>
-    public BoundPattern? UncoveredExample => throw new NotImplementedException();
+    public IReadOnlySet<Redundance> Redundancies => this.redundancies;
+    private HashSet<Redundance> redundancies = new();
 
     private readonly IntrinsicSymbols intrinsicSymbols;
-    private readonly BuildAccessorDelegate buildAccessor;
 
-    private DecisionTree(IntrinsicSymbols intrinsicSymbols, BuildAccessorDelegate buildAccessor, MutableNode root)
+    private DecisionTree(IntrinsicSymbols intrinsicSymbols, Node root)
     {
         this.intrinsicSymbols = intrinsicSymbols;
-        this.mutableRoot = root;
-        this.buildAccessor = buildAccessor;
+        this.root = root;
     }
 
-    private void Build(MutableNode node)
+    /// <summary>
+    /// Builds the subtree.
+    /// </summary>
+    /// <param name="node">The current root of the tree.</param>
+    private void Build(Node node)
     {
+        // TODO: Handle guards!
+        // They complicate analysis quite a bit
+
         if (node.IsFail) return;
 
         if (node.PatternMatrix[0].All(MatchesEverything))
         {
             // This is a succeeding node, set the performed action
-            node.MutableAction = node.Actions[0];
+            node.ActionArm = node.ActionArms[0];
             // The remaining ones are redundant
             for (var i = 1; i < node.PatternMatrix.Count; ++i)
             {
-                this.redundancies.Add(new(node.Actions[0], node.Actions[i]));
+                this.redundancies.Add(new(node.ActionArms[0].Action, node.ActionArms[i].Action));
             }
             return;
         }
 
         // We need to make a decision, bring the column that has refutable entries to the beginning
-        var firstColWithRefutable = FirstColumnWithRefutableEntry(node);
+        var firstColWithRefutable = node.FirstColumnWithRefutableEntry;
         if (firstColWithRefutable != 0) node.SwapColumns(0, firstColWithRefutable);
 
         // The first column now contains something that is refutable
@@ -277,7 +276,7 @@ internal sealed class DecisionTree<TAction>
             // We covered the value, subtract
             uncoveredDomain.SubtractPattern(pat);
             // Add as child
-            node.MutableChildren.Add(new(pat, child));
+            node.Children.Add(new(pat, child));
         }
 
         // If not complete, do defaulting
@@ -285,19 +284,25 @@ internal sealed class DecisionTree<TAction>
         {
             var @default = this.Default(node);
             // Add as child
-            node.MutableChildren.Add(new(BoundDiscardPattern.Default, @default));
+            node.Children.Add(new(BoundDiscardPattern.Default, @default));
         }
 
         // Recurse to children
-        foreach (var (_, child) in node.MutableChildren) this.Build(child);
+        foreach (var (_, child) in node.Children) this.Build((Node)child);
     }
 
-    private MutableNode Specialize(MutableNode node, BoundPattern specializer)
+    /// <summary>
+    /// Specializes the given node.
+    /// </summary>
+    /// <param name="node">The node to specialize.</param>
+    /// <param name="specializer">The specializer pattern.</param>
+    /// <returns>The <paramref name="node"/> specialized by <paramref name="specializer"/>.</returns>
+    private Node Specialize(Node node, BoundPattern specializer)
     {
         var remainingRows = new List<List<BoundPattern>>();
-        var remainingActions = new List<TAction>();
+        var remainingActions = new List<Arm>();
         var hadEmptyRow = false;
-        foreach (var (row, action) in node.PatternMatrix.Zip(node.Actions))
+        foreach (var (row, action) in node.PatternMatrix.Zip(node.ActionArms))
         {
             var exploded = TryExplode(specializer, row[0]);
             if (exploded is null) continue;
@@ -309,6 +314,7 @@ internal sealed class DecisionTree<TAction>
                 newRow.Add(BoundDiscardPattern.Default);
             }
 
+            // NOTE: Row is already cloned
             remainingRows.Add(newRow);
             remainingActions.Add(action);
         }
@@ -317,7 +323,8 @@ internal sealed class DecisionTree<TAction>
             .Range(0, remainingRows[0].Count - node.PatternMatrix[0].Count + 1)
             .Select(i => hadEmptyRow
                 ? node.Arguments[0]
-                : this.buildAccessor(node.Arguments[0], i))
+                // TODO: Construct accessor for i-th element
+                : throw new NotImplementedException("we don't handle accessor construction yet"))
             .Concat(node.Arguments.Skip(1))
             .ToList();
 
@@ -325,49 +332,31 @@ internal sealed class DecisionTree<TAction>
             parent: node,
             arguments: newArguments,
             patternMatrix: remainingRows,
-            actions: remainingActions);
+            actionArms: remainingActions);
     }
 
-    private MutableNode Default(MutableNode node)
+    /// <summary>
+    /// Constructs the default node, which keeps only the irrefutable elements.
+    /// </summary>
+    /// <param name="node">The node to construct the default of.</param>
+    /// <returns>The defaulted <paramref name="node"/>.</returns>
+    private Node Default(Node node)
     {
         // Keep only irrefutable rows
         var remainingRows = new List<List<BoundPattern>>();
-        var remainingActions = new List<TAction>();
-        foreach (var (row, action) in node.PatternMatrix.Zip(node.Actions))
+        var remainingActions = new List<Arm>();
+        foreach (var (row, action) in node.PatternMatrix.Zip(node.ActionArms))
         {
             if (!MatchesEverything(row[0])) continue;
 
-            remainingRows.Add(row);
+            // NOTE: We need to clone in case it gets mutated
+            remainingRows.Add(row.ToList());
             remainingActions.Add(action);
         }
         return new(
             parent: node,
             arguments: node.Arguments,
             patternMatrix: remainingRows,
-            actions: remainingActions);
+            actionArms: remainingActions);
     }
-
-    private static int FirstColumnWithRefutableEntry(MutableNode node)
-    {
-        for (var col = 0; col < node.PatternMatrix[0].Count; ++col)
-        {
-            if (node.PatternMatrix.Any(row => !MatchesEverything(row[col]))) return col;
-        }
-
-        throw new InvalidOperationException("should not happen");
-    }
-
-    private static bool MatchesEverything(BoundPattern pattern) => pattern switch
-    {
-        BoundDiscardPattern => true,
-        _ => false,
-    };
-
-    private static ImmutableArray<BoundPattern>? TryExplode(BoundPattern specializer, BoundPattern toExplode) => (specializer, toExplode) switch
-    {
-        (BoundDiscardPattern, _) => throw new ArgumentOutOfRangeException(nameof(specializer)),
-        (BoundLiteralPattern, BoundDiscardPattern) => ImmutableArray<BoundPattern>.Empty,
-        (BoundLiteralPattern lit1, BoundLiteralPattern lit2) when Equals(lit1.Value, lit2.Value) => ImmutableArray<BoundPattern>.Empty,
-        _ => null,
-    };
 }

@@ -296,13 +296,18 @@ internal sealed class DecisionTree<TAction>
     {
         var remainingRows = new List<List<BoundPattern>>();
         var remainingActions = new List<TAction>();
+        var hadEmptyRow = false;
         foreach (var (row, action) in node.PatternMatrix.Zip(node.Actions))
         {
             var exploded = TryExplode(specializer, row[0]);
             if (exploded is null) continue;
 
             var newRow = exploded.Concat(row.Skip(1)).ToList();
-            if (newRow.Count == 0) newRow.Add(BoundDiscardPattern.Default);
+            if (newRow.Count == 0)
+            {
+                hadEmptyRow = true;
+                newRow.Add(BoundDiscardPattern.Default);
+            }
 
             remainingRows.Add(newRow);
             remainingActions.Add(action);
@@ -310,19 +315,37 @@ internal sealed class DecisionTree<TAction>
 
         var newArguments = Enumerable
             .Range(0, remainingRows[0].Count - node.PatternMatrix[0].Count + 1)
-            .Select(i => this.buildAccessor(node.Arguments[0], i))
+            .Select(i => hadEmptyRow
+                ? node.Arguments[0]
+                : this.buildAccessor(node.Arguments[0], i))
             .Concat(node.Arguments.Skip(1))
             .ToList();
 
-        return new MutableNode(
+        return new(
             parent: node,
             arguments: newArguments,
             patternMatrix: remainingRows,
             actions: remainingActions);
     }
 
-    private MutableNode Default(MutableNode node) =>
-        throw new NotImplementedException();
+    private MutableNode Default(MutableNode node)
+    {
+        // Keep only irrefutable rows
+        var remainingRows = new List<List<BoundPattern>>();
+        var remainingActions = new List<TAction>();
+        foreach (var (row, action) in node.PatternMatrix.Zip(node.Actions))
+        {
+            if (!MatchesEverything(row[0])) continue;
+
+            remainingRows.Add(row);
+            remainingActions.Add(action);
+        }
+        return new(
+            parent: node,
+            arguments: node.Arguments,
+            patternMatrix: remainingRows,
+            actions: remainingActions);
+    }
 
     private static int FirstColumnWithRefutableEntry(MutableNode node)
     {

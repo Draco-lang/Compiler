@@ -5,11 +5,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Valuetype element boxing.
 /// </summary>
-internal sealed class BoxInstruction : InstructionBase
+internal sealed class BoxInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the boxed value to.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

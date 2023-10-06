@@ -6,11 +6,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// A procedure call.
 /// </summary>
-internal sealed class CallInstruction : InstructionBase
+internal sealed class CallInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the call result to.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

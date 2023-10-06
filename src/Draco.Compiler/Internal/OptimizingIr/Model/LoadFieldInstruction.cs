@@ -5,11 +5,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// A field access.
 /// </summary>
-internal sealed class LoadFieldInstruction : InstructionBase
+internal sealed class LoadFieldInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the field to.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

@@ -3,11 +3,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// An array length query.
 /// </summary>
-internal sealed class ArrayLengthInstruction : InstructionBase
+internal sealed class ArrayLengthInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the array length to.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

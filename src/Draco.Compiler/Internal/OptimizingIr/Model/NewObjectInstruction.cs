@@ -6,11 +6,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// An object instantiation.
 /// </summary>
-internal sealed class NewObjectInstruction : InstructionBase
+internal sealed class NewObjectInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the instantiated object to.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

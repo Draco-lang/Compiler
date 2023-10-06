@@ -7,11 +7,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// An array instantiation.
 /// </summary>
-internal sealed class NewArrayInstruction : InstructionBase
+internal sealed class NewArrayInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the instantiated array to.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

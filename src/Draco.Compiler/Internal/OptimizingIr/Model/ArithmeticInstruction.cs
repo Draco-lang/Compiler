@@ -5,11 +5,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Represents some kind of binary arithmetic instruction.
 /// </summary>
-internal sealed class ArithmeticInstruction : InstructionBase
+internal sealed class ArithmeticInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to store the result at.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

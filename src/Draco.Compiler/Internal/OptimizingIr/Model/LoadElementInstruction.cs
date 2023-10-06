@@ -6,11 +6,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// An array element access.
 /// </summary>
-internal sealed class LoadElementInstruction : InstructionBase
+internal sealed class LoadElementInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the array element to.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

@@ -3,11 +3,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Loads a value from a local/global/argument.
 /// </summary>
-internal sealed class LoadInstruction : InstructionBase
+internal sealed class LoadInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to load to.
-    /// </summary>
     public Register Target { get; set; }
 
     /// <summary>

@@ -293,7 +293,7 @@ internal sealed class CilCodegen
             // Arguments
             foreach (var arg in mcall.Arguments) this.EncodePush(arg);
             // Call
-            this.InstructionEncoder.OpCode(IsVirtual(mcall.Procedure) ? ILOpCode.Callvirt : ILOpCode.Call);
+            this.InstructionEncoder.OpCode(mcall.Procedure.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
             this.EncodeToken(mcall.Procedure);
             // Store result
             this.StoreLocal(mcall.Target);
@@ -360,7 +360,7 @@ internal sealed class CilCodegen
         }
     }
 
-    private void EncodeToken(TypeSymbol symbol)
+    private void EncodeToken(Symbol symbol)
     {
         var handle = this.GetHandle(symbol);
         this.InstructionEncoder.Token(handle);
@@ -472,10 +472,4 @@ internal sealed class CilCodegen
         if (index is null) return;
         this.InstructionEncoder.StoreLocal(index.Value);
     }
-
-    private static bool IsVirtual(IOperand operand) => operand switch
-    {
-        SymbolReference reference => (reference.Symbol as FunctionSymbol)?.IsVirtual ?? false,
-        _ => throw new ArgumentOutOfRangeException(nameof(operand)),
-    };
 }

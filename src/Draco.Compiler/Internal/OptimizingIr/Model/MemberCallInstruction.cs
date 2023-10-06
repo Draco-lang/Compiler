@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -13,7 +14,7 @@ internal sealed class MemberCallInstruction : InstructionBase, IValueInstruction
     /// <summary>
     /// The called procedure.
     /// </summary>
-    public IOperand Procedure { get; set; }
+    public FunctionSymbol Procedure { get; set; }
 
     /// <summary>
     /// The receiver the method is called on.
@@ -25,7 +26,7 @@ internal sealed class MemberCallInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
 
-    public MemberCallInstruction(Register target, IOperand procedure, IOperand receiver, IEnumerable<IOperand> arguments)
+    public MemberCallInstruction(Register target, FunctionSymbol procedure, IOperand receiver, IEnumerable<IOperand> arguments)
     {
         this.Target = target;
         this.Procedure = procedure;
@@ -34,7 +35,7 @@ internal sealed class MemberCallInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := call {this.Receiver.ToOperandString()}.{this.Procedure.ToOperandString()}({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
+        $"{this.Target.ToOperandString()} := call {this.Receiver.ToOperandString()}.[{this.Procedure.FullName}]({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
 
     public override MemberCallInstruction Clone() => new(this.Target, this.Procedure, this.Receiver, this.Arguments);
 }

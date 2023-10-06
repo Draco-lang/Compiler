@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -13,14 +14,14 @@ internal sealed class NewObjectInstruction : InstructionBase, IValueInstruction
     /// <summary>
     /// The called constructor.
     /// </summary>
-    public IOperand Constructor { get; set; }
+    public FunctionSymbol Constructor { get; set; }
 
     /// <summary>
     /// The arguments that are passed to the constructor.
     /// </summary>
     public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
 
-    public NewObjectInstruction(Register target, IOperand constructor, IEnumerable<IOperand> arguments)
+    public NewObjectInstruction(Register target, FunctionSymbol constructor, IEnumerable<IOperand> arguments)
     {
         this.Target = target;
         this.Constructor = constructor;
@@ -28,7 +29,7 @@ internal sealed class NewObjectInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := new {this.Constructor.ToOperandString()}({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
+        $"{this.Target.ToOperandString()} := new [{this.Constructor.FullName}]({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
 
     public override NewObjectInstruction Clone() => new(this.Target, this.Constructor, this.Arguments);
 }

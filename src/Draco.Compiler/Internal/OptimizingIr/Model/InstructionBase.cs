@@ -18,6 +18,7 @@ internal abstract class InstructionBase : IInstruction
     public virtual bool IsValidInUnreachableContext => false;
     public virtual IEnumerable<BasicBlock> JumpTargets => Enumerable.Empty<BasicBlock>();
     IEnumerable<IBasicBlock> IInstruction.JumpTargets => this.JumpTargets;
+    public virtual IEnumerable<IOperand> Operands => Enumerable.Empty<IOperand>();
 
     public override abstract string ToString();
 

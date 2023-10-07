@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
@@ -11,6 +13,8 @@ internal sealed class LoadInstruction : InstructionBase, IValueInstruction
     /// The operand to load from.
     /// </summary>
     public IOperand Source { get; set; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Source };
 
     public LoadInstruction(Register target, IOperand source)
     {

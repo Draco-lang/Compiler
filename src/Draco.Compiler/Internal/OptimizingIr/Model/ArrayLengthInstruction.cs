@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
@@ -11,6 +13,8 @@ internal sealed class ArrayLengthInstruction : InstructionBase, IValueInstructio
     /// The array to get the length of.
     /// </summary>
     public IOperand Array { get; set; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Array };
 
     public ArrayLengthInstruction(Register target, IOperand array)
     {

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
@@ -11,6 +13,8 @@ internal sealed class RetInstruction : InstructionBase
     /// The returned value.
     /// </summary>
     public IOperand Value { get; set; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Value };
 
     public RetInstruction(IOperand value)
     {

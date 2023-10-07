@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -18,6 +19,8 @@ internal sealed class LoadFieldInstruction : InstructionBase, IValueInstruction
     /// The accessed member.
     /// </summary>
     public FieldSymbol Member { get; set; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Receiver };
 
     public LoadFieldInstruction(Register target, IOperand receiver, FieldSymbol member)
     {

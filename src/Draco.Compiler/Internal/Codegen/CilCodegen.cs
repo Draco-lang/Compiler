@@ -366,34 +366,6 @@ internal sealed class CilCodegen
         this.InstructionEncoder.Token(handle);
     }
 
-    private void EncodeToken(IOperand operand)
-    {
-        switch (operand)
-        {
-        case IProcedure proc:
-        {
-            // Regular procedure call
-            var handle = this.GetProcedureDefinitionHandle(proc);
-            this.InstructionEncoder.Token(handle);
-            break;
-        }
-        case SymbolReference symbolRef when symbolRef.Symbol is TypeSymbol type:
-        {
-            this.EncodeToken(type);
-            break;
-        }
-        case SymbolReference symbolRef:
-        {
-            // Regular lookup
-            var handle = this.GetHandle(symbolRef.Symbol);
-            this.InstructionEncoder.Token(handle);
-            break;
-        }
-        default:
-            throw new ArgumentOutOfRangeException(nameof(operand));
-        }
-    }
-
     private void EncodePush(IOperand operand)
     {
         switch (operand)

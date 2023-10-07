@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -21,6 +22,8 @@ internal sealed class StoreFieldInstruction : InstructionBase
     /// The operand to store the value of.
     /// </summary>
     public IOperand Source { get; set; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Receiver, this.Source };
 
     public StoreFieldInstruction(IOperand receiver, FieldSymbol member, IOperand source)
     {

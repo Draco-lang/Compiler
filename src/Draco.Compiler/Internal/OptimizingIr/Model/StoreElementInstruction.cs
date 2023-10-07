@@ -23,6 +23,8 @@ internal sealed class StoreElementInstruction : InstructionBase
     /// </summary>
     public IOperand Source { get; set; }
 
+    public override IEnumerable<IOperand> Operands => this.Indices.Prepend(this.TargetArray).Append(this.Source);
+
     public StoreElementInstruction(IOperand targetArray, IEnumerable<IOperand> indices, IOperand source)
     {
         this.TargetArray = targetArray;

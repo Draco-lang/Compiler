@@ -26,6 +26,8 @@ internal sealed class MemberCallInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
 
+    public override IEnumerable<IOperand> Operands => this.Arguments.Prepend(this.Receiver);
+
     public MemberCallInstruction(Register target, FunctionSymbol procedure, IOperand receiver, IEnumerable<IOperand> arguments)
     {
         this.Target = target;

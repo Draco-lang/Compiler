@@ -21,6 +21,8 @@ internal sealed class CallInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
 
+    public override IEnumerable<IOperand> Operands => this.Arguments;
+
     public CallInstruction(Register target, FunctionSymbol procedure, IEnumerable<IOperand> arguments)
     {
         this.Target = target;

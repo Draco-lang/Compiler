@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -18,6 +19,8 @@ internal sealed class BoxInstruction : InstructionBase, IValueInstruction
     /// The boxed value.
     /// </summary>
     public IOperand Value { get; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Value };
 
     public BoxInstruction(Register target, TypeSymbol boxedType, IOperand value)
     {

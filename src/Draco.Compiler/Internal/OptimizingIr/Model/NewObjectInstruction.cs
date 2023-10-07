@@ -21,6 +21,8 @@ internal sealed class NewObjectInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
 
+    public override IEnumerable<IOperand> Operands => this.Arguments;
+
     public NewObjectInstruction(Register target, FunctionSymbol constructor, IEnumerable<IOperand> arguments)
     {
         this.Target = target;

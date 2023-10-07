@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
@@ -14,6 +16,8 @@ internal sealed class StoreInstruction : InstructionBase
     /// The operand to store the value of.
     /// </summary>
     public IOperand Source { get; set; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Target, this.Source };
 
     public StoreInstruction(IOperand target, IOperand source)
     {

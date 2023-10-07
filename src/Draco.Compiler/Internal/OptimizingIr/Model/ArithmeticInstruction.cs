@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -23,6 +24,8 @@ internal sealed class ArithmeticInstruction : InstructionBase, IValueInstruction
     /// The right operand of the operation.
     /// </summary>
     public IOperand Right { get; set; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Left, this.Right };
 
     public ArithmeticInstruction(Register target, ArithmeticOp op, IOperand left, IOperand right)
     {

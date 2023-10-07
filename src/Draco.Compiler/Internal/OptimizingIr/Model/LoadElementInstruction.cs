@@ -20,6 +20,8 @@ internal sealed class LoadElementInstruction : InstructionBase, IValueInstructio
     /// </summary>
     public IList<IOperand> Indices { get; set; } = new List<IOperand>();
 
+    public override IEnumerable<IOperand> Operands => this.Indices.Prepend(this.Array);
+
     public LoadElementInstruction(Register target, IOperand array, IEnumerable<IOperand> indices)
     {
         this.Target = target;

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
+using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -33,13 +35,31 @@ internal sealed class CilCodegen
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
+    private readonly ImmutableHashSet<Register>? stackifiedRegisters;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
     private readonly Dictionary<IOperand, AllocatedLocal> allocatedLocals = new();
+
+    // NOTE: The current stackification attempt is FLAWED
+    // Imagine this situation:
+    //
+    // r1 := load loc0
+    // r2 := box 1 as object
+    // store r1[0] := r2
+    //
+    // We stackify it and get
+    //
+    // load loc0
+    // box 1 as object
+    // store r1[0]
+    //
+    // OOPS! The index "leaked behind" the value, reversing the order
+    // We might need to structure the instructions in a tree after all
 
     public CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
     {
         this.metadataCodegen = metadataCodegen;
         this.procedure = procedure;
+        this.stackifiedRegisters = Stackifier.Stackify(procedure);
 
         var codeBuilder = new BlobBuilder();
         var controlFlowBuilder = new ControlFlowBuilder();
@@ -426,6 +446,8 @@ internal sealed class CilCodegen
 
     private void LoadLocal(Register register)
     {
+        // Register got stackified
+        if (this.stackifiedRegisters?.Contains(register) ?? false) return;
         var index = this.GetRegisterIndex(register);
         if (index is null) return;
         this.InstructionEncoder.LoadLocal(index.Value);
@@ -440,6 +462,8 @@ internal sealed class CilCodegen
 
     private void StoreLocal(Register register)
     {
+        // Register got stackified
+        if (this.stackifiedRegisters?.Contains(register) ?? false) return;
         var index = this.GetRegisterIndex(register);
         if (index is null) return;
         this.InstructionEncoder.StoreLocal(index.Value);

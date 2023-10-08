@@ -13,12 +13,12 @@ internal static class InstructionFactory
     public static NopInstruction Nop() => new();
     public static BoxInstruction Box(Register target, TypeSymbol boxedType, IOperand value) =>
         new(target, boxedType, value);
-    public static StoreInstruction Store(IOperand target, IOperand source) => new(target, source);
+    public static StoreInstruction Store(Symbol target, IOperand source) => new(target, source);
     public static StoreElementInstruction StoreElement(IOperand array, IEnumerable<IOperand> indices, IOperand source) =>
         new(array, indices, source);
     public static StoreFieldInstruction StoreField(IOperand receiver, FieldSymbol field, IOperand source) =>
         new(receiver, field, source);
-    public static LoadInstruction Load(Register target, IOperand source) => new(target, source);
+    public static LoadInstruction Load(Register target, Symbol source) => new(target, source);
     public static LoadElementInstruction LoadElement(Register target, IOperand array, IEnumerable<IOperand> indices) =>
         new(target, array, indices);
     public static LoadFieldInstruction LoadField(Register target, IOperand receiver, FieldSymbol field) =>

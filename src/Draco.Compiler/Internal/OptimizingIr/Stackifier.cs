@@ -13,6 +13,18 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed class Stackifier
 {
+    /// <summary>
+    /// Stackifies the given procedure without rearranging instructions.
+    /// </summary>
+    /// <param name="procedure">The procedure to stackify.</param>
+    /// <returns>The registers that need to be saved to locals. The rest can stay on the stack.</returns>
+    public static ImmutableHashSet<Register> Stackify(IProcedure procedure)
+    {
+        var stackifier = new Stackifier(procedure);
+        foreach (var bb in procedure.BasicBlocks.Values) stackifier.Stackify(bb);
+        return stackifier.savedRegisters.ToImmutable();
+    }
+
     private static ImmutableDictionary<Register, int> CountRegisterUses(IEnumerable<IInstruction> instructions)
     {
         var registerUses = ImmutableDictionary.CreateBuilder<Register, int>();
@@ -28,8 +40,9 @@ internal sealed class Stackifier
 
     private readonly IProcedure procedure;
     private readonly ImmutableDictionary<Register, int> registerUses;
+    private readonly ImmutableHashSet<Register>.Builder savedRegisters = ImmutableHashSet.CreateBuilder<Register>();
 
-    public Stackifier(IProcedure procedure)
+    private Stackifier(IProcedure procedure)
     {
         this.procedure = procedure;
         var instructions = procedure.BasicBlocks.Values.SelectMany(bb => bb.Instructions);
@@ -37,38 +50,23 @@ internal sealed class Stackifier
         this.registerUses = CountRegisterUses(instructions);
     }
 
-    /// <summary>
-    /// Stackifies the given basic block.
-    /// </summary>
-    /// <param name="basicBlock">The basic block to stackify.</param>
-    /// <returns>The index of the instructions that has to leak onto registers.</returns>
-    public ImmutableArray<int> Stackify(IBasicBlock basicBlock)
+    private void Stackify(IBasicBlock basicBlock)
     {
-        if (basicBlock.Procedure != this.procedure)
+        var instr = basicBlock.LastInstruction;
+        while (instr is not null)
         {
-            throw new ArgumentException("only basic-blocks belonging to the specified procedure can be stackified", nameof(basicBlock));
-        }
-
-        var instructions = basicBlock.Instructions.ToImmutableArray();
-        var commitPoints = ImmutableArray.CreateBuilder<int>();
-        var index = basicBlock.InstructionCount;
-        while (index > 0)
-        {
-            --index;
-            // This is a commit-point
-            commitPoints.Add(index);
+            // This instruction has to have its registers saved
+            if (instr is IValueInstruction valueInstr) this.savedRegisters.Add(valueInstr.Target);
             // Recover the longest tree backwards
-            this.RecoverTree(instructions, ref index);
+            this.RecoverTree(ref instr);
+            // Step back
+            instr = instr.Prev;
         }
-
-        // Reverse for convenience
-        commitPoints.Reverse();
-        return commitPoints.ToImmutable();
     }
 
-    private bool RecoverTree(ImmutableArray<IInstruction> instructions, ref int offset)
+    private bool RecoverTree(ref IInstruction instrIterator)
     {
-        var instr = instructions[offset];
+        var instr = instrIterator;
         var stopped = false;
 
         foreach (var op in instr.Operands.Reverse())
@@ -80,11 +78,11 @@ internal sealed class Stackifier
             // all good, part of the tree
             if (!stopped
              && this.registerUses[reg] == 1
-             && instructions[offset - 1] is IValueInstruction valueInstr
+             && instrIterator.Prev is IValueInstruction valueInstr
              && valueInstr.Target == reg)
             {
-                --offset;
-                var childStopped = this.RecoverTree(instructions, ref offset);
+                instrIterator = instrIterator.Prev;
+                var childStopped = this.RecoverTree(ref instrIterator);
                 // If child recovery broke the tree, we break too
                 if (childStopped) stopped = true;
                 continue;

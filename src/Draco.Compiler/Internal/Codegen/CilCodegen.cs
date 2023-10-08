@@ -371,7 +371,7 @@ internal sealed class CilCodegen
             // Box it
             this.InstructionEncoder.OpCode(ILOpCode.Box);
             this.EncodeToken(box.Value.Type!);
-            // Sore result
+            // Store result
             this.StoreLocal(box.Target);
             break;
         }

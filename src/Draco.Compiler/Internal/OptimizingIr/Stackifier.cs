@@ -17,12 +17,15 @@ internal sealed class Stackifier
     /// Stackifies the given procedure without rearranging instructions.
     /// </summary>
     /// <param name="procedure">The procedure to stackify.</param>
-    /// <returns>The registers that need to be saved to locals. The rest can stay on the stack.</returns>
+    /// <returns>The registers that got stackified.</returns>
     public static ImmutableHashSet<Register> Stackify(IProcedure procedure)
     {
         var stackifier = new Stackifier(procedure);
         foreach (var bb in procedure.BasicBlocks.Values) stackifier.Stackify(bb);
-        return stackifier.savedRegisters.ToImmutable();
+        // Subtract to get stackified regs
+        return stackifier.registerUses.Keys
+            .Except(stackifier.savedRegisters)
+            .ToImmutableHashSet();
     }
 
     private static ImmutableDictionary<Register, int> CountRegisterUses(IEnumerable<IInstruction> instructions)
@@ -40,7 +43,7 @@ internal sealed class Stackifier
 
     private readonly IProcedure procedure;
     private readonly ImmutableDictionary<Register, int> registerUses;
-    private readonly ImmutableHashSet<Register>.Builder savedRegisters = ImmutableHashSet.CreateBuilder<Register>();
+    private readonly HashSet<Register> savedRegisters = new();
 
     private Stackifier(IProcedure procedure)
     {

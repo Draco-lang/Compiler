@@ -35,7 +35,6 @@ internal sealed class CilCodegen
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
-    private readonly ImmutableHashSet<Register>? stackifiedRegisters;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
     private readonly Dictionary<IOperand, AllocatedLocal> allocatedLocals = new();
 
@@ -59,7 +58,6 @@ internal sealed class CilCodegen
     {
         this.metadataCodegen = metadataCodegen;
         this.procedure = procedure;
-        this.stackifiedRegisters = Stackifier.Stackify(procedure);
 
         var codeBuilder = new BlobBuilder();
         var controlFlowBuilder = new ControlFlowBuilder();
@@ -446,8 +444,6 @@ internal sealed class CilCodegen
 
     private void LoadLocal(Register register)
     {
-        // Register got stackified
-        if (this.stackifiedRegisters?.Contains(register) ?? false) return;
         var index = this.GetRegisterIndex(register);
         if (index is null) return;
         this.InstructionEncoder.LoadLocal(index.Value);
@@ -462,8 +458,6 @@ internal sealed class CilCodegen
 
     private void StoreLocal(Register register)
     {
-        // Register got stackified
-        if (this.stackifiedRegisters?.Contains(register) ?? false) return;
         var index = this.GetRegisterIndex(register);
         if (index is null) return;
         this.InstructionEncoder.StoreLocal(index.Value);

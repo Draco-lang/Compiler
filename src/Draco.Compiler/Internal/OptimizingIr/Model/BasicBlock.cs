@@ -58,13 +58,12 @@ internal sealed class BasicBlock : IBasicBlock
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.Append(this.ToOperandString()).Append(':');
+        result.Append("lbl").Append(this.Index).Append(':');
         if (!string.IsNullOrWhiteSpace(this.Symbol.Name)) result.Append($" ; {this.Symbol.Name}");
         result.AppendLine();
         result.AppendJoin(Environment.NewLine, this.Instructions.Select(i => $"  {i}"));
         return result.ToString();
     }
-    public string ToOperandString() => $"lbl{this.Index}";
 
     private void AssertOwnInstruction(InstructionBase instruction)
     {

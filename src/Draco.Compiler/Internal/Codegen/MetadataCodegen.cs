@@ -65,8 +65,6 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
-    private readonly Dictionary<Global, MemberReferenceHandle> globalReferenceHandles = new();
-    private readonly Dictionary<IProcedure, MemberReferenceHandle> procedureReferenceHandles = new();
     private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = new();
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
     private readonly AssemblyReferenceHandle systemRuntimeReference;
@@ -114,35 +112,6 @@ internal sealed class MetadataCodegen : MetadataWriter
             baseType: default,
             fieldList: MetadataTokens.FieldDefinitionHandle(1),
             methodList: MetadataTokens.MethodDefinitionHandle(1));
-    }
-
-    public MemberReferenceHandle GetGlobalReferenceHandle(Global global)
-    {
-        if (!this.globalReferenceHandles.TryGetValue(global, out var handle))
-        {
-            // Add the field reference
-            handle = this.AddMemberReference(
-                parent: this.GetModuleReferenceHandle(global.DeclaringModule),
-                name: global.Name,
-                signature: this.EncodeGlobalSignature(global));
-            // Cache
-            this.globalReferenceHandles.Add(global, handle);
-        }
-        return handle;
-    }
-
-    public MemberReferenceHandle GetProcedureReferenceHandle(IProcedure procedure)
-    {
-        if (!this.procedureReferenceHandles.TryGetValue(procedure, out var handle))
-        {
-            var signature = this.EncodeProcedureSignature(procedure);
-            handle = this.AddMemberReference(
-                parent: this.GetModuleReferenceHandle(procedure.DeclaringModule),
-                name: procedure.Name,
-                signature: signature);
-            this.procedureReferenceHandles.Add(procedure, handle);
-        }
-        return handle;
     }
 
     public TypeReferenceHandle GetModuleReferenceHandle(IModule module)
@@ -464,14 +433,14 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
-    private FieldDefinitionHandle EncodeGlobal(Global global)
+    private FieldDefinitionHandle EncodeGlobal(GlobalSymbol global)
     {
-        var visibility = global.Symbol.Visibility switch
+        var visibility = global.Visibility switch
         {
             Api.Semantics.Visibility.Public => FieldAttributes.Public,
             Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
             Api.Semantics.Visibility.Private => FieldAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(global.Symbol.Visibility)),
+            _ => throw new ArgumentOutOfRangeException(nameof(global.Visibility)),
         };
 
         // Definition
@@ -519,7 +488,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         // Parameters
         var parameterList = this.NextParameterHandle;
-        foreach (var param in procedure.ParametersInDefinitionOrder)
+        foreach (var param in procedure.Parameters)
         {
             this.AddParameterDefinition(
                 attributes: ParameterAttributes.None,
@@ -553,7 +522,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         return definitionHandle;
     }
 
-    private BlobHandle EncodeGlobalSignature(Global global) =>
+    private BlobHandle EncodeGlobalSignature(GlobalSymbol global) =>
         this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), global.Type));
 
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
@@ -562,7 +531,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             .MethodSignature(genericParameterCount: procedure.Generics.Count)
             .Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
         this.EncodeReturnType(retEncoder, procedure.ReturnType);
-        foreach (var param in procedure.ParametersInDefinitionOrder)
+        foreach (var param in procedure.Parameters)
         {
             this.EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
         }

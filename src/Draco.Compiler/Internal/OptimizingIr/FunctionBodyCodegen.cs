@@ -66,9 +66,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private Procedure DefineProcedure(FunctionSymbol function) => this.GetDefiningModule(function).DefineProcedure(function);
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
-    private Local DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
-    private Global DefineGlobal(GlobalSymbol global) => this.GetDefiningModule(global).DefineGlobal(global);
-    private Parameter DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
+    private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
+    private int DefineGlobal(GlobalSymbol global) => this.GetDefiningModule(global).DefineGlobal(global);
+    private int DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
 
     public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
@@ -205,7 +205,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var receiver = field.Receiver is null ? null : this.Compile(field.Receiver);
             if (receiver is null)
             {
-                var src = new SymbolReference(field.Field);
+                var src = field.Field;
                 return (Load: Load(default!, src), Store: Store(src, default!));
             }
             else
@@ -547,7 +547,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(receiver is null
-            ? Load(result, new SymbolReference(node.Field))
+            ? Load(result, node.Field)
             : LoadField(result, receiver, node.Field));
         return result;
     }

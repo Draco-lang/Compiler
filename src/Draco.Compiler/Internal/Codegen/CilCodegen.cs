@@ -69,12 +69,6 @@ internal sealed class CilCodegen
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
 
     private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetEntityHandle(symbol);
-    private EntityHandle GetHandle(IOperand operand) => operand switch
-    {
-        IProcedure proc => this.GetProcedureDefinitionHandle(proc),
-        SymbolReference symbolRef => this.GetHandle(symbolRef.Symbol),
-        _ => throw new ArgumentOutOfRangeException(nameof(operand)),
-    };
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(Parameter parameter) => parameter.Index;
@@ -193,10 +187,6 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
                 break;
-            case SymbolReference symbol:
-                this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
-                this.InstructionEncoder.Token(this.GetHandle(symbol));
-                break;
             default:
                 throw new InvalidOperationException();
             }
@@ -249,11 +239,6 @@ internal sealed class CilCodegen
                 this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
-                break;
-            case SymbolReference symbol:
-                this.EncodePush(store.Source);
-                this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
-                this.InstructionEncoder.Token(this.GetHandle(symbol));
                 break;
             default:
                 throw new InvalidOperationException();
@@ -395,9 +380,6 @@ internal sealed class CilCodegen
             break;
         case Parameter p:
             this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
-            break;
-        case SymbolReference s when s.Symbol is ModuleSymbol module:
-            this.InstructionEncoder.Token(this.GetHandle(module));
             break;
         case Address a:
             switch (a.Operand)

@@ -254,6 +254,19 @@ internal sealed class MetadataCodegen : MetadataWriter
                 }));
         }
 
+        case GlobalSymbol global:
+        {
+            return this.AddMemberReference(
+                parent: this.GetEntityHandle(global.ContainingSymbol
+                                          ?? throw new InvalidOperationException()),
+                name: global.Name,
+                signature: this.EncodeBlob(e =>
+                {
+                    var encoder = e.Field();
+                    this.EncodeSignatureType(encoder.Type(), global.Type);
+                }));
+        }
+
         default:
             throw new ArgumentOutOfRangeException(nameof(symbol));
         }

@@ -351,12 +351,13 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitBlockExpression(BoundBlockExpression node)
     {
-        // Find locals that we care about
+        // Define all locals
+        foreach (var local in node.Locals) this.DefineLocal(local);
+
+        // Find locals that we care about for visible scope
         var locals = node.Locals
             .OfType<SourceLocalSymbol>()
             .ToList();
-        // Register them
-        foreach (var local in locals) this.DefineLocal(local);
 
         // Start scope
         if (locals.Count > 0) this.Write(StartScope(locals));

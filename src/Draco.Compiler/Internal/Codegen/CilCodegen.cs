@@ -30,6 +30,13 @@ internal sealed class CilCodegen
         .OrderBy(kv => kv.Value.Index)
         .Select(kv => kv.Value);
 
+    /// <summary>
+    /// The allocated registers in order.
+    /// </summary>
+    public IEnumerable<Register> AllocatedRegisters => this.allocatedRegisters
+        .OrderBy(kv => kv.Value)
+        .Select(kv => kv.Key);
+
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
 
     private readonly MetadataCodegen metadataCodegen;
@@ -89,7 +96,8 @@ internal sealed class CilCodegen
         if (SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit)) return null;
         if (!this.allocatedRegisters.TryGetValue(register, out var index))
         {
-            index = this.allocatedRegisters.Count;
+            // IMPORTANT: We need to offset by the locals count
+            index = this.allocatedLocals.Count + this.allocatedRegisters.Count;
             this.allocatedRegisters.Add(register, index);
         }
         return index;
@@ -187,13 +195,23 @@ internal sealed class CilCodegen
             // Depends on where we load from
             switch (load.Source)
             {
+            case ParameterSymbol param:
+            {
+                var index = this.GetParameterIndex(param);
+                this.InstructionEncoder.LoadArgument(index);
+                break;
+            }
             case LocalSymbol local:
+            {
                 this.LoadLocal(local);
                 break;
+            }
             case GlobalSymbol global:
+            {
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
                 this.EncodeToken(global);
                 break;
+            }
             default:
                 throw new InvalidOperationException();
             }
@@ -238,6 +256,8 @@ internal sealed class CilCodegen
         {
             switch (store.Target)
             {
+            case ParameterSymbol:
+                throw new InvalidOperationException();
             case LocalSymbol local:
                 this.EncodePush(store.Source);
                 this.StoreLocal(local);

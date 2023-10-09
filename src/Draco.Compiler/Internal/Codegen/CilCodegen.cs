@@ -42,8 +42,8 @@ internal sealed class CilCodegen
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
     private readonly Dictionary<LocalSymbol, AllocatedLocal> allocatedLocals;
-    private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
     private readonly Dictionary<Register, int> allocatedRegisters = new();
+    private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
 
     // NOTE: The current stackification attempt is FLAWED
     // Imagine this situation:

@@ -9,7 +9,6 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
-using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;
 
 namespace Draco.Compiler.Internal.Codegen;
@@ -178,12 +177,12 @@ internal sealed class CilCodegen
             // Depends on where we load from
             switch (load.Source)
             {
-            case Local local:
+            case LocalSymbol local:
                 this.LoadLocal(local);
                 break;
-            case Global global:
+            case GlobalSymbol global:
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
-                this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
+                this.EncodeToken(global);
                 break;
             default:
                 throw new InvalidOperationException();
@@ -229,14 +228,14 @@ internal sealed class CilCodegen
         {
             switch (store.Target)
             {
-            case Local local:
+            case LocalSymbol local:
                 this.EncodePush(store.Source);
                 this.StoreLocal(local);
                 break;
-            case Global global:
+            case GlobalSymbol global:
                 this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
-                this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
+                this.EncodeToken(global);
                 break;
             default:
                 throw new InvalidOperationException();
@@ -374,10 +373,7 @@ internal sealed class CilCodegen
         case Void:
             return;
         case Register r:
-            this.LoadLocal(r);
-            break;
-        case Parameter p:
-            this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
+            this.LoadRegister(r);
             break;
         case Address a:
             switch (a.Operand)
@@ -415,21 +411,21 @@ internal sealed class CilCodegen
         }
     }
 
-    private void LoadLocal(Local local)
+    private void LoadLocal(LocalSymbol local)
     {
         var index = this.GetLocalIndex(local);
         if (index is null) return;
         this.InstructionEncoder.LoadLocal(index.Value);
     }
 
-    private void LoadLocal(Register register)
+    private void LoadRegister(Register register)
     {
         var index = this.GetRegisterIndex(register);
         if (index is null) return;
         this.InstructionEncoder.LoadLocal(index.Value);
     }
 
-    private void StoreLocal(Local local)
+    private void StoreLocal(LocalSymbol local)
     {
         var index = this.GetLocalIndex(local);
         if (index is null) return;

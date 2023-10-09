@@ -6,14 +6,6 @@ namespace Draco.Compiler.Internal.Codegen;
 /// <summary>
 /// Some method-local variable allocation.
 /// </summary>
-/// <param name="Operand">The corresponding IR operand.</param>
+/// <param name="Symbol">The corresponding local symbol.</param>
 /// <param name="Index">The index of the local within the method.</param>
-internal readonly record struct AllocatedLocal(
-    IOperand Operand,
-    int Index)
-{
-    /// <summary>
-    /// The symbol associated with this local, if any.
-    /// </summary>
-    public LocalSymbol? Symbol => this.Operand is Local local ? local.Symbol : null;
-}
+internal readonly record struct AllocatedLocal(LocalSymbol Symbol, int Index);

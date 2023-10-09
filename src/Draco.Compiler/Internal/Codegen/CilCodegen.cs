@@ -34,8 +34,9 @@ internal sealed class CilCodegen
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
+    private readonly Dictionary<LocalSymbol, AllocatedLocal> allocatedLocals;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
-    private readonly Dictionary<IOperand, AllocatedLocal> allocatedLocals = new();
+    private readonly Dictionary<Register, int> allocatedRegisters = new();
 
     // NOTE: The current stackification attempt is FLAWED
     // Imagine this situation:
@@ -61,6 +62,11 @@ internal sealed class CilCodegen
         var codeBuilder = new BlobBuilder();
         var controlFlowBuilder = new ControlFlowBuilder();
         this.InstructionEncoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
+
+        this.allocatedLocals = procedure.Locals
+            .Where(local => !SymbolEqualityComparer.Default.Equals(local.Type, IntrinsicSymbols.Unit))
+            .Select((local, index) => (Local: local, Index: index))
+            .ToDictionary(pair => pair.Local, pair => new AllocatedLocal(pair.Local, pair.Index));
     }
 
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
@@ -70,19 +76,24 @@ internal sealed class CilCodegen
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
     private int GetParameterIndex(ParameterSymbol parameter) => this.procedure.GetParameterIndex(parameter);
 
-    private AllocatedLocal? GetAllocatedLocal(IOperand operand)
+    private AllocatedLocal? GetAllocatedLocal(LocalSymbol local)
     {
-        if (SymbolEqualityComparer.Default.Equals(operand.Type, IntrinsicSymbols.Unit)) return null;
-        if (!this.allocatedLocals.TryGetValue(operand, out var local))
-        {
-            local = new(operand, this.allocatedLocals.Count);
-            this.allocatedLocals.Add(operand, local);
-        }
-        return local;
+        if (!this.allocatedLocals.TryGetValue(local, out var allocatedLocal)) return null;
+        return allocatedLocal;
     }
 
     private int? GetLocalIndex(LocalSymbol local) => this.GetAllocatedLocal(local)?.Index;
-    private int? GetRegisterIndex(Register register) => this.GetAllocatedLocal(register)?.Index;
+    private int? GetRegisterIndex(Register register)
+    {
+        // We don't allocate registers to void
+        if (SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit)) return null;
+        if (!this.allocatedRegisters.TryGetValue(register, out var index))
+        {
+            index = this.allocatedRegisters.Count;
+            this.allocatedRegisters.Add(register, index);
+        }
+        return index;
+    }
 
     private LabelHandle GetLabel(IBasicBlock block)
     {
@@ -116,11 +127,7 @@ internal sealed class CilCodegen
         }
         case StartScope start:
         {
-            var localIndices = start.Locals
-                .Select(sym => this.procedure.Locals[sym])
-                .Select(loc => this.GetAllocatedLocal(loc))
-                .OfType<AllocatedLocal>();
-            this.PdbCodegen?.StartScope(this.InstructionEncoder.Offset, localIndices);
+            this.PdbCodegen?.StartScope(this.InstructionEncoder.Offset, this.allocatedLocals.Values);
             break;
         }
         case EndScope:

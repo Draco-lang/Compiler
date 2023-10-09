@@ -68,7 +68,7 @@ internal sealed class CilCodegen
     private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetEntityHandle(symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
-    private int GetParameterIndex(ParameterSymbol parameter) => parameter.Index;
+    private int GetParameterIndex(ParameterSymbol parameter) => this.procedure.GetParameterIndex(parameter);
 
     private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
@@ -378,6 +378,8 @@ internal sealed class CilCodegen
         case Address a:
             switch (a.Operand)
             {
+            // TODO
+            /*
             case Local local:
             {
                 var index = this.GetLocalIndex(local);
@@ -385,6 +387,7 @@ internal sealed class CilCodegen
                 this.InstructionEncoder.LoadLocalAddress(index.Value);
                 break;
             }
+            */
             default:
                 throw new NotImplementedException();
             }

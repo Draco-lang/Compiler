@@ -466,7 +466,8 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         // Encode locals
         var allocatedLocals = cilCodegen.AllocatedLocals.ToImmutableArray();
-        var localsHandle = this.EncodeLocals(allocatedLocals);
+        var allocatedRegisters = cilCodegen.AllocatedRegisters.ToImmutableArray();
+        var localsHandle = this.EncodeLocals(allocatedLocals, allocatedRegisters);
 
         // Encode body
         this.ilBuilder.Align(4);
@@ -537,17 +538,24 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     });
 
-    private StandaloneSignatureHandle EncodeLocals(ImmutableArray<AllocatedLocal> locals)
+    private StandaloneSignatureHandle EncodeLocals(
+        ImmutableArray<AllocatedLocal> locals,
+        ImmutableArray<Register> registers)
     {
         // We must not encode 0 locals
         if (locals.Length == 0) return default;
         return this.MetadataBuilder.AddStandaloneSignature(this.EncodeBlob(e =>
         {
-            var localsEncoder = e.LocalVariableSignature(locals.Length);
+            var localsEncoder = e.LocalVariableSignature(locals.Length + registers.Length);
             foreach (var local in locals)
             {
                 var typeEncoder = localsEncoder.AddVariable().Type();
                 this.EncodeSignatureType(typeEncoder, local.Symbol.Type);
+            }
+            foreach (var register in registers)
+            {
+                var typeEncoder = localsEncoder.AddVariable().Type();
+                this.EncodeSignatureType(typeEncoder, register.Type);
             }
         }));
     }

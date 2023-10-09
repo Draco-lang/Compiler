@@ -79,6 +79,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
             var codegen = new FunctionBodyCodegen(this.compilation, proc);
             func.Body.Accept(codegen);
+            // TODO: Kinda duplication
+            // Maybe we should move parameter definition to the proc construction simply?
+            // Or even simpler, just project from symbol?
+            foreach (var param in func.Parameters) proc.DefineParameter(param);
         }
         return proc;
     }

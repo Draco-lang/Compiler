@@ -543,7 +543,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         ImmutableArray<Register> registers)
     {
         // We must not encode 0 locals
-        if (locals.Length == 0) return default;
+        if (locals.Length + registers.Length == 0) return default;
         return this.MetadataBuilder.AddStandaloneSignature(this.EncodeBlob(e =>
         {
             var localsEncoder = e.LocalVariableSignature(locals.Length + registers.Length);

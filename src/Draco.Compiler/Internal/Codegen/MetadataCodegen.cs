@@ -547,8 +547,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             foreach (var local in locals)
             {
                 var typeEncoder = localsEncoder.AddVariable().Type();
-                Debug.Assert(local.Operand.Type is not null);
-                this.EncodeSignatureType(typeEncoder, local.Operand.Type);
+                this.EncodeSignatureType(typeEncoder, local.Symbol.Type);
             }
         }));
     }

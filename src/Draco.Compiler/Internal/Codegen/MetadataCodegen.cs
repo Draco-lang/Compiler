@@ -493,7 +493,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             this.AddParameterDefinition(
                 attributes: ParameterAttributes.None,
                 name: param.Name,
-                index: param.Index);
+                index: procedure.GetParameterIndex(param));
         }
 
         // Add definition

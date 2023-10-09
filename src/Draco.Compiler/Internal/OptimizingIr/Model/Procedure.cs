@@ -42,6 +42,13 @@ internal sealed class Procedure : IProcedure
         this.Entry = this.DefineBasicBlock(new SynthetizedLabelSymbol("begin"));
     }
 
+    public int GetParameterIndex(ParameterSymbol symbol)
+    {
+        var idx = this.parameters.IndexOf(symbol);
+        if (idx == -1) throw new System.ArgumentOutOfRangeException(nameof(symbol));
+        return idx;
+    }
+
     public int DefineParameter(ParameterSymbol symbol)
     {
         var index = this.parameters.IndexOf(symbol);

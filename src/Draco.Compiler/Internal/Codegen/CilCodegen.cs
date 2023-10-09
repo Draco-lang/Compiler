@@ -127,6 +127,9 @@ internal sealed class CilCodegen
         }
         case StartScope start:
         {
+            var localIndices = start.Locals
+                .Select(sym => this.GetAllocatedLocal(sym))
+                .OfType<AllocatedLocal>();
             this.PdbCodegen?.StartScope(this.InstructionEncoder.Offset, this.allocatedLocals.Values);
             break;
         }

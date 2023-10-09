@@ -36,7 +36,7 @@ internal interface IModule
     /// <summary>
     /// The globals within this module.
     /// </summary>
-    public IReadOnlyDictionary<GlobalSymbol, Global> Globals { get; }
+    public IReadOnlySet<GlobalSymbol> Globals { get; }
 
     /// <summary>
     /// The compiled procedures within this module.

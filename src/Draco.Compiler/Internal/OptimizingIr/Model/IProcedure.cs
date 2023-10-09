@@ -67,4 +67,11 @@ internal interface IProcedure
     /// The registers in this procedure.
     /// </summary>
     public IReadOnlyList<Register> Registers { get; }
+
+    /// <summary>
+    /// Retrieves the index of the given parameter.
+    /// </summary>
+    /// <param name="symbol">The parameter symbol to get the index of.</param>
+    /// <returns>The (0-based) index of the parameter.</returns>
+    public int GetParameterIndex(ParameterSymbol symbol);
 }

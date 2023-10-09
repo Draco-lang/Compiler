@@ -41,8 +41,8 @@ internal sealed class CilCodegen
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
-    private readonly Dictionary<LocalSymbol, AllocatedLocal> allocatedLocals;
-    private readonly Dictionary<Register, int> allocatedRegisters = new();
+    private readonly ImmutableDictionary<LocalSymbol, AllocatedLocal> allocatedLocals;
+    private readonly ImmutableDictionary<Register, int> allocatedRegisters;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
 
     // NOTE: The current stackification attempt is FLAWED
@@ -73,7 +73,11 @@ internal sealed class CilCodegen
         this.allocatedLocals = procedure.Locals
             .Where(local => !SymbolEqualityComparer.Default.Equals(local.Type, IntrinsicSymbols.Unit))
             .Select((local, index) => (Local: local, Index: index))
-            .ToDictionary(pair => pair.Local, pair => new AllocatedLocal(pair.Local, pair.Index));
+            .ToImmutableDictionary(pair => pair.Local, pair => new AllocatedLocal(pair.Local, pair.Index));
+        this.allocatedRegisters = procedure.Registers
+            .Where(reg => !SymbolEqualityComparer.Default.Equals(reg.Type, IntrinsicSymbols.Unit))
+            .Select((local, index) => (Local: local, Index: index))
+            .ToImmutableDictionary(pair => pair.Local, pair => this.allocatedLocals.Count + pair.Index);
     }
 
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
@@ -92,15 +96,8 @@ internal sealed class CilCodegen
     private int? GetLocalIndex(LocalSymbol local) => this.GetAllocatedLocal(local)?.Index;
     private int? GetRegisterIndex(Register register)
     {
-        // We don't allocate registers to void
-        if (SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit)) return null;
-        if (!this.allocatedRegisters.TryGetValue(register, out var index))
-        {
-            // IMPORTANT: We need to offset by the locals count
-            index = this.allocatedLocals.Count + this.allocatedRegisters.Count;
-            this.allocatedRegisters.Add(register, index);
-        }
-        return index;
+        if (!this.allocatedRegisters.TryGetValue(register, out var allocatedRegister)) return null;
+        return allocatedRegister;
     }
 
     private LabelHandle GetLabel(IBasicBlock block)

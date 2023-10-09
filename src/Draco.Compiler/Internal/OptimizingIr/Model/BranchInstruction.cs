@@ -34,7 +34,7 @@ internal sealed class BranchInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"if {this.Condition.ToOperandString()} jump {this.Then.ToOperandString()} else jump {this.Else.ToOperandString()}";
+        $"if {this.Condition.ToOperandString()} jump lbl{this.Then.Index} else jump lbl{this.Else.Index}";
 
     public override BranchInstruction Clone() => new(this.Condition, this.Then, this.Else);
 }

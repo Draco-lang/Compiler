@@ -68,7 +68,7 @@ internal sealed class CilCodegen
     private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetEntityHandle(symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
-    private int GetParameterIndex(Parameter parameter) => parameter.Index;
+    private int GetParameterIndex(ParameterSymbol parameter) => parameter.Index;
 
     private AllocatedLocal? GetAllocatedLocal(IOperand operand)
     {
@@ -81,7 +81,7 @@ internal sealed class CilCodegen
         return local;
     }
 
-    private int? GetLocalIndex(Local local) => this.GetAllocatedLocal(local)?.Index;
+    private int? GetLocalIndex(LocalSymbol local) => this.GetAllocatedLocal(local)?.Index;
     private int? GetRegisterIndex(Register register) => this.GetAllocatedLocal(register)?.Index;
 
     private LabelHandle GetLabel(IBasicBlock block)

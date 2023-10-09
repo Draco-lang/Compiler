@@ -377,7 +377,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         var currentFieldIndex = fieldIndex;
         var currentProcIndex = procIndex;
         // Go through globals
-        foreach (var global in module.Globals.Values)
+        foreach (var global in module.Globals)
         {
             this.EncodeGlobal(global);
             currentFieldIndex++;

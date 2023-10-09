@@ -67,9 +67,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Procedure DefineProcedure(FunctionSymbol function) => this.GetDefiningModule(function).DefineProcedure(function);
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
-    private int DefineGlobal(GlobalSymbol global) => this.GetDefiningModule(global).DefineGlobal(global);
-    private int DefineParameter(ParameterSymbol param) => this.procedure.DefineParameter(param);
-
     public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
     private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
@@ -145,8 +142,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
         var right = this.Compile(node.Value);
         right = this.BoxIfNeeded(node.Local.Type, right);
-        var left = this.DefineLocal(node.Local);
-        this.Write(Store(left, right));
+        this.Write(Store(node.Local, right));
 
         return default!;
     }
@@ -192,13 +188,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
         case BoundLocalLvalue local:
         {
-            var src = this.DefineLocal(local.Local);
-            return (Load: Load(default!, src), Store: Store(src, default!));
+            return (Load: Load(default!, local.Local), Store: Store(local.Local, default!));
         }
         case BoundGlobalLvalue global:
         {
-            var src = this.DefineGlobal(global.Global);
-            return (Load: Load(default!, src), Store: Store(src, default!));
+            return (Load: Load(default!, global.Global), Store: Store(global.Global, default!));
         }
         case BoundFieldLvalue field:
         {
@@ -235,19 +229,22 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
         case BoundLocalExpression local:
         {
-            var localOperand = this.DefineLocal(local.Local);
-            return new Address(localOperand);
+            // TODO
+            // return new Address(localOperand);
+            // TODO
+            throw new System.NotImplementedException();
         }
         default:
         {
             // We allocate a local so we can take its address
             var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
-            var localOperand = this.DefineLocal(local);
             // Store the value in it
             var value = this.Compile(expression);
-            this.Write(Store(localOperand, value));
+            this.Write(Store(local, value));
             // Take its address
-            return new Address(localOperand);
+            // return new Address(localOperand);
+            // TODO
+            throw new System.NotImplementedException();
         }
         }
     }
@@ -358,6 +355,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var locals = node.Locals
             .OfType<SourceLocalSymbol>()
             .ToList();
+        // Register them
+        foreach (var local in locals) this.DefineLocal(local);
 
         // Start scope
         if (locals.Count > 0) this.Write(StartScope(locals));
@@ -489,16 +488,21 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitGlobalExpression(BoundGlobalExpression node)
     {
         var result = this.DefineRegister(node.TypeRequired);
-        var global = this.DefineGlobal(node.Global);
-        this.Write(Load(result, global));
+        this.Write(Load(result, node.Global));
         return result;
     }
 
     public override IOperand VisitLocalExpression(BoundLocalExpression node)
     {
         var result = this.DefineRegister(node.TypeRequired);
-        var local = this.DefineLocal(node.Local);
-        this.Write(Load(result, local));
+        this.Write(Load(result, node.Local));
+        return result;
+    }
+
+    public override IOperand VisitParameterExpression(BoundParameterExpression node)
+    {
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(Load(result, node.Parameter));
         return result;
     }
 
@@ -521,10 +525,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.TranslateFunctionSymbol(i.GenericDefinition);
         return i;
     }
-
-    // NOTE: Parameters don't need loading, they are read-only values by default
-    public override IOperand VisitParameterExpression(BoundParameterExpression node) =>
-        this.DefineParameter(node.Parameter);
 
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value, node.TypeRequired);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);

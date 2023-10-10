@@ -549,24 +549,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitFieldExpression(BoundFieldExpression node)
     {
-        // Check, if it's a literal we need to inline
-        var metadataField = ExtractMetadataField(node.Field);
-        if (metadataField is not null && metadataField.IsLiteral)
-        {
-            var defaultValue = metadataField.DefaultValue;
-            if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.IntrinsicSymbols, out var literalType))
-            {
-                throw new System.InvalidOperationException();
-            }
-            return new Constant(defaultValue, literalType);
-        }
-
-        // Regular static or nonstatic field
-        var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
+        var receiver = this.Compile(node.Receiver);
         var result = this.DefineRegister(node.TypeRequired);
-        this.Write(receiver is null
-            ? Load(result, node.Field)
-            : LoadField(result, receiver, node.Field));
+        this.Write(LoadField(result, receiver, node.Field));
         return result;
     }
 

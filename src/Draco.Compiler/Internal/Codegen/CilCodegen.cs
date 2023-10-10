@@ -276,6 +276,7 @@ internal sealed class CilCodegen
             // TODO: REALLY MERGE static fields with globals!
             case FieldSymbol field:
                 Debug.Assert(field.IsStatic);
+                this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.EncodeToken(field);
                 break;

@@ -23,6 +23,7 @@ internal static class InstructionFactory
         new(target, array, indices);
     public static LoadFieldInstruction LoadField(Register target, IOperand receiver, FieldSymbol field) =>
         new(target, receiver, field);
+    public static AddressOfInstruction AddressOf(Register target, Symbol source) => new(target, source);
     public static RetInstruction Ret(IOperand value) => new(value);
     public static JumpInstruction Jump(BasicBlock target) => new(target);
     public static BranchInstruction Branch(IOperand condition, BasicBlock then, BasicBlock @else) =>

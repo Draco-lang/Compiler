@@ -418,23 +418,6 @@ internal sealed class CilCodegen
         case Register r:
             this.LoadRegister(r);
             break;
-        case Address a:
-            switch (a.Operand)
-            {
-            // TODO
-            /*
-            case Local local:
-            {
-                var index = this.GetLocalIndex(local);
-                if (index is null) break;
-                this.InstructionEncoder.LoadLocalAddress(index.Value);
-                break;
-            }
-            */
-            default:
-                throw new NotImplementedException();
-            }
-            break;
         case Constant c:
             switch (c.Value)
             {

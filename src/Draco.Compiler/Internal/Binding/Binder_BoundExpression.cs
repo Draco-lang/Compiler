@@ -109,7 +109,7 @@ internal partial class Binder
 
     private BoundExpression TypeFieldExpression(UntypedFieldExpression field, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var receiver = field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics);
+        var receiver = this.TypeExpression(field.Reciever, constraints, diagnostics);
         return new BoundFieldExpression(field.Syntax, receiver, field.Field);
     }
 

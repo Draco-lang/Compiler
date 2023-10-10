@@ -151,7 +151,7 @@
   </Node>
 
   <Node Name="UntypedFieldExpression" Base="UntypedExpression">
-    <Field Name="Reciever" Type="UntypedExpression?"/>
+    <Field Name="Reciever" Type="UntypedExpression"/>
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
@@ -241,7 +241,7 @@
   </Node>
 
   <Node Name="UntypedFieldLvalue" Base="UntypedLvalue">
-    <Field Name="Reciever" Type="UntypedExpression?"/>
+    <Field Name="Reciever" Type="UntypedExpression"/>
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 

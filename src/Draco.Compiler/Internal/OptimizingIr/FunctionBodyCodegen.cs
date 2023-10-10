@@ -233,22 +233,22 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
         case BoundLocalExpression local:
         {
-            // TODO
-            // return new Address(localOperand);
-            // TODO
-            throw new System.NotImplementedException();
+            var target = this.DefineRegister(new ReferenceTypeSymbol(local.TypeRequired));
+            this.Write(AddressOf(target, local.Local));
+            return target;
         }
         default:
         {
             // We allocate a local so we can take its address
             var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
+            this.procedure.DefineLocal(local);
             // Store the value in it
             var value = this.Compile(expression);
             this.Write(Store(local, value));
             // Take its address
-            // return new Address(localOperand);
-            // TODO
-            throw new System.NotImplementedException();
+            var target = this.DefineRegister(new ReferenceTypeSymbol(expression.TypeRequired));
+            this.Write(AddressOf(target, local));
+            return target;
         }
         }
     }

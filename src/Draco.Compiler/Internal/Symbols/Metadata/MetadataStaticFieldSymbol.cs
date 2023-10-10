@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -6,10 +7,12 @@ using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
+// TODO: Copypasta from metadata field
+
 /// <summary>
-/// Nonstatic fields read from metadata.
+/// Static fields read from metadata.
 /// </summary>
-internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
+internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
 {
     public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
     private TypeSymbol? type;
@@ -69,11 +72,11 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     private readonly FieldDefinition fieldDefinition;
 
-    public MetadataFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition)
+    public MetadataStaticFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition)
     {
-        if (fieldDefinition.Attributes.HasFlag(FieldAttributes.Static))
+        if (!fieldDefinition.Attributes.HasFlag(FieldAttributes.Static))
         {
-            throw new System.ArgumentException("fields must be constructed from nonstatic fields");
+            throw new System.ArgumentException("globals must be constructed from static fields");
         }
 
         this.ContainingSymbol = containingSymbol;

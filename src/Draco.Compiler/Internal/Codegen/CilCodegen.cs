@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -209,6 +210,14 @@ internal sealed class CilCodegen
                 this.EncodeToken(global);
                 break;
             }
+            // TODO: REALLY MERGE static fields with globals!
+            case FieldSymbol field:
+            {
+                Debug.Assert(field.IsStatic);
+                this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
+                this.EncodeToken(field);
+                break;
+            }
             default:
                 throw new InvalidOperationException();
             }
@@ -263,6 +272,12 @@ internal sealed class CilCodegen
                 this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.EncodeToken(global);
+                break;
+            // TODO: REALLY MERGE static fields with globals!
+            case FieldSymbol field:
+                Debug.Assert(field.IsStatic);
+                this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
+                this.EncodeToken(field);
                 break;
             default:
                 throw new InvalidOperationException();

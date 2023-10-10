@@ -6,6 +6,8 @@ using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
+// TODO: For static ones, we could just merge them with globals...
+
 /// <summary>
 /// Fields read from metadata.
 /// </summary>

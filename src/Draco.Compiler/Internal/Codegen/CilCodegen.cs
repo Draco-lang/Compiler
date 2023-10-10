@@ -318,6 +318,30 @@ internal sealed class CilCodegen
             this.InstructionEncoder.Token(this.GetHandle(storeField.Member));
             break;
         }
+        case AddressOfInstruction addressOf:
+        {
+            switch (addressOf.Source)
+            {
+            case ParameterSymbol local:
+            {
+                var paramIndex = this.GetParameterIndex(local);
+                this.InstructionEncoder.LoadArgumentAddress(paramIndex);
+                this.StoreLocal(addressOf.Target);
+                break;
+            }
+            case LocalSymbol local:
+            {
+                var localIndex = this.GetLocalIndex(local);
+                Debug.Assert(localIndex is not null);
+                this.InstructionEncoder.LoadLocalAddress(localIndex.Value);
+                this.StoreLocal(addressOf.Target);
+                break;
+            }
+            default:
+                throw new InvalidOperationException();
+            }
+            break;
+        }
         case CallInstruction call:
         {
             // Arguments

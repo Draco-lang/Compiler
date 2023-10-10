@@ -670,6 +670,12 @@ internal sealed class MetadataCodegen : MetadataWriter
             }
         }
 
+        if (type is ReferenceTypeSymbol referenceType)
+        {
+            this.EncodeSignatureType(encoder.Pointer(), referenceType.ElementType);
+            return;
+        }
+
         // TODO
         throw new NotImplementedException();
     }

@@ -77,8 +77,8 @@ internal sealed class CilCodegen
             .ToImmutableDictionary(pair => pair.Local, pair => new AllocatedLocal(pair.Local, pair.Index));
         this.allocatedRegisters = procedure.Registers
             .Where(reg => !SymbolEqualityComparer.Default.Equals(reg.Type, IntrinsicSymbols.Unit))
-            .Select((local, index) => (Local: local, Index: index))
-            .ToImmutableDictionary(pair => pair.Local, pair => this.allocatedLocals.Count + pair.Index);
+            .Select((reg, index) => (Register: reg, Index: index))
+            .ToImmutableDictionary(pair => pair.Register, pair => this.allocatedLocals.Count + pair.Index);
     }
 
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);

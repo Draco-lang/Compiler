@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class LoadInstruction : InstructionBase, IValueInstruction
 {
-    public string InstructionKeyword => "load";
+    public override string InstructionKeyword => "load";
 
     public Register Target { get; set; }
 

@@ -8,6 +8,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal abstract class InstructionBase : IInstruction
 {
+    public abstract string InstructionKeyword { get; }
+
     public BasicBlock BasicBlock { get; set; } = null!;
     IBasicBlock IInstruction.BasicBlock => this.BasicBlock;
     public InstructionBase? Prev { get; set; }

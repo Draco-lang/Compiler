@@ -8,6 +8,11 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal interface IInstruction
 {
     /// <summary>
+    /// The keyword notating the instruction.
+    /// </summary>
+    public string InstructionKeyword { get; }
+
+    /// <summary>
     /// The basic block this instruction is a part of.
     /// </summary>
     public IBasicBlock BasicBlock { get; }

@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class AddressOfInstruction : InstructionBase, IValueInstruction
 {
-    public string InstructionKeyword => "addressof";
+    public override string InstructionKeyword => "addressof";
 
     public Register Target { get; set; }
 

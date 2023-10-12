@@ -8,6 +8,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class StoreInstruction : InstructionBase
 {
+    public override string InstructionKeyword => "store";
+
     /// <summary>
     /// The symbol to store to.
     /// </summary>
@@ -26,7 +28,7 @@ internal sealed class StoreInstruction : InstructionBase
         this.Source = source;
     }
 
-    public override string ToString() => $"store {this.Target.FullName} := {this.Source.ToOperandString()}";
+    public override string ToString() => $"{this.InstructionKeyword} {this.Target.FullName} := {this.Source.ToOperandString()}";
 
     public override StoreInstruction Clone() => new(this.Target, this.Source);
 }

@@ -11,6 +11,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class StartScope : InstructionBase
 {
+    public override string InstructionKeyword => "@scope start";
+
     /// <summary>
     /// The locals introduced in this scope.
     /// </summary>
@@ -28,7 +30,7 @@ internal sealed class StartScope : InstructionBase
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.Append("@scope start [");
+        result.Append($"{this.InstructionKeyword} [");
         result.AppendJoin(", ", this.Locals.Select(x => x.Name));
         result.Append(']');
         return result.ToString();

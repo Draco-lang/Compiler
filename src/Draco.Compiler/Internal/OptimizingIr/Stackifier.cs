@@ -13,21 +13,6 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed class Stackifier
 {
-    /// <summary>
-    /// Stackifies the given procedure without rearranging instructions.
-    /// </summary>
-    /// <param name="procedure">The procedure to stackify.</param>
-    /// <returns>The registers that got stackified.</returns>
-    public static ImmutableHashSet<Register> Stackify(IProcedure procedure)
-    {
-        var stackifier = new Stackifier(procedure);
-        foreach (var bb in procedure.BasicBlocks.Values) stackifier.Stackify(bb);
-        // Subtract to get stackified regs
-        return stackifier.registerUses.Keys
-            .Except(stackifier.savedRegisters)
-            .ToImmutableHashSet();
-    }
-
     private static ImmutableDictionary<Register, int> CountRegisterUses(IEnumerable<IInstruction> instructions)
     {
         var registerUses = ImmutableDictionary.CreateBuilder<Register, int>();
@@ -43,9 +28,8 @@ internal sealed class Stackifier
 
     private readonly IProcedure procedure;
     private readonly ImmutableDictionary<Register, int> registerUses;
-    private readonly HashSet<Register> savedRegisters = new();
 
-    private Stackifier(IProcedure procedure)
+    public Stackifier(IProcedure procedure)
     {
         this.procedure = procedure;
         var instructions = procedure.BasicBlocks.Values.SelectMany(bb => bb.Instructions);
@@ -53,7 +37,8 @@ internal sealed class Stackifier
         this.registerUses = CountRegisterUses(instructions);
     }
 
-    private void Stackify(IBasicBlock basicBlock)
+    // TODO: Doc
+    public ImmutableArray<IInstruction> Stackify(IBasicBlock basicBlock)
     {
         var instr = basicBlock.LastInstruction;
         while (instr is not null)
@@ -67,15 +52,20 @@ internal sealed class Stackifier
         }
     }
 
-    private bool RecoverTree(ref IInstruction instrIterator)
+    private (IOperand Tree, bool Stopped) RecoverTree(ref IInstruction instrIterator)
     {
         var instr = instrIterator;
+        var children = ImmutableArray.CreateBuilder<IOperand>();
         var stopped = false;
 
         foreach (var op in instr.Operands.Reverse())
         {
             // Not a register, pushed some other way, does not break tree
-            if (op is not Register reg) continue;
+            if (op is not Register reg)
+            {
+                children.Add(op);
+                continue;
+            }
 
             // If we have a single-use register as a result immediately before this instruction,
             // all good, part of the tree
@@ -85,16 +75,24 @@ internal sealed class Stackifier
              && valueInstr.Target == reg)
             {
                 instrIterator = instrIterator.Prev;
-                var childStopped = this.RecoverTree(ref instrIterator);
+                var (childTree, childStopped) = this.RecoverTree(ref instrIterator);
+                children.Add(childTree);
                 // If child recovery broke the tree, we break too
                 if (childStopped) stopped = true;
                 continue;
             }
 
             // Match failure, need to break the tree
+            children.Add(op);
             stopped = true;
         }
 
-        return stopped;
+        children.Reverse();
+        var tree = instr switch
+        {
+            IValueInstruction vi => new TreeInstruction(vi, children.ToImmutable()),
+            _ => throw new InvalidOperationException(),
+        };
+        return (tree, stopped);
     }
 }

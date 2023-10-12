@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class BoxInstruction : InstructionBase, IValueInstruction
 {
-    public string InstructionKeyword => "box";
+    public override string InstructionKeyword => "box";
 
     public Register Target { get; set; }
 

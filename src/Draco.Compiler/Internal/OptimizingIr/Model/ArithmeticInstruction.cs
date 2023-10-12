@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class ArithmeticInstruction : InstructionBase, IValueInstruction
 {
-    public string InstructionKeyword => this.OpToString();
+    public override string InstructionKeyword => this.OpToString();
 
     public Register Target { get; set; }
 

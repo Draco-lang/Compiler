@@ -43,7 +43,7 @@ internal sealed class CilCodegen
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
     private readonly ImmutableDictionary<LocalSymbol, AllocatedLocal> allocatedLocals;
-    private readonly ImmutableDictionary<Register, int> allocatedRegisters;
+    private readonly Dictionary<Register, int> allocatedRegisters = new();
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
     private readonly Stackifier stackifier;
 
@@ -56,15 +56,10 @@ internal sealed class CilCodegen
         var controlFlowBuilder = new ControlFlowBuilder();
         this.InstructionEncoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
 
-        // TODO: Incorrect computations in case we stackify...
         this.allocatedLocals = procedure.Locals
             .Where(local => !SymbolEqualityComparer.Default.Equals(local.Type, IntrinsicSymbols.Unit))
             .Select((local, index) => (Local: local, Index: index))
             .ToImmutableDictionary(pair => pair.Local, pair => new AllocatedLocal(pair.Local, pair.Index));
-        this.allocatedRegisters = procedure.Registers
-            .Where(reg => !SymbolEqualityComparer.Default.Equals(reg.Type, IntrinsicSymbols.Unit))
-            .Select((reg, index) => (Register: reg, Index: index))
-            .ToImmutableDictionary(pair => pair.Register, pair => this.allocatedLocals.Count + pair.Index);
 
         this.stackifier = new(procedure);
     }
@@ -85,7 +80,12 @@ internal sealed class CilCodegen
     private int? GetLocalIndex(LocalSymbol local) => this.GetAllocatedLocal(local)?.Index;
     private int? GetRegisterIndex(Register register)
     {
-        if (!this.allocatedRegisters.TryGetValue(register, out var allocatedRegister)) return null;
+        if (SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit)) return null;
+        if (!this.allocatedRegisters.TryGetValue(register, out var allocatedRegister))
+        {
+            allocatedRegister = this.allocatedRegisters.Count;
+            this.allocatedRegisters.Add(register, allocatedRegister);
+        }
         return allocatedRegister;
     }
 

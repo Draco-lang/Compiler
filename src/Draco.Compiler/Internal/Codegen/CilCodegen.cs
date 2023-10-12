@@ -82,6 +82,7 @@ internal sealed class CilCodegen
     private int? GetRegisterIndex(Register register)
     {
         if (SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit)) return null;
+        if (this.stackifier.RegisterUses[register] == 0) return null;
         if (!this.allocatedRegisters.TryGetValue(register, out var allocatedRegister))
         {
             // NOTE: We need to offset by the number of locals
@@ -484,7 +485,15 @@ internal sealed class CilCodegen
         if (this.treeDepth > 0) return;
 
         var index = this.GetRegisterIndex(register);
-        if (index is null) return;
+        if (index is null)
+        {
+            if (!SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit))
+            {
+                // Need to pop
+                this.InstructionEncoder.OpCode(ILOpCode.Pop);
+            }
+            return;
+        }
         this.InstructionEncoder.StoreLocal(index.Value);
     }
 

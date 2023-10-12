@@ -26,18 +26,25 @@ internal sealed class Stackifier
         return registerUses.ToImmutable();
     }
 
+    /// <summary>
+    /// A dictionary for the number of register uses for each register.
+    /// </summary>
+    public ImmutableDictionary<Register, int> RegisterUses { get; }
+
     private readonly IProcedure procedure;
-    private readonly ImmutableDictionary<Register, int> registerUses;
 
     public Stackifier(IProcedure procedure)
     {
         this.procedure = procedure;
         var instructions = procedure.BasicBlocks.Values.SelectMany(bb => bb.Instructions);
-        // Count the number of register uses
-        this.registerUses = CountRegisterUses(instructions);
+        this.RegisterUses = CountRegisterUses(instructions);
     }
 
-    // TODO: Doc
+    /// <summary>
+    /// Stackifies the given basic block.
+    /// </summary>
+    /// <param name="basicBlock">The basic block to stackify.</param>
+    /// <returns>The new, stackified array of instructions.</returns>
     public ImmutableArray<IInstruction> Stackify(IBasicBlock basicBlock)
     {
         if (!this.procedure.BasicBlocks.Values.Contains(basicBlock))
@@ -80,7 +87,7 @@ internal sealed class Stackifier
             // If we have a single-use register as a result immediately before this instruction,
             // all good, part of the tree
             if (!stopped
-             && this.registerUses[reg] == 1
+             && this.RegisterUses[reg] == 1
              && instrIterator.Prev is IValueInstruction valueInstr
              && valueInstr.Target == reg)
             {

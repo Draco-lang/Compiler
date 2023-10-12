@@ -46,6 +46,7 @@ internal sealed class CilCodegen
     private readonly Dictionary<Register, int> allocatedRegisters = new();
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
     private readonly Stackifier stackifier;
+    private int treeDepth;
 
     public CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
     {
@@ -117,6 +118,20 @@ internal sealed class CilCodegen
 
     private void EncodeInstruction(IInstruction instruction)
     {
+        var operandEnumerator = instruction.Operands.GetEnumerator();
+        IOperand NextOperand()
+        {
+            if (!operandEnumerator!.MoveNext()) throw new InvalidOperationException();
+            return operandEnumerator.Current;
+        }
+        IEnumerable<IOperand> RemainingOperands()
+        {
+            while (operandEnumerator!.MoveNext()) yield return operandEnumerator.Current;
+        }
+
+        // NOTE: Unwrap after capturing operands
+        if (instruction is TreeInstruction treeInstr) instruction = treeInstr.Underlying;
+
         switch (instruction)
         {
         case OptimizingIr.Model.SequencePoint sp:
@@ -150,7 +165,7 @@ internal sealed class CilCodegen
         }
         case BranchInstruction branch:
         {
-            this.EncodePush(branch.Condition);
+            this.EncodePush(NextOperand());
             var then = this.GetLabel(branch.Then);
             var @else = this.GetLabel(branch.Else);
             this.InstructionEncoder.Branch(ILOpCode.Brtrue, then);
@@ -159,14 +174,14 @@ internal sealed class CilCodegen
         }
         case RetInstruction ret:
         {
-            this.EncodePush(ret.Value);
+            this.EncodePush(NextOperand());
             this.InstructionEncoder.OpCode(ILOpCode.Ret);
             break;
         }
         case ArithmeticInstruction arithmetic:
         {
-            this.EncodePush(arithmetic.Left);
-            this.EncodePush(arithmetic.Right);
+            this.EncodePush(NextOperand());
+            this.EncodePush(NextOperand());
             this.InstructionEncoder.OpCode(arithmetic.Op switch
             {
                 ArithmeticOp.Add => ILOpCode.Add,
@@ -178,7 +193,7 @@ internal sealed class CilCodegen
                 ArithmeticOp.Equal => ILOpCode.Ceq,
                 _ => throw new InvalidOperationException(),
             });
-            this.StoreLocal(arithmetic.Target);
+            this.StoreRegister(arithmetic.Target);
             break;
         }
         case LoadInstruction load:
@@ -207,15 +222,15 @@ internal sealed class CilCodegen
                 throw new InvalidOperationException();
             }
             // Just copy to the target local
-            this.StoreLocal(load.Target);
+            this.StoreRegister(load.Target);
             break;
         }
         case LoadElementInstruction loadElement:
         {
             // Array
-            this.EncodePush(loadElement.Array);
+            this.EncodePush(NextOperand());
             // Indices
-            foreach (var i in loadElement.Indices) this.EncodePush(i);
+            foreach (var i in RemainingOperands()) this.EncodePush(i);
             // One-dimensional and multi-dimensional arrays are very different
             if (loadElement.Indices.Count == 1)
             {
@@ -232,15 +247,15 @@ internal sealed class CilCodegen
                     loadElement.Indices.Count));
             }
             // Store result
-            this.StoreLocal(loadElement.Target);
+            this.StoreRegister(loadElement.Target);
             break;
         }
         case LoadFieldInstruction loadField:
         {
-            this.EncodePush(loadField.Receiver);
+            this.EncodePush(NextOperand());
             this.InstructionEncoder.OpCode(ILOpCode.Ldfld);
             this.InstructionEncoder.Token(this.GetHandle(loadField.Member));
-            this.StoreLocal(loadField.Target);
+            this.StoreRegister(loadField.Target);
             break;
         }
         case StoreInstruction store:
@@ -250,11 +265,11 @@ internal sealed class CilCodegen
             case ParameterSymbol:
                 throw new InvalidOperationException();
             case LocalSymbol local:
-                this.EncodePush(store.Source);
+                this.EncodePush(NextOperand());
                 this.StoreLocal(local);
                 break;
             case GlobalSymbol global:
-                this.EncodePush(store.Source);
+                this.EncodePush(NextOperand());
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.EncodeToken(global);
                 break;
@@ -265,9 +280,10 @@ internal sealed class CilCodegen
         }
         case StoreElementInstruction storeElement:
         {
-            this.EncodePush(storeElement.TargetArray);
-            foreach (var index in storeElement.Indices) this.EncodePush(index);
-            this.EncodePush(storeElement.Source);
+            this.EncodePush(NextOperand());
+            var remainingOps = RemainingOperands();
+            foreach (var index in remainingOps.SkipLast(1)) this.EncodePush(index);
+            this.EncodePush(remainingOps.Last());
 
             // TODO: Not the prettiest...
             var targetStorageType = storeElement.TargetArray.Type!.Substitution.GenericArguments[0].Substitution;
@@ -290,8 +306,8 @@ internal sealed class CilCodegen
         }
         case StoreFieldInstruction storeField:
         {
-            this.EncodePush(storeField.Receiver);
-            this.EncodePush(storeField.Source);
+            this.EncodePush(NextOperand());
+            this.EncodePush(NextOperand());
             this.InstructionEncoder.OpCode(ILOpCode.Stfld);
             this.InstructionEncoder.Token(this.GetHandle(storeField.Member));
             break;
@@ -304,7 +320,7 @@ internal sealed class CilCodegen
             {
                 var paramIndex = this.GetParameterIndex(param);
                 this.InstructionEncoder.LoadArgumentAddress(paramIndex);
-                this.StoreLocal(addressOf.Target);
+                this.StoreRegister(addressOf.Target);
                 break;
             }
             case LocalSymbol local:
@@ -313,14 +329,14 @@ internal sealed class CilCodegen
                 // NOTE: What if we ask the address of a unit?
                 Debug.Assert(localIndex is not null);
                 this.InstructionEncoder.LoadLocalAddress(localIndex.Value);
-                this.StoreLocal(addressOf.Target);
+                this.StoreRegister(addressOf.Target);
                 break;
             }
             case GlobalSymbol global:
             {
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsflda);
                 this.EncodeToken(global);
-                this.StoreLocal(addressOf.Target);
+                this.StoreRegister(addressOf.Target);
                 break;
             }
             default:
@@ -331,41 +347,41 @@ internal sealed class CilCodegen
         case CallInstruction call:
         {
             // Arguments
-            foreach (var arg in call.Arguments) this.EncodePush(arg);
+            foreach (var arg in RemainingOperands()) this.EncodePush(arg);
             // Call
             this.InstructionEncoder.OpCode(ILOpCode.Call);
             this.EncodeToken(call.Procedure);
             // Store result
-            this.StoreLocal(call.Target);
+            this.StoreRegister(call.Target);
             break;
         }
         case MemberCallInstruction mcall:
         {
             // Receiver
-            this.EncodePush(mcall.Receiver);
+            this.EncodePush(NextOperand());
             // Arguments
-            foreach (var arg in mcall.Arguments) this.EncodePush(arg);
+            foreach (var arg in RemainingOperands()) this.EncodePush(arg);
             // Call
             this.InstructionEncoder.OpCode(mcall.Procedure.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
             this.EncodeToken(mcall.Procedure);
             // Store result
-            this.StoreLocal(mcall.Target);
+            this.StoreRegister(mcall.Target);
             break;
         }
         case NewObjectInstruction newObj:
         {
             // Arguments
-            foreach (var arg in newObj.Arguments) this.EncodePush(arg);
+            foreach (var arg in RemainingOperands()) this.EncodePush(arg);
             this.InstructionEncoder.OpCode(ILOpCode.Newobj);
             this.EncodeToken(newObj.Constructor);
             // Store result
-            this.StoreLocal(newObj.Target);
+            this.StoreRegister(newObj.Target);
             break;
         }
         case NewArrayInstruction newArr:
         {
             // Dimensions
-            foreach (var dim in newArr.Dimensions) this.EncodePush(dim);
+            foreach (var dim in RemainingOperands()) this.EncodePush(dim);
             // One-dimensional and multi-dimensional arrays are very different
             if (newArr.Dimensions.Count == 1)
             {
@@ -382,30 +398,30 @@ internal sealed class CilCodegen
                     newArr.Dimensions.Count));
             }
             // Store result
-            this.StoreLocal(newArr.Target);
+            this.StoreRegister(newArr.Target);
             break;
         }
         case ArrayLengthInstruction arrLen:
         {
             // Array
-            this.EncodePush(arrLen.Array);
+            this.EncodePush(NextOperand());
             // Length query
             this.InstructionEncoder.OpCode(ILOpCode.Ldlen);
             // Convert to I4
             this.InstructionEncoder.OpCode(ILOpCode.Conv_i4);
             // Store result
-            this.StoreLocal(arrLen.Target);
+            this.StoreRegister(arrLen.Target);
             break;
         }
         case BoxInstruction box:
         {
             // Value to be boxed
-            this.EncodePush(box.Value);
+            this.EncodePush(NextOperand());
             // Box it
             this.InstructionEncoder.OpCode(ILOpCode.Box);
             this.EncodeToken(box.Value.Type!);
             // Store result
-            this.StoreLocal(box.Target);
+            this.StoreRegister(box.Target);
             break;
         }
         default:
@@ -423,8 +439,13 @@ internal sealed class CilCodegen
     {
         switch (operand)
         {
+        case TreeInstruction treeInstruction:
+            ++this.treeDepth;
+            this.EncodeInstruction(treeInstruction);
+            --this.treeDepth;
+            break;
         case Void:
-            return;
+            break;
         case Register r:
             this.LoadRegister(r);
             break;
@@ -450,13 +471,6 @@ internal sealed class CilCodegen
         }
     }
 
-    private void LoadLocal(LocalSymbol local)
-    {
-        var index = this.GetLocalIndex(local);
-        if (index is null) return;
-        this.InstructionEncoder.LoadLocal(index.Value);
-    }
-
     private void LoadRegister(Register register)
     {
         var index = this.GetRegisterIndex(register);
@@ -464,16 +478,25 @@ internal sealed class CilCodegen
         this.InstructionEncoder.LoadLocal(index.Value);
     }
 
-    private void StoreLocal(LocalSymbol local)
+    private void StoreRegister(Register register)
     {
-        var index = this.GetLocalIndex(local);
+        if (this.treeDepth > 0) return;
+
+        var index = this.GetRegisterIndex(register);
         if (index is null) return;
         this.InstructionEncoder.StoreLocal(index.Value);
     }
 
-    private void StoreLocal(Register register)
+    private void LoadLocal(LocalSymbol local)
     {
-        var index = this.GetRegisterIndex(register);
+        var index = this.GetLocalIndex(local);
+        if (index is null) return;
+        this.InstructionEncoder.LoadLocal(index.Value);
+    }
+
+    private void StoreLocal(LocalSymbol local)
+    {
+        var index = this.GetLocalIndex(local);
         if (index is null) return;
         this.InstructionEncoder.StoreLocal(index.Value);
     }

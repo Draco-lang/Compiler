@@ -25,6 +25,7 @@ internal sealed class TreeInstruction : InstructionBase, IOperand, IValueInstruc
 
     public override bool IsBranch => this.Underlying.IsBranch;
     public override IEnumerable<BasicBlock> JumpTargets => this.Underlying.JumpTargets.Cast<BasicBlock>();
+    public override IEnumerable<Symbol> StaticOperands => this.Underlying.StaticOperands;
     public override IEnumerable<IOperand> Operands { get; }
 
     public TypeSymbol Type => this.Target.Type;
@@ -40,8 +41,14 @@ internal sealed class TreeInstruction : InstructionBase, IOperand, IValueInstruc
     public override string ToString() => this.Underlying is IValueInstruction
         ? $"{this.Target} := {this.ToOperandString()}"
         : this.ToOperandString();
-    public string ToOperandString() =>
-        $"{this.InstructionKeyword}({string.Join(", ", this.Operands.Select(op => op.ToOperandString()))})";
+    public string ToOperandString()
+    {
+        var staticOperands = this.StaticOperands.Select(op => op.FullName);
+        var operands = this.Operands.Select(op => op.ToOperandString());
+        var jumpTargets = this.JumpTargets.Select(op => $"lbl{op.Index}");
+        var allArgs = staticOperands.Concat(operands).Concat(jumpTargets);
+        return $"{this.InstructionKeyword}({string.Join(", ", allArgs)})";
+    }
     public override IInstruction Clone() =>
         new TreeInstruction(this.Underlying.Clone(), this.Operands.ToImmutableArray());
 }

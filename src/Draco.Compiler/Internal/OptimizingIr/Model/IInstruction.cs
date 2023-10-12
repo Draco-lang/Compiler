@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -41,6 +42,11 @@ internal interface IInstruction
     /// The jump targets for this instruction.
     /// </summary>
     public IEnumerable<IBasicBlock> JumpTargets { get; }
+
+    /// <summary>
+    /// The static operands of this instruction that are not runtime values.
+    /// </summary>
+    public IEnumerable<Symbol> StaticOperands { get; }
 
     /// <summary>
     /// The input operands of this instruction.

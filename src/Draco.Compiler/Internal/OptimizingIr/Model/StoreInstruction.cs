@@ -20,6 +20,7 @@ internal sealed class StoreInstruction : InstructionBase
     /// </summary>
     public IOperand Source { get; set; }
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.Target };
     public override IEnumerable<IOperand> Operands => new[] { this.Source };
 
     public StoreInstruction(Symbol target, IOperand source)

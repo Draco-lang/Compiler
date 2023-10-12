@@ -25,6 +25,7 @@ internal sealed class StoreFieldInstruction : InstructionBase
     /// </summary>
     public IOperand Source { get; set; }
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.Member };
     public override IEnumerable<IOperand> Operands => new[] { this.Receiver, this.Source };
 
     public StoreFieldInstruction(IOperand receiver, FieldSymbol member, IOperand source)

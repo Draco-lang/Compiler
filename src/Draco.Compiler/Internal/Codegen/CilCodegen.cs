@@ -84,7 +84,8 @@ internal sealed class CilCodegen
         if (SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit)) return null;
         if (!this.allocatedRegisters.TryGetValue(register, out var allocatedRegister))
         {
-            allocatedRegister = this.allocatedRegisters.Count;
+            // NOTE: We need to offset by the number of locals
+            allocatedRegister = this.allocatedLocals.Count + this.allocatedRegisters.Count;
             this.allocatedRegisters.Add(register, allocatedRegister);
         }
         return allocatedRegister;
@@ -281,7 +282,7 @@ internal sealed class CilCodegen
         case StoreElementInstruction storeElement:
         {
             this.EncodePush(NextOperand());
-            var remainingOps = RemainingOperands();
+            var remainingOps = RemainingOperands().ToList();
             foreach (var index in remainingOps.SkipLast(1)) this.EncodePush(index);
             this.EncodePush(remainingOps.Last());
 

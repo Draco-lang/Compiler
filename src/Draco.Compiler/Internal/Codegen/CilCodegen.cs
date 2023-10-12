@@ -307,9 +307,9 @@ internal sealed class CilCodegen
         {
             switch (addressOf.Source)
             {
-            case ParameterSymbol local:
+            case ParameterSymbol param:
             {
-                var paramIndex = this.GetParameterIndex(local);
+                var paramIndex = this.GetParameterIndex(param);
                 this.InstructionEncoder.LoadArgumentAddress(paramIndex);
                 this.StoreLocal(addressOf.Target);
                 break;
@@ -317,8 +317,16 @@ internal sealed class CilCodegen
             case LocalSymbol local:
             {
                 var localIndex = this.GetLocalIndex(local);
+                // NOTE: What if we ask the address of a unit?
                 Debug.Assert(localIndex is not null);
                 this.InstructionEncoder.LoadLocalAddress(localIndex.Value);
+                this.StoreLocal(addressOf.Target);
+                break;
+            }
+            case GlobalSymbol global:
+            {
+                this.InstructionEncoder.OpCode(ILOpCode.Ldsflda);
+                this.EncodeToken(global);
                 this.StoreLocal(addressOf.Target);
                 break;
             }

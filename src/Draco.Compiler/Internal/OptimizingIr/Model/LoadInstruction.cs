@@ -8,6 +8,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class LoadInstruction : InstructionBase, IValueInstruction
 {
+    public string InstructionKeyword => "load";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -22,7 +24,7 @@ internal sealed class LoadInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := load {this.Source.FullName}";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Source.FullName}";
 
     public override LoadInstruction Clone() => new(this.Target, this.Source);
 }

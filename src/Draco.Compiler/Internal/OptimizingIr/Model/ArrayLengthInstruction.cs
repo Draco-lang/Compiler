@@ -7,6 +7,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class ArrayLengthInstruction : InstructionBase, IValueInstruction
 {
+    public string InstructionKeyword => "length";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -23,7 +25,7 @@ internal sealed class ArrayLengthInstruction : InstructionBase, IValueInstructio
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := length {this.Array.ToOperandString()}";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Array.ToOperandString()}";
 
     public override ArrayLengthInstruction Clone() => new(this.Target, this.Array);
 }

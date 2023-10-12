@@ -8,6 +8,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class LoadFieldInstruction : InstructionBase, IValueInstruction
 {
+    public string InstructionKeyword => "loadfield";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -30,7 +32,7 @@ internal sealed class LoadFieldInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := load {this.Receiver.ToOperandString()}.{this.Member.Name}";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Receiver.ToOperandString()}.{this.Member.Name}";
 
     public override LoadFieldInstruction Clone() => new(this.Target, this.Receiver, this.Member);
 }

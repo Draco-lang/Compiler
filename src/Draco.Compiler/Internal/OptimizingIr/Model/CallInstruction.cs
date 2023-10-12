@@ -9,6 +9,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class CallInstruction : InstructionBase, IValueInstruction
 {
+    public string InstructionKeyword => "call";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -31,7 +33,7 @@ internal sealed class CallInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := call [{this.Procedure.FullName}]({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} [{this.Procedure.FullName}]({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
 
     public override CallInstruction Clone() => new(this.Target, this.Procedure, this.Arguments);
 }

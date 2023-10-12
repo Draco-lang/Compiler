@@ -17,6 +17,8 @@ internal sealed class LoadInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public Symbol Source { get; set; }
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.Source };
+
     public LoadInstruction(Register target, Symbol source)
     {
         this.Target = target;

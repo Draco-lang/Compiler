@@ -23,6 +23,7 @@ internal sealed class NewArrayInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public IList<IOperand> Dimensions { get; set; } = new List<IOperand>();
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.ElementType };
     public override IEnumerable<IOperand> Operands => this.Dimensions;
 
     public NewArrayInstruction(Register target, TypeSymbol elementType, IEnumerable<IOperand> dimensions)

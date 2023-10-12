@@ -22,6 +22,7 @@ internal sealed class BoxInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public IOperand Value { get; }
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.BoxedType };
     public override IEnumerable<IOperand> Operands => new[] { this.Value };
 
     public BoxInstruction(Register target, TypeSymbol boxedType, IOperand value)

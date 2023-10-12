@@ -31,6 +31,8 @@ internal sealed class TreeInstruction : InstructionBase, IOperand, IValueInstruc
 
     public TreeInstruction(IValueInstruction underlying, ImmutableArray<IOperand> operands)
     {
+        if (underlying is TreeInstruction) throw new ArgumentOutOfRangeException(nameof(underlying));
+
         this.Underlying = underlying;
         this.Operands = operands;
     }

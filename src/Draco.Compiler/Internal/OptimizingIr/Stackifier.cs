@@ -40,19 +40,24 @@ internal sealed class Stackifier
     // TODO: Doc
     public ImmutableArray<IInstruction> Stackify(IBasicBlock basicBlock)
     {
+        var result = ImmutableArray.CreateBuilder<IInstruction>();
+
         var instr = basicBlock.LastInstruction;
         while (instr is not null)
         {
-            // This instruction has to have its registers saved
-            if (instr is IValueInstruction valueInstr) this.savedRegisters.Add(valueInstr.Target);
             // Recover the longest tree backwards
-            this.RecoverTree(ref instr);
+            var (tree, _) = this.RecoverTree(ref instr);
+            // Add result
+            result.Add(tree);
             // Step back
             instr = instr.Prev;
         }
+
+        result.Reverse();
+        return result.ToImmutable();
     }
 
-    private (IOperand Tree, bool Stopped) RecoverTree(ref IInstruction instrIterator)
+    private (TreeInstruction Tree, bool Stopped) RecoverTree(ref IInstruction instrIterator)
     {
         var instr = instrIterator;
         var children = ImmutableArray.CreateBuilder<IOperand>();
@@ -88,11 +93,7 @@ internal sealed class Stackifier
         }
 
         children.Reverse();
-        var tree = instr switch
-        {
-            IValueInstruction vi => new TreeInstruction(vi, children.ToImmutable()),
-            _ => throw new InvalidOperationException(),
-        };
+        var tree = new TreeInstruction(instr, children.ToImmutable());
         return (tree, stopped);
     }
 }

@@ -36,7 +36,7 @@ internal sealed class TreeInstruction : InstructionBase, IOperand, IValueInstruc
     }
 
     public override string ToString() => $"{this.Target} := {this.ToOperandString()}";
-    public string ToOperandString() => $"{this.InstructionKeyword}({string.Join(", ", this.Operands)})";
+    public string ToOperandString() => $"{this.InstructionKeyword}({string.Join(", ", this.Operands.Select(op => op.ToOperandString()))})";
     public override IInstruction Clone() =>
         new TreeInstruction((IValueInstruction)this.Underlying.Clone(), this.Operands.ToImmutableArray());
 }

@@ -7,8 +7,6 @@ using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
-// TODO: Copypasta from metadata field
-
 /// <summary>
 /// Static fields read from metadata.
 /// </summary>

@@ -45,22 +45,7 @@ internal sealed class CilCodegen
     private readonly ImmutableDictionary<LocalSymbol, AllocatedLocal> allocatedLocals;
     private readonly ImmutableDictionary<Register, int> allocatedRegisters;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
-
-    // NOTE: The current stackification attempt is FLAWED
-    // Imagine this situation:
-    //
-    // r1 := load loc0
-    // r2 := box 1 as object
-    // store r1[0] := r2
-    //
-    // We stackify it and get
-    //
-    // load loc0
-    // box 1 as object
-    // store r1[0]
-    //
-    // OOPS! The index "leaked behind" the value, reversing the order
-    // We might need to structure the instructions in a tree after all
+    private readonly Stackifier stackifier;
 
     public CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
     {
@@ -71,6 +56,7 @@ internal sealed class CilCodegen
         var controlFlowBuilder = new ControlFlowBuilder();
         this.InstructionEncoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
 
+        // TODO: Incorrect computations in case we stackify...
         this.allocatedLocals = procedure.Locals
             .Where(local => !SymbolEqualityComparer.Default.Equals(local.Type, IntrinsicSymbols.Unit))
             .Select((local, index) => (Local: local, Index: index))
@@ -79,6 +65,8 @@ internal sealed class CilCodegen
             .Where(reg => !SymbolEqualityComparer.Default.Equals(reg.Type, IntrinsicSymbols.Unit))
             .Select((reg, index) => (Register: reg, Index: index))
             .ToImmutableDictionary(pair => pair.Register, pair => this.allocatedLocals.Count + pair.Index);
+
+        this.stackifier = new(procedure);
     }
 
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
@@ -119,7 +107,12 @@ internal sealed class CilCodegen
     private void EncodeBasicBlock(IBasicBlock basicBlock)
     {
         this.InstructionEncoder.MarkLabel(this.GetLabel(basicBlock));
-        foreach (var instr in basicBlock.Instructions) this.EncodeInstruction(instr);
+
+        var stackify = true;
+        var instructions = stackify
+            ? this.stackifier.Stackify(basicBlock)
+            : basicBlock.Instructions;
+        foreach (var instr in instructions) this.EncodeInstruction(instr);
     }
 
     private void EncodeInstruction(IInstruction instruction)

@@ -40,6 +40,11 @@ internal sealed class Stackifier
     // TODO: Doc
     public ImmutableArray<IInstruction> Stackify(IBasicBlock basicBlock)
     {
+        if (!this.procedure.BasicBlocks.Values.Contains(basicBlock))
+        {
+            throw new ArgumentOutOfRangeException(nameof(basicBlock));
+        }
+
         var result = ImmutableArray.CreateBuilder<IInstruction>();
 
         var instr = basicBlock.LastInstruction;

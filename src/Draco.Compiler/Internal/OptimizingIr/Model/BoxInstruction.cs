@@ -8,6 +8,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class BoxInstruction : InstructionBase, IValueInstruction
 {
+    public string InstructionKeyword => "box";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -30,7 +32,7 @@ internal sealed class BoxInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := box {this.Value.ToOperandString()} as {this.BoxedType}";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Value.ToOperandString()} as {this.BoxedType}";
 
     public override BoxInstruction Clone() => new(this.Target, this.BoxedType, this.Value);
 }

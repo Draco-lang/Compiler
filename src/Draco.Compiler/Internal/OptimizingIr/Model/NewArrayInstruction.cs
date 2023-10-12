@@ -9,6 +9,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class NewArrayInstruction : InstructionBase, IValueInstruction
 {
+    public string InstructionKeyword => "newarray";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -31,7 +33,7 @@ internal sealed class NewArrayInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := new {this.ElementType}[{string.Join(", ", this.Dimensions.Select(d => d.ToOperandString()))}]";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.ElementType}[{string.Join(", ", this.Dimensions.Select(d => d.ToOperandString()))}]";
 
     public override NewArrayInstruction Clone() => new(this.Target, this.ElementType, this.Dimensions);
 }

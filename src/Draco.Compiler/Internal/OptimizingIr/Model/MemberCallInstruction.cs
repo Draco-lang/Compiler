@@ -9,6 +9,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class MemberCallInstruction : InstructionBase, IValueInstruction
 {
+    public string InstructionKeyword => "membercall";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -37,7 +39,7 @@ internal sealed class MemberCallInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := call {this.Receiver.ToOperandString()}.[{this.Procedure.FullName}]({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Receiver.ToOperandString()}.[{this.Procedure.FullName}]({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
 
     public override MemberCallInstruction Clone() => new(this.Target, this.Procedure, this.Receiver, this.Arguments);
 }

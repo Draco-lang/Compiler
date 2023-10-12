@@ -12,6 +12,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class AddressOfInstruction : InstructionBase, IValueInstruction
 {
+    public string InstructionKeyword => "addressof";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -26,7 +28,7 @@ internal sealed class AddressOfInstruction : InstructionBase, IValueInstruction
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := addressof {this.Source.FullName}";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Source.FullName}";
 
     public override AddressOfInstruction Clone() => new(this.Target, this.Source);
 }

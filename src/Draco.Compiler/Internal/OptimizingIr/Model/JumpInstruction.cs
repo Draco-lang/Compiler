@@ -21,7 +21,7 @@ internal sealed class JumpInstruction : InstructionBase
         this.Target = target;
     }
 
-    public override string ToString() => $"jump {this.Target.ToOperandString()}";
+    public override string ToString() => $"jump lbl{this.Target.Index}";
 
     public override JumpInstruction Clone() => new(this.Target);
 }

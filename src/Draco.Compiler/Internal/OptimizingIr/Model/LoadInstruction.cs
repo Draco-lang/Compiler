@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -12,18 +13,16 @@ internal sealed class LoadInstruction : InstructionBase, IValueInstruction
     /// <summary>
     /// The operand to load from.
     /// </summary>
-    public IOperand Source { get; set; }
+    public Symbol Source { get; set; }
 
-    public override IEnumerable<IOperand> Operands => new[] { this.Source };
-
-    public LoadInstruction(Register target, IOperand source)
+    public LoadInstruction(Register target, Symbol source)
     {
         this.Target = target;
         this.Source = source;
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := load {this.Source.ToOperandString()}";
+        $"{this.Target.ToOperandString()} := load {this.Source.FullName}";
 
     public override LoadInstruction Clone() => new(this.Target, this.Source);
 }

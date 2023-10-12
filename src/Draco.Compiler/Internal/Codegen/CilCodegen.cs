@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -9,7 +10,6 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
-using Parameter = Draco.Compiler.Internal.OptimizingIr.Model.Parameter;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;
 
 namespace Draco.Compiler.Internal.Codegen;
@@ -31,12 +31,20 @@ internal sealed class CilCodegen
         .OrderBy(kv => kv.Value.Index)
         .Select(kv => kv.Value);
 
+    /// <summary>
+    /// The allocated registers in order.
+    /// </summary>
+    public IEnumerable<Register> AllocatedRegisters => this.allocatedRegisters
+        .OrderBy(kv => kv.Value)
+        .Select(kv => kv.Key);
+
     private PdbCodegen? PdbCodegen => this.metadataCodegen.PdbCodegen;
 
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
+    private readonly ImmutableDictionary<LocalSymbol, AllocatedLocal> allocatedLocals;
+    private readonly ImmutableDictionary<Register, int> allocatedRegisters;
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
-    private readonly Dictionary<IOperand, AllocatedLocal> allocatedLocals = new();
 
     // NOTE: The current stackification attempt is FLAWED
     // Imagine this situation:
@@ -62,30 +70,36 @@ internal sealed class CilCodegen
         var codeBuilder = new BlobBuilder();
         var controlFlowBuilder = new ControlFlowBuilder();
         this.InstructionEncoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
+
+        this.allocatedLocals = procedure.Locals
+            .Where(local => !SymbolEqualityComparer.Default.Equals(local.Type, IntrinsicSymbols.Unit))
+            .Select((local, index) => (Local: local, Index: index))
+            .ToImmutableDictionary(pair => pair.Local, pair => new AllocatedLocal(pair.Local, pair.Index));
+        this.allocatedRegisters = procedure.Registers
+            .Where(reg => !SymbolEqualityComparer.Default.Equals(reg.Type, IntrinsicSymbols.Unit))
+            .Select((reg, index) => (Register: reg, Index: index))
+            .ToImmutableDictionary(pair => pair.Register, pair => this.allocatedLocals.Count + pair.Index);
     }
 
-    private MemberReferenceHandle GetGlobalReferenceHandle(Global global) => this.metadataCodegen.GetGlobalReferenceHandle(global);
-    private MemberReferenceHandle GetProcedureDefinitionHandle(IProcedure procedure) => this.metadataCodegen.GetProcedureReferenceHandle(procedure);
     private UserStringHandle GetStringLiteralHandle(string text) => this.metadataCodegen.GetStringLiteralHandle(text);
 
     private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetEntityHandle(symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
-    private int GetParameterIndex(Parameter parameter) => parameter.Index;
+    private int GetParameterIndex(ParameterSymbol parameter) => this.procedure.GetParameterIndex(parameter);
 
-    private AllocatedLocal? GetAllocatedLocal(IOperand operand)
+    private AllocatedLocal? GetAllocatedLocal(LocalSymbol local)
     {
-        if (SymbolEqualityComparer.Default.Equals(operand.Type, IntrinsicSymbols.Unit)) return null;
-        if (!this.allocatedLocals.TryGetValue(operand, out var local))
-        {
-            local = new(operand, this.allocatedLocals.Count);
-            this.allocatedLocals.Add(operand, local);
-        }
-        return local;
+        if (!this.allocatedLocals.TryGetValue(local, out var allocatedLocal)) return null;
+        return allocatedLocal;
     }
 
-    private int? GetLocalIndex(Local local) => this.GetAllocatedLocal(local)?.Index;
-    private int? GetRegisterIndex(Register register) => this.GetAllocatedLocal(register)?.Index;
+    private int? GetLocalIndex(LocalSymbol local) => this.GetAllocatedLocal(local)?.Index;
+    private int? GetRegisterIndex(Register register)
+    {
+        if (!this.allocatedRegisters.TryGetValue(register, out var allocatedRegister)) return null;
+        return allocatedRegister;
+    }
 
     private LabelHandle GetLabel(IBasicBlock block)
     {
@@ -120,10 +134,9 @@ internal sealed class CilCodegen
         case StartScope start:
         {
             var localIndices = start.Locals
-                .Select(sym => this.procedure.Locals[sym])
-                .Select(loc => this.GetAllocatedLocal(loc))
+                .Select(sym => this.GetAllocatedLocal(sym))
                 .OfType<AllocatedLocal>();
-            this.PdbCodegen?.StartScope(this.InstructionEncoder.Offset, localIndices);
+            this.PdbCodegen?.StartScope(this.InstructionEncoder.Offset, this.allocatedLocals.Values);
             break;
         }
         case EndScope:
@@ -180,13 +193,23 @@ internal sealed class CilCodegen
             // Depends on where we load from
             switch (load.Source)
             {
-            case Local local:
+            case ParameterSymbol param:
+            {
+                var index = this.GetParameterIndex(param);
+                this.InstructionEncoder.LoadArgument(index);
+                break;
+            }
+            case LocalSymbol local:
+            {
                 this.LoadLocal(local);
                 break;
-            case Global global:
+            }
+            case GlobalSymbol global:
+            {
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
-                this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
+                this.EncodeToken(global);
                 break;
+            }
             default:
                 throw new InvalidOperationException();
             }
@@ -231,14 +254,16 @@ internal sealed class CilCodegen
         {
             switch (store.Target)
             {
-            case Local local:
+            case ParameterSymbol:
+                throw new InvalidOperationException();
+            case LocalSymbol local:
                 this.EncodePush(store.Source);
                 this.StoreLocal(local);
                 break;
-            case Global global:
+            case GlobalSymbol global:
                 this.EncodePush(store.Source);
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
-                this.InstructionEncoder.Token(this.GetGlobalReferenceHandle(global));
+                this.EncodeToken(global);
                 break;
             default:
                 throw new InvalidOperationException();
@@ -276,6 +301,38 @@ internal sealed class CilCodegen
             this.EncodePush(storeField.Source);
             this.InstructionEncoder.OpCode(ILOpCode.Stfld);
             this.InstructionEncoder.Token(this.GetHandle(storeField.Member));
+            break;
+        }
+        case AddressOfInstruction addressOf:
+        {
+            switch (addressOf.Source)
+            {
+            case ParameterSymbol param:
+            {
+                var paramIndex = this.GetParameterIndex(param);
+                this.InstructionEncoder.LoadArgumentAddress(paramIndex);
+                this.StoreLocal(addressOf.Target);
+                break;
+            }
+            case LocalSymbol local:
+            {
+                var localIndex = this.GetLocalIndex(local);
+                // NOTE: What if we ask the address of a unit?
+                Debug.Assert(localIndex is not null);
+                this.InstructionEncoder.LoadLocalAddress(localIndex.Value);
+                this.StoreLocal(addressOf.Target);
+                break;
+            }
+            case GlobalSymbol global:
+            {
+                this.InstructionEncoder.OpCode(ILOpCode.Ldsflda);
+                this.EncodeToken(global);
+                this.StoreLocal(addressOf.Target);
+                break;
+            }
+            default:
+                throw new InvalidOperationException();
+            }
             break;
         }
         case CallInstruction call:
@@ -376,24 +433,7 @@ internal sealed class CilCodegen
         case Void:
             return;
         case Register r:
-            this.LoadLocal(r);
-            break;
-        case Parameter p:
-            this.InstructionEncoder.LoadArgument(this.GetParameterIndex(p));
-            break;
-        case Address a:
-            switch (a.Operand)
-            {
-            case Local local:
-            {
-                var index = this.GetLocalIndex(local);
-                if (index is null) break;
-                this.InstructionEncoder.LoadLocalAddress(index.Value);
-                break;
-            }
-            default:
-                throw new NotImplementedException();
-            }
+            this.LoadRegister(r);
             break;
         case Constant c:
             switch (c.Value)
@@ -417,21 +457,21 @@ internal sealed class CilCodegen
         }
     }
 
-    private void LoadLocal(Local local)
+    private void LoadLocal(LocalSymbol local)
     {
         var index = this.GetLocalIndex(local);
         if (index is null) return;
         this.InstructionEncoder.LoadLocal(index.Value);
     }
 
-    private void LoadLocal(Register register)
+    private void LoadRegister(Register register)
     {
         var index = this.GetRegisterIndex(register);
         if (index is null) return;
         this.InstructionEncoder.LoadLocal(index.Value);
     }
 
-    private void StoreLocal(Local local)
+    private void StoreLocal(LocalSymbol local)
     {
         var index = this.GetLocalIndex(local);
         if (index is null) return;

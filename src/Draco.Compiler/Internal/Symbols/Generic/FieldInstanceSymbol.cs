@@ -13,8 +13,6 @@ internal sealed class FieldInstanceSymbol : FieldSymbol, IGenericInstanceSymbol
 
     public override bool IsMutable => this.GenericDefinition.IsMutable;
 
-    public override bool IsStatic => this.GenericDefinition.IsStatic;
-
     public override Symbol? ContainingSymbol { get; }
     public override FieldSymbol GenericDefinition { get; }
 

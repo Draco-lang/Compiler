@@ -757,8 +757,6 @@ internal partial class Binder
             return new UntypedLocalExpression(syntax, local, constraints.GetLocalType(local));
         case GlobalSymbol global:
             return new UntypedGlobalExpression(syntax, global);
-        case FieldSymbol field:
-            return new UntypedFieldExpression(syntax, null, field);
         case PropertySymbol prop:
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new UntypedPropertyGetExpression(syntax, null, getter);

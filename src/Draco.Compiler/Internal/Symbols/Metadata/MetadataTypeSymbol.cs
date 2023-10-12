@@ -158,9 +158,9 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             // Skip non-public
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Add it
-            var fieldSym = new MetadataFieldSymbol(
-                containingSymbol: this,
-                fieldDefinition: fieldDef);
+            var fieldSym = fieldDef.Attributes.HasFlag(FieldAttributes.Static)
+                ? new MetadataStaticFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef) as Symbol
+                : new MetadataFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef);
             result.Add(fieldSym);
         }
 

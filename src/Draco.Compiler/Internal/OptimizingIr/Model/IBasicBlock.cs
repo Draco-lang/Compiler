@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Read-only interface of a basic-block.
 /// </summary>
-internal interface IBasicBlock : IOperand
+internal interface IBasicBlock
 {
     /// <summary>
     /// The corresponding label.

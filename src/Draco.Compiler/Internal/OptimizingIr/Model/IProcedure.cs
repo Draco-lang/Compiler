@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Read-only interface of a procedure.
 /// </summary>
-internal interface IProcedure : IOperand
+internal interface IProcedure
 {
     /// <summary>
     /// The symbol that corresponds to this procedure.
@@ -39,14 +39,9 @@ internal interface IProcedure : IOperand
     public IReadOnlyList<TypeParameterSymbol> Generics { get; }
 
     /// <summary>
-    /// All parameters for this procedure.
+    /// All parameters for this procedure in the order they were defined.
     /// </summary>
-    public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters { get; }
-
-    /// <summary>
-    /// The parameters in the order they were defined.
-    /// </summary>
-    public IEnumerable<Parameter> ParametersInDefinitionOrder { get; }
+    public IReadOnlyList<ParameterSymbol> Parameters { get; }
 
     /// <summary>
     /// The return type of this procedure.
@@ -64,17 +59,19 @@ internal interface IProcedure : IOperand
     public IEnumerable<IBasicBlock> BasicBlocksInDefinitionOrder { get; }
 
     /// <summary>
-    /// The locals defined within this procedure.
+    /// The locals defined within this procedure, in definition order.
     /// </summary>
-    public IReadOnlyDictionary<LocalSymbol, Local> Locals { get; }
-
-    /// <summary>
-    /// The locals in the order they were defined.
-    /// </summary>
-    public IEnumerable<Local> LocalsInDefinitionOrder { get; }
+    public IReadOnlyList<LocalSymbol> Locals { get; }
 
     /// <summary>
     /// The registers in this procedure.
     /// </summary>
     public IReadOnlyList<Register> Registers { get; }
+
+    /// <summary>
+    /// Retrieves the index of the given parameter.
+    /// </summary>
+    /// <param name="symbol">The parameter symbol to get the index of.</param>
+    /// <returns>The (0-based) index of the parameter.</returns>
+    public int GetParameterIndex(ParameterSymbol symbol);
 }

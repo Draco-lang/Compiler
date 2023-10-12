@@ -147,8 +147,8 @@ internal partial class Binder
     {
         switch (symbol)
         {
-        case FieldSymbol field:
-            return new UntypedFieldLvalue(syntax, null, field);
+        case GlobalSymbol global:
+            return new UntypedGlobalLvalue(syntax, global);
         case PropertySymbol prop:
             var setter = GetSetterSymbol(syntax, prop, diagnostics);
             return new UntypedPropertySetLvalue(syntax, null, setter);

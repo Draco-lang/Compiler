@@ -36,7 +36,7 @@ internal partial class Binder
 
     private BoundLvalue TypeFieldLvalue(UntypedFieldLvalue field, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var receiver = field.Reciever is null ? null : this.TypeExpression(field.Reciever, constraints, diagnostics);
+        var receiver = this.TypeExpression(field.Reciever, constraints, diagnostics);
         return new BoundFieldLvalue(field.Syntax, receiver, field.Field);
     }
 

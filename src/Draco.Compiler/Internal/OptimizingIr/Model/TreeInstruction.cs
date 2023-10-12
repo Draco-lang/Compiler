@@ -14,14 +14,14 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class TreeInstruction : InstructionBase, IOperand, IValueInstruction
 {
-    public string InstructionKeyword => this.Underlying.InstructionKeyword;
+    public override string InstructionKeyword => this.Underlying.InstructionKeyword;
 
-    public Register Target => this.Underlying.Target;
+    public Register Target => (this.Underlying as IValueInstruction)!.Target;
 
     /// <summary>
     /// The original, non-tree instruction.
     /// </summary>
-    public IValueInstruction Underlying { get; }
+    public IInstruction Underlying { get; }
 
     public override bool IsBranch => this.Underlying.IsBranch;
     public override IEnumerable<BasicBlock> JumpTargets => this.Underlying.JumpTargets.Cast<BasicBlock>();
@@ -29,7 +29,7 @@ internal sealed class TreeInstruction : InstructionBase, IOperand, IValueInstruc
 
     public TypeSymbol Type => this.Target.Type;
 
-    public TreeInstruction(IValueInstruction underlying, ImmutableArray<IOperand> operands)
+    public TreeInstruction(IInstruction underlying, ImmutableArray<IOperand> operands)
     {
         if (underlying is TreeInstruction) throw new ArgumentOutOfRangeException(nameof(underlying));
 
@@ -40,5 +40,5 @@ internal sealed class TreeInstruction : InstructionBase, IOperand, IValueInstruc
     public override string ToString() => $"{this.Target} := {this.ToOperandString()}";
     public string ToOperandString() => $"{this.InstructionKeyword}({string.Join(", ", this.Operands.Select(op => op.ToOperandString()))})";
     public override IInstruction Clone() =>
-        new TreeInstruction((IValueInstruction)this.Underlying.Clone(), this.Operands.ToImmutableArray());
+        new TreeInstruction(this.Underlying.Clone(), this.Operands.ToImmutableArray());
 }

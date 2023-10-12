@@ -8,6 +8,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class JumpInstruction : InstructionBase
 {
+    public override string InstructionKeyword => "jump";
     public override bool IsBranch => true;
     public override IEnumerable<BasicBlock> JumpTargets => new[] { this.Target };
 
@@ -21,7 +22,7 @@ internal sealed class JumpInstruction : InstructionBase
         this.Target = target;
     }
 
-    public override string ToString() => $"jump lbl{this.Target.Index}";
+    public override string ToString() => $"{this.InstructionKeyword} lbl{this.Target.Index}";
 
     public override JumpInstruction Clone() => new(this.Target);
 }

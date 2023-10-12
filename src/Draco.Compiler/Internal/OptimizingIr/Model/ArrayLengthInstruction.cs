@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class ArrayLengthInstruction : InstructionBase, IValueInstruction
 {
-    public string InstructionKeyword => "length";
+    public override string InstructionKeyword => "length";
 
     public Register Target { get; set; }
 

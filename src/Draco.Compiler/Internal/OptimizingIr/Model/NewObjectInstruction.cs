@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class NewObjectInstruction : InstructionBase, IValueInstruction
 {
-    public string InstructionKeyword => "newobject";
+    public override string InstructionKeyword => "newobject";
 
     public Register Target { get; set; }
 

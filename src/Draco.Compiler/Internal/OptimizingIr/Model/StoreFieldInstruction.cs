@@ -8,6 +8,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class StoreFieldInstruction : InstructionBase
 {
+    public override string InstructionKeyword => "storefield";
+
     /// <summary>
     /// The accessed object.
     /// </summary>
@@ -33,7 +35,7 @@ internal sealed class StoreFieldInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"store {this.Receiver.ToOperandString()}.{this.Member.Name} := {this.Source.ToOperandString()}";
+        $"{this.InstructionKeyword} {this.Receiver.ToOperandString()}.{this.Member.Name} := {this.Source.ToOperandString()}";
 
     public override StoreFieldInstruction Clone() => new(this.Receiver, this.Member, this.Source);
 }

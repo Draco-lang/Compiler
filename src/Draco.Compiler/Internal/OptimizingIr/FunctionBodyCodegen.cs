@@ -13,6 +13,9 @@ using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
+// TODO: Operators and calls became identical, can we merge them?
+// During lowering we could turn operators into calls
+
 /// <summary>
 /// Generates IR code on function-local level.
 /// </summary>
@@ -272,21 +275,28 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitCallExpression(BoundCallExpression node)
     {
-        // TODO: Lots of duplication, we should merge these instructions...
         var receiver = this.CompileReceiver(node);
         var args = node.Arguments
             .Zip(node.Method.Parameters)
             .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
-            .ToList();
+            .ToImmutableArray();
         var callResult = this.DefineRegister(node.TypeRequired);
-        var proc = this.TranslateFunctionSymbol(node.Method);
-        if (receiver is null)
+
+        if (node.Method is IrFunctionSymbol irFunc)
         {
-            this.Write(Call(callResult, proc, args));
+            irFunc.Codegen(this, callResult, args);
         }
         else
         {
-            this.Write(MemberCall(callResult, proc, receiver, args));
+            var proc = this.TranslateFunctionSymbol(node.Method);
+            if (receiver is null)
+            {
+                this.Write(Call(callResult, proc, args));
+            }
+            else
+            {
+                this.Write(MemberCall(callResult, proc, receiver, args));
+            }
         }
         return callResult;
     }
@@ -397,7 +407,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             }
             else
             {
-                // TOO
+                // TODO
                 throw new System.NotImplementedException();
             }
         }

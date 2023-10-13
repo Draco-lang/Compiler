@@ -47,6 +47,41 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return BoundTreeFactory.LiteralExpression(value, literalType);
     }
 
+    public override BoundNode VisitUnaryExpression(BoundUnaryExpression node)
+    {
+        // Unary operators simply get turned into calls, as they use practically the same logic
+        //
+        // @ x
+        //
+        // =>
+        //
+        // @(x)
+
+        var arg = (BoundExpression)node.Operand.Accept(this);
+        return CallExpression(
+            receiver: null,
+            method: node.Operator,
+            arguments: ImmutableArray.Create(arg));
+    }
+
+    public override BoundNode VisitBinaryExpression(BoundBinaryExpression node)
+    {
+        // Binary operators simply get turned into calls, as they use practically the same logic
+        //
+        // x @ y
+        //
+        // =>
+        //
+        // @(x, y)
+
+        var left = (BoundExpression)node.Left.Accept(this);
+        var right = (BoundExpression)node.Right.Accept(this);
+        return CallExpression(
+            receiver: null,
+            method: node.Operator,
+            arguments: ImmutableArray.Create(left, right));
+    }
+
     public override BoundNode VisitCallExpression(BoundCallExpression node)
     {
         if (!node.Method.IsVariadic) return base.VisitCallExpression(node);
@@ -309,11 +344,12 @@ internal partial class LocalRewriter : BoundTreeRewriter
         {
             var left = (BoundExpression)node.First.Accept(this);
             var right = (BoundExpression)node.Comparisons[0].Next.Accept(this);
-            return BinaryExpression(
+            var result = BinaryExpression(
                 left: left,
                 @operator: node.Comparisons[0].Operator,
                 right: right,
                 type: this.IntrinsicSymbols.Bool);
+            return result.Accept(this);
         }
 
         // expr1 < expr2 == expr3 > expr4 != ...

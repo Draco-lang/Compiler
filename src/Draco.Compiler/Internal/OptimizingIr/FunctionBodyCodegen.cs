@@ -13,9 +13,6 @@ using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
 
-// TODO: Operators and calls became identical, can we merge them?
-// During lowering we could turn operators into calls
-
 /// <summary>
 /// Generates IR code on function-local level.
 /// </summary>

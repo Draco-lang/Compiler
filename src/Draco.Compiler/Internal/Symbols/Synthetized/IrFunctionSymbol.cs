@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Model;
@@ -6,9 +5,9 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
 /// <summary>
-/// An <see cref="IntrinsicFunctionSymbol"/> that provides its IR codegen.
+/// An intrinsic that provides its IR codegen.
 /// </summary>
-internal sealed class IrFunctionSymbol : IntrinsicFunctionSymbol
+internal abstract class IrFunctionSymbol : FunctionSymbol
 {
     /// <summary>
     /// The codegen delegate.
@@ -24,15 +23,5 @@ internal sealed class IrFunctionSymbol : IntrinsicFunctionSymbol
     /// <summary>
     /// The codegen function.
     /// </summary>
-    public CodegenDelegate Codegen { get; }
-
-    public IrFunctionSymbol(
-        string name,
-        IEnumerable<TypeSymbol> paramTypes,
-        TypeSymbol returnType,
-        CodegenDelegate codegen)
-        : base(name, paramTypes, returnType)
-    {
-        this.Codegen = codegen;
-    }
+    public abstract CodegenDelegate Codegen { get; }
 }

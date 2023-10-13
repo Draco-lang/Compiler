@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -5,11 +6,10 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// A field access.
 /// </summary>
-internal sealed class LoadFieldInstruction : InstructionBase
+internal sealed class LoadFieldInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the field to.
-    /// </summary>
+    public override string InstructionKeyword => "loadfield";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -22,6 +22,9 @@ internal sealed class LoadFieldInstruction : InstructionBase
     /// </summary>
     public FieldSymbol Member { get; set; }
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.Member };
+    public override IEnumerable<IOperand> Operands => new[] { this.Receiver };
+
     public LoadFieldInstruction(Register target, IOperand receiver, FieldSymbol member)
     {
         this.Target = target;
@@ -30,7 +33,7 @@ internal sealed class LoadFieldInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := load {this.Receiver.ToOperandString()}.{this.Member.Name}";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Receiver.ToOperandString()}.{this.Member.Name}";
 
     public override LoadFieldInstruction Clone() => new(this.Target, this.Receiver, this.Member);
 }

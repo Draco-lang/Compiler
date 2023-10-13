@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -5,11 +6,10 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Valuetype element boxing.
 /// </summary>
-internal sealed class BoxInstruction : InstructionBase
+internal sealed class BoxInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the boxed value to.
-    /// </summary>
+    public override string InstructionKeyword => "box";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -22,6 +22,9 @@ internal sealed class BoxInstruction : InstructionBase
     /// </summary>
     public IOperand Value { get; }
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.BoxedType };
+    public override IEnumerable<IOperand> Operands => new[] { this.Value };
+
     public BoxInstruction(Register target, TypeSymbol boxedType, IOperand value)
     {
         this.Target = target;
@@ -30,7 +33,7 @@ internal sealed class BoxInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := box {this.Value.ToOperandString()} as {this.BoxedType}";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Value.ToOperandString()} as {this.BoxedType}";
 
     public override BoxInstruction Clone() => new(this.Target, this.BoxedType, this.Value);
 }

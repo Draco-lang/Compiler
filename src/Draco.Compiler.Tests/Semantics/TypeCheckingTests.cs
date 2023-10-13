@@ -1075,7 +1075,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var stringEmptySym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
+        var stringEmptySym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);

@@ -13,25 +13,26 @@ internal static class InstructionFactory
     public static NopInstruction Nop() => new();
     public static BoxInstruction Box(Register target, TypeSymbol boxedType, IOperand value) =>
         new(target, boxedType, value);
-    public static StoreInstruction Store(IOperand target, IOperand source) => new(target, source);
+    public static StoreInstruction Store(Symbol target, IOperand source) => new(target, source);
     public static StoreElementInstruction StoreElement(IOperand array, IEnumerable<IOperand> indices, IOperand source) =>
         new(array, indices, source);
     public static StoreFieldInstruction StoreField(IOperand receiver, FieldSymbol field, IOperand source) =>
         new(receiver, field, source);
-    public static LoadInstruction Load(Register target, IOperand source) => new(target, source);
+    public static LoadInstruction Load(Register target, Symbol source) => new(target, source);
     public static LoadElementInstruction LoadElement(Register target, IOperand array, IEnumerable<IOperand> indices) =>
         new(target, array, indices);
     public static LoadFieldInstruction LoadField(Register target, IOperand receiver, FieldSymbol field) =>
         new(target, receiver, field);
+    public static AddressOfInstruction AddressOf(Register target, Symbol source) => new(target, source);
     public static RetInstruction Ret(IOperand value) => new(value);
     public static JumpInstruction Jump(BasicBlock target) => new(target);
     public static BranchInstruction Branch(IOperand condition, BasicBlock then, BasicBlock @else) =>
         new(condition, then, @else);
-    public static CallInstruction Call(Register target, IOperand proc, IEnumerable<IOperand> args) =>
+    public static CallInstruction Call(Register target, FunctionSymbol proc, IEnumerable<IOperand> args) =>
         new(target, proc, args);
-    public static MemberCallInstruction MemberCall(Register target, IOperand proc, IOperand receiver, IEnumerable<IOperand> args) =>
+    public static MemberCallInstruction MemberCall(Register target, FunctionSymbol proc, IOperand receiver, IEnumerable<IOperand> args) =>
         new(target, proc, receiver, args);
-    public static NewObjectInstruction NewObject(Register target, IOperand ctor, IEnumerable<IOperand> args) =>
+    public static NewObjectInstruction NewObject(Register target, FunctionSymbol ctor, IEnumerable<IOperand> args) =>
         new(target, ctor, args);
     public static NewArrayInstruction NewArray(Register target, TypeSymbol elementType, IEnumerable<IOperand> dimensions) =>
         new(target, elementType, dimensions);

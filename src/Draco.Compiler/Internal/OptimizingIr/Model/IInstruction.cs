@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -7,6 +8,11 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal interface IInstruction
 {
+    /// <summary>
+    /// The keyword notating the instruction.
+    /// </summary>
+    public string InstructionKeyword { get; }
+
     /// <summary>
     /// The basic block this instruction is a part of.
     /// </summary>
@@ -36,6 +42,16 @@ internal interface IInstruction
     /// The jump targets for this instruction.
     /// </summary>
     public IEnumerable<IBasicBlock> JumpTargets { get; }
+
+    /// <summary>
+    /// The static operands of this instruction that are not runtime values.
+    /// </summary>
+    public IEnumerable<Symbol> StaticOperands { get; }
+
+    /// <summary>
+    /// The input operands of this instruction.
+    /// </summary>
+    public IEnumerable<IOperand> Operands { get; }
 
     /// <summary>
     /// Clones this instruction.

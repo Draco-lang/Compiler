@@ -108,7 +108,7 @@ internal static class MetadataSymbol
 
     private static FunctionSymbol SynthetizeConstructor(
         MetadataTypeSymbol type,
-        MethodDefinition ctorMethod) => new SynthetizedMetadataConstructorSymbol(type, ctorMethod);
+        MethodDefinition ctorMethod) => new MetadataConstructorFunctionSymbol(type, ctorMethod);
 
     /// <summary>
     /// Gets the documentation XML as text for the given <paramref name="symbol"/>.

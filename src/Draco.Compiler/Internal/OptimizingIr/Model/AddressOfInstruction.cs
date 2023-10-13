@@ -4,11 +4,11 @@ using Draco.Compiler.Internal.Symbols;
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
-/// Loads a value from a local/global/argument.
+/// Loads the address of some local/global/argument.
 /// </summary>
-internal sealed class LoadInstruction : InstructionBase, IValueInstruction
+internal sealed class AddressOfInstruction : InstructionBase, IValueInstruction
 {
-    public override string InstructionKeyword => "load";
+    public override string InstructionKeyword => "addressof";
 
     public Register Target { get; set; }
 
@@ -19,7 +19,7 @@ internal sealed class LoadInstruction : InstructionBase, IValueInstruction
 
     public override IEnumerable<Symbol> StaticOperands => new[] { this.Source };
 
-    public LoadInstruction(Register target, Symbol source)
+    public AddressOfInstruction(Register target, Symbol source)
     {
         this.Target = target;
         this.Source = source;
@@ -28,5 +28,5 @@ internal sealed class LoadInstruction : InstructionBase, IValueInstruction
     public override string ToString() =>
         $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Source.FullName}";
 
-    public override LoadInstruction Clone() => new(this.Target, this.Source);
+    public override AddressOfInstruction Clone() => new(this.Target, this.Source);
 }

@@ -12,17 +12,13 @@ internal sealed class Module : IModule
 {
     private static readonly string doubleNewline = $"{Environment.NewLine}{Environment.NewLine}";
 
-    private readonly Dictionary<GlobalSymbol, Global> globals = new();
-    private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
-    private readonly Dictionary<ModuleSymbol, IModule> submodules = new();
-
     public ModuleSymbol Symbol { get; }
 
     public string Name => this.Symbol.Name;
 
     public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
 
-    public IReadOnlyDictionary<GlobalSymbol, Global> Globals => this.globals;
+    public IReadOnlySet<GlobalSymbol> Globals => this.globals;
 
     public Procedure GlobalInitializer { get; }
     IProcedure IModule.GlobalInitializer => this.GlobalInitializer;
@@ -34,6 +30,10 @@ internal sealed class Module : IModule
 
     public Module? Parent { get; }
     IModule? IModule.Parent => this.Parent;
+
+    private readonly HashSet<GlobalSymbol> globals = new();
+    private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
+    private readonly Dictionary<ModuleSymbol, IModule> submodules = new();
 
     public Module(ModuleSymbol symbol, Assembly assembly, Module? Parent)
     {
@@ -57,15 +57,7 @@ internal sealed class Module : IModule
         return result.ToImmutable();
     }
 
-    public Global DefineGlobal(GlobalSymbol globalSymbol)
-    {
-        if (!this.globals.TryGetValue(globalSymbol, out var result))
-        {
-            result = new Global(globalSymbol, this);
-            this.globals.Add(globalSymbol, result);
-        }
-        return result;
-    }
+    public void DefineGlobal(GlobalSymbol globalSymbol) => this.globals.Add(globalSymbol);
 
     public Procedure DefineProcedure(FunctionSymbol functionSymbol)
     {
@@ -91,7 +83,7 @@ internal sealed class Module : IModule
     {
         var result = new StringBuilder();
         result.AppendLine($"module {this.Symbol.Name}");
-        result.AppendJoin(Environment.NewLine, this.globals.Values);
+        result.AppendJoin(Environment.NewLine, this.globals);
         if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.procedures.Values);
         if (this.procedures.Count > 0 && this.submodules.Count > 0) result.Append(doubleNewline);

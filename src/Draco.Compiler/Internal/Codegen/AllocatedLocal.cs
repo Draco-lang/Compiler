@@ -1,4 +1,3 @@
-using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Codegen;

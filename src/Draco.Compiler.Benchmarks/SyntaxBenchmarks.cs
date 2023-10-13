@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
-using CompilationUnitSyntax = Draco.Compiler.Internal.Syntax.CompilationUnitSyntax;
 using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Benchmarks;

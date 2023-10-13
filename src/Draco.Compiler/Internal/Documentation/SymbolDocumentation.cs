@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Documentation;
 

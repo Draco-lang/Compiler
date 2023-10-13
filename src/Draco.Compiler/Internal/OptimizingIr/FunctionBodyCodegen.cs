@@ -279,6 +279,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var irFunc = ExtractIrFunction(proc);
         if (irFunc is not null)
         {
+            if (receiver is not null)
+            {
+                throw new System.NotImplementedException();
+            }
             irFunc.Codegen(this, callResult, args);
         }
         else

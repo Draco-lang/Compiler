@@ -455,43 +455,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
-    public override IOperand VisitUnaryExpression(BoundUnaryExpression node)
-    {
-        var sub = node.Operand.Accept(this);
-        var target = this.DefineRegister(node.TypeRequired);
-
-        if (node.Operator is IrFunctionSymbol irFunction)
-        {
-            irFunction.Codegen(this, target, ImmutableArray.Create(sub));
-        }
-        else
-        {
-            // TODO
-            throw new System.NotImplementedException();
-        }
-
-        return target;
-    }
-
-    public override IOperand VisitBinaryExpression(BoundBinaryExpression node)
-    {
-        var left = this.Compile(node.Left);
-        var right = this.Compile(node.Right);
-        var target = this.DefineRegister(node.TypeRequired);
-
-        if (node.Operator is IrFunctionSymbol irFunction)
-        {
-            irFunction.Codegen(this, target, ImmutableArray.Create(left, right));
-        }
-        else
-        {
-            // TODO
-            throw new System.NotImplementedException();
-        }
-
-        return target;
-    }
-
     public override IOperand VisitReturnExpression(BoundReturnExpression node)
     {
         var operand = this.Compile(node.Value);
@@ -554,7 +517,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return i;
     }
 
-    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) => new Constant(node.Value, node.TypeRequired);
+    public override IOperand VisitLiteralExpression(BoundLiteralExpression node) =>
+        new Constant(node.Value, node.TypeRequired);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
 
     public override IOperand VisitFieldExpression(BoundFieldExpression node)
@@ -565,12 +529,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    private static MetadataFieldSymbol? ExtractMetadataField(FieldSymbol field) => field switch
-    {
-        MetadataFieldSymbol m => m,
-        FieldInstanceSymbol i => ExtractMetadataField(i.GenericDefinition),
-        _ => null,
-    };
+    public override IOperand VisitUnaryExpression(BoundUnaryExpression node) =>
+        throw new System.InvalidOperationException();
+
+    public override IOperand VisitBinaryExpression(BoundBinaryExpression node) =>
+        throw new System.InvalidOperationException();
 
     private static MetadataStaticFieldSymbol? ExtractMetadataStaticField(GlobalSymbol global) => global switch
     {

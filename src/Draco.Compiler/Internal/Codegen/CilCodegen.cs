@@ -19,6 +19,9 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class CilCodegen
 {
+    // NOTE: We might want to expose this as a setting later for debugging
+    const bool stackify = true;
+
     /// <summary>
     /// The instruction encoder.
     /// </summary>
@@ -110,8 +113,6 @@ internal sealed class CilCodegen
     private void EncodeBasicBlock(IBasicBlock basicBlock)
     {
         this.InstructionEncoder.MarkLabel(this.GetLabel(basicBlock));
-
-        var stackify = true;
         var instructions = stackify
             ? this.stackifier.Stackify(basicBlock)
             : basicBlock.Instructions;

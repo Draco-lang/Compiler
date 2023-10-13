@@ -21,20 +21,17 @@ internal sealed class Procedure : IProcedure
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
-    public IReadOnlyDictionary<ParameterSymbol, Parameter> Parameters => this.parameters;
-    public IEnumerable<Parameter> ParametersInDefinitionOrder => this.parameters.Values.OrderBy(p => p.Index);
+    public IReadOnlyList<ParameterSymbol> Parameters => this.Symbol.Parameters;
     public TypeSymbol ReturnType => this.Symbol.ReturnType;
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks => this.basicBlocks;
     public IEnumerable<IBasicBlock> BasicBlocksInDefinitionOrder => this.basicBlocks.Values
         .Cast<BasicBlock>()
         .OrderBy(bb => bb.Index);
-    public IReadOnlyDictionary<LocalSymbol, Local> Locals => this.locals;
-    public IEnumerable<Local> LocalsInDefinitionOrder => this.locals.Values.OrderBy(l => l.Index);
+    public IReadOnlyList<LocalSymbol> Locals => this.locals;
     public IReadOnlyList<Register> Registers => this.registers;
 
-    private readonly Dictionary<ParameterSymbol, Parameter> parameters = new();
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = new();
-    private readonly Dictionary<LocalSymbol, Local> locals = new();
+    private readonly List<LocalSymbol> locals = new();
     private readonly List<Register> registers = new();
 
     public Procedure(Module declaringModule, FunctionSymbol symbol)
@@ -44,14 +41,11 @@ internal sealed class Procedure : IProcedure
         this.Entry = this.DefineBasicBlock(new SynthetizedLabelSymbol("begin"));
     }
 
-    public Parameter DefineParameter(ParameterSymbol symbol)
+    public int GetParameterIndex(ParameterSymbol symbol)
     {
-        if (!this.parameters.TryGetValue(symbol, out var param))
-        {
-            param = new Parameter(symbol, this.parameters.Count);
-            this.parameters.Add(symbol, param);
-        }
-        return param;
+        var idx = this.Symbol.Parameters.IndexOf(symbol);
+        if (idx == -1) throw new System.ArgumentOutOfRangeException(nameof(symbol));
+        return idx;
     }
 
     public BasicBlock DefineBasicBlock(LabelSymbol symbol)
@@ -66,14 +60,15 @@ internal sealed class Procedure : IProcedure
 
     public bool RemoveBasicBlock(IBasicBlock bb) => this.basicBlocks.Remove(bb.Symbol);
 
-    public Local DefineLocal(LocalSymbol symbol)
+    public int DefineLocal(LocalSymbol symbol)
     {
-        if (!this.locals.TryGetValue(symbol, out var result))
+        var index = this.locals.IndexOf(symbol);
+        if (index == -1)
         {
-            result = new Local(symbol, this.locals.Count);
-            this.locals.Add(symbol, result);
+            index = this.locals.Count;
+            this.locals.Add(symbol);
         }
-        return result;
+        return index;
     }
 
     public Register DefineRegister(TypeSymbol type)
@@ -86,7 +81,7 @@ internal sealed class Procedure : IProcedure
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.Append($"proc {this.ToOperandString()}");
+        result.Append($"proc {this.Name}");
         if (this.Generics.Count > 0)
         {
             result.Append('<');
@@ -94,16 +89,14 @@ internal sealed class Procedure : IProcedure
             result.Append('>');
         }
         result.Append('(');
-        result.AppendJoin(", ", this.ParametersInDefinitionOrder);
+        result.AppendJoin(", ", this.Parameters);
         result.AppendLine($") {this.ReturnType}:");
         if (this.Locals.Count > 0)
         {
             result.AppendLine("locals:");
-            foreach (var local in this.LocalsInDefinitionOrder) result.AppendLine($"  {local}");
+            foreach (var local in this.Locals) result.AppendLine($"  {local}");
         }
         result.AppendJoin(System.Environment.NewLine, this.BasicBlocksInDefinitionOrder);
         return result.ToString();
     }
-
-    public string ToOperandString() => this.Symbol.Name;
 }

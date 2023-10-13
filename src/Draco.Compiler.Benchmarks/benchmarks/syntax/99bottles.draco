@@ -1,0 +1,29 @@
+import System.Console;
+
+func bottles(n: int32): string =
+    if (n == 0) "no more bottles"
+    else if (n == 1) "1 bottle"
+    else "\{n} bottles";
+
+func capitalize(s: string): string =
+    "\{s.Substring(0, 1).ToUpper()}\{s.Substring(1)}";
+
+func main() {
+    var i = 99;
+    while (i > 0) {
+        WriteLine("""
+            \{capitalize(bottles(i))} of beer on the wall,
+            \{bottles(i)} of beer.
+            Take one down, pass it around,
+            \{bottles(i - 1)} of beer on the wall.
+            
+            """);
+        i -= 1;
+    }
+    WriteLine("""
+        No more bottles of beer on the wall,
+        no more bottles of beer.
+        Go to the store, buy some more,
+        99 bottles of beer on the wall.
+        """);
+}

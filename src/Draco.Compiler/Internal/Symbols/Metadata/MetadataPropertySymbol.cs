@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Internal.Utilities;
+using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -43,6 +45,12 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     private PropertySymbol? @override;
     private volatile bool overrideNeedsBuild = true;
     private readonly object overrideBuildLock = new();
+
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    private SymbolDocumentation? documentation;
+
+    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
+    private string? rawDocumentation;
 
     public override Symbol ContainingSymbol { get; }
 
@@ -98,4 +106,10 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
         if (accessor.Override is not null) return (accessor.Override as IPropertyAccessorSymbol)?.Property;
         return null;
     }
+
+    private SymbolDocumentation BuildDocumentation() =>
+        XmlDocumentationExtractor.Extract(this);
+
+    private string BuildRawDocumentation() =>
+        MetadataSymbol.GetDocumentation(this);
 }

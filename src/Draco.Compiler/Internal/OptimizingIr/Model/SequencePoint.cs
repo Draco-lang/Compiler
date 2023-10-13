@@ -8,6 +8,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class SequencePoint : InstructionBase
 {
+    public override string InstructionKeyword => "@sequence point";
+
     /// <summary>
     /// The range this sequence point corresponds to, if any.
     /// </summary>
@@ -23,7 +25,7 @@ internal sealed class SequencePoint : InstructionBase
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.Append("@sequence point");
+        result.Append(this.InstructionKeyword);
         if (this.Range is not null)
         {
             var start = this.Range.Value.Start;

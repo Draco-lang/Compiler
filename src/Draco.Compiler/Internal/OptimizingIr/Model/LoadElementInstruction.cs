@@ -6,11 +6,10 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// An array element access.
 /// </summary>
-internal sealed class LoadElementInstruction : InstructionBase
+internal sealed class LoadElementInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the array element to.
-    /// </summary>
+    public override string InstructionKeyword => "loadelement";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -23,6 +22,8 @@ internal sealed class LoadElementInstruction : InstructionBase
     /// </summary>
     public IList<IOperand> Indices { get; set; } = new List<IOperand>();
 
+    public override IEnumerable<IOperand> Operands => this.Indices.Prepend(this.Array);
+
     public LoadElementInstruction(Register target, IOperand array, IEnumerable<IOperand> indices)
     {
         this.Target = target;
@@ -31,7 +32,7 @@ internal sealed class LoadElementInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := load {this.Array.ToOperandString()}[{string.Join(", ", this.Indices.Select(d => d.ToOperandString()))}]";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Array.ToOperandString()}[{string.Join(", ", this.Indices.Select(d => d.ToOperandString()))}]";
 
     public override LoadElementInstruction Clone() => new(this.Target, this.Array, this.Indices);
 }

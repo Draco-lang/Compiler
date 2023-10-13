@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Xml;
 
 namespace Draco.Compiler.Api;
 
@@ -15,6 +16,11 @@ public abstract class MetadataReference
     /// Retrieves the metadata reader for this reference.
     /// </summary>
     public abstract MetadataReader MetadataReader { get; }
+
+    /// <summary>
+    /// The documentation for this reference.
+    /// </summary>
+    public abstract XmlDocument? Documentation { get; }
 
     /// <summary>
     /// Creates a metadata reference from the given assembly.
@@ -47,13 +53,27 @@ public abstract class MetadataReference
         return new MetadataReaderReference(metadataReader);
     }
 
+    /// <summary>
+    /// Adds xml documentation to this metadata reference.
+    /// </summary>
+    /// <param name="xmlStream">The stream with the xml documentation.</param>
+    /// <returns>New metadata reference containing xml documentation.</returns>
+    public MetadataReference WithDocumentation(Stream xmlStream)
+    {
+        var doc = new XmlDocument();
+        doc.Load(xmlStream);
+        return new MetadataReaderReference(this.MetadataReader, doc);
+    }
+
     private sealed class MetadataReaderReference : MetadataReference
     {
         public override MetadataReader MetadataReader { get; }
+        public override XmlDocument? Documentation { get; }
 
-        public MetadataReaderReference(MetadataReader metadataReader)
+        public MetadataReaderReference(MetadataReader metadataReader, XmlDocument? documentation = null)
         {
             this.MetadataReader = metadataReader;
+            this.Documentation = documentation;
         }
     }
 }

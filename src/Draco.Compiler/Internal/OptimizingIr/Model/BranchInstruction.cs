@@ -7,7 +7,9 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class BranchInstruction : InstructionBase
 {
+    public override string InstructionKeyword => "jump_if";
     public override bool IsBranch => true;
+    public override IEnumerable<IOperand> Operands => new[] { this.Condition };
     public override IEnumerable<BasicBlock> JumpTargets => new[] { this.Then, this.Else };
 
     /// <summary>
@@ -33,7 +35,7 @@ internal sealed class BranchInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"if {this.Condition.ToOperandString()} jump {this.Then.ToOperandString()} else jump {this.Else.ToOperandString()}";
+        $"if {this.Condition.ToOperandString()} jump lbl{this.Then.Index} else jump lbl{this.Else.Index}";
 
     public override BranchInstruction Clone() => new(this.Condition, this.Then, this.Else);
 }

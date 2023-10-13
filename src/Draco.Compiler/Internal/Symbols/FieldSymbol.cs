@@ -5,11 +5,11 @@ using Draco.Compiler.Internal.Symbols.Generic;
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
-/// Represents a field.
+/// Represents a nonstatic field.
 /// </summary>
 internal abstract class FieldSymbol : VariableSymbol, IMemberSymbol
 {
-    public abstract bool IsStatic { get; }
+    public bool IsStatic => false;
 
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (FieldSymbol)base.GenericInstantiate(containingSymbol, arguments);

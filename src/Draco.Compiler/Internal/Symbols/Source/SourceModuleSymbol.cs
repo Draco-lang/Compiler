@@ -9,6 +9,8 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Utilities;
+using Draco.Compiler.Internal.Documentation;
+using Draco.Compiler.Internal.Documentation.Extractors;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -25,12 +27,18 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     public override Symbol? ContainingSymbol { get; }
     public override string Name => this.declaration.Name;
 
-    public override SyntaxNode? DeclaringSyntax => null;
+    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    private SymbolDocumentation? documentation;
 
     /// <summary>
     /// The syntaxes contributing to this module.
     /// </summary>
     public IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declaration.DeclaringSyntaxes;
+
+    internal override string RawDocumentation => this.DeclaringSyntaxes
+        .Select(syntax => syntax.Documentation)
+        .Where(doc => !string.IsNullOrEmpty(doc))
+        .FirstOrDefault() ?? string.Empty;
 
     private readonly Declaration declaration;
 
@@ -42,14 +50,6 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
         this.DeclaringCompilation = compilation;
         this.ContainingSymbol = containingSymbol;
         this.declaration = declaration;
-    }
-
-    public SourceModuleSymbol(
-        Compilation compilation,
-        Symbol? containingSymbol,
-        SingleModuleDeclaration declaration)
-        : this(compilation, containingSymbol, declaration as Declaration)
-    {
     }
 
     public SourceModuleSymbol(
@@ -106,4 +106,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     private FunctionSymbol BuildFunction(FunctionDeclaration declaration) => new SourceFunctionSymbol(this, declaration);
     private GlobalSymbol BuildGlobal(GlobalDeclaration declaration) => new SourceGlobalSymbol(this, declaration);
     private ModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new SourceModuleSymbol(this.DeclaringCompilation, this, declaration);
+
+    private SymbolDocumentation BuildDocumentation() =>
+        MarkdownDocumentationExtractor.Extract(this);
 }

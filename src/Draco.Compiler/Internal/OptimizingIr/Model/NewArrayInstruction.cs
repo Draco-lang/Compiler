@@ -7,11 +7,10 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// An array instantiation.
 /// </summary>
-internal sealed class NewArrayInstruction : InstructionBase
+internal sealed class NewArrayInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the instantiated array to.
-    /// </summary>
+    public override string InstructionKeyword => "newarray";
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -24,6 +23,9 @@ internal sealed class NewArrayInstruction : InstructionBase
     /// </summary>
     public IList<IOperand> Dimensions { get; set; } = new List<IOperand>();
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.ElementType };
+    public override IEnumerable<IOperand> Operands => this.Dimensions;
+
     public NewArrayInstruction(Register target, TypeSymbol elementType, IEnumerable<IOperand> dimensions)
     {
         this.Target = target;
@@ -32,7 +34,7 @@ internal sealed class NewArrayInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := new {this.ElementType}[{string.Join(", ", this.Dimensions.Select(d => d.ToOperandString()))}]";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.ElementType}[{string.Join(", ", this.Dimensions.Select(d => d.ToOperandString()))}]";
 
     public override NewArrayInstruction Clone() => new(this.Target, this.ElementType, this.Dimensions);
 }

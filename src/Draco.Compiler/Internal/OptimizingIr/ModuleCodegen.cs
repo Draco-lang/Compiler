@@ -38,7 +38,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (globalSymbol is not SourceGlobalSymbol sourceGlobal) return;
 
-        var global = this.module.DefineGlobal(sourceGlobal);
+        this.module.DefineGlobal(sourceGlobal);
 
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)
@@ -49,8 +49,8 @@ internal sealed class ModuleCodegen : SymbolVisitor
             // Compile it
             var value = bodyWithoutLocalFunctions.Accept(this.globalInitializer);
             // Store it
-            value = this.globalInitializer.BoxIfNeeded(global.Type, value);
-            this.globalInitializer.Write(Store(global, value));
+            value = this.globalInitializer.BoxIfNeeded(sourceGlobal.Type, value);
+            this.globalInitializer.Write(Store(sourceGlobal, value));
 
             // Compile the local functions
             foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
@@ -61,9 +61,8 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
-        // Add procedure, define parameters
+        // Add procedure
         var procedure = this.module.DefineProcedure(functionSymbol);
-        foreach (var param in functionSymbol.Parameters) procedure.DefineParameter(param);
 
         // Create the body
         var body = this.RewriteBody(sourceFunction.Body);

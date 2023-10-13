@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -7,6 +8,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class StoreFieldInstruction : InstructionBase
 {
+    public override string InstructionKeyword => "storefield";
+
     /// <summary>
     /// The accessed object.
     /// </summary>
@@ -22,6 +25,9 @@ internal sealed class StoreFieldInstruction : InstructionBase
     /// </summary>
     public IOperand Source { get; set; }
 
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.Member };
+    public override IEnumerable<IOperand> Operands => new[] { this.Receiver, this.Source };
+
     public StoreFieldInstruction(IOperand receiver, FieldSymbol member, IOperand source)
     {
         this.Receiver = receiver;
@@ -30,7 +36,7 @@ internal sealed class StoreFieldInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"store {this.Receiver.ToOperandString()}.{this.Member.Name} := {this.Source.ToOperandString()}";
+        $"{this.InstructionKeyword} {this.Receiver.ToOperandString()}.{this.Member.Name} := {this.Source.ToOperandString()}";
 
     public override StoreFieldInstruction Clone() => new(this.Receiver, this.Member, this.Source);
 }

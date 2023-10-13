@@ -1075,7 +1075,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var stringEmptySym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
+        var stringEmptySym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -2178,5 +2178,47 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+    }
+
+    [Fact]
+    public void GettingTypeFromReference()
+    {
+        // func main(){
+        //   var x = FooModule.foo;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+
+        var fooRef = CompileCSharpToMetadataRef("""
+            using System;
+            public static class FooModule{
+                public static Random foo;
+            }
+            """);
+
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+
+        // Act
+        var compilation = Compilation.Create(
+            syntaxTrees: ImmutableArray.Create(main),
+            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .Append(fooRef)
+                .ToImmutableArray());
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.Equal("System.Random", xSym.Type.FullName);
     }
 }

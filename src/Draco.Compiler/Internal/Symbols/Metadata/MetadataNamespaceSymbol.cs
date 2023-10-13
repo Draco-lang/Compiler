@@ -66,4 +66,28 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
         // Done
         return result.ToImmutable();
     }
+
+    /// <summary>
+    /// Looks up symbol by its prefixed documentation name.
+    /// </summary>
+    /// <param name="prefixedDocumentationName">The prefixed documentation name to lookup by.</param>
+    /// <returns>The looked up symbol, or null, if such symbol doesn't exist under this module symbol.</returns>
+    public Symbol? LookupByPrefixedDocumentationName(string prefixedDocumentationName)
+    {
+        // Note: we cut off the first two chars, because the first two chars are always the prefix annotating what kind of symbol this is
+        var parts = prefixedDocumentationName[2..].Split('.');
+        if (parts.Length == 0) return this;
+
+        var current = this as Symbol;
+        for (var i = 0; i < parts.Length - 1; ++i)
+        {
+            var part = parts[i];
+            current = current.Members
+                .Where(m => m.MetadataName == part && m is ModuleSymbol or TypeSymbol)
+                .SingleOrDefault();
+            if (current is null) return null;
+        }
+
+        return current.Members.SingleOrDefault(m => MetadataSymbol.GetPrefixedDocumentationName(m) == prefixedDocumentationName);
+    }
 }

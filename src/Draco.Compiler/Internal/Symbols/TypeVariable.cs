@@ -24,7 +24,6 @@ internal sealed class TypeVariable : TypeSymbol, IEquatable<TypeVariable>
     public override bool IsError => throw new NotSupportedException();
     public override Symbol? ContainingSymbol => throw new NotSupportedException();
     public override IEnumerable<Symbol> DefinedMembers => throw new NotSupportedException();
-    public override string Documentation => throw new NotSupportedException();
 
     public override TypeSymbol Substitution => this.solver.Unwrap(this);
 

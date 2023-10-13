@@ -1,22 +1,22 @@
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
 /// A procedure call on a member.
 /// </summary>
-internal sealed class MemberCallInstruction : InstructionBase
+internal sealed class MemberCallInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to write the call result to.
-    /// </summary>
+    public override string InstructionKeyword => "membercall";
+
     public Register Target { get; set; }
 
     /// <summary>
     /// The called procedure.
     /// </summary>
-    public IOperand Procedure { get; set; }
+    public FunctionSymbol Procedure { get; set; }
 
     /// <summary>
     /// The receiver the method is called on.
@@ -28,7 +28,10 @@ internal sealed class MemberCallInstruction : InstructionBase
     /// </summary>
     public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
 
-    public MemberCallInstruction(Register target, IOperand procedure, IOperand receiver, IEnumerable<IOperand> arguments)
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.Procedure };
+    public override IEnumerable<IOperand> Operands => this.Arguments.Prepend(this.Receiver);
+
+    public MemberCallInstruction(Register target, FunctionSymbol procedure, IOperand receiver, IEnumerable<IOperand> arguments)
     {
         this.Target = target;
         this.Procedure = procedure;
@@ -37,7 +40,7 @@ internal sealed class MemberCallInstruction : InstructionBase
     }
 
     public override string ToString() =>
-        $"{this.Target.ToOperandString()} := call {this.Receiver.ToOperandString()}.{this.Procedure.ToOperandString()}({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
+        $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Receiver.ToOperandString()}.[{this.Procedure.FullName}]({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";
 
     public override MemberCallInstruction Clone() => new(this.Target, this.Procedure, this.Receiver, this.Arguments);
 }

@@ -135,6 +135,11 @@ public sealed class Compilation : IBinderProvider
     internal WellKnownTypes WellKnownTypes { get; }
 
     /// <summary>
+    /// The type provider used for metadata references.
+    /// </summary>
+    internal TypeProvider TypeProvider { get; }
+
+    /// <summary>
     /// Intrinsicly defined symbols for the compilation.
     /// </summary>
     internal IntrinsicSymbols IntrinsicSymbols { get; }
@@ -154,6 +159,7 @@ public sealed class Compilation : IBinderProvider
         ModuleSymbol? sourceModule = null,
         DeclarationTable? declarationTable = null,
         WellKnownTypes? wellKnownTypes = null,
+        TypeProvider? typeProvider = null,
         IntrinsicSymbols? intrinsicSymbols = null,
         BinderCache? binderCache = null)
     {
@@ -167,6 +173,7 @@ public sealed class Compilation : IBinderProvider
         this.sourceModule = sourceModule;
         this.declarationTable = declarationTable;
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
+        this.TypeProvider = typeProvider ?? new TypeProvider(this);
         this.IntrinsicSymbols = intrinsicSymbols ?? new IntrinsicSymbols(this);
         this.binderCache = binderCache ?? new BinderCache(this);
     }
@@ -216,6 +223,10 @@ public sealed class Compilation : IBinderProvider
             // Or we keep it as long as metadata refs don't change?
             // Just a cache
             wellKnownTypes: this.WellKnownTypes,
+            // TODO: We might want to change the compilation of type provider?
+            // Or we keep it as long as metadata refs don't change?
+            // Just a cache
+            typeProvider: this.TypeProvider,
             // TODO: We might want to change the compilation of intrinsic-symbols?
             // Or we keep it as long as metadata refs don't change?
             // Just a cache
@@ -335,7 +346,7 @@ public sealed class Compilation : IBinderProvider
     private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> BuildMetadataAssemblies() => this.MetadataReferences
         .ToImmutableDictionary(
             r => r,
-            r => new MetadataAssemblySymbol(this, r.MetadataReader));
+            r => new MetadataAssemblySymbol(this, r.MetadataReader, r.Documentation));
     private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
         containingSymbol: null,
         name: string.Empty,

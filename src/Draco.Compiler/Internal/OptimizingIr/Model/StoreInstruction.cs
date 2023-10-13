@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using Draco.Compiler.Internal.Symbols;
+
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
@@ -5,23 +8,28 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal sealed class StoreInstruction : InstructionBase
 {
+    public override string InstructionKeyword => "store";
+
     /// <summary>
-    /// The operand to store to.
+    /// The symbol to store to.
     /// </summary>
-    public IOperand Target { get; set; }
+    public Symbol Target { get; set; }
 
     /// <summary>
     /// The operand to store the value of.
     /// </summary>
     public IOperand Source { get; set; }
 
-    public StoreInstruction(IOperand target, IOperand source)
+    public override IEnumerable<Symbol> StaticOperands => new[] { this.Target };
+    public override IEnumerable<IOperand> Operands => new[] { this.Source };
+
+    public StoreInstruction(Symbol target, IOperand source)
     {
         this.Target = target;
         this.Source = source;
     }
 
-    public override string ToString() => $"store {this.Target.ToOperandString()} := {this.Source.ToOperandString()}";
+    public override string ToString() => $"{this.InstructionKeyword} {this.Target.FullName} := {this.Source.ToOperandString()}";
 
     public override StoreInstruction Clone() => new(this.Target, this.Source);
 }

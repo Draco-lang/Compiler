@@ -1,15 +1,15 @@
 using System;
+using System.Collections.Generic;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 /// <summary>
 /// Represents some kind of binary arithmetic instruction.
 /// </summary>
-internal sealed class ArithmeticInstruction : InstructionBase
+internal sealed class ArithmeticInstruction : InstructionBase, IValueInstruction
 {
-    /// <summary>
-    /// The register to store the result at.
-    /// </summary>
+    public override string InstructionKeyword => this.OpToString();
+
     public Register Target { get; set; }
 
     /// <summary>
@@ -26,6 +26,8 @@ internal sealed class ArithmeticInstruction : InstructionBase
     /// The right operand of the operation.
     /// </summary>
     public IOperand Right { get; set; }
+
+    public override IEnumerable<IOperand> Operands => new[] { this.Left, this.Right };
 
     public ArithmeticInstruction(Register target, ArithmeticOp op, IOperand left, IOperand right)
     {

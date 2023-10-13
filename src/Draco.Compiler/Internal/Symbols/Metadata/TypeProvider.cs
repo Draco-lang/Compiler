@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 

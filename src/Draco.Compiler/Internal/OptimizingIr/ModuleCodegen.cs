@@ -61,9 +61,8 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
 
-        // Add procedure, define parameters
+        // Add procedure
         var procedure = this.module.DefineProcedure(functionSymbol);
-        foreach (var param in functionSymbol.Parameters) procedure.DefineParameter(param);
 
         // Create the body
         var body = this.RewriteBody(sourceFunction.Body);

@@ -21,7 +21,7 @@ internal sealed class Procedure : IProcedure
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
-    public IReadOnlyList<ParameterSymbol> Parameters => this.parameters;
+    public IReadOnlyList<ParameterSymbol> Parameters => this.Symbol.Parameters;
     public TypeSymbol ReturnType => this.Symbol.ReturnType;
     public IReadOnlyDictionary<LabelSymbol, IBasicBlock> BasicBlocks => this.basicBlocks;
     public IEnumerable<IBasicBlock> BasicBlocksInDefinitionOrder => this.basicBlocks.Values
@@ -30,7 +30,6 @@ internal sealed class Procedure : IProcedure
     public IReadOnlyList<LocalSymbol> Locals => this.locals;
     public IReadOnlyList<Register> Registers => this.registers;
 
-    private readonly List<ParameterSymbol> parameters = new();
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = new();
     private readonly List<LocalSymbol> locals = new();
     private readonly List<Register> registers = new();
@@ -44,20 +43,9 @@ internal sealed class Procedure : IProcedure
 
     public int GetParameterIndex(ParameterSymbol symbol)
     {
-        var idx = this.parameters.IndexOf(symbol);
+        var idx = this.Symbol.Parameters.IndexOf(symbol);
         if (idx == -1) throw new System.ArgumentOutOfRangeException(nameof(symbol));
         return idx;
-    }
-
-    public int DefineParameter(ParameterSymbol symbol)
-    {
-        var index = this.parameters.IndexOf(symbol);
-        if (index == -1)
-        {
-            index = this.parameters.Count;
-            this.parameters.Add(symbol);
-        }
-        return index;
     }
 
     public BasicBlock DefineBasicBlock(LabelSymbol symbol)
@@ -77,7 +65,7 @@ internal sealed class Procedure : IProcedure
         var index = this.locals.IndexOf(symbol);
         if (index == -1)
         {
-            index = this.parameters.Count;
+            index = this.locals.Count;
             this.locals.Add(symbol);
         }
         return index;

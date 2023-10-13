@@ -1,20 +1,27 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection.Metadata;
+using System.Text;
+using System.Threading.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
-using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
+using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
 /// <summary>
-/// A synthetized constructor function for metadata types.
+/// A constructor function for a metadata type.
 /// </summary>
-internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunctionSymbol
+internal sealed class MetadataConstructorFunctionSymbol : IrFunctionSymbol
 {
     public override string Name => this.instantiatedType.Name;
+    public override Symbol? ContainingSymbol => null;
+    public override bool IsSpecialName => true;
+    public override bool IsStatic => true;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
@@ -27,11 +34,19 @@ internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunction
     public override TypeSymbol ReturnType => InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
-    public override BoundStatement Body => InterlockedUtils.InitializeNull(ref this.body, this.BuildBody);
-    private BoundStatement? body;
-
     private FunctionSymbol ConstructorSymbol => InterlockedUtils.InitializeNull(ref this.constructorSymbol, this.BuildConstructorSymbol);
     private FunctionSymbol? constructorSymbol;
+
+    public override CodegenDelegate Codegen => (codegen, target, args) =>
+    {
+        var instance = target.Type;
+        var ctorSymbol = this.ConstructorSymbol;
+        if (instance.IsGenericInstance && this.IsGenericDefinition)
+        {
+            ctorSymbol = ctorSymbol.GenericInstantiate(instance, ((IGenericInstanceSymbol)instance).Context);
+        }
+        codegen.Write(NewObject(target, ctorSymbol, args));
+    };
 
     private GenericContext? Context
     {
@@ -58,7 +73,7 @@ internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunction
     private readonly MetadataTypeSymbol instantiatedType;
     private readonly MethodDefinition ctorDefinition;
 
-    public SynthetizedMetadataConstructorSymbol(MetadataTypeSymbol instantiatedType, MethodDefinition ctorDefinition)
+    public MetadataConstructorFunctionSymbol(MetadataTypeSymbol instantiatedType, MethodDefinition ctorDefinition)
     {
         this.instantiatedType = instantiatedType;
         this.ctorDefinition = ctorDefinition;
@@ -77,15 +92,6 @@ internal sealed class SynthetizedMetadataConstructorSymbol : SynthetizedFunction
     private TypeSymbol BuildReturnType() => this.Context is null
         ? this.instantiatedType
         : this.instantiatedType.GenericInstantiate(this.instantiatedType.ContainingSymbol, this.Context.Value);
-
-    private BoundStatement BuildBody() => ExpressionStatement(ReturnExpression(
-        value: ObjectCreationExpression(
-            objectType: this.ReturnType,
-            constructor: this.ConstructorSymbol,
-            arguments: this.Parameters
-                .Select(ParameterExpression)
-                .Cast<BoundExpression>()
-                .ToImmutableArray())));
 
     private FunctionSymbol BuildConstructorSymbol()
     {

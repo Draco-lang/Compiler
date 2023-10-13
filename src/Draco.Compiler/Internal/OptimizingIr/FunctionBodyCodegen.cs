@@ -282,13 +282,14 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             .ToImmutableArray();
         var callResult = this.DefineRegister(node.TypeRequired);
 
-        if (node.Method is IrFunctionSymbol irFunc)
+        var proc = this.TranslateFunctionSymbol(node.Method);
+        var irFunc = ExtractIrFunction(proc);
+        if (irFunc is not null)
         {
             irFunc.Codegen(this, callResult, args);
         }
         else
         {
-            var proc = this.TranslateFunctionSymbol(node.Method);
             if (receiver is null)
             {
                 this.Write(Call(callResult, proc, args));
@@ -507,6 +508,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func).Symbol,
         MetadataMethodSymbol m => m,
         FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
+        IrFunctionSymbol i => i,
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 
@@ -539,6 +541,13 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         MetadataStaticFieldSymbol m => m,
         // TODO: Global instances?
+        _ => null,
+    };
+
+    private static IrFunctionSymbol? ExtractIrFunction(FunctionSymbol symbol) => symbol switch
+    {
+        IrFunctionSymbol i => i,
+        FunctionInstanceSymbol i => ExtractIrFunction(i.GenericDefinition),
         _ => null,
     };
 }

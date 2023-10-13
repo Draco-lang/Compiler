@@ -20,7 +20,7 @@ namespace Draco.Compiler.Internal.Codegen;
 internal sealed class CilCodegen
 {
     // NOTE: We might want to expose this as a setting later for debugging
-    const bool stackify = true;
+    private const bool stackify = true;
 
     /// <summary>
     /// The instruction encoder.

@@ -107,6 +107,13 @@ internal sealed class DecisionTree<TAction>
     public readonly record struct Redundance(TAction CoveredBy, TAction Uselesss);
 
     /// <summary>
+    /// Represents a conditional match by either a pattern or a guard condition.
+    /// </summary>
+    /// <param name="Pattern">The pattern to match.</param>
+    /// <param name="Guard">The guard to satisfy.</param>
+    public readonly record struct Condition(BoundPattern? Pattern, BoundExpression? Guard);
+
+    /// <summary>
     /// A single node in the decision tree.
     /// </summary>
     public interface INode
@@ -151,7 +158,7 @@ internal sealed class DecisionTree<TAction>
         /// <summary>
         /// The child nodes of this one, associated to the pattern to match to take the route to the child.
         /// </summary>
-        public IReadOnlyList<KeyValuePair<BoundPattern, INode>> Children { get; }
+        public IReadOnlyList<KeyValuePair<Condition, INode>> Children { get; }
     }
 
     // A mutable node implementation
@@ -164,8 +171,8 @@ internal sealed class DecisionTree<TAction>
         public bool IsFail => this.PatternMatrix.Count == 0;
         public BoundPattern? NotCovered { get; set; }
         public BoundExpression MatchedValue => this.Arguments[0];
-        public List<KeyValuePair<BoundPattern, INode>> Children { get; } = new();
-        IReadOnlyList<KeyValuePair<BoundPattern, INode>> INode.Children => this.Children;
+        public List<KeyValuePair<Condition, INode>> Children { get; } = new();
+        IReadOnlyList<KeyValuePair<Condition, INode>> INode.Children => this.Children;
 
         public List<BoundExpression> Arguments { get; }
         public List<int> ArgumentOrder { get; }
@@ -359,7 +366,7 @@ internal sealed class DecisionTree<TAction>
             // Specialize to the pattern
             var child = this.Specialize(node, pat);
             // Add as child
-            node.Children.Add(new(pat, child));
+            node.Children.Add(new(new(pat, null), child));
             // We covered the value, subtract
             uncoveredDomain.SubtractPattern(pat);
         }
@@ -369,7 +376,7 @@ internal sealed class DecisionTree<TAction>
         {
             var @default = this.Default(node);
             // Add as child
-            node.Children.Add(new(BoundDiscardPattern.Default, @default));
+            node.Children.Add(new(new(BoundDiscardPattern.Default, null), @default));
             // If it's a failure node, add counterexample
             if (@default.IsFail) @default.NotCovered = uncoveredDomain.SamplePattern();
         }

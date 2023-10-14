@@ -111,7 +111,16 @@ internal sealed class DecisionTree<TAction>
     /// </summary>
     /// <param name="Pattern">The pattern to match.</param>
     /// <param name="Guard">The guard to satisfy.</param>
-    public readonly record struct Condition(BoundPattern? Pattern, BoundExpression? Guard);
+    public readonly record struct Condition(BoundPattern? Pattern, BoundExpression? Guard)
+    {
+        /// <summary>
+        /// Default condition.
+        /// </summary>
+        public static Condition Else { get; } = new();
+
+        public static Condition Match(BoundPattern pattern) => new(pattern, null);
+        public static Condition If(BoundExpression expr) => new(null, expr);
+    }
 
     /// <summary>
     /// A single node in the decision tree.
@@ -333,15 +342,34 @@ internal sealed class DecisionTree<TAction>
 
         if (node.PatternMatrix[0].All(MatchesEverything))
         {
-            // This is a succeeding node, set the performed action
+            // We can potentially match, all depends on the guard now
             var takenAction = node.ActionArms[0];
-            node.ActionArm = takenAction;
-            this.usedActions.Add(takenAction.Action);
-            // The remaining ones are registered as redundant
-            for (var i = 1; i < node.PatternMatrix.Count; ++i)
+            if (takenAction.Guard is null)
             {
-                // Note, that this is not true redundancy, later cases can still use these
-                this.redundancies.Add(new(takenAction.Action, node.ActionArms[i].Action));
+                // This is a succeeding node, set the performed action
+                node.ActionArm = takenAction;
+                this.usedActions.Add(takenAction.Action);
+                // The remaining ones are registered as redundant
+                for (var i = 1; i < node.PatternMatrix.Count; ++i)
+                {
+                    // Note, that this is not true redundancy, later cases can still use these
+                    this.redundancies.Add(new(takenAction.Action, node.ActionArms[i].Action));
+                }
+            }
+            else
+            {
+                // We still have a guard to match
+                // Split off first row
+                var (first, rest) = this.SplitOffFirstRow(node);
+
+                // We can match the first one by the condition
+                first.ActionArm = takenAction;
+                this.usedActions.Add(takenAction.Action);
+                node.Children.Add(new(Condition.If(takenAction.Guard), first));
+
+                // Handle rest
+                node.Children.Add(new(Condition.Else, rest));
+                this.Build(rest);
             }
             return;
         }
@@ -352,23 +380,30 @@ internal sealed class DecisionTree<TAction>
 
         // The first column now contains something that is refutable
         // Collect all pattern variants that we covered
-        var coveredPatterns = node.PatternMatrix
-            .Select(row => row[0])
-            .Where(p => !MatchesEverything(p))
-            .ToHashSet(SpecializationComparer.Instance);
+        var coveredPatterns = node.PatternMatrix.Zip(node.ActionArms)
+            .Select(pair => (Row: pair.First[0], Guard: pair.Second.Guard))
+            .Where(p => !MatchesEverything(p.Row))
+            .GroupBy(p => p.Row, SpecializationComparer.Instance);
 
         // Track if there are any uncovered values in this domain
         var uncoveredDomain = ValueDomain.CreateDomain(this.intrinsicSymbols, node.PatternMatrix[0][0].Type);
 
         // Specialize for each of these cases
-        foreach (var pat in coveredPatterns)
+        foreach (var group in coveredPatterns)
         {
-            // Specialize to the pattern
-            var child = this.Specialize(node, pat);
-            // Add as child
-            node.Children.Add(new(new(pat, null), child));
-            // We covered the value, subtract
-            uncoveredDomain.SubtractPattern(pat);
+            foreach (var (pat, guard) in group)
+            {
+                // Specialize to the pattern
+                var child = this.Specialize(node, pat);
+                // Add as child
+                node.Children.Add(new(Condition.Match(pat), child));
+                // We only add covered, if it's not guarded
+                if (guard is null)
+                {
+                    // We covered the value, subtract
+                    uncoveredDomain.SubtractPattern(pat);
+                }
+            }
         }
 
         // If not complete, do defaulting
@@ -376,7 +411,7 @@ internal sealed class DecisionTree<TAction>
         {
             var @default = this.Default(node);
             // Add as child
-            node.Children.Add(new(new(BoundDiscardPattern.Default, null), @default));
+            node.Children.Add(new(Condition.Else, @default));
             // If it's a failure node, add counterexample
             if (@default.IsFail) @default.NotCovered = uncoveredDomain.SamplePattern();
         }
@@ -391,6 +426,27 @@ internal sealed class DecisionTree<TAction>
     private void CleanUpRedundancies()
     {
         this.redundancies.RemoveWhere(r => this.usedActions.Contains(r.Uselesss));
+    }
+
+    /// <summary>
+    /// Splits off the first row of the pattern matrix to produce a single-row node
+    /// and a node with everything else.
+    /// </summary>
+    /// <param name="node">The node to spli.</param>
+    /// <returns>The pair of first-row and rest nodes.</returns>
+    private (Node First, Node Remaining) SplitOffFirstRow(Node node)
+    {
+        var first = new Node(
+            parent: node,
+            arguments: node.Arguments.ToList(),
+            patternMatrix: new List<List<BoundPattern>> { node.PatternMatrix[0].ToList() },
+            actionArms: new List<Arm> { node.ActionArms[0] });
+        var rest = new Node(
+            parent: node,
+            arguments: node.Arguments.ToList(),
+            patternMatrix: node.PatternMatrix.Skip(1).ToList(),
+            actionArms: node.ActionArms.Skip(1).ToList());
+        return (first, rest);
     }
 
     /// <summary>

@@ -371,9 +371,6 @@ internal sealed class DecisionTree<TAction>
     /// <param name="node">The current root of the tree.</param>
     private void Build(Node node)
     {
-        // TODO: Handle guards!
-        // They complicate analysis quite a bit
-
         if (node.IsFail) return;
 
         if (node.PatternMatrix[0].All(MatchesEverything))

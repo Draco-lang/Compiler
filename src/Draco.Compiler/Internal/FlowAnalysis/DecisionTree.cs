@@ -135,18 +135,18 @@ internal sealed class DecisionTree<TAction>
         /// <summary>
         /// True, if this is an action node, meaning that there is a match.
         /// </summary>
+        [MemberNotNullWhen(true, nameof(ActionArm))]
+        [MemberNotNullWhen(true, nameof(Action))]
         public bool IsAction { get; }
 
         /// <summary>
         /// The action arm that's associated with the node, in case it's a leaf.
         /// </summary>
-        [MemberNotNullWhen(true, nameof(IsAction))]
         public Arm? ActionArm { get; }
 
         /// <summary>
         /// The action that's associated with the node, in case it's a leaf.
         /// </summary>
-        [MemberNotNullWhen(true, nameof(IsAction))]
         public TAction? Action { get; }
 
         /// <summary>
@@ -343,7 +343,7 @@ internal sealed class DecisionTree<TAction>
             // Add node
             graph
                 .AddVertex(node)
-                .WithLabel(node.MatchedValue.ToString());
+                .WithLabel(node.IsAction ? node.Action.ToString() : node.MatchedValue.ToString());
             // Add children and edges
             foreach (var ((pat, cond), child) in node.Children)
             {

@@ -105,7 +105,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     {
         // NOTE: Is this correct? What about nested generics?
         // Is this why .NET projects down generic args?
-        if (!this.IsGenericDefinition) return this;
+        if (!this.IsInGenericContext) return this;
         return new TypeInstanceSymbol(containingSymbol, this, context);
     }
 

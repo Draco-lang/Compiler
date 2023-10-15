@@ -6,6 +6,7 @@
 
   <Assembly Name="System.Runtime" PublicKeyToken="b03f5f7f11d50a3a" />
 
+  <Type Name="System.Char" Assembly="System.Runtime" />
   <Type Name="System.Boolean" Assembly="System.Runtime" />
 
   <Type Name="System.Byte" Assembly="System.Runtime" />

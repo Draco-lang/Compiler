@@ -43,7 +43,8 @@ internal static class BinderFacts
         or PropertySymbol
         or FunctionSymbol
         or ModuleSymbol
-        or TypeSymbol;
+        or TypeSymbol
+        or TypeAliasSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a type-context.
@@ -69,7 +70,8 @@ internal static class BinderFacts
     /// <param name="symbol">The symbol to check.</param>
     /// <returns>True, if <paramref name="symbol"/> can be referenced in a non-type value context.</returns>
     public static bool IsNonTypeValueSymbol(Symbol symbol) => symbol
-        is not TypeSymbol && IsValueSymbol(symbol);
+           is not (TypeSymbol or TypeAliasSymbol)
+        && IsValueSymbol(symbol);
 
     /// <summary>
     /// Retrieves the first scope defining ancestor of a given syntax node.

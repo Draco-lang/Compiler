@@ -52,7 +52,8 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="symbol"/> can be referenced in a type-context.</returns>
     public static bool IsTypeSymbol(Symbol symbol) => symbol
         is TypeSymbol
-        or ModuleSymbol;
+        or ModuleSymbol
+        or TypeAliasSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a label-context.

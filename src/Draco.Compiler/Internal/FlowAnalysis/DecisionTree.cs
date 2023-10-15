@@ -330,6 +330,42 @@ internal sealed class DecisionTree<TAction>
     }
 
     /// <summary>
+    /// Constructs a DOT graph representation of the decision-tree.
+    /// </summary>
+    /// <returns>The DOT graph code of the decision-tree.</returns>
+    public string ToDot()
+    {
+        var graph = new DotGraphBuilder<INode>(isDirected: true)
+            .WithRankDir(DotAttribs.RankDir.TopToBottom);
+
+        void Recurse(INode node)
+        {
+            // Add node
+            graph
+                .AddVertex(node)
+                .WithLabel(node.MatchedValue.ToString());
+            // Add children and edges
+            foreach (var ((pat, cond), child) in node.Children)
+            {
+                var label = (pat, cond) switch
+                {
+                    (BoundPattern, null) => $"match {pat}",
+                    (null, BoundExpression) => $"if {cond}",
+                    (null, null) => "else",
+                    _ => throw new InvalidOperationException(),
+                };
+                graph
+                    .AddEdge(node, child)
+                    .WithLabel(label);
+                Recurse(child);
+            }
+        }
+
+        Recurse(this.Root);
+        return graph.ToDot();
+    }
+
+    /// <summary>
     /// Builds the subtree.
     /// </summary>
     /// <param name="node">The current root of the tree.</param>

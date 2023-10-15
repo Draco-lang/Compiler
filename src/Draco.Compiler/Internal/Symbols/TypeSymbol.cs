@@ -101,8 +101,13 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);
-    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
-        new TypeInstanceSymbol(containingSymbol, this, context);
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context)
+    {
+        // NOTE: Is this correct? What about nested generics?
+        // Is this why .NET projects down generic args?
+        if (!this.IsGenericDefinition) return this;
+        return new TypeInstanceSymbol(containingSymbol, this, context);
+    }
 
     public override Api.Semantics.ITypeSymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 

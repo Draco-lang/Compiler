@@ -332,9 +332,19 @@ internal sealed class DecisionTree<TAction>
     /// <summary>
     /// Constructs a DOT graph representation of the decision-tree.
     /// </summary>
+    /// <param name="exprToString">Expression stringifier.</param>
+    /// <param name="patToString">Pattern stringifier.</param>
+    /// <param name="actToString">Action stringifier.</param>
     /// <returns>The DOT graph code of the decision-tree.</returns>
-    public string ToDot()
+    public string ToDot(
+        Func<BoundExpression, string?>? exprToString = null,
+        Func<BoundPattern, string?>? patToString = null,
+        Func<TAction, string?>? actToString = null)
     {
+        exprToString ??= o => o.ToString();
+        patToString ??= o => o.ToString();
+        actToString ??= o => o.ToString();
+
         var graph = new DotGraphBuilder<INode>(isDirected: true)
             .WithRankDir(DotAttribs.RankDir.TopToBottom);
 
@@ -343,14 +353,14 @@ internal sealed class DecisionTree<TAction>
             // Add node
             graph
                 .AddVertex(node)
-                .WithLabel(node.IsAction ? node.Action.ToString() : node.MatchedValue.ToString());
+                .WithLabel(node.IsAction ? actToString(node.Action) : exprToString(node.MatchedValue));
             // Add children and edges
             foreach (var ((pat, cond), child) in node.Children)
             {
                 var label = (pat, cond) switch
                 {
-                    (BoundPattern, null) => $"match {pat}",
-                    (null, BoundExpression) => $"if {cond}",
+                    (BoundPattern, null) => $"match {patToString(pat)}",
+                    (null, BoundExpression) => $"if {exprToString(cond)}",
                     (null, null) => "else",
                     _ => throw new InvalidOperationException(),
                 };

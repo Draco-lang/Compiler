@@ -83,7 +83,7 @@ namespace Draco.Compiler.Internal.BoundTree;
             public override string ToString()
             {
                 var result = new StringBuilder();
-                result.Append("{{$node.Name}}");
+                result.Append("{{string.remove_first($node.Name, 'Bound')}}");
                 result.Append('(');
 
                 {{has_more_fields = array.size($node.Fields) > 1}}

@@ -548,7 +548,7 @@ public sealed class FlowAnalysisTests : SemanticTestsBase
     public void GlobalValReassigned()
     {
         // val x: int32 = 0;
-        // func foo() {    
+        // func foo() {
         //     x = 1;
         // }
 
@@ -570,5 +570,31 @@ public sealed class FlowAnalysisTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void ExhaustiveMatch()
+    {
+        // func dirac_pulse(n: int32): int32 = match (n) {
+        //     0 -> 1;
+        //     _ -> 0;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "dirac_pulse",
+            ParameterList(Parameter("n", NameType("int32"))),
+            NameType("int32"),
+            InlineFunctionBody(MatchExpression(NameExpression("n"),
+                MatchArm(LiteralPattern(0), LiteralExpression(1)),
+                MatchArm(DiscardPattern(), LiteralExpression(0)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
     }
 }

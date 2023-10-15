@@ -391,7 +391,9 @@ internal sealed class DecisionTree<TAction>
         // Specialize for each of these cases
         foreach (var group in coveredPatterns)
         {
-            foreach (var (pat, guard) in group)
+            var pat = group.Key;
+            var guards = group.Select(p => p.Guard).Distinct();
+            foreach (var guard in guards)
             {
                 // Specialize to the pattern
                 var child = this.Specialize(node, pat);

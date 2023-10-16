@@ -88,7 +88,15 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     {
         var builder = ImmutableArray.CreateBuilder<Symbol>();
         var ignore = new List<Symbol>();
-        foreach (var member in this.BaseTypes.SelectMany(x => x.DefinedMembers))
+
+        // TODO: Maybe just include private members but filter them out during lookup?
+        // NOTE: We use this workaround so we don't import interface members that
+        // are implemented privately
+        var relevantBases = this.IsInterface
+            ? this.BaseTypes
+            : this.BaseTypes.Where(b => !b.IsInterface);
+
+        foreach (var member in relevantBases.SelectMany(x => x.DefinedMembers))
         {
             if (ignore.Any(member.CanBeShadowedBy)) continue;
             ignore.Add(member);

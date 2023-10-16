@@ -21,8 +21,4 @@ internal sealed class SynthetizedTypeAliasSymbol : TypeAliasSymbol
         this.Name = name;
         this.Substitution = substitution;
     }
-
-    public override void Accept(SymbolVisitor visitor) => visitor.VisitTypeAlias(this);
-    public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitTypeAlias(this);
-    public override ISymbol ToApiSymbol() => throw new NotImplementedException();
 }

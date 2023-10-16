@@ -62,15 +62,17 @@ internal sealed class MatchExhaustiveness : BoundTreeVisitor
             this.diagnostics.Add(diagBuilder.Build());
         }
 
-        foreach (var (covers, redundant) in decisionTree.Redundancies)
+        foreach (var group in decisionTree.Redundancies.GroupBy(r => r.Useless))
         {
             // Report
             this.diagnostics.Add(Diagnostic.Create(
                 template: FlowAnalysisErrors.MatchPatternAlreadyHandled,
-                location: redundant.Syntax?.Location,
-                relatedInformation: ImmutableArray.Create(DiagnosticRelatedInformation.Create(
-                    location: covers.Syntax?.Location,
-                    "the case covering this one can be found here"))));
+                location: group.Key.Syntax?.Location,
+                relatedInformation: group
+                    .Select(cover => DiagnosticRelatedInformation.Create(
+                        location: cover.CoveredBy.Syntax?.Location,
+                        "a case covering this one can be found here"))
+                    .ToImmutableArray()));
         }
     }
 }

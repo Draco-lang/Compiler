@@ -84,8 +84,6 @@ internal sealed class DecisionTree<TAction>
         var tree = new DecisionTree<TAction>(intrinsicSymbols, root);
         // Build it
         tree.Build(root);
-        // Cleanup
-        tree.CleanUpRedundancies();
         // Done
         return tree;
     }
@@ -104,7 +102,7 @@ internal sealed class DecisionTree<TAction>
     /// <param name="CoveredBy">The action that covers the <paramref name="Uselesss"/> one already.</param>
     /// <param name="Uselesss">The action that is redundant or useless, because <paramref name="CoveredBy"/> already
     /// matches.</param>
-    public readonly record struct Redundance(TAction CoveredBy, TAction Uselesss);
+    public readonly record struct Redundance(TAction CoveredBy, TAction Useless);
 
     /// <summary>
     /// Represents a conditional match by either a pattern or a guard condition.
@@ -300,8 +298,21 @@ internal sealed class DecisionTree<TAction>
     /// <summary>
     /// All redundancies in the tree.
     /// </summary>
-    public IReadOnlySet<Redundance> Redundancies => this.redundancies;
-    private HashSet<Redundance> redundancies = new();
+    public IEnumerable<Redundance> Redundancies
+    {
+        get
+        {
+            foreach (var (covered, coveringSet) in this.coveredBy)
+            {
+                if (this.usedActions.Contains(covered)) continue;
+
+                foreach (var covering in coveringSet)
+                {
+                    yield return new(CoveredBy: covering, Useless: covered);
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// True, if this tree is exhaustive.
@@ -322,6 +333,7 @@ internal sealed class DecisionTree<TAction>
 
     private readonly IntrinsicSymbols intrinsicSymbols;
     private readonly HashSet<TAction> usedActions = new();
+    private readonly Dictionary<TAction, HashSet<TAction>> coveredBy = new();
 
     private DecisionTree(IntrinsicSymbols intrinsicSymbols, Node root)
     {
@@ -392,11 +404,16 @@ internal sealed class DecisionTree<TAction>
                 // This is a succeeding node, set the performed action
                 node.ActionArm = takenAction;
                 this.usedActions.Add(takenAction.Action);
-                // The remaining ones are registered as redundant
+                // The remaining ones are registered as covered
                 for (var i = 1; i < node.PatternMatrix.Count; ++i)
                 {
-                    // Note, that this is not true redundancy, later cases can still use these
-                    this.redundancies.Add(new(takenAction.Action, node.ActionArms[i].Action));
+                    var coveredAction = node.ActionArms[i].Action;
+                    if (!this.coveredBy.TryGetValue(coveredAction, out var coverSet))
+                    {
+                        coverSet = new();
+                        this.coveredBy.Add(coveredAction, coverSet);
+                    }
+                    coverSet.Add(takenAction.Action);
                 }
             }
             else
@@ -463,14 +480,6 @@ internal sealed class DecisionTree<TAction>
 
         // Recurse to children
         foreach (var (_, child) in node.Children) this.Build((Node)child);
-    }
-
-    /// <summary>
-    /// Cleans up the redundancy info, removing false positives.
-    /// </summary>
-    private void CleanUpRedundancies()
-    {
-        this.redundancies.RemoveWhere(r => this.usedActions.Contains(r.Uselesss));
     }
 
     /// <summary>

@@ -31,8 +31,8 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
 
     private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SyntaxRange range) => symbols.First() switch
     {
-        TypeSymbol when currentContexts.HasFlag(CompletionContext.Expression)
-                     || currentContexts.HasFlag(CompletionContext.Type) =>
+        TypeSymbol or TypeAliasSymbol when currentContexts.HasFlag(CompletionContext.Expression)
+                                        || currentContexts.HasFlag(CompletionContext.Type) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Class),
 
         IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>

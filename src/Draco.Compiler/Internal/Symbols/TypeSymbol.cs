@@ -89,7 +89,15 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     {
         var builder = ImmutableArray.CreateBuilder<Symbol>();
         var ignore = new List<Symbol>();
-        foreach (var member in this.BaseTypes.SelectMany(x => x.DefinedMembers))
+
+        // TODO: Maybe just include private members but filter them out during lookup?
+        // NOTE: We use this workaround so we don't import interface members that
+        // are implemented privately
+        var relevantBases = this.IsInterface
+            ? this.BaseTypes
+            : this.BaseTypes.Where(b => !b.IsInterface);
+
+        foreach (var member in relevantBases.SelectMany(x => x.DefinedMembers))
         {
             if (ignore.Any(member.CanBeShadowedBy)) continue;
             ignore.Add(member);
@@ -102,8 +110,13 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);
-    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
-        new TypeInstanceSymbol(containingSymbol, this, context);
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context)
+    {
+        // NOTE: Is this correct? What about nested generics?
+        // Is this why .NET projects down generic args?
+        if (!this.IsInGenericContext) return this;
+        return new TypeInstanceSymbol(containingSymbol, this, context);
+    }
 
     public override Api.Semantics.ITypeSymbol ToApiSymbol() => new Api.Semantics.TypeSymbol(this);
 

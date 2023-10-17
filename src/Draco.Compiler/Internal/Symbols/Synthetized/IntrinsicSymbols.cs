@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr;
@@ -25,14 +23,33 @@ internal sealed partial class IntrinsicSymbols
 
     // Types that never change
 
-    public static TypeSymbol Never => NeverTypeSymbol.Instance;
-    public static TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
-    public static TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
-    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
+    public static TypeSymbol Never => WellKnownTypes.Never;
+    public static TypeSymbol ErrorType => WellKnownTypes.ErrorType;
+    public static TypeSymbol UninferredType => WellKnownTypes.UninferredType;
+    public static TypeSymbol Unit => WellKnownTypes.Unit;
 
-    // Types backed by metadata potentially, nonstatic
+    // Forwarded from metadata
 
-    public TypeSymbol Char { get; } = new PrimitiveTypeSymbol("char", isValueType: true);
+    public TypeSymbol Char => this.WellKnownTypes.SystemChar;
+    public TypeSymbol Bool => this.WellKnownTypes.SystemBoolean;
+
+    public TypeSymbol Uint8 => this.WellKnownTypes.SystemByte;
+    public TypeSymbol Uint16 => this.WellKnownTypes.SystemUInt16;
+    public TypeSymbol Uint32 => this.WellKnownTypes.SystemUInt32;
+    public TypeSymbol Uint64 => this.WellKnownTypes.SystemUInt64;
+
+    public TypeSymbol Int8 => this.WellKnownTypes.SystemSByte;
+    public TypeSymbol Int16 => this.WellKnownTypes.SystemInt16;
+    public TypeSymbol Int32 => this.WellKnownTypes.SystemInt32;
+    public TypeSymbol Int64 => this.WellKnownTypes.SystemInt64;
+
+    public TypeSymbol Float32 => this.WellKnownTypes.SystemSingle;
+    public TypeSymbol Float64 => this.WellKnownTypes.SystemDouble;
+
+    public TypeSymbol String => this.WellKnownTypes.SystemString;
+    public TypeSymbol Object => this.WellKnownTypes.SystemObject;
+
+    // Generated
 
     public ArrayTypeSymbol Array => InterlockedUtils.InitializeNull(ref this.array, () => new(1, this.Int32));
     private ArrayTypeSymbol? array;
@@ -60,16 +77,36 @@ internal sealed partial class IntrinsicSymbols
         int n => new ArrayTypeSymbol(n, this.Int32).GenericInstantiate(elementType),
     };
 
-    private ImmutableArray<Symbol> BuildAllSymbols() => typeof(IntrinsicSymbols)
-        .GetProperties(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)
-        .Where(prop => prop.PropertyType.IsAssignableTo(typeof(Symbol)))
-        .Select(prop => prop.GetValue(this))
-        .Cast<Symbol>()
-        .Concat(this.GenerateIntrinsicSymbols())
-        .ToImmutableArray();
+    private ImmutableArray<Symbol> BuildAllSymbols() =>
+        this.GenerateIntrinsicSymbols().ToImmutableArray();
 
+    // NOTE: We don't yield each primitive directly, we need to alias them
     private IEnumerable<Symbol> GenerateIntrinsicSymbols()
     {
+        // Primitive aliases
+        yield return Alias("char", this.Char);
+        yield return Alias("bool", this.Bool);
+
+        yield return Alias("uint8", this.Uint8);
+        yield return Alias("uint16", this.Uint16);
+        yield return Alias("uint32", this.Uint32);
+        yield return Alias("uint64", this.Uint64);
+
+        yield return Alias("int8", this.Int8);
+        yield return Alias("int16", this.Int16);
+        yield return Alias("int32", this.Int32);
+        yield return Alias("int64", this.Int64);
+
+        yield return Alias("float32", this.Float32);
+        yield return Alias("float64", this.Float64);
+
+        yield return Alias("string", this.String);
+        yield return Alias("object", this.Object);
+
+        // 1D array
+        yield return this.Array;
+        yield return this.ArrayCtor;
+
         // Array types from 2D to 8D
         for (var i = 2; i <= 8; ++i)
         {
@@ -79,6 +116,9 @@ internal sealed partial class IntrinsicSymbols
             // Ctor
             yield return new ArrayConstructorSymbol(arrayType);
         }
+
+        // Bool negation
+        yield return this.Bool_Not;
 
         // Numeric operators
         foreach (var type in new[]
@@ -109,6 +149,9 @@ internal sealed partial class IntrinsicSymbols
             yield return this.Binary(TokenKind.KeywordRem, type, type, type, this.CodegenRem);
         }
     }
+
+    private static TypeAliasSymbol Alias(string name, TypeSymbol type) =>
+        new SynthetizedTypeAliasSymbol(name, type);
 
     // Operators
 

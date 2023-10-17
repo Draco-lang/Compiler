@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -14,6 +15,14 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal sealed partial class WellKnownTypes
 {
+    #region Singletons
+    public static TypeSymbol Never => NeverTypeSymbol.Instance;
+    public static TypeSymbol ErrorType { get; } = new ErrorTypeSymbol("<error>");
+    public static TypeSymbol UninferredType { get; } = new ErrorTypeSymbol("?");
+    public static TypeSymbol Unit { get; } = new PrimitiveTypeSymbol("unit", isValueType: true);
+    #endregion
+
+    #region Methods
     /// <summary>
     /// object.ToString().
     /// </summary>
@@ -48,6 +57,7 @@ internal sealed partial class WellKnownTypes
                 m.Name == "Format"
              && m.Parameters is [_, { Type: TypeInstanceSymbol { GenericDefinition: ArrayTypeSymbol } }]));
     private MetadataMethodSymbol? systemString_Format;
+    #endregion
 
     private readonly Compilation compilation;
 
@@ -56,6 +66,7 @@ internal sealed partial class WellKnownTypes
         this.compilation = compilation;
     }
 
+    #region Loader Methods
     public MetadataTypeSymbol GetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)
     {
         var assembly = this.GetAssemblyWithAssemblyName(name);
@@ -75,4 +86,5 @@ internal sealed partial class WellKnownTypes
         return this.compilation.MetadataAssemblies.Values
             .Single(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName));
     }
+    #endregion
 }

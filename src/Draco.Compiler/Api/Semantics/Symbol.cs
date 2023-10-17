@@ -78,6 +78,7 @@ public interface IMemberSymbol
     /// </summary>
     public bool IsStatic { get; }
 }
+
 /// <summary>
 /// Represents a module symbol.
 /// </summary>
@@ -150,6 +151,17 @@ public interface IFunctionSymbol : ISymbol, ITypedSymbol, IMemberSymbol
 /// </summary>
 public interface ITypeSymbol : ISymbol, IMemberSymbol
 {
+}
+
+/// <summary>
+/// Represents a type alias symbol.
+/// </summary>
+public interface ITypeAliasSymbol : ISymbol, IMemberSymbol
+{
+    /// <summary>
+    /// The type this alias substitutes.
+    /// </summary>
+    public ITypeSymbol Substitution { get; }
 }
 
 /// <summary>
@@ -305,6 +317,18 @@ internal sealed class TypeSymbol : SymbolBase<Internal.Symbols.TypeSymbol>, ITyp
     public bool IsStatic => this.Symbol.IsStatic;
 
     public TypeSymbol(Internal.Symbols.TypeSymbol type)
+        : base(type)
+    {
+    }
+}
+
+internal sealed class TypeAliasSymbol : SymbolBase<Internal.Symbols.TypeAliasSymbol>, ITypeAliasSymbol
+{
+    public bool IsStatic => this.Symbol.IsStatic;
+
+    public ITypeSymbol Substitution => this.Symbol.Substitution.ToApiSymbol();
+
+    public TypeAliasSymbol(Internal.Symbols.TypeAliasSymbol type)
         : base(type)
     {
     }

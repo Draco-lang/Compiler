@@ -2221,4 +2221,32 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(diags);
         Assert.Equal("System.Random", xSym.Type.FullName);
     }
+
+    [Fact]
+    public void StringAssignableToObject()
+    {
+        // func main(){
+        //     var x: object = "Hello";
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration(
+                    "x",
+                    NameType("object"),
+                    StringExpression("Hello")))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
 }

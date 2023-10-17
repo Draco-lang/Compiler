@@ -71,6 +71,11 @@ internal sealed class LookupResult
         else
         {
             // Can be anything
+            if (symbol is TypeAliasSymbol typeAlias)
+            {
+                // Unwrap type alias
+                symbol = typeAlias.Substitution;
+            }
             this.symbols.Add(symbol);
             return true;
         }

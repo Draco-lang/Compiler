@@ -67,6 +67,13 @@ internal abstract partial class Symbol
     public bool IsGenericInstance => this.GenericArguments.Length > 0;
 
     /// <summary>
+    /// True, if this symbol is in a generic context.
+    /// </summary>
+    public bool IsInGenericContext =>
+           this.IsGenericDefinition
+        || (this.ContainingSymbol?.IsInGenericContext ?? false);
+
+    /// <summary>
     /// The metadata name of this symbol.
     /// </summary>
     public virtual string MetadataName => this.Name;

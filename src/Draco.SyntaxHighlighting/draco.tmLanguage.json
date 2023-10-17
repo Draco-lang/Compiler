@@ -17,6 +17,9 @@
         },
         {
           "include": "#expressions"
+        },
+        {
+          "include": "#patterns"
         }
       ]
     },
@@ -291,6 +294,17 @@
         },
         {
           "include": "#literals"
+        }
+      ]
+    },
+    "patterns": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "name": "variable.language.discard.draco",
+          "match": "\\b_\\b"
         }
       ]
     },

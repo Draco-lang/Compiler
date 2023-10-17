@@ -23,7 +23,7 @@ internal abstract class ValueDomain
             return new IntegralDomain<int>(type, int.MinValue, int.MaxValue);
         }
 
-        throw new ArgumentOutOfRangeException(nameof(type));
+        return FullDomain.Instance;
     }
 
     /// <summary>

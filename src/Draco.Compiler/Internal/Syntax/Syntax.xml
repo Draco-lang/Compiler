@@ -1403,6 +1403,18 @@
     </Documentation>
   </AbstractNode>
 
+  <Node Name="UnexpectedPatternSyntax" Base="PatternSyntax">
+    <Documentation>
+      Unexpected input in pattern expression context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
   <Node Name="LiteralPatternSyntax" Base="PatternSyntax">
     <Documentation>
       A literal pattern.

@@ -278,6 +278,9 @@
 
   <!-- Patterns -->
 
+  <Node Name="UntypedUnexpectedPattern" Base="UntypedPattern">
+  </Node>
+
   <Node Name="UntypedDiscardPattern" Base="UntypedPattern">
   </Node>
 

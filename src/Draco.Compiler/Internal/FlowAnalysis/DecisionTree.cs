@@ -248,6 +248,7 @@ internal sealed class DecisionTree<TAction>
 
         public int GetHashCode([DisallowNull] BoundPattern obj) => obj switch
         {
+            BoundUnexpectedPattern => 0,
             BoundDiscardPattern => 0,
             BoundLiteralPattern lit => lit.Value?.GetHashCode() ?? 0,
             _ => throw new ArgumentOutOfRangeException(nameof(obj)),
@@ -529,6 +530,16 @@ internal sealed class DecisionTree<TAction>
             // NOTE: Row is already cloned
             remainingRows.Add(newRow);
             remainingActions.Add(action);
+        }
+
+        if (remainingRows.Count == 0)
+        {
+            // Short-circuit to avoid errors
+            return new(
+                parent: node,
+                arguments: new(),
+                patternMatrix: new(),
+                actionArms: new());
         }
 
         var newArguments = Enumerable

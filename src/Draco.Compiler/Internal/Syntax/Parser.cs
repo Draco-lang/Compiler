@@ -1254,13 +1254,33 @@ internal sealed class Parser
     /// Parses a pattern.
     /// </summary>
     /// <returns>The parsed <see cref="PatternSyntax"/>.</returns>
-    private PatternSyntax ParsePattern() => this.Peek() switch
+    private PatternSyntax ParsePattern()
     {
-        TokenKind.LiteralInteger => new LiteralPatternSyntax(this.Advance()),
-        TokenKind.KeywordDiscard => new DiscardPatternSyntax(this.Advance()),
-        // TODO: synchronize
-        _ => throw new NotImplementedException("parse error"),
-    };
+        switch (this.Peek())
+        {
+        case TokenKind.LiteralInteger:
+            return new LiteralPatternSyntax(this.Advance());
+        case TokenKind.KeywordDiscard:
+            return new DiscardPatternSyntax(this.Advance());
+        default:
+        {
+            var input = this.Synchronize(t => t switch
+            {
+                TokenKind.Semicolon or TokenKind.Comma
+                or TokenKind.ParenClose or TokenKind.BracketClose
+                or TokenKind.CurlyClose or TokenKind.InterpolationEnd
+                or TokenKind.Assign or TokenKind.Arrow => false,
+                _ when IsExpressionStarter(t) => false,
+                _ => true,
+            });
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "type");
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
+            var node = new UnexpectedPatternSyntax(input);
+            this.AddDiagnostic(node, diag);
+            return node;
+        }
+        }
+    }
 
     /// <summary>
     /// Checks, if a given syntax can be followed by a generic argument list.

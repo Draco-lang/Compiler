@@ -143,6 +143,11 @@ internal partial class UntypedPattern
     public abstract TypeSymbol Type { get; }
 }
 
+internal partial class UntypedUnexpectedPattern
+{
+    public override TypeSymbol Type => IntrinsicSymbols.Never;
+}
+
 internal partial class UntypedDiscardPattern
 {
     public override TypeSymbol Type => IntrinsicSymbols.Never;

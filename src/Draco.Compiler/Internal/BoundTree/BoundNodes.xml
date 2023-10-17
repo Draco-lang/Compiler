@@ -304,6 +304,9 @@
 
   <!-- Patterns -->
 
+  <Node Name="BoundUnexpectedPattern" Base="BoundPattern">
+  </Node>
+
   <Node Name="BoundDiscardPattern" Base="BoundPattern">
   </Node>
 

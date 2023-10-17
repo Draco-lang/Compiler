@@ -17,6 +17,7 @@ internal partial class Binder
     /// <returns>The bound expression for <paramref name="pattern"/>.</returns>
     internal virtual BoundPattern TypePattern(UntypedPattern pattern, ConstraintSolver constraints, DiagnosticBag diagnostics) => pattern switch
     {
+        UntypedUnexpectedPattern => new BoundUnexpectedPattern(pattern.Syntax),
         UntypedDiscardPattern discard => this.TypeDiscardPattern(discard, constraints, diagnostics),
         UntypedLiteralPattern literal => this.TypeLiteralPattern(literal, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(pattern)),

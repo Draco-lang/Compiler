@@ -17,6 +17,7 @@ internal partial class Binder
     /// <returns>The untyped pattern for <paramref name="syntax"/>.</returns>
     protected virtual UntypedPattern BindPattern(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
+        UnexpectedPatternSyntax => new UntypedUnexpectedPattern(syntax),
         DiscardPatternSyntax discard => this.BindDiscardPattern(discard, constraints, diagnostics),
         LiteralPatternSyntax literal => this.BindLiteralPattern(literal, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),

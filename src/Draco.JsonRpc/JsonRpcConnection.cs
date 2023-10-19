@@ -135,6 +135,8 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter> : IJsonRpcCon
     #region Message Processing
     protected async Task ProcessMessageAsync(TMessage message)
     {
+        await Task.Yield();
+
         if (TMessageAdapter.IsRequest(message))
         {
             var response = await this.ProcessIncomingRequestAsync(message);

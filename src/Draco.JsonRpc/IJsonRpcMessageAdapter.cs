@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Draco.JsonRpc;
@@ -62,6 +63,13 @@ public interface IJsonRpcMessageAdapter<TMessage>
     /// <param name="message">The message to retrieve the method name for.</param>
     /// <returns>The method name <paramref name="message"/> is invoking.</returns>
     public static abstract string GetMethodName(TMessage message);
+
+    /// <summary>
+    /// Retrieves the parameters for <paramref name="message"/>.
+    /// </summary>
+    /// <param name="message">The message to retrieve the parameters of.</param>
+    /// <returns>The parameters in <paramref name="message"/>.</returns>
+    public static abstract JsonElement? GetParams(TMessage message);
 
     /// <summary>
     /// Checks, if <paramref name="message"/> is a cancellation message.

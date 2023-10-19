@@ -155,15 +155,87 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
     {
         var messageId = TMessageAdapter.GetId(message);
         var methodName = TMessageAdapter.GetMethodName(message);
+        var @params = TMessageAdapter.GetParams(message);
 
+        TMessage Error(object error)
+        {
+            var errorJson = JsonSerializer.SerializeToElement(error, this.JsonSerializerOptions);
+            return TMessageAdapter.CreateErrorResponse(messageId!, errorJson);
+        }
+
+        // Cancellation handling
         if (TMessageAdapter.IsCancellation(message))
         {
             this.CancelIncomingRequest(messageId!);
             return TMessageAdapter.CreateOkResponse(messageId!, default);
         }
 
-        // TODO
-        throw new NotImplementedException();
+        // Error handling block
+        if (!this.methodHandlers.TryGetValue(methodName, out var handler))
+        {
+            return Error(TMessageAdapter.CreateHandlerNotRegisteredError(methodName));
+        }
+        if (@params is JsonElement { ValueKind: not (JsonValueKind.Object or JsonValueKind.Array) })
+        {
+            return Error(TMessageAdapter.CreateInvalidRequestError());
+        }
+        if (!handler.IsRequest)
+        {
+            return Error(TMessageAdapter.CreateHandlerWasRegisteredAsNotificationHandlerError(methodName));
+        }
+
+        // Build up arguments
+        var args = new List<object?>();
+        if (handler.AcceptsParams)
+        {
+            if (@params.HasValue)
+            {
+                try
+                {
+                    var arg = @params.Value.Deserialize(handler.DeclaredParamsType, this.JsonDeserializerOptions);
+                    args.Add(arg);
+                }
+                catch (JsonException ex)
+                {
+                    return Error(TMessageAdapter.CreateJsonExceptionError(ex));
+                }
+            }
+            else
+            {
+                args.Add(null);
+            }
+        }
+        if (handler.SupportsCancellation)
+        {
+            var ct = this.AddIncomingRequest(messageId!);
+            args.Add(ct);
+        }
+
+        // Actually invoke handler
+        var result = null as object;
+        var error = null as Exception;
+        try
+        {
+            result = await handler.InvokeRequest(args.ToArray());
+        }
+        catch (Exception ex)
+        {
+            error = ex;
+        }
+
+        // Operation completed or canceled, try completing it
+        if (handler.SupportsCancellation) this.CompleteIncomingRequest(messageId!);
+
+        // Respond appropriately
+        if (error is not null)
+        {
+            return Error(TMessageAdapter.CreateExceptionError(error));
+        }
+        else
+        {
+            var resultJson = JsonSerializer.SerializeToElement(result, this.JsonSerializerOptions);
+            return TMessageAdapter.CreateOkResponse(messageId!, resultJson);
+        }
     }
 
     private void ProcessIncomingResponse(TMessage message)

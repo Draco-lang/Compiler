@@ -14,7 +14,7 @@ public interface IJsonRpcMethodHandler
     /// <summary>
     /// The name of the method this handles.
     /// </summary>
-    public string Method { get; }
+    public string MethodName { get; }
 
     /// <summary>
     /// True, if this is a request handler.

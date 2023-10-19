@@ -12,9 +12,10 @@ namespace Draco.JsonRpc;
 /// A base class for a JSON-RPC connection.
 /// </summary>
 /// <typeparam name="TMessage">The message type.</typeparam>
+/// <typeparam name="TError">The error descriptor.</typeparam>
 /// <typeparam name="TMessageAdapter">The message adapter to query info about the messages.</typeparam>
-public abstract class JsonRpcConnection<TMessage, TMessageAdapter> : IJsonRpcConnection
-    where TMessageAdapter : IJsonRpcMessageAdapter<TMessage>
+public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJsonRpcConnection
+    where TMessageAdapter : IJsonRpcMessageAdapter<TMessage, TError>
 {
     private interface IOutgoingRequest
     {
@@ -74,7 +75,7 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter> : IJsonRpcCon
     // Communication state
     private int lastMessageId = 0;
 
-    public void AddHandler(IJsonRpcMethodHandler handler) => this.methodHandlers.Add(handler.Method, handler);
+    public void AddHandler(IJsonRpcMethodHandler handler) => this.methodHandlers.Add(handler.MethodName, handler);
 
     public Task Listen() => Task.WhenAll(
         this.ReaderLoopAsync(),
@@ -162,11 +163,7 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter> : IJsonRpcCon
         var methodName = TMessageAdapter.GetMethodName(message);
         var @params = TMessageAdapter.GetParams(message);
 
-        TMessage Error(object error)
-        {
-            var errorJson = JsonSerializer.SerializeToElement(error, this.JsonSerializerOptions);
-            return TMessageAdapter.CreateErrorResponse(messageId!, errorJson);
-        }
+        TMessage Error(TError error) => TMessageAdapter.CreateErrorResponse(messageId!, error);
 
         // Cancellation handling
         if (TMessageAdapter.IsCancellation(message))

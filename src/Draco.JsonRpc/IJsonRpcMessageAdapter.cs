@@ -12,20 +12,21 @@ namespace Draco.JsonRpc;
 /// A message adapter to query info about messages.
 /// </summary>
 /// <typeparam name="TMessage">The message type this is an adapter for.</typeparam>
-public interface IJsonRpcMessageAdapter<TMessage>
+/// <typeparam name="TError">The error descriptor.</typeparam>
+public interface IJsonRpcMessageAdapter<TMessage, TError>
 {
     #region Factory Methods
     public static abstract TMessage CreateRequest(int id, string method, JsonElement @params);
     public static abstract TMessage CreateCancelRequest(int id);
     public static abstract TMessage CreateOkResponse(object id, JsonElement okResult);
-    public static abstract TMessage CreateErrorResponse(object id, JsonElement errorResult);
+    public static abstract TMessage CreateErrorResponse(object id, TError errorResult);
     public static abstract TMessage CreateNotification(string method, JsonElement @params);
 
-    public static abstract object CreateExceptionError(Exception exception);
-    public static abstract object CreateJsonExceptionError(JsonException exception);
-    public static abstract object CreateHandlerNotRegisteredError(string method);
-    public static abstract object CreateInvalidRequestError();
-    public static abstract object CreateHandlerWasRegisteredAsNotificationHandlerError(string method);
+    public static abstract TError CreateExceptionError(Exception exception);
+    public static abstract TError CreateJsonExceptionError(JsonException exception);
+    public static abstract TError CreateHandlerNotRegisteredError(string method);
+    public static abstract TError CreateInvalidRequestError();
+    public static abstract TError CreateHandlerWasRegisteredAsNotificationHandlerError(string method);
     #endregion
 
     #region Observers

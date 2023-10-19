@@ -11,6 +11,6 @@ public interface IDidDeleteFiles
     [RegistrationOptions("workspace/didDeleteFiles")]
     public FileOperationRegistrationOptions DidDeleteFileRegistrationOptions { get; }
 
-    [Notification("workspace/didDeleteFiles")]
-    public Task DidDeleteFilesAsync(DeleteFilesParams param, CancellationToken cancellationToken);
+    [Notification("workspace/didDeleteFiles", Mutating = true)]
+    public Task DidDeleteFilesAsync(DeleteFilesParams param);
 }

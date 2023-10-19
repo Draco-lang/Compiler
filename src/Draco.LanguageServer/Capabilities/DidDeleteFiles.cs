@@ -21,7 +21,7 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
         }
     };
 
-    public async Task DidDeleteFilesAsync(DeleteFilesParams param, CancellationToken cancellationToken)
+    public async Task DidDeleteFilesAsync(DeleteFilesParams param)
     {
         foreach (var file in param.Files)
         {

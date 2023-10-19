@@ -45,8 +45,6 @@ internal static class Program
 
     internal static async Task RunServerAsync(bool stdioFlag)
     {
-        await Task.Delay(10000);
-
         var transportKind = GetTransportKind(stdioFlag);
         var transportStream = BuildTransportStream(transportKind);
 

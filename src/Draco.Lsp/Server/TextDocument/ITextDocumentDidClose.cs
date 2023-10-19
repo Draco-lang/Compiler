@@ -12,5 +12,5 @@ public interface ITextDocumentDidClose
     public TextDocumentRegistrationOptions DidCloseRegistrationOptions { get; }
 
     [Notification("textDocument/didClose", Mutating = true)]
-    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken);
+    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param);
 }

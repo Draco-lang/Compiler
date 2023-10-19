@@ -32,7 +32,12 @@ internal sealed class LspMessageAdapter : IJsonRpcMessageAdapter<LspMessage, Res
         Id = id,
         Params = @params,
     };
-    public static LspMessage CreateCancelRequest(int id) => throw new NotImplementedException();
+    public static LspMessage CreateCancelRequest(int id) => CreateNotification(
+        "$/cancelRequest",
+        JsonSerializer.SerializeToElement(new CancelParams
+        {
+            Id = id,
+        }));
     public static LspMessage CreateOkResponse(object id, JsonElement okResult) => new ResponseMessage
     {
         Jsonrpc = "2.0",
@@ -43,7 +48,7 @@ internal sealed class LspMessageAdapter : IJsonRpcMessageAdapter<LspMessage, Res
     {
         Jsonrpc = "2.0",
         Id = ToId(id),
-        Error = (ResponseError)errorResult,
+        Error = errorResult,
     };
     public static LspMessage CreateNotification(string method, JsonElement @params) => new NotificationMessage
     {

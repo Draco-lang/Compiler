@@ -103,19 +103,12 @@ internal sealed class LanguageServerMethodHandler : IJsonRpcMethodHandler
         this.DeclaredReturnType = returnType;
     }
 
-    public Task InvokeNotification(object?[] args)
-    {
-        Debug.WriteLine($"InvokeNotification {this.MethodName} START");
-        var result = (Task)this.handlerMethod.Invoke(this.target, args.ToArray())!;
-        Debug.WriteLine($"InvokeNotification {this.MethodName} END");
-        return result;
-    }
+    public Task InvokeNotification(object?[] args) =>
+        (Task)this.handlerMethod.Invoke(this.target, args.ToArray())!;
 
     public async Task<object?> InvokeRequest(object?[] args)
     {
-        Debug.WriteLine($"InvokeRequest {this.MethodName} START");
         var task = (Task)this.handlerMethod.Invoke(this.target, args.ToArray())!;
-        Debug.WriteLine($"InvokeRequest {this.MethodName} END");
         await task;
 
         if (this.DeclaredReturnType == typeof(Task))
@@ -124,9 +117,7 @@ internal sealed class LanguageServerMethodHandler : IJsonRpcMethodHandler
         }
         else
         {
-            Debug.WriteLine($"EEEE {this.MethodName} START");
             var getResult = (MethodInfo)task.GetType().GetMemberWithSameMetadataDefinitionAs(taskGetResult);
-            Debug.WriteLine($"EEEE {this.MethodName} END");
             return getResult.Invoke(task, null);
         }
     }

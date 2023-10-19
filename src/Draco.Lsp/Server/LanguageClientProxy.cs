@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -41,11 +42,32 @@ internal class LanguageClientProxy : DispatchProxy
     private object? ProxyRpc(MethodInfo method, object?[] arguments)
     {
         var handler = this.handlers.GetOrAdd(method, m => new(m, this));
-        var args = handler.SupportsCancellation ? arguments[..^1] : arguments;
 
         if (handler.IsRequest)
         {
-            // It's a request
+            // Build up args
+            var args = new List<object?>();
+            // Method name
+            args.Add(handler.MethodName);
+            // Parameter
+            if (handler.AcceptsParams)
+            {
+                args.Add(arguments[0]);
+            }
+            else
+            {
+                args.Add(null);
+            }
+            // CT
+            if (handler.SupportsCancellation)
+            {
+                args.Add(arguments[1]!);
+            }
+            else
+            {
+                args.Add(CancellationToken.None);
+            }
+
             // Extract return type
             var returnType = method.ReturnType;
 
@@ -54,17 +76,14 @@ internal class LanguageClientProxy : DispatchProxy
                 returnType = returnType.GetGenericArguments()[0];
             }
 
-            // TODO: cancellation token
-            var ct = CancellationToken.None;
-
             return SendRequestMethod
                 .MakeGenericMethod(returnType)
-                .Invoke(this.Connection, new[] { handler.MethodName, args.SingleOrDefault(), ct });
+                .Invoke(this.Connection, args.ToArray());
         }
         else
         {
             // It's a notification
-            return this.Connection.SendNotificationAsync(handler.MethodName, args.SingleOrDefault());
+            return this.Connection.SendNotificationAsync(handler.MethodName, arguments.SingleOrDefault());
         }
     }
 }

@@ -3,6 +3,7 @@ using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Draco.JsonRpc;
 using Draco.Lsp.Attributes;
 
 namespace Draco.Lsp.Server;
@@ -50,7 +51,7 @@ public static class LanguageServer
         await connection.ListenAsync();
     }
 
-    private static void RegisterServerRpcMethods(object target, LanguageServerConnection connection)
+    private static void RegisterServerRpcMethods(object target, IJsonRpcConnection connection)
     {
         // Go through all methods of the server and register it
         // NOTE: We go through the interfaces, because interface attributes are not inherited
@@ -62,7 +63,7 @@ public static class LanguageServer
 
         foreach (var method in langserverMethods)
         {
-            connection.AddRpcMethod(method, target);
+            connection.AddHandler(new LanguageServerMethodHandler(method, target));
         }
     }
 

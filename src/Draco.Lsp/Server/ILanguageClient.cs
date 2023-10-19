@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Draco.JsonRpc;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
 
@@ -14,7 +15,7 @@ public interface ILanguageClient
     /// <summary>
     /// The RPC connection between the client and the server.
     /// </summary>
-    public LanguageServerConnection Connection { get; }
+    public IJsonRpcConnection Connection { get; }
 
     // Language features
 

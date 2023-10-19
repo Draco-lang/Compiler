@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Draco.Lsp.Server;
@@ -31,14 +33,17 @@ internal class LanguageClientProxy : DispatchProxy
         }
     }
 
-    private static readonly MethodInfo SendRequestMethod = typeof(LanguageServerConnection).GetMethod(nameof(LanguageServerConnection.SendRequestAsync))!;
+    private static readonly MethodInfo SendRequestMethod = typeof(LanguageServerConnection)
+        .GetMethods()
+        .First(m => m.Name == nameof(LanguageServerConnection.SendRequestAsync)
+                 && m.GetParameters().Length == 3);
 
     private object? ProxyRpc(MethodInfo method, object?[] arguments)
     {
         var handler = this.handlers.GetOrAdd(method, m => new(m, this));
-        var args = handler.HasCancellation ? arguments[..^1] : arguments;
+        var args = handler.SupportsCancellation ? arguments[..^1] : arguments;
 
-        if (handler.ProducesResponse)
+        if (handler.IsRequest)
         {
             // It's a request
             // Extract return type
@@ -49,13 +54,17 @@ internal class LanguageClientProxy : DispatchProxy
                 returnType = returnType.GetGenericArguments()[0];
             }
 
-            return SendRequestMethod.MakeGenericMethod(returnType).Invoke(this.Connection, new[] { handler.MethodName, args.SingleOrDefault() });
+            // TODO: cancellation token
+            var ct = CancellationToken.None;
+
+            return SendRequestMethod
+                .MakeGenericMethod(returnType)
+                .Invoke(this.Connection, new[] { handler.MethodName, args.SingleOrDefault(), ct });
         }
         else
         {
             // It's a notification
-            this.Connection.PostNotification(handler.MethodName, args.SingleOrDefault());
-            return Task.CompletedTask;
+            return this.Connection.SendNotificationAsync(handler.MethodName, args.SingleOrDefault());
         }
     }
 }

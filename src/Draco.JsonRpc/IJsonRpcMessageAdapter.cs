@@ -73,6 +73,20 @@ public interface IJsonRpcMessageAdapter<TMessage, TError>
     public static abstract JsonElement? GetParams(TMessage message);
 
     /// <summary>
+    /// Retrieves the error for <paramref name="message"/>.
+    /// </summary>
+    /// <param name="message">The message to retrieve the error message of.</param>
+    /// <returns>The pair of error descriptor, and a bool indicating if it's not null.</returns>
+    public static abstract (TError? Error, bool HasError) GetError(TMessage message);
+
+    /// <summary>
+    /// Retrieves the error message for <paramref name="error"/>.
+    /// </summary>
+    /// <param name="error">The error to retrieve the error message of.</param>
+    /// <returns>The error message of <paramref name="error"/>.</returns>
+    public static abstract string GetErrorMessage(TError error);
+
+    /// <summary>
     /// Checks, if <paramref name="message"/> is a cancellation message.
     /// </summary>
     /// <param name="message">The message to check.</param>

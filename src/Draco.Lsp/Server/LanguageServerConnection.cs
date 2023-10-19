@@ -149,6 +149,12 @@ internal sealed class LspMessageAdapter : IJsonRpcMessageAdapter<LspMessage, Res
         if (message.Is<NotificationMessage>(out var notif)) return notif.Params;
         return null;
     }
+    public static (ResponseError? Error, bool HasError) GetError(LspMessage message)
+    {
+        if (message.Is<ResponseMessage>(out var resp)) return (resp.Error, resp.Error is not null);
+        return (null, false);
+    }
+    public static string GetErrorMessage(ResponseError error) => error.Message;
 }
 
 internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, ResponseError, LspMessageAdapter>

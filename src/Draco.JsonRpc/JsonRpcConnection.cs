@@ -17,6 +17,17 @@ namespace Draco.JsonRpc;
 public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJsonRpcConnection
     where TMessageAdapter : IJsonRpcMessageAdapter<TMessage, TError>
 {
+    internal sealed class JsonRpcResponseException : Exception
+    {
+        public TError ResponseError { get; }
+
+        public JsonRpcResponseException(TError error, string message)
+            : base(message)
+        {
+            this.ResponseError = error;
+        }
+    }
+
     private interface IOutgoingRequest
     {
         public Task Task { get; }
@@ -24,6 +35,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
 
         public void Cancel();
         public void Complete(object? result);
+        public void Fail(Exception exception);
     }
 
     private sealed class OutgoingRequest<TResponse> : IOutgoingRequest
@@ -35,6 +47,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
 
         public void Cancel() => this.tcs.SetCanceled();
         public void Complete(object? result) => this.tcs.SetResult((TResponse?)result);
+        public void Fail(Exception exception) => this.tcs.SetException(exception);
     }
 
     /// <summary>
@@ -238,15 +251,20 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
 
     private void ProcessIncomingResponse(TMessage message)
     {
-        var messageId = TMessageAdapter.GetId(message);
+        var messageId = (int)TMessageAdapter.GetId(message)!;
         var @params = TMessageAdapter.GetParams(message);
 
-        if (@params is JsonElement { ValueKind: not (JsonValueKind.Object or JsonValueKind.Array) })
+        var (error, hasError) = TMessageAdapter.GetError(message);
+        if (hasError)
         {
-            return;
+            var errorMessage = TMessageAdapter.GetErrorMessage(error!);
+            var exception = new JsonRpcResponseException(error!, errorMessage);
+            this.FailOutgoingRequest(messageId, exception);
         }
-
-        this.CompleteOutgoingRequest((int)messageId!, @params);
+        else
+        {
+            this.CompleteOutgoingRequest(messageId, @params);
+        }
     }
 
     private async Task ProcessIncomingNotificationAsync(TMessage message)
@@ -377,6 +395,14 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         {
             var result = resultJson?.Deserialize(req.ResponseType, this.JsonDeserializerOptions);
             req.Complete(result);
+        }
+    }
+
+    private void FailOutgoingRequest(int id, JsonRpcResponseException error)
+    {
+        if (this.pendingOutgoingRequests.TryRemove(id, out var req))
+        {
+            req.Fail(error);
         }
     }
     #endregion

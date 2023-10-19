@@ -44,7 +44,7 @@ public interface IJsonRpcMethodHandler
     /// <summary>
     /// The declared parameter type.
     /// </summary>
-    public Type DeclaredParamsType { get; }
+    public Type? DeclaredParamsType { get; }
 
     /// <summary>
     /// The declared return type.

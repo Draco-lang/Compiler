@@ -5,6 +5,7 @@ using System.IO.Pipelines;
 using System.Text.Json;
 using System.Threading.Channels;
 using System.Collections.Concurrent;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.JsonRpc;
 
@@ -85,6 +86,9 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
     private readonly ConcurrentDictionary<object, CancellationTokenSource> pendingIncomingRequests = new();
     private readonly ConcurrentDictionary<int, IOutgoingRequest> pendingOutgoingRequests = new();
 
+    // Shutdown
+    private readonly CancellationTokenSource shutdownTokenSource = new();
+
     // Communication state
     private int lastMessageId = 0;
 
@@ -95,6 +99,8 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         this.WriterLoopAsync(),
         this.ProcessorLoopAsync());
 
+    public void Shutdown() => this.shutdownTokenSource.Cancel();
+
     protected int NextMessageId() => Interlocked.Increment(ref this.lastMessageId);
 
     #region Message Loops
@@ -102,23 +108,38 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
     {
         while (true)
         {
-            var (message, foundMessage) = await this.ReadMessageAsync();
-            if (!foundMessage) break;
+            try
+            {
+                var (message, foundMessage) = await this
+                    .ReadMessageAsync()
+                    .WaitAsync(this.shutdownTokenSource.Token);
+                if (!foundMessage) break;
 
-            if (TMessageAdapter.IsResponse(message!))
-            {
-                this.ProcessIncomingResponse(message!);
+                if (TMessageAdapter.IsResponse(message!))
+                {
+                    this.ProcessIncomingResponse(message!);
+                }
+                else
+                {
+                    await this.incomingMessages.Writer.WriteAsync(message!);
+                }
             }
-            else
+            catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
             {
-                await this.incomingMessages.Writer.WriteAsync(message!);
+                break;
+            }
+            catch (JsonException ex)
+            {
+                var error = TMessageAdapter.CreateJsonExceptionError(ex);
+                await this.outgoingMessages.Writer.WriteAsync(TMessageAdapter.CreateErrorResponse(null!, error));
+                continue;
             }
         }
     }
 
     private async Task WriterLoopAsync()
     {
-        await foreach (var message in this.outgoingMessages.Reader.ReadAllAsync())
+        await foreach (var message in this.outgoingMessages.Reader.ReadAllAsync(this.shutdownTokenSource.Token))
         {
             await this.WriteMessageAsync(message);
         }
@@ -134,7 +155,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         }
 
         var currentTasks = new List<Task>();
-        await foreach (var message in this.incomingMessages.Reader.ReadAllAsync())
+        await foreach (var message in this.incomingMessages.Reader.ReadAllAsync(this.shutdownTokenSource.Token))
         {
             if (IsMutating(message))
             {

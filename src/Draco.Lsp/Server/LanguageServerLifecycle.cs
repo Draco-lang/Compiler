@@ -55,8 +55,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
 
     public Task ExitAsync()
     {
-        // TODO
-        // this.connection.Shutdown();
+        this.connection.Shutdown();
         return Task.CompletedTask;
     }
 

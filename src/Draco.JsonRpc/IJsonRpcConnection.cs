@@ -23,6 +23,11 @@ public interface IJsonRpcConnection
     /// <returns>The task that completes when the connection closes.</returns>
     public Task ListenAsync();
 
+    /// <summary>
+    /// Shuts down this connection.
+    /// </summary>
+    public void Shutdown();
+
     // TODO: Doc
     public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params);
 

@@ -21,5 +21,14 @@ public interface IJsonRpcConnection
     /// Starts listening on the connection.
     /// </summary>
     /// <returns>The task that completes when the connection closes.</returns>
-    public Task Listen();
+    public Task ListenAsync();
+
+    // TODO: Doc
+    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params);
+
+    // TODO: Doc
+    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params, CancellationToken cancellationToken);
+
+    // TODO: Doc
+    public Task SendNotificationAsync(string method, object? @params);
 }

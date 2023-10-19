@@ -77,7 +77,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
 
     public void AddHandler(IJsonRpcMethodHandler handler) => this.methodHandlers.Add(handler.MethodName, handler);
 
-    public Task Listen() => Task.WhenAll(
+    public Task ListenAsync() => Task.WhenAll(
         this.ReaderLoopAsync(),
         this.WriterLoopAsync(),
         this.ProcessorLoopAsync());
@@ -301,6 +301,8 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
     #endregion
 
     #region Sending Message
+    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params) =>
+        this.SendRequestAsync<TResponse>(method, @params, CancellationToken.None);
     public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params, CancellationToken cancellationToken)
     {
         // Construct request
@@ -319,7 +321,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         return (Task<TResponse?>)pendingReq.Task;
     }
 
-    public async ValueTask SendNotificationAsync(string method, object? @params)
+    public async Task SendNotificationAsync(string method, object? @params)
     {
         var serializedParams = JsonSerializer.SerializeToElement(@params, this.JsonSerializerOptions);
         var notification = TMessageAdapter.CreateNotification(method, serializedParams);

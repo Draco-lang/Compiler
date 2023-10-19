@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,6 +30,7 @@ public interface IJsonRpcMethodHandler
     /// <summary>
     /// True, if the handler accepts a parameter object.
     /// </summary>
+    [MemberNotNullWhen(true, nameof(DeclaredParamsType))]
     public bool AcceptsParams { get; }
 
     /// <summary>

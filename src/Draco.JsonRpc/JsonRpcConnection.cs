@@ -13,7 +13,7 @@ namespace Draco.JsonRpc;
 /// </summary>
 /// <typeparam name="TMessage">The message type.</typeparam>
 /// <typeparam name="TMessageAdapter">The message adapter to query info about the messages.</typeparam>
-public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
+public abstract class JsonRpcConnection<TMessage, TMessageAdapter> : IJsonRpcConnection
     where TMessageAdapter : IJsonRpcMessageAdapter<TMessage>
 {
     private interface IOutgoingRequest
@@ -71,14 +71,17 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
     private readonly ConcurrentDictionary<object, CancellationTokenSource> pendingIncomingRequests = new();
     private readonly ConcurrentDictionary<int, IOutgoingRequest> pendingOutgoingRequests = new();
 
-    // TODO: Doc
+    // Communication state
+    private int lastMessageId = 0;
+
     public void AddHandler(IJsonRpcMethodHandler handler) => this.methodHandlers.Add(handler.Method, handler);
 
-    // TODO: Doc
     public Task Listen() => Task.WhenAll(
         this.ReaderLoopAsync(),
         this.WriterLoopAsync(),
         this.ProcessorLoopAsync());
+
+    protected int NextMessageId() => Interlocked.Increment(ref this.lastMessageId);
 
     #region Message Loops
     private async Task ReaderLoopAsync()
@@ -135,7 +138,7 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
         if (TMessageAdapter.IsRequest(message))
         {
             var response = await this.ProcessIncomingRequestAsync(message);
-            this.outgoingMessages.Writer.TryWrite(response);
+            await this.outgoingMessages.Writer.WriteAsync(response);
         }
         else if (TMessageAdapter.IsResponse(message))
         {
@@ -188,21 +191,14 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
         var args = new List<object?>();
         if (handler.AcceptsParams)
         {
-            if (@params.HasValue)
+            try
             {
-                try
-                {
-                    var arg = @params.Value.Deserialize(handler.DeclaredParamsType, this.JsonDeserializerOptions);
-                    args.Add(arg);
-                }
-                catch (JsonException ex)
-                {
-                    return Error(TMessageAdapter.CreateJsonExceptionError(ex));
-                }
+                var arg = @params?.Deserialize(handler.DeclaredParamsType, this.JsonDeserializerOptions);
+                args.Add(arg);
             }
-            else
+            catch (JsonException ex)
             {
-                args.Add(null);
+                return Error(TMessageAdapter.CreateJsonExceptionError(ex));
             }
         }
         if (handler.SupportsCancellation)
@@ -240,14 +236,95 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
 
     private void ProcessIncomingResponse(TMessage message)
     {
-        // TODO
-        throw new NotImplementedException();
+        var messageId = TMessageAdapter.GetId(message);
+        var @params = TMessageAdapter.GetParams(message);
+
+        if (@params is JsonElement { ValueKind: not (JsonValueKind.Object or JsonValueKind.Array) })
+        {
+            return;
+        }
+
+        this.CompleteOutgoingRequest((int)messageId!, @params);
     }
 
     private async Task ProcessIncomingNotificationAsync(TMessage message)
     {
-        // TODO
-        throw new NotImplementedException();
+        var messageId = TMessageAdapter.GetId(message);
+        var methodName = TMessageAdapter.GetMethodName(message);
+        var @params = TMessageAdapter.GetParams(message);
+
+        // Cancellation handling
+        if (TMessageAdapter.IsCancellation(message))
+        {
+            this.CancelIncomingRequest(messageId!);
+            return;
+        }
+
+        // Error handling block
+        // Note that we can't respond to notifications
+        if (!this.methodHandlers.TryGetValue(methodName, out var handler))
+        {
+            return;
+        }
+        if (@params is JsonElement { ValueKind: not (JsonValueKind.Object or JsonValueKind.Array) })
+        {
+            return;
+        }
+        if (!handler.IsNotification)
+        {
+            return;
+        }
+
+        // Build up arguments
+        var args = new List<object?>();
+        if (handler.AcceptsParams)
+        {
+            try
+            {
+                var arg = @params?.Deserialize(handler.DeclaredParamsType, this.JsonDeserializerOptions);
+                args.Add(arg);
+            }
+            catch (JsonException)
+            {
+                return;
+            }
+        }
+
+        // Actually invoke handler
+        try
+        {
+            await handler.InvokeNotification(args.ToArray());
+        }
+        catch
+        {
+        }
+    }
+    #endregion
+
+    #region Sending Message
+    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params, CancellationToken cancellationToken)
+    {
+        // Construct request
+        var id = this.NextMessageId();
+        var serializedParams = JsonSerializer.SerializeToElement(@params, this.JsonSerializerOptions);
+        var request = TMessageAdapter.CreateRequest(id, method, serializedParams);
+
+        // Add the request to pending
+        var pendingReq = this.AddOutgoingRequest<TResponse>(id);
+
+        // When canceled, cancel corresponding TCS and write cancel message
+        cancellationToken.Register(() => this.CancelOutgoingRequest(id));
+
+        // Actually send message
+        this.outgoingMessages.Writer.TryWrite(request);
+        return (Task<TResponse?>)pendingReq.Task;
+    }
+
+    public async ValueTask SendNotificationAsync(string method, object? @params)
+    {
+        var serializedParams = JsonSerializer.SerializeToElement(@params, this.JsonSerializerOptions);
+        var notification = TMessageAdapter.CreateNotification(method, serializedParams);
+        await this.outgoingMessages.Writer.WriteAsync(notification);
     }
     #endregion
 

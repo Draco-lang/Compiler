@@ -39,4 +39,18 @@ public interface IJsonRpcMessageAdapter<TMessage>
     /// <param name="message">The message to retrieve the ID for.</param>
     /// <returns>The ID of <paramref name="message"/>, or null if it has none.</returns>
     public static abstract object? GetId(TMessage message);
+
+    /// <summary>
+    /// Retrieves the method name for <paramref name="message"/>.
+    /// </summary>
+    /// <param name="message">The message to retrieve the method name for.</param>
+    /// <returns>The method name <paramref name="message"/> is invoking.</returns>
+    public static abstract string GetMethodName(TMessage message);
+
+    /// <summary>
+    /// Checks, if <paramref name="message"/> is a cancellation message.
+    /// </summary>
+    /// <param name="message">The message to check.</param>
+    /// <returns>True, if <paramref name="message"/> is a request cancellation, false otherwise.</returns>
+    public static abstract bool IsCancellation(TMessage message);
 }

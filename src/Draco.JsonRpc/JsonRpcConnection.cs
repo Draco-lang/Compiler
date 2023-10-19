@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Text.Json;
 using System.Threading.Channels;
+using System.Collections.Concurrent;
 
 namespace Draco.JsonRpc;
 
@@ -15,6 +16,26 @@ namespace Draco.JsonRpc;
 public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
     where TMessageAdapter : IJsonRpcMessageAdapter<TMessage>
 {
+    private interface IOutgoingRequest
+    {
+        public Task Task { get; }
+        public Type ResponseType { get; }
+
+        public void Cancel();
+        public void Complete(object? result);
+    }
+
+    private sealed class OutgoingRequest<TResponse> : IOutgoingRequest
+    {
+        public Task Task => this.tcs.Task;
+        public Type ResponseType => typeof(TResponse);
+
+        private readonly TaskCompletionSource<TResponse?> tcs = new();
+
+        public void Cancel() => this.tcs.SetCanceled();
+        public void Complete(object? result) => this.tcs.SetResult((TResponse?)result);
+    }
+
     /// <summary>
     /// The IO transport pipeline to send and receive messages through.
     /// </summary>
@@ -42,6 +63,16 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
         SingleReader = true,
         SingleWriter = false,
     });
+
+    // Handlers
+    private readonly Dictionary<string, IJsonRpcMethodHandler> methodHandlers = new();
+
+    // Pending requests
+    private readonly ConcurrentDictionary<object, CancellationTokenSource> pendingIncomingRequests = new();
+    private readonly ConcurrentDictionary<int, IOutgoingRequest> pendingOutgoingRequests = new();
+
+    // TODO: Doc
+    public void AddHandler(IJsonRpcMethodHandler handler) => this.methodHandlers.Add(handler.Method, handler);
 
     // TODO: Doc
     public Task Listen() => Task.WhenAll(
@@ -71,12 +102,17 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
 
     private async Task ProcessorLoopAsync()
     {
-        static bool MutatesWorkspace(TMessage message) => throw new NotImplementedException();
+        bool IsMutating(TMessage message)
+        {
+            var method = TMessageAdapter.GetMethodName(message);
+            return this.methodHandlers.TryGetValue(method, out var handler)
+                && handler.Mutating;
+        }
 
         var currentTasks = new List<Task>();
         await foreach (var message in this.incomingMessages.Reader.ReadAllAsync())
         {
-            if (MutatesWorkspace(message))
+            if (IsMutating(message))
             {
                 await Task.WhenAll(currentTasks);
                 currentTasks.Clear();
@@ -117,6 +153,15 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
 
     private async Task<TMessage> ProcessIncomingRequestAsync(TMessage message)
     {
+        var messageId = TMessageAdapter.GetId(message);
+        var methodName = TMessageAdapter.GetMethodName(message);
+
+        if (TMessageAdapter.IsCancellation(message))
+        {
+            this.CancelIncomingRequest(messageId!);
+            return TMessageAdapter.CreateOkResponse(messageId!, default);
+        }
+
         // TODO
         throw new NotImplementedException();
     }
@@ -131,6 +176,55 @@ public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
     {
         // TODO
         throw new NotImplementedException();
+    }
+    #endregion
+
+    #region Request Response
+    private CancellationToken AddIncomingRequest(object id)
+    {
+        var cts = new CancellationTokenSource();
+        this.pendingIncomingRequests.TryAdd(id, cts);
+        return cts.Token;
+    }
+
+    private void CancelIncomingRequest(object id)
+    {
+        if (this.pendingIncomingRequests.TryRemove(id, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+    }
+
+    private void CompleteIncomingRequest(object id)
+    {
+        if (this.pendingIncomingRequests.TryRemove(id, out var cts)) cts.Dispose();
+    }
+
+    private IOutgoingRequest AddOutgoingRequest<TResponse>(int id)
+    {
+        var req = new OutgoingRequest<TResponse>();
+        this.pendingOutgoingRequests.TryAdd(id, req);
+        return req;
+    }
+
+    private void CancelOutgoingRequest(int id)
+    {
+        // Cancel the task
+        if (this.pendingOutgoingRequests.TryRemove(id, out var req)) req.Cancel();
+
+        // Send message
+        var cancelMessage = TMessageAdapter.CreateCancelRequest(id);
+        this.outgoingMessages.Writer.TryWrite(cancelMessage);
+    }
+
+    private void CompleteOutgoingRequest(int id, JsonElement? resultJson)
+    {
+        if (this.pendingOutgoingRequests.TryRemove(id, out var req))
+        {
+            var result = resultJson?.Deserialize(req.ResponseType, this.JsonDeserializerOptions);
+            req.Complete(result);
+        }
     }
     #endregion
 

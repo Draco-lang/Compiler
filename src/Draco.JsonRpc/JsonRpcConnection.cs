@@ -11,7 +11,9 @@ namespace Draco.JsonRpc;
 /// A base class for a JSON-RPC connection.
 /// </summary>
 /// <typeparam name="TMessage">The message type.</typeparam>
-public abstract class JsonRpcConnection<TMessage>
+/// <typeparam name="TMessageAdapter">The message adapter to query info about the messages.</typeparam>
+public abstract class JsonRpcConnection<TMessage, TMessageAdapter>
+    where TMessageAdapter : IJsonRpcMessageAdapter<TMessage>
 {
     /// <summary>
     /// The IO transport pipeline to send and receive messages through.
@@ -91,10 +93,46 @@ public abstract class JsonRpcConnection<TMessage>
     }
     #endregion
 
-    protected Task ProcessMessageAsync(TMessage message)
+    #region Message Processing
+    protected async Task ProcessMessageAsync(TMessage message)
+    {
+        if (TMessageAdapter.IsRequest(message))
+        {
+            var response = await this.ProcessIncomingRequestAsync(message);
+            this.outgoingMessages.Writer.TryWrite(response);
+        }
+        else if (TMessageAdapter.IsResponse(message))
+        {
+            this.ProcessIncomingResponse(message);
+        }
+        else if (TMessageAdapter.IsNotification(message))
+        {
+            await this.ProcessIncomingNotificationAsync(message);
+        }
+        else
+        {
+            // TODO: What to do?
+        }
+    }
+
+    private async Task<TMessage> ProcessIncomingRequestAsync(TMessage message)
     {
         // TODO
+        throw new NotImplementedException();
     }
+
+    private void ProcessIncomingResponse(TMessage message)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    private async Task ProcessIncomingNotificationAsync(TMessage message)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+    #endregion
 
     #region Serialization
     private async Task<(TMessage? Message, bool Found)> ReadMessageAsync()

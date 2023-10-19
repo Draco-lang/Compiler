@@ -92,7 +92,14 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
             var (message, foundMessage) = await this.ReadMessageAsync();
             if (!foundMessage) break;
 
-            await this.incomingMessages.Writer.WriteAsync(message!);
+            if (TMessageAdapter.IsResponse(message!))
+            {
+                this.ProcessIncomingResponse(message!);
+            }
+            else
+            {
+                await this.incomingMessages.Writer.WriteAsync(message!);
+            }
         }
     }
 
@@ -142,10 +149,6 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         {
             var response = await this.ProcessIncomingRequestAsync(message);
             await this.outgoingMessages.Writer.WriteAsync(response);
-        }
-        else if (TMessageAdapter.IsResponse(message))
-        {
-            this.ProcessIncomingResponse(message);
         }
         else if (TMessageAdapter.IsNotification(message))
         {

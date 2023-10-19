@@ -145,6 +145,7 @@ internal sealed class LspMessageAdapter : IJsonRpcMessageAdapter<LspMessage, Res
     public static JsonElement? GetParams(LspMessage message)
     {
         if (message.Is<RequestMessage>(out var req)) return req.Params;
+        if (message.Is<ResponseMessage>(out var resp)) return resp.Result;
         if (message.Is<NotificationMessage>(out var notif)) return notif.Params;
         return null;
     }

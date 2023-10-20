@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Draco.Dap.Attributes;
+using Draco.JsonRpc;
 
 namespace Draco.Dap.Adapter;
 
@@ -50,7 +51,7 @@ public static class DebugAdapter
         await connection.ListenAsync();
     }
 
-    private static void RegisterAdapterRpcMethods(object target, DebugAdapterConnection connection)
+    private static void RegisterAdapterRpcMethods(object target, IJsonRpcConnection connection)
     {
         // Go through all methods of the adapter and register it
         // NOTE: We go through the interfaces, because interface attributes are not inherited
@@ -62,7 +63,7 @@ public static class DebugAdapter
 
         foreach (var method in adapterMethods)
         {
-            connection.AddRpcMethod(method, target);
+            connection.AddHandler(new DebugAdapterMethodHandler(method, target));
         }
     }
 

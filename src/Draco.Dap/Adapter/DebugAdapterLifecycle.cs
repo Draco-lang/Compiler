@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Draco.Dap.Attributes;
 using Draco.Dap.Model;
+using Draco.JsonRpc;
 
 namespace Draco.Dap.Adapter;
 
@@ -14,9 +15,9 @@ namespace Draco.Dap.Adapter;
 internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
 {
     private readonly IDebugAdapter adapter;
-    private readonly DebugAdapterConnection connection;
+    private readonly IJsonRpcConnection connection;
 
-    public DebugAdapterLifecycle(IDebugAdapter adapter, DebugAdapterConnection connection)
+    public DebugAdapterLifecycle(IDebugAdapter adapter, IJsonRpcConnection connection)
     {
         this.adapter = adapter;
         this.connection = connection;

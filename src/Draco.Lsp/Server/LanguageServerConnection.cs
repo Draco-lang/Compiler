@@ -74,7 +74,7 @@ internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, R
             JsonSerializer.SerializeToElement(new CancelParams
             {
                 Id = id,
-            })));
+            }, this.JsonSerializerOptions)));
     }
 
     protected override LspMessage CreateRequestMessage(int id, string method, JsonElement @params) => new RequestMessage
@@ -84,16 +84,16 @@ internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, R
         Id = id,
         Params = @params,
     };
-    protected override LspMessage CreateOkResponseMessage(object id, JsonElement okResult) => new ResponseMessage
+    protected override LspMessage CreateOkResponseMessage(LspMessage request, JsonElement okResult) => new ResponseMessage
     {
         Jsonrpc = "2.0",
-        Id = ToMessageId(id),
+        Id = ToMessageId(this.GetMessageId(request)!),
         Result = okResult,
     };
-    protected override LspMessage CreateErrorResponseMessage(object id, ResponseError errorResult) => new ResponseMessage
+    protected override LspMessage CreateErrorResponseMessage(LspMessage request, ResponseError errorResult) => new ResponseMessage
     {
         Jsonrpc = "2.0",
-        Id = ToMessageId(id),
+        Id = ToMessageId(this.GetMessageId(request)!),
         Error = errorResult,
     };
     protected override LspMessage CreateNotificationMessage(string method, JsonElement @params) => new NotificationMessage
@@ -129,7 +129,7 @@ internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, R
         {
             Message = exception.Message,
             Code = errorCode,
-            Data = JsonSerializer.SerializeToElement(exception?.ToString()),
+            Data = JsonSerializer.SerializeToElement(exception?.ToString(), this.JsonSerializerOptions),
         };
     }
     protected override ResponseError CreateHandlerNotRegisteredError(string method) => new()
@@ -161,7 +161,7 @@ internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, R
         var responseError = new ResponseError
         {
             Message = exception.Message,
-            Data = JsonSerializer.SerializeToElement(exception.ToString()),
+            Data = JsonSerializer.SerializeToElement(exception.ToString(), this.JsonSerializerOptions),
             Code = code,
         };
 

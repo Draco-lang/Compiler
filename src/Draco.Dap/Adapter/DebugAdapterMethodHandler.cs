@@ -1,37 +1,34 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Dap.Attributes;
+using Draco.JsonRpc;
 
 namespace Draco.Dap.Adapter;
 
-internal sealed class DebugAdapterMethodHandler
+internal sealed class DebugAdapterMethodHandler : IJsonRpcMethodHandler
 {
-    internal MethodInfo HandlerMethod { get; }
+    private static readonly MethodInfo taskGetResult = typeof(Task<>).GetMethod("get_Result")!;
 
-    internal object? Target { get; }
+    public string MethodName { get; }
+    public bool IsRequest { get; }
+    public bool IsNotification => !this.IsRequest;
+    public bool AcceptsParams => this.DeclaredParamsType is not null;
+    public bool SupportsCancellation { get; }
+    public bool Mutating { get; }
+    public Type? DeclaredParamsType { get; }
+    public Type DeclaredReturnType { get; }
 
-    internal string MethodName { get; }
+    private readonly MethodInfo handlerMethod;
+    private readonly object? target;
 
-    internal bool ProducesResponse { get; }
-
-    internal bool HasCancellation { get; }
-
-    [MemberNotNullWhen(true, nameof(DeclaredParamsType))]
-    internal bool HasParams => this.DeclaredParamsType is not null;
-
-    internal bool Mutating { get; }
-
-    internal Type? DeclaredParamsType { get; }
-
-    internal Type DeclaredReturnType { get; }
-
-    internal DebugAdapterMethodHandler(MethodInfo handlerMethod, object? target)
+    public DebugAdapterMethodHandler(MethodInfo handlerMethod, object? target)
     {
-        this.HandlerMethod = handlerMethod;
-        this.Target = target;
+        this.handlerMethod = handlerMethod;
+        this.target = target;
 
         // Verify parameters
         var parameters = handlerMethod.GetParameters();
@@ -44,7 +41,7 @@ internal sealed class DebugAdapterMethodHandler
                 throw new ArgumentException("The second parameter of a handler must be CancellationToken if it is defined.", nameof(handlerMethod));
             }
 
-            this.HasCancellation = true;
+            this.SupportsCancellation = true;
             this.DeclaredParamsType = parameters[0].ParameterType;
             break;
         }
@@ -53,7 +50,7 @@ internal sealed class DebugAdapterMethodHandler
             var type = parameters[0].ParameterType;
             if (type == typeof(CancellationToken))
             {
-                this.HasCancellation = true;
+                this.SupportsCancellation = true;
             }
             else
             {
@@ -73,35 +70,54 @@ internal sealed class DebugAdapterMethodHandler
 
         // Verify attributes
         var requestAttr = handlerMethod.GetCustomAttribute<RequestAttribute>();
-        var eventAttr = handlerMethod.GetCustomAttribute<EventAttribute>();
+        var notificationAttr = handlerMethod.GetCustomAttribute<EventAttribute>();
 
-        if (requestAttr is null && eventAttr is null)
+        if (requestAttr is null && notificationAttr is null)
         {
-            throw new ArgumentException($"Handler must be marked as either a request or event handler.", nameof(handlerMethod));
+            throw new ArgumentException($"Handler must be marked as either a request or notification handler.", nameof(handlerMethod));
         }
 
-        if (requestAttr is not null && eventAttr is not null)
+        if (requestAttr is not null && notificationAttr is not null)
         {
-            throw new ArgumentException($"Handler can not be marked as both a request and event handler.", nameof(handlerMethod));
+            throw new ArgumentException($"Handler can not be marked as both a request and notification handler.", nameof(handlerMethod));
         }
 
-        this.MethodName = requestAttr?.Method ?? eventAttr!.Method;
-        this.Mutating = requestAttr?.Mutating ?? eventAttr!.Mutating;
+        this.MethodName = requestAttr?.Method ?? notificationAttr!.Method;
+        this.Mutating = requestAttr?.Mutating ?? notificationAttr!.Mutating;
 
-        this.ProducesResponse = requestAttr is not null;
+        this.IsRequest = requestAttr is not null;
 
         // Verify return type
         var returnType = handlerMethod.ReturnType;
-        if (this.ProducesResponse && returnType != typeof(Task) && returnType.GetGenericTypeDefinition() != typeof(Task<>))
+        if (this.IsRequest && returnType != typeof(Task) && returnType.GetGenericTypeDefinition() != typeof(Task<>))
         {
             throw new ArgumentException("Request handler must return Task or Task<T>.", nameof(handlerMethod));
         }
 
-        if (!this.ProducesResponse && returnType != typeof(Task))
+        if (!this.IsRequest && returnType != typeof(Task))
         {
-            throw new ArgumentException("Event handler must return Task.", nameof(handlerMethod));
+            throw new ArgumentException("Notification handler must return Task.", nameof(handlerMethod));
         }
 
         this.DeclaredReturnType = returnType;
+    }
+
+    public Task InvokeNotification(object?[] args) =>
+        (Task)this.handlerMethod.Invoke(this.target, args.ToArray())!;
+
+    public async Task<object?> InvokeRequest(object?[] args)
+    {
+        var task = (Task)this.handlerMethod.Invoke(this.target, args.ToArray())!;
+        await task;
+
+        if (this.DeclaredReturnType == typeof(Task))
+        {
+            return null;
+        }
+        else
+        {
+            var getResult = (MethodInfo)task.GetType().GetMemberWithSameMetadataDefinitionAs(taskGetResult);
+            return getResult.Invoke(task, null);
+        }
     }
 }

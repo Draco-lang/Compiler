@@ -133,7 +133,7 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
             catch (JsonException ex)
             {
                 var error = this.CreateJsonExceptionError(ex);
-                await this.SendMessageAsync(this.CreateErrorResponseMessage(null!, error));
+                await this.SendMessageAsync(this.CreateErrorResponseMessage(default!, error));
                 continue;
             }
         }
@@ -202,7 +202,7 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         var methodName = this.GetMessageMethodName(message);
         var @params = this.GetMessageParams(message);
 
-        TMessage Error(TError error) => this.CreateErrorResponseMessage(messageId!, error);
+        TMessage Error(TError error) => this.CreateErrorResponseMessage(message, error);
 
         // Custom handling
         var (customResponse, customHandled) = await this.TryProcessCustomRequest(message);
@@ -265,7 +265,7 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         else
         {
             var resultJson = JsonSerializer.SerializeToElement(result, this.JsonSerializerOptions);
-            return this.CreateOkResponseMessage(messageId!, resultJson);
+            return this.CreateOkResponseMessage(message, resultJson);
         }
     }
 
@@ -554,8 +554,8 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 
     #region Factory Methods
     protected abstract TMessage CreateRequestMessage(int id, string method, JsonElement @params);
-    protected abstract TMessage CreateOkResponseMessage(object id, JsonElement okResult);
-    protected abstract TMessage CreateErrorResponseMessage(object id, TError errorResult);
+    protected abstract TMessage CreateOkResponseMessage(TMessage request, JsonElement okResult);
+    protected abstract TMessage CreateErrorResponseMessage(TMessage request, TError errorResult);
     protected abstract TMessage CreateNotificationMessage(string method, JsonElement @params);
 
     protected abstract TError CreateExceptionError(Exception exception);

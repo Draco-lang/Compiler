@@ -8,13 +8,8 @@ namespace Draco.Dap.Adapter;
 /// <summary>
 /// An interface representing the debug client on the remote.
 /// </summary>
-public interface IDebugClient
+public interface IDebugClient : IJsonRpcClient
 {
-    /// <summary>
-    /// The RPC connection between the client and the server.
-    /// </summary>
-    public IJsonRpcConnection Connection { get; }
-
     [Event("initialized")]
     public Task Initialized();
 

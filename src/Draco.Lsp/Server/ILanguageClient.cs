@@ -10,13 +10,8 @@ namespace Draco.Lsp.Server;
 /// <summary>
 /// An interface representing the language client on the remote.
 /// </summary>
-public interface ILanguageClient
+public interface ILanguageClient : IJsonRpcClient
 {
-    /// <summary>
-    /// The RPC connection between the client and the server.
-    /// </summary>
-    public IJsonRpcConnection Connection { get; }
-
     // Language features
 
     [Notification("textDocument/publishDiagnostics")]

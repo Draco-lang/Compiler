@@ -14,9 +14,7 @@ namespace Draco.JsonRpc;
 /// </summary>
 /// <typeparam name="TMessage">The message type.</typeparam>
 /// <typeparam name="TError">The error descriptor.</typeparam>
-/// <typeparam name="TMessageAdapter">The message adapter to query info about the messages.</typeparam>
-public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJsonRpcConnection
-    where TMessageAdapter : IJsonRpcMessageAdapter<TMessage, TError>
+public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 {
     internal sealed class JsonRpcResponseException : Exception
     {
@@ -115,7 +113,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
                     .WaitAsync(this.shutdownTokenSource.Token);
                 if (!foundMessage) break;
 
-                if (TMessageAdapter.IsResponse(message!))
+                if (this.IsResponseMessage(message!))
                 {
                     this.ProcessIncomingResponse(message!);
                 }
@@ -130,8 +128,8 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
             }
             catch (JsonException ex)
             {
-                var error = TMessageAdapter.CreateJsonExceptionError(ex);
-                await this.outgoingMessages.Writer.WriteAsync(TMessageAdapter.CreateErrorResponse(null!, error));
+                var error = this.CreateJsonExceptionError(ex);
+                await this.outgoingMessages.Writer.WriteAsync(this.CreateErrorResponseMessage(null!, error));
                 continue;
             }
         }
@@ -149,7 +147,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
     {
         bool IsMutating(TMessage message)
         {
-            var method = TMessageAdapter.GetMethodName(message);
+            var method = this.GetMessageMethodName(message);
             return this.methodHandlers.TryGetValue(method, out var handler)
                 && handler.Mutating;
         }
@@ -179,12 +177,12 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
     {
         await Task.Yield();
 
-        if (TMessageAdapter.IsRequest(message))
+        if (this.IsRequestMessage(message))
         {
             var response = await this.ProcessIncomingRequestAsync(message);
             await this.outgoingMessages.Writer.WriteAsync(response);
         }
-        else if (TMessageAdapter.IsNotification(message))
+        else if (this.IsNotificationMessage(message))
         {
             await this.ProcessIncomingNotificationAsync(message);
         }
@@ -196,31 +194,31 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
 
     private async Task<TMessage> ProcessIncomingRequestAsync(TMessage message)
     {
-        var messageId = TMessageAdapter.GetId(message);
-        var methodName = TMessageAdapter.GetMethodName(message);
-        var @params = TMessageAdapter.GetParams(message);
+        var messageId = this.GetMessageId(message);
+        var methodName = this.GetMessageMethodName(message);
+        var @params = this.GetMessageParams(message);
 
-        TMessage Error(TError error) => TMessageAdapter.CreateErrorResponse(messageId!, error);
+        TMessage Error(TError error) => this.CreateErrorResponseMessage(messageId!, error);
 
         // Cancellation handling
-        if (TMessageAdapter.IsCancellation(message))
+        if (this.IsCancellationMessage(message))
         {
             this.CancelIncomingRequest(messageId!);
-            return TMessageAdapter.CreateOkResponse(messageId!, default);
+            return this.CreateOkResponseMessage(messageId!, default);
         }
 
         // Error handling block
         if (!this.methodHandlers.TryGetValue(methodName, out var handler))
         {
-            return Error(TMessageAdapter.CreateHandlerNotRegisteredError(methodName));
+            return Error(this.CreateHandlerNotRegisteredError(methodName));
         }
         if (@params is JsonElement { ValueKind: not (JsonValueKind.Object or JsonValueKind.Array) })
         {
-            return Error(TMessageAdapter.CreateInvalidRequestError());
+            return Error(this.CreateInvalidRequestError());
         }
         if (!handler.IsRequest)
         {
-            return Error(TMessageAdapter.CreateHandlerWasRegisteredAsNotificationHandlerError(methodName));
+            return Error(this.CreateHandlerWasRegisteredAsNotificationHandlerError(methodName));
         }
 
         // Build up arguments
@@ -234,7 +232,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
             }
             catch (JsonException ex)
             {
-                return Error(TMessageAdapter.CreateJsonExceptionError(ex));
+                return Error(this.CreateJsonExceptionError(ex));
             }
         }
         if (handler.SupportsCancellation)
@@ -261,24 +259,24 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         // Respond appropriately
         if (error is not null)
         {
-            return Error(TMessageAdapter.CreateExceptionError(error));
+            return Error(this.CreateExceptionError(error));
         }
         else
         {
             var resultJson = JsonSerializer.SerializeToElement(result, this.JsonSerializerOptions);
-            return TMessageAdapter.CreateOkResponse(messageId!, resultJson);
+            return this.CreateOkResponseMessage(messageId!, resultJson);
         }
     }
 
     private void ProcessIncomingResponse(TMessage message)
     {
-        var messageId = (int)TMessageAdapter.GetId(message)!;
-        var @params = TMessageAdapter.GetParams(message);
+        var messageId = (int)this.GetMessageId(message)!;
+        var @params = this.GetMessageParams(message);
 
-        var (error, hasError) = TMessageAdapter.GetError(message);
+        var (error, hasError) = this.GetMessageError(message);
         if (hasError)
         {
-            var errorMessage = TMessageAdapter.GetErrorMessage(error!);
+            var errorMessage = this.GetErrorMessage(error!);
             var exception = new JsonRpcResponseException(error!, errorMessage);
             this.FailOutgoingRequest(messageId, exception);
         }
@@ -290,12 +288,12 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
 
     private async Task ProcessIncomingNotificationAsync(TMessage message)
     {
-        var messageId = TMessageAdapter.GetId(message);
-        var methodName = TMessageAdapter.GetMethodName(message);
-        var @params = TMessageAdapter.GetParams(message);
+        var messageId = this.GetMessageId(message);
+        var methodName = this.GetMessageMethodName(message);
+        var @params = this.GetMessageParams(message);
 
         // Cancellation handling
-        if (TMessageAdapter.IsCancellation(message))
+        if (this.IsCancellationMessage(message))
         {
             this.CancelIncomingRequest(messageId!);
             return;
@@ -350,7 +348,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         // Construct request
         var id = this.NextMessageId();
         var serializedParams = JsonSerializer.SerializeToElement(@params, this.JsonSerializerOptions);
-        var request = TMessageAdapter.CreateRequest(id, method, serializedParams);
+        var request = this.CreateRequestMessage(id, method, serializedParams);
 
         // Add the request to pending
         var pendingReq = this.AddOutgoingRequest<TResponse>(id);
@@ -366,7 +364,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
     public async Task SendNotificationAsync(string method, object? @params)
     {
         var serializedParams = JsonSerializer.SerializeToElement(@params, this.JsonSerializerOptions);
-        var notification = TMessageAdapter.CreateNotification(method, serializedParams);
+        var notification = this.CreateNotificationMessage(method, serializedParams);
         await this.outgoingMessages.Writer.WriteAsync(notification);
     }
     #endregion
@@ -406,7 +404,7 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         if (this.pendingOutgoingRequests.TryRemove(id, out var req)) req.Cancel();
 
         // Send message
-        var cancelMessage = TMessageAdapter.CreateCancelRequest(id);
+        var cancelMessage = this.CreateCancelRequestMessage(id);
         this.outgoingMessages.Writer.TryWrite(cancelMessage);
     }
 
@@ -544,5 +542,31 @@ public abstract class JsonRpcConnection<TMessage, TError, TMessageAdapter> : IJs
         WriteData();
         return writer.FlushAsync();
     }
+    #endregion
+
+    #region Factory Methods
+    protected abstract TMessage CreateRequestMessage(int id, string method, JsonElement @params);
+    protected abstract TMessage CreateCancelRequestMessage(int id);
+    protected abstract TMessage CreateOkResponseMessage(object id, JsonElement okResult);
+    protected abstract TMessage CreateErrorResponseMessage(object id, TError errorResult);
+    protected abstract TMessage CreateNotificationMessage(string method, JsonElement @params);
+
+    protected abstract TError CreateExceptionError(Exception exception);
+    protected abstract TError CreateJsonExceptionError(JsonException exception);
+    protected abstract TError CreateHandlerNotRegisteredError(string method);
+    protected abstract TError CreateInvalidRequestError();
+    protected abstract TError CreateHandlerWasRegisteredAsNotificationHandlerError(string method);
+    #endregion
+
+    #region Observers
+    protected abstract bool IsRequestMessage(TMessage message);
+    protected abstract bool IsResponseMessage(TMessage message);
+    protected abstract bool IsNotificationMessage(TMessage message);
+    protected abstract bool IsCancellationMessage(TMessage message);
+    protected abstract object? GetMessageId(TMessage message);
+    protected abstract string GetMessageMethodName(TMessage message);
+    protected abstract JsonElement? GetMessageParams(TMessage message);
+    protected abstract (TError? Error, bool HasError) GetMessageError(TMessage message);
+    protected abstract string GetErrorMessage(TError error);
     #endregion
 }

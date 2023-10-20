@@ -99,6 +99,10 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 
     public void Shutdown() => this.shutdownTokenSource.Cancel();
 
+    /// <summary>
+    /// Generates a new message ID.
+    /// </summary>
+    /// <returns>The next free message ID.</returns>
     protected int NextMessageId() => Interlocked.Increment(ref this.lastMessageId);
 
     #region Message Loops
@@ -173,7 +177,7 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     #endregion
 
     #region Message Processing
-    protected async Task ProcessMessageAsync(TMessage message)
+    private async Task ProcessMessageAsync(TMessage message)
     {
         await Task.Yield();
 

@@ -28,12 +28,30 @@ public interface IJsonRpcConnection
     /// </summary>
     public void Shutdown();
 
-    // TODO: Doc
+    /// <summary>
+    /// Sends a request to the client.
+    /// </summary>
+    /// <typeparam name="TResponse">The expected response type.</typeparam>
+    /// <param name="method">The method name.</param>
+    /// <param name="params">The parameter passed in with the request.</param>
+    /// <returns>The task with the response that completes, when the client responds.</returns>
     public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params);
 
-    // TODO: Doc
+    /// <summary>
+    /// Sends a request to the client.
+    /// </summary>
+    /// <typeparam name="TResponse">The expected response type.</typeparam>
+    /// <param name="method">The method name.</param>
+    /// <param name="params">The parameter passed in with the request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The task with the response that completes, when the client responds.</returns>
     public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params, CancellationToken cancellationToken);
 
-    // TODO: Doc
+    /// <summary>
+    /// Sends a notification to the client.
+    /// </summary>
+    /// <param name="method">The method name.</param>
+    /// <param name="params">The parameters passed in with the notification.</param>
+    /// <returns>The task that completes when the notification is sent.</returns>
     public Task SendNotificationAsync(string method, object? @params);
 }

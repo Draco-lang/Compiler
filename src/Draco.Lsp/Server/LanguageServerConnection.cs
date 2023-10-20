@@ -19,150 +19,7 @@ using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RequestMessage, Draco.L
 
 namespace Draco.Lsp.Server;
 
-internal sealed class LspMessageAdapter : IJsonRpcMessageAdapter<LspMessage, ResponseError>
-{
-    private LspMessageAdapter()
-    {
-    }
-
-    public static LspMessage CreateRequest(int id, string method, JsonElement @params) => new RequestMessage
-    {
-        Jsonrpc = "2.0",
-        Method = method,
-        Id = id,
-        Params = @params,
-    };
-    public static LspMessage CreateCancelRequest(int id) => CreateNotification(
-        "$/cancelRequest",
-        JsonSerializer.SerializeToElement(new CancelParams
-        {
-            Id = id,
-        }));
-    public static LspMessage CreateOkResponse(object id, JsonElement okResult) => new ResponseMessage
-    {
-        Jsonrpc = "2.0",
-        Id = ToId(id),
-        Result = okResult,
-    };
-    public static LspMessage CreateErrorResponse(object id, ResponseError errorResult) => new ResponseMessage
-    {
-        Jsonrpc = "2.0",
-        Id = ToId(id),
-        Error = errorResult,
-    };
-    public static LspMessage CreateNotification(string method, JsonElement @params) => new NotificationMessage
-    {
-        Jsonrpc = "2.0",
-        Method = method,
-        Params = @params,
-    };
-
-    private static OneOf<int, string> ToId(object id) => id switch
-    {
-        int i => i,
-        string s => s,
-        OneOf<int, string> o => o,
-        _ => -1,
-    };
-
-    public static ResponseError CreateExceptionError(Exception exception)
-    {
-        // Unwrap
-        if (exception is TargetInvocationException) exception = exception.InnerException!;
-        if (exception is JsonException jsonException) return CreateJsonExceptionError(jsonException);
-
-        var errorCode = exception switch
-        {
-            // RequestCancelled
-            OperationCanceledException => -32800,
-            // InternalError
-            _ => -32603,
-        };
-
-        return new()
-        {
-            Message = exception.Message,
-            Code = errorCode,
-            Data = JsonSerializer.SerializeToElement(exception?.ToString()),
-        };
-    }
-    public static ResponseError CreateHandlerNotRegisteredError(string method) => new()
-    {
-        // MethodNotFound
-        Code = -32601,
-        Message = $"A handler for the method '{method}' was not registered.",
-    };
-    public static ResponseError CreateHandlerWasRegisteredAsNotificationHandlerError(string method) => new()
-    {
-        // InternalError
-        Code = -32603,
-        Message = $"A handler for the method '{method}' was registered as a notification handler.",
-    };
-    public static ResponseError CreateInvalidRequestError() => new()
-    {
-        // InvalidRequest
-        Code = -32600,
-        Message = "Invalid request.",
-    };
-    public static ResponseError CreateJsonExceptionError(JsonException exception)
-    {
-        // Typically, only exceptions from Utf8JsonReader have the position info set
-        // So, we assume this is a parse error if it's there, and other errors are serialization errors
-        var code = exception.BytePositionInLine.HasValue
-            ? -32700  // ParseError
-            : -32602; // InvalidParams
-
-        var responseError = new ResponseError
-        {
-            Message = exception.Message,
-            Data = JsonSerializer.SerializeToElement(exception.ToString()),
-            Code = code,
-        };
-
-        return responseError;
-    }
-
-    public static bool IsRequest(LspMessage message) => message.Is<RequestMessage>();
-    public static bool IsResponse(LspMessage message) => message.Is<ResponseMessage>();
-    public static bool IsNotification(LspMessage message) => message.Is<NotificationMessage>();
-    public static bool IsCancellation(LspMessage message) =>
-           message.Is<RequestMessage>(out var req)
-        && req.Method == "$/cancelRequest";
-
-    public static object? GetId(LspMessage message)
-    {
-        static object? GetRawId(LspMessage message)
-        {
-            if (message.Is<RequestMessage>(out var req)) return req.Id;
-            if (message.Is<ResponseMessage>(out var resp)) return resp.Id;
-            return null;
-        }
-
-        var rawId = GetRawId(message);
-        return (rawId as IOneOf)?.Value;
-    }
-    public static string GetMethodName(LspMessage message)
-    {
-        if (message.Is<RequestMessage>(out var req)) return req.Method;
-        if (message.Is<NotificationMessage>(out var notif)) return notif.Method;
-        return string.Empty;
-    }
-    public static JsonElement? GetParams(LspMessage message)
-    {
-        if (message.Is<RequestMessage>(out var req)) return req.Params;
-        if (message.Is<ResponseMessage>(out var resp)) return resp.Result;
-        if (message.Is<NotificationMessage>(out var notif)) return notif.Params;
-        return null;
-    }
-    public static (ResponseError? Error, bool HasError) GetError(LspMessage message)
-    {
-        if (message.Is<ResponseMessage>(out var resp)) return (resp.Error, resp.Error is not null);
-        return (null, false);
-    }
-    public static string GetErrorMessage(ResponseError error) => error.Message;
-}
-
-internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, ResponseError, LspMessageAdapter>
+internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, ResponseError>
 {
     public override IDuplexPipe Transport { get; }
 
@@ -191,14 +48,159 @@ internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, R
     {
         this.Transport = transport;
     }
-}
 
-internal sealed class LspResponseException : Exception
-{
-    public LspResponseException(ResponseError error) : base(error.Message)
+    protected override Task<(LspMessage Message, bool Handled)> TryProcessCustomRequest(LspMessage message) =>
+        Task.FromResult((message, false));
+
+    protected override Task<bool> TryProcessCustomNotification(LspMessage message)
     {
-        this.ResponseError = error;
+        // Cancellation
+        var id = this.GetMessageId(message);
+        var method = this.GetMessageMethodName(message);
+        if (method == "$/cancelRequest")
+        {
+            this.CancelIncomingRequest(id!);
+            return Task.FromResult(true);
+        }
+
+        return Task.FromResult(false);
     }
 
-    public ResponseError ResponseError { get; }
+    protected override void CancelOutgoingRequest(int id)
+    {
+        base.CancelOutgoingRequest(id);
+        this.SendMessage(this.CreateNotificationMessage(
+            "$/cancelRequest",
+            JsonSerializer.SerializeToElement(new CancelParams
+            {
+                Id = id,
+            })));
+    }
+
+    protected override LspMessage CreateRequestMessage(int id, string method, JsonElement @params) => new RequestMessage
+    {
+        Jsonrpc = "2.0",
+        Method = method,
+        Id = id,
+        Params = @params,
+    };
+    protected override LspMessage CreateOkResponseMessage(object id, JsonElement okResult) => new ResponseMessage
+    {
+        Jsonrpc = "2.0",
+        Id = ToMessageId(id),
+        Result = okResult,
+    };
+    protected override LspMessage CreateErrorResponseMessage(object id, ResponseError errorResult) => new ResponseMessage
+    {
+        Jsonrpc = "2.0",
+        Id = ToMessageId(id),
+        Error = errorResult,
+    };
+    protected override LspMessage CreateNotificationMessage(string method, JsonElement @params) => new NotificationMessage
+    {
+        Jsonrpc = "2.0",
+        Method = method,
+        Params = @params,
+    };
+
+    private static OneOf<int, string> ToMessageId(object id) => id switch
+    {
+        int i => i,
+        string s => s,
+        OneOf<int, string> o => o,
+        _ => -1,
+    };
+
+    protected override ResponseError CreateExceptionError(Exception exception)
+    {
+        // Unwrap
+        if (exception is TargetInvocationException) exception = exception.InnerException!;
+        if (exception is JsonException jsonException) return this.CreateJsonExceptionError(jsonException);
+
+        var errorCode = exception switch
+        {
+            // RequestCancelled
+            OperationCanceledException => -32800,
+            // InternalError
+            _ => -32603,
+        };
+
+        return new()
+        {
+            Message = exception.Message,
+            Code = errorCode,
+            Data = JsonSerializer.SerializeToElement(exception?.ToString()),
+        };
+    }
+    protected override ResponseError CreateHandlerNotRegisteredError(string method) => new()
+    {
+        // MethodNotFound
+        Code = -32601,
+        Message = $"A handler for the method '{method}' was not registered.",
+    };
+    protected override ResponseError CreateHandlerWasRegisteredAsNotificationHandlerError(string method) => new()
+    {
+        // InternalError
+        Code = -32603,
+        Message = $"A handler for the method '{method}' was registered as a notification handler.",
+    };
+    protected override ResponseError CreateInvalidRequestError() => new()
+    {
+        // InvalidRequest
+        Code = -32600,
+        Message = "Invalid request.",
+    };
+    protected override ResponseError CreateJsonExceptionError(JsonException exception)
+    {
+        // Typically, only exceptions from Utf8JsonReader have the position info set
+        // So, we assume this is a parse error if it's there, and other errors are serialization errors
+        var code = exception.BytePositionInLine.HasValue
+            ? -32700  // ParseError
+            : -32602; // InvalidParams
+
+        var responseError = new ResponseError
+        {
+            Message = exception.Message,
+            Data = JsonSerializer.SerializeToElement(exception.ToString()),
+            Code = code,
+        };
+
+        return responseError;
+    }
+
+    protected override bool IsRequestMessage(LspMessage message) => message.Is<RequestMessage>();
+    protected override bool IsResponseMessage(LspMessage message) => message.Is<ResponseMessage>();
+    protected override bool IsNotificationMessage(LspMessage message) => message.Is<NotificationMessage>();
+
+    protected override object? GetMessageId(LspMessage message)
+    {
+        static object? GetRawId(LspMessage message)
+        {
+            if (message.Is<RequestMessage>(out var req)) return req.Id;
+            if (message.Is<ResponseMessage>(out var resp)) return resp.Id;
+            return null;
+        }
+
+        var rawId = GetRawId(message);
+        return (rawId as IOneOf)?.Value;
+    }
+    protected override string GetMessageMethodName(LspMessage message)
+    {
+        if (message.Is<RequestMessage>(out var req)) return req.Method;
+        if (message.Is<NotificationMessage>(out var notif)) return notif.Method;
+        return string.Empty;
+    }
+    protected override JsonElement? GetMessageParams(LspMessage message)
+    {
+        if (message.Is<RequestMessage>(out var req)) return req.Params;
+        if (message.Is<ResponseMessage>(out var resp)) return resp.Result;
+        if (message.Is<NotificationMessage>(out var notif)) return notif.Params;
+        return null;
+    }
+    protected override (ResponseError? Error, bool HasError) GetMessageError(LspMessage message)
+    {
+        if (message.Is<ResponseMessage>(out var resp)) return (resp.Error, resp.Error is not null);
+        return (null, false);
+    }
+    protected override string GetErrorMessage(ResponseError error) => error.Message;
 }

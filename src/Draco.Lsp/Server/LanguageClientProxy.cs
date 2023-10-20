@@ -14,5 +14,5 @@ namespace Draco.Lsp.Server;
 internal class LanguageClientProxy : JsonRpcClientProxy
 {
     protected override IJsonRpcMethodHandler CreateHandler(MethodInfo method) =>
-        new LanguageServerMethodHandler(method, this);
+        LanguageServerMethodHandler.Create(method, this);
 }

@@ -63,7 +63,7 @@ public static class DebugAdapter
 
         foreach (var method in adapterMethods)
         {
-            connection.AddHandler(new DebugAdapterMethodHandler(method, target));
+            connection.AddHandler(DebugAdapterMethodHandler.Create(method, target));
         }
     }
 

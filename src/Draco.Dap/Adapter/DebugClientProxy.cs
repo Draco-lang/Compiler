@@ -13,5 +13,5 @@ namespace Draco.Dap.Adapter;
 internal class DebugClientProxy : JsonRpcClientProxy
 {
     protected override IJsonRpcMethodHandler CreateHandler(MethodInfo method) =>
-        new DebugAdapterMethodHandler(method, this);
+        DebugAdapterMethodHandler.Create(method, this);
 }

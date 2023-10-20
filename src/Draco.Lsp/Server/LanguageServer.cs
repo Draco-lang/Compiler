@@ -63,7 +63,7 @@ public static class LanguageServer
 
         foreach (var method in langserverMethods)
         {
-            connection.AddHandler(new LanguageServerMethodHandler(method, target));
+            connection.AddHandler(LanguageServerMethodHandler.Create(method, target));
         }
     }
 

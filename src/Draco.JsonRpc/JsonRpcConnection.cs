@@ -111,9 +111,7 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         {
             try
             {
-                var (message, foundMessage) = await this
-                    .ReadMessageAsync()
-                    .WaitAsync(this.shutdownTokenSource.Token);
+                var (message, foundMessage) = await this.ReadMessageAsync();
                 if (!foundMessage) break;
 
                 if (this.IsResponseMessage(message!))
@@ -441,7 +439,7 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 
         while (true)
         {
-            var result = await reader.ReadAsync();
+            var result = await reader.ReadAsync(this.shutdownTokenSource.Token);
             var buffer = result.Buffer;
 
             var foundJson = this.TryParseMessage(ref buffer, ref contentLength, out var message);

@@ -165,6 +165,7 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
             }
             else
             {
+                currentTasks.RemoveAll(t => t.IsCompleted);
                 currentTasks.Add(this.ProcessMessageAsync(message));
             }
         }

@@ -110,9 +110,7 @@ internal class Program
         var (path, name) = ExtractOutputPathAndName(output);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            metadataReferences: references
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
-                .ToImmutableArray(),
+            metadataReferences: GetMetadataReferences(references),
             rootModulePath: rootModule?.FullName,
             outputPath: path,
             assemblyName: name);
@@ -131,9 +129,7 @@ internal class Program
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            metadataReferences: references
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
-                .ToImmutableArray(),
+            metadataReferences: GetMetadataReferences(references),
             rootModulePath: rootModule?.FullName);
         var execResult = ScriptingEngine.Execute(compilation);
         if (!EmitDiagnostics(execResult, msbuildDiags))
@@ -192,6 +188,14 @@ internal class Program
         }
         return result.ToImmutable();
     }
+
+    private static ImmutableArray<MetadataReference> GetMetadataReferences(FileInfo[] references) => references
+        .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+#if DEBUG
+        .Concat(Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes))))
+#endif
+        .ToImmutableArray();
 
     private static bool EmitDiagnostics(EmitResult result, bool msbuildDiags)
     {

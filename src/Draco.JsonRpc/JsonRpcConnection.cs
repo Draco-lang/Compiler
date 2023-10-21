@@ -365,8 +365,8 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         await this.SendMessageAsync(notification);
     }
 
-    protected Task SendMessageAsync(TMessage message) =>
-        this.outgoingMessages.Writer.WriteAsync(message).AsTask();
+    protected async Task SendMessageAsync(TMessage message) =>
+        await this.outgoingMessages.Writer.WriteAsync(message);
 
     protected void SendMessage(TMessage message) =>
         this.outgoingMessages.Writer.TryWrite(message);

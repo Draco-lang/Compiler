@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Draco.Compiler.Api.Diagnostics;
 
@@ -7,7 +8,7 @@ namespace Draco.Compiler.Internal.Diagnostics;
 /// <summary>
 /// Holds diagnostic messages.
 /// </summary>
-internal sealed class DiagnosticBag : ICollection<Diagnostic>
+internal sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
 {
     /// <summary>
     /// True, if the bad contains errors.
@@ -15,15 +16,14 @@ internal sealed class DiagnosticBag : ICollection<Diagnostic>
     public bool HasErrors { get; private set; }
 
     public int Count => this.diagnostics.Count;
-    public bool IsReadOnly => false;
 
-    private readonly List<Diagnostic> diagnostics = new();
+    private readonly ConcurrentBag<Diagnostic> diagnostics = new();
 
     public void Add(Diagnostic diagnostic)
     {
         this.diagnostics.Add(diagnostic);
         this.HasErrors = this.HasErrors
-                      || diagnostic.Severity == Api.Diagnostics.DiagnosticSeverity.Error;
+                      || diagnostic.Severity == DiagnosticSeverity.Error;
     }
 
     /// <summary>
@@ -39,8 +39,4 @@ internal sealed class DiagnosticBag : ICollection<Diagnostic>
 
     public IEnumerator<Diagnostic> GetEnumerator() => this.diagnostics.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
-
-    bool ICollection<Diagnostic>.Contains(Diagnostic item) => this.diagnostics.Contains(item);
-    void ICollection<Diagnostic>.CopyTo(Diagnostic[] array, int arrayIndex) => this.diagnostics.CopyTo(array, arrayIndex);
-    bool ICollection<Diagnostic>.Remove(Diagnostic item) => this.diagnostics.Remove(item);
 }

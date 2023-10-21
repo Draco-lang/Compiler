@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Draco.JsonRpc;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
 
@@ -16,11 +17,11 @@ namespace Draco.Lsp.Server;
 internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
 {
     private readonly ILanguageServer server;
-    private readonly LanguageServerConnection connection;
+    private readonly IJsonRpcConnection connection;
 
     private ClientCapabilities clientCapabilities = null!;
 
-    public LanguageServerLifecycle(ILanguageServer server, LanguageServerConnection connection)
+    public LanguageServerLifecycle(ILanguageServer server, IJsonRpcConnection connection)
     {
         this.server = server;
         this.connection = connection;

@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.TextDocument;
@@ -9,15 +8,15 @@ namespace Draco.LanguageServer;
 
 internal sealed partial class DracoLanguageServer : ITextDocumentSync
 {
-    public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param, CancellationToken cancellationToken)
+    public async Task TextDocumentDidOpenAsync(DidOpenTextDocumentParams param)
     {
         await this.PublishDiagnosticsAsync(param.TextDocument.Uri);
     }
 
-    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken) =>
+    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param) =>
         Task.CompletedTask;
 
-    public async Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param, CancellationToken cancellationToken)
+    public async Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param)
     {
         var uri = param.TextDocument.Uri;
         var change = param.ContentChanges.First();

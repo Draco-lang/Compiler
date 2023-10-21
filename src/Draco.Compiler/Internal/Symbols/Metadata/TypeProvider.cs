@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -21,7 +22,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
-    private readonly Dictionary<CacheKey, TypeSymbol> cache = new();
+    private readonly ConcurrentDictionary<CacheKey, TypeSymbol> cache = new();
 
     public TypeProvider(Compilation compilation)
     {
@@ -94,12 +95,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
         var key = new CacheKey(reader, handle);
-        if (!this.cache.TryGetValue(key, out var type))
-        {
-            type = this.BuildTypeFromDefinition(reader, handle, rawTypeKind);
-            this.cache.Add(key, type);
-        }
-        return type;
+        return this.cache.GetOrAdd(key, _ => this.BuildTypeFromDefinition(reader, handle, rawTypeKind));
     }
 
     private TypeSymbol BuildTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
@@ -137,12 +133,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
         var key = new CacheKey(reader, handle);
-        if (!this.cache.TryGetValue(key, out var type))
-        {
-            type = this.BuildTypeFromReference(reader, handle, rawTypeKind);
-            this.cache.Add(key, type);
-        }
-        return type;
+        return this.cache.GetOrAdd(key, _ => this.BuildTypeFromReference(reader, handle, rawTypeKind));
     }
 
     private TypeSymbol BuildTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)

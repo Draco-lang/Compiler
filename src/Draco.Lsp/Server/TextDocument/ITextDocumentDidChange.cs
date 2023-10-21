@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
@@ -12,5 +11,5 @@ public interface ITextDocumentDidChange
     public TextDocumentChangeRegistrationOptions DidChangeRegistrationOptions { get; }
 
     [Notification("textDocument/didChange", Mutating = true)]
-    public Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param, CancellationToken cancellationToken);
+    public Task TextDocumentDidChangeAsync(DidChangeTextDocumentParams param);
 }

@@ -28,18 +28,9 @@ public interface IJsonRpcConnection
     /// <typeparam name="TResponse">The expected response type.</typeparam>
     /// <param name="method">The method name.</param>
     /// <param name="params">The parameter passed in with the request.</param>
-    /// <returns>The task with the response that completes, when the client responds.</returns>
-    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params);
-
-    /// <summary>
-    /// Sends a request to the client.
-    /// </summary>
-    /// <typeparam name="TResponse">The expected response type.</typeparam>
-    /// <param name="method">The method name.</param>
-    /// <param name="params">The parameter passed in with the request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The task with the response that completes, when the client responds.</returns>
-    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params, CancellationToken cancellationToken);
+    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sends a notification to the client.

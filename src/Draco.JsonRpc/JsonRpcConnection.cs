@@ -339,9 +339,7 @@ public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     #endregion
 
     #region Sending Message
-    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params) =>
-        this.SendRequestAsync<TResponse>(method, @params, CancellationToken.None);
-    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params, CancellationToken cancellationToken)
+    public Task<TResponse?> SendRequestAsync<TResponse>(string method, object? @params, CancellationToken cancellationToken = default)
     {
         // Construct request
         var id = this.NextMessageId();

@@ -31,9 +31,7 @@ public abstract class JsonRpcClientProxy : DispatchProxy
     }
 
     private static readonly MethodInfo SendRequestMethod = typeof(IJsonRpcConnection)
-        .GetMethods()
-        .First(m => m.Name == nameof(IJsonRpcConnection.SendRequestAsync)
-                 && m.GetParameters().Length == 3);
+        .GetMethod(nameof(IJsonRpcConnection.SendRequestAsync))!;
 
     private object? ProxyRpc(MethodInfo method, object?[] arguments)
     {

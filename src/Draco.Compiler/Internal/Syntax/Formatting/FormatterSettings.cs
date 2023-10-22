@@ -9,6 +9,6 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// <summary>
 /// The settings of the formatter.
 /// </summary>
-internal sealed class SyntaxFormatterSettings
+internal sealed class FormatterSettings
 {
 }

@@ -9,14 +9,14 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// <summary>
 /// A formatter for the syntax tree.
 /// </summary>
-internal sealed class SyntaxFormatter
+internal sealed class Formatter
 {
     /// <summary>
     /// The settings of the formatter.
     /// </summary>
-    public SyntaxFormatterSettings Settings { get; }
+    public FormatterSettings Settings { get; }
 
-    public SyntaxFormatter(SyntaxFormatterSettings settings)
+    public Formatter(FormatterSettings settings)
     {
         this.Settings = settings;
     }

@@ -16,7 +16,7 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// <param name="TokenKind">The token kind, in case it's a token.</param>
 /// <param name="TriviaKind>">The trivia kind, in case it's trivia.</param>
 /// <param name="Text">The text the atom represents.</param>
-internal readonly record struct SyntaxFormatAtom(
+internal readonly record struct FormatAtom(
     TokenKind? TokenKind,
     TriviaKind? TriviaKind,
     string? Text);

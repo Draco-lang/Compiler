@@ -45,6 +45,11 @@ internal sealed class Formatter : SyntaxRewriter
         this.Settings = settings;
     }
 
+    public override SyntaxNode VisitCompilationUnit(CompilationUnitSyntax node) => node.Update(this.AppendSequence(
+        node.Declarations,
+        Newline,
+        node.End));
+
     public override SyntaxNode VisitFunctionDeclaration(FunctionDeclarationSyntax node) => node.Update(this.AppendSequence(
         node.VisibilityModifier,
         Space,
@@ -165,7 +170,8 @@ internal sealed class Formatter : SyntaxRewriter
             if (t.Kind is not TriviaKind.LineComment or TriviaKind.DocumentationComment) continue;
 
             // Indent the trivia
-            if (!first) this.EnsureIndentation(this.indentation);
+            if (first) this.EnsureSpace();
+            else this.EnsureIndentation(this.indentation);
             // Add comment
             this.currentTrivia.Add(t);
             // Add a newline after

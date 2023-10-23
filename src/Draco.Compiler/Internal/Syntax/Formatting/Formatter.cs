@@ -72,6 +72,17 @@ internal sealed class Formatter : SyntaxRewriter
         Unindent,
         node.CloseBrace));
 
+    public override SyntaxNode VisitVariableDeclaration(VariableDeclarationSyntax node) => node.Update(this.AppendSequence(
+        node.VisibilityModifier,
+        Space,
+        node.Keyword,
+        Space,
+        node.Name,
+        node.Type,
+        node.Value,
+        node.Semicolon,
+        Newline));
+
     public override SyntaxNode VisitExpressionStatement(ExpressionStatementSyntax node) => node.Update(this.AppendSequence(
         node.Expression,
         node.Semicolon,
@@ -79,6 +90,17 @@ internal sealed class Formatter : SyntaxRewriter
 
     public override SyntaxNode VisitGroupingExpression(GroupingExpressionSyntax node) =>
         node.Update(this.AppendSequence(node.OpenParen, node.Expression, node.CloseParen));
+
+    public override SyntaxNode VisitTypeSpecifier(TypeSpecifierSyntax node) => node.Update(this.AppendSequence(
+        node.Colon,
+        Space,
+        node.Type));
+
+    public override SyntaxNode VisitValueSpecifier(ValueSpecifierSyntax node) => node.Update(this.AppendSequence(
+        Space,
+        node.Assign,
+        Space,
+        node.Value));
 
     public override SyntaxNode VisitSyntaxToken(SyntaxToken node)
     {

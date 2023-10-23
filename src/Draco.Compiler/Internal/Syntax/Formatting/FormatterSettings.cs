@@ -15,4 +15,9 @@ internal sealed class FormatterSettings
     /// The default formatting settings.
     /// </summary>
     public static FormatterSettings Default { get; } = new();
+
+    /// <summary>
+    /// The newline sequence.
+    /// </summary>
+    public string Newline { get; } = "\n";
 }

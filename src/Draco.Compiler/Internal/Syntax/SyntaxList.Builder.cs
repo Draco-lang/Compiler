@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -14,7 +15,7 @@ internal sealed partial class SyntaxList<TNode>
         public bool IsReadOnly => false;
         public int Count => this.builder.Count;
 
-        TNode IList<TNode>.this[int index]
+        public TNode this[int index]
         {
             get => this.builder[index];
             set => this.builder[index] = value;

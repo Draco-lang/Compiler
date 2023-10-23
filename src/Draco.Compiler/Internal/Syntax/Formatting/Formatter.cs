@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
@@ -20,6 +21,7 @@ internal sealed class Formatter : SyntaxRewriter
 
     private readonly SyntaxTrivia newlineTrivia;
     private readonly SyntaxTrivia whitespaceTrivia;
+    private readonly SyntaxTrivia indentationTrivia;
 
     private int indentation;
     private SyntaxToken? lastToken;
@@ -30,6 +32,7 @@ internal sealed class Formatter : SyntaxRewriter
 
         this.newlineTrivia = SyntaxTrivia.From(TriviaKind.Newline, this.Settings.Newline);
         this.whitespaceTrivia = SyntaxTrivia.From(TriviaKind.Whitespace, " ");
+        this.indentationTrivia = SyntaxTrivia.From(TriviaKind.Whitespace, this.Settings.Indentation);
     }
 
     /// <summary>
@@ -109,6 +112,31 @@ internal sealed class Formatter : SyntaxRewriter
     }
 
     /// <summary>
+    /// Ensures that there is indentation at the end of a trivia list.
+    /// </summary>
+    /// <param name="trivia">The trivia list to ensure indentation for.</param>
+    /// <param name="indentation">The amount of indentation to ensure.</param>
+    private void EnsureIndentation(
+        SyntaxList<SyntaxTrivia>.Builder trivia,
+        int indentation)
+    {
+        // Count how many we have so far
+        var indentCount = 0;
+        for (var i = trivia.Count - 1; i >= 0; --i)
+        {
+            if (trivia[i].Kind != TriviaKind.Whitespace) break;
+            ++indentCount;
+        }
+
+        // Add indentation if needed
+        while (indentCount < indentation)
+        {
+            trivia.Add(this.indentationTrivia);
+            ++indentCount;
+        }
+    }
+
+    /// <summary>
     ///  * Removes all whitespace/newline.
     ///  * Adds a newline after each comment/doc comment.
     /// </summary>
@@ -127,6 +155,7 @@ internal sealed class Formatter : SyntaxRewriter
         {
             if (ShouldTrim(t)) continue;
 
+            this.EnsureIndentation(result, this.indentation);
             result.Add(t);
             if (IsLineComment(t)) result.Add(this.newlineTrivia);
         }

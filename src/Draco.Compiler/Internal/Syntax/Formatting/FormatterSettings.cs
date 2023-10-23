@@ -19,5 +19,10 @@ internal sealed class FormatterSettings
     /// <summary>
     /// The newline sequence.
     /// </summary>
-    public string Newline { get; } = "\n";
+    public string Newline { get; init; } = "\n";
+
+    /// <summary>
+    /// The indentation sequence.
+    /// </summary>
+    public string Indentation { get; init; } = "    ";
 }

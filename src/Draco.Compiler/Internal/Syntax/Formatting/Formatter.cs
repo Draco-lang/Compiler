@@ -88,8 +88,51 @@ internal sealed class Formatter : SyntaxRewriter
         node.Semicolon,
         Newline));
 
-    public override SyntaxNode VisitGroupingExpression(GroupingExpressionSyntax node) =>
-        node.Update(this.AppendSequence(node.OpenParen, node.Expression, node.CloseParen));
+    public override SyntaxNode VisitIfExpression(IfExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.IfKeyword,
+        Space,
+        node.OpenParen,
+        node.Condition,
+        node.CloseParen,
+        Space,
+        node.Then,
+        node.Else));
+
+    public override SyntaxNode VisitElseClause(ElseClauseSyntax node) => node.Update(this.AppendSequence(
+        Space,
+        node.ElseKeyword,
+        Space,
+        node.Expression));
+
+    public override SyntaxNode VisitWhileExpression(WhileExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.WhileKeyword,
+        Space,
+        node.OpenParen,
+        node.Condition,
+        node.CloseParen,
+        Space,
+        node.Then));
+
+    public override SyntaxNode VisitBlockExpression(BlockExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.OpenBrace,
+        Newline,
+        Indent,
+        node.Statements,
+        node.Value,
+        Unindent,
+        node.CloseBrace));
+
+    public override SyntaxNode VisitBinaryExpression(BinaryExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.Left,
+        Space,
+        node.Operator,
+        Space,
+        node.Right));
+
+    public override SyntaxNode VisitGroupingExpression(GroupingExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.OpenParen,
+        node.Expression,
+        node.CloseParen));
 
     public override SyntaxNode VisitTypeSpecifier(TypeSpecifierSyntax node) => node.Update(this.AppendSequence(
         node.Colon,

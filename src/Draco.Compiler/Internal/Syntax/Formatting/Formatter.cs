@@ -14,14 +14,14 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// </summary>
 internal sealed class Formatter : SyntaxRewriter
 {
+    private static readonly object Space = new();
+    private static readonly object Newline = new();
+    private static readonly object Newline2 = new();
+
     /// <summary>
     /// The settings of the formatter.
     /// </summary>
     public FormatterSettings Settings { get; }
-
-    private readonly SyntaxTrivia newlineTrivia;
-    private readonly SyntaxTrivia whitespaceTrivia;
-    private readonly SyntaxTrivia indentationTrivia;
 
     private int indentation;
     private SyntaxToken? lastToken;
@@ -29,136 +29,46 @@ internal sealed class Formatter : SyntaxRewriter
     public Formatter(FormatterSettings settings)
     {
         this.Settings = settings;
-
-        this.newlineTrivia = SyntaxTrivia.From(TriviaKind.Newline, this.Settings.Newline);
-        this.whitespaceTrivia = SyntaxTrivia.From(TriviaKind.Whitespace, " ");
-        this.indentationTrivia = SyntaxTrivia.From(TriviaKind.Whitespace, this.Settings.Indentation);
     }
 
-    /// <summary>
-    /// Updates a token with the given leading and trailing trivia.
-    /// Also sets the updated token as the <see cref="lastToken"/>.
-    /// </summary>
-    /// <param name="syntaxToken">The token to update.</param>
-    /// <param name="leadingTrivia">The leading trivia to update with.</param>
-    /// <param name="trailingTrivia">The trailing trivia to update with.</param>
-    /// <returns>The updated token.</returns>
-    private SyntaxToken UpdateToken(
-        SyntaxToken syntaxToken,
-        SyntaxList<SyntaxTrivia>.Builder leadingTrivia,
-        SyntaxList<SyntaxTrivia>.Builder trailingTrivia)
+    public override SyntaxNode VisitIfExpression(IfExpressionSyntax node)
     {
-        var builder = SyntaxToken.Builder.From(syntaxToken);
-
-        builder.LeadingTrivia = leadingTrivia;
-        builder.TrailingTrivia = trailingTrivia;
-
-        var result = builder.Build();
-        this.lastToken = result;
-        return result;
+        // Sequence(node.KeywordIf, Space, node.OpenParen, node.Condition, node.CloseParen, Space, node.Then)
+        // if (node.Else is not null) Sequence(Space, node.Else.Keyword.Else, Space, node.Else.Expression);
     }
 
-    /// <summary>
-    /// Ensures that two trivia lists are separated by at least one whitespace.
-    /// </summary>
-    /// <param name="prevTrailing">The first trivia list in the sequence.</param>
-    /// <param name="nextLeading">The second trivia list in the sequence.</param>
-    private void EnsureWhitespaceOrNewline(
-        SyntaxList<SyntaxTrivia>.Builder? prevTrailing,
-        SyntaxList<SyntaxTrivia>.Builder nextLeading)
+    private IEnumerable<SyntaxNode?> AppendSequence(params object[] elements)
     {
-        static bool IsWhitespaceOrNewline(SyntaxTrivia trivia) =>
-            trivia.Kind is TriviaKind.Whitespace or TriviaKind.Newline;
-
-        if (prevTrailing is null) return;
-        if (prevTrailing.Count > 0 && IsWhitespaceOrNewline(prevTrailing[^1])) return;
-        if (nextLeading.Count > 0 && IsWhitespaceOrNewline(nextLeading[0])) return;
-
-        prevTrailing.Add(this.whitespaceTrivia);
-    }
-
-    /// <summary>
-    /// Ensures that there is newlines separation between two trivia lists.
-    /// </summary>
-    /// <param name="prevTrailing">The first trivia list in the sequence.</param>
-    /// <param name="nextLeading">The second trivia list in the sequence.</param>
-    /// <param name="amount">The amount of newlines to ensure.</param>
-    private void EnsureNewline(
-        SyntaxList<SyntaxTrivia>.Builder? prevTrailing,
-        SyntaxList<SyntaxTrivia>.Builder nextLeading,
-        int amount = 1)
-    {
-        if (prevTrailing is null) return;
-
-        // Count the number of newlines
-        var newlineCount = 0;
-        for (var i = prevTrailing.Count - 1; i >= 0; i--)
+        foreach (var element in elements)
         {
-            if (prevTrailing[i].Kind != TriviaKind.Newline) break;
-            ++newlineCount;
+            if (element is null)
+            {
+                yield return null;
+            }
+            if (ReferenceEquals(element, Space))
+            {
+                // TODO: Ensure space between now and lastToken
+            }
+            else if (ReferenceEquals(element, Newline))
+            {
+                // TODO: Ensure newline between now and lastToken
+            }
+            else if (ReferenceEquals(element, Newline2))
+            {
+                // TODO: Ensure 2 newlines between now and lastToken
+            }
+            else if (element is SyntaxToken token)
+            {
+                // TODO: Construct token with accumulated leading trivia
+            }
+            else if (element is SyntaxNode node)
+            {
+                yield return node.Accept(this);
+            }
+            else
+            {
+                throw new ArgumentException($"can not handle sequence element {element}");
+            }
         }
-        for (var i = 0; i < nextLeading.Count; ++i)
-        {
-            if (nextLeading[i].Kind != TriviaKind.Newline) break;
-            ++newlineCount;
-        }
-
-        // Add newlines if needed
-        while (newlineCount < amount)
-        {
-            prevTrailing.Add(this.newlineTrivia);
-            ++newlineCount;
-        }
-    }
-
-    /// <summary>
-    /// Ensures that there is indentation at the end of a trivia list.
-    /// </summary>
-    /// <param name="trivia">The trivia list to ensure indentation for.</param>
-    /// <param name="indentation">The amount of indentation to ensure.</param>
-    private void EnsureIndentation(
-        SyntaxList<SyntaxTrivia>.Builder trivia,
-        int indentation)
-    {
-        // Count how many we have so far
-        var indentCount = 0;
-        for (var i = trivia.Count - 1; i >= 0; --i)
-        {
-            if (trivia[i].Kind != TriviaKind.Whitespace) break;
-            ++indentCount;
-        }
-
-        // Add indentation if needed
-        while (indentCount < indentation)
-        {
-            trivia.Add(this.indentationTrivia);
-            ++indentCount;
-        }
-    }
-
-    /// <summary>
-    ///  * Removes all whitespace/newline.
-    ///  * Adds a newline after each comment/doc comment.
-    /// </summary>
-    /// <param name="trivia">The trivia to normalize.</param>
-    /// <returns>The normalized trivia.</returns>
-    private SyntaxList<SyntaxTrivia>.Builder NormalizeTrivia(IEnumerable<SyntaxTrivia> trivia)
-    {
-        static bool ShouldTrim(SyntaxTrivia trivia) =>
-            trivia.Kind is TriviaKind.Whitespace or TriviaKind.Newline;
-
-        static bool IsLineComment(SyntaxTrivia trivia) =>
-            trivia.Kind is TriviaKind.LineComment or TriviaKind.DocumentationComment;
-
-        var result = SyntaxList.CreateBuilder<SyntaxTrivia>();
-        foreach (var t in trivia)
-        {
-            if (ShouldTrim(t)) continue;
-
-            this.EnsureIndentation(result, this.indentation);
-            result.Add(t);
-            if (IsLineComment(t)) result.Add(this.newlineTrivia);
-        }
-        return result;
     }
 }

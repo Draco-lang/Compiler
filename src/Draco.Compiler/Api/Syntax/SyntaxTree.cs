@@ -5,6 +5,7 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Syntax.Formatting;
 using Draco.Compiler.Internal.Syntax.Rewriting;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -150,6 +151,18 @@ public sealed class SyntaxTree
     public ImmutableArray<TextEdit> SyntaxTreeDiff(SyntaxTree other) =>
         // TODO: We can use a better diff algo
         ImmutableArray.Create(new TextEdit(this.Root.Range, other.ToString()));
+
+    /// <summary>
+    /// Syntactically formats this <see cref="SyntaxTree"/>.
+    /// </summary>
+    /// <returns>The formatted tree.</returns>
+    public SyntaxTree Format() => new(
+        // TODO: Correct to inherit source text?
+        sourceText: this.SourceText,
+        // TODO: Better API?
+        greenRoot: this.GreenRoot.Accept(new Formatter(FormatterSettings.Default)),
+        // TODO: Anything smarter to pass here?
+        syntaxDiagnostics: new());
 
     /// <summary>
     /// The internal root of the tree.

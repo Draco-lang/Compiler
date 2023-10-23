@@ -25,4 +25,13 @@ internal sealed class FormatterSettings
     /// The indentation sequence.
     /// </summary>
     public string Indentation { get; init; } = "    ";
+
+    public SyntaxTrivia NewlineTrivia => new(Api.Syntax.TriviaKind.Newline, this.Newline);
+    public SyntaxTrivia SpaceTrivia => new(Api.Syntax.TriviaKind.Whitespace, " ");
+    public SyntaxTrivia IndentationTrivia(int amount = 1)
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < amount; ++i) sb.Append(this.Indentation);
+        return new(Api.Syntax.TriviaKind.Whitespace, sb.ToString());
+    }
 }

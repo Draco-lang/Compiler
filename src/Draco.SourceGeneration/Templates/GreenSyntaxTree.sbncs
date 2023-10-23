@@ -117,10 +117,16 @@ namespace Draco.Compiler.Internal.Syntax;
                     {
                         throw new System.ArgumentOutOfRangeException(
                             nameof(children),
-                            "the sequence must contain the exact amount of children");
+                            "the sequence contains too few children for this node");
                     }
                     var {{camel_case($field.Name)}} = ({{$field.Type}})enumerator.Current!;
                 {{end}}
+                if (enumerator.MoveNext())
+                {
+                    throw new System.ArgumentOutOfRangeException(
+                        nameof(children),
+                        "the sequence contains too many children for this node");
+                }
                 return this.Update(
                     {{wrap separated(', ', $node.Fields)}}
                         {{camel_case($element.Name)}}

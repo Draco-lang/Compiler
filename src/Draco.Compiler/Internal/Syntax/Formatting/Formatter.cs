@@ -67,6 +67,11 @@ internal sealed class Formatter : SyntaxRewriter
         Unindent,
         node.CloseBrace));
 
+    public override SyntaxNode VisitExpressionStatement(ExpressionStatementSyntax node) => node.Update(this.AppendSequence(
+        node.Expression,
+        node.Semicolon,
+        Newline));
+
     public override SyntaxNode VisitGroupingExpression(GroupingExpressionSyntax node) =>
         node.Update(this.AppendSequence(node.OpenParen, node.Expression, node.CloseParen));
 

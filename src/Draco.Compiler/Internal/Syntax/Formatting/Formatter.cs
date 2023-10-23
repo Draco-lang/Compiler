@@ -129,6 +129,16 @@ internal sealed class Formatter : SyntaxRewriter
         Space,
         node.Right));
 
+    public override SyntaxNode VisitRelationalExpression(RelationalExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.Left,
+        node.Comparisons));
+
+    public override SyntaxNode VisitComparisonElement(ComparisonElementSyntax node) => node.Update(this.AppendSequence(
+        Space,
+        node.Operator,
+        Space,
+        node.Right));
+
     public override SyntaxNode VisitGroupingExpression(GroupingExpressionSyntax node) => node.Update(this.AppendSequence(
         node.OpenParen,
         node.Expression,

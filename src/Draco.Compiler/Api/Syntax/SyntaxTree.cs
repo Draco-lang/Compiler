@@ -14,9 +14,6 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxTree
 {
-    private static SyntaxTreeFormatterSettings FormatterSettings { get; } = new(
-        Indentation: "    ");
-
     /// <summary>
     /// Constructs a new <see cref="SyntaxTree"/> with given <paramref name="path"/> from the given <paramref name="root"/>, if <paramref name="path"/> is null, there will be no source text set.
     /// </summary>
@@ -111,12 +108,6 @@ public sealed class SyntaxTree
     /// <param name="range">The range to check for intersection with the nodes.</param>
     /// <returns>All subtrees in intersecting <paramref name="range"/> in parent-child order.</returns>
     public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range) => this.Root.TraverseSubtreesIntersectingRange(range);
-
-    /// <summary>
-    /// Syntactically formats this <see cref="SyntaxTree"/>.
-    /// </summary>
-    /// <returns>The formatted tree.</returns>
-    public SyntaxTree Format() => new SyntaxTreeFormatter(FormatterSettings).Format(this);
 
     /// <summary>
     /// Reorders the <see cref="SyntaxTree"/> that contains <paramref name="toReorder"/> node and puts <paramref name="toReorder"/> to specified <paramref name="position"/> in the original <see cref="SyntaxList"/>.

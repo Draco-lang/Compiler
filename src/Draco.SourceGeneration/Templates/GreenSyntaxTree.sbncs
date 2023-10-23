@@ -99,6 +99,34 @@ namespace Draco.Compiler.Internal.Syntax;
                     {{end}}
                 );
             }
+
+            /// <summary>
+            /// Updates this <see cref="{{$node.Name}}"/> with the new provided data.
+            /// The node is only reinstantiated, if the passed in data is different.
+            /// </summary>
+            /// <param name="children">The child nodes of this node.</param>
+            /// <returns>
+            /// The constructed <see cref="{{$node.Name}}"/>, or this instance, if the passed in data is identical
+            /// to the old one.
+            /// </returns>
+            public {{$node.Name}} Update(IEnumerable<SyntaxNode?> children)
+            {
+                var enumerator = children.GetEnumerator();
+                {{for $field in $node.Fields}}
+                    if (!enumerator.MoveNext())
+                    {
+                        throw new System.ArgumentOutOfRangeException(
+                            nameof(children),
+                            "the sequence must contain the exact amount of children");
+                    }
+                    var {{camel_case($field.Name)}} = ({{$field.Type}})enumerator.Current!;
+                {{end}}
+                return this.Update(
+                    {{wrap separated(', ', $node.Fields)}}
+                        {{camel_case($element.Name)}}
+                    {{end}}
+                );
+            }
         {{end}}
 
         {{accept_functions($node)}}

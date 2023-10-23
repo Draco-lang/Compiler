@@ -31,12 +31,6 @@ internal sealed class Formatter : SyntaxRewriter
         this.Settings = settings;
     }
 
-    public override SyntaxNode VisitIfExpression(IfExpressionSyntax node)
-    {
-        // Sequence(node.KeywordIf, Space, node.OpenParen, node.Condition, node.CloseParen, Space, node.Then)
-        // if (node.Else is not null) Sequence(Space, node.Else.Keyword.Else, Space, node.Else.Expression);
-    }
-
     private IEnumerable<SyntaxNode?> AppendSequence(params object[] elements)
     {
         foreach (var element in elements)

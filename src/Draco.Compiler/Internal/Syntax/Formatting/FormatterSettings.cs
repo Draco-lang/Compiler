@@ -11,4 +11,8 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// </summary>
 internal sealed class FormatterSettings
 {
+    /// <summary>
+    /// The default formatting settings.
+    /// </summary>
+    public static FormatterSettings Default { get; } = new();
 }

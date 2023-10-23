@@ -14,6 +14,7 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// </summary>
 internal sealed class Formatter : SyntaxRewriter
 {
+    private static readonly object Skip = new();
     private static readonly object Space = new();
     private static readonly object Newline = new();
     private static readonly object Newline2 = new();
@@ -88,6 +89,15 @@ internal sealed class Formatter : SyntaxRewriter
         node.Semicolon,
         Newline));
 
+    public override SyntaxNode VisitGotoExpression(GotoExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.GotoKeyword,
+        Space,
+        node.Target));
+
+    public override SyntaxNode VisitReturnExpression(ReturnExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.ReturnKeyword,
+        node.Value is null ? Skip : Space));
+
     public override SyntaxNode VisitIfExpression(IfExpressionSyntax node) => node.Update(this.AppendSequence(
         node.IfKeyword,
         Space,
@@ -113,12 +123,27 @@ internal sealed class Formatter : SyntaxRewriter
         Space,
         node.Then));
 
+    public override SyntaxNode VisitForExpression(ForExpressionSyntax node) => node.Update(this.AppendSequence(
+        node.ForKeyword,
+        Space,
+        node.OpenParen,
+        node.Iterator,
+        node.ElementType,
+        Space,
+        node.InKeyword,
+        Space,
+        node.Sequence,
+        node.CloseParen,
+        Space,
+        node.Then));
+
     public override SyntaxNode VisitBlockExpression(BlockExpressionSyntax node) => node.Update(this.AppendSequence(
         node.OpenBrace,
         Newline,
         Indent,
         node.Statements,
         node.Value,
+        Newline,
         Unindent,
         node.CloseBrace));
 
@@ -155,6 +180,13 @@ internal sealed class Formatter : SyntaxRewriter
         Space,
         node.Value));
 
+    public override SyntaxNode VisitLabelDeclaration(LabelDeclarationSyntax node) => node.Update(this.AppendSequence(
+        Unindent,
+        node.Name,
+        node.Colon,
+        Newline,
+        Indent));
+
     public override SyntaxNode VisitSyntaxToken(SyntaxToken node)
     {
         this.AddNormalizedLeadingTrivia(node.LeadingTrivia);
@@ -188,6 +220,10 @@ internal sealed class Formatter : SyntaxRewriter
             if (element is null)
             {
                 yield return null;
+            }
+            else if (ReferenceEquals(element, Skip))
+            {
+                // No-op
             }
             else if (ReferenceEquals(element, Indent))
             {

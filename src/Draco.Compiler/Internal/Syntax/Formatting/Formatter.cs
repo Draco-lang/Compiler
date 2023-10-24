@@ -47,9 +47,16 @@ internal sealed class Formatter : SyntaxRewriter
     }
 
     public override SyntaxNode VisitCompilationUnit(CompilationUnitSyntax node) => node.Update(this.AppendSequence(
-        node.Declarations,
+        new SyntaxList<DeclarationSyntax>(this.AppendSequence(PartitionStatementsFromImportDeclarations(node.Declarations))!),
         Newline,
         node.End));
+
+    public override SyntaxNode VisitImportDeclaration(ImportDeclarationSyntax node) => node.Update(this.AppendSequence(
+        node.ImportKeyword,
+        Space,
+        node.Path,
+        node.Semicolon,
+        Newline));
 
     public override SyntaxNode VisitFunctionDeclaration(FunctionDeclarationSyntax node) => node.Update(this.AppendSequence(
         node.VisibilityModifier,
@@ -69,7 +76,7 @@ internal sealed class Formatter : SyntaxRewriter
         node.OpenBrace,
         Newline,
         Indent,
-        node.Statements,
+        new SyntaxList<StatementSyntax>(this.AppendSequence(PartitionStatementsFromImportDeclarations(node.Statements))!),
         Unindent,
         node.CloseBrace));
 
@@ -361,5 +368,26 @@ internal sealed class Formatter : SyntaxRewriter
 
         // Not indented, last trivia was a newline
         this.currentTrivia.Add(this.Settings.IndentationTrivia(indentation));
+    }
+
+    private static IEnumerable<object?> PartitionStatementsFromImportDeclarations<T>(SyntaxList<T> syntax)
+        where T : SyntaxNode
+    {
+        // Inject a double newline between import and non-import elements
+        var lastWasImport = false;
+        foreach (var statement in syntax)
+        {
+            if (statement is ImportDeclarationSyntax)
+            {
+                if (!lastWasImport) yield return Newline2;
+                lastWasImport = true;
+            }
+            else
+            {
+                if (lastWasImport) yield return Newline2;
+                lastWasImport = false;
+            }
+            yield return statement;
+        }
     }
 }

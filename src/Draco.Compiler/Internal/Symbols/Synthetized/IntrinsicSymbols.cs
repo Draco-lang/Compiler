@@ -153,6 +153,10 @@ internal sealed partial class IntrinsicSymbols
         {
             foreach (var additionalSym in metadataType.AdditionalSymbols) yield return additionalSym;
         }
+
+        // String addition
+        yield return this.Binary(TokenKind.Plus, this.String, this.String, this.String, (codegen, target, operands) =>
+            codegen.Write(Call(target, this.WellKnownTypes.SystemString_Concat, operands)));
     }
 
     private static TypeAliasSymbol Alias(string name, TypeSymbol type) =>

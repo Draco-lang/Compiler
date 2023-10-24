@@ -45,6 +45,20 @@ internal sealed partial class WellKnownTypes
                 m.Name == "Format"
              && m.Parameters is [_, { Type: TypeInstanceSymbol { GenericDefinition: ArrayTypeSymbol } }]));
     private MetadataMethodSymbol? systemString_Format;
+
+    /// <summary>
+    /// string.Concat(string str1, string str2).
+    /// </summary>
+    public MetadataMethodSymbol SystemString_Concat => InterlockedUtils.InitializeNull(
+        ref this.systemString_Concat,
+        () => this.SystemString
+            .Members
+            .OfType<MetadataMethodSymbol>()
+            .First(m =>
+                m.Name == "Concat"
+             && m.Parameters.Length == 2
+             && m.Parameters.All(p => SymbolEqualityComparer.Default.Equals(p.Type, this.SystemString))));
+    private MetadataMethodSymbol? systemString_Concat;
     #endregion
 
     private readonly Compilation compilation;

@@ -24,17 +24,17 @@ internal static class MetadataSymbol
         TypeDefinition type,
         MetadataReader metadataReader)
     {
+        var result = new List<Symbol>();
         if (type.Attributes.HasFlag(StaticClassAttributes))
         {
             // Static classes are treated as modules, nothing extra to do
-            var result = new MetadataStaticClassSymbol(containingSymbol, type);
-            return new[] { result };
+            result.Add(new MetadataStaticClassSymbol(containingSymbol, type));
         }
         else
         {
             // Non-static classes get constructor methods injected, in case they are not abstract
             var typeSymbol = new MetadataTypeSymbol(containingSymbol, type);
-            var results = new List<Symbol>() { typeSymbol };
+            result.Add(typeSymbol);
             if (!type.Attributes.HasFlag(TypeAttributes.Abstract))
             {
                 // Look for the constructors
@@ -45,12 +45,12 @@ internal static class MetadataSymbol
                     if (methodName != ".ctor") continue;
 
                     // This is a constructor, synthetize a function overload
-                    var ctor = SynthetizeConstructor(typeSymbol, method);
-                    results.Add(ctor);
+                    var ctor = new MetadataConstructorFunctionSymbol(typeSymbol, method);
+                    result.Add(ctor);
                 }
             }
-            return results;
         }
+        return result;
     }
 
     public static string? GetDefaultMemberAttributeName(TypeDefinition typeDefinition, Compilation compilation, MetadataReader reader)
@@ -64,12 +64,18 @@ internal static class MetadataSymbol
             case HandleKind.MethodDefinition:
                 var method = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
                 var methodType = reader.GetTypeDefinition(method.GetDeclaringType());
-                if (reader.GetString(methodType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                if (reader.GetString(methodType.Name) == "DefaultMemberAttribute")
+                {
+                    return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                }
                 break;
             case HandleKind.MemberReference:
                 var member = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
                 var memberType = reader.GetTypeReference((TypeReferenceHandle)member.Parent);
-                if (reader.GetString(memberType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                if (reader.GetString(memberType.Name) == "DefaultMemberAttribute")
+                {
+                    return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                }
                 break;
             default: throw new InvalidOperationException();
             };
@@ -106,10 +112,6 @@ internal static class MetadataSymbol
         };
     }
 
-    private static FunctionSymbol SynthetizeConstructor(
-        MetadataTypeSymbol type,
-        MethodDefinition ctorMethod) => new MetadataConstructorFunctionSymbol(type, ctorMethod);
-
     /// <summary>
     /// Gets the documentation XML as text for the given <paramref name="symbol"/>.
     /// </summary>
@@ -144,7 +146,8 @@ internal static class MetadataSymbol
     /// </summary>
     /// <param name="symbol">The symbol to get prefixed documentation name of.</param>
     /// <returns>The prefixed documentation name, or empty string, if <paramref name="symbol"/> is null.</returns>
-    public static string GetPrefixedDocumentationName(Symbol? symbol) => $"{GetDocumentationPrefix(symbol)}{GetDocumentationName(symbol)}";
+    public static string GetPrefixedDocumentationName(Symbol? symbol) =>
+        $"{GetDocumentationPrefix(symbol)}{GetDocumentationName(symbol)}";
 
     private static string GetDocumentationPrefix(Symbol? symbol) => symbol switch
     {

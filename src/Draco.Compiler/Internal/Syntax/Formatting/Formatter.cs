@@ -375,19 +375,21 @@ internal sealed class Formatter : SyntaxRewriter
     {
         // Inject a double newline between import and non-import elements
         var lastWasImport = false;
+        var first = true;
         foreach (var statement in syntax)
         {
             if (statement is ImportDeclarationSyntax)
             {
-                if (!lastWasImport) yield return Newline2;
+                if (!lastWasImport && !first) yield return Newline2;
                 lastWasImport = true;
             }
             else
             {
-                if (lastWasImport) yield return Newline2;
+                if (lastWasImport && !first) yield return Newline2;
                 lastWasImport = false;
             }
             yield return statement;
+            first = false;
         }
     }
 }

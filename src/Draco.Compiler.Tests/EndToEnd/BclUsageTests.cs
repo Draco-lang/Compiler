@@ -384,4 +384,35 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal("11235813", stringWriter.ToString());
     }
+
+    [Fact]
+    public void StringEqualsOperator()
+    {
+        var assembly = Compile("""
+            public func streq(s1: string, s2: string): bool = s1 == s2;
+            """);
+
+        var case1 = Invoke<bool>(assembly: assembly, methodName: "streq", "asd", "def");
+        var case2 = Invoke<bool>(assembly: assembly, methodName: "streq", "asd", "asd");
+
+        Assert.False(case1);
+        Assert.True(case2);
+    }
+
+    [Fact]
+    public void StringAddOperator()
+    {
+        var assembly = Compile("""
+            public func mangle(s1: string, s2: string): string {
+                var result = "";
+                result += s1 + s2;
+                result += s2 + s1;
+                return result;
+            }
+            """);
+
+        var result = Invoke<string>(assembly: assembly, methodName: "mangle", "asd", "def");
+
+        Assert.Equal("asddefdefasd", result);
+    }
 }

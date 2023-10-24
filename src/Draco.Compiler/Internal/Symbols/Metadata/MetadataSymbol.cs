@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -19,38 +21,65 @@ internal static class MetadataSymbol
     public static readonly TypeAttributes StaticClassAttributes =
         TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class;
 
-    public static IEnumerable<Symbol> ToSymbol(
-        Symbol containingSymbol,
-        TypeDefinition type,
-        MetadataReader metadataReader)
+    public static Symbol ToSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
     {
-        var result = new List<Symbol>();
-        if (type.Attributes.HasFlag(StaticClassAttributes))
+        if (typeDefinition.Attributes.HasFlag(StaticClassAttributes))
         {
             // Static classes are treated as modules, nothing extra to do
-            result.Add(new MetadataStaticClassSymbol(containingSymbol, type));
+            return new MetadataStaticClassSymbol(containingSymbol, typeDefinition);
         }
         else
         {
-            // Non-static classes get constructor methods injected, in case they are not abstract
-            var typeSymbol = new MetadataTypeSymbol(containingSymbol, type);
-            result.Add(typeSymbol);
-            if (!type.Attributes.HasFlag(TypeAttributes.Abstract))
-            {
-                // Look for the constructors
-                foreach (var methodHandle in type.GetMethods())
-                {
-                    var method = metadataReader.GetMethodDefinition(methodHandle);
-                    var methodName = metadataReader.GetString(method.Name);
-                    if (methodName != ".ctor") continue;
+            // Non-static classes
+            return new MetadataTypeSymbol(containingSymbol, typeDefinition);
+        }
+    }
 
-                    // This is a constructor, synthetize a function overload
-                    var ctor = new MetadataConstructorFunctionSymbol(typeSymbol, method);
-                    result.Add(ctor);
-                }
+    public static IEnumerable<Symbol> GetAdditionalSymbols(
+        Symbol typeSymbol,
+        TypeDefinition typeDefinition,
+        MetadataReader metadataReader)
+    {
+        // Constructors
+        if (!typeDefinition.Attributes.HasFlag(TypeAttributes.Abstract))
+        {
+            // Look for the constructors
+            foreach (var methodHandle in typeDefinition.GetMethods())
+            {
+                var method = metadataReader.GetMethodDefinition(methodHandle);
+
+                // Skip private
+                if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
+
+                // Match name
+                var methodName = metadataReader.GetString(method.Name);
+                if (methodName != ".ctor") continue;
+
+                // This is a public constructor, synthetize a function overload
+                var ctor = new MetadataConstructorFunctionSymbol((MetadataTypeSymbol)typeSymbol, method);
+                yield return ctor;
             }
         }
-        return result;
+
+        // We look for operator symbols
+        foreach (var methodHandle in typeDefinition.GetMethods())
+        {
+            var method = metadataReader.GetMethodDefinition(methodHandle);
+
+            // Skip private
+            if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
+
+            // Skip non-specialname
+            if (!method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
+
+            // Name must start with "op_"
+            var methodName = metadataReader.GetString(method.Name);
+            if (!methodName.StartsWith("op_")) continue;
+
+            // This is an operator, synthetize a function overload
+            var op = new MetadataMethodSymbol(typeSymbol, method);
+            yield return op;
+        }
     }
 
     public static string? GetDefaultMemberAttributeName(TypeDefinition typeDefinition, Compilation compilation, MetadataReader reader)

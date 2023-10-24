@@ -18,9 +18,9 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// <returns>The name of the symbol to look up the unary operator.</returns>
     public static string GetUnaryOperatorName(TokenKind token) => token switch
     {
-        TokenKind.Plus => "operator +",
-        TokenKind.Minus => "operator -",
-        TokenKind.KeywordNot => "operator not",
+        TokenKind.Plus => "op_UnaryPlus",
+        TokenKind.Minus => "op_UnaryNegation",
+        TokenKind.KeywordNot => "op_LogicalNot",
         _ => throw new System.ArgumentOutOfRangeException(nameof(token)),
     };
 
@@ -31,12 +31,14 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// <returns>The name of the symbol to look up the binary operator.</returns>
     public static string GetBinaryOperatorName(TokenKind token) => token switch
     {
-        TokenKind.Plus => "operator +",
-        TokenKind.Minus => "operator -",
-        TokenKind.Star => "operator *",
-        TokenKind.Slash => "operator /",
-        TokenKind.KeywordMod => "operator mod",
-        TokenKind.KeywordRem => "operator rem",
+        TokenKind.Plus => "op_Addition",
+        TokenKind.Minus => "op_Subtraction",
+        TokenKind.Star => "op_Multiply",
+        TokenKind.Slash => "op_Division",
+        // NOTE: This is actually remainder
+        TokenKind.KeywordRem => "op_Modulus",
+        // TODO: Consider for interop
+        TokenKind.KeywordMod => "op_DracoModulo",
         _ => throw new System.ArgumentOutOfRangeException(nameof(token)),
     };
 
@@ -47,12 +49,12 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// <returns>The name of the symbol to look up the comparison operator.</returns>
     public static string GetComparisonOperatorName(TokenKind token) => token switch
     {
-        TokenKind.Equal => "operator ==",
-        TokenKind.NotEqual => "operator !=",
-        TokenKind.GreaterThan => "operator >",
-        TokenKind.LessThan => "operator <",
-        TokenKind.GreaterEqual => "operator >=",
-        TokenKind.LessEqual => "operator <=",
+        TokenKind.Equal => "op_Equality",
+        TokenKind.NotEqual => "op_Inequality",
+        TokenKind.GreaterThan => "op_GreaterThan",
+        TokenKind.LessThan => "op_LessThan",
+        TokenKind.GreaterEqual => "op_GreaterThanOrEqual",
+        TokenKind.LessEqual => "op_LessThanOrEqual",
         _ => throw new System.ArgumentOutOfRangeException(nameof(token)),
     };
 

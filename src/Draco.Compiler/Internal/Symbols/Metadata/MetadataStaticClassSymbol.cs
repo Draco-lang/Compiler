@@ -60,8 +60,11 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
-            result.AddRange(symbols);
+            // Turn into a symbol
+            var symbol = MetadataSymbol.ToSymbol(this, typeDef);
+            result.Add(symbol);
+            // Add additional symbols
+            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol, typeDef, this.MetadataReader));
         }
 
         // Methods

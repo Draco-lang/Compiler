@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
 /// <summary>
@@ -14,4 +16,10 @@ internal interface IMetadataClass : IMetadataSymbol
     /// The default member attribute name, which is the name of an indexer property.
     /// </summary>
     public string? DefaultMemberAttributeName { get; }
+
+    /// <summary>
+    /// The additional symbols that can potentially leak out of the class, like constructors or operators.
+    /// </summary>
+    /// <returns>The additional symbols that should be in the same scope as the class definition.</returns>
+    public IEnumerable<Symbol> AdditionalSymbols { get; }
 }

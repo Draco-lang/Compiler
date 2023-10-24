@@ -4,6 +4,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Model;
+using Draco.Compiler.Internal.Symbols.Metadata;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
@@ -145,6 +146,12 @@ internal sealed partial class IntrinsicSymbols
             yield return this.Binary(TokenKind.Slash, type, type, type, this.CodegenDiv);
             yield return this.Binary(TokenKind.KeywordMod, type, type, type, this.CodegenMod);
             yield return this.Binary(TokenKind.KeywordRem, type, type, type, this.CodegenRem);
+        }
+
+        // Add additional symbols for some metadata builtins
+        foreach (var metadataType in new[] { this.WellKnownTypes.SystemString })
+        {
+            foreach (var additionalSym in metadataType.AdditionalSymbols) yield return additionalSym;
         }
     }
 

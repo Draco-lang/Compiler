@@ -56,6 +56,10 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
+    public IEnumerable<Symbol> AdditionalSymbols =>
+        InterlockedUtils.InitializeDefault(ref this.additionalSymbols, this.BuildAdditionalSymbols);
+    private ImmutableArray<Symbol> additionalSymbols;
+
     private readonly TypeDefinition typeDefinition;
 
     public MetadataTypeSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
@@ -134,7 +138,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol, typeDef, this.MetadataReader));
+            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
         }
 
         // Methods
@@ -186,4 +190,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private string BuildRawDocumentation() =>
         MetadataSymbol.GetDocumentation(this);
+
+    private ImmutableArray<Symbol> BuildAdditionalSymbols() =>
+        MetadataSymbol.GetAdditionalSymbols(this, this.typeDefinition, this.MetadataReader).ToImmutableArray();
 }

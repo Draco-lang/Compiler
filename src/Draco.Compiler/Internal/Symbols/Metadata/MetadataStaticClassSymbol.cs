@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -38,6 +39,11 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     public string? DefaultMemberAttributeName =>
         InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.Assembly.Compilation, this.MetadataReader));
+
+    public IEnumerable<Symbol> AdditionalSymbols =>
+        InterlockedUtils.InitializeDefault(ref this.additionalSymbols, this.BuildAdditionalSymbols);
+    private ImmutableArray<Symbol> additionalSymbols;
+
     private string? defaultMemberAttributeName;
 
     private readonly TypeDefinition typeDefinition;
@@ -64,7 +70,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol, typeDef, this.MetadataReader));
+            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
         }
 
         // Methods
@@ -119,4 +125,7 @@ internal sealed class MetadataStaticClassSymbol : ModuleSymbol, IMetadataSymbol,
 
     private string BuildRawDocumentation() =>
         MetadataSymbol.GetDocumentation(this);
+
+    private ImmutableArray<Symbol> BuildAdditionalSymbols() =>
+        MetadataSymbol.GetAdditionalSymbols(this, this.typeDefinition, this.MetadataReader).ToImmutableArray();
 }

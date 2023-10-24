@@ -61,7 +61,7 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol, typeDef, this.MetadataReader));
+            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
         }
 
         // Done

@@ -285,7 +285,7 @@ internal sealed class Formatter : SyntaxRewriter
         var first = true;
         foreach (var t in trivia)
         {
-            if (t.Kind is not TriviaKind.LineComment or TriviaKind.DocumentationComment) continue;
+            if (t.Kind is not (TriviaKind.LineComment or TriviaKind.DocumentationComment)) continue;
 
             // Indent the trivia
             if (first) this.EnsureSpace();

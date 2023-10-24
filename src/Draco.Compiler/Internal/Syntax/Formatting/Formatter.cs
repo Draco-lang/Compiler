@@ -47,6 +47,8 @@ internal sealed class Formatter : SyntaxRewriter
     }
 
     public override SyntaxNode VisitCompilationUnit(CompilationUnitSyntax node) => node.Update(this.AppendSequence(
+        // TODO: BUG, this is eagerly evaluated, and AppendSequence is lazy
+        // meaning that the leading trivia is polluted
         new SyntaxList<DeclarationSyntax>(this.AppendSequence(PartitionStatementsFromImportDeclarations(node.Declarations))!),
         Newline,
         node.End));
@@ -76,6 +78,8 @@ internal sealed class Formatter : SyntaxRewriter
         node.OpenBrace,
         Newline,
         Indent,
+        // TODO: BUG, this is eagerly evaluated, and AppendSequence is lazy
+        // meaning that the leading trivia is polluted
         new SyntaxList<StatementSyntax>(this.AppendSequence(PartitionStatementsFromImportDeclarations(node.Statements))!),
         Unindent,
         node.CloseBrace));
@@ -148,7 +152,9 @@ internal sealed class Formatter : SyntaxRewriter
         node.OpenBrace,
         Newline,
         Indent,
-        node.Statements,
+        // TODO: BUG, this is eagerly evaluated, and AppendSequence is lazy
+        // meaning that the leading trivia is polluted
+        new SyntaxList<StatementSyntax>(this.AppendSequence(PartitionStatementsFromImportDeclarations(node.Statements))!),
         node.Value,
         Newline,
         Unindent,

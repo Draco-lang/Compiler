@@ -47,6 +47,11 @@ internal sealed class Formatter : SyntaxVisitor
     }
 
     /// <summary>
+    /// Performs a formattiong action.
+    /// </summary>
+    private delegate void FormatActionDelegate();
+
+    /// <summary>
     /// The settings of the formatter.
     /// </summary>
     public FormatterSettings Settings { get; }
@@ -64,6 +69,10 @@ internal sealed class Formatter : SyntaxVisitor
         // TODO
         this.tokens.Add(node.ToBuilder());
     }
+
+    // Format actions //////////////////////////////////////////////////////////
+
+    private FormatActionDelegate Just(SyntaxNode node) => () => node.Accept(this);
 
     // Low level utilities /////////////////////////////////////////////////////
 

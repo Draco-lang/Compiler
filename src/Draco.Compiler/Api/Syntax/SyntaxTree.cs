@@ -156,13 +156,7 @@ public sealed class SyntaxTree
     /// Syntactically formats this <see cref="SyntaxTree"/>.
     /// </summary>
     /// <returns>The formatted tree.</returns>
-    public SyntaxTree Format() => new(
-        // TODO: Correct to inherit source text?
-        sourceText: this.SourceText,
-        // TODO: Better API?
-        greenRoot: this.GreenRoot.Accept(new Formatter(FormatterSettings.Default)),
-        // TODO: Anything smarter to pass here?
-        syntaxDiagnostics: new());
+    public SyntaxTree Format() => Formatter.Format(this);
 
     /// <summary>
     /// The internal root of the tree.

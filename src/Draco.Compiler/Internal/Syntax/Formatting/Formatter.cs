@@ -47,6 +47,38 @@ internal sealed class Formatter : SyntaxRewriter
         this.Settings = settings;
     }
 
+    // Low level utilities /////////////////////////////////////////////////////
+
+    private void EnsureIndentation(
+        SyntaxList<SyntaxTrivia>.Builder first,
+        SyntaxList<SyntaxTrivia>.Builder second,
+        int indentation)
+    {
+        // The first didn't end in a newline, no need to indent
+        if (first.Count == 0) return;
+        if (first[^1].Kind != TriviaKind.Newline) return;
+
+        // Trim the second one
+        TrimLeft(second);
+
+        // Add the indentation, if it's > 0
+        if (indentation > 0) second.Insert(0, this.Settings.IndentationTrivia(indentation));
+    }
+
+    private void EnsureSpace(
+        SyntaxList<SyntaxTrivia>.Builder first,
+        SyntaxList<SyntaxTrivia>.Builder second)
+    {
+        static bool IsSpace(SyntaxTrivia trivia) =>
+            trivia.Kind is TriviaKind.Newline or TriviaKind.Whitespace;
+
+        if (first.Count > 0 && IsSpace(first[^1])) return;
+        if (second.Count > 0 && IsSpace(second[0])) return;
+
+        // We can just append at the end of the first
+        first.Add(this.Settings.SpaceTrivia);
+    }
+
     private void EnsureNewline(
         SyntaxList<SyntaxTrivia>.Builder first,
         SyntaxList<SyntaxTrivia>.Builder second,

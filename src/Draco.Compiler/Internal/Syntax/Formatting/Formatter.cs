@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// <summary>
 /// A formatter for the syntax tree.
 /// </summary>
-internal sealed class Formatter : SyntaxRewriter
+internal sealed class Formatter : SyntaxVisitor
 {
     /// <summary>
     /// Formats the given syntax tree.
@@ -25,7 +25,18 @@ internal sealed class Formatter : SyntaxRewriter
         settings ??= FormatterSettings.Default;
         var formatter = new Formatter(settings);
 
-        var formattedRoot = tree.GreenRoot.Accept(formatter);
+        // Construct token sequence
+        tree.GreenRoot.Accept(formatter);
+
+        // Re-parse into tree
+        var tokens = formatter.tokens
+            .Select(t => t.Build())
+            .ToArray();
+        var tokenSource = TokenSource.From(tokens.AsMemory());
+        // TODO: Pass in anything for diagnostics?
+        var parser = new Parser(tokenSource, diagnostics: new());
+        // TODO: Is it correct to assume compilation unit?
+        var formattedRoot = parser.ParseCompilationUnit();
 
         return new SyntaxTree(
             // TODO: Is this correct to pass it in?
@@ -46,8 +57,6 @@ internal sealed class Formatter : SyntaxRewriter
     {
         this.Settings = settings;
     }
-
-
 
     // Low level utilities /////////////////////////////////////////////////////
 

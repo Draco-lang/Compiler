@@ -47,6 +47,8 @@ internal sealed class Formatter : SyntaxRewriter
         this.Settings = settings;
     }
 
+
+
     // Low level utilities /////////////////////////////////////////////////////
 
     private void EnsureIndentation(
@@ -59,7 +61,7 @@ internal sealed class Formatter : SyntaxRewriter
         if (first[^1].Kind != TriviaKind.Newline) return;
 
         // Trim the second one
-        TrimLeft(second);
+        TrimLeft(second, TriviaKind.Whitespace);
 
         // Add the indentation, if it's > 0
         if (indentation > 0) second.Insert(0, this.Settings.IndentationTrivia(indentation));

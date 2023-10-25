@@ -52,13 +52,78 @@ internal sealed class Formatter : SyntaxVisitor
     public FormatterSettings Settings { get; }
 
     private readonly List<SyntaxToken.Builder> tokens = new();
+    private int indentation;
 
     private Formatter(FormatterSettings settings)
     {
         this.Settings = settings;
     }
 
+    public override void VisitSyntaxToken(SyntaxToken node)
+    {
+        // TODO
+        this.tokens.Add(node.ToBuilder());
+    }
+
     // Low level utilities /////////////////////////////////////////////////////
+
+    private void NormalizeLeadingTrivia(
+        SyntaxList<SyntaxTrivia>.Builder trivia,
+        int indentation)
+    {
+        static bool IsSpace(SyntaxTrivia trivia) =>
+            trivia.Kind is TriviaKind.Newline or TriviaKind.Whitespace;
+
+        static bool IsComment(SyntaxTrivia trivia) =>
+            trivia.Kind is TriviaKind.LineComment or TriviaKind.DocumentationComment;
+
+        // Remove all space
+        for (var i = 0; i < trivia.Count;)
+        {
+            if (IsSpace(trivia[i])) trivia.RemoveAt(i);
+            else ++i;
+        }
+
+        // Indent the trivia if needed
+        if (this.tokens.Count > 0)
+        {
+            this.EnsureIndentation(this.tokens[^1].TrailingTrivia, trivia, indentation);
+        }
+
+        // Before each comment or doc comment, we add a newline, then indentation
+        // Except the first one, which just got indented
+        var isFirst = true;
+        for (var i = 0; i < this.tokens.Count; ++i)
+        {
+            if (!IsComment(trivia[i])) continue;
+            if (isFirst)
+            {
+                isFirst = false;
+                continue;
+            }
+            // A comment comes next, add newline then indentation
+            trivia.Insert(i, this.Settings.NewlineTrivia);
+            if (indentation > 0) trivia.Insert(i + 1, this.Settings.IndentationTrivia(indentation));
+        }
+    }
+
+    private void NormalizeTrailingTrivia(
+        SyntaxList<SyntaxTrivia>.Builder trivia,
+        int indentation)
+    {
+        static bool IsSpace(SyntaxTrivia trivia) =>
+            trivia.Kind is TriviaKind.Newline or TriviaKind.Whitespace;
+
+        // Remove all space
+        for (var i = 0; i < trivia.Count;)
+        {
+            if (IsSpace(trivia[i])) trivia.RemoveAt(i);
+            else ++i;
+        }
+
+        // If nonempty, add a space
+        if (trivia.Count > 0) trivia.Insert(0, this.Settings.SpaceTrivia);
+    }
 
     private void EnsureIndentation(
         SyntaxList<SyntaxTrivia>.Builder first,

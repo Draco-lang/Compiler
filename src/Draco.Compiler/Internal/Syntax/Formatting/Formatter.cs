@@ -107,7 +107,8 @@ internal sealed class Formatter : SyntaxRewriter
 
     public override SyntaxNode VisitReturnExpression(ReturnExpressionSyntax node) => node.Update(this.AppendSequence(
         node.ReturnKeyword,
-        node.Value is null ? Skip : Space));
+        node.Value is null ? Skip : Space,
+        node.Value));
 
     public override SyntaxNode VisitIfExpression(IfExpressionSyntax node) => node.Update(this.AppendSequence(
         node.IfKeyword,

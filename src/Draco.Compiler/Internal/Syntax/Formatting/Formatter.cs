@@ -62,8 +62,26 @@ internal sealed class Formatter : SyntaxVisitor
 
     public override void VisitSyntaxToken(SyntaxToken node)
     {
-        // TODO
-        this.tokens.Add(node.ToBuilder());
+        var builder = node.ToBuilder();
+
+        // Normalize trivia
+        this.NormalizeLeadingTrivia(builder.LeadingTrivia, this.indentation);
+        this.NormalizeTrailingTrivia(builder.TrailingTrivia, this.indentation);
+
+        // Add what is accumulated
+        builder.LeadingTrivia.InsertRange(0, this.currentTrivia);
+
+        // Indent
+        if (this.tokens.Count > 0)
+        {
+            this.EnsureIndentation(this.tokens[^1].TrailingTrivia, builder.LeadingTrivia, this.indentation);
+        }
+
+        // Clear state
+        this.currentTrivia.Clear();
+
+        // Append
+        this.tokens.Add(builder);
     }
 
     // Format actions //////////////////////////////////////////////////////////
@@ -114,7 +132,7 @@ internal sealed class Formatter : SyntaxVisitor
         // Before each comment or doc comment, we add a newline, then indentation
         // Except the first one, which just got indented
         var isFirst = true;
-        for (var i = 0; i < this.tokens.Count; ++i)
+        for (var i = 0; i < trivia.Count; ++i)
         {
             if (!IsComment(trivia[i])) continue;
             if (isFirst)

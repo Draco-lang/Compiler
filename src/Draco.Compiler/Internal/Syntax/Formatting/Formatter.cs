@@ -68,6 +68,11 @@ internal sealed class Formatter : SyntaxVisitor
 
     // Format actions //////////////////////////////////////////////////////////
 
+    private void Place(SyntaxNode? node)
+    {
+        if (node is null) return;
+        node.Accept(this);
+    }
     private void Indent() => ++this.indentation;
     private void Unindent() => --this.indentation;
     private void Space()
@@ -137,8 +142,12 @@ internal sealed class Formatter : SyntaxVisitor
             else ++i;
         }
 
-        // If nonempty, add a space
-        if (trivia.Count > 0) trivia.Insert(0, this.Settings.SpaceTrivia);
+        // If nonempty, add a space and a newline at the end
+        if (trivia.Count > 0)
+        {
+            trivia.Insert(0, this.Settings.SpaceTrivia);
+            trivia.Add(this.Settings.NewlineTrivia);
+        }
     }
 
     private void EnsureIndentation(

@@ -47,16 +47,12 @@ internal sealed class Formatter : SyntaxVisitor
     }
 
     /// <summary>
-    /// Performs a formattiong action.
-    /// </summary>
-    private delegate void FormatActionDelegate();
-
-    /// <summary>
     /// The settings of the formatter.
     /// </summary>
     public FormatterSettings Settings { get; }
 
     private readonly List<SyntaxToken.Builder> tokens = new();
+    private readonly SyntaxList<SyntaxTrivia>.Builder currentTrivia = new();
     private int indentation;
 
     private Formatter(FormatterSettings settings)
@@ -72,7 +68,18 @@ internal sealed class Formatter : SyntaxVisitor
 
     // Format actions //////////////////////////////////////////////////////////
 
-    private FormatActionDelegate Just(SyntaxNode node) => () => node.Accept(this);
+    private void Indent() => ++this.indentation;
+    private void Unindent() => --this.indentation;
+    private void Space()
+    {
+        if (this.tokens.Count == 0) return;
+        this.EnsureSpace(this.tokens[^1].TrailingTrivia, this.currentTrivia);
+    }
+    private void Newline(int amount = 1)
+    {
+        if (this.tokens.Count == 0) return;
+        this.EnsureNewline(this.tokens[^1].TrailingTrivia, this.currentTrivia, amount);
+    }
 
     // Low level utilities /////////////////////////////////////////////////////
 

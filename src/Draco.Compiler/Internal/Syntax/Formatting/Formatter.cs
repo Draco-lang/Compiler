@@ -60,6 +60,19 @@ internal sealed class Formatter : SyntaxVisitor
         this.Settings = settings;
     }
 
+    public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
+    {
+        this.Place(node.FunctionKeyword);
+        this.Space();
+        this.Place(node.Name);
+        this.Place(node.OpenParen);
+        // TODO: Format params nicely
+        this.Place(node.CloseParen);
+        this.Place(node.ReturnType);
+        this.Space();
+        this.Place(node.Body);
+    }
+
     public override void VisitSyntaxToken(SyntaxToken node)
     {
         var builder = node.ToBuilder();

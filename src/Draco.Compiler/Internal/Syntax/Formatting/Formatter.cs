@@ -69,12 +69,27 @@ internal sealed class Formatter : SyntaxVisitor
         this.Place(node.End);
     }
 
+    public override void VisitDeclarationStatement(DeclarationStatementSyntax node)
+    {
+        this.Place(node.Declaration);
+        this.Newline();
+    }
+
     public override void VisitImportDeclaration(ImportDeclarationSyntax node)
     {
         this.Place(node.ImportKeyword);
         this.Space();
         this.Place(node.Path);
         this.Place(node.Semicolon);
+        this.Newline();
+    }
+
+    public override void VisitLabelDeclaration(LabelDeclarationSyntax node)
+    {
+        this.Unindent();
+        this.Place(node.Name);
+        this.Place(node.Colon);
+        this.Indent();
     }
 
     public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
@@ -107,6 +122,7 @@ internal sealed class Formatter : SyntaxVisitor
         this.Space();
         this.Indent();
         this.Place(node.Value);
+        this.Place(node.Semicolon);
         this.Unindent();
     }
 
@@ -121,6 +137,13 @@ internal sealed class Formatter : SyntaxVisitor
     {
         this.Place(node.ReturnKeyword);
         this.SpaceBeforeNotNull(node.Value);
+    }
+
+    public override void VisitGotoExpression(GotoExpressionSyntax node)
+    {
+        this.Place(node.GotoKeyword);
+        this.Space();
+        this.Place(node.Target);
     }
 
     public override void VisitTypeSpecifier(TypeSpecifierSyntax node)

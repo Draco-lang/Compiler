@@ -31,12 +31,15 @@ internal sealed class FormatterSettings
     /// </summary>
     public bool NormalizeStringNewline { get; init; } = true;
 
-    public SyntaxTrivia NewlineTrivia => new(Api.Syntax.TriviaKind.Newline, this.Newline);
-    public SyntaxTrivia SpaceTrivia => new(Api.Syntax.TriviaKind.Whitespace, " ");
-    public SyntaxTrivia IndentationTrivia(int amount = 1)
+    public string IndentationString(int amount = 1)
     {
         var sb = new StringBuilder();
         for (var i = 0; i < amount; ++i) sb.Append(this.Indentation);
-        return new(Api.Syntax.TriviaKind.Whitespace, sb.ToString());
+        return sb.ToString();
     }
+
+    public SyntaxTrivia NewlineTrivia => new(Api.Syntax.TriviaKind.Newline, this.Newline);
+    public SyntaxTrivia SpaceTrivia => new(Api.Syntax.TriviaKind.Whitespace, " ");
+    public SyntaxTrivia IndentationTrivia(int amount = 1) =>
+        new(Api.Syntax.TriviaKind.Whitespace, this.IndentationString(amount));
 }

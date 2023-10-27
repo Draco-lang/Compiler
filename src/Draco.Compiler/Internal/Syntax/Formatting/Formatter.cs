@@ -318,11 +318,25 @@ internal sealed class Formatter : SyntaxVisitor
 
     public override void VisitStringExpression(StringExpressionSyntax node)
     {
+        var isMultiline = node.OpenQuotes.Kind == TokenKind.MultiLineStringStart;
         this.Place(node.OpenQuotes);
-        this.Indent();
-        foreach (var part in node.Parts) this.Place(part);
+        if (isMultiline)
+        {
+            this.Newline();
+            this.Indent();
+        }
+        var isNewLine = true;
+        foreach (var part in node.Parts)
+        {
+            if (isNewLine)
+            {
+                // TODO: Trim left, indent
+            }
+            this.Place(part);
+            isNewLine = part is TextStringPartSyntax { Content: { Kind: TokenKind.StringNewline } };
+        }
         this.Place(node.CloseQuotes);
-        this.Unindent();
+        if (isMultiline) this.Unindent();
     }
 
     // ELemental token formatting

@@ -256,10 +256,7 @@ internal sealed class Formatter : SyntaxVisitor
     public override void VisitUnaryExpression(UnaryExpressionSyntax node)
     {
         this.Place(node.Operator);
-
-        // TODO: Do something more generic
-        if (node.Operator.Kind == TokenKind.KeywordNot) this.Space();
-
+        if (IsKeyword(node.Operator.Kind)) this.Space();
         this.Place(node.Operand);
     }
 
@@ -319,22 +316,40 @@ internal sealed class Formatter : SyntaxVisitor
     public override void VisitStringExpression(StringExpressionSyntax node)
     {
         var isMultiline = node.OpenQuotes.Kind == TokenKind.MultiLineStringStart;
+        var cutoff = SyntaxFacts.ComputeCutoff(node);
+
         this.Place(node.OpenQuotes);
         if (isMultiline)
         {
             this.Newline();
             this.Indent();
         }
+
+        var cutoffString = this.Settings.IndentationString(this.indentation);
+
         var isNewLine = true;
         foreach (var part in node.Parts)
         {
+            var toInsert = part;
             if (isNewLine)
             {
-                // TODO: Trim left, indent
+                if (part is TextStringPartSyntax { Content.Kind: TokenKind.StringContent } textPart)
+                {
+                    var content = textPart.Content.ToBuilder();
+                    if (content.Text is not null && content.Text.StartsWith(cutoff))
+                    {
+                        content.Text = content.Text[cutoff.Length..];
+                        content.Text = string.Concat(cutoffString, content.Text);
+                        content.Value = content.Text;
+                    }
+                    toInsert = new TextStringPartSyntax(content.Build());
+                }
             }
-            this.Place(part);
-            isNewLine = part is TextStringPartSyntax { Content: { Kind: TokenKind.StringNewline } };
+            this.Place(toInsert);
+            isNewLine = part is TextStringPartSyntax { Content.Kind: TokenKind.StringNewline };
         }
+
+        this.Newline();
         this.Place(node.CloseQuotes);
         if (isMultiline) this.Unindent();
     }
@@ -349,15 +364,18 @@ internal sealed class Formatter : SyntaxVisitor
             builder.Text = this.Settings.Newline;
         }
 
-        // Normalize trivia
-        this.NormalizeLeadingTrivia(builder.LeadingTrivia, this.indentation);
-        this.NormalizeTrailingTrivia(builder.TrailingTrivia, this.indentation);
+        if (!IsStringContent(node.Kind))
+        {
+            // Normalize trivia
+            this.NormalizeLeadingTrivia(builder.LeadingTrivia, this.indentation);
+            this.NormalizeTrailingTrivia(builder.TrailingTrivia, this.indentation);
+        }
 
         // Add what is accumulated
         builder.LeadingTrivia.InsertRange(0, this.currentTrivia);
 
         // Indent
-        if (this.tokens.Count > 0)
+        if (this.tokens.Count > 0 && !IsStringContent(node.Kind))
         {
             this.EnsureIndentation(this.tokens[^1].TrailingTrivia, builder.LeadingTrivia, this.indentation);
         }
@@ -550,4 +568,32 @@ internal sealed class Formatter : SyntaxVisitor
         while (builder.Count > n && toTrim.Contains(builder[builder.Count - n - 1].Kind)) ++n;
         builder.RemoveRange(builder.Count - n - 1, n);
     }
+
+    // Token facts /////////////////////////////////////////////////////////////
+
+    private static bool IsKeyword(TokenKind kind) => kind
+        is TokenKind.KeywordAnd
+        or TokenKind.KeywordElse
+        or TokenKind.KeywordFalse
+        or TokenKind.KeywordFor
+        or TokenKind.KeywordFunc
+        or TokenKind.KeywordGoto
+        or TokenKind.KeywordIf
+        or TokenKind.KeywordImport
+        or TokenKind.KeywordIn
+        or TokenKind.KeywordInternal
+        or TokenKind.KeywordMod
+        or TokenKind.KeywordModule
+        or TokenKind.KeywordNot
+        or TokenKind.KeywordOr
+        or TokenKind.KeywordPublic
+        or TokenKind.KeywordRem
+        or TokenKind.KeywordReturn
+        or TokenKind.KeywordTrue
+        or TokenKind.KeywordVal
+        or TokenKind.KeywordVar
+        or TokenKind.KeywordWhile;
+
+    private static bool IsStringContent(TokenKind kind) =>
+        kind is TokenKind.StringContent or TokenKind.StringNewline;
 }

@@ -66,13 +66,27 @@ internal sealed class Formatter : SyntaxVisitor
         this.Space();
         this.Place(node.Name);
         this.Place(node.OpenParen);
-        // TODO: Format params nicely
+        this.AfterSeparator(node.ParameterList, this.Space);
         this.Place(node.CloseParen);
         this.Place(node.ReturnType);
         this.Space();
         this.Place(node.Body);
     }
 
+    public override void VisitReturnExpression(ReturnExpressionSyntax node)
+    {
+        this.Place(node.ReturnKeyword);
+        this.SpaceBeforeNotNull(node.Value);
+    }
+
+    public override void VisitTypeSpecifier(TypeSpecifierSyntax node)
+    {
+        this.Place(node.Colon);
+        this.Space();
+        this.Place(node.Type);
+    }
+
+    // ELemental token formatting
     public override void VisitSyntaxToken(SyntaxToken node)
     {
         var builder = node.ToBuilder();
@@ -115,6 +129,23 @@ internal sealed class Formatter : SyntaxVisitor
     {
         if (this.tokens.Count == 0) return;
         this.EnsureNewline(this.tokens[^1].TrailingTrivia, this.currentTrivia, amount);
+    }
+    private void SpaceBeforeNotNull(SyntaxNode? node)
+    {
+        if (node is null) return;
+        this.Space();
+        this.Place(node);
+    }
+    private void AfterSeparator<T>(SeparatedSyntaxList<T> list, Action afterSep)
+        where T : SyntaxNode
+    {
+        var isSeparator = false;
+        foreach (var item in list)
+        {
+            this.Place(item);
+            if (isSeparator) afterSep();
+            isSeparator = !isSeparator;
+        }
     }
 
     // Low level utilities /////////////////////////////////////////////////////

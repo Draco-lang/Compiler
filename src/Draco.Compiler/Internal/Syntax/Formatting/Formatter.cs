@@ -146,6 +146,36 @@ internal sealed class Formatter : SyntaxVisitor
         this.Place(node.Target);
     }
 
+    public override void VisitIfExpression(IfExpressionSyntax node)
+    {
+        this.Place(node.IfKeyword);
+        this.Space();
+        this.Place(node.OpenParen);
+        this.Place(node.Condition);
+        this.Place(node.CloseParen);
+        this.Space();
+        this.Place(node.Then);
+        this.SpaceBeforeNotNull(node.Else);
+    }
+
+    public override void VisitElseClause(ElseClauseSyntax node)
+    {
+        this.Place(node.ElseKeyword);
+        this.Space();
+        this.Place(node.Expression);
+    }
+
+    public override void VisitWhileExpression(WhileExpressionSyntax node)
+    {
+        this.Place(node.WhileKeyword);
+        this.Space();
+        this.Place(node.OpenParen);
+        this.Place(node.Condition);
+        this.Place(node.CloseParen);
+        this.Space();
+        this.Place(node.Then);
+    }
+
     public override void VisitTypeSpecifier(TypeSpecifierSyntax node)
     {
         this.Place(node.Colon);

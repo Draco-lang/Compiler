@@ -316,10 +316,24 @@ internal sealed class Formatter : SyntaxVisitor
         }
     }
 
+    public override void VisitStringExpression(StringExpressionSyntax node)
+    {
+        this.Place(node.OpenQuotes);
+        this.Indent();
+        foreach (var part in node.Parts) this.Place(part);
+        this.Place(node.CloseQuotes);
+        this.Unindent();
+    }
+
     // ELemental token formatting
     public override void VisitSyntaxToken(SyntaxToken node)
     {
         var builder = node.ToBuilder();
+
+        if (this.Settings.NormalizeStringNewline && builder.Kind == TokenKind.StringNewline)
+        {
+            builder.Text = this.Settings.Newline;
+        }
 
         // Normalize trivia
         this.NormalizeLeadingTrivia(builder.LeadingTrivia, this.indentation);

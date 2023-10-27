@@ -26,6 +26,11 @@ internal sealed class FormatterSettings
     /// </summary>
     public string Indentation { get; init; } = "    ";
 
+    /// <summary>
+    /// True, if newlines in strings should be normalized to the <see cref="Newline"/> sequence.
+    /// </summary>
+    public bool NormalizeStringNewline { get; init; } = true;
+
     public SyntaxTrivia NewlineTrivia => new(Api.Syntax.TriviaKind.Newline, this.Newline);
     public SyntaxTrivia SpaceTrivia => new(Api.Syntax.TriviaKind.Whitespace, " ");
     public SyntaxTrivia IndentationTrivia(int amount = 1)

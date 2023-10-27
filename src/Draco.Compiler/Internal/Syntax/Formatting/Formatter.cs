@@ -60,6 +60,23 @@ internal sealed class Formatter : SyntaxVisitor
         this.Settings = settings;
     }
 
+    public override void VisitCompilationUnit(CompilationUnitSyntax node)
+    {
+        this.FormatWithImports(node.Declarations);
+        // NOTE: Is is safe to clear this?
+        this.currentTrivia.Clear();
+        this.Newline();
+        this.Place(node.End);
+    }
+
+    public override void VisitImportDeclaration(ImportDeclarationSyntax node)
+    {
+        this.Place(node.ImportKeyword);
+        this.Space();
+        this.Place(node.Path);
+        this.Place(node.Semicolon);
+    }
+
     public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
     {
         this.Place(node.FunctionKeyword);
@@ -73,6 +90,33 @@ internal sealed class Formatter : SyntaxVisitor
         this.Place(node.Body);
     }
 
+    public override void VisitBlockFunctionBody(BlockFunctionBodySyntax node)
+    {
+        this.Place(node.OpenBrace);
+        if (node.Statements.Count > 0) this.Newline();
+        this.Indent();
+        this.FormatWithImports(node.Statements);
+        this.Unindent();
+        this.Place(node.CloseBrace);
+        this.Newline(2);
+    }
+
+    public override void VisitInlineFunctionBody(InlineFunctionBodySyntax node)
+    {
+        this.Place(node.Assign);
+        this.Space();
+        this.Indent();
+        this.Place(node.Value);
+        this.Unindent();
+    }
+
+    public override void VisitExpressionStatement(ExpressionStatementSyntax node)
+    {
+        this.Place(node.Expression);
+        this.Place(node.Semicolon);
+        this.Newline();
+    }
+
     public override void VisitReturnExpression(ReturnExpressionSyntax node)
     {
         this.Place(node.ReturnKeyword);
@@ -84,6 +128,27 @@ internal sealed class Formatter : SyntaxVisitor
         this.Place(node.Colon);
         this.Space();
         this.Place(node.Type);
+    }
+
+    // Formatting a list with potential import declarations within
+    private void FormatWithImports<T>(SyntaxList<T> list)
+        where T : SyntaxNode
+    {
+        var lastWasImport = false;
+        foreach (var item in list)
+        {
+            if (item is ImportDeclarationSyntax)
+            {
+                if (!lastWasImport) this.Newline(2);
+                lastWasImport = true;
+            }
+            else
+            {
+                if (lastWasImport) this.Newline(2);
+                lastWasImport = false;
+            }
+            this.Place(item);
+        }
     }
 
     // ELemental token formatting

@@ -60,10 +60,6 @@ internal sealed class Formatter : SyntaxVisitor
         this.Settings = settings;
     }
 
-    // TODO:
-    //  - strings
-    //  - error nodes
-
     public override void VisitCompilationUnit(CompilationUnitSyntax node)
     {
         this.FormatWithImports(node.Declarations);

@@ -47,12 +47,19 @@ internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, R
     protected override Task<bool> TryProcessCustomNotification(LspMessage message)
     {
         // Cancellation
-        var id = this.GetMessageId(message);
         var method = this.GetMessageMethodName(message);
         if (method == "$/cancelRequest")
         {
-            this.CancelIncomingRequest(id!);
-            return Task.FromResult(true);
+            var id = (message
+                .As<NotificationMessage>()
+                .Params?
+                .Deserialize<CancelParams>(this.JsonDeserializerOptions)?
+                .Id as IOneOf)?.Value;
+            if (id is not null)
+            {
+                this.CancelIncomingRequest(id);
+                return Task.FromResult(true);
+            }
         }
 
         return Task.FromResult(false);

@@ -99,6 +99,7 @@ internal sealed class Formatter : SyntaxVisitor
         this.Place(node.Name);
         this.Place(node.Type);
         this.Place(node.Value);
+        this.Place(node.Semicolon);
     }
 
     public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
@@ -230,7 +231,6 @@ internal sealed class Formatter : SyntaxVisitor
         }
         this.Unindent();
         this.Place(node.CloseBrace);
-        this.Newline(2);
     }
 
     public override void VisitCallExpression(CallExpressionSyntax node)
@@ -345,7 +345,7 @@ internal sealed class Formatter : SyntaxVisitor
             isNewLine = part is TextStringPartSyntax { Content.Kind: TokenKind.StringNewline };
         }
 
-        this.Newline();
+        if (isMultiline) this.Newline();
         this.Place(node.CloseQuotes);
         if (isMultiline) this.Unindent();
     }

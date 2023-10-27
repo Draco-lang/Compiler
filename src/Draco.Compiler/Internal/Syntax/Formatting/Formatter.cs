@@ -60,6 +60,10 @@ internal sealed class Formatter : SyntaxVisitor
         this.Settings = settings;
     }
 
+    // TODO:
+    //  - strings
+    //  - error nodes
+
     public override void VisitCompilationUnit(CompilationUnitSyntax node)
     {
         this.FormatWithImports(node.Declarations);
@@ -92,17 +96,34 @@ internal sealed class Formatter : SyntaxVisitor
         this.Indent();
     }
 
+    public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
+    {
+        this.Place(node.Keyword);
+        this.Space();
+        this.Place(node.Name);
+        this.Place(node.Type);
+        this.Place(node.Value);
+    }
+
     public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
     {
         this.Place(node.FunctionKeyword);
         this.Space();
         this.Place(node.Name);
+        this.Place(node.Generics);
         this.Place(node.OpenParen);
         this.AfterSeparator(node.ParameterList, this.Space);
         this.Place(node.CloseParen);
         this.Place(node.ReturnType);
         this.Space();
         this.Place(node.Body);
+    }
+
+    public override void VisitGenericParameterList(GenericParameterListSyntax node)
+    {
+        this.Place(node.OpenBracket);
+        this.AfterSeparator(node.Parameters, this.Space);
+        this.Place(node.CloseBracket);
     }
 
     public override void VisitBlockFunctionBody(BlockFunctionBodySyntax node)
@@ -124,6 +145,14 @@ internal sealed class Formatter : SyntaxVisitor
         this.Place(node.Value);
         this.Place(node.Semicolon);
         this.Unindent();
+    }
+
+    public override void VisitGenericType(GenericTypeSyntax node)
+    {
+        this.Place(node.Instantiated);
+        this.Place(node.OpenBracket);
+        this.AfterSeparator(node.Arguments, this.Space);
+        this.Place(node.CloseBracket);
     }
 
     public override void VisitExpressionStatement(ExpressionStatementSyntax node)
@@ -176,11 +205,94 @@ internal sealed class Formatter : SyntaxVisitor
         this.Place(node.Then);
     }
 
+    public override void VisitForExpression(ForExpressionSyntax node)
+    {
+        this.Place(node.ForKeyword);
+        this.Space();
+        this.Place(node.OpenParen);
+        this.Place(node.Iterator);
+        this.Place(node.ElementType);
+        this.Space();
+        this.Place(node.InKeyword);
+        this.Space();
+        this.Place(node.Sequence);
+        this.Place(node.CloseParen);
+        this.Space();
+        this.Place(node.Then);
+    }
+
+    public override void VisitBlockExpression(BlockExpressionSyntax node)
+    {
+        this.Place(node.OpenBrace);
+        if (node.Statements.Count > 0 || node.Value is not null) this.Newline();
+        this.Indent();
+        this.FormatWithImports(node.Statements);
+        if (node.Value is not null)
+        {
+            this.Place(node.Value);
+            this.Newline();
+        }
+        this.Unindent();
+        this.Place(node.CloseBrace);
+        this.Newline(2);
+    }
+
+    public override void VisitCallExpression(CallExpressionSyntax node)
+    {
+        this.Place(node.Function);
+        this.Place(node.OpenParen);
+        this.AfterSeparator(node.ArgumentList, this.Space);
+        this.Place(node.CloseParen);
+    }
+
+    public override void VisitGenericExpression(GenericExpressionSyntax node)
+    {
+        this.Place(node.Instantiated);
+        this.Place(node.OpenBracket);
+        this.AfterSeparator(node.Arguments, this.Space);
+        this.Place(node.CloseBracket);
+    }
+
+    public override void VisitUnaryExpression(UnaryExpressionSyntax node)
+    {
+        this.Place(node.Operator);
+
+        // TODO: Do something more generic
+        if (node.Operator.Kind == TokenKind.KeywordNot) this.Space();
+
+        this.Place(node.Operand);
+    }
+
+    public override void VisitBinaryExpression(BinaryExpressionSyntax node)
+    {
+        this.Place(node.Left);
+        this.Space();
+        this.Place(node.Operator);
+        this.Space();
+        this.Place(node.Right);
+    }
+
+    public override void VisitComparisonElement(ComparisonElementSyntax node)
+    {
+        this.Space();
+        this.Place(node.Operator);
+        this.Space();
+        this.Place(node.Right);
+    }
+
     public override void VisitTypeSpecifier(TypeSpecifierSyntax node)
     {
         this.Place(node.Colon);
         this.Space();
         this.Place(node.Type);
+    }
+
+    public override void VisitValueSpecifier(ValueSpecifierSyntax node)
+    {
+        this.Space();
+        this.Place(node.Assign);
+        this.Space();
+        this.Place(node.Value);
     }
 
     // Formatting a list with potential import declarations within

@@ -28,6 +28,9 @@ internal sealed class Formatter : SyntaxVisitor
         // Construct token sequence
         tree.GreenRoot.Accept(formatter);
 
+        // Apply constraints
+        formatter.ApplyConstraints();
+
         // Re-parse into tree
         var tokens = formatter.tokens
             .Select(t => t.Build())
@@ -53,12 +56,42 @@ internal sealed class Formatter : SyntaxVisitor
 
     private readonly List<SyntaxToken.Builder> tokens = new();
     private readonly SyntaxList<SyntaxTrivia>.Builder currentTrivia = new();
+    // A list of groups of indices of tokens that should be aligned together
+    private readonly List<ImmutableArray<int>> alignmentGroupIndices = new();
     private int indentation;
 
     private Formatter(FormatterSettings settings)
     {
         this.Settings = settings;
     }
+
+    // Constraints /////////////////////////////////////////////////////////////
+
+    private void ApplyConstraints()
+    {
+        foreach (var group in this.alignmentGroupIndices) this.ApplyAlignmentConstraint(group);
+    }
+
+    private void ApplyAlignmentConstraint(ImmutableArray<int> indices)
+    {
+        // Compute the offset of each token
+        var tokensWithOffsets = indices
+            .Select(i => (Index: i, Offset: this.GetColumnOfToken(i)))
+            .ToList();
+
+        // Find the largest offset among the tokens
+        var maxColumn = tokensWithOffsets.Max(p => p.Offset);
+
+        // Add padding to all tokens
+        foreach (var (index, offset) in tokensWithOffsets)
+        {
+            var token = this.tokens[index];
+            var padding = maxColumn - offset;
+            if (padding > 0) token.LeadingTrivia.Add(this.Settings.PaddingTrivia(padding));
+        }
+    }
+
+    // Formatters //////////////////////////////////////////////////////////////
 
     public override void VisitCompilationUnit(CompilationUnitSyntax node)
     {
@@ -327,7 +360,7 @@ internal sealed class Formatter : SyntaxVisitor
         foreach (var part in node.Parts)
         {
             var toInsert = part;
-            if (isNewLine)
+            if (isMultiline && isNewLine)
             {
                 if (part is TextStringPartSyntax { Content.Kind: TokenKind.StringContent } textPart)
                 {
@@ -385,10 +418,11 @@ internal sealed class Formatter : SyntaxVisitor
 
     // Format actions //////////////////////////////////////////////////////////
 
-    private void Place(SyntaxNode? node)
+    private int Place(SyntaxNode? node)
     {
-        if (node is null) return;
-        node.Accept(this);
+        var index = this.tokens.Count;
+        node?.Accept(this);
+        return index;
     }
     private void Indent() => ++this.indentation;
     private void Unindent() => --this.indentation;
@@ -549,6 +583,47 @@ internal sealed class Formatter : SyntaxVisitor
                 second.Insert(0, this.Settings.NewlineTrivia);
             }
         }
+    }
+
+    /// <summary>
+    /// Computes the starting column of a token.
+    /// </summary>
+    /// <param name="tokenIndex">The index of the token in question.</param>
+    /// <returns>The offset of the token from the start of its line.</returns>
+    private int GetColumnOfToken(int tokenIndex)
+    {
+        var token = this.tokens[tokenIndex];
+        var offset = 0;
+        // First consider leading trivia
+        for (var i = token.LeadingTrivia.Count - 1; i >= 0; --i)
+        {
+            var trivia = token.LeadingTrivia[i];
+            if (trivia.Kind == TriviaKind.Newline) return offset;
+            offset += trivia.FullWidth;
+        }
+        // Then all other tokens previously
+        for (var i = tokenIndex - 1; i >= 0; --i)
+        {
+            var prevToken = this.tokens[i];
+            // Consider its trailing trivia
+            for (var j = prevToken.TrailingTrivia.Count - 1; j >= 0; --j)
+            {
+                var trivia = prevToken.TrailingTrivia[j];
+                if (trivia.Kind == TriviaKind.Newline) return offset;
+                offset += trivia.FullWidth;
+            }
+            // Then the token itself
+            offset += prevToken.Text?.Length ?? 0;
+            // Then its leading trivia
+            for (var j = prevToken.LeadingTrivia.Count - 1; j >= 0; --j)
+            {
+                var trivia = prevToken.LeadingTrivia[j];
+                if (trivia.Kind == TriviaKind.Newline) return offset;
+                offset += trivia.FullWidth;
+            }
+        }
+        // We're at the start of the token sequence, we were in the first line
+        return offset;
     }
 
     private static void TrimLeft(SyntaxList<SyntaxTrivia>.Builder builder, params TriviaKind[] toTrim)

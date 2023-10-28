@@ -252,7 +252,7 @@ internal sealed class Formatter : SyntaxVisitor
     public override void VisitUnaryExpression(UnaryExpressionSyntax node)
     {
         this.Place(node.Operator);
-        if (IsKeyword(node.Operator.Kind)) this.Space();
+        if (SyntaxFacts.IsKeyword(node.Operator.Kind)) this.Space();
         this.Place(node.Operand);
     }
 
@@ -566,29 +566,6 @@ internal sealed class Formatter : SyntaxVisitor
     }
 
     // Token facts /////////////////////////////////////////////////////////////
-
-    private static bool IsKeyword(TokenKind kind) => kind
-        is TokenKind.KeywordAnd
-        or TokenKind.KeywordElse
-        or TokenKind.KeywordFalse
-        or TokenKind.KeywordFor
-        or TokenKind.KeywordFunc
-        or TokenKind.KeywordGoto
-        or TokenKind.KeywordIf
-        or TokenKind.KeywordImport
-        or TokenKind.KeywordIn
-        or TokenKind.KeywordInternal
-        or TokenKind.KeywordMod
-        or TokenKind.KeywordModule
-        or TokenKind.KeywordNot
-        or TokenKind.KeywordOr
-        or TokenKind.KeywordPublic
-        or TokenKind.KeywordRem
-        or TokenKind.KeywordReturn
-        or TokenKind.KeywordTrue
-        or TokenKind.KeywordVal
-        or TokenKind.KeywordVar
-        or TokenKind.KeywordWhile;
 
     private static bool IsStringContent(TokenKind kind) =>
         kind is TokenKind.StringContent or TokenKind.StringNewline;

@@ -130,6 +130,14 @@ public static class SyntaxFacts
         or TokenKind.LessEqual;
 
     /// <summary>
+    /// Checks, if a given <see cref="TokenKind"/> represents a keyword.
+    /// </summary>
+    /// <param name="tokenKind">The <see cref="TokenKind"/> to check.</param>
+    /// <returns>True, if <paramref name="tokenKind"/> is a keyword, false otherwise.</returns>
+    public static bool IsKeyword(TokenKind tokenKind) =>
+        tokenKind.ToString().StartsWith("Keyword");
+
+    /// <summary>
     /// Computes the cutoff sequence that is removed from each line of a multiline string.
     /// </summary>
     /// <param name="str">The string syntax to compute the cutoff for.</param>

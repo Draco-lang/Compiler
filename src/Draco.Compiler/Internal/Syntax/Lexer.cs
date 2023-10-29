@@ -84,6 +84,8 @@ internal sealed class Lexer
             or ModeKind.LineInterpolation;
     }
 
+    private static readonly Rune DefaultCharacter = new(' ');
+
     /// <summary>
     /// The reader the source text is read from.
     /// </summary>
@@ -383,7 +385,7 @@ internal sealed class Lexer
                     .SetValue(' ');
                 return default;
             }
-            var resultChar = string.Empty;
+            var resultChar = default(Rune);
             if (ch2 == '\\')
             {
                 // Escape-sequence
@@ -394,7 +396,7 @@ internal sealed class Lexer
             {
                 // Regular character
                 ++offset;
-                resultChar = ch2.ToString();
+                resultChar = new(ch2);
             }
             else
             {
@@ -404,7 +406,7 @@ internal sealed class Lexer
                     offset: offset,
                     width: 1,
                     args: (int)ch2);
-                resultChar = " ";
+                resultChar = DefaultCharacter;
             }
             // Expect closing quote
             if (this.Peek(offset) == '\'')
@@ -697,8 +699,6 @@ internal sealed class Lexer
         goto start;
     }
 
-    // NOTE: We are returning a string here because UTF32 > UTF16...
-    // We might want to switch to something more efficient later for performance reasons
     /// <summary>
     /// Parses an escape sequence for strings and character literals.
     /// Reports an error, if the escape sequence is illegal.
@@ -707,7 +707,7 @@ internal sealed class Lexer
     /// <param name="offset">A reference to an offset that points after the backslash and optional extended
     /// delimiter characters. If parsing the escape succeeded, the result is written back here.</param>
     /// <returns>True, if an escape was successfully parsed.</returns>
-    private string ParseEscapeSequence(int escapeStart, ref int offset)
+    private Rune ParseEscapeSequence(int escapeStart, ref int offset)
     {
         if (!this.TryPeek(offset, out var esc))
         {
@@ -716,8 +716,8 @@ internal sealed class Lexer
                 template: SyntaxErrors.UnexpectedEscapeSequenceEnd,
                 offset: offset,
                 width: 1);
-            // We return the \####... literally
-            return $"\\{new string('#', offset - escapeStart - 1)}";
+            // We return a space as a default
+            return DefaultCharacter;
         }
         // Valid in any string
         if (esc == 'u' && this.Peek(offset + 1) == '{')
@@ -738,7 +738,7 @@ internal sealed class Lexer
                 ++offset;
                 if (length > 0)
                 {
-                    return char.ConvertFromUtf32(unicodeValue);
+                    return new(unicodeValue);
                 }
                 else
                 {
@@ -747,7 +747,7 @@ internal sealed class Lexer
                         offset: escapeStart,
                         width: offset - escapeStart);
                     // We just return an empty character
-                    return string.Empty;
+                    return DefaultCharacter;
                 }
             }
             else
@@ -757,29 +757,29 @@ internal sealed class Lexer
                     offset: offset,
                     width: 1);
                 // We just return an empty character
-                return string.Empty;
+                return DefaultCharacter;
             }
         }
         // Any single-character escape, find the escaped equivalent
-        var escaped = esc switch
+        char? escaped = esc switch
         {
-            '0' => "\0",
-            'a' => "\a",
-            'b' => "\b",
-            'f' => "\f",
-            'n' => "\n",
-            'r' => "\r",
-            't' => "\t",
-            'v' => "\v",
-            '\'' => "\'",
-            '\"' => "\"",
-            '\\' => "\\",
+            '0' => '\0',
+            'a' => '\a',
+            'b' => '\b',
+            'f' => '\f',
+            'n' => '\n',
+            'r' => '\r',
+            't' => '\t',
+            'v' => '\v',
+            '\'' => '\'',
+            '\"' => '\"',
+            '\\' => '\\',
             _ => null,
         };
         if (escaped is not null)
         {
             ++offset;
-            return escaped;
+            return new(escaped.Value);
         }
         else
         {
@@ -789,8 +789,7 @@ internal sealed class Lexer
                 width: 2,
                 args: esc);
             ++offset;
-            // We return the escaped character literally as a substitute
-            return esc.ToString();
+            return DefaultCharacter;
         }
     }
 

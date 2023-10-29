@@ -468,6 +468,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         if (metadataGlobal is not null && metadataGlobal.IsLiteral)
         {
             var defaultValue = metadataGlobal.DefaultValue;
+            // NOTE: Literals possibly have a different type than the signature of the global
             if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.IntrinsicSymbols, out var literalType))
             {
                 throw new System.InvalidOperationException();

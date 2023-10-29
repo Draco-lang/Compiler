@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Diagnostics;
@@ -13,18 +14,17 @@ internal sealed class DiagnosticBag : IReadOnlyCollection<Diagnostic>
     /// <summary>
     /// True, if the bad contains errors.
     /// </summary>
-    public bool HasErrors { get; private set; }
+    public bool HasErrors => this.diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error);
 
     public int Count => this.diagnostics.Count;
 
     private readonly ConcurrentBag<Diagnostic> diagnostics = new();
 
-    public void Add(Diagnostic diagnostic)
-    {
-        this.diagnostics.Add(diagnostic);
-        this.HasErrors = this.HasErrors
-                      || diagnostic.Severity == DiagnosticSeverity.Error;
-    }
+    /// <summary>
+    /// Adds a diagnostic to this bag.
+    /// </summary>
+    /// <param name="diagnostic">The diagnostic to add.</param>
+    public void Add(Diagnostic diagnostic) => this.diagnostics.Add(diagnostic);
 
     /// <summary>
     /// Adds a range of diagnostics to this bag.

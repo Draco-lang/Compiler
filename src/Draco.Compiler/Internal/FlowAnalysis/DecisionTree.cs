@@ -409,12 +409,7 @@ internal sealed class DecisionTree<TAction>
                 for (var i = 1; i < node.PatternMatrix.Count; ++i)
                 {
                     var coveredAction = node.ActionArms[i].Action;
-                    if (!this.coveredBy.TryGetValue(coveredAction, out var coverSet))
-                    {
-                        coverSet = new();
-                        this.coveredBy.Add(coveredAction, coverSet);
-                    }
-                    coverSet.Add(takenAction.Action);
+                    this.Cover(takenAction.Action, coveredAction);
                 }
             }
             else
@@ -581,5 +576,15 @@ internal sealed class DecisionTree<TAction>
             arguments: node.Arguments,
             patternMatrix: remainingRows,
             actionArms: remainingActions);
+    }
+
+    private void Cover(TAction covering, TAction covered)
+    {
+        if (!this.coveredBy.TryGetValue(covered, out var coverSet))
+        {
+            coverSet = new();
+            this.coveredBy.Add(covered, coverSet);
+        }
+        coverSet.Add(covering);
     }
 }

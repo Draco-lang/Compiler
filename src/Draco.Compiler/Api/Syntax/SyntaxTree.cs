@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Syntax.Formatting;
 using Draco.Compiler.Internal.Syntax.Rewriting;
 using Draco.Compiler.Internal.Utilities;
 
@@ -14,9 +15,6 @@ namespace Draco.Compiler.Api.Syntax;
 /// </summary>
 public sealed class SyntaxTree
 {
-    private static SyntaxTreeFormatterSettings FormatterSettings { get; } = new(
-        Indentation: "    ");
-
     /// <summary>
     /// Constructs a new <see cref="SyntaxTree"/> with given <paramref name="path"/> from the given <paramref name="root"/>, if <paramref name="path"/> is null, there will be no source text set.
     /// </summary>
@@ -113,12 +111,6 @@ public sealed class SyntaxTree
     public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range) => this.Root.TraverseSubtreesIntersectingRange(range);
 
     /// <summary>
-    /// Syntactically formats this <see cref="SyntaxTree"/>.
-    /// </summary>
-    /// <returns>The formatted tree.</returns>
-    public SyntaxTree Format() => new SyntaxTreeFormatter(FormatterSettings).Format(this);
-
-    /// <summary>
     /// Reorders the <see cref="SyntaxTree"/> that contains <paramref name="toReorder"/> node and puts <paramref name="toReorder"/> to specified <paramref name="position"/> in the original <see cref="SyntaxList"/>.
     /// </summary>
     /// <param name="toReorder">The <see cref="SyntaxNode"/> that will be reordered.</param>
@@ -159,6 +151,12 @@ public sealed class SyntaxTree
     public ImmutableArray<TextEdit> SyntaxTreeDiff(SyntaxTree other) =>
         // TODO: We can use a better diff algo
         ImmutableArray.Create(new TextEdit(this.Root.Range, other.ToString()));
+
+    /// <summary>
+    /// Syntactically formats this <see cref="SyntaxTree"/>.
+    /// </summary>
+    /// <returns>The formatted tree.</returns>
+    public SyntaxTree Format() => Formatter.Format(this);
 
     /// <summary>
     /// The internal root of the tree.

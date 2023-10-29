@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Draco.Compiler.Api.Syntax;
 
 /// <summary>
@@ -129,4 +131,37 @@ public static class SyntaxFacts
         or TokenKind.LessThan
         or TokenKind.GreaterEqual
         or TokenKind.LessEqual;
+
+    /// <summary>
+    /// Checks, if a given <see cref="TokenKind"/> represents a keyword.
+    /// </summary>
+    /// <param name="tokenKind">The <see cref="TokenKind"/> to check.</param>
+    /// <returns>True, if <paramref name="tokenKind"/> is a keyword, false otherwise.</returns>
+    public static bool IsKeyword(TokenKind tokenKind) =>
+        tokenKind.ToString().StartsWith("Keyword");
+
+    /// <summary>
+    /// Computes the cutoff sequence that is removed from each line of a multiline string.
+    /// </summary>
+    /// <param name="str">The string syntax to compute the cutoff for.</param>
+    /// <returns>The cutoff string for <paramref name="str"/>.</returns>
+    public static string ComputeCutoff(StringExpressionSyntax str) => ComputeCutoff(str.Green);
+
+    /// <summary>
+    /// See <see cref="ComputeCutoff(StringExpressionSyntax)"/>.
+    /// </summary>
+    internal static string ComputeCutoff(Internal.Syntax.StringExpressionSyntax str)
+    {
+        // Line strings have no cutoff
+        if (str.OpenQuotes.Kind == TokenKind.LineStringStart) return string.Empty;
+        // Multiline strings
+        Debug.Assert(str.CloseQuotes.LeadingTrivia.Count <= 2);
+        // If this is true, we have malformed input
+        if (str.CloseQuotes.LeadingTrivia.Count == 0) return string.Empty;
+        // If this is true, there's only newline, no spaces before
+        if (str.CloseQuotes.LeadingTrivia.Count == 1) return string.Empty;
+        // The first trivia was newline, the second must be spaces
+        Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Kind == TriviaKind.Whitespace);
+        return str.CloseQuotes.LeadingTrivia[1].Text;
+    }
 }

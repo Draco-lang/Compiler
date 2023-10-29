@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -71,23 +70,8 @@ internal partial class Binder
 
     private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        static string ComputeCutoff(StringExpressionSyntax str)
-        {
-            // Line strings have no cutoff
-            if (str.OpenQuotes.Kind == TokenKind.LineStringStart) return string.Empty;
-            // Multiline strings
-            Debug.Assert(str.CloseQuotes.LeadingTrivia.Count <= 2);
-            // If this is true, we have malformed input
-            if (str.CloseQuotes.LeadingTrivia.Count == 0) return string.Empty;
-            // If this is true, there's only newline, no spaces before
-            if (str.CloseQuotes.LeadingTrivia.Count == 1) return string.Empty;
-            // The first trivia was newline, the second must be spaces
-            Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Kind == TriviaKind.Whitespace);
-            return str.CloseQuotes.LeadingTrivia[1].Text;
-        }
-
         var lastNewline = true;
-        var cutoff = ComputeCutoff(syntax);
+        var cutoff = SyntaxFacts.ComputeCutoff(syntax);
         var parts = ImmutableArray.CreateBuilder<UntypedStringPart>();
         foreach (var part in syntax.Parts)
         {

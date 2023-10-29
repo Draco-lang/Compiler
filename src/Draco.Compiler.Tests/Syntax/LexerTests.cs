@@ -1,3 +1,4 @@
+using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Syntax;
@@ -245,7 +246,7 @@ public sealed class LexerTests
         Assert.Equal($"{ext}\"", this.Current.Text);
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{}}", string.Empty);
+        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{}}", " ");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.ZeroLengthUnicodeCodepoint);
 
@@ -273,7 +274,7 @@ public sealed class LexerTests
         this.AssertNoTriviaOrDiagnostics();
 
         //TODO: change this when we get better errors out of invalid unicode codepoints
-        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{3S}}", "S}");
+        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{3S}}", " S}");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnclosedUnicodeCodepoint);
 
@@ -300,7 +301,7 @@ public sealed class LexerTests
         this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{", string.Empty);
+        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}u{{", " ");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnclosedUnicodeCodepoint);
 
@@ -412,7 +413,7 @@ public sealed class LexerTests
         this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}y", "y");
+        this.AssertNextToken(TokenKind.StringContent, @$"\{ext}y", " ");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.IllegalEscapeCharacter);
 
@@ -996,7 +997,7 @@ public sealed class LexerTests
         this.AssertNextToken(TokenKind.LineStringStart, $"{ext}\"");
         this.AssertNoTriviaOrDiagnostics();
 
-        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}", $"\\{ext}");
+        this.AssertNextToken(TokenKind.StringContent, $"\\{ext}", " ");
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnexpectedEscapeSequenceEnd);
 
@@ -1209,7 +1210,8 @@ public sealed class LexerTests
     {
         this.Lex(text);
 
-        this.AssertNextToken(TokenKind.LiteralCharacter, text, charValue);
+        var rune = Rune.GetRuneAt(charValue, 0);
+        this.AssertNextToken(TokenKind.LiteralCharacter, text, rune);
         this.AssertNoTriviaOrDiagnostics();
 
         this.AssertNextToken(TokenKind.EndOfInput);
@@ -1223,7 +1225,7 @@ public sealed class LexerTests
         var text = "'a";
         this.Lex(text);
 
-        this.AssertNextToken(TokenKind.LiteralCharacter, text, "a");
+        this.AssertNextToken(TokenKind.LiteralCharacter, text, new Rune('a'));
         this.AssertNoTrivia();
         this.AssertDiagnostics(SyntaxErrors.UnclosedCharacterLiteral);
 

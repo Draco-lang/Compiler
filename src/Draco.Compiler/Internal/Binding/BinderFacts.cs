@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -203,6 +204,9 @@ internal static class BinderFacts
             return true;
         case double:
             type = intrinsics.Float64;
+            return true;
+        case Rune:
+            type = intrinsics.Char;
             return true;
         case string:
             type = intrinsics.String;

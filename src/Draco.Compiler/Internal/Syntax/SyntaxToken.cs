@@ -5,6 +5,10 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Syntax;
 
+// TODO: It seems like SyntaxTokens are not implementing any kind of Equals
+// which means the Update methods are not actually reusing the existing nodes when possible.
+// Prolly a bug, verify and fix.
+
 /// <summary>
 /// A single token in the source code, possibly surrounded by trivia.
 /// </summary>

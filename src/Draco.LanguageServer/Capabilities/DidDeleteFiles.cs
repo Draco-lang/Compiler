@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Workspace;
@@ -21,7 +20,7 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
         }
     };
 
-    public async Task DidDeleteFilesAsync(DeleteFilesParams param, CancellationToken cancellationToken)
+    public async Task DidDeleteFilesAsync(DeleteFilesParams param)
     {
         foreach (var file in param.Files)
         {

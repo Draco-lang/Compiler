@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
@@ -12,5 +11,5 @@ public interface ITextDocumentDidClose
     public TextDocumentRegistrationOptions DidCloseRegistrationOptions { get; }
 
     [Notification("textDocument/didClose", Mutating = true)]
-    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param, CancellationToken cancellationToken);
+    public Task TextDocumentDidCloseAsync(DidCloseTextDocumentParams param);
 }

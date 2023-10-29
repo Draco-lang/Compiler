@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Draco.JsonRpc\Draco.JsonRpc.csproj" />
     <ProjectReference Include="..\Draco.SourceGeneration\Draco.SourceGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
   </ItemGroup>
   

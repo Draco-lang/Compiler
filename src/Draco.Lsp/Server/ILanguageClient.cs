@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Draco.JsonRpc;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
 
@@ -9,13 +10,8 @@ namespace Draco.Lsp.Server;
 /// <summary>
 /// An interface representing the language client on the remote.
 /// </summary>
-public interface ILanguageClient
+public interface ILanguageClient : IJsonRpcClient
 {
-    /// <summary>
-    /// The RPC connection between the client and the server.
-    /// </summary>
-    public LanguageServerConnection Connection { get; }
-
     // Language features
 
     [Notification("textDocument/publishDiagnostics")]

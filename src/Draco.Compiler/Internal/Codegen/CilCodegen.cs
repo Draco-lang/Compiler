@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
+using System.Text;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -460,6 +461,9 @@ internal sealed class CilCodegen
                 break;
             case bool b:
                 this.InstructionEncoder.LoadConstantI4(b ? 1 : 0);
+                break;
+            case Rune ch:
+                this.InstructionEncoder.LoadConstantI4(ch.Value);
                 break;
             case string s:
                 var stringHandle = this.GetStringLiteralHandle(s);

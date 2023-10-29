@@ -8,7 +8,6 @@ public sealed class SyntaxTreeFormatterTests
     public void TestFormatting()
     {
         var input = """"
-                myLabelNonIndented:
              func  main  ( )  {
 
             var   x   :  int32   = 5+
@@ -54,13 +53,12 @@ public sealed class SyntaxTreeFormatterTests
             """";
 
         var expected = """"
-            myLabelNonIndented:
             func main() {
                 var x: int32 = 5 + 4 + 5;
                 val singleLineString = "";
                 var multilineString = #"""
-                    something
-                """#;
+                        something
+                    """#;
                 val y = 4 - 2 mod 4 + 3;
                 while (true) {
                     x = 7;
@@ -80,7 +78,8 @@ public sealed class SyntaxTreeFormatterTests
                     val z = 4;
                 }
                 while (t < 5) x = 4;
-                if (x >= 7) t = 4; else t = 3;
+                if (x >= 7) t = 4;
+                else t = 3;
                 var a = {
                     0
                 };

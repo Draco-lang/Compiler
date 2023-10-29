@@ -148,6 +148,16 @@ internal sealed partial class IntrinsicSymbols
             yield return this.Binary(TokenKind.KeywordRem, type, type, type, this.CodegenRem);
         }
 
+        // The operators that make sense for characters too
+        {
+            yield return this.Comparison(TokenKind.Equal, this.Char, this.Char, this.CodegenEqual);
+            yield return this.Comparison(TokenKind.NotEqual, this.Char, this.Char, this.CodegenNotEqual);
+            yield return this.Comparison(TokenKind.GreaterThan, this.Char, this.Char, this.CodegenGreater);
+            yield return this.Comparison(TokenKind.LessThan, this.Char, this.Char, this.CodegenLess);
+            yield return this.Comparison(TokenKind.GreaterEqual, this.Char, this.Char, this.CodegenGreaterEqual);
+            yield return this.Comparison(TokenKind.LessEqual, this.Char, this.Char, this.CodegenLessEqual);
+        }
+
         // Add additional symbols for some metadata builtins
         foreach (var metadataType in new[] { this.WellKnownTypes.SystemString })
         {

@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -32,6 +33,17 @@ internal sealed partial class WellKnownTypes
             .OfType<MetadataMethodSymbol>()
             .Single(m => m.Name == "ToString"));
     private MetadataMethodSymbol? object_ToString;
+
+    /// <summary>
+    /// object.Equals(object? o1, object? o2).
+    /// </summary>
+    public MetadataMethodSymbol SystemObject_Equals => InterlockedUtils.InitializeNull(
+        ref this.object_Equals,
+        () => this.SystemObject
+            .Members
+            .OfType<MetadataMethodSymbol>()
+            .Single(m => m.Name == "Equals" && m.Parameters.Length == 2));
+    private MetadataMethodSymbol? object_Equals;
 
     /// <summary>
     /// string.Format(string formatString, object[] args).

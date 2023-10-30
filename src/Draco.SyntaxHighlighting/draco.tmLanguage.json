@@ -17,6 +17,9 @@
         },
         {
           "include": "#expressions"
+        },
+        {
+          "include": "#patterns"
         }
       ]
     },
@@ -277,7 +280,7 @@
         },
         {
           "name": "keyword.control.draco",
-          "match": "\\b(if|else|while|for|in|return|goto)\\b"
+          "match": "\\b(if|else|while|for|in|return|goto|match)\\b"
         },
         {
           "include": "#call-expression"
@@ -291,6 +294,17 @@
         },
         {
           "include": "#literals"
+        }
+      ]
+    },
+    "patterns": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "name": "variable.language.discard.draco",
+          "match": "\\b_\\b"
         }
       ]
     },

@@ -18,6 +18,7 @@ public static class SyntaxFacts
         TokenKind.EndOfInput => string.Empty,
         TokenKind.InterpolationEnd => "}",
         TokenKind.KeywordAnd => "and",
+        TokenKind.KeywordDiscard => "_",
         TokenKind.KeywordElse => "else",
         TokenKind.KeywordFalse => "false",
         TokenKind.KeywordFor => "for",
@@ -27,6 +28,7 @@ public static class SyntaxFacts
         TokenKind.KeywordImport => "import",
         TokenKind.KeywordIn => "in",
         TokenKind.KeywordInternal => "internal",
+        TokenKind.KeywordMatch => "match",
         TokenKind.KeywordMod => "mod",
         TokenKind.KeywordModule => "module",
         TokenKind.KeywordNot => "not",
@@ -64,6 +66,7 @@ public static class SyntaxFacts
         TokenKind.StarAssign => "*=",
         TokenKind.SlashAssign => "/=",
         TokenKind.Ellipsis => "...",
+        TokenKind.Arrow => "->",
         _ => null,
     };
 

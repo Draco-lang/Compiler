@@ -683,4 +683,26 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<string>(assembly, "stringify", 123);
         Assert.Equal("123", x);
     }
+
+    [Fact]
+    public void BasicMatchOnNumbers()
+    {
+        var assembly = Compile(""""
+            public func categorize(a: int32): string = match (a) {
+                1 -> "one";
+                2 -> "two";
+                _ if (a rem 2 == 0) -> "even";
+                _ -> "odd";
+            };
+            """");
+
+        var input = new[] { 1, 2, 3, 4, 7, 8 };
+        var output = new[] { "one", "two", "odd", "even", "odd", "even" };
+
+        foreach (var (inp, expectedOut) in input.Zip(output))
+        {
+            var got = Invoke<string>(assembly, "categorize", inp);
+            Assert.Equal(expectedOut, got);
+        }
+    }
 }

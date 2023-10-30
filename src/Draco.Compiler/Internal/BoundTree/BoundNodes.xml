@@ -9,6 +9,7 @@
   <AbstractNode Name="BoundStatement" Base="BoundNode" />
   <AbstractNode Name="BoundExpression" Base="BoundNode" />
   <AbstractNode Name="BoundLvalue" Base="BoundNode" />
+  <AbstractNode Name="BoundPattern" Base="BoundNode" />
 
   <!-- Statements -->
 
@@ -90,6 +91,18 @@
     <Field Name="Then" Type="BoundExpression" />
     <Field Name="Else" Type="BoundExpression" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="BoundMatchExpression" Base="BoundExpression">
+    <Field Name="MatchedValue" Type="BoundExpression" />
+    <Field Name="MatchArms" Type="ImmutableArray&lt;BoundMatchArm&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="BoundMatchArm" Base="BoundNode">
+    <Field Name="Pattern" Type="BoundPattern" />
+    <Field Name="Guard" Type="BoundExpression?" />
+    <Field Name="Value" Type="BoundExpression" />
   </Node>
 
   <Node Name="BoundWhileExpression" Base="BoundExpression">
@@ -287,5 +300,18 @@
   <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
     <Field Name="Array" Type="BoundExpression" />
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
+  <!-- Patterns -->
+
+  <Node Name="BoundUnexpectedPattern" Base="BoundPattern">
+  </Node>
+
+  <Node Name="BoundDiscardPattern" Base="BoundPattern">
+  </Node>
+
+  <Node Name="BoundLiteralPattern" Base="BoundPattern">
+    <Field Name="Value" Type="object?" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 </Tree>

@@ -81,6 +81,11 @@ public enum TokenKind
     KeywordAnd,
 
     /// <summary>
+    /// The keyword '_'.
+    /// </summary>
+    KeywordDiscard,
+
+    /// <summary>
     /// The keyword 'else'.
     /// </summary>
     KeywordElse,
@@ -124,6 +129,11 @@ public enum TokenKind
     /// The keyword 'internal'.
     /// </summary>
     KeywordInternal,
+
+    /// <summary>
+    /// The keyword 'match'.
+    /// </summary>
+    KeywordMatch,
 
     /// <summary>
     /// The keyword 'mod'.
@@ -309,4 +319,9 @@ public enum TokenKind
     /// '...'.
     /// </summary>
     Ellipsis,
+
+    /// <summary>
+    /// '->'.
+    /// </summary>
+    Arrow,
 }

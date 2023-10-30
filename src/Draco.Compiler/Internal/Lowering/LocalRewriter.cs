@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.Lowering;
 /// <summary>
 /// Performs local rewrites of the source code.
 /// </summary>
-internal partial class LocalRewriter : BoundTreeRewriter
+internal sealed partial class LocalRewriter : BoundTreeRewriter
 {
     /// <summary>
     /// Represents a value that was temporarily stored.

@@ -80,7 +80,7 @@ public abstract class EndToEndTestsBase
         string methodName,
         TextReader? stdin = null,
         TextWriter? stdout = null,
-        string moduleName = CompilerConstants.DefaultModuleName,
+        string moduleName = Constants.DefaultModuleName,
         params object[] args)
     {
         Console.SetIn(stdin ?? Console.In);
@@ -106,7 +106,7 @@ public abstract class EndToEndTestsBase
 
     protected static TResult Invoke<TResult>(Assembly assembly, string methodName, params object[] args) => Invoke<TResult>(
         assembly: assembly,
-        moduleName: CompilerConstants.DefaultModuleName,
+        moduleName: Constants.DefaultModuleName,
         methodName: methodName,
         stdin: null,
         stdout: null,

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Threading;
 
-namespace Draco.Compiler.Internal;
+namespace Draco.Compiler.Internal.Utilities;
 
 /// <summary>
 /// Utility functions for atomic operations.

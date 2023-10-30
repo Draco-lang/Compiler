@@ -742,6 +742,127 @@
     </Field>
   </Node>
 
+  <Node Name="MatchExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      An match-expression.
+    </Documentation>
+
+    <Field Name="MatchKeyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword 'match'.
+      </Documentation>
+
+      <Token Kind="KeywordMatch" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the matched value.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="MatchedValue" Type="ExpressionSyntax">
+      <Documentation>
+        The value we match on.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the matched value.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace before the match arms.
+      </Documentation>
+
+      <Token Kind="CurlyOpen" />
+    </Field>
+    <Field Name="MatchArms" Type="SyntaxList&lt;MatchArmSyntax&gt;">
+      <Documentation>
+        The arms of this match expression.
+      </Documentation>
+    </Field>
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace after the match arms.
+      </Documentation>
+
+      <Token Kind="CurlyClose" />
+    </Field>
+  </Node>
+
+  <Node Name="MatchArmSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single arm of a match expression that matches a pattern and assigns a value to it.
+    </Documentation>
+
+    <Field Name="Pattern" Type="PatternSyntax">
+      <Documentation>
+        The pattern that the arm matches.
+      </Documentation>
+    </Field>
+    <Field Name="GuardClause" Type="GuardClauseSyntax?">
+      <Documentation>
+        The optional guard clause of the arm.
+      </Documentation>
+    </Field>
+    <Field Name="Arrow" Type="SyntaxToken">
+      <Documentation>
+        The arrow after the pattern and clause.
+      </Documentation>
+
+      <Token Kind="Arrow" />
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax">
+      <Documentation>
+        The value the arm evaluates to.
+      </Documentation>
+    </Field>
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon terminating the arm.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <Node Name="GuardClauseSyntax" Base="SyntaxNode">
+    <Documentation>
+      A guard clause.
+    </Documentation>
+
+    <Field Name="IfKeyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword 'if'.
+      </Documentation>
+
+      <Token Kind="KeywordIf" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the condition.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="Condition" Type="ExpressionSyntax">
+      <Documentation>
+        The condition.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the condition.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+  </Node>
+
   <Node Name="WhileExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
       A while-expression.
@@ -1273,6 +1394,52 @@
       </Documentation>
 
       <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="PatternSyntax" Base="SyntaxNode">
+    <Documentation>
+      A pattern.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="UnexpectedPatternSyntax" Base="PatternSyntax">
+    <Documentation>
+      Unexpected input in pattern expression context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="LiteralPatternSyntax" Base="PatternSyntax">
+    <Documentation>
+      A literal pattern.
+    </Documentation>
+
+    <Field Name="Literal" Type="SyntaxToken">
+      <Documentation>
+        The literal token representing the value.
+      </Documentation>
+
+      <Token Kind="LiteralInteger" />
+    </Field>
+  </Node>
+
+  <Node Name="DiscardPatternSyntax" Base="PatternSyntax">
+    <Documentation>
+      A pattern matching anything, discarding the value.
+    </Documentation>
+
+    <Field Name="Discard" Type="SyntaxToken">
+      <Documentation>
+        The underscore signaling the discard.
+      </Documentation>
+
+      <Token Kind="KeywordDiscard" />
     </Field>
   </Node>
 </Tree>

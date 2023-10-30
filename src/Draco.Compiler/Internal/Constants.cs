@@ -1,6 +1,6 @@
 namespace Draco.Compiler.Internal;
 
-internal static class CompilerConstants
+internal static class Constants
 {
     /// <summary>
     /// The default name of the root module in IL.

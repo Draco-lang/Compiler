@@ -9,6 +9,7 @@
   <AbstractNode Name="UntypedStatement" Base="UntypedNode" />
   <AbstractNode Name="UntypedExpression" Base="UntypedNode" />
   <AbstractNode Name="UntypedLvalue" Base="UntypedNode" />
+  <AbstractNode Name="UntypedPattern" Base="UntypedNode" />
 
   <!-- Statements -->
 
@@ -64,6 +65,18 @@
     <Field Name="Then" Type="UntypedExpression" />
     <Field Name="Else" Type="UntypedExpression" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="UntypedMatchExpression" Base="UntypedExpression">
+    <Field Name="MatchedValue" Type="UntypedExpression" />
+    <Field Name="MatchArms" Type="ImmutableArray&lt;UntypedMatchArm&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <Node Name="UntypedMatchArm" Base="UntypedNode">
+    <Field Name="Pattern" Type="UntypedPattern" />
+    <Field Name="Guard" Type="UntypedExpression?" />
+    <Field Name="Value" Type="UntypedExpression" />
   </Node>
 
   <Node Name="UntypedWhileExpression" Base="UntypedExpression">
@@ -260,6 +273,19 @@
   <Node Name="UntypedMemberLvalue" Base="UntypedLvalue">
     <Field Name="Accessed" Type="UntypedExpression" />
     <Field Name="Member" Type="IConstraintPromise&lt;Symbol&gt;" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
+  <!-- Patterns -->
+
+  <Node Name="UntypedUnexpectedPattern" Base="UntypedPattern">
+  </Node>
+
+  <Node Name="UntypedDiscardPattern" Base="UntypedPattern">
+  </Node>
+
+  <Node Name="UntypedLiteralPattern" Base="UntypedPattern">
+    <Field Name="Value" Type="object?" />
     <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 </Tree>

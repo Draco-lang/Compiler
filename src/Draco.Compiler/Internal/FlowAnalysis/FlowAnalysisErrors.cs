@@ -55,4 +55,22 @@ internal static class FlowAnalysisErrors
         severity: DiagnosticSeverity.Error,
         format: "the immutable variable {0} can not be assigned to, it is read only",
         code: Code(5));
+
+    /// <summary>
+    /// A match expression is non-exhaustive.
+    /// </summary>
+    public static readonly DiagnosticTemplate NonExhaustiveMatchExpression = DiagnosticTemplate.Create(
+        title: "match expression is not exhaustive",
+        severity: DiagnosticSeverity.Warning,
+        format: "the match expression does not cover all possible values",
+        code: Code(6));
+
+    /// <summary>
+    /// A match expression arm is already covered by another.
+    /// </summary>
+    public static readonly DiagnosticTemplate MatchPatternAlreadyHandled = DiagnosticTemplate.Create(
+        title: "pattern already handled",
+        severity: DiagnosticSeverity.Warning,
+        format: "the pattern is already handled by a previous case",
+        code: Code(7));
 }

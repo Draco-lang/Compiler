@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;

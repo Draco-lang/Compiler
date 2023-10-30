@@ -280,6 +280,33 @@ public static partial class SyntaxFactory
         sequence,
         body);
 
+    public static MatchExpressionSyntax MatchExpression(
+        ExpressionSyntax matchedValue,
+        IEnumerable<MatchArmSyntax> matchArms) => MatchExpression(
+        Match,
+        OpenParen,
+        matchedValue,
+        CloseParen,
+        OpenBrace,
+        SyntaxList(matchArms),
+        CloseBrace);
+    public static MatchExpressionSyntax MatchExpression(
+        ExpressionSyntax matchedValue,
+        params MatchArmSyntax[] matchArms) => MatchExpression(matchedValue, matchArms.AsEnumerable());
+
+    public static MatchArmSyntax MatchArm(
+        PatternSyntax pattern,
+        ExpressionSyntax? guard,
+        ExpressionSyntax value) => MatchArm(
+        pattern,
+        guard is null ? null : GuardClause(If, OpenParen, guard, CloseParen),
+        Arrow,
+        value,
+        Semicolon);
+    public static MatchArmSyntax MatchArm(
+        PatternSyntax pattern,
+        ExpressionSyntax value) => MatchArm(pattern, null, value);
+
     public static CallExpressionSyntax CallExpression(
         ExpressionSyntax called,
         IEnumerable<ExpressionSyntax> args) => CallExpression(
@@ -329,6 +356,9 @@ public static partial class SyntaxFactory
     public static TextStringPartSyntax TextStringPart(string value) =>
         TextStringPart(MakeToken(TokenKind.StringContent, value, value));
 
+    public static LiteralPatternSyntax LiteralPattern(int value) => LiteralPattern(Integer(value));
+    public static DiscardPatternSyntax DiscardPattern() => DiscardPattern(Discard);
+
     // TOKENS //////////////////////////////////////////////////////////////////
 
     public static SyntaxToken EndOfInput { get; } = MakeToken(TokenKind.EndOfInput);
@@ -349,6 +379,8 @@ public static partial class SyntaxFactory
     public static SyntaxToken Func { get; } = MakeToken(TokenKind.KeywordFunc);
     public static SyntaxToken Goto { get; } = MakeToken(TokenKind.KeywordGoto);
     public static SyntaxToken Module { get; } = MakeToken(TokenKind.KeywordModule);
+    public static SyntaxToken Match { get; } = MakeToken(TokenKind.KeywordMatch);
+    public static SyntaxToken Discard { get; } = MakeToken(TokenKind.KeywordDiscard);
     public static SyntaxToken True { get; } = MakeToken(TokenKind.KeywordTrue, true);
     public static SyntaxToken False { get; } = MakeToken(TokenKind.KeywordFalse, false);
     public static SyntaxToken OpenBrace { get; } = MakeToken(TokenKind.CurlyOpen);
@@ -361,6 +393,7 @@ public static partial class SyntaxFactory
     public static SyntaxToken PlusAssign { get; } = MakeToken(TokenKind.PlusAssign);
     public static SyntaxToken LessThan { get; } = MakeToken(TokenKind.LessThan);
     public static SyntaxToken GreaterThan { get; } = MakeToken(TokenKind.GreaterThan);
+    public static SyntaxToken Arrow { get; } = MakeToken(TokenKind.Arrow);
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
     public static SyntaxToken Ellipsis { get; } = MakeToken(TokenKind.Ellipsis);

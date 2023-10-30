@@ -1,3 +1,5 @@
+using Draco.Compiler.Internal.Utilities;
+
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
 /// <summary>

@@ -548,7 +548,7 @@ public sealed class FlowAnalysisTests : SemanticTestsBase
     public void GlobalValReassigned()
     {
         // val x: int32 = 0;
-        // func foo() {    
+        // func foo() {
         //     x = 1;
         // }
 
@@ -570,5 +570,144 @@ public sealed class FlowAnalysisTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void ExhaustiveMatch()
+    {
+        // func dirac_pulse(n: int32): int32 = match (n) {
+        //     0 -> 1;
+        //     _ -> 0;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "dirac_pulse",
+            ParameterList(Parameter("n", NameType("int32"))),
+            NameType("int32"),
+            InlineFunctionBody(MatchExpression(NameExpression("n"),
+                MatchArm(LiteralPattern(0), LiteralExpression(1)),
+                MatchArm(DiscardPattern(), LiteralExpression(0)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void NonExhaustiveMatch()
+    {
+        // func dirac_pulse(n: int32): int32 = match (n) {
+        //     0 -> 1;
+        //     1 -> 0;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "dirac_pulse",
+            ParameterList(Parameter("n", NameType("int32"))),
+            NameType("int32"),
+            InlineFunctionBody(MatchExpression(NameExpression("n"),
+                MatchArm(LiteralPattern(0), LiteralExpression(1)),
+                MatchArm(LiteralPattern(1), LiteralExpression(0)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.NonExhaustiveMatchExpression);
+    }
+
+    [Fact]
+    public void RedundantMatchArm()
+    {
+        // func dirac_pulse(n: int32): int32 = match (n) {
+        //     0 -> 1;
+        //     0 -> 0;
+        //     _ -> 1;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "dirac_pulse",
+            ParameterList(Parameter("n", NameType("int32"))),
+            NameType("int32"),
+            InlineFunctionBody(MatchExpression(NameExpression("n"),
+                MatchArm(LiteralPattern(0), LiteralExpression(1)),
+                MatchArm(LiteralPattern(0), LiteralExpression(0)),
+                MatchArm(DiscardPattern(), LiteralExpression(1)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.MatchPatternAlreadyHandled);
+    }
+
+    [Fact]
+    public void RedundantMatchArmWithCondition()
+    {
+        // func dirac_pulse(n: int32): int32 = match (n) {
+        //     0 -> 1;
+        //     _ if (false) -> 0;
+        //     _ -> 1;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "dirac_pulse",
+            ParameterList(Parameter("n", NameType("int32"))),
+            NameType("int32"),
+            InlineFunctionBody(MatchExpression(NameExpression("n"),
+                MatchArm(LiteralPattern(0), LiteralExpression(1)),
+                MatchArm(DiscardPattern(), LiteralExpression(false), LiteralExpression(0)),
+                MatchArm(DiscardPattern(), LiteralExpression(1)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+    }
+
+    [Fact]
+    public void RedundantMatchArmWithConditionLast()
+    {
+        // func dirac_pulse(n: int32): int32 = match (n) {
+        //     0 -> 1;
+        //     _ -> 0;
+        //     _ if (false) -> 1;
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "dirac_pulse",
+            ParameterList(Parameter("n", NameType("int32"))),
+            NameType("int32"),
+            InlineFunctionBody(MatchExpression(NameExpression("n"),
+                MatchArm(LiteralPattern(0), LiteralExpression(1)),
+                MatchArm(DiscardPattern(), LiteralExpression(0)),
+                MatchArm(DiscardPattern(), LiteralExpression(false), LiteralExpression(1)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostic(diags, FlowAnalysisErrors.MatchPatternAlreadyHandled);
     }
 }

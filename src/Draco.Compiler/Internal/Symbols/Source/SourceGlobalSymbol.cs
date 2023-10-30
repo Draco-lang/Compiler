@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.FlowAnalysis;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -49,6 +50,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
         // Flow analysis
         if (value is not null) DefiniteAssignment.Analyze(value, binderProvider.DiagnosticBag);
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+        MatchExhaustiveness.Analyze(this, this.DeclaringCompilation!.IntrinsicSymbols, binderProvider.DiagnosticBag);
     }
 
     private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValueIfNeeded(IBinderProvider binderProvider)

@@ -8,6 +8,7 @@ repository:
     - include: '#comments'
     - include: '#statements'
     - include: '#expressions'
+    - include: '#patterns'
   comments:
     patterns:
     - name: comment.line.double-slash.draco
@@ -139,13 +140,19 @@ repository:
       match: '[><=!]=?'
       # Control keywords that build up expressions
     - name: keyword.control.draco
-      match: \b(if|else|while|for|in|return|goto)\b
+      match: \b(if|else|while|for|in|return|goto|match)\b
     - include: '#call-expression'
       # Variable name
     - name: variable.other.draco
       match: '[[:alpha:]_][[:alnum:]_]*'
     - include: '#block'
     - include: '#literals'
+  patterns:
+    patterns:
+    - include: '#comments'
+    # Discard pattern
+    - name: variable.language.discard.draco
+      match: \b_\b
   call-expression:
     # Function name, generic args, unconsumed open paren
     begin: \b([[:alpha:]_][[:alnum:]_]*)\b\s*(?<type_args>\s*<([^<>]|\g<type_args>)+>\s*)?\s*(?=[(])

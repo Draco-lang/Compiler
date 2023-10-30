@@ -106,6 +106,11 @@ internal partial class UntypedAssignmentExpression
 
 // Lvalues
 
+internal partial class UntypedLvalue
+{
+    public abstract TypeSymbol Type { get; }
+}
+
 internal partial class UntypedUnexpectedLvalue
 {
     public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
@@ -126,12 +131,24 @@ internal partial class UntypedPropertySetLvalue
     public override TypeSymbol Type => this.Setter.Parameters[0].Type;
 }
 
-internal partial class UntypedLvalue
+internal partial class UntypedGlobalLvalue
+{
+    public override TypeSymbol Type => this.Global.Type;
+}
+
+// Patterns
+
+internal partial class UntypedPattern
 {
     public abstract TypeSymbol Type { get; }
 }
 
-internal partial class UntypedGlobalLvalue
+internal partial class UntypedUnexpectedPattern
 {
-    public override TypeSymbol Type => this.Global.Type;
+    public override TypeSymbol Type => IntrinsicSymbols.Never;
+}
+
+internal partial class UntypedDiscardPattern
+{
+    public override TypeSymbol Type => IntrinsicSymbols.Never;
 }

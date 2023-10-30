@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -70,6 +71,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
         DefiniteAssignment.Analyze(body, binderProvider.DiagnosticBag);
         ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+        MatchExhaustiveness.Analyze(this, this.DeclaringCompilation!.IntrinsicSymbols, binderProvider.DiagnosticBag);
     }
 
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)

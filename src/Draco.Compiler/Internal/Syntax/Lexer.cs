@@ -218,6 +218,7 @@ internal sealed class Lexer
             return TakeBasic(TokenKind.Plus, 1);
         case '-':
             if (this.Peek(1) == '=') return TakeBasic(TokenKind.MinusAssign, 2);
+            if (this.Peek(1) == '>') return TakeBasic(TokenKind.Arrow, 2);
             return TakeBasic(TokenKind.Minus, 1);
         case '*':
             if (this.Peek(1) == '=') return TakeBasic(TokenKind.StarAssign, 2);
@@ -321,6 +322,7 @@ internal sealed class Lexer
             // TODO: Any better/faster way?
             var tokenKind = ident switch
             {
+                var _ when ident.Span.SequenceEqual("_") => TokenKind.KeywordDiscard,
                 var _ when ident.Span.SequenceEqual("and") => TokenKind.KeywordAnd,
                 var _ when ident.Span.SequenceEqual("else") => TokenKind.KeywordElse,
                 var _ when ident.Span.SequenceEqual("false") => TokenKind.KeywordFalse,
@@ -331,6 +333,7 @@ internal sealed class Lexer
                 var _ when ident.Span.SequenceEqual("import") => TokenKind.KeywordImport,
                 var _ when ident.Span.SequenceEqual("in") => TokenKind.KeywordIn,
                 var _ when ident.Span.SequenceEqual("internal") => TokenKind.KeywordInternal,
+                var _ when ident.Span.SequenceEqual("match") => TokenKind.KeywordMatch,
                 var _ when ident.Span.SequenceEqual("mod") => TokenKind.KeywordMod,
                 var _ when ident.Span.SequenceEqual("module") => TokenKind.KeywordModule,
                 var _ when ident.Span.SequenceEqual("not") => TokenKind.KeywordNot,

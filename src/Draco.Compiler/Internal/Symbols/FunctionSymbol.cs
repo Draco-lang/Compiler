@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols.Generic;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -89,8 +90,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     {
         get
         {
-            var syntax = this.DeclaringSyntax as FunctionDeclarationSyntax;
-            if (syntax is null) return Api.Semantics.Visibility.Internal; // Default
+            if (this.DeclaringSyntax is not FunctionDeclarationSyntax syntax) return Api.Semantics.Visibility.Internal; // Default
             return GetVisibilityFromTokenKind(syntax.VisibilityModifier?.Kind);
         }
     }

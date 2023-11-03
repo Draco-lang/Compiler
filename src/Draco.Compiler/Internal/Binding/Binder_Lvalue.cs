@@ -26,7 +26,7 @@ internal partial class Binder
     protected virtual BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedExpressionSyntax => new UntypedUnexpectedLvalue(syntax),
+        UnexpectedExpressionSyntax => BindingTask.FromResult<BoundLvalue>(new BoundUnexpectedLvalue(syntax)),
         GroupingExpressionSyntax group => this.BindLvalue(group.Expression, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameLvalue(name, constraints, diagnostics),
         MemberExpressionSyntax member => this.BindMemberLvalue(member, constraints, diagnostics),

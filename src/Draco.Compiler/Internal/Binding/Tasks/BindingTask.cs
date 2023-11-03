@@ -3,6 +3,16 @@ using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Internal.Binding.Tasks;
 
+internal static class BindingTask
+{
+    public static BindingTask<T> FromResult<T>(T result)
+    {
+        var task = new BindingTask<T>();
+        task.Awaiter.SetResult(result, null);
+        return task;
+    }
+}
+
 [AsyncMethodBuilder(typeof(BindingTaskMethodBuilder<>))]
 internal struct BindingTask<T>
 {

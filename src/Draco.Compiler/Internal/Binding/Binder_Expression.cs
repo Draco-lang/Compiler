@@ -27,7 +27,7 @@ internal partial class Binder
     protected virtual BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedExpressionSyntax => new UntypedUnexpectedExpression(syntax),
+        UnexpectedExpressionSyntax => BindingTask.FromResult<BoundExpression>(new BoundUnexpectedExpression(syntax)),
         GroupingExpressionSyntax grp => this.BindExpression(grp.Expression, constraints, diagnostics),
         StatementExpressionSyntax stmt => this.BindStatementExpression(stmt, constraints, diagnostics),
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),

@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
+
 #pragma warning disable IDE0250 // Make struct 'readonly'
 public struct SyncTaskCompletionSource<T>
 {

@@ -4,8 +4,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
+
 public struct SyncAwaiter<T> : INotifyCompletion
 {
+    public bool IsCompleted { get; private set; }
+
     private T? result;
     private Exception? exception;
     private List<Action>? completions;
@@ -20,8 +23,6 @@ public struct SyncAwaiter<T> : INotifyCompletion
             completion();
         }
     }
-
-    public bool IsCompleted { get; private set; }
 
     public readonly T GetResult()
     {

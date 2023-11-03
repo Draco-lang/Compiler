@@ -7,7 +7,6 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.UntypedTree;
 
 // NOTE: We don't follow the file-hierarchy here
 // The reason is because this is a nested class of semantic model
@@ -68,13 +67,13 @@ public sealed partial class SemanticModel
 
         // Memoizing overrides /////////////////////////////////////////////////
 
-        internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        internal override BoundStatement TypeStatement(BoundStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));
 
-        internal override BoundExpression TypeExpression(UntypedExpression expression, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        internal override BoundExpression TypeExpression(BoundExpression expression, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(expression, () => base.TypeExpression(expression, constraints, diagnostics));
 
-        internal override BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        internal override BoundLvalue TypeLvalue(BoundLvalue lvalue, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.TypeNode(lvalue, () => base.TypeLvalue(lvalue, constraints, diagnostics));
 
         internal override Symbol BindLabel(LabelSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>

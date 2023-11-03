@@ -1,15 +1,15 @@
 using System.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Binding;
 
 internal partial class Binder
 {
-    protected void ConstraintReturnType(SyntaxNode returnSyntax, UntypedExpression returnValue, ConstraintSolver constraints)
+    protected void ConstraintReturnType(SyntaxNode returnSyntax, BoundExpression returnValue, ConstraintSolver constraints)
     {
         var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
         Debug.Assert(containingFunction is not null);

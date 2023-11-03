@@ -22,10 +22,10 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped lvalue for <paramref name="syntax"/>.</returns>
-    protected virtual UntypedLvalue BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    protected virtual BoundLvalue BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedExpressionSyntax => new UntypedUnexpectedLvalue(syntax),
+        UnexpectedExpressionSyntax => new BoundUnexpectedLvalue(syntax),
         GroupingExpressionSyntax group => this.BindLvalue(group.Expression, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameLvalue(name, constraints, diagnostics),
         MemberExpressionSyntax member => this.BindMemberLvalue(member, constraints, diagnostics),
@@ -33,15 +33,15 @@ internal partial class Binder
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
-    private UntypedLvalue BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BoundLvalue BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         switch (symbol)
         {
         case UntypedLocalSymbol local:
-            return new UntypedLocalLvalue(syntax, local, constraints.GetLocalType(local));
+            return new BoundLocalLvalue(syntax, local, constraints.GetLocalType(local));
         case GlobalSymbol global:
-            return new UntypedGlobalLvalue(syntax, global);
+            return new BoundGlobalLvalue(syntax, global);
         case FieldSymbol:
             return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
         case PropertySymbol:
@@ -51,19 +51,19 @@ internal partial class Binder
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalLvalue,
                 location: syntax?.Location));
-            return new UntypedIllegalLvalue(syntax);
+            return new BoundIllegalLvalue(syntax);
         }
         }
     }
 
-    private UntypedLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BoundLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
 
-        Symbol? container = left is UntypedModuleExpression untypedModule
+        Symbol? container = left is BoundModuleExpression untypedModule
             ? untypedModule.Module
-            : (left as UntypedTypeExpression)?.Type;
+            : (left as BoundTypeExpression)?.Type;
 
         if (container is not null)
         {
@@ -84,26 +84,26 @@ internal partial class Binder
         {
             // Value, add constraint
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType, syntax);
-            return new UntypedMemberLvalue(syntax, left, promise, memberType);
+            return new BoundMemberLvalue(syntax, left, promise, memberType);
         }
     }
 
-    private UntypedLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BoundLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // TODO: Should illegal lvalues contain an expression we still bind?
         // It could result in more errors within the expression, which might be useful
         diagnostics.Add(Diagnostic.Create(
             template: SymbolResolutionErrors.IllegalLvalue,
             location: syntax?.Location));
-        return new UntypedIllegalLvalue(syntax);
+        return new BoundIllegalLvalue(syntax);
     }
 
-    private UntypedLvalue BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BoundLvalue BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
-        if (receiver is UntypedReferenceErrorExpression err)
+        if (receiver is BoundReferenceErrorExpression err)
         {
-            return new UntypedIllegalLvalue(syntax);
+            return new BoundIllegalLvalue(syntax);
         }
         var args = syntax.IndexList.Values
             .Select(x => this.BindExpression(x, constraints, diagnostics))
@@ -140,21 +140,21 @@ internal partial class Binder
             return overloaded;
         }, syntax).Unwrap();
 
-        return new UntypedIndexSetLvalue(syntax, receiver, promise, args, returnType);
+        return new BoundIndexSetLvalue(syntax, receiver, promise, args, returnType);
     }
 
-    private UntypedLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BoundLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         switch (symbol)
         {
         case GlobalSymbol global:
-            return new UntypedGlobalLvalue(syntax, global);
+            return new BoundGlobalLvalue(syntax, global);
         case PropertySymbol prop:
             var setter = GetSetterSymbol(syntax, prop, diagnostics);
-            return new UntypedPropertySetLvalue(syntax, null, setter);
+            return new BoundPropertySetLvalue(syntax, null, setter);
         default:
             // NOTE: The error is already reported
-            return new UntypedIllegalLvalue(syntax);
+            return new BoundIllegalLvalue(syntax);
         }
     }
 }

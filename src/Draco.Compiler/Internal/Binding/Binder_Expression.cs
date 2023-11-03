@@ -9,8 +9,9 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.UntypedTree;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Utilities;
+using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -23,7 +24,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped expression for <paramref name="syntax"/>.</returns>
-    protected virtual UntypedExpression BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    protected virtual SyncTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedExpressionSyntax => new UntypedUnexpectedExpression(syntax),
@@ -48,7 +49,7 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private UntypedExpression BindStatementExpression(StatementExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindStatementExpression(StatementExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // We just desugar stmt; into { stmt; }
         var stmt = this.BindStatement(syntax.Statement, constraints, diagnostics);
@@ -59,7 +60,7 @@ internal partial class Binder
             value: UntypedUnitExpression.Default);
     }
 
-    private UntypedExpression BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         if (!BinderFacts.TryGetLiteralType(syntax.Literal.Value, this.IntrinsicSymbols, out var literalType))
         {
@@ -68,7 +69,7 @@ internal partial class Binder
         return new UntypedLiteralExpression(syntax, syntax.Literal.Value, literalType);
     }
 
-    private UntypedExpression BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var lastNewline = true;
         var cutoff = SyntaxFacts.ComputeCutoff(syntax);
@@ -107,7 +108,7 @@ internal partial class Binder
         return new UntypedStringExpression(syntax, parts.ToImmutable(), this.IntrinsicSymbols.String);
     }
 
-    private UntypedExpression BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
@@ -115,7 +116,7 @@ internal partial class Binder
         return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
-    private UntypedExpression BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
         var locals = binder.DeclaredSymbols
@@ -130,13 +131,13 @@ internal partial class Binder
         return new UntypedBlockExpression(syntax, locals, statements, value);
     }
 
-    private UntypedExpression BindGotoExpression(GotoExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindGotoExpression(GotoExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var target = (LabelSymbol)this.BindLabel(syntax.Target, constraints, diagnostics);
         return new UntypedGotoExpression(syntax, target);
     }
 
-    private UntypedExpression BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var value = syntax.Value is null
             ? UntypedUnitExpression.Default
@@ -147,7 +148,7 @@ internal partial class Binder
         return new UntypedReturnExpression(syntax, value);
     }
 
-    private UntypedExpression BindIfExpression(IfExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindIfExpression(IfExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
@@ -178,7 +179,7 @@ internal partial class Binder
         return new UntypedIfExpression(syntax, condition, then, @else, resultType);
     }
 
-    private UntypedExpression BindWhileExpression(WhileExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindWhileExpression(WhileExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
 
@@ -201,7 +202,7 @@ internal partial class Binder
         return new UntypedWhileExpression(syntax, condition, then, continueLabel, breakLabel);
     }
 
-    private UntypedExpression BindForExpression(ForExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindForExpression(ForExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
 
@@ -332,7 +333,7 @@ internal partial class Binder
         return new UntypedDelayedExpression(syntax, exprPromise, IntrinsicSymbols.Unit);
     }
 
-    private UntypedExpression BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var method = this.BindExpression(syntax.Function, constraints, diagnostics);
         var args = syntax.ArgumentList.Values
@@ -342,7 +343,7 @@ internal partial class Binder
         return this.BindCallExpression(syntax, method, args, constraints, diagnostics);
     }
 
-    private UntypedExpression BindCallExpression(
+    private SyncTask<BoundExpression> BindCallExpression(
         CallExpressionSyntax syntax,
         UntypedExpression method,
         ImmutableArray<UntypedExpression> args,
@@ -425,7 +426,7 @@ internal partial class Binder
         }
     }
 
-    private UntypedExpression BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // Get the unary operator symbol
         var operatorName = FunctionSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
@@ -443,7 +444,7 @@ internal partial class Binder
         return new UntypedUnaryExpression(syntax, symbolPromise, operand, resultType);
     }
 
-    private UntypedExpression BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         if (syntax.Operator.Kind == TokenKind.Assign)
         {
@@ -511,7 +512,7 @@ internal partial class Binder
         }
     }
 
-    private UntypedExpression BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var first = this.BindExpression(syntax.Left, constraints, diagnostics);
         var comparisons = ImmutableArray.CreateBuilder<UntypedComparison>();
@@ -525,7 +526,7 @@ internal partial class Binder
         return new UntypedRelationalExpression(syntax, first, comparisons.ToImmutable(), this.IntrinsicSymbols.Bool);
     }
 
-    private UntypedComparison BindComparison(
+    private SyncTask<BoundExpression> BindComparison(
         UntypedExpression prev,
         ComparisonElementSyntax syntax,
         ConstraintSolver constraints,
@@ -550,7 +551,7 @@ internal partial class Binder
         return new UntypedComparison(syntax, symbolPromise, right);
     }
 
-    private UntypedExpression BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
@@ -586,7 +587,7 @@ internal partial class Binder
         }
     }
 
-    private UntypedExpression BindIndexExpression(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindIndexExpression(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
         if (receiver is UntypedReferenceErrorExpression err)
@@ -629,7 +630,7 @@ internal partial class Binder
         return new UntypedIndexGetExpression(syntax, receiver, promise, args, returnType);
     }
 
-    private UntypedExpression BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private SyncTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var instantiated = this.BindExpression(syntax.Instantiated, constraints, diagnostics);
         var args = syntax.Arguments.Values
@@ -720,7 +721,7 @@ internal partial class Binder
         }
     }
 
-    private UntypedExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BoundExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         if (symbol.IsError) return new UntypedReferenceErrorExpression(syntax, symbol);
         switch (symbol)

@@ -10,7 +10,7 @@ using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Solver.Tasks;
+using Draco.Compiler.Internal.Binding.Tasks;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -23,7 +23,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped lvalue for <paramref name="syntax"/>.</returns>
-    protected virtual SyncTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    protected virtual BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedExpressionSyntax => new UntypedUnexpectedLvalue(syntax),
@@ -34,7 +34,7 @@ internal partial class Binder
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
-    private SyncTask<BoundLvalue> BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundLvalue> BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         switch (symbol)
@@ -57,7 +57,7 @@ internal partial class Binder
         }
     }
 
-    private SyncTask<BoundLvalue> BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundLvalue> BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
@@ -89,7 +89,7 @@ internal partial class Binder
         }
     }
 
-    private SyncTask<BoundLvalue> BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundLvalue> BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // TODO: Should illegal lvalues contain an expression we still bind?
         // It could result in more errors within the expression, which might be useful
@@ -99,7 +99,7 @@ internal partial class Binder
         return new UntypedIllegalLvalue(syntax);
     }
 
-    private SyncTask<BoundLvalue> BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundLvalue> BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
         if (receiver is UntypedReferenceErrorExpression err)

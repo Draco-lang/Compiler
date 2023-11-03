@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.Solver;
 
@@ -5,11 +7,19 @@ namespace Draco.Compiler.Internal.Binding.Tasks;
 
 internal static class BindingTask
 {
-    public static BindingTask<T> FromResult<T>(T result)
+    public static BindingTask<T> FromResult<T>(ConstraintSolver solver, T result)
     {
         var task = new BindingTask<T>();
+        task.Awaiter.Solver = solver;
         task.Awaiter.SetResult(result, null);
         return task;
+    }
+
+    public static async BindingTask<ImmutableArray<T>> WhenAll<T>(IEnumerable<BindingTask<T>> tasks)
+    {
+        var result = ImmutableArray.CreateBuilder<T>();
+        foreach (var task in tasks) result.Add(await task);
+        return result.ToImmutable();
     }
 }
 

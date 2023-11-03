@@ -1,5 +1,6 @@
 using System;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Binding.Tasks;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -9,13 +10,12 @@ namespace Draco.Compiler.Internal.Solver;
 /// <typeparam name="TResult">The result type.</typeparam>
 internal abstract class Constraint<TResult> : IConstraint<TResult>
 {
-    public IConstraintPromise<TResult> Promise { get; }
-    IConstraintPromise IConstraint.Promise => this.Promise;
+    public BindingTaskCompletionSource<TResult> CompletionSource { get; }
     public ConstraintLocator Locator { get; }
 
-    protected Constraint(ConstraintLocator locator)
+    protected Constraint(ConstraintSolver solver, ConstraintLocator locator)
     {
-        this.Promise = ConstraintPromise.Create(this);
+        this.CompletionSource = new(solver);
         this.Locator = locator;
     }
 

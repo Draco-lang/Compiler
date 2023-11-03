@@ -1,3 +1,5 @@
+using Draco.Compiler.Internal.Binding.Tasks;
+
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
@@ -5,11 +7,6 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal interface IConstraint
 {
-    /// <summary>
-    /// The promise of this constraint.
-    /// </summary>
-    public IConstraintPromise Promise { get; }
-
     /// <summary>
     /// The locator for the constraint.
     /// </summary>
@@ -23,7 +20,7 @@ internal interface IConstraint
 internal interface IConstraint<TResult> : IConstraint
 {
     /// <summary>
-    /// The promise of this constraint.
+    /// The completion source of this constraint.
     /// </summary>
-    public new IConstraintPromise<TResult> Promise { get; }
+    public BindingTaskCompletionSource<TResult> CompletionSource { get; }
 }

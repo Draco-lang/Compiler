@@ -40,40 +40,12 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
-        if (this.TryDequeue<AwaitConstraint<UntypedExpression>>(out var wait, w => w.Awaited()))
-        {
-            this.HandleRule(wait);
-            return true;
-        }
-
-        if (this.TryDequeue<AwaitConstraint<Symbol>>(out var wait2, w => w.Awaited()))
-        {
-            this.HandleRule(wait2);
-            return true;
-        }
-
-        if (this.TryDequeue<AwaitConstraint<TypeSymbol>>(out var wait3, w => w.Awaited()))
-        {
-            this.HandleRule(wait3);
-            return true;
-        }
-
-        if (this.TryDequeue<AwaitConstraint<IConstraintPromise<FunctionSymbol>>>(out var wait4, w => w.Awaited()))
-        {
-            this.HandleRule(wait4);
-            return true;
-        }
-
-        if (this.TryDequeue<AwaitConstraint<Unit>>(out var wait5, w => w.Awaited()))
-        {
-            this.HandleRule(wait5);
-            return true;
-        }
+        // NOTE: Await constraints used to be here, maybe yield here?
 
         foreach (var overload in this.Enumerate<OverloadConstraint>())
         {
             this.HandleRule(overload, diagnostics);
-            if (!overload.Promise.IsResolved) continue;
+            if (!overload.CompletionSource.IsCompleted) continue;
 
             this.Remove(overload);
             return true;
@@ -82,7 +54,7 @@ internal sealed partial class ConstraintSolver
         foreach (var call in this.Enumerate<CallConstraint>(c => !c.CalledType.Substitution.IsTypeVariable))
         {
             this.HandleRule(call, diagnostics);
-            if (!call.Promise.IsResolved) continue;
+            if (!call.CompletionSource.IsCompleted) continue;
 
             this.Remove(call);
             return true;
@@ -165,13 +137,13 @@ internal sealed partial class ConstraintSolver
                     .WithTemplate(TypeCheckingErrors.TypeMismatch)
                     .WithFormatArgs(constraint.Types[0].Substitution, constraint.Types[i].Substitution))
                     .Build());
-                constraint.Promise.Fail(default);
+                constraint.CompletionSource.SetResult(default);
                 return;
             }
         }
 
         // Successful unification
-        constraint.Promise.Resolve(default);
+        constraint.CompletionSource.SetResult(default);
     }
 
     private void HandleRule(AssignableConstraint constraint, DiagnosticBag? diagnostics)
@@ -183,12 +155,12 @@ internal sealed partial class ConstraintSolver
                 .WithTemplate(TypeCheckingErrors.TypeMismatch)
                 .WithFormatArgs(constraint.TargetType.Substitution, constraint.AssignedType.Substitution))
                 .Build());
-            constraint.Promise.Fail(default);
+            constraint.CompletionSource.SetResult(default);
             return;
         }
 
         // Ok
-        constraint.Promise.Resolve(default);
+        constraint.CompletionSource.SetResult(default);
     }
 
     private void HandleRule(CommonTypeConstraint constraint, DiagnosticBag? diagnostics)
@@ -199,7 +171,7 @@ internal sealed partial class ConstraintSolver
             {
                 // Found a good common type
                 this.UnifyAsserted(constraint.CommonType, type);
-                constraint.Promise.Resolve(default);
+                constraint.CompletionSource.SetResult(default);
                 return;
             }
         }
@@ -210,7 +182,7 @@ internal sealed partial class ConstraintSolver
             .WithFormatArgs(string.Join(", ", constraint.AlternativeTypes)))
             .Build());
         this.UnifyAsserted(constraint.CommonType, IntrinsicSymbols.ErrorType);
-        constraint.Promise.Fail(default);
+        constraint.CompletionSource.SetResult(default);
     }
 
     private void HandleRule(MemberConstraint constraint, DiagnosticBag? diagnostics)
@@ -226,7 +198,7 @@ internal sealed partial class ConstraintSolver
         if (accessed.IsError)
         {
             this.Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
-            constraint.Promise.Resolve(UndefinedMemberSymbol.Instance);
+            constraint.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);
             return;
         }
 
@@ -244,7 +216,7 @@ internal sealed partial class ConstraintSolver
                 .Build());
             // We still provide a single error symbol
             this.UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
-            constraint.Promise.Fail(UndefinedMemberSymbol.Instance);
+            constraint.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);
             return;
         }
 
@@ -253,7 +225,7 @@ internal sealed partial class ConstraintSolver
             // One member, we know what type the member type is
             var memberType = ((ITypedSymbol)membersWithName[0]).Type;
             var assignablePromise = this.Assignable(constraint.MemberType, memberType, ConstraintLocator.Constraint(constraint));
-            constraint.Promise.Resolve(membersWithName[0]);
+            constraint.CompletionSource.SetResult(membersWithName[0]);
             return;
         }
 
@@ -264,23 +236,8 @@ internal sealed partial class ConstraintSolver
             Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
             this.UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
             var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
-            constraint.Promise.Resolve(overload);
+            constraint.CompletionSource.SetResult(overload);
         }
-    }
-
-    private void HandleRule<T>(AwaitConstraint<T> constraint)
-    {
-        // Wait until resolved
-        if (!constraint.Awaited())
-        {
-            throw new InvalidOperationException("rule handling for await constraint called prematurely");
-        }
-
-        // We can resolve the awaited promise
-        var mappedValue = constraint.Map();
-
-        // Resolve this promise
-        constraint.Promise.Resolve(mappedValue);
     }
 
     private void HandleRule(OverloadConstraint constraint, DiagnosticBag? diagnostics)
@@ -315,7 +272,7 @@ internal sealed partial class ConstraintSolver
                 .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
                 .WithFormatArgs(functionName))
                 .Build());
-            constraint.Promise.Fail(errorSymbol);
+            constraint.CompletionSource.SetResult(errorSymbol);
             return;
         }
 
@@ -355,7 +312,7 @@ internal sealed partial class ConstraintSolver
             // In all cases, return type is simple, it's an assignment
             var returnTypePromise = this.Assignable(constraint.ReturnType, chosen.ReturnType, ConstraintLocator.Constraint(constraint));
             // Resolve promise
-            constraint.Promise.Resolve(chosen);
+            constraint.CompletionSource.SetResult(chosen);
         }
         else
         {
@@ -366,7 +323,7 @@ internal sealed partial class ConstraintSolver
                 .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
                 .WithFormatArgs(functionName, string.Join(", ", dominatingCandidates)))
                 .Build());
-            constraint.Promise.Fail(errorSymbol);
+            constraint.CompletionSource.SetResult(errorSymbol);
         }
     }
 
@@ -395,7 +352,7 @@ internal sealed partial class ConstraintSolver
                 .WithTemplate(TypeCheckingErrors.CallNonFunction)
                 .WithFormatArgs(called))
                 .Build());
-            constraint.Promise.Fail(default);
+            constraint.CompletionSource.SetResult(default);
             return;
         }
 
@@ -414,7 +371,7 @@ internal sealed partial class ConstraintSolver
                     functionType,
                     MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)))
                 .Build());
-            constraint.Promise.Fail(default);
+            constraint.CompletionSource.SetResult(default);
             return;
         }
 
@@ -433,7 +390,7 @@ internal sealed partial class ConstraintSolver
                         functionType,
                         MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)))
                     .Build());
-                constraint.Promise.Fail(default);
+                constraint.CompletionSource.SetResult(default);
                 return;
             }
             if (score.IsWellDefined) break;
@@ -450,6 +407,6 @@ internal sealed partial class ConstraintSolver
     private void FailRule(CallConstraint constraint)
     {
         this.UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
-        constraint.Promise.Fail(default);
+        constraint.CompletionSource.SetResult(default);
     }
 }

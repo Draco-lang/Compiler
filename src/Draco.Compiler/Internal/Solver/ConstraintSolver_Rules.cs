@@ -39,29 +39,7 @@ internal sealed partial class ConstraintSolver
             return true;
         }
 
-        if (this.TryDequeue<AwaitConstraint<Symbol>>(out var wait2, w => w.Awaited()))
-        {
-            this.HandleRule(wait2);
-            return true;
-        }
-
-        if (this.TryDequeue<AwaitConstraint<TypeSymbol>>(out var wait3, w => w.Awaited()))
-        {
-            this.HandleRule(wait3);
-            return true;
-        }
-
-        if (this.TryDequeue<AwaitConstraint<IConstraintPromise<FunctionSymbol>>>(out var wait4, w => w.Awaited()))
-        {
-            this.HandleRule(wait4);
-            return true;
-        }
-
-        if (this.TryDequeue<AwaitConstraint<Unit>>(out var wait5, w => w.Awaited()))
-        {
-            this.HandleRule(wait5);
-            return true;
-        }
+        // NOTE: We used to solve await constraints here
 
         foreach (var overload in this.Enumerate<OverloadConstraint>())
         {
@@ -259,21 +237,6 @@ internal sealed partial class ConstraintSolver
             var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
             constraint.Promise.Resolve(overload);
         }
-    }
-
-    private void HandleRule<T>(AwaitConstraint<T> constraint)
-    {
-        // Wait until resolved
-        if (!constraint.Awaited())
-        {
-            throw new InvalidOperationException("rule handling for await constraint called prematurely");
-        }
-
-        // We can resolve the awaited promise
-        var mappedValue = constraint.Map();
-
-        // Resolve this promise
-        constraint.Promise.Resolve(mappedValue);
     }
 
     private void HandleRule(OverloadConstraint constraint, DiagnosticBag? diagnostics)

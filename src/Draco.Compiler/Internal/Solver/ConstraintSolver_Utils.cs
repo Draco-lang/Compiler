@@ -5,9 +5,9 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.UntypedTree;
 
 namespace Draco.Compiler.Internal.Solver;
 

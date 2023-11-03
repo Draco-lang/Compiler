@@ -6,11 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
-[AsyncMethodBuilder(typeof(SyncTaskMethodBuilder<>))]
-public struct SyncTask<T>
+[AsyncMethodBuilder(typeof(SolverTaskMethodBuilder<>))]
+internal struct SolverTask<T>
 {
-    internal SyncAwaiter<T> Awaiter { get; }
+    internal SolverTaskAwaiter<T> Awaiter;
+    internal readonly ConstraintSolver Solver => this.Awaiter.Solver;
     public readonly bool IsCompleted => this.Awaiter.IsCompleted;
     public readonly T Result => this.Awaiter.GetResult();
-    public readonly SyncAwaiter<T> GetAwaiter() => this.Awaiter;
+    public readonly SolverTaskAwaiter<T> GetAwaiter() => this.Awaiter;
 }

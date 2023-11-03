@@ -7,11 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
-public class SyncTaskMethodBuilder<T>
+public class SolverTaskMethodBuilder<T>
 {
-    public SyncTask<T> Task { get; private set; }
+    private SolverTask<T> task;
 
-    public static SyncTaskMethodBuilder<T> Create() => new();
+    public SolverTask<T> Task => this.task;
+
+    public static SolverTaskMethodBuilder<T> Create() => new();
 
     public void Start<TStateMachine>(ref TStateMachine stateMachine)
         where TStateMachine : IAsyncStateMachine => stateMachine.MoveNext();
@@ -24,11 +26,26 @@ public class SyncTaskMethodBuilder<T>
     public void AwaitOnCompleted<TAwaiter, TStateMachine>(
         ref TAwaiter awaiter, ref TStateMachine stateMachine)
         where TAwaiter : INotifyCompletion
-        where TStateMachine : IAsyncStateMachine =>
+        where TStateMachine : IAsyncStateMachine
+    {
+        if (awaiter is not SolverTaskAwaiter<object> syncAwaiter)
+        {
+            throw new NotSupportedException("Only supporting SolverTasks.");
+        }
+        this.task.Awaiter.Solver = syncAwaiter.Solver;
         awaiter.OnCompleted(stateMachine.MoveNext);
+    }
+
     public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(
         ref TAwaiter awaiter, ref TStateMachine stateMachine)
         where TAwaiter : ICriticalNotifyCompletion
-        where TStateMachine : IAsyncStateMachine =>
+        where TStateMachine : IAsyncStateMachine
+    {
+        if (awaiter is not SolverTaskAwaiter<object> syncAwaiter)
+        {
+            throw new NotSupportedException("Only supporting SolverTasks.");
+        }
+        this.task.Awaiter.Solver = syncAwaiter.Solver;
         awaiter.OnCompleted(stateMachine.MoveNext);
+    }
 }

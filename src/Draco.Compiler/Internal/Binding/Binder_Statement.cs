@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
@@ -53,32 +54,32 @@ internal partial class Binder
         return new BoundExpressionStatement(syntax, await exprTask);
     }
 
-    private BindingTask<BoundStatement> BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundStatement> BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var binder = this.GetBinder(syntax);
         var locals = binder.DeclaredSymbols
-            .OfType<UntypedLocalSymbol>()
+            .OfType<LocalSymbol>()
             .ToImmutableArray();
-        var statements = ImmutableArray.CreateBuilder<BoundStatement>();
-        statements.AddRange(syntax.Statements.Select(s => binder.BindStatement(s, constraints, diagnostics)));
+        var statementsTask = new List<BindingTask<BoundStatement>>();
+        statementsTask.AddRange(syntax.Statements.Select(s => binder.BindStatement(s, constraints, diagnostics)));
         // TODO: Do we want to handle this here, or during DFA?
         // If this function returns unit, we implicitly append a return expression
         var function = (FunctionSymbol)this.ContainingSymbol!;
         if (SymbolEqualityComparer.Default.Equals(function.ReturnType, IntrinsicSymbols.Unit))
         {
-            statements.Add(new BoundExpressionStatement(
+            statementsTask.Add(FromResult(new BoundExpressionStatement(
                 syntax: null,
                 expression: new BoundReturnExpression(
                     syntax: null,
-                    value: BoundUnitExpression.Default)));
+                    value: BoundUnitExpression.Default))));
         }
         return new BoundExpressionStatement(
             syntax,
-            new BoundBlockExpression(syntax, locals, statements.ToImmutable(), BoundUnitExpression.Default));
-#else
-        throw new NotImplementedException();
-#endif
+            new BoundBlockExpression(
+                syntax,
+                locals,
+                await BindingTask.WhenAll(statementsTask),
+                BoundUnitExpression.Default));
     }
 
     private async BindingTask<BoundStatement> BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

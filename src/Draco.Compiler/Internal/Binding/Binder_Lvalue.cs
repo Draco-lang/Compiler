@@ -26,7 +26,7 @@ internal partial class Binder
     protected virtual BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedExpressionSyntax => new BoundUnexpectedLvalue(syntax),
+        UnexpectedExpressionSyntax => FromResult(constraints, new BoundUnexpectedLvalue(syntax)),
         GroupingExpressionSyntax group => this.BindLvalue(group.Expression, constraints, diagnostics),
         NameExpressionSyntax name => this.BindNameLvalue(name, constraints, diagnostics),
         MemberExpressionSyntax member => this.BindMemberLvalue(member, constraints, diagnostics),
@@ -34,8 +34,12 @@ internal partial class Binder
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
+    private static BindingTask<BoundLvalue> FromResult(ConstraintSolver constraints, BoundLvalue expr) =>
+        BindingTask.FromResult(constraints, expr);
+
     private BindingTask<BoundLvalue> BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         switch (symbol)
         {
@@ -55,10 +59,14 @@ internal partial class Binder
             return new BoundIllegalLvalue(syntax);
         }
         }
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundLvalue> BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
 
@@ -87,20 +95,28 @@ internal partial class Binder
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType, syntax);
             return new BoundMemberLvalue(syntax, left, promise, memberType);
         }
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundLvalue> BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         // TODO: Should illegal lvalues contain an expression we still bind?
         // It could result in more errors within the expression, which might be useful
         diagnostics.Add(Diagnostic.Create(
             template: SymbolResolutionErrors.IllegalLvalue,
             location: syntax?.Location));
         return new BoundIllegalLvalue(syntax);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundLvalue> BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
         if (receiver is BoundReferenceErrorExpression err)
         {
@@ -142,6 +158,9 @@ internal partial class Binder
         }, syntax).Unwrap();
 
         return new BoundIndexSetLvalue(syntax, receiver, promise, args, returnType);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BoundLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -152,7 +171,11 @@ internal partial class Binder
             return new BoundGlobalLvalue(syntax, global);
         case PropertySymbol prop:
             var setter = GetSetterSymbol(syntax, prop, diagnostics);
+#if false
             return new BoundPropertySetLvalue(syntax, null, setter);
+#else
+            throw new NotImplementedException();
+#endif
         default:
             // NOTE: The error is already reported
             return new BoundIllegalLvalue(syntax);

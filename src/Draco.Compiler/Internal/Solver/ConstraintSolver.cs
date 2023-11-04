@@ -31,8 +31,6 @@ internal sealed partial class ConstraintSolver
     private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = new();
-    // Type variable substitutions
-    private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new();
     // The declared/inferred types of locals
     private readonly Dictionary<UntypedLocalSymbol, TypeSymbol> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
     // All locals that have a typed variant constructed
@@ -70,7 +68,7 @@ internal sealed partial class ConstraintSolver
             var unwrappedLocalType = localType.Substitution;
             if (unwrappedLocalType is TypeVariable typeVar)
             {
-                this.UnifyAsserted(typeVar, IntrinsicSymbols.UninferredType);
+                UnifyAsserted(typeVar, IntrinsicSymbols.UninferredType);
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
                     location: local.DeclaringSyntax.Location,
@@ -142,48 +140,19 @@ internal sealed partial class ConstraintSolver
     /// <returns>A new, unique type-variable.</returns>
     public TypeVariable AllocateTypeVariable(bool track = true)
     {
-        var typeVar = new TypeVariable(this, this.typeVariables.Count);
+        var typeVar = new TypeVariable(this.typeVariables.Count);
         if (track) this.typeVariables.Add(typeVar);
         return typeVar;
     }
-
-    /// <summary>
-    /// Unwraps the given type from potential variable substitutions.
-    /// </summary>
-    /// <param name="type">The type to unwrap.</param>
-    /// <returns>The unwrapped type, which might be <paramref name="type"/> itself, or the substitution, if it was
-    /// a type variable that already got substituted.</returns>
-    public TypeSymbol Unwrap(TypeSymbol type)
-    {
-        // If not a type-variable, we consider it substituted
-        if (type is not TypeVariable typeVar) return type;
-        // If it is, but has no substitutions, just return it as-is
-        if (!this.substitutions.TryGetValue(typeVar, out var substitution)) return typeVar;
-        // If the substitution is also a type-variable, we prune
-        if (substitution.IsTypeVariable)
-        {
-            substitution = substitution.Substitution;
-            this.substitutions[typeVar] = substitution;
-        }
-        return substitution;
-    }
-
-    /// <summary>
-    /// Substitutes the given type variable for a type symbol.
-    /// </summary>
-    /// <param name="var">The type variable to substitute.</param>
-    /// <param name="type">The substitution.</param>
-    public void Substitute(TypeVariable var, TypeSymbol type) =>
-        this.substitutions.Add(var, type);
 
     /// <summary>
     /// Unifies two types, asserting their success.
     /// </summary>
     /// <param name="first">The first type to unify.</param>
     /// <param name="second">The second type to unify.</param>
-    public void UnifyAsserted(TypeSymbol first, TypeSymbol second)
+    public static void UnifyAsserted(TypeSymbol first, TypeSymbol second)
     {
-        if (this.Unify(first, second)) return;
+        if (Unify(first, second)) return;
         throw new System.InvalidOperationException($"could not unify {first} and {second}");
     }
 
@@ -193,7 +162,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="first">The first type to unify.</param>
     /// <param name="second">The second type to unify.</param>
     /// <returns>True, if unification was successful, false otherwise.</returns>
-    private bool Unify(TypeSymbol first, TypeSymbol second)
+    private static bool Unify(TypeSymbol first, TypeSymbol second)
     {
         first = first.Substitution;
         second = second.Substitution;
@@ -211,17 +180,17 @@ internal sealed partial class ConstraintSolver
             // NOTE: Referential equality is OK here, we are checking for CIRCULARITY
             // which is  referential check
             if (ReferenceEquals(v1, v2)) return true;
-            this.Substitute(v1, v2);
+            v1.Substitute(v2);
             return true;
         }
         case (TypeVariable v, TypeSymbol other):
         {
-            this.Substitute(v, other);
+            v.Substitute(other);
             return true;
         }
         case (TypeSymbol other, TypeVariable v):
         {
-            this.Substitute(v, other);
+            v.Substitute(other);
             return true;
         }
 
@@ -243,9 +212,9 @@ internal sealed partial class ConstraintSolver
             if (f1.Parameters.Length != f2.Parameters.Length) return false;
             for (var i = 0; i < f1.Parameters.Length; ++i)
             {
-                if (!this.Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
+                if (!Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
             }
-            return this.Unify(f1.ReturnType, f2.ReturnType);
+            return Unify(f1.ReturnType, f2.ReturnType);
         }
 
         case (_, _) when first.IsGenericInstance && second.IsGenericInstance:
@@ -254,10 +223,10 @@ internal sealed partial class ConstraintSolver
             Debug.Assert(first.GenericDefinition is not null);
             Debug.Assert(second.GenericDefinition is not null);
             if (first.GenericArguments.Length != second.GenericArguments.Length) return false;
-            if (!this.Unify(first.GenericDefinition, second.GenericDefinition)) return false;
+            if (!Unify(first.GenericDefinition, second.GenericDefinition)) return false;
             for (var i = 0; i < first.GenericArguments.Length; ++i)
             {
-                if (!this.Unify(first.GenericArguments[i], second.GenericArguments[i])) return false;
+                if (!Unify(first.GenericArguments[i], second.GenericArguments[i])) return false;
             }
             return true;
         }

@@ -31,8 +31,6 @@ internal sealed partial class ConstraintSolver
     private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = new();
-    // Type variable substitutions
-    private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new();
     // The declared/inferred types of locals
     private readonly Dictionary<UntypedLocalSymbol, TypeSymbol> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
     // All locals that have a typed variant constructed
@@ -142,39 +140,10 @@ internal sealed partial class ConstraintSolver
     /// <returns>A new, unique type-variable.</returns>
     public TypeVariable AllocateTypeVariable(bool track = true)
     {
-        var typeVar = new TypeVariable(this, this.typeVariables.Count);
+        var typeVar = new TypeVariable(this.typeVariables.Count);
         if (track) this.typeVariables.Add(typeVar);
         return typeVar;
     }
-
-    /// <summary>
-    /// Unwraps the given type from potential variable substitutions.
-    /// </summary>
-    /// <param name="type">The type to unwrap.</param>
-    /// <returns>The unwrapped type, which might be <paramref name="type"/> itself, or the substitution, if it was
-    /// a type variable that already got substituted.</returns>
-    public TypeSymbol Unwrap(TypeSymbol type)
-    {
-        // If not a type-variable, we consider it substituted
-        if (type is not TypeVariable typeVar) return type;
-        // If it is, but has no substitutions, just return it as-is
-        if (!this.substitutions.TryGetValue(typeVar, out var substitution)) return typeVar;
-        // If the substitution is also a type-variable, we prune
-        if (substitution.IsTypeVariable)
-        {
-            substitution = substitution.Substitution;
-            this.substitutions[typeVar] = substitution;
-        }
-        return substitution;
-    }
-
-    /// <summary>
-    /// Substitutes the given type variable for a type symbol.
-    /// </summary>
-    /// <param name="var">The type variable to substitute.</param>
-    /// <param name="type">The substitution.</param>
-    public void Substitute(TypeVariable var, TypeSymbol type) =>
-        this.substitutions.Add(var, type);
 
     /// <summary>
     /// Unifies two types, asserting their success.
@@ -211,17 +180,17 @@ internal sealed partial class ConstraintSolver
             // NOTE: Referential equality is OK here, we are checking for CIRCULARITY
             // which is  referential check
             if (ReferenceEquals(v1, v2)) return true;
-            this.Substitute(v1, v2);
+            v1.Substitute(v2);
             return true;
         }
         case (TypeVariable v, TypeSymbol other):
         {
-            this.Substitute(v, other);
+            v.Substitute(other);
             return true;
         }
         case (TypeSymbol other, TypeVariable v):
         {
-            this.Substitute(v, other);
+            v.Substitute(other);
             return true;
         }
 

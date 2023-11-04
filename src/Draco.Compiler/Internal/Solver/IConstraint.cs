@@ -1,4 +1,5 @@
 using Draco.Compiler.Internal.Binding.Tasks;
+using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -22,5 +23,5 @@ internal interface IConstraint<TResult> : IConstraint
     /// <summary>
     /// The completion source of this constraint.
     /// </summary>
-    public BindingTaskCompletionSource<TResult> CompletionSource { get; }
+    public SolverTaskCompletionSource<TResult> CompletionSource { get; }
 }

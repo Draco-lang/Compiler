@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding.Tasks;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
@@ -72,7 +73,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public BindingTask<Unit> SameType(TypeSymbol first, TypeSymbol second, SyntaxNode syntax)
+    public SolverTask<Unit> SameType(TypeSymbol first, TypeSymbol second, SyntaxNode syntax)
     {
         var constraint = new SameTypeConstraint(this, ImmutableArray.Create(first, second), ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
@@ -86,7 +87,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="assignedType">The type assigned.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public BindingTask<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, SyntaxNode syntax) =>
+    public SolverTask<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, SyntaxNode syntax) =>
         this.Assignable(targetType, assignedType, ConstraintLocator.Syntax(syntax));
 
     /// <summary>
@@ -96,7 +97,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="assignedType">The type assigned.</param>
     /// <param name="locator">The locator for the constraint.</param>
     /// <returns>The promise for the constraint added.</returns>
-    public BindingTask<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, ConstraintLocator locator)
+    public SolverTask<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, ConstraintLocator locator)
     {
         var constraint = new AssignableConstraint(this, targetType, assignedType, locator);
         this.Add(constraint);
@@ -110,7 +111,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise of the constraint added.</returns>
-    public BindingTask<Unit> CommonType(
+    public SolverTask<Unit> CommonType(
         TypeSymbol commonType,
         ImmutableArray<TypeSymbol> alternativeTypes,
         SyntaxNode syntax) => this.CommonType(commonType, alternativeTypes, ConstraintLocator.Syntax(syntax));
@@ -122,7 +123,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
     /// <param name="locator">The locator for this constraint.</param>
     /// <returns>The promise of the constraint added.</returns>
-    public BindingTask<Unit> CommonType(
+    public SolverTask<Unit> CommonType(
         TypeSymbol commonType,
         ImmutableArray<TypeSymbol> alternativeTypes,
         ConstraintLocator locator)
@@ -140,7 +141,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="memberType">The type of the member.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise of the accessed member symbol.</returns>
-    public BindingTask<Symbol> Member(
+    public SolverTask<Symbol> Member(
         TypeSymbol accessedType,
         string memberName,
         out TypeSymbol memberType,
@@ -160,7 +161,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="returnType">The return type.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise of the constraint.</returns>
-    public BindingTask<Unit> Call(
+    public SolverTask<Unit> Call(
         TypeSymbol calledType,
         ImmutableArray<object> args,
         out TypeSymbol returnType,
@@ -181,7 +182,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="returnType">The return type of the call.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
     /// <returns>The promise for the resolved overload.</returns>
-    public BindingTask<FunctionSymbol> Overload(
+    public SolverTask<FunctionSymbol> Overload(
         string name,
         ImmutableArray<FunctionSymbol> functions,
         ImmutableArray<object> args,

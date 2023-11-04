@@ -660,13 +660,14 @@ internal partial class Binder
 #endif
     }
 
-    private BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
-        var instantiated = this.BindExpression(syntax.Instantiated, constraints, diagnostics);
+        var instantiatedTask = this.BindExpression(syntax.Instantiated, constraints, diagnostics);
         var args = syntax.Arguments.Values
             .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
             .ToImmutableArray();
+
+        var instantiated = await instantiatedTask;
         if (instantiated is BoundFunctionGroupExpression group)
         {
             // Filter for same number of generic parameters
@@ -702,42 +703,33 @@ internal partial class Binder
             // We are playing the same game as with call expression
             // A member access has to be delayed to get resolved
 
-            var promise = constraints.Await(member.Member, BoundExpression () =>
+            var members = member.Member;
+            // Search for all function members with the same number of generic parameters
+            var withSameNoParams = GetFunctions(members);
+            if (withSameNoParams.Length == 0)
             {
-                var members = member.Member.Result;
-                // Search for all function members with the same number of generic parameters
-                var withSameNoParams = GetFunctions(members);
-                if (withSameNoParams.Length == 0)
-                {
-                    // No generic functions with this number of parameters
-                    diagnostics.Add(Diagnostic.Create(
-                        template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
-                        location: syntax.Location,
-                        formatArgs: new object[] { members.Name, args.Length }));
+                // No generic functions with this number of parameters
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
+                    location: syntax.Location,
+                    formatArgs: new object[] { members.Name, args.Length }));
 
-                    // Return a sentinel
-                    // NOTE: Is this the right one to return?
-                    return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
-                }
-                else
-                {
-                    // There are functions with this same number of parameters
-                    // Instantiate each possibility
-                    var instantiatedFuncs = withSameNoParams
-                        .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
-                        .ToImmutableArray();
-                    var overload = new OverloadSymbol(instantiatedFuncs);
+                // Return a sentinel
+                // NOTE: Is this the right one to return?
+                return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
+            }
+            else
+            {
+                // There are functions with this same number of parameters
+                // Instantiate each possibility
+                var instantiatedFuncs = withSameNoParams
+                    .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
+                    .ToImmutableArray();
+                var overload = new OverloadSymbol(instantiatedFuncs);
 
-                    // Wrap them back up in a member expression
-                    return new BoundMemberExpression(
-                        syntax,
-                        member.Accessed,
-                        ConstraintPromise.FromResult<Symbol>(overload),
-                        member.Type);
-                }
-            });
-            // NOTE: The generic function itself has no concrete type
-            return new BoundDelayedExpression(syntax, promise, IntrinsicSymbols.ErrorType);
+                // Wrap them back up in a member expression
+                return new BoundMemberExpression(syntax, member.Receiver, overload, member.Type);
+            }
         }
         else
         {
@@ -750,9 +742,6 @@ internal partial class Binder
             // NOTE: Is this the right one to return?
             return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
         }
-#else
-        throw new NotImplementedException();
-#endif
     }
 
     private BoundExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)

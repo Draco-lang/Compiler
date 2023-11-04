@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Tests.Tasks;
+
 public sealed class SolverTaskTests
 {
     [Fact]
@@ -19,7 +20,7 @@ public sealed class SolverTaskTests
     [Fact]
     public void ContinuationIsRanOnResult()
     {
-        bool continued = false;
+        var continued = false;
         var tcs = new SolverTaskCompletionSource<int>();
         tcs.GetAwaiter().OnCompleted(() =>
         {

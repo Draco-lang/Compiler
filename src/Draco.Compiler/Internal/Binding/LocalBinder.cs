@@ -142,7 +142,7 @@ internal sealed class LocalBinder : Binder
             {
                 // There is a symbol being built
                 // If it's a local, it depends on position, otherwise we don't care
-                if (symbol is UntypedLocalSymbol)
+                if (symbol is LocalSymbol)
                 {
                     // Locals need to be offset by their width
                     var width = EnumerateNodesInSameScope(syntax).Count();
@@ -166,9 +166,8 @@ internal sealed class LocalBinder : Binder
     {
         FunctionDeclarationSyntax function => new SourceFunctionSymbol(this.ContainingSymbol, function),
         ParameterSyntax parameter => new SourceParameterSymbol(this.ContainingSymbol, parameter),
-        // NOTE: Locals are special, we have no type-info about them
-        // They are remapped at the end of binding to 'SourceLocalSymbol's
-        VariableDeclarationSyntax variable => new UntypedLocalSymbol(this.ContainingSymbol, variable),
+        // TODO: typevar index
+        VariableDeclarationSyntax variable => new SourceLocalSymbol(this.ContainingSymbol, new TypeVariable(0), variable),
         LabelDeclarationSyntax label => new SourceLabelSymbol(this.ContainingSymbol, label),
         _ => null,
     };

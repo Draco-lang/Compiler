@@ -124,8 +124,7 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.compilation.GetBinder(node);
         while (binder is not null)
         {
-            var symbols = binder.DeclaredSymbols
-                .Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol());
+            var symbols = binder.DeclaredSymbols.Select(x => x.ToApiSymbol());
             foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;
         }
@@ -167,11 +166,6 @@ public sealed partial class SemanticModel : IBinderProvider
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
-            if (symbol is UntypedLocalSymbol)
-            {
-                // NOTE: Special case, locals are untyped, we need the typed variant
-                symbol = this.symbolMap[syntax];
-            }
             return symbol?.ToApiSymbol();
         }
         case SourceModuleSymbol module:
@@ -325,9 +319,7 @@ public sealed partial class SemanticModel : IBinderProvider
         while (binder is not null)
         {
             var symbols = binder.DeclaredSymbols
-                .Select(x => x is UntypedLocalSymbol loc
-                    ? this.GetDeclaredSymbol(loc.DeclaringSyntax)!
-                    : x.ToApiSymbol())
+                .Select(x => x.ToApiSymbol())
                 .Where(x => x is FunctionSymbol && x.Name == syntax.ToString());
             foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;

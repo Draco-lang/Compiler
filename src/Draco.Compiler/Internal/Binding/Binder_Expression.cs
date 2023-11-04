@@ -123,23 +123,23 @@ internal partial class Binder
         return FromResult(this.SymbolToExpression(syntax, symbol, constraints, diagnostics));
     }
 
-    private BindingTask<BoundExpression> BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var binder = this.GetBinder(syntax);
         var locals = binder.DeclaredSymbols
-            .OfType<UntypedLocalSymbol>()
+            .OfType<LocalSymbol>()
             .ToImmutableArray();
-        var statements = syntax.Statements
+        var statementsTask = syntax.Statements
             .Select(s => binder.BindStatement(s, constraints, diagnostics))
-            .ToImmutableArray();
-        var value = syntax.Value is null
-            ? BoundUnitExpression.Default
+            .ToList();
+        var valueTask = syntax.Value is null
+            ? FromResult(BoundUnitExpression.Default)
             : binder.BindExpression(syntax.Value, constraints, diagnostics);
-        return new BoundBlockExpression(syntax, locals, statements, value);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundBlockExpression(
+            syntax,
+            locals,
+            await BindingTask.WhenAll(statementsTask),
+            await valueTask);
     }
 
     private BindingTask<BoundExpression> BindGotoExpression(GotoExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -148,19 +148,15 @@ internal partial class Binder
         return FromResult(new BoundGotoExpression(syntax, target));
     }
 
-    private BindingTask<BoundExpression> BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
-        var value = syntax.Value is null
-            ? BoundUnitExpression.Default
+        var valueTask = syntax.Value is null
+            ? FromResult(BoundUnitExpression.Default)
             : this.BindExpression(syntax.Value, constraints, diagnostics);
 
-        this.ConstraintReturnType(syntax, value, constraints);
+        this.ConstraintReturnType(syntax, valueTask, constraints);
 
-        return new BoundReturnExpression(syntax, value);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundReturnExpression(syntax, await valueTask);
     }
 
     private async BindingTask<BoundExpression> BindIfExpression(IfExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -782,12 +778,8 @@ internal partial class Binder
 #endif
         case ParameterSymbol param:
             return new BoundParameterExpression(syntax, param);
-        case UntypedLocalSymbol local:
-#if false
-            return new BoundLocalExpression(syntax, local, constraints.GetLocalType(local));
-#else
-            throw new NotImplementedException();
-#endif
+        case LocalSymbol local:
+            return new BoundLocalExpression(syntax, local);
         case GlobalSymbol global:
             return new BoundGlobalExpression(syntax, global);
         case PropertySymbol prop:

@@ -4,7 +4,9 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -31,10 +33,8 @@ internal sealed partial class ConstraintSolver
     private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = new();
-    // The declared/inferred types of locals
-    private readonly Dictionary<UntypedLocalSymbol, TypeSymbol> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
-    // All locals that have a typed variant constructed
-    private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
+    // The registered local variables
+    private readonly List<LocalSymbol> localVariables = new();
 
     public ConstraintSolver(SyntaxNode context, string contextName)
     {
@@ -63,15 +63,15 @@ internal sealed partial class ConstraintSolver
 
     private void CheckForUninferredLocals(DiagnosticBag diagnostics)
     {
-        foreach (var (local, localType) in this.inferredLocalTypes)
+        foreach (var local in this.localVariables)
         {
-            var unwrappedLocalType = localType.Substitution;
+            var unwrappedLocalType = local.Type.Substitution;
             if (unwrappedLocalType is TypeVariable typeVar)
             {
                 UnifyAsserted(typeVar, IntrinsicSymbols.UninferredType);
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
-                    location: local.DeclaringSyntax.Location,
+                    location: local.DeclaringSyntax?.Location,
                     formatArgs: local.Name));
             }
         }
@@ -97,40 +97,7 @@ internal sealed partial class ConstraintSolver
     /// Adds a local to the solver.
     /// </summary>
     /// <param name="local">The symbol of the untyped local.</param>
-    /// <param name="type">The optional declared type for the local.</param>
-    /// <returns>The type the local was declared with.</returns>
-    public TypeSymbol DeclareLocal(UntypedLocalSymbol local, TypeSymbol? type)
-    {
-        var inferredType = type ?? this.AllocateTypeVariable();
-        this.inferredLocalTypes.Add(local, inferredType);
-        return inferredType;
-    }
-
-    /// <summary>
-    /// Retrieves the declared/inferred type of a local.
-    /// </summary>
-    /// <param name="local">The local to get the type of.</param>
-    /// <returns>The type of the local inferred so far.</returns>
-    public TypeSymbol GetLocalType(UntypedLocalSymbol local) => this.inferredLocalTypes[local].Substitution;
-
-    /// <summary>
-    /// Retrieves the typed variant of an untyped local symbol. In case this is the first time the local is
-    /// retrieved and the variable type could not be inferred, an error is reported.
-    /// </summary>
-    /// <param name="local">The untyped local to get the typed equivalent of.</param>
-    /// <param name="diagnostics">The diagnostics to report errors to.</param>
-    /// <returns>The typed equivalent of <paramref name="local"/>.</returns>
-    public LocalSymbol GetTypedLocal(UntypedLocalSymbol local, DiagnosticBag diagnostics)
-    {
-        if (!this.typedLocals.TryGetValue(local, out var typedLocal))
-        {
-            var localType = this.GetLocalType(local);
-            Debug.Assert(!localType.IsTypeVariable);
-            typedLocal = new SourceLocalSymbol(local, localType);
-            this.typedLocals.Add(local, typedLocal);
-        }
-        return typedLocal;
-    }
+    public void DeclareLocal(LocalSymbol local) => this.localVariables.Add(local);
 
     /// <summary>
     /// Allocates a type-variable.

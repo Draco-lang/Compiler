@@ -15,7 +15,7 @@ internal sealed class ForLoopBinder : LoopBinder
     /// <summary>
     /// The introduced iterator variable.
     /// </summary>
-    public UntypedLocalSymbol Iterator { get; }
+    public LocalSymbol Iterator { get; }
 
     public override ForExpressionSyntax DeclaringSyntax { get; }
 
@@ -26,9 +26,10 @@ internal sealed class ForLoopBinder : LoopBinder
         : base(parent, declaringSyntax)
     {
         this.DeclaringSyntax = declaringSyntax;
-        this.Iterator = new(
+        this.Iterator = new SourceLocalSymbol(
             this.ContainingSymbol!,
             declaringSyntax.Iterator.Text,
+            type: new TypeVariable(0), // TODO: Index
             isMutable: false,
             declaringSyntax.Iterator);
     }

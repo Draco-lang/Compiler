@@ -12,10 +12,11 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
 {
     public override Symbol ContainingSymbol { get; }
     public override string Name { get; }
-    public override TypeSymbol Type { get; }
     public override bool IsMutable { get; }
-
     public override SyntaxNode DeclaringSyntax { get; }
+
+    public override TypeSymbol Type => this.type.Substitution;
+    private readonly TypeSymbol type;
 
     public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
@@ -26,7 +27,7 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
     {
         this.ContainingSymbol = containingSymbol;
         this.Name = name;
-        this.Type = type;
+        this.type = type;
         this.IsMutable = isMutable;
         this.DeclaringSyntax = declaringSyntax;
     }

@@ -7,7 +7,7 @@ using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
 
-internal class SolverTaskAwaiter<T> : INotifyCompletion
+internal sealed class SolverTaskAwaiter<T> : INotifyCompletion
 {
     public bool IsCompleted { get; private set; }
 

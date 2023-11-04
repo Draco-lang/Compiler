@@ -25,7 +25,7 @@ internal static class BindingTask
 }
 
 [AsyncMethodBuilder(typeof(BindingTaskMethodBuilder<>))]
-internal class BindingTask<T>
+internal sealed class BindingTask<T>
 {
     internal BindingTaskAwaiter<T> Awaiter = new();
     public bool IsCompleted => this.Awaiter.IsCompleted;

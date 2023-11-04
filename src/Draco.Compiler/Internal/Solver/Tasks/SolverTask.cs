@@ -23,7 +23,7 @@ internal static class SolverTask
 }
 
 [AsyncMethodBuilder(typeof(SolverTaskMethodBuilder<>))]
-internal class SolverTask<T>
+internal sealed class SolverTask<T>
 {
     internal SolverTaskAwaiter<T> Awaiter = new();
     public bool IsCompleted => this.Awaiter.IsCompleted;

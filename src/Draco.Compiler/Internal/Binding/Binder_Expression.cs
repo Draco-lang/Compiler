@@ -54,7 +54,7 @@ internal partial class Binder
         var stmt = this.BindStatement(syntax.Statement, constraints, diagnostics);
         return new BoundBlockExpression(
             syntax: syntax,
-            locals: ImmutableArray<UntypedLocalSymbol>.Empty,
+            locals: ImmutableArray<LocalSymbol>.Empty,
             statements: ImmutableArray.Create(stmt),
             value: BoundUnitExpression.Default);
     }

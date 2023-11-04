@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -15,9 +16,9 @@ internal sealed partial class ConstraintSolver
 {
     private readonly record struct OverloadCandidate(FunctionSymbol Symbol, CallScore Score);
 
-    private static FunctionTypeSymbol MakeMismatchedFunctionType(ImmutableArray<object> args, TypeSymbol returnType) => new(
+    private FunctionTypeSymbol MakeMismatchedFunctionType(ImmutableArray<object> args, TypeSymbol returnType) => new(
         args
-            .Select(a => new SynthetizedParameterSymbol(null, ExtractArgumentType(a)))
+            .Select(a => new SynthetizedParameterSymbol(null, this.ExtractArgumentType(a)))
             .Cast<ParameterSymbol>()
             .ToImmutableArray(),
         returnType);
@@ -63,9 +64,9 @@ internal sealed partial class ConstraintSolver
     private void UnifyParameterWithArgument(TypeSymbol paramType, object argument)
     {
         var syntax = ExtractSyntax(argument);
-        var promise = this.Assignable(
+        _ = this.Assignable(
             paramType,
-            ExtractArgumentType(argument),
+            this.ExtractArgumentType(argument),
             syntax is null ? ConstraintLocator.Null : ConstraintLocator.Syntax(syntax));
     }
 
@@ -84,7 +85,7 @@ internal sealed partial class ConstraintSolver
         return false;
     }
 
-    private static bool RefineOverloadScores(
+    private bool RefineOverloadScores(
         List<OverloadCandidate> candidates,
         ImmutableArray<object> arguments,
         out bool wellDefined)
@@ -97,7 +98,7 @@ internal sealed partial class ConstraintSolver
             var candidate = candidates[i];
 
             // Compute any undefined arguments
-            changed = AdjustOverloadScore(candidate, arguments) || changed;
+            changed = this.AdjustOverloadScore(candidate, arguments) || changed;
             // We consider having a 0-element well-defined, since we are throwing it away
             var hasZero = candidate.Score.HasZero;
             wellDefined = wellDefined && (candidate.Score.IsWellDefined || hasZero);
@@ -116,7 +117,7 @@ internal sealed partial class ConstraintSolver
         return changed;
     }
 
-    private static bool AdjustScore(FunctionTypeSymbol candidate, ImmutableArray<object> args, CallScore scoreVector)
+    private bool AdjustScore(FunctionTypeSymbol candidate, ImmutableArray<object> args, CallScore scoreVector)
     {
         Debug.Assert(candidate.Parameters.Length == args.Length);
         Debug.Assert(candidate.Parameters.Length == scoreVector.Length);
@@ -131,7 +132,7 @@ internal sealed partial class ConstraintSolver
             // If the argument is not null, it means we have already scored it
             if (score is not null) continue;
 
-            score = ScoreArgument(param, ExtractArgumentType(arg));
+            score = ScoreArgument(param, this.ExtractArgumentType(arg));
             changed = changed || score is not null;
             scoreVector[i] = score;
 
@@ -141,7 +142,7 @@ internal sealed partial class ConstraintSolver
         return changed;
     }
 
-    private static bool AdjustOverloadScore(OverloadCandidate candidate, ImmutableArray<object> arguments)
+    private bool AdjustOverloadScore(OverloadCandidate candidate, ImmutableArray<object> arguments)
     {
         var changed = false;
         var (func, scoreVector) = candidate;
@@ -163,7 +164,7 @@ internal sealed partial class ConstraintSolver
                 continue;
             }
 
-            var arg = ExtractArgumentType(arguments[i]);
+            var arg = this.ExtractArgumentType(arguments[i]);
             var score = scoreVector[i];
 
             // If the argument is not null, it means we have already scored it
@@ -182,7 +183,7 @@ internal sealed partial class ConstraintSolver
             var variadicParam = func.Parameters[^1];
             var variadicArgTypes = arguments
                 .Skip(func.Parameters.Length - 1)
-                .Select(ExtractArgumentType);
+                .Select(this.ExtractArgumentType);
             var score = ScoreVariadicArguments(variadicParam, variadicArgTypes);
             changed = changed || score is not null;
             scoreVector[^1] = score;
@@ -190,12 +191,13 @@ internal sealed partial class ConstraintSolver
         return changed;
     }
 
-    private static TypeSymbol ExtractArgumentType(object node) => node switch
+    private TypeSymbol ExtractArgumentType(object node) => node switch
     {
 #if false
         UntypedExpression e => e.TypeRequired,
         UntypedLvalue l => l.Type,
 #endif
+        BindingTask<BoundExpression> t => t.GetResultTypeRequired(this),
         TypeSymbol t => t,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };

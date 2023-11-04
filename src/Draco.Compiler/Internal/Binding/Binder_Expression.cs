@@ -163,23 +163,28 @@ internal partial class Binder
 #endif
     }
 
-    private BindingTask<BoundExpression> BindIfExpression(IfExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindIfExpression(IfExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
-        var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
-        // Condition must be bool
-        constraints.SameType(this.IntrinsicSymbols.Bool, condition.TypeRequired, syntax);
+        var conditionTask = this.BindExpression(syntax.Condition, constraints, diagnostics);
 
-        var then = this.BindExpression(syntax.Then, constraints, diagnostics);
-        var @else = syntax.Else is null
-            ? BoundUnitExpression.Default
+        // Condition must be bool
+        _ = constraints.SameType(
+            this.IntrinsicSymbols.Bool,
+            conditionTask.GetResultTypeRequired(constraints),
+            syntax);
+
+        var thenTask = this.BindExpression(syntax.Then, constraints, diagnostics);
+        var elseTask = syntax.Else is null
+            ? FromResult(BoundUnitExpression.Default)
             : this.BindExpression(syntax.Else.Expression, constraints, diagnostics);
 
         // Then and else must be compatible types
         var resultType = constraints.AllocateTypeVariable();
-        constraints.CommonType(
+        _ = constraints.CommonType(
             resultType,
-            ImmutableArray.Create(then.TypeRequired, @else.TypeRequired),
+            ImmutableArray.Create(
+                thenTask.GetResultTypeRequired(constraints),
+                elseTask.GetResultTypeRequired(constraints)),
             // The location will point at the else value, assuming that the latter expression is
             // the offending one
             // If there is no else clause, we just point at the then clause
@@ -188,14 +193,11 @@ internal partial class Binder
                 : ExtractValueSyntax(syntax.Else.Expression))
                 .WithRelatedInformation(
                     format: "the other branch is inferred to be {0}",
-                    formatArgs: then.TypeRequired,
+                    formatArgs: thenTask.GetResultTypeRequired(constraints),
                     // If there is an else clause, we annotate the then clause as related info
                     location: ExtractValueSyntax(syntax.Then).Location));
 
-        return new BoundIfExpression(syntax, condition, then, @else, resultType);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundIfExpression(syntax, await conditionTask, await thenTask, await elseTask, resultType);
     }
 
     private BindingTask<BoundExpression> BindWhileExpression(WhileExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -552,51 +554,48 @@ internal partial class Binder
 #endif
     }
 
-    private BindingTask<BoundExpression> BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var first = this.BindExpression(syntax.Left, constraints, diagnostics);
-        var comparisons = ImmutableArray.CreateBuilder<UntypedComparison>();
+        var comparisons = new List<BindingTask<BoundComparison>>();
         var prev = first;
         foreach (var comparisonSyntax in syntax.Comparisons)
         {
-            var comparison = this.BindComparison(prev, comparisonSyntax, constraints, diagnostics);
-            prev = comparison.Next;
+            var next = this.BindExpression(comparisonSyntax.Right, constraints, diagnostics);
+            var comparison = this.BindComparison(prev, next, comparisonSyntax, constraints, diagnostics);
+            prev = next;
             comparisons.Add(comparison);
         }
-        return new BoundRelationalExpression(syntax, first, comparisons.ToImmutable(), this.IntrinsicSymbols.Bool);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundRelationalExpression(
+            syntax,
+            await first,
+            await BindingTask.WhenAll(comparisons),
+            this.IntrinsicSymbols.Bool);
     }
 
-    private BindingTask<BoundComparison> BindComparison(
-        BoundExpression prev,
+    private async BindingTask<BoundComparison> BindComparison(
+        BindingTask<BoundExpression> left,
+        BindingTask<BoundExpression> right,
         ComparisonElementSyntax syntax,
         ConstraintSolver constraints,
         DiagnosticBag diagnostics)
     {
-#if false
         // Get the comparison operator symbol
         var operatorName = FunctionSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
-        var right = this.BindExpression(syntax.Right, constraints, diagnostics);
 
         // NOTE: We know it must be bool, no need to pass it on to comparison
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
             operatorName,
             GetFunctions(operatorSymbol),
-            ImmutableArray.Create<object>(prev, right),
+            ImmutableArray.Create<object>(left, right),
             out var resultType,
             syntax.Operator);
         // For safety, we assume it has to be bool
-        constraints.SameType(this.IntrinsicSymbols.Bool, resultType, syntax.Operator);
+        _ = constraints.SameType(this.IntrinsicSymbols.Bool, resultType, syntax.Operator);
 
-        return new BoundComparison(syntax, symbolPromise, right);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundComparison(syntax, await symbolPromise, await right);
     }
 
     private BindingTask<BoundExpression> BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

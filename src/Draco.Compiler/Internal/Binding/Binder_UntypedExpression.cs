@@ -235,7 +235,7 @@ internal partial class Binder
             var getEnumeratorResult = getEnumeratorMethodsPromise.Result;
             if (getEnumeratorResult.IsError)
             {
-                constraints.UnifyAsserted(elementType, IntrinsicSymbols.ErrorType);
+                ConstraintSolver.UnifyAsserted(elementType, IntrinsicSymbols.ErrorType);
                 return new UntypedForExpression(
                     syntax,
                     iterator,
@@ -357,7 +357,7 @@ internal partial class Binder
             {
                 // Retry binding with the resolved variant
                 var call = this.BindCallExpression(syntax, delayed.Promise.Result, args, constraints, diagnostics);
-                constraints.UnifyAsserted(promisedType, call.TypeRequired);
+                ConstraintSolver.UnifyAsserted(promisedType, call.TypeRequired);
                 return call;
             });
             return new UntypedDelayedExpression(syntax, promise, promisedType);
@@ -397,7 +397,7 @@ internal partial class Binder
                         out var resultType,
                         syntax.Function);
 
-                    constraints.UnifyAsserted(resultType, promisedType);
+                    ConstraintSolver.UnifyAsserted(resultType, promisedType);
                     return new UntypedCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
                 }
                 else
@@ -408,7 +408,7 @@ internal partial class Binder
                         out var resultType,
                         syntax);
 
-                    constraints.UnifyAsserted(resultType, promisedType);
+                    ConstraintSolver.UnifyAsserted(resultType, promisedType);
                     return new UntypedIndirectCallExpression(syntax, mem, args, resultType);
                 }
             });
@@ -613,7 +613,7 @@ internal partial class Binder
                     template: SymbolResolutionErrors.NoGettableIndexerInType,
                     location: syntax.Location,
                     formatArgs: receiver.Type));
-                constraints.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
+                ConstraintSolver.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
             }
             var overloaded = constraints.Overload(
@@ -622,7 +622,7 @@ internal partial class Binder
                 args.Cast<object>().ToImmutableArray(),
                 out var gotReturnType,
                 syntax);
-            constraints.UnifyAsserted(returnType, gotReturnType);
+            ConstraintSolver.UnifyAsserted(returnType, gotReturnType);
             return overloaded;
         }, syntax).Unwrap();
 

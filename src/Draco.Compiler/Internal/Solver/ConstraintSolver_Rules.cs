@@ -97,7 +97,7 @@ internal sealed partial class ConstraintSolver
             if (assignmentsWithSameTarget.Count == 0)
             {
                 // No, assume same type
-                this.UnifyAsserted(assignable.TargetType, assignable.AssignedType);
+                UnifyAsserted(assignable.TargetType, assignable.AssignedType);
                 return true;
             }
 
@@ -131,7 +131,7 @@ internal sealed partial class ConstraintSolver
             // NOTE: We do NOT remove the constraint, will be resolved in a future iteration
             // Only one non-type-var, the rest are type variables
             var nonTypeVar = commonNonTypeVars[0];
-            foreach (var tv in commonTypeVars) this.UnifyAsserted(tv, nonTypeVar);
+            foreach (var tv in commonTypeVars) UnifyAsserted(tv, nonTypeVar);
             return true;
         }
 
@@ -144,7 +144,7 @@ internal sealed partial class ConstraintSolver
         foreach (var typeVar in this.typeVariables)
         {
             var unwrapped = typeVar.Substitution;
-            if (unwrapped is TypeVariable unwrappedTv) this.UnifyAsserted(unwrappedTv, IntrinsicSymbols.UninferredType);
+            if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, IntrinsicSymbols.UninferredType);
         }
 
         while (this.constraints.Count > 0)
@@ -158,7 +158,7 @@ internal sealed partial class ConstraintSolver
     {
         for (var i = 1; i < constraint.Types.Length; ++i)
         {
-            if (!this.Unify(constraint.Types[0], constraint.Types[i]))
+            if (!Unify(constraint.Types[0], constraint.Types[i]))
             {
                 // Type-mismatch
                 diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
@@ -198,7 +198,7 @@ internal sealed partial class ConstraintSolver
             if (constraint.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t)))
             {
                 // Found a good common type
-                this.UnifyAsserted(constraint.CommonType, type);
+                UnifyAsserted(constraint.CommonType, type);
                 constraint.Promise.Resolve(default);
                 return;
             }
@@ -209,7 +209,7 @@ internal sealed partial class ConstraintSolver
             .WithTemplate(TypeCheckingErrors.NoCommonType)
             .WithFormatArgs(string.Join(", ", constraint.AlternativeTypes)))
             .Build());
-        this.UnifyAsserted(constraint.CommonType, IntrinsicSymbols.ErrorType);
+        UnifyAsserted(constraint.CommonType, IntrinsicSymbols.ErrorType);
         constraint.Promise.Fail(default);
     }
 
@@ -225,7 +225,7 @@ internal sealed partial class ConstraintSolver
         // Don't propagate type errors
         if (accessed.IsError)
         {
-            this.Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
+            Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
             constraint.Promise.Resolve(UndefinedMemberSymbol.Instance);
             return;
         }
@@ -243,7 +243,7 @@ internal sealed partial class ConstraintSolver
                 .WithFormatArgs(constraint.MemberName, accessed))
                 .Build());
             // We still provide a single error symbol
-            this.UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
             constraint.Promise.Fail(UndefinedMemberSymbol.Instance);
             return;
         }
@@ -262,7 +262,7 @@ internal sealed partial class ConstraintSolver
             // All must be functions, otherwise we have bigger problems
             // TODO: Can this assertion fail? Like in a faulty module decl?
             Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
-            this.UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
             var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
             constraint.Promise.Resolve(overload);
         }
@@ -308,7 +308,7 @@ internal sealed partial class ConstraintSolver
         // We have all candidates well-defined, find the absolute dominator
         if (candidates.Count == 0)
         {
-            this.UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
             // Best-effort shape approximation
             var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
             diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
@@ -360,7 +360,7 @@ internal sealed partial class ConstraintSolver
         else
         {
             // Best-effort shape approximation
-            this.UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
             var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
             diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
                 .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
@@ -390,7 +390,7 @@ internal sealed partial class ConstraintSolver
         if (called is not FunctionTypeSymbol functionType)
         {
             // Error
-            this.UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
             diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
                 .WithTemplate(TypeCheckingErrors.CallNonFunction)
                 .WithFormatArgs(called))
@@ -401,13 +401,13 @@ internal sealed partial class ConstraintSolver
 
         // It's a function
         // We can merge the return type
-        this.UnifyAsserted(constraint.ReturnType, functionType.ReturnType);
+        UnifyAsserted(constraint.ReturnType, functionType.ReturnType);
 
         // Check if it has the same number of args
         if (functionType.Parameters.Length != constraint.Arguments.Length)
         {
             // Error
-            this.UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
             diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
                 .WithTemplate(TypeCheckingErrors.TypeMismatch)
                 .WithFormatArgs(
@@ -426,7 +426,7 @@ internal sealed partial class ConstraintSolver
             if (score.HasZero)
             {
                 // Error
-                this.UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+                UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
                 diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
                     .WithTemplate(TypeCheckingErrors.TypeMismatch)
                     .WithFormatArgs(
@@ -449,7 +449,7 @@ internal sealed partial class ConstraintSolver
 
     private void FailRule(CallConstraint constraint)
     {
-        this.UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+        UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
         constraint.Promise.Fail(default);
     }
 }

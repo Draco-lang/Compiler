@@ -127,7 +127,7 @@ internal partial class Binder
                     template: SymbolResolutionErrors.NoSettableIndexerInType,
                     location: syntax.Location,
                     formatArgs: receiverType));
-                constraints.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
+                ConstraintSolver.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
                 return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
             }
             var overloaded = constraints.Overload(

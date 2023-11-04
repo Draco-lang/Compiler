@@ -460,26 +460,22 @@ internal partial class Binder
 #endif
     }
 
-    private BindingTask<BoundExpression> BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         // Get the unary operator symbol
         var operatorName = FunctionSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
-        var operand = this.BindExpression(syntax.Operand, constraints, diagnostics);
+        var operandTask = this.BindExpression(syntax.Operand, constraints, diagnostics);
 
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
             operatorName,
             GetFunctions(operatorSymbol),
-            ImmutableArray.Create<object>(operand),
+            ImmutableArray.Create<object>(operandTask),
             out var resultType,
             syntax.Operator);
 
-        return new BoundUnaryExpression(syntax, symbolPromise, operand, resultType);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundUnaryExpression(syntax, await symbolPromise, await operandTask, resultType);
     }
 
     private BindingTask<BoundExpression> BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

@@ -34,8 +34,8 @@ internal partial class Binder
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
-    private static BindingTask<BoundLvalue> FromResult(ConstraintSolver constraints, BoundLvalue expr) =>
-        BindingTask.FromResult(constraints, expr);
+    private static BindingTask<BoundLvalue> FromResult(ConstraintSolver constraints, BoundLvalue lvalue) =>
+        BindingTask.FromResult(constraints, lvalue);
 
     private BindingTask<BoundLvalue> BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

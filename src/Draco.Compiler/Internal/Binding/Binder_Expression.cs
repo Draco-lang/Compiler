@@ -613,16 +613,19 @@ internal partial class Binder
         }
     }
 
-    private BindingTask<BoundExpression> BindIndexExpression(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindIndexExpression(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
-        var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
+        var receiverTask = this.BindExpression(syntax.Indexed, constraints, diagnostics);
+        var argsTask = syntax.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
+
+        var receiver = await receiverTask;
         if (receiver is BoundReferenceErrorExpression err)
         {
             return new BoundReferenceErrorExpression(syntax, err.Symbol);
         }
-        var args = syntax.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
-        var returnType = constraints.AllocateTypeVariable();
+
+        // NOTE: Substituted needs special treatment
+#if false
         var promise = constraints.Substituted(receiver.TypeRequired, () =>
         {
             var receiverType = receiver.TypeRequired.Substitution;

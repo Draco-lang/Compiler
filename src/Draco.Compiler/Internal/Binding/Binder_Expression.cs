@@ -362,50 +362,26 @@ internal partial class Binder
 #endif
     }
 
-    private BindingTask<BoundExpression> BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        // TODO: We might just be able to inline the method below to here
-        var method = this.BindExpression(syntax.Function, constraints, diagnostics);
-        var args = syntax.ArgumentList.Values
+        var methodTask = this.BindExpression(syntax.Function, constraints, diagnostics);
+        var argsTask = syntax.ArgumentList.Values
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
             .ToList();
 
-        return this.BindCallExpression(syntax, method, args, constraints, diagnostics);
-    }
-
-    private BindingTask<BoundExpression> BindCallExpression(
-        CallExpressionSyntax syntax,
-        BindingTask<BoundExpression> method,
-        IEnumerable<BindingTask<BoundExpression>> args,
-        ConstraintSolver constraints,
-        DiagnosticBag diagnostics)
-    {
-#if false
-        if (method is BoundDelayedExpression delayed)
-        {
-            // The binding is delayed, we have to delay this as well
-            var promisedType = constraints.AllocateTypeVariable();
-            var promise = constraints.Await(delayed.Promise, () =>
-            {
-                // Retry binding with the resolved variant
-                var call = this.BindCallExpression(syntax, delayed.Promise.Result, args, constraints, diagnostics);
-                ConstraintSolver.UnifyAsserted(promisedType, call.TypeRequired);
-                return call;
-            });
-            return new BoundDelayedExpression(syntax, promise, promisedType);
-        }
-        else if (method is BoundFunctionGroupExpression group)
+        var method = await methodTask;
+        if (method is BoundFunctionGroupExpression group)
         {
             // Simple overload
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 group.Functions[0].Name,
                 group.Functions,
-                args.Cast<object>().ToImmutableArray(),
-                out var resultType,
+                argsTask.Cast<object>().ToImmutableArray(),
+                out var _,
                 syntax.Function);
 
-            return new BoundCallExpression(syntax, null, symbolPromise, args, resultType);
+            return new BoundCallExpression(syntax, null, await symbolPromise, await BindingTask.WhenAll(argsTask));
         }
         else if (method is BoundMemberExpression mem)
         {
@@ -414,50 +390,44 @@ internal partial class Binder
             // If the resolved members are a statically bound function symbols, this becomes an overloaded call,
             // otherwise this becomes an indirect call
 
-            var promisedType = constraints.AllocateTypeVariable();
-            var promise = constraints.Await(mem.Member, BoundExpression () =>
+            var members = mem.Member;
+            if (members is FunctionSymbol or OverloadSymbol)
             {
-                var members = mem.Member.Result;
-                if (members is FunctionSymbol or OverloadSymbol)
-                {
-                    // Overloaded member call
-                    var functions = GetFunctions(members);
-                    var symbolPromise = constraints.Overload(
-                        members.Name,
-                        functions,
-                        args.Cast<object>().ToImmutableArray(),
-                        out var resultType,
-                        syntax.Function);
+                // Overloaded member call
+                var functions = GetFunctions(members);
+                var symbolPromise = constraints.Overload(
+                    members.Name,
+                    functions,
+                    argsTask.Cast<object>().ToImmutableArray(),
+                    out var resultType,
+                    syntax.Function);
 
-                    ConstraintSolver.UnifyAsserted(resultType, promisedType);
-                    return new BoundCallExpression(syntax, mem.Accessed, symbolPromise, args, resultType);
-                }
-                else
-                {
-                    var callPromise = constraints.Call(
-                        method.TypeRequired,
-                        args.Cast<object>().ToImmutableArray(),
-                        out var resultType,
-                        syntax);
+                return new BoundCallExpression(
+                    syntax,
+                    mem.Receiver,
+                    await symbolPromise,
+                    await BindingTask.WhenAll(argsTask));
+            }
+            else
+            {
+                var callPromise = constraints.Call(
+                    method.TypeRequired,
+                    argsTask.Cast<object>().ToImmutableArray(),
+                    out var resultType,
+                    syntax);
 
-                    ConstraintSolver.UnifyAsserted(resultType, promisedType);
-                    return new BoundIndirectCallExpression(syntax, mem, args, resultType);
-                }
-            });
-            return new BoundDelayedExpression(syntax, promise, promisedType);
+                return new BoundIndirectCallExpression(syntax, mem, await BindingTask.WhenAll(argsTask), resultType);
+            }
         }
         else
         {
             var callPromise = constraints.Call(
                 method.TypeRequired,
-                args.Cast<object>().ToImmutableArray(),
+                argsTask.Cast<object>().ToImmutableArray(),
                 out var resultType,
                 syntax);
-            return new BoundIndirectCallExpression(syntax, method, args, resultType);
+            return new BoundIndirectCallExpression(syntax, method, await BindingTask.WhenAll(argsTask), resultType);
         }
-#else
-        throw new NotImplementedException();
-#endif
     }
 
     private async BindingTask<BoundExpression> BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

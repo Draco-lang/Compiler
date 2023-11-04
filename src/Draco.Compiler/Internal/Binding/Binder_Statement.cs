@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -19,7 +20,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped statement for <paramref name="syntax"/>.</returns>
-    protected virtual BoundStatement BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    protected virtual BindingTask<BoundStatement> BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => new BoundUnexpectedStatement(syntax),
@@ -35,7 +36,7 @@ internal partial class Binder
         _ => throw new System.ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private BoundStatement BindFunctionDeclaration(FunctionDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundStatement> BindFunctionDeclaration(FunctionDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.DeclaredSymbols
             .OfType<SourceFunctionSymbol>()
@@ -43,13 +44,13 @@ internal partial class Binder
         return new UntypedLocalFunction(syntax, symbol);
     }
 
-    private BoundStatement BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundStatement> BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var expr = this.BindExpression(syntax.Expression, constraints, diagnostics);
         return new BoundExpressionStatement(syntax, expr);
     }
 
-    private BoundStatement BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundStatement> BindBlockFunctionBody(BlockFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
         var locals = binder.DeclaredSymbols
@@ -73,7 +74,7 @@ internal partial class Binder
             new BoundBlockExpression(syntax, locals, statements.ToImmutable(), BoundUnitExpression.Default));
     }
 
-    private BoundStatement BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundStatement> BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var binder = this.GetBinder(syntax);
         var value = binder.BindExpression(syntax.Value, constraints, diagnostics);
@@ -83,7 +84,7 @@ internal partial class Binder
         return new BoundExpressionStatement(syntax, new BoundReturnExpression(syntax, value));
     }
 
-    private BoundStatement BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundStatement> BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
         var labelSymbol = this.DeclaredSymbols
@@ -93,7 +94,7 @@ internal partial class Binder
         return new BoundLabelStatement(syntax, labelSymbol);
     }
 
-    private BoundStatement BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundStatement> BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // Look up the corresponding symbol defined
         var localSymbol = this.DeclaredSymbols

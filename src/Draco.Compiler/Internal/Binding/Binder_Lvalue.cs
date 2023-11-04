@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -22,7 +23,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped lvalue for <paramref name="syntax"/>.</returns>
-    protected virtual BoundLvalue BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    protected virtual BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedExpressionSyntax => new BoundUnexpectedLvalue(syntax),
@@ -33,7 +34,7 @@ internal partial class Binder
         _ => this.BindIllegalLvalue(syntax, constraints, diagnostics),
     };
 
-    private BoundLvalue BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundLvalue> BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         switch (symbol)
@@ -56,7 +57,7 @@ internal partial class Binder
         }
     }
 
-    private BoundLvalue BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundLvalue> BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
@@ -88,7 +89,7 @@ internal partial class Binder
         }
     }
 
-    private BoundLvalue BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundLvalue> BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // TODO: Should illegal lvalues contain an expression we still bind?
         // It could result in more errors within the expression, which might be useful
@@ -98,7 +99,7 @@ internal partial class Binder
         return new BoundIllegalLvalue(syntax);
     }
 
-    private BoundLvalue BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundLvalue> BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
         if (receiver is BoundReferenceErrorExpression err)

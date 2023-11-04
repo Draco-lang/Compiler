@@ -193,11 +193,8 @@ internal sealed partial class ConstraintSolver
 
     private TypeSymbol ExtractArgumentType(object node) => node switch
     {
-#if false
-        UntypedExpression e => e.TypeRequired,
-        UntypedLvalue l => l.Type,
-#endif
         BindingTask<BoundExpression> t => t.GetResultTypeRequired(this),
+        BindingTask<BoundLvalue> t => t.GetResultTypeRequired(this),
         TypeSymbol t => t,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };

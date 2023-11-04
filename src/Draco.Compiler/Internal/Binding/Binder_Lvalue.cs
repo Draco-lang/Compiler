@@ -38,29 +38,24 @@ internal partial class Binder
 
     private BindingTask<BoundLvalue> BindNameLvalue(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var symbol = this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
         switch (symbol)
         {
-        case UntypedLocalSymbol local:
-            return new BoundLocalLvalue(syntax, local, constraints.GetLocalType(local));
+        case LocalSymbol local:
+            return FromResult(new BoundLocalLvalue(syntax, local));
         case GlobalSymbol global:
-            return new BoundGlobalLvalue(syntax, global);
+            return FromResult(new BoundGlobalLvalue(syntax, global));
         case FieldSymbol:
-            return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
         case PropertySymbol:
-            return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
+            return FromResult(this.SymbolToLvalue(syntax, symbol, constraints, diagnostics));
         default:
         {
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalLvalue,
                 location: syntax?.Location));
-            return new BoundIllegalLvalue(syntax);
+            return FromResult(new BoundIllegalLvalue(syntax));
         }
         }
-#else
-        throw new NotImplementedException();
-#endif
     }
 
     private BindingTask<BoundLvalue> BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

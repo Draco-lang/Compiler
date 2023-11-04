@@ -31,13 +31,12 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     public TypeSymbol ReturnType { get; }
 
     public OverloadConstraint(
-        ConstraintSolver solver,
         string name,
         ImmutableArray<FunctionSymbol> candidates,
         ImmutableArray<object> arguments,
         TypeSymbol returnType,
         ConstraintLocator locator)
-        : base(solver, locator)
+        : base(locator)
     {
         this.Name = name;
         this.Candidates = candidates;

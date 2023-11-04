@@ -23,26 +23,10 @@ internal sealed class SolverTaskMethodBuilder<T>
     public void AwaitOnCompleted<TAwaiter, TStateMachine>(
         ref TAwaiter awaiter, ref TStateMachine stateMachine)
         where TAwaiter : INotifyCompletion
-        where TStateMachine : IAsyncStateMachine
-    {
-        if (awaiter is not IBindingTaskAwaiter syncAwaiter)
-        {
-            throw new NotSupportedException("Only supporting BindingTask.");
-        }
-        this.task.Awaiter.Solver = syncAwaiter.Solver;
-        awaiter.OnCompleted(stateMachine.MoveNext);
-    }
+        where TStateMachine : IAsyncStateMachine => awaiter.OnCompleted(stateMachine.MoveNext);
 
     public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(
         ref TAwaiter awaiter, ref TStateMachine stateMachine)
         where TAwaiter : ICriticalNotifyCompletion
-        where TStateMachine : IAsyncStateMachine
-    {
-        if (awaiter is not IBindingTaskAwaiter syncAwaiter)
-        {
-            throw new NotSupportedException("Only supporting BindingTask.");
-        }
-        this.task.Awaiter.Solver = syncAwaiter.Solver;
-        awaiter.OnCompleted(stateMachine.MoveNext);
-    }
+        where TStateMachine : IAsyncStateMachine => awaiter.OnCompleted(stateMachine.MoveNext);
 }

@@ -28,7 +28,7 @@ internal partial class Binder
     protected virtual BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedExpressionSyntax => FromResult(constraints, new BoundUnexpectedExpression(syntax)),
+        UnexpectedExpressionSyntax => FromResult(new BoundUnexpectedExpression(syntax)),
         GroupingExpressionSyntax grp => this.BindExpression(grp.Expression, constraints, diagnostics),
         StatementExpressionSyntax stmt => this.BindStatementExpression(stmt, constraints, diagnostics),
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),
@@ -50,8 +50,7 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private static BindingTask<BoundExpression> FromResult(ConstraintSolver constraints, BoundExpression expr) =>
-        BindingTask.FromResult(constraints, expr);
+    private static BindingTask<BoundExpression> FromResult(BoundExpression expr) => BindingTask.FromResult(expr);
 
     private async BindingTask<BoundExpression> BindStatementExpression(StatementExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
@@ -70,7 +69,7 @@ internal partial class Binder
         {
             throw new InvalidOperationException("can not determine literal type");
         }
-        return FromResult(constraints, new BoundLiteralExpression(syntax, syntax.Literal.Value, literalType));
+        return FromResult(new BoundLiteralExpression(syntax, syntax.Literal.Value, literalType));
     }
 
     private BindingTask<BoundExpression> BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -121,7 +120,7 @@ internal partial class Binder
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        return FromResult(constraints, this.SymbolToExpression(syntax, symbol, constraints, diagnostics));
+        return FromResult(this.SymbolToExpression(syntax, symbol, constraints, diagnostics));
     }
 
     private BindingTask<BoundExpression> BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -146,7 +145,7 @@ internal partial class Binder
     private BindingTask<BoundExpression> BindGotoExpression(GotoExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var target = (LabelSymbol)this.BindLabel(syntax.Target, constraints, diagnostics);
-        return FromResult(constraints, new BoundGotoExpression(syntax, target));
+        return FromResult(new BoundGotoExpression(syntax, target));
     }
 
     private BindingTask<BoundExpression> BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

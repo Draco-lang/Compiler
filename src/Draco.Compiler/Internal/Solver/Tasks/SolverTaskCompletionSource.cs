@@ -16,14 +16,8 @@ internal sealed class SolverTaskCompletionSource<T>
     }
     public bool IsCompleted => this.Awaiter.IsCompleted;
     public T Result => this.Awaiter.GetResult();
-    internal ConstraintSolver Solver => this.Awaiter.Solver;
 
     internal SolverTaskAwaiter<T> Awaiter;
-
-    internal SolverTaskCompletionSource(ConstraintSolver solver)
-    {
-        this.Awaiter.Solver = solver;
-    }
 
     public SolverTaskAwaiter<T> GetAwaiter() => this.Awaiter;
     public void SetResult(T result) => this.Awaiter.SetResult(result, null);

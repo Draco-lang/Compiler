@@ -24,9 +24,9 @@ internal partial class Binder
     protected virtual BindingTask<BoundStatement> BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => FromResult(constraints, new BoundUnexpectedStatement(syntax)),
+        UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => FromResult(new BoundUnexpectedStatement(syntax)),
         // Ignored
-        ImportDeclarationSyntax => FromResult(constraints, BoundNoOpStatement.Default),
+        ImportDeclarationSyntax => FromResult(BoundNoOpStatement.Default),
         FunctionDeclarationSyntax func => this.BindFunctionDeclaration(func, constraints, diagnostics),
         DeclarationStatementSyntax decl => this.BindStatement(decl.Declaration, constraints, diagnostics),
         ExpressionStatementSyntax expr => this.BindExpressionStatement(expr, constraints, diagnostics),
@@ -37,15 +37,14 @@ internal partial class Binder
         _ => throw new System.ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private static BindingTask<BoundStatement> FromResult(ConstraintSolver constraints, BoundStatement stmt) =>
-        BindingTask.FromResult(constraints, stmt);
+    private static BindingTask<BoundStatement> FromResult(BoundStatement stmt) => BindingTask.FromResult(stmt);
 
     private BindingTask<BoundStatement> BindFunctionDeclaration(FunctionDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = this.DeclaredSymbols
             .OfType<SourceFunctionSymbol>()
             .First(s => s.DeclaringSyntax == syntax);
-        return FromResult(constraints, new BoundLocalFunction(syntax, symbol));
+        return FromResult(new BoundLocalFunction(syntax, symbol));
     }
 
     private async BindingTask<BoundStatement> BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -99,7 +98,7 @@ internal partial class Binder
             .OfType<LabelSymbol>()
             .First(sym => sym.DeclaringSyntax == syntax);
 
-        return FromResult(constraints, new BoundLabelStatement(syntax, labelSymbol));
+        return FromResult(new BoundLabelStatement(syntax, labelSymbol));
     }
 
     private BindingTask<BoundStatement> BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

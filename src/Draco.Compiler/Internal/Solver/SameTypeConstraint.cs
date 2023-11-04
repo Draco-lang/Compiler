@@ -15,10 +15,9 @@ internal sealed class SameTypeConstraint : Constraint<Unit>
     public ImmutableArray<TypeSymbol> Types { get; }
 
     public SameTypeConstraint(
-        ConstraintSolver solver,
         ImmutableArray<TypeSymbol> types,
         ConstraintLocator locator)
-        : base(solver, locator)
+        : base(locator)
     {
         this.Types = types;
     }

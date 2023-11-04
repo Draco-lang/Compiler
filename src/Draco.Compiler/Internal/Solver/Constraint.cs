@@ -14,9 +14,9 @@ internal abstract class Constraint<TResult> : IConstraint<TResult>
     public SolverTaskCompletionSource<TResult> CompletionSource { get; }
     public ConstraintLocator Locator { get; }
 
-    protected Constraint(ConstraintSolver solver, ConstraintLocator locator)
+    protected Constraint(ConstraintLocator locator)
     {
-        this.CompletionSource = new(solver);
+        this.CompletionSource = new();
         this.Locator = locator;
     }
 

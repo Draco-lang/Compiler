@@ -19,11 +19,10 @@ internal sealed class AssignableConstraint : Constraint<Unit>
     public TypeSymbol AssignedType { get; }
 
     public AssignableConstraint(
-        ConstraintSolver solver,
         TypeSymbol targetType,
         TypeSymbol assignedType,
         ConstraintLocator locator)
-        : base(solver, locator)
+        : base(locator)
     {
         this.TargetType = targetType;
         this.AssignedType = assignedType;

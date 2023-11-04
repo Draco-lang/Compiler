@@ -8,26 +8,22 @@ using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding.Tasks;
 
-internal struct BindingTaskAwaiter<T> : INotifyCompletion, IBindingTaskAwaiter
+internal struct BindingTaskAwaiter<T> : INotifyCompletion
 {
     public bool IsCompleted { get; private set; }
-    public ConstraintSolver Solver { get; set; }
-
-    public TypeSymbol? ResultType
-    {
-        get
-        {
-            if (this.result is not null) return ExtractType(this.result);
-
-            this.allocatedResultType ??= this.Solver.AllocateTypeVariable();
-            return this.allocatedResultType;
-        }
-    }
 
     private T? result;
     private Exception? exception;
     private List<Action>? completions;
     private TypeSymbol? allocatedResultType;
+
+    public TypeSymbol? GetResultType(ConstraintSolver solver)
+    {
+        if (this.result is not null) return ExtractType(this.result);
+
+        this.allocatedResultType ??= solver.AllocateTypeVariable();
+        return this.allocatedResultType;
+    }
 
     internal void SetResult(T? result, Exception? exception)
     {
@@ -37,7 +33,7 @@ internal struct BindingTaskAwaiter<T> : INotifyCompletion, IBindingTaskAwaiter
         if (this.allocatedResultType is not null)
         {
             var type = ExtractType(result!);
-            this.Solver.UnifyAsserted(this.allocatedResultType, type!);
+            ConstraintSolver.UnifyAsserted(this.allocatedResultType, type!);
         }
         foreach (var completion in this.completions ?? Enumerable.Empty<Action>())
         {

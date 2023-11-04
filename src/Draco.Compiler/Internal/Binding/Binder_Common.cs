@@ -17,7 +17,7 @@ internal partial class Binder
         var returnTypeSyntax = (containingFunction as SourceFunctionSymbol)?.DeclaringSyntax?.ReturnType?.Type;
         constraints.Assignable(
             containingFunction.ReturnType,
-            returnValue.ResultTypeRequired,
+            returnValue.GetResultTypeRequired(constraints),
             ConstraintLocator.Syntax(returnSyntax)
                 .WithRelatedInformation(
                     format: "return type declared to be {0}",

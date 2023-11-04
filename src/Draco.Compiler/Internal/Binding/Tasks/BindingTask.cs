@@ -9,10 +9,9 @@ namespace Draco.Compiler.Internal.Binding.Tasks;
 
 internal static class BindingTask
 {
-    public static BindingTask<T> FromResult<T>(ConstraintSolver solver, T result)
+    public static BindingTask<T> FromResult<T>(T result)
     {
         var task = new BindingTask<T>();
-        task.Awaiter.Solver = solver;
         task.Awaiter.SetResult(result, null);
         return task;
     }
@@ -29,11 +28,11 @@ internal static class BindingTask
 internal struct BindingTask<T>
 {
     internal BindingTaskAwaiter<T> Awaiter;
-    internal readonly ConstraintSolver Solver => this.Awaiter.Solver;
     public readonly bool IsCompleted => this.Awaiter.IsCompleted;
     public readonly T Result => this.Awaiter.GetResult();
-    public readonly TypeSymbol? ResultType => this.Awaiter.ResultType;
-    public readonly TypeSymbol ResultTypeRequired => this.Awaiter.ResultType
-                                                  ?? throw new System.InvalidOperationException();
     public readonly BindingTaskAwaiter<T> GetAwaiter() => this.Awaiter;
+    public readonly TypeSymbol? GetResultType(ConstraintSolver solver) =>
+        this.Awaiter.GetResultType(solver);
+    public readonly TypeSymbol GetResultTypeRequired(ConstraintSolver solver) =>
+        this.Awaiter.GetResultType(solver) ?? throw new System.InvalidOperationException();
 }

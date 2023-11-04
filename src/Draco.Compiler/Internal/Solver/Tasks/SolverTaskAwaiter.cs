@@ -7,10 +7,9 @@ using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
 
-internal struct SolverTaskAwaiter<T> : INotifyCompletion, IBindingTaskAwaiter
+internal struct SolverTaskAwaiter<T> : INotifyCompletion
 {
     public bool IsCompleted { get; private set; }
-    public ConstraintSolver Solver { get; set; }
 
     private T? result;
     private Exception? exception;

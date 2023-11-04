@@ -7,10 +7,9 @@ namespace Draco.Compiler.Internal.Solver.Tasks;
 
 internal static class SolverTask
 {
-    public static SolverTask<T> FromResult<T>(ConstraintSolver solver, T result)
+    public static SolverTask<T> FromResult<T>(T result)
     {
         var task = new SolverTask<T>();
-        task.Awaiter.Solver = solver;
         task.Awaiter.SetResult(result, null);
         return task;
     }
@@ -27,7 +26,6 @@ internal static class SolverTask
 internal struct SolverTask<T>
 {
     internal SolverTaskAwaiter<T> Awaiter;
-    internal readonly ConstraintSolver Solver => this.Awaiter.Solver;
     public readonly bool IsCompleted => this.Awaiter.IsCompleted;
     public readonly T Result => this.Awaiter.GetResult();
     public readonly SolverTaskAwaiter<T> GetAwaiter() => this.Awaiter;

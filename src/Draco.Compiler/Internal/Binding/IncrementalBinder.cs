@@ -69,13 +69,13 @@ public sealed partial class SemanticModel
         // Memoizing overrides /////////////////////////////////////////////////
 
         protected override BindingTask<BoundStatement> BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.MemoizeBinding(syntax, () => base.BindStatement(syntax, constraints, diagnostics));
+            this.MemoizeBinding(syntax, constraints, () => base.BindStatement(syntax, constraints, diagnostics));
 
         protected override BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.MemoizeBinding(syntax, () => base.BindExpression(syntax, constraints, diagnostics));
+            this.MemoizeBinding(syntax, constraints, () => base.BindExpression(syntax, constraints, diagnostics));
 
         protected override BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.MemoizeBinding(syntax, () => base.BindLvalue(syntax, constraints, diagnostics));
+            this.MemoizeBinding(syntax, constraints, () => base.BindLvalue(syntax, constraints, diagnostics));
 
         internal override Symbol BindLabel(LabelSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.BindSymbol(syntax, () => base.BindLabel(syntax, constraints, diagnostics));
@@ -95,28 +95,23 @@ public sealed partial class SemanticModel
 
         // Memo logic
 
-        private BindingTask<TBoundNode> MemoizeBinding<TBoundNode>(SyntaxNode syntax, Func<BindingTask<TBoundNode>> binder)
+        private async BindingTask<TBoundNode> MemoizeBinding<TBoundNode>(SyntaxNode syntax, ConstraintSolver constraints, Func<BindingTask<TBoundNode>> binder)
             where TBoundNode : BoundNode
         {
-            if (untyped.Syntax is null) return binder();
+            if (!this.semanticModel.boundNodeMap.TryGetValue(syntax, out var node))
+            {
+                node = await binder();
 
-            return (TBoundNode)this.semanticModel.boundNodeMap.GetOrAdd(
-                key: (untyped.Syntax, typeof(TBoundNode)),
-                valueFactory: _ =>
+                var symbol = ExtractSymbol(node);
+                if (symbol is not null)
                 {
-                    var node = binder();
-                    if (untyped.Syntax is null) return node;
-
-                    var symbol = ExtractSymbol(node);
-                    if (symbol is null) return node;
-
-                    foreach (var syntax in EnumerateSyntaxesWithSameSymbol(untyped.Syntax))
+                    foreach (var childSyntax in EnumerateSyntaxesWithSameSymbol(syntax))
                     {
-                        this.semanticModel.symbolMap[syntax] = symbol;
+                        this.semanticModel.symbolMap[childSyntax] = symbol;
                     }
-
-                    return node;
-                });
+                }
+            }
+            return (TBoundNode)node;
         }
 
         private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder) => this.semanticModel.symbolMap.GetOrAdd(

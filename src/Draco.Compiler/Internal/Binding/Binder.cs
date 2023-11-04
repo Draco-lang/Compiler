@@ -3,6 +3,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -76,10 +77,9 @@ internal abstract partial class Binder
     {
         var functionName = function.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(function.DeclaringSyntax, $"function {functionName}");
-        var untypedStatement = this.BindStatement(function.DeclaringSyntax.Body, constraints, diagnostics);
+        var statementTask = this.BindStatement(function.DeclaringSyntax.Body, constraints, diagnostics);
         constraints.Solve(diagnostics);
-        var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
-        return boundStatement;
+        return statementTask.Result;
     }
 
     public virtual (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
@@ -92,22 +92,28 @@ internal abstract partial class Binder
 
         // Bind type and value
         var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
-        var untypedValue = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
+        var valueTask = valueSyntax is null
+            ? null as BindingTask<BoundExpression>?
+            : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
 
         // Infer declared type
         var declaredType = type ?? constraints.AllocateTypeVariable(track: false);
 
         // Add assignability constraint, if needed
-        if (untypedValue is not null)
+        if (valueTask is not null)
         {
+#if false
             constraints.Assignable(declaredType, untypedValue.TypeRequired, global.DeclaringSyntax.Value!.Value);
+#else
+            throw new System.NotImplementedException();
+#endif
         }
 
         // Solve
         constraints.Solve(diagnostics);
 
         // Type out the expression, if needed
-        var boundValue = untypedValue is null ? null : this.TypeExpression(untypedValue, constraints, diagnostics);
+        var boundValue = valueTask?.Result;
 
         // Unwrap the type
         declaredType = declaredType.Substitution;

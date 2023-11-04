@@ -43,7 +43,11 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
 
     public T GetResult()
     {
-        if (this.exception is not null) throw this.exception;
+        if (this.exception is not null)
+        {
+            if (this.exception is not AggregateException) this.exception = new AggregateException(this.exception);
+            throw this.exception;
+        }
         return this.result!;
     }
 

@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding.Tasks;
 
@@ -31,5 +32,8 @@ internal struct BindingTask<T>
     internal readonly ConstraintSolver Solver => this.Awaiter.Solver;
     public readonly bool IsCompleted => this.Awaiter.IsCompleted;
     public readonly T Result => this.Awaiter.GetResult();
+    public readonly TypeSymbol? ResultType => this.Awaiter.ResultType;
+    public readonly TypeSymbol ResultTypeRequired => this.Awaiter.ResultType
+                                                  ?? throw new System.InvalidOperationException();
     public readonly BindingTaskAwaiter<T> GetAwaiter() => this.Awaiter;
 }

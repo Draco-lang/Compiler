@@ -173,6 +173,7 @@ internal sealed partial class ConstraintSolver
         return constraint.CompletionSource.Task;
     }
 
+    // TODO: Do we still need the return type as an out?
     /// <summary>
     /// Adds an overload constraint to the solver.
     /// </summary>

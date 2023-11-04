@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -622,43 +623,37 @@ internal partial class Binder
             return new BoundReferenceErrorExpression(syntax, err.Symbol);
         }
 
-        // NOTE: Substituted needs special treatment
-#if false
-        var promise = constraints.Substituted(receiver.TypeRequired, () =>
-        {
-            var receiverType = receiver.TypeRequired.Substitution;
+        var receiverType = await ConstraintSolver.Substituted(receiverTask.GetResultTypeRequired(constraints));
 
-            // General indexer
-            var indexers = receiverType
-                .Members
-                .OfType<PropertySymbol>()
-                .Where(x => x.IsIndexer)
-                .Select(x => x.Getter)
-                .OfType<FunctionSymbol>()
-                .ToImmutableArray();
-            if (indexers.Length == 0)
-            {
-                diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.NoGettableIndexerInType,
-                    location: syntax.Location,
-                    formatArgs: receiver.Type));
-                ConstraintSolver.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
-                return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length));
-            }
-            var overloaded = constraints.Overload(
+        SolverTask<FunctionSymbol> accessorTask;
+
+        // General indexer
+        var indexers = receiverType
+            .Members
+            .OfType<PropertySymbol>()
+            .Where(x => x.IsIndexer)
+            .Select(x => x.Getter)
+            .OfType<FunctionSymbol>()
+            .ToImmutableArray();
+        if (indexers.Length == 0)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.NoGettableIndexerInType,
+                location: syntax.Location,
+                formatArgs: receiver.Type));
+            accessorTask = SolverTask.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(argsTask.Length));
+        }
+        else
+        {
+            accessorTask = constraints.Overload(
                 "operator[]",
                 indexers,
-                args.Cast<object>().ToImmutableArray(),
-                out var gotReturnType,
+                argsTask.Cast<object>().ToImmutableArray(),
+                out _,
                 syntax);
-            ConstraintSolver.UnifyAsserted(returnType, gotReturnType);
-            return overloaded;
-        }, syntax).Unwrap();
+        }
 
-        return new BoundIndexGetExpression(syntax, receiver, promise, args, returnType);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundIndexGetExpression(syntax, receiver, await accessorTask, await BindingTask.WhenAll(argsTask));
     }
 
     private async BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

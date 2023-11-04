@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Draco.Compiler.Internal.Solver;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -36,6 +37,12 @@ internal sealed class TypeVariable : TypeSymbol
         }
     }
 
+    /// <summary>
+    /// A task that completes when this variable is substituted.
+    /// </summary>
+    public SolverTask<TypeSymbol> Substituted => this.substitutedCompletionSource.Task;
+
+    private readonly SolverTaskCompletionSource<TypeSymbol> substitutedCompletionSource = new();
     private TypeSymbol? substitution;
     private readonly int index;
 
@@ -57,5 +64,6 @@ internal sealed class TypeVariable : TypeSymbol
     {
         if (this.substitution is not null) throw new InvalidOperationException("type variable already substituted");
         this.substitution = other;
+        this.substitutedCompletionSource.SetResult(other);
     }
 }

@@ -113,6 +113,17 @@ internal sealed partial class ConstraintSolver
     }
 
     /// <summary>
+    /// Unwraps the potential type-variable until it is a non-type-variable type.
+    /// </summary>
+    /// <param name="type">The type to unwrap.</param>
+    /// <returns>The task that completes when <paramref name="type"/> is subsituted as a non-type-variable.</returns>
+    public static async SolverTask<TypeSymbol> Substituted(TypeSymbol type)
+    {
+        while (type is TypeVariable tv) type = await tv.Substituted;
+        return type;
+    }
+
+    /// <summary>
     /// Unifies two types, asserting their success.
     /// </summary>
     /// <param name="first">The first type to unify.</param>

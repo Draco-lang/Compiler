@@ -478,31 +478,39 @@ internal partial class Binder
         return new BoundUnaryExpression(syntax, await symbolPromise, await operandTask, resultType);
     }
 
-    private BindingTask<BoundExpression> BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         if (syntax.Operator.Kind == TokenKind.Assign)
         {
-            var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
-            var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+            var leftTask = this.BindLvalue(syntax.Left, constraints, diagnostics);
+            var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
             // Right must be assignable to left
-            constraints.Assignable(left.Type, right.TypeRequired, syntax);
+            _ = constraints.Assignable(
+                leftTask.GetResultTypeRequired(constraints),
+                rightTask.GetResultTypeRequired(constraints),
+                syntax);
 
-            return new BoundAssignmentExpression(syntax, null, left, right);
+            return new BoundAssignmentExpression(syntax, null, await leftTask, await rightTask);
         }
         else if (syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr)
         {
-            var left = this.BindExpression(syntax.Left, constraints, diagnostics);
-            var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+            var leftTask = this.BindExpression(syntax.Left, constraints, diagnostics);
+            var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
             // Both left and right must be bool
-            constraints.SameType(this.IntrinsicSymbols.Bool, left.TypeRequired, syntax.Left);
-            constraints.SameType(this.IntrinsicSymbols.Bool, right.TypeRequired, syntax.Right);
+            _ = constraints.SameType(
+                this.IntrinsicSymbols.Bool,
+                leftTask.GetResultTypeRequired(constraints),
+                syntax.Left);
+            _ = constraints.SameType(
+                this.IntrinsicSymbols.Bool,
+                rightTask.GetResultTypeRequired(constraints),
+                syntax.Right);
 
             return syntax.Operator.Kind == TokenKind.KeywordAnd
-                ? new BoundAndExpression(syntax, left, right)
-                : new BoundOrExpression(syntax, left, right);
+                ? new BoundAndExpression(syntax, await leftTask, await rightTask)
+                : new BoundOrExpression(syntax, await leftTask, await rightTask);
         }
         else if (SyntaxFacts.TryGetOperatorOfCompoundAssignment(syntax.Operator.Kind, out var nonCompound))
         {
@@ -510,44 +518,44 @@ internal partial class Binder
             var operatorName = FunctionSymbol.GetBinaryOperatorName(nonCompound);
             var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
 
-            var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
-            var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+            var leftTask = this.BindLvalue(syntax.Left, constraints, diagnostics);
+            var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 operatorName,
                 GetFunctions(operatorSymbol),
-                ImmutableArray.Create<object>(left, right),
+                ImmutableArray.Create<object>(leftTask, rightTask),
                 out var resultType,
                 syntax.Operator);
             // The result of the binary operator must be assignable to the left-hand side
             // For example, a + b in the form of a += b means that a + b has to result in a type
             // that is assignable to a, hence the extra constraint
-            constraints.Assignable(left.Type, resultType, syntax);
+            _ = constraints.Assignable(
+                leftTask.GetResultTypeRequired(constraints),
+                resultType,
+                syntax);
 
-            return new BoundAssignmentExpression(syntax, symbolPromise, left, right);
+            return new BoundAssignmentExpression(syntax, await symbolPromise, await leftTask, await rightTask);
         }
         else
         {
             // Get the binary operator symbol
             var operatorName = FunctionSymbol.GetBinaryOperatorName(syntax.Operator.Kind);
             var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
-            var left = this.BindExpression(syntax.Left, constraints, diagnostics);
-            var right = this.BindExpression(syntax.Right, constraints, diagnostics);
+            var leftTask = this.BindExpression(syntax.Left, constraints, diagnostics);
+            var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 operatorName,
                 GetFunctions(operatorSymbol),
-                ImmutableArray.Create<object>(left, right),
+                ImmutableArray.Create<object>(leftTask, rightTask),
                 out var resultType,
                 syntax.Operator);
 
-            return new BoundBinaryExpression(syntax, symbolPromise, left, right, resultType);
+            return new BoundBinaryExpression(syntax, await symbolPromise, await leftTask, await rightTask, resultType);
         }
-#else
-        throw new NotImplementedException();
-#endif
     }
 
     private async BindingTask<BoundExpression> BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

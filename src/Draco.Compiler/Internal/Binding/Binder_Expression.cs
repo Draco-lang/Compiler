@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
@@ -27,7 +28,7 @@ internal partial class Binder
     protected virtual BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedExpressionSyntax => new BoundUnexpectedExpression(syntax),
+        UnexpectedExpressionSyntax => FromResult(constraints, new BoundUnexpectedExpression(syntax)),
         GroupingExpressionSyntax grp => this.BindExpression(grp.Expression, constraints, diagnostics),
         StatementExpressionSyntax stmt => this.BindStatementExpression(stmt, constraints, diagnostics),
         LiteralExpressionSyntax lit => this.BindLiteralExpression(lit, constraints, diagnostics),
@@ -49,14 +50,17 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private BindingTask<BoundExpression> BindStatementExpression(StatementExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private static BindingTask<BoundExpression> FromResult(ConstraintSolver constraints, BoundExpression expr) =>
+        BindingTask.FromResult(constraints, expr);
+
+    private async BindingTask<BoundExpression> BindStatementExpression(StatementExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // We just desugar stmt; into { stmt; }
-        var stmt = this.BindStatement(syntax.Statement, constraints, diagnostics);
+        var stmtTask = this.BindStatement(syntax.Statement, constraints, diagnostics);
         return new BoundBlockExpression(
             syntax: syntax,
             locals: ImmutableArray<LocalSymbol>.Empty,
-            statements: ImmutableArray.Create(stmt),
+            statements: ImmutableArray.Create(await stmtTask),
             value: BoundUnitExpression.Default);
     }
 
@@ -66,11 +70,12 @@ internal partial class Binder
         {
             throw new InvalidOperationException("can not determine literal type");
         }
-        return new BoundLiteralExpression(syntax, syntax.Literal.Value, literalType);
+        return FromResult(constraints, new BoundLiteralExpression(syntax, syntax.Literal.Value, literalType));
     }
 
     private BindingTask<BoundExpression> BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var lastNewline = true;
         var cutoff = SyntaxFacts.ComputeCutoff(syntax);
         var parts = ImmutableArray.CreateBuilder<UntypedStringPart>();
@@ -106,6 +111,9 @@ internal partial class Binder
             }
         }
         return new BoundStringExpression(syntax, parts.ToImmutable(), this.IntrinsicSymbols.String);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -113,11 +121,12 @@ internal partial class Binder
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
+        return FromResult(constraints, this.SymbolToExpression(syntax, symbol, constraints, diagnostics));
     }
 
     private BindingTask<BoundExpression> BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var binder = this.GetBinder(syntax);
         var locals = binder.DeclaredSymbols
             .OfType<UntypedLocalSymbol>()
@@ -129,16 +138,20 @@ internal partial class Binder
             ? BoundUnitExpression.Default
             : binder.BindExpression(syntax.Value, constraints, diagnostics);
         return new BoundBlockExpression(syntax, locals, statements, value);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindGotoExpression(GotoExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var target = (LabelSymbol)this.BindLabel(syntax.Target, constraints, diagnostics);
-        return new BoundGotoExpression(syntax, target);
+        return FromResult(constraints, new BoundGotoExpression(syntax, target));
     }
 
     private BindingTask<BoundExpression> BindReturnExpression(ReturnExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var value = syntax.Value is null
             ? BoundUnitExpression.Default
             : this.BindExpression(syntax.Value, constraints, diagnostics);
@@ -146,10 +159,14 @@ internal partial class Binder
         this.ConstraintReturnType(syntax, value, constraints);
 
         return new BoundReturnExpression(syntax, value);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindIfExpression(IfExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var condition = this.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         constraints.SameType(this.IntrinsicSymbols.Bool, condition.TypeRequired, syntax);
@@ -177,10 +194,14 @@ internal partial class Binder
                     location: ExtractValueSyntax(syntax.Then).Location));
 
         return new BoundIfExpression(syntax, condition, then, @else, resultType);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindWhileExpression(WhileExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var binder = this.GetBinder(syntax);
 
         var condition = binder.BindExpression(syntax.Condition, constraints, diagnostics);
@@ -200,10 +221,14 @@ internal partial class Binder
             .First(sym => sym.Name == "break");
 
         return new BoundWhileExpression(syntax, condition, then, continueLabel, breakLabel);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindForExpression(ForExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var binder = this.GetBinder(syntax);
 
         // Resolve iterator
@@ -331,25 +356,30 @@ internal partial class Binder
                 currentPromise);
         });
         return new BoundDelayedExpression(syntax, exprPromise, IntrinsicSymbols.Unit);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+        // TODO: We might just be able to inline the method below to here
         var method = this.BindExpression(syntax.Function, constraints, diagnostics);
         var args = syntax.ArgumentList.Values
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
-            .ToImmutableArray();
+            .ToList();
 
         return this.BindCallExpression(syntax, method, args, constraints, diagnostics);
     }
 
     private BindingTask<BoundExpression> BindCallExpression(
         CallExpressionSyntax syntax,
-        BoundExpression method,
-        ImmutableArray<BoundExpression> args,
+        BindingTask<BoundExpression> method,
+        IEnumerable<BindingTask<BoundExpression>> args,
         ConstraintSolver constraints,
         DiagnosticBag diagnostics)
     {
+#if false
         if (method is BoundDelayedExpression delayed)
         {
             // The binding is delayed, we have to delay this as well
@@ -424,10 +454,14 @@ internal partial class Binder
                 syntax);
             return new BoundIndirectCallExpression(syntax, method, args, resultType);
         }
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         // Get the unary operator symbol
         var operatorName = FunctionSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
@@ -442,10 +476,14 @@ internal partial class Binder
             syntax.Operator);
 
         return new BoundUnaryExpression(syntax, symbolPromise, operand, resultType);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         if (syntax.Operator.Kind == TokenKind.Assign)
         {
             var left = this.BindLvalue(syntax.Left, constraints, diagnostics);
@@ -510,10 +548,14 @@ internal partial class Binder
 
             return new BoundBinaryExpression(syntax, symbolPromise, left, right, resultType);
         }
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindRelationalExpression(RelationalExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var first = this.BindExpression(syntax.Left, constraints, diagnostics);
         var comparisons = ImmutableArray.CreateBuilder<UntypedComparison>();
         var prev = first;
@@ -524,6 +566,9 @@ internal partial class Binder
             comparisons.Add(comparison);
         }
         return new BoundRelationalExpression(syntax, first, comparisons.ToImmutable(), this.IntrinsicSymbols.Bool);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundComparison> BindComparison(
@@ -532,6 +577,7 @@ internal partial class Binder
         ConstraintSolver constraints,
         DiagnosticBag diagnostics)
     {
+#if false
         // Get the comparison operator symbol
         var operatorName = FunctionSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
         var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
@@ -549,10 +595,14 @@ internal partial class Binder
         constraints.SameType(this.IntrinsicSymbols.Bool, resultType, syntax.Operator);
 
         return new BoundComparison(syntax, symbolPromise, right);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
         if (left is BoundReferenceErrorExpression err)
@@ -585,10 +635,14 @@ internal partial class Binder
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType, syntax);
             return new BoundMemberExpression(syntax, left, promise, memberType);
         }
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindIndexExpression(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
         if (receiver is BoundReferenceErrorExpression err)
         {
@@ -628,10 +682,14 @@ internal partial class Binder
         }, syntax).Unwrap();
 
         return new BoundIndexGetExpression(syntax, receiver, promise, args, returnType);
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+#if false
         var instantiated = this.BindExpression(syntax.Instantiated, constraints, diagnostics);
         var args = syntax.Arguments.Values
             .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
@@ -719,6 +777,9 @@ internal partial class Binder
             // NOTE: Is this the right one to return?
             return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
         }
+#else
+        throw new NotImplementedException();
+#endif
     }
 
     private BoundExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -731,15 +792,27 @@ internal partial class Binder
         case ModuleSymbol module:
             // NOTE: Hack, see the note above this method definition
             this.BindSyntaxToSymbol(syntax, module);
+#if false
             return new BoundModuleExpression(syntax, module);
+#else
+            throw new NotImplementedException();
+#endif
         case TypeSymbol type:
             // NOTE: Hack, see the note above this method definition
             this.BindTypeSyntaxToSymbol(syntax, type);
+#if false
             return new BoundTypeExpression(syntax, type);
+#else
+            throw new NotImplementedException();
+#endif
         case ParameterSymbol param:
             return new BoundParameterExpression(syntax, param);
         case UntypedLocalSymbol local:
+#if false
             return new BoundLocalExpression(syntax, local, constraints.GetLocalType(local));
+#else
+            throw new NotImplementedException();
+#endif
         case GlobalSymbol global:
             return new BoundGlobalExpression(syntax, global);
         case PropertySymbol prop:

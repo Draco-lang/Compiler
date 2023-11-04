@@ -113,6 +113,8 @@ internal partial class Binder
         var valueTask = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);
 
         constraints.DeclareLocal(localSymbol);
+        if (type is not null) ConstraintSolver.UnifyAsserted(localSymbol.Type, type);
+
         if (valueTask is not null)
         {
             // It has to be assignable

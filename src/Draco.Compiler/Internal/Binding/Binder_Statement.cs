@@ -82,18 +82,14 @@ internal partial class Binder
 #endif
     }
 
-    private BindingTask<BoundStatement> BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundStatement> BindInlineFunctionBody(InlineFunctionBodySyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var binder = this.GetBinder(syntax);
-        var value = binder.BindExpression(syntax.Value, constraints, diagnostics);
+        var valueTask = binder.BindExpression(syntax.Value, constraints, diagnostics);
 
-        this.ConstraintReturnType(syntax.Value, value, constraints);
+        this.ConstraintReturnType(syntax.Value, valueTask, constraints);
 
-        return new BoundExpressionStatement(syntax, new BoundReturnExpression(syntax, value));
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundExpressionStatement(syntax, new BoundReturnExpression(syntax, await valueTask));
     }
 
     private BindingTask<BoundStatement> BindLabelStatement(LabelDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

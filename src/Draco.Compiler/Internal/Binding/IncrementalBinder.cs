@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -67,14 +68,14 @@ public sealed partial class SemanticModel
 
         // Memoizing overrides /////////////////////////////////////////////////
 
-        internal override BoundStatement TypeStatement(BoundStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));
+        protected override BindingTask<BoundStatement> BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.MemoizeBinding(syntax, () => base.BindStatement(syntax, constraints, diagnostics));
 
-        internal override BoundExpression TypeExpression(BoundExpression expression, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.TypeNode(expression, () => base.TypeExpression(expression, constraints, diagnostics));
+        protected override BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.MemoizeBinding(syntax, () => base.BindExpression(syntax, constraints, diagnostics));
 
-        internal override BoundLvalue TypeLvalue(BoundLvalue lvalue, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.TypeNode(lvalue, () => base.TypeLvalue(lvalue, constraints, diagnostics));
+        protected override BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.MemoizeBinding(syntax, () => base.BindLvalue(syntax, constraints, diagnostics));
 
         internal override Symbol BindLabel(LabelSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.BindSymbol(syntax, () => base.BindLabel(syntax, constraints, diagnostics));
@@ -94,8 +95,7 @@ public sealed partial class SemanticModel
 
         // Memo logic
 
-        private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode untyped, Func<TBoundNode> binder)
-            where TUntypedNode : UntypedNode
+        private BindingTask<TBoundNode> MemoizeBinding<TBoundNode>(SyntaxNode syntax, Func<BindingTask<TBoundNode>> binder)
             where TBoundNode : BoundNode
         {
             if (untyped.Syntax is null) return binder();

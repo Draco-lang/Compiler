@@ -102,27 +102,26 @@ internal partial class Binder
         return FromResult(new BoundLabelStatement(syntax, labelSymbol));
     }
 
-    private BindingTask<BoundStatement> BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundStatement> BindVariableDeclaration(VariableDeclarationSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         // Look up the corresponding symbol defined
         var localSymbol = this.DeclaredSymbols
-            .OfType<UntypedLocalSymbol>()
+            .OfType<LocalSymbol>()
             .First(sym => sym.DeclaringSyntax == syntax);
 
         var type = syntax.Type is null ? null : this.BindTypeToTypeSymbol(syntax.Type.Type, diagnostics);
-        var value = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);
+        var valueTask = syntax.Value is null ? null : this.BindExpression(syntax.Value.Value, constraints, diagnostics);
 
-        var declaredType = constraints.DeclareLocal(localSymbol, type);
-        if (value is not null)
+        constraints.DeclareLocal(localSymbol);
+        if (valueTask is not null)
         {
             // It has to be assignable
-            constraints.Assignable(declaredType, value.TypeRequired, syntax.Value!.Value);
+            _ = constraints.Assignable(
+                localSymbol.Type,
+                valueTask.GetResultTypeRequired(constraints),
+                syntax.Value!.Value);
         }
 
-        return new UntypedLocalDeclaration(syntax, localSymbol, value);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundLocalDeclaration(syntax, localSymbol, valueTask is null ? null : await valueTask);
     }
 }

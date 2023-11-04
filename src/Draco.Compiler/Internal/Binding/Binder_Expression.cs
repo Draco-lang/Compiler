@@ -72,12 +72,11 @@ internal partial class Binder
         return FromResult(new BoundLiteralExpression(syntax, syntax.Literal.Value, literalType));
     }
 
-    private BindingTask<BoundExpression> BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindStringExpression(StringExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var lastNewline = true;
         var cutoff = SyntaxFacts.ComputeCutoff(syntax);
-        var parts = ImmutableArray.CreateBuilder<UntypedStringPart>();
+        var partsTask = new List<BindingTask<BoundStringPart>>();
         foreach (var part in syntax.Parts)
         {
             switch (part)
@@ -86,33 +85,30 @@ internal partial class Binder
             {
                 var text = content.Content.ValueText
                         ?? throw new InvalidOperationException();
-                // Single line string or string newline or malformed input
-                if (!lastNewline || !text.StartsWith(cutoff)) parts.Add(new UntypedStringText(syntax, text));
-                else parts.Add(new UntypedStringText(syntax, text[cutoff.Length..]));
+                // Apply cutoff
+                if (lastNewline && text.StartsWith(cutoff)) text = text[cutoff.Length..];
+                partsTask.Add(BindingTask.FromResult<BoundStringPart>(new BoundStringText(syntax, text)));
                 lastNewline = content.Content.Kind == TokenKind.StringNewline;
                 break;
             }
             case InterpolationStringPartSyntax interpolation:
             {
-                parts.Add(new UntypedStringInterpolation(
+                partsTask.Add(BindingTask.FromResult<BoundStringPart>(new BoundStringInterpolation(
                     syntax,
-                    this.BindExpression(interpolation.Expression, constraints, diagnostics)));
+                    await this.BindExpression(interpolation.Expression, constraints, diagnostics))));
                 lastNewline = false;
                 break;
             }
             case UnexpectedStringPartSyntax unexpected:
             {
-                parts.Add(new UntypedUnexpectedStringPart(syntax));
+                partsTask.Add(BindingTask.FromResult<BoundStringPart>(new BoundUnexpectedStringPart(syntax)));
                 break;
             }
             default:
                 throw new ArgumentOutOfRangeException();
             }
         }
-        return new BoundStringExpression(syntax, parts.ToImmutable(), this.IntrinsicSymbols.String);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundStringExpression(syntax, await BindingTask.WhenAll(partsTask), this.IntrinsicSymbols.String);
     }
 
     private BindingTask<BoundExpression> BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

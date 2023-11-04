@@ -196,18 +196,23 @@ internal partial class Binder
         return new BoundIfExpression(syntax, await conditionTask, await thenTask, await elseTask, resultType);
     }
 
-    private BindingTask<BoundExpression> BindWhileExpression(WhileExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindWhileExpression(WhileExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var binder = this.GetBinder(syntax);
 
-        var condition = binder.BindExpression(syntax.Condition, constraints, diagnostics);
+        var conditionTask = binder.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
-        constraints.SameType(this.IntrinsicSymbols.Bool, condition.TypeRequired, syntax);
+        _ = constraints.SameType(
+            this.IntrinsicSymbols.Bool,
+            conditionTask.GetResultTypeRequired(constraints),
+            syntax);
 
-        var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
+        var thenTask = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
-        constraints.SameType(IntrinsicSymbols.Unit, then.TypeRequired, ExtractValueSyntax(syntax.Then));
+        _ = constraints.SameType(
+            IntrinsicSymbols.Unit,
+            thenTask.GetResultTypeRequired(constraints),
+            ExtractValueSyntax(syntax.Then));
 
         // Resolve labels
         var continueLabel = binder.DeclaredSymbols
@@ -217,10 +222,7 @@ internal partial class Binder
             .OfType<LabelSymbol>()
             .First(sym => sym.Name == "break");
 
-        return new BoundWhileExpression(syntax, condition, then, continueLabel, breakLabel);
-#else
-        throw new NotImplementedException();
-#endif
+        return new BoundWhileExpression(syntax, await conditionTask, await thenTask, continueLabel, breakLabel);
     }
 
     private BindingTask<BoundExpression> BindForExpression(ForExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

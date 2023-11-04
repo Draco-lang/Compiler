@@ -23,11 +23,12 @@ internal sealed class MemberConstraint : Constraint<Symbol>
     public TypeSymbol MemberType { get; }
 
     public MemberConstraint(
+        ConstraintSolver solver,
         TypeSymbol accessed,
         string memberName,
         TypeSymbol memberType,
         ConstraintLocator locator)
-        : base(locator)
+        : base(solver, locator)
     {
         this.Accessed = accessed;
         this.MemberName = memberName;

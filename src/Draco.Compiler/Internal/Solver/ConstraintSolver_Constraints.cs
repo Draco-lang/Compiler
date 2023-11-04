@@ -74,9 +74,9 @@ internal sealed partial class ConstraintSolver
     /// <returns>The promise for the constraint added.</returns>
     public BindingTask<Unit> SameType(TypeSymbol first, TypeSymbol second, SyntaxNode syntax)
     {
-        var constraint = new SameTypeConstraint(ImmutableArray.Create(first, second), ConstraintLocator.Syntax(syntax));
+        var constraint = new SameTypeConstraint(this, ImmutableArray.Create(first, second), ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
-        return constraint.Promise;
+        return constraint.CompletionSource.Task;
     }
 
     /// <summary>
@@ -98,9 +98,9 @@ internal sealed partial class ConstraintSolver
     /// <returns>The promise for the constraint added.</returns>
     public BindingTask<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, ConstraintLocator locator)
     {
-        var constraint = new AssignableConstraint(targetType, assignedType, locator);
+        var constraint = new AssignableConstraint(this, targetType, assignedType, locator);
         this.Add(constraint);
-        return constraint.Promise;
+        return constraint.CompletionSource.Task;
     }
 
     /// <summary>
@@ -127,9 +127,9 @@ internal sealed partial class ConstraintSolver
         ImmutableArray<TypeSymbol> alternativeTypes,
         ConstraintLocator locator)
     {
-        var constraint = new CommonTypeConstraint(commonType, alternativeTypes, locator);
+        var constraint = new CommonTypeConstraint(this, commonType, alternativeTypes, locator);
         this.Add(constraint);
-        return constraint.Promise;
+        return constraint.CompletionSource.Task;
     }
 
     /// <summary>
@@ -147,9 +147,9 @@ internal sealed partial class ConstraintSolver
         SyntaxNode syntax)
     {
         memberType = this.AllocateTypeVariable();
-        var constraint = new MemberConstraint(accessedType, memberName, memberType, ConstraintLocator.Syntax(syntax));
+        var constraint = new MemberConstraint(this, accessedType, memberName, memberType, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
-        return constraint.Promise;
+        return constraint.CompletionSource.Task;
     }
 
     /// <summary>
@@ -167,9 +167,9 @@ internal sealed partial class ConstraintSolver
         SyntaxNode syntax)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new CallConstraint(calledType, args, returnType, ConstraintLocator.Syntax(syntax));
+        var constraint = new CallConstraint(this, calledType, args, returnType, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
-        return constraint.Promise;
+        return constraint.CompletionSource.Task;
     }
 
     /// <summary>
@@ -189,8 +189,8 @@ internal sealed partial class ConstraintSolver
         SyntaxNode syntax)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new OverloadConstraint(name, functions, args, returnType, ConstraintLocator.Syntax(syntax));
+        var constraint = new OverloadConstraint(this, name, functions, args, returnType, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
-        return constraint.Promise;
+        return constraint.CompletionSource.Task;
     }
 }

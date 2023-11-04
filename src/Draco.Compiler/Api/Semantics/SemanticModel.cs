@@ -268,7 +268,7 @@ public sealed partial class SemanticModel : IBinderProvider
     /// or null if it does not evaluate to a value with type.</returns>
     public ITypeSymbol? TypeOf(ExpressionSyntax syntax)
     {
-        if (this.TryGetBoundNode(syntax, typeof(BoundExpression), out var existing))
+        if (this.TryGetBoundNode(syntax, out var existing))
         {
             return (existing as BoundExpression)?.Type?.ToApiSymbol();
         }
@@ -298,12 +298,12 @@ public sealed partial class SemanticModel : IBinderProvider
         }
 
         // Attempt to retrieve
-        this.TryGetBoundNode(syntax, typeof(BoundExpression), out var node);
+        this.TryGetBoundNode(syntax, out var node);
         return (node as BoundExpression)?.Type?.ToApiSymbol();
     }
 
-    private bool TryGetBoundNode(SyntaxNode syntax, System.Type type, [MaybeNullWhen(false)] out BoundNode node) =>
-        this.boundNodeMap.TryGetValue((syntax, type), out node);
+    private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node) =>
+        this.boundNodeMap.TryGetValue(syntax, out node);
 
     /// <summary>
     /// Retrieves the function overloads referenced by <paramref name="syntax"/>.

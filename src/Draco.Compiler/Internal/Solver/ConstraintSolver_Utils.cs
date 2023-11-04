@@ -192,15 +192,19 @@ internal sealed partial class ConstraintSolver
 
     private static TypeSymbol ExtractArgumentType(object node) => node switch
     {
+#if false
         UntypedExpression e => e.TypeRequired,
         UntypedLvalue l => l.Type,
+#endif
         TypeSymbol t => t,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 
     private static SyntaxNode? ExtractSyntax(object node) => node switch
     {
+#if false
         UntypedNode n => n.Syntax,
+#endif
         _ => null,
     };
 

@@ -93,7 +93,7 @@ internal abstract partial class Binder
         // Bind type and value
         var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
         var valueTask = valueSyntax is null
-            ? null as BindingTask<BoundExpression>?
+            ? null
             : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
 
         // Infer declared type

@@ -25,14 +25,14 @@ internal static class BindingTask
 }
 
 [AsyncMethodBuilder(typeof(BindingTaskMethodBuilder<>))]
-internal struct BindingTask<T>
+internal class BindingTask<T>
 {
-    internal BindingTaskAwaiter<T> Awaiter;
-    public readonly bool IsCompleted => this.Awaiter.IsCompleted;
-    public readonly T Result => this.Awaiter.GetResult();
-    public readonly BindingTaskAwaiter<T> GetAwaiter() => this.Awaiter;
-    public readonly TypeSymbol? GetResultType(ConstraintSolver solver) =>
+    internal BindingTaskAwaiter<T> Awaiter = new();
+    public bool IsCompleted => this.Awaiter.IsCompleted;
+    public T Result => this.Awaiter.GetResult();
+    public BindingTaskAwaiter<T> GetAwaiter() => this.Awaiter;
+    public TypeSymbol? GetResultType(ConstraintSolver solver) =>
         this.Awaiter.GetResultType(solver);
-    public readonly TypeSymbol GetResultTypeRequired(ConstraintSolver solver) =>
+    public TypeSymbol GetResultTypeRequired(ConstraintSolver solver) =>
         this.Awaiter.GetResultType(solver) ?? throw new System.InvalidOperationException();
 }

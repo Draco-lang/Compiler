@@ -7,7 +7,7 @@ using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
 
-internal struct SolverTaskAwaiter<T> : INotifyCompletion
+internal class SolverTaskAwaiter<T> : INotifyCompletion
 {
     public bool IsCompleted { get; private set; }
 
@@ -26,7 +26,7 @@ internal struct SolverTaskAwaiter<T> : INotifyCompletion
         }
     }
 
-    public readonly T GetResult()
+    public T GetResult()
     {
         if (this.exception is not null) throw this.exception;
         return this.result!;

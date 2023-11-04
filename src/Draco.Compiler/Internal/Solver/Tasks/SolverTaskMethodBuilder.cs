@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Solver.Tasks;
 internal sealed class SolverTaskMethodBuilder<T>
 {
     public SolverTask<T> Task => this.task;
-    private SolverTask<T> task;
+    private SolverTask<T> task = new();
 
     public static SolverTaskMethodBuilder<T> Create() => new();
 

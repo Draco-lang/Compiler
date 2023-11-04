@@ -23,10 +23,10 @@ internal static class SolverTask
 }
 
 [AsyncMethodBuilder(typeof(SolverTaskMethodBuilder<>))]
-internal struct SolverTask<T>
+internal class SolverTask<T>
 {
-    internal SolverTaskAwaiter<T> Awaiter;
-    public readonly bool IsCompleted => this.Awaiter.IsCompleted;
-    public readonly T Result => this.Awaiter.GetResult();
-    public readonly SolverTaskAwaiter<T> GetAwaiter() => this.Awaiter;
+    internal SolverTaskAwaiter<T> Awaiter = new();
+    public bool IsCompleted => this.Awaiter.IsCompleted;
+    public T Result => this.Awaiter.GetResult();
+    public SolverTaskAwaiter<T> GetAwaiter() => this.Awaiter;
 }

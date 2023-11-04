@@ -8,7 +8,7 @@ using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding.Tasks;
 
-internal struct BindingTaskAwaiter<T> : INotifyCompletion
+internal class BindingTaskAwaiter<T> : INotifyCompletion
 {
     public bool IsCompleted { get; private set; }
 
@@ -41,7 +41,7 @@ internal struct BindingTaskAwaiter<T> : INotifyCompletion
         }
     }
 
-    public readonly T GetResult()
+    public T GetResult()
     {
         if (this.exception is not null) throw this.exception;
         return this.result!;

@@ -30,7 +30,7 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
         this.IsCompleted = true;
         this.result = result;
         this.exception = exception;
-        if (this.allocatedResultType is not null)
+        if (exception is null && this.allocatedResultType is not null)
         {
             var type = ExtractType(result!);
             ConstraintSolver.UnifyAsserted(this.allocatedResultType, type!);

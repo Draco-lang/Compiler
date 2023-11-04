@@ -364,12 +364,15 @@ internal partial class Binder
 
     private async BindingTask<BoundExpression> BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+        // TODO: Now with async we can simplify a lot on this logic
+
         var methodTask = this.BindExpression(syntax.Function, constraints, diagnostics);
         var argsTask = syntax.ArgumentList.Values
             .Select(arg => this.BindExpression(arg, constraints, diagnostics))
             .ToList();
 
         var method = await methodTask;
+
         if (method is BoundFunctionGroupExpression group)
         {
             // Simple overload

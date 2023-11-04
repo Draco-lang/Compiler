@@ -571,19 +571,24 @@ internal partial class Binder
         return new BoundComparison(syntax, await symbolPromise, await right);
     }
 
-    private BindingTask<BoundExpression> BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
-        var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
+        var leftTask = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
+        var left = await leftTask;
         if (left is BoundReferenceErrorExpression err)
         {
             // Error, don't cascade
             return new BoundReferenceErrorExpression(syntax, err.Symbol);
         }
+
+        // TODO
+        /*
         Symbol? container = left is BoundModuleExpression untypedModule
             ? untypedModule.Module
             : (left as BoundTypeExpression)?.Type;
+        */
+        var container = null as Symbol;
 
         if (container is not null)
         {
@@ -604,11 +609,8 @@ internal partial class Binder
         {
             // Value, add constraint
             var promise = constraints.Member(left.TypeRequired, memberName, out var memberType, syntax);
-            return new BoundMemberExpression(syntax, left, promise, memberType);
+            return new BoundMemberExpression(syntax, left, await promise, memberType);
         }
-#else
-        throw new NotImplementedException();
-#endif
     }
 
     private BindingTask<BoundExpression> BindIndexExpression(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

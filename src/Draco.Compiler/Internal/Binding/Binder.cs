@@ -102,11 +102,10 @@ internal abstract partial class Binder
         // Add assignability constraint, if needed
         if (valueTask is not null)
         {
-#if false
-            constraints.Assignable(declaredType, untypedValue.TypeRequired, global.DeclaringSyntax.Value!.Value);
-#else
-            throw new System.NotImplementedException();
-#endif
+            _ = constraints.Assignable(
+                declaredType,
+                valueTask.GetResultTypeRequired(constraints),
+                global.DeclaringSyntax.Value!.Value);
         }
 
         // Solve

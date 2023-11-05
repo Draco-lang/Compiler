@@ -222,24 +222,27 @@ internal partial class Binder
         return new BoundWhileExpression(syntax, await conditionTask, await thenTask, continueLabel, breakLabel);
     }
 
-    private BindingTask<BoundExpression> BindForExpression(ForExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindForExpression(ForExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var binder = this.GetBinder(syntax);
 
         // Resolve iterator
         var iterator = binder.DeclaredSymbols
-            .OfType<UntypedLocalSymbol>()
+            .OfType<LocalSymbol>()
             .Single();
 
         var type = syntax.ElementType is null ? null : this.BindTypeToTypeSymbol(syntax.ElementType.Type, diagnostics);
-        var elementType = constraints.DeclareLocal(iterator, type);
+        constraints.DeclareLocal(iterator);
+        if (type is not null) ConstraintSolver.UnifyAsserted(iterator.Type, type);
 
-        var sequence = binder.BindExpression(syntax.Sequence, constraints, diagnostics);
+        var sequenceTask = binder.BindExpression(syntax.Sequence, constraints, diagnostics);
 
-        var then = binder.BindExpression(syntax.Then, constraints, diagnostics);
+        var thenTask = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
-        constraints.SameType(IntrinsicSymbols.Unit, then.TypeRequired, ExtractValueSyntax(syntax.Then));
+        _ = constraints.SameType(
+            IntrinsicSymbols.Unit,
+            thenTask.GetResultTypeRequired(constraints),
+            ExtractValueSyntax(syntax.Then));
 
         // Resolve labels
         var continueLabel = binder.DeclaredSymbols
@@ -250,111 +253,102 @@ internal partial class Binder
             .First(sym => sym.Name == "break");
 
         // GetEnumerator
-        var getEnumeratorMethodsPromise = constraints.Member(sequence.TypeRequired, "GetEnumerator", out _, syntax.Sequence);
+        var getEnumeratorMembersTask = constraints.Member(
+            sequenceTask.GetResultTypeRequired(constraints),
+            "GetEnumerator",
+            out _,
+            syntax.Sequence);
 
-        var exprPromise = constraints.Await(getEnumeratorMethodsPromise, BoundExpression () =>
+        var getEnumeratorMembers = await getEnumeratorMembersTask;
+        if (getEnumeratorMembers.IsError)
         {
-            var getEnumeratorResult = getEnumeratorMethodsPromise.Result;
-            if (getEnumeratorResult.IsError)
-            {
-                ConstraintSolver.UnifyAsserted(elementType, IntrinsicSymbols.ErrorType);
-                return new BoundForExpression(
-                    syntax,
-                    iterator,
-                    sequence,
-                    then,
-                    continueLabel,
-                    breakLabel,
-                    ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol),
-                    ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol),
-                    ConstraintPromise.FromResult(UndefinedMemberSymbol.Instance as Symbol));
-            }
-
-            // Look up the overload
-            var getEnumeratorFunctions = GetFunctions(getEnumeratorResult);
-            var getEnumeratorPromise = constraints.Overload(
-                "GetEnumerator",
-                getEnumeratorFunctions,
-                ImmutableArray<object>.Empty,
-                out var enumeratorType,
-                syntax.Sequence);
-
-            // Look up MoveNext
-            var moveNextMethodsPromise = constraints.Member(enumeratorType, "MoveNext", out _, syntax.Sequence);
-
-            var moveNextPromise = constraints.Await(moveNextMethodsPromise, () =>
-            {
-                var moveNextResult = moveNextMethodsPromise.Result;
-
-                // Don't propagate errors
-                if (moveNextResult.IsError)
-                {
-                    return ConstraintPromise.FromResult(new NoOverloadFunctionSymbol(0) as FunctionSymbol);
-                }
-
-                var moveNextFunctions = GetFunctions(moveNextResult);
-
-                var moveNextPromise = constraints.Overload(
-                    "MoveNext",
-                    moveNextFunctions,
-                    ImmutableArray<object>.Empty,
-                    out var moveNextReturnType,
-                    syntax.Sequence);
-
-                var moveNextReturnsBoolPromise = constraints.SameType(
-                    this.IntrinsicSymbols.Bool,
-                    moveNextReturnType,
-                    syntax.Sequence);
-
-                return moveNextPromise;
-            }).Unwrap();
-
-            // Look up Current
-            var currentPromise = constraints.Member(
-                enumeratorType,
-                "Current",
-                out var currentType,
-                syntax.Sequence);
-
-            var elementAssignablePromise = constraints.Assignable(
-                elementType,
-                currentType,
-                syntax.ElementType as SyntaxNode ?? syntax.Iterator);
-
-            // Current needs to be a gettable property
-            constraints.Await(currentPromise, () =>
-            {
-                var current = currentPromise.Result;
-
-                // Don't propagate error
-                if (current.IsError) return default(Unit);
-
-                if (current is not PropertySymbol propSymbol || propSymbol.Getter is null)
-                {
-                    diagnostics.Add(Diagnostic.Create(
-                        template: SymbolResolutionErrors.NotGettableProperty,
-                        location: syntax.Sequence.Location,
-                        formatArgs: current.Name));
-                }
-
-                return default;
-            });
-
+            ConstraintSolver.UnifyAsserted(iterator.Type, IntrinsicSymbols.ErrorType);
             return new BoundForExpression(
                 syntax,
                 iterator,
-                sequence,
-                then,
+                await sequenceTask,
+                await thenTask,
                 continueLabel,
                 breakLabel,
-                getEnumeratorPromise,
-                moveNextPromise,
-                currentPromise);
-        });
-        return new BoundDelayedExpression(syntax, exprPromise, IntrinsicSymbols.Unit);
-#else
-        throw new NotImplementedException();
-#endif
+                new NoOverloadFunctionSymbol(0),
+                new NoOverloadFunctionSymbol(0),
+                UndefinedMemberSymbol.Instance);
+        }
+
+        // Look up the overload
+        var getEnumeratorFunctions = GetFunctions(getEnumeratorMembers);
+        var getEnumeratorTask = constraints.Overload(
+            "GetEnumerator",
+            getEnumeratorFunctions,
+            ImmutableArray<object>.Empty,
+            out var enumeratorType,
+            syntax.Sequence);
+
+        // Look up MoveNext
+        var moveNextMembersTask = constraints.Member(
+            enumeratorType,
+            "MoveNext",
+            out _,
+            syntax.Sequence);
+
+        var moveNextMembers = await moveNextMembersTask;
+        SolverTask<FunctionSymbol> moveNextTask;
+        // Don't propagate errors
+        if (moveNextMembers.IsError)
+        {
+            moveNextTask = SolverTask.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(0));
+        }
+        else
+        {
+            var moveNextFunctions = GetFunctions(moveNextMembers);
+            moveNextTask = constraints.Overload(
+                "MoveNext",
+                moveNextFunctions,
+                ImmutableArray<object>.Empty,
+                out var moveNextReturnType,
+                syntax.Sequence);
+            // MoveNext should return bool
+            _ = constraints.SameType(
+                this.IntrinsicSymbols.Bool,
+                moveNextReturnType,
+                syntax.Sequence);
+        }
+
+        // Look up Current
+        var currentTask = constraints.Member(
+            enumeratorType,
+            "Current",
+            out var currentType,
+            syntax.Sequence);
+
+        // Element type of the Enumerator must be assignable to the iterator type of the for loop
+        _ = constraints.Assignable(
+            iterator.Type,
+            currentType,
+            syntax.ElementType as SyntaxNode ?? syntax.Iterator);
+
+        // Current needs to be a gettable property
+        var current = await currentTask;
+
+        // Don't propagate error
+        if (!current.IsError && (current is not PropertySymbol propSymbol || propSymbol.Getter is null))
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.NotGettableProperty,
+                location: syntax.Sequence.Location,
+                formatArgs: current.Name));
+        }
+
+        return new BoundForExpression(
+            syntax,
+            iterator,
+            await sequenceTask,
+            await thenTask,
+            continueLabel,
+            breakLabel,
+            await getEnumeratorTask,
+            await moveNextTask,
+            current);
     }
 
     private async BindingTask<BoundExpression> BindCallExpression(CallExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

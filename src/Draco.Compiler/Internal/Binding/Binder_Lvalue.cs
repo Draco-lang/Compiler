@@ -58,15 +58,18 @@ internal partial class Binder
         }
     }
 
-    private BindingTask<BoundLvalue> BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundLvalue> BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
 
+        // TODO
+        /*
         Symbol? container = left is BoundModuleExpression untypedModule
             ? untypedModule.Module
             : (left as BoundTypeExpression)?.Type;
+        */
+        var container = null as Symbol;
 
         if (container is not null)
         {
@@ -86,12 +89,39 @@ internal partial class Binder
         else
         {
             // Value, add constraint
-            var promise = constraints.Member(left.TypeRequired, memberName, out var memberType, syntax);
-            return new BoundMemberLvalue(syntax, left, promise, memberType);
+            var memberTask = constraints.Member(
+                left.GetResultTypeRequired(constraints),
+                memberName,
+                out var memberType,
+                syntax);
+            var members = await memberTask;
+
+            if (members is ITypedSymbol member)
+            {
+                // Error, don't cascade
+                if (members.IsError)
+                {
+                    return new BoundIllegalLvalue(syntax);
+                }
+                if (member is FieldSymbol field)
+                {
+                    return new BoundFieldLvalue(syntax, await left, field);
+                }
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.IllegalLvalue,
+                    location: syntax.Location));
+                return new BoundIllegalLvalue(syntax);
+            }
+            else
+            {
+                // NOTE: This can happen in case of function with more overloads, but without () after the function name. For example builder.Append
+                diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
+                    location: syntax.Location,
+                    formatArgs: members.Name));
+                return new BoundUnexpectedLvalue(syntax);
+            }
         }
-#else
-        throw new NotImplementedException();
-#endif
     }
 
     private BindingTask<BoundLvalue> BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

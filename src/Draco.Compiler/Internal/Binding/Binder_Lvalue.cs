@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -126,65 +127,64 @@ internal partial class Binder
 
     private BindingTask<BoundLvalue> BindIllegalLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
         // TODO: Should illegal lvalues contain an expression we still bind?
         // It could result in more errors within the expression, which might be useful
         diagnostics.Add(Diagnostic.Create(
             template: SymbolResolutionErrors.IllegalLvalue,
             location: syntax?.Location));
-        return new BoundIllegalLvalue(syntax);
-#else
-        throw new NotImplementedException();
-#endif
+        return FromResult(new BoundIllegalLvalue(syntax));
     }
 
-    private BindingTask<BoundLvalue> BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundLvalue> BindIndexLvalue(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-#if false
-        var receiver = this.BindExpression(syntax.Indexed, constraints, diagnostics);
+        var receiverTask = this.BindExpression(syntax.Indexed, constraints, diagnostics);
+        var argsTask = syntax.IndexList.Values
+            .Select(x => this.BindExpression(x, constraints, diagnostics))
+            .ToImmutableArray();
+
+        var receiver = await receiverTask;
         if (receiver is BoundReferenceErrorExpression err)
         {
             return new BoundIllegalLvalue(syntax);
         }
-        var args = syntax.IndexList.Values
-            .Select(x => this.BindExpression(x, constraints, diagnostics))
-            .ToImmutableArray();
-        var returnType = constraints.AllocateTypeVariable();
-        var promise = constraints.Substituted(receiver.TypeRequired, () =>
-        {
-            var receiverType = receiver.TypeRequired.Substitution;
 
-            // General indexer
-            var indexers = receiverType
-                .Members
-                .OfType<PropertySymbol>()
-                .Where(x => x.IsIndexer)
-                .Select(x => x.Setter)
-                .OfType<FunctionSymbol>()
-                .ToImmutableArray();
-            if (indexers.Length == 0)
-            {
-                diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.NoSettableIndexerInType,
-                    location: syntax.Location,
-                    formatArgs: receiverType));
-                ConstraintSolver.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
-                return ConstraintPromise.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(args.Length + 1));
-            }
-            var overloaded = constraints.Overload(
+        var receiverType = await ConstraintSolver.Substituted(receiver.TypeRequired);
+
+        // General indexer
+        var indexers = receiverType
+            .Members
+            .OfType<PropertySymbol>()
+            .Where(x => x.IsIndexer)
+            .Select(x => x.Setter)
+            .OfType<FunctionSymbol>()
+            .ToImmutableArray();
+
+        var returnType = constraints.AllocateTypeVariable();
+        SolverTask<FunctionSymbol> indexerTask;
+
+        if (indexers.Length == 0)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.NoSettableIndexerInType,
+                location: syntax.Location,
+                formatArgs: receiverType));
+            ConstraintSolver.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
+            indexerTask = SolverTask.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(argsTask.Length + 1));
+        }
+        else
+        {
+            indexerTask = constraints.Overload(
                 "operator[]",
                 indexers,
-                args.Append(returnType as object).ToImmutableArray(),
+                argsTask.Append(returnType as object).ToImmutableArray(),
                 // NOTE: We don't care about the return type, this is an lvalue
                 out _,
                 syntax);
-            return overloaded;
-        }, syntax).Unwrap();
+        }
 
-        return new BoundIndexSetLvalue(syntax, receiver, promise, args, returnType);
-#else
+        // TODO
+        // return new BoundIndexSetLvalue(syntax, receiver, promise, argsTask, returnType);
         throw new NotImplementedException();
-#endif
     }
 
     private BoundLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)

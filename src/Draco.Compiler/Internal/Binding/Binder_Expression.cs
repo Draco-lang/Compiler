@@ -539,14 +539,7 @@ internal partial class Binder
             return new BoundReferenceErrorExpression(syntax, err.Symbol);
         }
 
-        // TODO
-        /*
-        Symbol? container = left is BoundModuleExpression untypedModule
-            ? untypedModule.Module
-            : (left as BoundTypeExpression)?.Type;
-        */
-        var container = null as Symbol;
-
+        var container = ExtractContainer(receiver);
         if (container is not null)
         {
             Func<Symbol, bool> pred = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
@@ -699,19 +692,11 @@ internal partial class Binder
         case ModuleSymbol module:
             // NOTE: Hack, see the note above this method definition
             this.BindSyntaxToSymbol(syntax, module);
-#if false
             return new BoundModuleExpression(syntax, module);
-#else
-            throw new NotImplementedException();
-#endif
         case TypeSymbol type:
             // NOTE: Hack, see the note above this method definition
             this.BindTypeSyntaxToSymbol(syntax, type);
-#if false
             return new BoundTypeExpression(syntax, type);
-#else
-            throw new NotImplementedException();
-#endif
         case ParameterSymbol param:
             return new BoundParameterExpression(syntax, param);
         case LocalSymbol local:
@@ -729,6 +714,13 @@ internal partial class Binder
             throw new InvalidOperationException();
         }
     }
+
+    private static Symbol? ExtractContainer(BoundExpression expression) => expression switch
+    {
+        BoundModuleExpression m => m.Module,
+        BoundTypeExpression t => t.Type,
+        _ => null,
+    };
 
     private static ImmutableArray<FunctionSymbol> GetFunctions(Symbol symbol) => symbol switch
     {

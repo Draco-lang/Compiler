@@ -172,6 +172,14 @@
     <Field Name="Array" Type="BoundExpression" />
   </Node>
 
+  <Node Name="BoundModuleExpression" Base="BoundExpression">
+    <Field Name="Module" Type="ModuleSymbol" />
+  </Node>
+
+  <Node Name="BoundTypeExpression" Base="BoundExpression">
+    <Field Name="Type" Type="TypeSymbol" />
+  </Node>
+
   <Node Name="BoundLocalExpression" Base="BoundExpression">
     <Field Name="Local" Type="LocalSymbol" />
   </Node>

@@ -134,7 +134,6 @@ public sealed partial class SemanticModel
             BoundReferenceErrorExpression e => e.Symbol,
             BoundLocalLvalue l => l.Local,
             BoundGlobalLvalue g => g.Global,
-            BoundMemberExpression m => m.Member,
             BoundCallExpression c => c.Method,
             BoundFieldLvalue f => f.Field,
             BoundFieldExpression f => f.Field,

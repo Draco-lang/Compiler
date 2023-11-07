@@ -373,43 +373,7 @@ internal partial class Binder
                 out var _,
                 syntax.Function);
 
-            return new BoundCallExpression(syntax, null, await symbolPromise, await BindingTask.WhenAll(argsTask));
-        }
-        else if (method is BoundMemberExpression mem)
-        {
-            // We are in a bit of a pickle here, the member expression might not be resolved yet,
-            // and based on it this can be a direct, or indirect call
-            // If the resolved members are a statically bound function symbols, this becomes an overloaded call,
-            // otherwise this becomes an indirect call
-
-            var members = mem.Member;
-            if (members is FunctionSymbol or OverloadSymbol)
-            {
-                // Overloaded member call
-                var functions = GetFunctions(members);
-                var symbolPromise = constraints.Overload(
-                    members.Name,
-                    functions,
-                    argsTask.Cast<object>().ToImmutableArray(),
-                    out var resultType,
-                    syntax.Function);
-
-                return new BoundCallExpression(
-                    syntax,
-                    mem.Receiver,
-                    await symbolPromise,
-                    await BindingTask.WhenAll(argsTask));
-            }
-            else
-            {
-                var callPromise = constraints.Call(
-                    method.TypeRequired,
-                    argsTask.Cast<object>().ToImmutableArray(),
-                    out var resultType,
-                    syntax);
-
-                return new BoundIndirectCallExpression(syntax, mem, await BindingTask.WhenAll(argsTask), resultType);
-            }
+            return new BoundCallExpression(syntax, group.Receiver, await symbolPromise, await BindingTask.WhenAll(argsTask));
         }
         else
         {
@@ -566,10 +530,10 @@ internal partial class Binder
 
     private async BindingTask<BoundExpression> BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var leftTask = this.BindExpression(syntax.Accessed, constraints, diagnostics);
+        var receiverTask = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
-        var left = await leftTask;
-        if (left is BoundReferenceErrorExpression err)
+        var receiver = await receiverTask;
+        if (receiver is BoundReferenceErrorExpression err)
         {
             // Error, don't cascade
             return new BoundReferenceErrorExpression(syntax, err.Symbol);
@@ -601,8 +565,32 @@ internal partial class Binder
         else
         {
             // Value, add constraint
-            var promise = constraints.Member(left.TypeRequired, memberName, out var memberType, syntax);
-            return new BoundMemberExpression(syntax, left, await promise, memberType);
+            var memberTask = constraints.Member(receiver.TypeRequired, memberName, out var memberType, syntax);
+            var member = await memberTask;
+
+            switch (member)
+            {
+            case FunctionSymbol func:
+                return new BoundFunctionGroupExpression(syntax, receiver, ImmutableArray.Create(func));
+            case OverloadSymbol overload:
+                return new BoundFunctionGroupExpression(syntax, receiver, overload.Functions);
+            case FieldSymbol field:
+                return new BoundFieldExpression(syntax, receiver, field);
+            case PropertySymbol prop:
+                // It could be array length
+                if (prop.GenericDefinition is ArrayLengthPropertySymbol)
+                {
+                    return new BoundArrayLengthExpression(syntax, receiver);
+                }
+                else
+                {
+                    var getter = GetGetterSymbol(syntax, prop, diagnostics);
+                    return new BoundPropertyGetExpression(syntax, receiver, getter);
+                }
+            default:
+                // TODO
+                throw new NotImplementedException();
+            }
         }
     }
 
@@ -685,40 +673,7 @@ internal partial class Binder
                     .ToImmutableArray();
 
                 // Wrap them back up in a function group
-                return new BoundFunctionGroupExpression(syntax, instantiatedFuncs);
-            }
-        }
-        else if (instantiated is BoundMemberExpression member)
-        {
-            // We are playing the same game as with call expression
-            // A member access has to be delayed to get resolved
-
-            var members = member.Member;
-            // Search for all function members with the same number of generic parameters
-            var withSameNoParams = GetFunctions(members);
-            if (withSameNoParams.Length == 0)
-            {
-                // No generic functions with this number of parameters
-                diagnostics.Add(Diagnostic.Create(
-                    template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
-                    location: syntax.Location,
-                    formatArgs: new object[] { members.Name, args.Length }));
-
-                // Return a sentinel
-                // NOTE: Is this the right one to return?
-                return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
-            }
-            else
-            {
-                // There are functions with this same number of parameters
-                // Instantiate each possibility
-                var instantiatedFuncs = withSameNoParams
-                    .Select(f => f.GenericInstantiate(f.ContainingSymbol, args))
-                    .ToImmutableArray();
-                var overload = new OverloadSymbol(instantiatedFuncs);
-
-                // Wrap them back up in a member expression
-                return new BoundMemberExpression(syntax, member.Receiver, overload, member.Type);
+                return new BoundFunctionGroupExpression(syntax, group.Receiver, instantiatedFuncs);
             }
         }
         else
@@ -767,9 +722,9 @@ internal partial class Binder
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
-            return new BoundFunctionGroupExpression(syntax, ImmutableArray.Create(func));
+            return new BoundFunctionGroupExpression(syntax, null, ImmutableArray.Create(func));
         case OverloadSymbol overload:
-            return new BoundFunctionGroupExpression(syntax, overload.Functions);
+            return new BoundFunctionGroupExpression(syntax, null, overload.Functions);
         default:
             throw new InvalidOperationException();
         }

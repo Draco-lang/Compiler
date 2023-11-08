@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding.Tasks;
@@ -475,9 +476,36 @@ internal partial class Binder
                 resultType,
                 syntax);
 
-            // TODO: Handle index set here too?
+            var left = await leftTask;
+            if (left is BoundIndexSetLvalue indexSet)
+            {
+                var getter = (indexSet.Setter as IPropertyAccessorSymbol)?.Property.Getter;
+                if (getter is null)
+                {
+                    // TODO
+                    throw new NotImplementedException();
+                }
 
-            return new BoundAssignmentExpression(syntax, await symbolPromise, await leftTask, await rightTask);
+                return new BoundIndexSetExpression(
+                    syntax,
+                    indexSet.Receiver,
+                    indexSet.Setter,
+                    indexSet.Indices,
+                    new BoundBinaryExpression(
+                        syntax,
+                        await symbolPromise,
+                        new BoundIndexGetExpression(
+                            syntax,
+                            indexSet.Receiver,
+                            getter,
+                            indexSet.Indices),
+                        await rightTask,
+                        resultType));
+            }
+            else
+            {
+                return new BoundAssignmentExpression(syntax, await symbolPromise, await leftTask, await rightTask);
+            }
         }
         else
         {

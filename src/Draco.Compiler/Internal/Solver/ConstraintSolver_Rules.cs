@@ -95,14 +95,15 @@ internal sealed partial class ConstraintSolver
             var commonTypeVars = common2.AlternativeTypes
                 .Where(t => t.Substitution.IsTypeVariable)
                 .ToImmutableArray();
+            if (commonTypeVars.Length == 0) continue;
             var commonNonTypeVars = common2.AlternativeTypes
                 .Where(t => !t.Substitution.IsTypeVariable)
-                .ToImmutableArray();
-            if (commonNonTypeVars.Length != 1) continue;
+                .ToImmutableHashSet(SymbolEqualityComparer.AllowTypeVariables);
+            if (commonNonTypeVars.Count != 1) continue;
 
             // NOTE: We do NOT remove the constraint, will be resolved in a future iteration
             // Only one non-type-var, the rest are type variables
-            var nonTypeVar = commonNonTypeVars[0];
+            var nonTypeVar = commonNonTypeVars.Single();
             foreach (var tv in commonTypeVars) UnifyAsserted(tv, nonTypeVar);
             return true;
         }

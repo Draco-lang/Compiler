@@ -287,6 +287,12 @@
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
+  <Node Name="BoundPropertySetLvalue" Base="BoundLvalue">
+    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Setter" Type="FunctionSymbol" />
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
   <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
     <Field Name="Array" Type="BoundExpression" />
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />

@@ -103,6 +103,15 @@ internal partial class Binder
                 {
                     return new BoundFieldLvalue(syntax, left, field);
                 }
+                if (member is PropertySymbol prop)
+                {
+                    if (prop.Setter is null)
+                    {
+                        // TODO
+                        throw new NotImplementedException();
+                    }
+                    return new BoundPropertySetLvalue(syntax, left, prop.Setter, prop.Type);
+                }
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalLvalue,
                     location: syntax.Location));
@@ -193,11 +202,7 @@ internal partial class Binder
             return new BoundGlobalLvalue(syntax, global);
         case PropertySymbol prop:
             var setter = GetSetterSymbol(syntax, prop, diagnostics);
-#if false
-            return new BoundPropertySetLvalue(syntax, null, setter);
-#else
-            throw new NotImplementedException();
-#endif
+            return new BoundPropertySetLvalue(syntax, null, setter, prop.Type);
         default:
             // NOTE: The error is already reported
             return new BoundIllegalLvalue(syntax);

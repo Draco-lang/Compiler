@@ -419,7 +419,15 @@ internal partial class Binder
                 syntax);
 
             var left = await leftTask;
-            if (left is BoundIndexSetLvalue indexSet)
+            if (left is BoundPropertySetLvalue propertySet)
+            {
+                return new BoundPropertySetExpression(
+                    syntax,
+                    propertySet.Receiver,
+                    propertySet.Setter,
+                    await rightTask);
+            }
+            else if (left is BoundIndexSetLvalue indexSet)
             {
                 return new BoundIndexSetExpression(
                     syntax,
@@ -477,7 +485,30 @@ internal partial class Binder
                 syntax);
 
             var left = await leftTask;
-            if (left is BoundIndexSetLvalue indexSet)
+            if (left is BoundPropertySetLvalue propertySet)
+            {
+                var getter = (propertySet.Setter as IPropertyAccessorSymbol)?.Property.Getter;
+                if (getter is null)
+                {
+                    // TODO
+                    throw new NotImplementedException();
+                }
+
+                return new BoundPropertySetExpression(
+                    syntax,
+                    propertySet.Receiver,
+                    propertySet.Setter,
+                    new BoundBinaryExpression(
+                        syntax,
+                        await symbolPromise,
+                        new BoundPropertyGetExpression(
+                            syntax,
+                            propertySet.Receiver,
+                            getter),
+                        await rightTask,
+                        resultType));
+            }
+            else if (left is BoundIndexSetLvalue indexSet)
             {
                 var getter = (indexSet.Setter as IPropertyAccessorSymbol)?.Property.Getter;
                 if (getter is null)

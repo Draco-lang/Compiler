@@ -61,16 +61,11 @@ internal partial class Binder
 
     private async BindingTask<BoundLvalue> BindMemberLvalue(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var left = this.BindExpression(syntax.Accessed, constraints, diagnostics);
+        var leftTask = this.BindExpression(syntax.Accessed, constraints, diagnostics);
         var memberName = syntax.Member.Text;
 
-        // TODO
-        /*
-        Symbol? container = left is BoundModuleExpression untypedModule
-            ? untypedModule.Module
-            : (left as BoundTypeExpression)?.Type;
-        */
-        var container = null as Symbol;
+        var left = await leftTask;
+        var container = ExtractContainer(left);
 
         if (container is not null)
         {
@@ -91,7 +86,7 @@ internal partial class Binder
         {
             // Value, add constraint
             var memberTask = constraints.Member(
-                left.GetResultTypeRequired(constraints),
+                left.TypeRequired,
                 memberName,
                 out var memberType,
                 syntax);
@@ -106,7 +101,7 @@ internal partial class Binder
                 }
                 if (member is FieldSymbol field)
                 {
-                    return new BoundFieldLvalue(syntax, await left, field);
+                    return new BoundFieldLvalue(syntax, left, field);
                 }
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalLvalue,

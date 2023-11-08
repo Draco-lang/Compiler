@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
@@ -429,6 +430,7 @@ internal partial class Binder
             }
             else if (left is BoundIndexSetLvalue indexSet)
             {
+                var arrayIndexProperty = (indexSet.Setter.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
                 return new BoundIndexSetExpression(
                     syntax,
                     indexSet.Receiver,
@@ -702,7 +704,17 @@ internal partial class Binder
                 syntax);
         }
 
-        return new BoundIndexGetExpression(syntax, receiver, await accessorTask, await BindingTask.WhenAll(argsTask));
+        var accessor = await accessorTask;
+        var arrayIndexProperty = (accessor.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
+        if (arrayIndexProperty is not null)
+        {
+            // Array getter
+            return new BoundArrayAccessExpression(syntax, receiver, await BindingTask.WhenAll(argsTask));
+        }
+        else
+        {
+            return new BoundIndexGetExpression(syntax, receiver, await accessorTask, await BindingTask.WhenAll(argsTask));
+        }
     }
 
     private async BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

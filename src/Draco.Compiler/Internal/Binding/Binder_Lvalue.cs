@@ -186,12 +186,24 @@ internal partial class Binder
                 syntax);
         }
 
-        return new BoundIndexSetLvalue(
-            syntax,
-            receiver,
-            await indexerTask,
-            await BindingTask.WhenAll(argsTask),
-            returnType);
+        var indexer = await indexerTask;
+        var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
+        if (arrayIndexProperty is not null)
+        {
+            return new BoundArrayAccessLvalue(
+                syntax,
+                receiver,
+                await BindingTask.WhenAll(argsTask));
+        }
+        else
+        {
+            return new BoundIndexSetLvalue(
+                syntax,
+                receiver,
+                await indexerTask,
+                await BindingTask.WhenAll(argsTask),
+                returnType);
+        }
     }
 
     private BoundLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)

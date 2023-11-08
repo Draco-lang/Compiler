@@ -182,9 +182,12 @@ internal partial class Binder
                 syntax);
         }
 
-        // TODO
-        // return new BoundIndexSetLvalue(syntax, receiver, promise, argsTask, returnType);
-        throw new NotImplementedException();
+        return new BoundIndexSetLvalue(
+            syntax,
+            receiver,
+            await indexerTask,
+            await BindingTask.WhenAll(argsTask),
+            returnType);
     }
 
     private BoundLvalue SymbolToLvalue(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)

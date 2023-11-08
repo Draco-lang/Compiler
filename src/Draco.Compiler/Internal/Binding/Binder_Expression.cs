@@ -417,7 +417,20 @@ internal partial class Binder
                 rightTask.GetResultTypeRequired(constraints),
                 syntax);
 
-            return new BoundAssignmentExpression(syntax, null, await leftTask, await rightTask);
+            var left = await leftTask;
+            if (left is BoundIndexSetLvalue indexSet)
+            {
+                return new BoundIndexSetExpression(
+                    syntax,
+                    indexSet.Receiver,
+                    indexSet.Setter,
+                    indexSet.Indices,
+                    await rightTask);
+            }
+            else
+            {
+                return new BoundAssignmentExpression(syntax, null, left, await rightTask);
+            }
         }
         else if (syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr)
         {
@@ -461,6 +474,8 @@ internal partial class Binder
                 leftTask.GetResultTypeRequired(constraints),
                 resultType,
                 syntax);
+
+            // TODO: Handle index set here too?
 
             return new BoundAssignmentExpression(syntax, await symbolPromise, await leftTask, await rightTask);
         }

@@ -256,7 +256,7 @@ internal sealed partial class ConstraintSolver
 
         while (true)
         {
-            var changed = RefineOverloadScores(candidates, constraint.Arguments, out var wellDefined);
+            var changed = this.RefineOverloadScores(candidates, constraint.Arguments, out var wellDefined);
             if (wellDefined) break;
             if (candidates.Count <= 1) break;
             if (!changed) return;
@@ -369,7 +369,7 @@ internal sealed partial class ConstraintSolver
                 .WithTemplate(TypeCheckingErrors.TypeMismatch)
                 .WithFormatArgs(
                     functionType,
-                    MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)))
+                    this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)))
                 .Build());
             constraint.CompletionSource.SetResult(default);
             return;
@@ -379,7 +379,7 @@ internal sealed partial class ConstraintSolver
         var score = new CallScore(functionType.Parameters.Length);
         while (true)
         {
-            var changed = AdjustScore(functionType, constraint.Arguments, score);
+            var changed = this.AdjustScore(functionType, constraint.Arguments, score);
             if (score.HasZero)
             {
                 // Error
@@ -388,7 +388,7 @@ internal sealed partial class ConstraintSolver
                     .WithTemplate(TypeCheckingErrors.TypeMismatch)
                     .WithFormatArgs(
                         functionType,
-                        MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)))
+                        this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)))
                     .Build());
                 constraint.CompletionSource.SetResult(default);
                 return;

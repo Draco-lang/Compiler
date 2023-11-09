@@ -888,7 +888,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalFounctionGroupExpression);
+        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalFunctionGroupExpression);
     }
 
     [Fact]

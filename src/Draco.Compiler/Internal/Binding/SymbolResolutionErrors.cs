@@ -114,7 +114,7 @@ internal static class SymbolResolutionErrors
     /// <summary>
     /// A function group was used as an expression.
     /// </summary>
-    public static readonly DiagnosticTemplate IllegalFounctionGroupExpression = DiagnosticTemplate.Create(
+    public static readonly DiagnosticTemplate IllegalFunctionGroupExpression = DiagnosticTemplate.Create(
         title: "illegal expression",
         severity: DiagnosticSeverity.Error,
         format: "the function group {0} is illegal in expression context",

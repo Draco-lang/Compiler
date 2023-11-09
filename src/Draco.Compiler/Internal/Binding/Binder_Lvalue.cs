@@ -121,7 +121,7 @@ internal partial class Binder
             {
                 // NOTE: This can happen in case of function with more overloads, but without () after the function name. For example builder.Append
                 diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.IllegalFounctionGroupExpression,
+                    template: SymbolResolutionErrors.IllegalFunctionGroupExpression,
                     location: syntax.Location,
                     formatArgs: members.Name));
                 return new BoundUnexpectedLvalue(syntax);

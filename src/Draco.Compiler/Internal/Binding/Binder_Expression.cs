@@ -633,6 +633,8 @@ internal partial class Binder
 
             switch (member)
             {
+            case Symbol when member.IsError:
+                return new BoundReferenceErrorExpression(syntax, member);
             case FunctionSymbol func:
                 return new BoundFunctionGroupExpression(syntax, receiver, ImmutableArray.Create(func));
             case OverloadSymbol overload:

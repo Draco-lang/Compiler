@@ -105,12 +105,8 @@ internal partial class Binder
                 }
                 if (member is PropertySymbol prop)
                 {
-                    if (prop.Setter is null)
-                    {
-                        // TODO
-                        throw new NotImplementedException();
-                    }
-                    return new BoundPropertySetLvalue(syntax, left, prop.Setter, prop.Type);
+                    var setter = GetSetterSymbol(syntax, prop, diagnostics);
+                    return new BoundPropertySetLvalue(syntax, left, setter, prop.Type);
                 }
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalLvalue,

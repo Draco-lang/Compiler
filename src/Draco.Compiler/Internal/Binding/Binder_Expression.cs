@@ -489,12 +489,8 @@ internal partial class Binder
             var left = await leftTask;
             if (left is BoundPropertySetLvalue propertySet)
             {
-                var getter = (propertySet.Setter as IPropertyAccessorSymbol)?.Property.Getter;
-                if (getter is null)
-                {
-                    // TODO
-                    throw new NotImplementedException();
-                }
+                var property = ((IPropertyAccessorSymbol)propertySet.Setter).Property;
+                var getter = GetGetterSymbol(syntax, property, diagnostics);
 
                 return new BoundPropertySetExpression(
                     syntax,
@@ -512,12 +508,8 @@ internal partial class Binder
             }
             else if (left is BoundIndexSetLvalue indexSet)
             {
-                var getter = (indexSet.Setter as IPropertyAccessorSymbol)?.Property.Getter;
-                if (getter is null)
-                {
-                    // TODO
-                    throw new NotImplementedException();
-                }
+                var property = ((IPropertyAccessorSymbol)indexSet.Setter).Property;
+                var getter = GetGetterSymbol(syntax, property, diagnostics);
 
                 return new BoundIndexSetExpression(
                     syntax,

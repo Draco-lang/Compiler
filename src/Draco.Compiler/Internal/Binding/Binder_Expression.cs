@@ -233,6 +233,8 @@ internal partial class Binder
             .OfType<LocalSymbol>()
             .Single();
 
+        this.BindSyntaxToSymbol(syntax.Iterator, iterator);
+
         var type = syntax.ElementType is null ? null : this.BindTypeToTypeSymbol(syntax.ElementType.Type, diagnostics);
         constraints.DeclareLocal(iterator);
         if (type is not null) ConstraintSolver.UnifyAsserted(iterator.Type, type);

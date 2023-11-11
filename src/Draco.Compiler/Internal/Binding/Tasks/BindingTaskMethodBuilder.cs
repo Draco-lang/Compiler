@@ -16,8 +16,8 @@ internal sealed class BindingTaskMethodBuilder<T>
 
     public void SetStateMachine(IAsyncStateMachine _) => Debug.Fail("Unused");
 
-    public void SetException(Exception exception) => this.Task.Awaiter.SetResult(default, exception);
-    public void SetResult(T result) => this.Task.Awaiter.SetResult(result, null);
+    public void SetResult(T result) => this.Task.Awaiter.SetResult(result);
+    public void SetException(Exception exception) => this.Task.Awaiter.SetException(exception);
 
     public void AwaitOnCompleted<TAwaiter, TStateMachine>(
         ref TAwaiter awaiter, ref TStateMachine stateMachine)

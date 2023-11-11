@@ -15,10 +15,19 @@ internal sealed class SolverTaskAwaiter<T> : INotifyCompletion
     private Exception? exception;
     private List<Action>? completions;
 
-    internal void SetResult(T? result, Exception? exception)
+    internal void SetResult(T? result)
     {
         this.IsCompleted = true;
         this.result = result;
+        foreach (var completion in this.completions ?? Enumerable.Empty<Action>())
+        {
+            completion();
+        }
+    }
+
+    internal void SetException(Exception? exception)
+    {
+        this.IsCompleted = true;
         this.exception = exception;
         foreach (var completion in this.completions ?? Enumerable.Empty<Action>())
         {

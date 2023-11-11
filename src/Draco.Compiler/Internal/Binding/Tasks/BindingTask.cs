@@ -12,7 +12,7 @@ internal static class BindingTask
     public static BindingTask<T> FromResult<T>(T result)
     {
         var task = new BindingTask<T>();
-        task.Awaiter.SetResult(result, null);
+        task.Awaiter.SetResult(result);
         return task;
     }
 

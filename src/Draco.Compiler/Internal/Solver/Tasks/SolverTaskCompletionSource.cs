@@ -20,6 +20,6 @@ internal sealed class SolverTaskCompletionSource<T>
     internal SolverTaskAwaiter<T> Awaiter = new();
 
     public SolverTaskAwaiter<T> GetAwaiter() => this.Awaiter;
-    public void SetResult(T result) => this.Awaiter.SetResult(result, null);
-    public void SetException(Exception exception) => this.Awaiter.SetResult(default, exception);
+    public void SetResult(T result) => this.Awaiter.SetResult(result);
+    public void SetException(Exception exception) => this.Awaiter.SetException(exception);
 }

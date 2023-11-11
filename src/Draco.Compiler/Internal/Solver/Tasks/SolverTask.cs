@@ -10,7 +10,7 @@ internal static class SolverTask
     public static SolverTask<T> FromResult<T>(T result)
     {
         var task = new SolverTask<T>();
-        task.Awaiter.SetResult(result, null);
+        task.Awaiter.SetResult(result);
         return task;
     }
 

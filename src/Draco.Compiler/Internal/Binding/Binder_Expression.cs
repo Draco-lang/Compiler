@@ -55,19 +55,6 @@ internal partial class Binder
 
     private static BindingTask<BoundExpression> FromResult(BoundExpression expr) => BindingTask.FromResult(expr);
 
-    private static TypeSymbol ExpectValue(BoundExpression expr, DiagnosticBag diagnostics)
-    {
-        if (expr.Type is null)
-        {
-            // Error
-            diagnostics.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.IllegalExpression,
-                location: expr.Syntax?.Location));
-            return IntrinsicSymbols.ErrorType;
-        }
-        return expr.Type;
-    }
-
     private async BindingTask<BoundExpression> BindStatementExpression(StatementExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         // We just desugar stmt; into { stmt; }

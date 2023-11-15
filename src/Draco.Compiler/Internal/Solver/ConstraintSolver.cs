@@ -5,6 +5,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Binding.Tasks;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
@@ -19,6 +20,13 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal sealed partial class ConstraintSolver
 {
+    /// <summary>
+    /// Represents an argument for a call.
+    /// </summary>
+    /// <param name="Syntax">The syntax of the argument, if any.</param>
+    /// <param name="Type">The type of the argument.</param>
+    public readonly record struct Argument(SyntaxNode? Syntax, TypeSymbol Type);
+
     /// <summary>
     /// The context being inferred.
     /// </summary>
@@ -41,6 +49,14 @@ internal sealed partial class ConstraintSolver
         this.Context = context;
         this.ContextName = contextName;
     }
+
+    // TODO: Docs
+    public Argument Arg(SyntaxNode? syntax, BindingTask<BoundExpression> expression, DiagnosticBag diagnostics) =>
+        new(syntax, expression.GetResultType(syntax, this, diagnostics));
+
+    // TODO: Docs
+    public Argument Arg(SyntaxNode? syntax, BindingTask<BoundLvalue> lvalue, DiagnosticBag diagnostics) =>
+        new(syntax, lvalue.GetResultType(syntax, this, diagnostics));
 
     /// <summary>
     /// Solves all diagnostics added to this solver.

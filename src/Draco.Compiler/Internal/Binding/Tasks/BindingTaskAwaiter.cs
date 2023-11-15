@@ -2,9 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding.Tasks;
 
@@ -15,39 +19,44 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
     private T? result;
     private Exception? exception;
     private List<Action>? completions;
-    private TypeSymbol? allocatedResultType;
+    private TypeSymbol? resultType;
 
-    public TypeSymbol? GetResultType(ConstraintSolver solver)
+    public TypeSymbol GetResultType(SyntaxNode? syntax, ConstraintSolver solver, DiagnosticBag diagnostics)
     {
-        if (this.result is not null) return ExtractType(this.result);
+        if (this.result is not null)
+        {
+            var type = ExtractType(this.result);
+            if (type is null)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.IllegalExpression,
+                    location: syntax?.Location));
+                type = IntrinsicSymbols.ErrorType;
+            }
+            return type;
+        }
 
-        this.allocatedResultType ??= solver.AllocateTypeVariable();
-        return this.allocatedResultType;
+        this.resultType ??= solver.AllocateTypeVariable();
+        return this.resultType;
     }
 
     internal void SetResult(T? result)
     {
         this.IsCompleted = true;
         this.result = result;
-        if (this.allocatedResultType is not null)
+        if (this.resultType is not null)
         {
             var type = ExtractType(result!);
-            ConstraintSolver.UnifyAsserted(this.allocatedResultType, type!);
+            ConstraintSolver.UnifyAsserted(this.resultType, type!);
         }
-        foreach (var completion in this.completions ?? Enumerable.Empty<Action>())
-        {
-            completion();
-        }
+        this.RunCompletions();
     }
 
     internal void SetException(Exception? exception)
     {
         this.IsCompleted = true;
         this.exception = exception;
-        foreach (var completion in this.completions ?? Enumerable.Empty<Action>())
-        {
-            completion();
-        }
+        this.RunCompletions();
     }
 
     public T GetResult()
@@ -70,6 +79,14 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
         {
             this.completions ??= new();
             this.completions.Add(completion);
+        }
+    }
+
+    private void RunCompletions()
+    {
+        foreach (var completion in this.completions ?? Enumerable.Empty<Action>())
+        {
+            completion();
         }
     }
 

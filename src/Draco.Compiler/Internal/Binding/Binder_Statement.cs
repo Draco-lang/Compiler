@@ -87,7 +87,7 @@ internal partial class Binder
         var binder = this.GetBinder(syntax);
         var valueTask = binder.BindExpression(syntax.Value, constraints, diagnostics);
 
-        this.ConstraintReturnType(syntax.Value, valueTask, constraints);
+        this.ConstraintReturnType(syntax.Value, valueTask, constraints, diagnostics);
 
         return new BoundExpressionStatement(syntax, new BoundReturnExpression(syntax, await valueTask));
     }
@@ -120,7 +120,7 @@ internal partial class Binder
             // It has to be assignable
             _ = constraints.Assignable(
                 localSymbol.Type,
-                valueTask.GetResultTypeRequired(constraints),
+                valueTask.GetResultType(syntax.Value, constraints, diagnostics),
                 syntax.Value!.Value);
         }
 

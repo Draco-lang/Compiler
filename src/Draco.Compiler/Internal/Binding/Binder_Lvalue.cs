@@ -176,7 +176,11 @@ internal partial class Binder
             indexerTask = constraints.Overload(
                 "operator[]",
                 indexers,
-                argsTask.Append(returnType as object).ToImmutableArray(),
+                argsTask
+                    .Zip(syntax.IndexList.Values)
+                    .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
+                    .Append(new ConstraintSolver.Argument(null, returnType))
+                    .ToImmutableArray(),
                 // NOTE: We don't care about the return type, this is an lvalue
                 out _,
                 syntax);

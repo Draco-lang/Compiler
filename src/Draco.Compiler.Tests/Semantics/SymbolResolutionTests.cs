@@ -852,7 +852,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(localSymbol.Type.IsError);
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleExpression);
+        AssertDiagnostic(diags, TypeCheckingErrors.IllegalExpression);
     }
 
     [Fact]

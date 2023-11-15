@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
@@ -31,8 +33,6 @@ internal sealed class BindingTask<T>
     public bool IsCompleted => this.Awaiter.IsCompleted;
     public T Result => this.Awaiter.GetResult();
     public BindingTaskAwaiter<T> GetAwaiter() => this.Awaiter;
-    public TypeSymbol? GetResultType(ConstraintSolver solver) =>
-        this.Awaiter.GetResultType(solver);
-    public TypeSymbol GetResultTypeRequired(ConstraintSolver solver) =>
-        this.Awaiter.GetResultType(solver) ?? throw new System.InvalidOperationException();
+    public TypeSymbol GetResultType(SyntaxNode? syntax, ConstraintSolver solver, DiagnosticBag diagnostics) =>
+        this.Awaiter.GetResultType(syntax, solver, diagnostics);
 }

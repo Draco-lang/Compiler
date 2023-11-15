@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Reflection;
@@ -153,7 +154,7 @@ internal partial class Binder
             ? FromResult(BoundUnitExpression.Default)
             : this.BindExpression(syntax.Value, constraints, diagnostics);
 
-        this.ConstraintReturnType(syntax, valueTask, constraints);
+        this.ConstraintReturnType(syntax, valueTask, constraints, diagnostics);
 
         return new BoundReturnExpression(syntax, await valueTask);
     }
@@ -165,7 +166,7 @@ internal partial class Binder
         // Condition must be bool
         _ = constraints.SameType(
             this.IntrinsicSymbols.Bool,
-            conditionTask.GetResultTypeRequired(constraints),
+            conditionTask.GetResultType(syntax.Condition, constraints, diagnostics),
             syntax);
 
         var thenTask = this.BindExpression(syntax.Then, constraints, diagnostics);
@@ -175,11 +176,11 @@ internal partial class Binder
 
         // Then and else must be compatible types
         var resultType = constraints.AllocateTypeVariable();
+        var thenType = thenTask.GetResultType(ExtractValueSyntax(syntax.Then), constraints, diagnostics);
+        var elseType = elseTask.GetResultType(ExtractValueSyntax(syntax.Else?.Expression), constraints, diagnostics);
         _ = constraints.CommonType(
             resultType,
-            ImmutableArray.Create(
-                thenTask.GetResultTypeRequired(constraints),
-                elseTask.GetResultTypeRequired(constraints)),
+            ImmutableArray.Create(thenType, elseType),
             // The location will point at the else value, assuming that the latter expression is
             // the offending one
             // If there is no else clause, we just point at the then clause
@@ -188,7 +189,7 @@ internal partial class Binder
                 : ExtractValueSyntax(syntax.Else.Expression))
                 .WithRelatedInformation(
                     format: "the other branch is inferred to be {0}",
-                    formatArgs: thenTask.GetResultTypeRequired(constraints),
+                    formatArgs: thenType,
                     // If there is an else clause, we annotate the then clause as related info
                     location: ExtractValueSyntax(syntax.Then).Location));
 
@@ -203,14 +204,14 @@ internal partial class Binder
         // Condition must be bool
         _ = constraints.SameType(
             this.IntrinsicSymbols.Bool,
-            conditionTask.GetResultTypeRequired(constraints),
+            conditionTask.GetResultType(syntax.Condition, constraints, diagnostics),
             syntax);
 
         var thenTask = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
         _ = constraints.SameType(
             IntrinsicSymbols.Unit,
-            thenTask.GetResultTypeRequired(constraints),
+            thenTask.GetResultType(ExtractValueSyntax(syntax.Then), constraints, diagnostics),
             ExtractValueSyntax(syntax.Then));
 
         // Resolve labels
@@ -245,7 +246,7 @@ internal partial class Binder
         // Body must be unit
         _ = constraints.SameType(
             IntrinsicSymbols.Unit,
-            thenTask.GetResultTypeRequired(constraints),
+            thenTask.GetResultType(ExtractValueSyntax(syntax.Then), constraints, diagnostics),
             ExtractValueSyntax(syntax.Then));
 
         // Resolve labels
@@ -258,7 +259,7 @@ internal partial class Binder
 
         // GetEnumerator
         var getEnumeratorMembersTask = constraints.Member(
-            sequenceTask.GetResultTypeRequired(constraints),
+            sequenceTask.GetResultType(syntax.Sequence, constraints, diagnostics),
             "GetEnumerator",
             out _,
             syntax.Sequence);
@@ -284,7 +285,7 @@ internal partial class Binder
         var getEnumeratorTask = constraints.Overload(
             "GetEnumerator",
             getEnumeratorFunctions,
-            ImmutableArray<object>.Empty,
+            ImmutableArray<ConstraintSolver.Argument>.Empty,
             out var enumeratorType,
             syntax.Sequence);
 
@@ -308,7 +309,7 @@ internal partial class Binder
             moveNextTask = constraints.Overload(
                 "MoveNext",
                 moveNextFunctions,
-                ImmutableArray<object>.Empty,
+                ImmutableArray<ConstraintSolver.Argument>.Empty,
                 out var moveNextReturnType,
                 syntax.Sequence);
             // MoveNext should return bool
@@ -366,6 +367,10 @@ internal partial class Binder
 
         var method = await methodTask;
 
+        var argsForConstraints = argsTask
+            .Zip(syntax.ArgumentList.Values)
+            .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
+            .ToImmutableArray();
         if (method is BoundFunctionGroupExpression group)
         {
             // Simple overload
@@ -373,7 +378,7 @@ internal partial class Binder
             var symbolPromise = constraints.Overload(
                 group.Functions[0].Name,
                 group.Functions,
-                argsTask.Cast<object>().ToImmutableArray(),
+                argsForConstraints,
                 out var _,
                 syntax.Function);
 
@@ -383,7 +388,7 @@ internal partial class Binder
         {
             var callPromise = constraints.Call(
                 method.TypeRequired,
-                argsTask.Cast<object>().ToImmutableArray(),
+                argsForConstraints,
                 out var resultType,
                 syntax);
             return new BoundIndirectCallExpression(syntax, method, await BindingTask.WhenAll(argsTask), resultType);
@@ -401,7 +406,7 @@ internal partial class Binder
         var symbolPromise = constraints.Overload(
             operatorName,
             GetFunctions(operatorSymbol),
-            ImmutableArray.Create<object>(operandTask),
+            ImmutableArray.Create(constraints.Arg(syntax.Operand, operandTask, diagnostics)),
             out var resultType,
             syntax.Operator);
 
@@ -417,8 +422,8 @@ internal partial class Binder
 
             // Right must be assignable to left
             _ = constraints.Assignable(
-                leftTask.GetResultTypeRequired(constraints),
-                rightTask.GetResultTypeRequired(constraints),
+                leftTask.GetResultType(syntax.Left, constraints, diagnostics),
+                rightTask.GetResultType(syntax.Right, constraints, diagnostics),
                 syntax);
 
             var left = await leftTask;
@@ -453,11 +458,11 @@ internal partial class Binder
             // Both left and right must be bool
             _ = constraints.SameType(
                 this.IntrinsicSymbols.Bool,
-                leftTask.GetResultTypeRequired(constraints),
+                leftTask.GetResultType(syntax.Left, constraints, diagnostics),
                 syntax.Left);
             _ = constraints.SameType(
                 this.IntrinsicSymbols.Bool,
-                rightTask.GetResultTypeRequired(constraints),
+                rightTask.GetResultType(syntax.Left, constraints, diagnostics),
                 syntax.Right);
 
             return syntax.Operator.Kind == TokenKind.KeywordAnd
@@ -477,14 +482,16 @@ internal partial class Binder
             var symbolPromise = constraints.Overload(
                 operatorName,
                 GetFunctions(operatorSymbol),
-                ImmutableArray.Create<object>(leftTask, rightTask),
+                ImmutableArray.Create(
+                    constraints.Arg(syntax.Left, leftTask, diagnostics),
+                    constraints.Arg(syntax.Right, rightTask, diagnostics)),
                 out var resultType,
                 syntax.Operator);
             // The result of the binary operator must be assignable to the left-hand side
             // For example, a + b in the form of a += b means that a + b has to result in a type
             // that is assignable to a, hence the extra constraint
             _ = constraints.Assignable(
-                leftTask.GetResultTypeRequired(constraints),
+                leftTask.GetResultType(syntax.Left, constraints, diagnostics),
                 resultType,
                 syntax);
 
@@ -546,7 +553,9 @@ internal partial class Binder
             var symbolPromise = constraints.Overload(
                 operatorName,
                 GetFunctions(operatorSymbol),
-                ImmutableArray.Create<object>(leftTask, rightTask),
+                ImmutableArray.Create(
+                    constraints.Arg(syntax.Left, leftTask, diagnostics),
+                    constraints.Arg(syntax.Right, rightTask, diagnostics)),
                 out var resultType,
                 syntax.Operator);
 
@@ -589,7 +598,9 @@ internal partial class Binder
         var symbolPromise = constraints.Overload(
             operatorName,
             GetFunctions(operatorSymbol),
-            ImmutableArray.Create<object>(left, right),
+            ImmutableArray.Create(
+                constraints.Arg(syntax, left, diagnostics),
+                constraints.Arg(syntax, right, diagnostics)),
             out var resultType,
             syntax.Operator);
         // For safety, we assume it has to be bool
@@ -662,7 +673,9 @@ internal partial class Binder
     private async BindingTask<BoundExpression> BindIndexExpression(IndexExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var receiverTask = this.BindExpression(syntax.Indexed, constraints, diagnostics);
-        var argsTask = syntax.IndexList.Values.Select(x => this.BindExpression(x, constraints, diagnostics)).ToImmutableArray();
+        var argsTask = syntax.IndexList.Values
+            .Select(x => this.BindExpression(x, constraints, diagnostics))
+            .ToImmutableArray();
 
         var receiver = await receiverTask;
         if (receiver is BoundReferenceErrorExpression err)
@@ -670,7 +683,8 @@ internal partial class Binder
             return new BoundReferenceErrorExpression(syntax, err.Symbol);
         }
 
-        var receiverType = await ConstraintSolver.Substituted(receiverTask.GetResultTypeRequired(constraints));
+        var receiverType = receiverTask.GetResultType(syntax.Indexed, constraints, diagnostics);
+        receiverType = await ConstraintSolver.Substituted(receiverType);
 
         SolverTask<FunctionSymbol> accessorTask;
 
@@ -695,7 +709,10 @@ internal partial class Binder
             accessorTask = constraints.Overload(
                 "operator[]",
                 indexers,
-                argsTask.Cast<object>().ToImmutableArray(),
+                argsTask
+                    .Zip(syntax.IndexList.Values)
+                    .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
+                    .ToImmutableArray(),
                 out _,
                 syntax);
         }
@@ -811,8 +828,10 @@ internal partial class Binder
         _ => ImmutableArray<FunctionSymbol>.Empty,
     };
 
-    private static ExpressionSyntax ExtractValueSyntax(ExpressionSyntax syntax) => syntax switch
+    [return: NotNullIfNotNull(nameof(syntax))]
+    private static ExpressionSyntax? ExtractValueSyntax(ExpressionSyntax? syntax) => syntax switch
     {
+        null => null,
         IfExpressionSyntax @if => ExtractValueSyntax(@if.Then),
         WhileExpressionSyntax @while => ExtractValueSyntax(@while.Then),
         ForExpressionSyntax @for => ExtractValueSyntax(@for.Then),

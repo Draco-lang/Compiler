@@ -17,7 +17,7 @@ internal sealed class CallConstraint : Constraint<Unit>
     /// <summary>
     /// The arguments the function was called with.
     /// </summary>
-    public ImmutableArray<object> Arguments { get; }
+    public ImmutableArray<ConstraintSolver.Argument> Arguments { get; }
 
     /// <summary>
     /// The return type of the call.
@@ -26,7 +26,7 @@ internal sealed class CallConstraint : Constraint<Unit>
 
     public CallConstraint(
         TypeSymbol calledType,
-        ImmutableArray<object> arguments,
+        ImmutableArray<ConstraintSolver.Argument> arguments,
         TypeSymbol returnType,
         ConstraintLocator locator)
         : base(locator)

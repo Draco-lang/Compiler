@@ -163,7 +163,7 @@ internal sealed partial class ConstraintSolver
     /// <returns>The promise of the constraint.</returns>
     public SolverTask<Unit> Call(
         TypeSymbol calledType,
-        ImmutableArray<object> args,
+        ImmutableArray<Argument> args,
         out TypeSymbol returnType,
         SyntaxNode syntax)
     {
@@ -186,7 +186,7 @@ internal sealed partial class ConstraintSolver
     public SolverTask<FunctionSymbol> Overload(
         string name,
         ImmutableArray<FunctionSymbol> functions,
-        ImmutableArray<object> args,
+        ImmutableArray<Argument> args,
         out TypeSymbol returnType,
         SyntaxNode syntax)
     {

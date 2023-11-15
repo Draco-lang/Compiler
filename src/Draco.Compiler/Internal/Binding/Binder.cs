@@ -104,7 +104,7 @@ internal abstract partial class Binder
         {
             _ = constraints.Assignable(
                 declaredType,
-                valueTask.GetResultTypeRequired(constraints),
+                valueTask.GetResultType(valueSyntax, constraints, diagnostics),
                 global.DeclaringSyntax.Value!.Value);
         }
 

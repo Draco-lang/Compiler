@@ -2741,7 +2741,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+        var fooSym = GetInternalSymbol<ErrorPropertySymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
 
         // Assert
         Assert.Single(diags);
@@ -2896,7 +2896,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+        var fooSym = GetInternalSymbol<ErrorPropertySymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
 
         // Assert
         Assert.Single(diags);
@@ -3039,7 +3039,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+        var fooSym = GetInternalSymbol<ErrorPropertySymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
 
         // Assert
         Assert.Single(diags);

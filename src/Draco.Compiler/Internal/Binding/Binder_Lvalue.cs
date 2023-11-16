@@ -169,7 +169,8 @@ internal partial class Binder
                 location: syntax.Location,
                 formatArgs: receiverType));
             ConstraintSolver.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
-            indexerTask = SolverTask.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(argsTask.Length + 1));
+            var errorProp = new ErrorPropertySymbol("operator[]");
+            indexerTask = SolverTask.FromResult<FunctionSymbol>(errorProp.Setter);
         }
         else
         {

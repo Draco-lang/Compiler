@@ -437,7 +437,6 @@ internal partial class Binder
             }
             else if (left is BoundIndexSetLvalue indexSet)
             {
-                var arrayIndexProperty = (indexSet.Setter.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
                 return new BoundIndexSetExpression(
                     syntax,
                     indexSet.Receiver,

@@ -218,6 +218,7 @@ internal sealed class Lexer
             return TakeBasic(TokenKind.Plus, 1);
         case '-':
             if (this.Peek(1) == '=') return TakeBasic(TokenKind.MinusAssign, 2);
+            if (this.Peek(1) == '>') return TakeBasic(TokenKind.Arrow, 2);
             return TakeBasic(TokenKind.Minus, 1);
         case '*':
             if (this.Peek(1) == '=') return TakeBasic(TokenKind.StarAssign, 2);

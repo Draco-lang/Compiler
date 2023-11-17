@@ -64,6 +64,22 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// The result of trying to disambiguate '('.
+    /// </summary>
+    private enum OpenParenDisambiguation
+    {
+        /// <summary>
+        /// Some kind of grouping or tuples.
+        /// </summary>
+        Grouping,
+
+        /// <summary>
+        /// Function type description.
+        /// </summary>
+        FunctionType,
+    }
+
+    /// <summary>
     /// Represents a parsed block.
     /// This is factored out because we parse blocks differently, and instantiating an AST node could be wasteful.
     /// </summary>
@@ -635,6 +651,30 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="TypeSyntax"/>.</returns>
     private TypeSyntax ParseAtomType()
     {
+        if (this.Peek() == TokenKind.ParenOpen)
+        {
+            // Disambiguate
+            var disambiguation = this.DisambiguateOpenParen();
+            if (disambiguation == OpenParenDisambiguation.FunctionType)
+            {
+                // Function type
+                var openParen = this.Expect(TokenKind.ParenOpen);
+                var paramTypes = this.ParseSeparatedSyntaxList(
+                    elementParser: this.ParseType,
+                    separatorKind: TokenKind.Comma,
+                    stopKind: TokenKind.ParenClose);
+                var closeParen = this.Expect(TokenKind.ParenClose);
+                var arrow = this.Expect(TokenKind.Arrow);
+                var returnType = this.ParseType();
+                return new FunctionTypeSyntax(openParen, paramTypes, closeParen, arrow, returnType);
+            }
+            else
+            {
+                // Grouping
+                throw new NotImplementedException();
+            }
+        }
+
         if (this.Matches(TokenKind.Identifier, out var typeName))
         {
             return new NameTypeSyntax(typeName);
@@ -1231,6 +1271,7 @@ internal sealed class Parser
             {
             case TokenKind.Dot:
             case TokenKind.Comma:
+            case TokenKind.Arrow:
             {
                 // Just skip, legal here
                 ++offset;
@@ -1267,6 +1308,53 @@ internal sealed class Parser
                 return LessThanDisambiguation.Operator;
             }
         }
+    }
+
+    /// <summary>
+    /// Attempts to disambiguate the upcoming open paren token.
+    /// </summary>
+    /// <returns>The result of the disambiguation.</returns>
+    private OpenParenDisambiguation DisambiguateOpenParen()
+    {
+        var offset = 0;
+        return this.DisambiguateOpenParen(ref offset);
+    }
+
+    /// <summary>
+    /// Attempts to disambiguate the upcoming open paren token.
+    /// </summary>
+    /// <param name="offset">The offset to start disambiguation from. The value will be updated to the farthest
+    /// offset that was peeked to disambiguate..</param>
+    /// <returns>The result of the disambiguation.</returns>
+    private OpenParenDisambiguation DisambiguateOpenParen(ref int offset)
+    {
+        Debug.Assert(this.Peek(offset) == TokenKind.ParenOpen);
+
+        var depth = 0;
+        while (true)
+        {
+            var peek = this.Peek(offset);
+            ++offset;
+            // TODO: For any illegal token in type context, we might want to break out of this loop
+            // not to lex the entire input by accident
+            if (peek == TokenKind.ParenOpen)
+            {
+                ++depth;
+            }
+            else if (peek == TokenKind.ParenClose)
+            {
+                --depth;
+                if (depth == 0) break;
+            }
+            else if (peek == TokenKind.EndOfInput)
+            {
+                return OpenParenDisambiguation.Grouping;
+            }
+        }
+
+        return this.Peek(offset) == TokenKind.Arrow
+            ? OpenParenDisambiguation.FunctionType
+            : OpenParenDisambiguation.Grouping;
     }
 
     // General utilities

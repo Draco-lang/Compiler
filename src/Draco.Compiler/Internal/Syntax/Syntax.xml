@@ -589,6 +589,44 @@
     </Field>
   </Node>
 
+  <Node Name="FunctionTypeSyntax" Base="TypeSyntax">
+    <Documentation>
+      Represents a function type.
+    </Documentation>
+
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;TypeSyntax&gt;">
+      <Documentation>
+        The parameter list of the function type.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="Arrow" Type="SyntaxToken">
+      <Documentation>
+        The arrow before the return type.
+      </Documentation>
+
+      <Token Kind="Arrow" />
+    </Field>
+    <Field Name="ReturnType" Type="TypeSyntax">
+      <Documentation>
+        The return type.
+      </Documentation>
+    </Field>
+  </Node>
+
   <AbstractNode Name="StatementSyntax" Base="SyntaxNode">
     <Documentation>
       Any statement.

@@ -51,6 +51,7 @@ internal partial class Binder
     private async BindingTask<BoundStatement> BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var exprTask = this.BindExpression(syntax.Expression, constraints, diagnostics);
+        _ = exprTask.GetResultType(syntax.Expression, constraints, diagnostics);
         return new BoundExpressionStatement(syntax, await exprTask);
     }
 

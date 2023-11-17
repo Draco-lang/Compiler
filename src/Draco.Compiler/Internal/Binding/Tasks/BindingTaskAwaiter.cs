@@ -47,7 +47,9 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
         if (this.resultType is not null)
         {
             var type = ExtractType(result!);
-            ConstraintSolver.UnifyAsserted(this.resultType, type!);
+            // TODO: Report type if null?
+            type ??= IntrinsicSymbols.ErrorType;
+            ConstraintSolver.UnifyAsserted(this.resultType, type);
         }
         this.RunCompletions();
     }

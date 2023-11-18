@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.Binding.Tasks;
 internal sealed class BindingTaskMethodBuilder<T>
 {
     public BindingTask<T> Task => this.task;
-    private BindingTask<T> task = new();
+    private readonly BindingTask<T> task = new();
 
     public static BindingTaskMethodBuilder<T> Create() => new();
 

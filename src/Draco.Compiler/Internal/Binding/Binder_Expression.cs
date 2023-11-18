@@ -765,6 +765,21 @@ internal partial class Binder
                 return new BoundFunctionGroupExpression(syntax, group.Receiver, instantiatedFuncs);
             }
         }
+        else if (instantiated is BoundTypeExpression type)
+        {
+            if (type.Type.GenericParameters.Length != args.Length)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.GenericTypeParamCountMismatch,
+                    location: syntax.Location,
+                    formatArgs: new object[] { type.Type.Name, args.Length }));
+
+                // Return a sentinel
+                // NOTE: Is this the right one to return?
+                return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
+            }
+            return new BoundTypeExpression(syntax, type.Type.GenericInstantiate(type.Type.ContainingSymbol, args));
+        }
         else
         {
             // Tried to instantiate something that can not be instantiated

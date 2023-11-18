@@ -201,7 +201,7 @@ internal partial class Binder
             return new BoundIndexSetLvalue(
                 syntax,
                 receiver,
-                await indexerTask,
+                indexer,
                 await BindingTask.WhenAll(argsTask),
                 returnType);
         }

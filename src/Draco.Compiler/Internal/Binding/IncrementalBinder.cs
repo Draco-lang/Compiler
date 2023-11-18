@@ -101,6 +101,7 @@ public sealed partial class SemanticModel
             if (!this.semanticModel.boundNodeMap.TryGetValue(syntax, out var node))
             {
                 node = await binder();
+                this.semanticModel.boundNodeMap.TryAdd(syntax, node);
 
                 var symbol = ExtractSymbol(node);
                 if (symbol is not null)

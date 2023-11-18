@@ -20,6 +20,8 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
     private Exception? exception;
     private List<Action>? completions;
     private TypeSymbol? resultType;
+    private SyntaxNode? syntax;
+    private DiagnosticBag? diagnostics;
 
     public TypeSymbol GetResultType(SyntaxNode? syntax, ConstraintSolver solver, DiagnosticBag diagnostics)
     {
@@ -37,6 +39,8 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
         }
 
         this.resultType ??= solver.AllocateTypeVariable();
+        this.syntax ??= syntax;
+        this.diagnostics ??= diagnostics;
         return this.resultType;
     }
 
@@ -47,9 +51,22 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
         if (this.resultType is not null)
         {
             var type = ExtractType(result!);
-            // TODO: Report type if null?
-            type ??= IntrinsicSymbols.ErrorType;
-            ConstraintSolver.UnifyAsserted(this.resultType, type);
+            if (type is null)
+            {
+                this.diagnostics?.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.IllegalExpression,
+                    location: this.syntax?.Location));
+                type = IntrinsicSymbols.ErrorType;
+                // NOTE: Might fail, we don't care
+                _ = ConstraintSolver.Unify(this.resultType, type);
+            }
+            else if (!ConstraintSolver.Unify(this.resultType, type))
+            {
+                this.diagnostics?.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.TypeMismatch,
+                    location: this.syntax?.Location,
+                    formatArgs: new[] { this.resultType, type }));
+            }
         }
         this.RunCompletions();
     }

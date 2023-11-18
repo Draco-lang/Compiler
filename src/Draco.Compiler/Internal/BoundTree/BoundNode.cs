@@ -80,6 +80,11 @@ internal partial class BoundWhileExpression
     public override TypeSymbol Type => IntrinsicSymbols.Unit;
 }
 
+internal partial class BoundForExpression
+{
+    public override TypeSymbol Type => IntrinsicSymbols.Unit;
+}
+
 internal partial class BoundParameterExpression
 {
     public override TypeSymbol Type => this.Parameter.Type;

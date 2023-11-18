@@ -156,7 +156,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="first">The first type to unify.</param>
     /// <param name="second">The second type to unify.</param>
     /// <returns>True, if unification was successful, false otherwise.</returns>
-    private static bool Unify(TypeSymbol first, TypeSymbol second)
+    public static bool Unify(TypeSymbol first, TypeSymbol second)
     {
         first = first.Substitution;
         second = second.Substitution;

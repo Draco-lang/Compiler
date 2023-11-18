@@ -166,6 +166,16 @@ internal partial class BoundCallExpression
     public override TypeSymbol Type => this.Method.ReturnType;
 }
 
+internal partial class BoundUnaryExpression
+{
+    public override TypeSymbol Type => this.Operator.ReturnType;
+}
+
+internal partial class BoundBinaryExpression
+{
+    public override TypeSymbol Type => this.Operator.ReturnType;
+}
+
 // Lvalues
 
 internal partial class BoundLvalue
@@ -201,4 +211,14 @@ internal partial class BoundFieldLvalue
 internal partial class BoundArrayAccessLvalue
 {
     public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
+}
+
+internal partial class BoundPropertySetLvalue
+{
+    public override TypeSymbol Type => ((IPropertyAccessorSymbol)this.Setter).Property.Type;
+}
+
+internal partial class BoundIndexSetLvalue
+{
+    public override TypeSymbol Type => ((IPropertyAccessorSymbol)this.Setter).Property.Type;
 }

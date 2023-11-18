@@ -106,7 +106,7 @@ internal partial class Binder
                 if (member is PropertySymbol prop)
                 {
                     var setter = GetSetterSymbol(syntax, prop, diagnostics);
-                    return new BoundPropertySetLvalue(syntax, left, setter, prop.Type);
+                    return new BoundPropertySetLvalue(syntax, left, setter);
                 }
                 diagnostics.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalLvalue,
@@ -202,8 +202,7 @@ internal partial class Binder
                 syntax,
                 receiver,
                 indexer,
-                await BindingTask.WhenAll(argsTask),
-                returnType);
+                await BindingTask.WhenAll(argsTask));
         }
     }
 
@@ -215,7 +214,7 @@ internal partial class Binder
             return new BoundGlobalLvalue(syntax, global);
         case PropertySymbol prop:
             var setter = GetSetterSymbol(syntax, prop, diagnostics);
-            return new BoundPropertySetLvalue(syntax, null, setter, prop.Type);
+            return new BoundPropertySetLvalue(syntax, null, setter);
         default:
             // NOTE: The error is already reported
             return new BoundIllegalLvalue(syntax);

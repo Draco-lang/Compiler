@@ -407,10 +407,10 @@ internal partial class Binder
             operatorName,
             GetFunctions(operatorSymbol),
             ImmutableArray.Create(constraints.Arg(syntax.Operand, operandTask, diagnostics)),
-            out var resultType,
+            out _,
             syntax.Operator);
 
-        return new BoundUnaryExpression(syntax, await symbolPromise, await operandTask, resultType);
+        return new BoundUnaryExpression(syntax, await symbolPromise, await operandTask);
     }
 
     private async BindingTask<BoundExpression> BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -511,8 +511,7 @@ internal partial class Binder
                             syntax,
                             propertySet.Receiver,
                             getter),
-                        await rightTask,
-                        resultType));
+                        await rightTask));
             }
             else if (left is BoundIndexSetLvalue indexSet)
             {
@@ -532,8 +531,7 @@ internal partial class Binder
                             indexSet.Receiver,
                             getter,
                             indexSet.Indices),
-                        await rightTask,
-                        resultType));
+                        await rightTask));
             }
             else
             {
@@ -555,10 +553,10 @@ internal partial class Binder
                 ImmutableArray.Create(
                     constraints.Arg(syntax.Left, leftTask, diagnostics),
                     constraints.Arg(syntax.Right, rightTask, diagnostics)),
-                out var resultType,
+                out _,
                 syntax.Operator);
 
-            return new BoundBinaryExpression(syntax, await symbolPromise, await leftTask, await rightTask, resultType);
+            return new BoundBinaryExpression(syntax, await symbolPromise, await leftTask, await rightTask);
         }
     }
 

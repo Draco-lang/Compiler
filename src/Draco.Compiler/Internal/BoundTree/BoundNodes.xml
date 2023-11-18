@@ -125,14 +125,12 @@
   <Node Name="BoundUnaryExpression" Base="BoundExpression">
     <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Operand" Type="BoundExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundBinaryExpression" Base="BoundExpression">
     <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundAndExpression" Base="BoundExpression">
@@ -290,7 +288,6 @@
   <Node Name="BoundPropertySetLvalue" Base="BoundLvalue">
     <Field Name="Receiver" Type="BoundExpression?"/>
     <Field Name="Setter" Type="FunctionSymbol" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
@@ -302,6 +299,5 @@
     <Field Name="Receiver" Type="BoundExpression" />
     <Field Name="Setter" Type="FunctionSymbol" />
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 </Tree>

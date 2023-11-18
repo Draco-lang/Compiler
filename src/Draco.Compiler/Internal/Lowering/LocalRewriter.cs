@@ -261,8 +261,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 ConditionalGotoStatement(
                     condition: UnaryExpression(
                         @operator: this.IntrinsicSymbols.Bool_Not,
-                        operand: condition,
-                        type: this.IntrinsicSymbols.Bool),
+                        operand: condition),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
@@ -347,8 +346,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             var result = BinaryExpression(
                 left: left,
                 @operator: node.Comparisons[0].Operator,
-                right: right,
-                type: this.IntrinsicSymbols.Bool);
+                right: right);
             return result.Accept(this);
         }
 
@@ -382,8 +380,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             comparisons.Add(BinaryExpression(
                 left: left,
                 @operator: op,
-                right: right,
-                type: this.IntrinsicSymbols.Bool));
+                right: right));
         }
 
         // Fold them into conjunctions

@@ -23,13 +23,17 @@ $templateProjectPath = Get-ChildItem -Path $toolchainPath -Filter "*Draco.Projec
 try { dotnet new uninstall Draco.ProjectTemplates --verbosity quiet } catch { }
 dotnet new install --force $templateProjectPath
 
+# We save the current location and go to the specified path
+Push-Location
+Set-Location $path
+
 # Create a test project in Draco if one doesn't exist yet
-if (!(Get-ChildItem -Path $path -Filter *.dracoproj)) {
+if (!(Get-ChildItem -Filter *.dracoproj)) {
     dotnet new console --language draco
 }
 
 # Add the toolchain as the primary nuget source and change the restore direcotry
-$nugetConfigPath = Join-Path -Path $path -ChildPath "nuget.config"
+$nugetConfigPath = "nuget.config"
 if (!(Test-Path $nugetConfigPath)) {
     $nugetConfig = '<?xml version="1.0" encoding="utf-8"?>
     <configuration>
@@ -46,3 +50,6 @@ if (!(Test-Path $nugetConfigPath)) {
     Out-File -FilePath $nugetConfigPath -InputObject $nugetConfig -Encoding utf8
     Write-Host "Successfully created NuGet.config."
 }
+
+# Restore old location
+Pop-Location

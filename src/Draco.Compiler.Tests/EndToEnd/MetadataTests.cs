@@ -21,7 +21,7 @@ public sealed class MetadataTests : EndToEndTestsBase
 
         var systemConsole = new AssemblyName("System.Console")
         {
-            Version = new Version(7, 0, 0, 0)
+            Version = new Version(8, 0, 0, 0)
         };
 
         Assert.Contains(metadataReader.AssemblyReferences, r =>

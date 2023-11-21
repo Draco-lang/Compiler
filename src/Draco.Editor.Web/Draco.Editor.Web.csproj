@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishTrimmed>false</PublishTrimmed>
@@ -11,11 +11,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ICSharpCode.Decompiler" Version="8.0.0.7313-preview4" ExcludeAssets="contentfiles" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.3" />
-    <!--We need an alpha version to have this patch included: https://github.com/dotnet/aspnetcore/pull/44968 -->
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0-alpha.1.22567.5" />
-    <PackageReference Include="Microsoft.JSInterop" Version="8.0.0-alpha.1.22567.5" />
+    <PackageReference Include="ICSharpCode.Decompiler" Version="8.2.0.7535" ExcludeAssets="contentfiles" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.JSInterop" Version="8.0.0" />
   </ItemGroup>
 
   <Target Name="JSSetup" AfterTargets="AfterBuild">
@@ -37,11 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETCore.App.Ref" Version="7.0.4" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
-    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net7.0\*.dll"
-                      LogicalName="ReferenceAssembly.%(Filename)%(Extension)"
-                      Visible="false"
-                      Link="Reference Assemblies\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net8.0\*.dll" LogicalName="ReferenceAssembly.%(Filename)%(Extension)" Visible="false" Link="Reference Assemblies\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

@@ -204,7 +204,7 @@ public sealed class Issue139Tests
         var syntaxTree = SyntaxTree.Parse(source);
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(syntaxTree),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
         _ = compilation.Diagnostics.ToList();

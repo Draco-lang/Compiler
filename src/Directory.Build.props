@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <DracoToolsTargetFramework>net7.0</DracoToolsTargetFramework>
+    <DracoToolsTargetFramework>net8.0</DracoToolsTargetFramework>
   </PropertyGroup>
 
   <!-- Package metadata -->

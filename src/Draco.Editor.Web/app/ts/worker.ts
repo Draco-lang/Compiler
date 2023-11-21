@@ -91,6 +91,7 @@ async function main() {
                 }
             }
         );
+        if (monoCfg['mainAssemblyName'] == undefined) throw new Error('mainAssemblyName is undefined');
         const exports = await getAssemblyExports(monoCfg['mainAssemblyName']);
         csOnMessage = exports.Draco.Editor.Web.Interop.OnMessage;
     }

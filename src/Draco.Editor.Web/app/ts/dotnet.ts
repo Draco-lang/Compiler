@@ -97,8 +97,7 @@ export async function initDotnetWorkers(initCode: string) {
     });
 
     const bootCfg = {
-        mainAssemblyName: cfg.entryAssembly,
-        assemblyRootFolder: '_framework',
+        mainAssemblyName: cfg.mainAssemblyName,
         assets: assets,
     };
     await downloadAssemblies(bootCfg);

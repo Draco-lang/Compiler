@@ -44,15 +44,14 @@ public sealed class DebuggerHost
         try
         {
             var wait = new AutoResetEvent(false);
-            unregisterToken = this.dbgShim.RegisterForRuntimeStartup(process.ProcessId, (raw, param, hresult) =>
+            unregisterToken = this.dbgShim.RegisterForRuntimeStartup(process.ProcessId, (pCordb, param, hresult) =>
             {
-                var corDbg = new CorDebug(raw);
-                corDbg.Initialize();
+                pCordb.Initialize();
 
                 var cb = new CorDebugManagedCallback();
-                corDbg.SetManagedHandler(cb);
+                pCordb.SetManagedHandler(cb);
 
-                var corDbgProcess = corDbg.DebugActiveProcess(process.ProcessId, win32Attach: false);
+                var corDbgProcess = pCordb.DebugActiveProcess(process.ProcessId, win32Attach: false);
                 debugger = new(
                     corDebugProcess: corDbgProcess,
                     ioWorker: new(corDbgProcess, ioHandles),

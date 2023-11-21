@@ -1,4 +1,4 @@
-import { createActionAuth } from '@octokit/auth-action';
+import { createTokenAuth } from '@octokit/auth-token';
 import { build } from 'esbuild';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -29,7 +29,7 @@ async function dotnetjsBuild() {
                 formats: ['umd']
             },
             rollupOptions: {
-                external: ['dotnet.wasm'],
+                external: ['dotnet.native.wasm'],
                 output: {
                     esModule: false,
                     format: 'cjs',
@@ -44,7 +44,7 @@ async function dotnetjsBuild() {
     // So I rename the file by hand instead...
     fs.renameSync(path.join(outDir, 'dotnet.umd.cjs'), path.join(outDir, 'dotnet.js'));
 
-    fs.copyFileSync(path.join(binFolder, 'dotnet.wasm'), path.join(outDir, 'dotnet.wasm'));
+    fs.copyFileSync(path.join(binFolder, 'dotnet.native.wasm'), path.join(outDir, 'dotnet.native.wasm'));
 }
 
 await dotnetjsBuild();
@@ -92,7 +92,7 @@ await build({
                 filter: /metadata.ts$/,
             })
     ],
-    external: ['dotnet.wasm']
+    external: ['dotnet.native.wasm']
 });
 
 // Bundle the worker.
@@ -114,11 +114,11 @@ fs.writeFileSync(path.join(outDir, 'favicon.svg'), favicon); // Write favicon to
 console.log('Downloading vs themes...');
 
 let octokit;
-if (process.env.GITHUB_TOKEN != undefined && process.env.GITHUB_TOKEN.length > 0) {
-    const auth = createActionAuth();
+if (process.env.GITHUB_TOKEN !== undefined && process.env.GITHUB_TOKEN.length > 0) {
+    const auth = createTokenAuth(process.env.GITHUB_TOKEN);
     const authentication = await auth();
     octokit = new Octokit({
-        auth: authentication.token
+        auth: authentication.token,
     });
 } else {
     octokit = new Octokit();

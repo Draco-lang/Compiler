@@ -85,7 +85,7 @@ export async function initDotnetWorkers(initCode: string) {
     );
     dlls.push({
         'behavior': 'dotnetwasm',
-        'name': 'dotnet.wasm'
+        'name': 'dotnet.native.wasm'
     });
     const bootCfg = {
         mainAssemblyName: cfg.entryAssembly,

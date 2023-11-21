@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Draco.Compiler.Api;
@@ -178,7 +182,7 @@ public partial class Program
                 }).Append(new
                 {
                     behavior = "dotnetwasm",
-                    name = "dotnet.wasm",
+                    name = "dotnet.native.wasm",
                     buffer = (byte[]?)default
                 }).ToArray()
             }));

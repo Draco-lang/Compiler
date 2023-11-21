@@ -75,7 +75,7 @@ export function unsubscribeOutputChange(listener: (arg: {outputType: string; val
 
 export async function initDotnetWorkers(initCode: string) {
     const cfg = await (await fetch('_framework/blazor.boot.json')).json();
-    const dlls: unknown[] = Object.keys(cfg.resources.assembly).map(
+    const assets: unknown[] = Object.keys(cfg.resources.assembly).map(
         s => {
             return {
                 'behavior': 'assembly',
@@ -83,14 +83,23 @@ export async function initDotnetWorkers(initCode: string) {
             };
         }
     );
-    dlls.push({
+    assets.unshift({
         'behavior': 'dotnetwasm',
         'name': 'dotnet.native.wasm'
     });
+    assets.unshift({
+        name: Object.keys(cfg['resources']['jsModuleNative'])[0],
+        behavior: 'js-module-native'
+    });
+    assets.unshift({
+        name: Object.keys(cfg['resources']['jsModuleRuntime'])[0],
+        behavior: 'js-module-runtime'
+    });
+
     const bootCfg = {
         mainAssemblyName: cfg.entryAssembly,
         assemblyRootFolder: '_framework',
-        assets: dlls,
+        assets: assets,
     };
     await downloadAssemblies(bootCfg);
     compilerWorker.postMessage(bootCfg);

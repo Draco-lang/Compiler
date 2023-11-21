@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Utilities;
 

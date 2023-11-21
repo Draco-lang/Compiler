@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Draco.Compiler.Internal.Binding.Tasks;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
 

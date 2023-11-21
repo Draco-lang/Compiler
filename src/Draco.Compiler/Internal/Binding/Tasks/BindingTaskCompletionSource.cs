@@ -1,5 +1,4 @@
 using System;
-using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Internal.Binding.Tasks;
 

@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;

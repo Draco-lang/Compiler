@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Internal.Solver.Tasks;
 

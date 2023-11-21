@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
-using Draco.Compiler.Internal.Binding.Tasks;
-using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 

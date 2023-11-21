@@ -24,7 +24,7 @@ on:
         description: The deployed version is pre-release
 
 env:
-  DOTNET_VERSION: '7.0.x'   # The .NET SDK version to use
+  DOTNET_VERSION: '8.0.x'   # The .NET SDK version to use
   CONFIGURATION: 'Release'  # The configuration to use
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

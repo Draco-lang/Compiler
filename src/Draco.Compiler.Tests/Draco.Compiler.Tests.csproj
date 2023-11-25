@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>11</LangVersion>
     <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

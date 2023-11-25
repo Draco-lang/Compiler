@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -139,8 +140,34 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     public MemberReferenceHandle GetIntrinsicReferenceHandle(Symbol symbol) => this.intrinsicReferenceHandles[symbol];
 
-    // TODO: This can be cached by symbol to avoid double reference instertion
+    private readonly Dictionary<Symbol, EntityHandle> _symbolToToken = new(ReferenceEqualityComparer.Instance);
+
     public EntityHandle GetEntityHandle(Symbol symbol)
+    {
+        ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(_symbolToToken, symbol, out bool exists);
+
+        if (!exists)
+        {
+            value = GetEntityHandleCore(symbol);
+        }
+
+        return value;
+    }
+
+    public Symbol GetSymbol(EntityHandle handle)
+    {
+        foreach (var (k, v) in _symbolToToken)
+        {
+            if (v == handle)
+            {
+                return k;
+            }
+        }
+
+        throw new KeyNotFoundException();
+    }
+
+    private EntityHandle GetEntityHandleCore(Symbol symbol)
     {
         switch (symbol)
         {

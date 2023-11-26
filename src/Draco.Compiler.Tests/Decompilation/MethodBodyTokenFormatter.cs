@@ -1,23 +1,23 @@
 using System.Diagnostics;
-using System.Text;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Tests.Utilities;
 
 namespace Draco.Compiler.Tests.Decompilation;
 
 internal sealed class MethodBodyTokenFormatter : SymbolVisitor
 {
-    private readonly StringBuilder _sb;
+    private readonly IndentedStringBuilder _sb;
     private readonly Compilation _compilation;
 
     // TODO: generics
-    private MethodBodyTokenFormatter(StringBuilder sb, Compilation compilation)
+    private MethodBodyTokenFormatter(IndentedStringBuilder sb, Compilation compilation)
     {
         _sb = sb;
         _compilation = compilation;
     }
 
-    public static void FormatTo(Symbol symbol, Compilation compilation, StringBuilder stringBuilder)
+    public static void FormatTo(Symbol symbol, Compilation compilation, IndentedStringBuilder stringBuilder)
     {
         var formatter = new MethodBodyTokenFormatter(stringBuilder, compilation);
         symbol.Accept(formatter);
@@ -74,6 +74,7 @@ internal sealed class MethodBodyTokenFormatter : SymbolVisitor
     private void FormatTypeCore(TypeSymbol typeSymbol, bool allowPrimitives)
     {
         if (allowPrimitives)
+        {
             if (typeSymbol == _compilation.WellKnownTypes.SystemInt32)
             {
                 _sb.Append("int32");
@@ -84,11 +85,7 @@ internal sealed class MethodBodyTokenFormatter : SymbolVisitor
                 _sb.Append("string");
                 return;
             }
-            else if (typeSymbol == _compilation.WellKnownTypes.SystemVoid)
-            {
-                _sb.Append("void");
-                return;
-            }
+        }
 
         var ancestors = typeSymbol.AncestorChain.Skip(1).Reverse().Skip(2); // skip self then assembly and root namespace, which have empty name
         foreach (var ancestor in ancestors)
@@ -117,7 +114,7 @@ internal sealed class MethodBodyTokenFormatter : SymbolVisitor
 
         if (functionSymbol.ContainingSymbol is { } container)
         {
-            // cannot use short name with referencing members of type
+            // cannot use short name when referencing members of type
             // e.g. 'string System.Int32::ToString()' is allowed
             // but 'string int32::ToString()' is not
             FormatTypeCore((TypeSymbol)container, false);

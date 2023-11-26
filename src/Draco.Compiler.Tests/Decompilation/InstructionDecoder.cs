@@ -1,4 +1,4 @@
-﻿using System.Buffers.Binary;
+using System.Buffers.Binary;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
@@ -10,7 +10,7 @@ internal static class InstructionDecoder
 {
     public static string GetText(ILOpCode code) => s_opCodes[(ushort)code].Name!;
 
-    public static CilInstruction Read(ReadOnlySpan<byte> ilStream, Func<EntityHandle, object?> resolveToken, Func<UserStringHandle, string> resolveString, out int advance)
+    public static CilInstruction Read(ReadOnlySpan<byte> ilStream, int offset, Func<EntityHandle, object?> resolveToken, Func<UserStringHandle, string> resolveString, out int advance)
     {
         ushort id = ilStream[0];
 
@@ -24,19 +24,19 @@ internal static class InstructionDecoder
 
         var operandType = GetOperandType((ILOpCode)id);
 
-        var operand = ReadOperand(operandType, ilStream[opCodeSize..], resolveToken, resolveString);
-
         advance = opCodeSize + GetOperandSize(operandType);
 
-        return new CilInstruction((ILOpCode)id, operand);
+        var operand = ReadOperand(operandType, ilStream[opCodeSize..], offset + advance, resolveToken, resolveString);
+
+        return new CilInstruction((ILOpCode)id, offset, operand);
     }
 
-    private static object? ReadOperand(OperandType type, ReadOnlySpan<byte> span, Func<EntityHandle, object?> resolveToken, Func<UserStringHandle, string> resolveString)
+    private static object? ReadOperand(OperandType type, ReadOnlySpan<byte> span, int offset, Func<EntityHandle, object?> resolveToken, Func<UserStringHandle, string> resolveString)
     {
         return type switch
         {
-            OperandType.InlineBrTarget => BinaryPrimitives.ReadInt32LittleEndian(span),
-            OperandType.ShortInlineBrTarget => span[0],
+            OperandType.InlineBrTarget => BinaryPrimitives.ReadInt32LittleEndian(span) + offset,
+            OperandType.ShortInlineBrTarget => (byte)(span[0] + offset),
 
             OperandType.ShortInlineVar or
             OperandType.ShortInlineI => span[0],
@@ -65,9 +65,13 @@ internal static class InstructionDecoder
         };
     }
 
+    public static int GetTotalOpCodeSize(ILOpCode opCode) => 1 + Convert.ToInt32(IsWideInstruction((ushort)opCode)) + GetOperandSize(GetOperandType(opCode));
+
     private static bool IsWideInstruction(ushort code) => s_opCodes[code].OpCodeType is OpCodeType.Nternal;
 
     private static OperandType GetOperandType(ILOpCode code) => s_opCodes[(ushort)code].OperandType;
+
+    public static bool IsBranch(ILOpCode code) => s_opCodes[(ushort)code].OperandType is OperandType.InlineBrTarget or OperandType.ShortInlineBrTarget;
 
     private static int GetOperandSize(OperandType type) => type switch
     {

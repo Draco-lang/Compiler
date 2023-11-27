@@ -49,11 +49,23 @@ internal sealed partial class ConstraintSolver
         this.ContextName = contextName;
     }
 
-    // TODO: Docs
+    /// <summary>
+    /// Constructs an argument for a call constraint.
+    /// </summary>
+    /// <param name="syntax">The argument syntax.</param>
+    /// <param name="expression">The argument expression.</param>
+    /// <param name="diagnostics">The diagnostics to report to.</param>
+    /// <returns>The constructed argument descriptor.</returns>
     public Argument Arg(SyntaxNode? syntax, BindingTask<BoundExpression> expression, DiagnosticBag diagnostics) =>
         new(syntax, expression.GetResultType(syntax, this, diagnostics));
 
-    // TODO: Docs
+    /// <summary>
+    /// Constructs an argument for a call constraint.
+    /// </summary>
+    /// <param name="syntax">The argument syntax.</param>
+    /// <param name="lvalue">The argument lvalue.</param>
+    /// <param name="diagnostics">The diagnostics to report to.</param>
+    /// <returns>The constructed argument descriptor.</returns>
     public Argument Arg(SyntaxNode? syntax, BindingTask<BoundLvalue> lvalue, DiagnosticBag diagnostics) =>
         new(syntax, lvalue.GetResultType(syntax, this, diagnostics));
 

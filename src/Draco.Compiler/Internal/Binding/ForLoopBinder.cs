@@ -29,7 +29,7 @@ internal sealed class ForLoopBinder : LoopBinder
         this.Iterator = new SourceLocalSymbol(
             this.ContainingSymbol!,
             declaringSyntax.Iterator.Text,
-            type: new TypeVariable(0), // TODO: Index
+            type: new TypeVariable(0),
             isMutable: false,
             declaringSyntax.Iterator);
     }

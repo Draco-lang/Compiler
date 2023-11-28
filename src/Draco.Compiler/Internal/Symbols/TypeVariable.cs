@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Draco.Compiler.Internal.Solver;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents an uninferred type that can be substituted.
 /// </summary>
-internal sealed class TypeVariable : TypeSymbol, IEquatable<TypeVariable>
+internal sealed class TypeVariable : TypeSymbol
 {
     public override bool IsTypeVariable => true;
     public override bool IsGroundType
@@ -25,20 +25,30 @@ internal sealed class TypeVariable : TypeSymbol, IEquatable<TypeVariable>
     public override Symbol? ContainingSymbol => throw new NotSupportedException();
     public override IEnumerable<Symbol> DefinedMembers => throw new NotSupportedException();
 
-    public override TypeSymbol Substitution => this.solver.Unwrap(this);
-
-    private readonly ConstraintSolver solver;
-    private readonly int index;
-
-    public TypeVariable(ConstraintSolver solver, int index)
+    public override TypeSymbol Substitution
     {
-        this.solver = solver;
-        this.index = index;
+        get
+        {
+            if (this.substitution is null) return this;
+            // Pruning
+            if (this.substitution is TypeVariable tv) this.substitution = tv.Substitution;
+            return this.substitution;
+        }
     }
 
-    public bool Equals(TypeVariable? other) => other is not null && this.index == other.index;
-    public override int GetHashCode() => this.index.GetHashCode();
-    public override bool Equals(object? obj) => this.Equals(obj as TypeVariable);
+    /// <summary>
+    /// A task that completes when this variable is substituted.
+    /// </summary>
+    public SolverTask<TypeSymbol> Substituted => this.substitutedCompletionSource.Task;
+
+    private readonly SolverTaskCompletionSource<TypeSymbol> substitutedCompletionSource = new();
+    private TypeSymbol? substitution;
+    private readonly int index;
+
+    public TypeVariable(int index)
+    {
+        this.index = index;
+    }
 
     public override string ToString() => this.Substitution switch
     {
@@ -48,4 +58,11 @@ internal sealed class TypeVariable : TypeSymbol, IEquatable<TypeVariable>
 
     public override void Accept(SymbolVisitor visitor) => throw new NotSupportedException();
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => throw new NotSupportedException();
+
+    public void Substitute(TypeSymbol other)
+    {
+        if (this.substitution is not null) throw new InvalidOperationException("type variable already substituted");
+        this.substitution = other;
+        this.substitutedCompletionSource.SetResult(other);
+    }
 }

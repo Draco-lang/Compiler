@@ -118,5 +118,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "no common type found for types {0}",
         code: Code(12));
+
+    /// <summary>
+    /// An expression was used in a context where a typed expression was expected.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalExpression = DiagnosticTemplate.Create(
+        title: "illegal expression",
+        severity: DiagnosticSeverity.Error,
+        format: "the expression is illegal in this context as it does not produce a value",
+        code: Code(13));
 }
 

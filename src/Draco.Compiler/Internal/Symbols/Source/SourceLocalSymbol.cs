@@ -10,26 +10,31 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
 {
-    public override TypeSymbol Type { get; }
+    public override Symbol ContainingSymbol { get; }
+    public override string Name { get; }
+    public override bool IsMutable { get; }
+    public override SyntaxNode DeclaringSyntax { get; }
 
-    public override Symbol ContainingSymbol => this.untypedSymbol.ContainingSymbol;
-    public override string Name => this.untypedSymbol.Name;
-
-    public override SyntaxNode DeclaringSyntax => this.untypedSymbol.DeclaringSyntax;
-
-    public override bool IsMutable => this.untypedSymbol.IsMutable;
+    public override TypeSymbol Type => this.type.Substitution;
+    private readonly TypeSymbol type;
 
     public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
     internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
-    private readonly UntypedLocalSymbol untypedSymbol;
-
-    public SourceLocalSymbol(UntypedLocalSymbol untypedSymbol, TypeSymbol type)
+    public SourceLocalSymbol(Symbol containingSymbol, string name, TypeSymbol type, bool isMutable, SyntaxNode declaringSyntax)
     {
-        this.untypedSymbol = untypedSymbol;
-        this.Type = type;
+        this.ContainingSymbol = containingSymbol;
+        this.Name = name;
+        this.type = type;
+        this.IsMutable = isMutable;
+        this.DeclaringSyntax = declaringSyntax;
+    }
+
+    public SourceLocalSymbol(Symbol containingSymbol, TypeSymbol type, VariableDeclarationSyntax syntax)
+        : this(containingSymbol, syntax.Name.Text, type, syntax.Keyword.Kind == TokenKind.KeywordVar, syntax)
+    {
     }
 
     public void Bind(IBinderProvider binderProvider) { }

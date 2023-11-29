@@ -320,6 +320,12 @@
     </Field>
   </Node>
 
+  <AbstractNode Name="PrimaryConstructorParameterSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single parameter in a primary constructor parameter list.
+    </Documentation>
+  </AbstractNode>
+
   <AbstractNode Name="ClassBodySyntax" Base="SyntaxNode">
     <Documentation>
       A class declaration body.

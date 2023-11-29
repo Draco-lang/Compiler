@@ -226,6 +226,148 @@
     </Field>
   </Node>
 
+  <Node Name="ClassDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A class declaration.
+    </Documentation>
+
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        The visibility modifier keyword possibly starting the declaration.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
+
+    <Field Name="ValueModifier" Type="SyntaxToken?">
+      <Documentation>
+        A modifier for making a class a value-type.
+      </Documentation>
+
+      <Token Kind="KeywordValue" />
+    </Field>
+
+    <Field Name="ClassKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'class' keyword starting the delcaration.
+      </Documentation>
+
+      <Token Kind="KeywordClass" />
+    </Field>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared class.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+
+    <Field Name="Generics" Type="GenericParameterListSyntax?">
+      <Documentation>
+        The list of generic parameters, in case the class introduces generics.
+      </Documentation>
+    </Field>
+
+    <Field Name="PrimaryConstructor" Type="PrimaryConstructorSyntax?">
+      <Documentation>
+        The primary constructor of the class.
+      </Documentation>
+    </Field>
+
+    <Field Name="Body" Type="ClassBodySyntax">
+      <Documentation>
+        The body of the class.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="PrimaryConstructorSyntax" Base="SyntaxNode">
+    <Documentation>
+      A primary constructor declaration.
+    </Documentation>
+
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        The optional visibility modifier keyword of the constructor.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
+
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The opening parenthesis before the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;PrimaryConstructorParameterSyntax&gt;">
+      <Documentation>
+        The parameters this constructor declares.
+      </Documentation>
+    </Field>
+
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The closing parenthesis after the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+  </Node>
+
+  <AbstractNode Name="ClassBodySyntax" Base="SyntaxNode">
+    <Documentation>
+      A class declaration body.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="EmptyClassBodySyntax" Base="ClassBodySyntax">
+    <Documentation>
+      A semicolon-terminated empty class body.
+    </Documentation>
+
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon terminating the class body.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <Node Name="BlockClassBodySyntax" Base="ClassBodySyntax">
+    <Documentation>
+      A block class body with multiple declarations within braces.
+    </Documentation>
+
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace token.
+      </Documentation>
+
+      <Token Kind="CurlyOpen" />
+    </Field>
+
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;">
+      <Documentation>
+        All declaration syntaxes within the class.
+      </Documentation>
+    </Field>
+
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace token.
+      </Documentation>
+
+      <Token Kind="CurlyClose" />
+    </Field>
+  </Node>
+
   <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">
     <Documentation>
       A function declaration.

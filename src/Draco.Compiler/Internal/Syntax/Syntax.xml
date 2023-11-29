@@ -305,7 +305,7 @@
       <Token Kind="ParenOpen" />
     </Field>
 
-    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;PrimaryConstructorParameterSyntax&gt;">
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;PrimaryConstructorItemSyntax&gt;">
       <Documentation>
         The parameters this constructor declares.
       </Documentation>
@@ -320,11 +320,27 @@
     </Field>
   </Node>
 
-  <AbstractNode Name="PrimaryConstructorParameterSyntax" Base="SyntaxNode">
+  <AbstractNode Name="PrimaryConstructorItemSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single item in a primary constructor parameter list.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="PrimaryConstructorParameterSyntax" Base="PrimaryConstructorItemSyntax">
     <Documentation>
       A single parameter in a primary constructor parameter list.
     </Documentation>
-  </AbstractNode>
+
+    <!-- TODO -->
+  </Node>
+
+  <Node Name="PrimaryConstructorMemberSyntax" Base="PrimaryConstructorItemSyntax">
+    <Documentation>
+      A single member declaration in a primary constructor parameter list.
+    </Documentation>
+
+    <!-- TODO -->
+  </Node>
 
   <AbstractNode Name="ClassBodySyntax" Base="SyntaxNode">
     <Documentation>

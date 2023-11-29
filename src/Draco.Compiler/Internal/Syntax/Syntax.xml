@@ -305,7 +305,7 @@
       <Token Kind="ParenOpen" />
     </Field>
 
-    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;PrimaryConstructorItemSyntax&gt;">
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;PrimaryConstructorParameterSyntax&gt;">
       <Documentation>
         The parameters this constructor declares.
       </Documentation>
@@ -320,26 +320,72 @@
     </Field>
   </Node>
 
-  <AbstractNode Name="PrimaryConstructorItemSyntax" Base="SyntaxNode">
+  <Node Name="PrimaryConstructorParameterSyntax" Base="SyntaxNode">
     <Documentation>
-      A single item in a primary constructor parameter list.
-    </Documentation>
-  </AbstractNode>
-
-  <Node Name="PrimaryConstructorParameterSyntax" Base="PrimaryConstructorItemSyntax">
-    <Documentation>
-      A single parameter in a primary constructor parameter list.
+      A single parameter declaration in a primary constructor parameter list.
     </Documentation>
 
-    <!-- TODO -->
+    <Field Name="MemberModifiers" Type="PrimaryConstructorParameterModifiersSyntax?">
+      <Documentation>
+        Optional modifiers for the parameter, in case it is manifested as a member.
+      </Documentation>
+    </Field>
+    <Field Name="Variadic" Type="SyntaxToken?">
+      <Documentation>
+        The ellipsis token, in case it's variadic.
+      </Documentation>
+
+      <Token Kind="Ellipsis" />
+    </Field>
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the parameter.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Colon" Type="SyntaxToken">
+      <Documentation>
+        The colon token between the name and the type.
+      </Documentation>
+
+      <Token Kind="Colon" />
+    </Field>
+    <Field Name="Type" Type="TypeSyntax">
+      <Documentation>
+        The type of the parameter.
+      </Documentation>
+    </Field>
   </Node>
 
-  <Node Name="PrimaryConstructorMemberSyntax" Base="PrimaryConstructorItemSyntax">
+  <Node Name="PrimaryConstructorParameterModifiersSyntax" Base="SyntaxNode">
     <Documentation>
-      A single member declaration in a primary constructor parameter list.
+      Modifiers for a primary constructor parameter, in case it is manifested as a member.
     </Documentation>
 
-    <!-- TODO -->
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        The optional visibility modifier keyword of the member.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
+    <Field Name="FieldModifier" Type="SyntaxToken?">
+      <Documentation>
+        The optional field modifier keyword to mark a field instead of a property.
+      </Documentation>
+
+      <Token Kind="KeywordField" />
+    </Field>
+    <Field Name="Keyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword introducing the variable, either 'var' or 'val'.
+      </Documentation>
+
+      <Token Kind="KeywordVar" />
+      <Token Kind="KeywordVal" />
+    </Field>
   </Node>
 
   <AbstractNode Name="ClassBodySyntax" Base="SyntaxNode">

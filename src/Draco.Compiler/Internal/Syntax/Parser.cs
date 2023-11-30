@@ -153,6 +153,8 @@ internal sealed class Parser
     private static readonly TokenKind[] declarationStarters = new[]
     {
         TokenKind.KeywordImport,
+        TokenKind.KeywordValue,
+        TokenKind.KeywordClass,
         TokenKind.KeywordFunc,
         TokenKind.KeywordModule,
         TokenKind.KeywordVar,
@@ -257,21 +259,31 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     private DeclarationSyntax ParseDeclaration(DeclarationContext context)
     {
-        var modifier = this.ParseVisibilityModifier();
+        var visibility = this.ParseVisibilityModifier();
         switch (this.Peek())
         {
         case TokenKind.KeywordImport:
+            // TODO: What if the visibility modifier is not null here? Should that be an error?
             return this.ParseImportDeclaration();
 
+        case TokenKind.KeywordValue:
+        {
+            var valueKeyword = this.Expect(TokenKind.KeywordValue);
+            return this.ParseClassDeclaration(visibility: visibility, valueType: valueKeyword);
+        }
+
+        case TokenKind.KeywordClass:
+            return this.ParseClassDeclaration(visibility: visibility, valueType: null);
+
         case TokenKind.KeywordFunc:
-            return this.ParseFunctionDeclaration(modifier);
+            return this.ParseFunctionDeclaration(visibility);
 
         case TokenKind.KeywordModule:
             return this.ParseModuleDeclaration(context);
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration(modifier);
+            return this.ParseVariableDeclaration(visibility);
 
         case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
             return this.ParseLabelDeclaration(context);
@@ -286,7 +298,7 @@ internal sealed class Parser
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
-            var node = new UnexpectedDeclarationSyntax(modifier, input);
+            var node = new UnexpectedDeclarationSyntax(visibility, input);
             this.AddDiagnostic(node, diag);
             return node;
         }
@@ -388,8 +400,32 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// Parses a class declaration.
+    /// </summary>
+    /// <param name="visibility">Optional visibility modifier token.</param>
+    /// <param name="valueType">Optional valuetype modifier token.</param>
+    /// <returns>The parsed <see cref="ClassDeclarationSyntax"/>.</returns>
+    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxToken? visibility, SyntaxToken? valueType)
+    {
+        // Class keyword and name of the class
+        var classKeyword = this.Expect(TokenKind.KeywordClass);
+        var name = this.Expect(TokenKind.Identifier);
+
+        // Optional generics
+        var generics = null as GenericParameterListSyntax;
+        if (this.Peek() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
+
+        // TODO: Parse optional primary constructor
+
+        // TODO: Parse body
+
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
     /// Parses a function declaration.
     /// </summary>
+    /// <param name="visibility">Optional visibility modifier token.</param>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
     private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxToken? visibility)
     {

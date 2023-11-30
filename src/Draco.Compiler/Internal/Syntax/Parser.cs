@@ -415,10 +415,107 @@ internal sealed class Parser
         var generics = null as GenericParameterListSyntax;
         if (this.Peek() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
 
-        // TODO: Parse optional primary constructor
+        var primaryCtor = null as PrimaryConstructorSyntax;
+        switch (this.Peek())
+        {
+        case TokenKind.ParenOpen:
+        case TokenKind.KeywordPublic:
+        case TokenKind.KeywordInternal:
+            primaryCtor = this.ParsePrimaryConstructor();
+            break;
+        }
 
-        // TODO: Parse body
+        var body = this.ParseClassBody();
 
+        return new ClassDeclarationSyntax(
+            visibility,
+            valueType,
+            classKeyword,
+            name,
+            generics,
+            primaryCtor,
+            body);
+    }
+
+    /// <summary>
+    /// Parses a primary constructor, including the visibility modifier and parentheses.
+    /// </summary>
+    /// <returns>The parsed <see cref="PrimaryConstructorSyntax"/>.</returns>
+    private PrimaryConstructorSyntax ParsePrimaryConstructor()
+    {
+        var visibility = this.ParseVisibilityModifier();
+
+        var openParen = this.Expect(TokenKind.ParenOpen);
+        var ctorParameters = this.ParseSeparatedSyntaxList(
+            elementParser: this.ParsePrimaryConstructorParameter,
+            separatorKind: TokenKind.Comma,
+            stopKind: TokenKind.ParenClose);
+        var closeParen = this.Expect(TokenKind.ParenClose);
+
+        return new PrimaryConstructorSyntax(
+            visibility,
+            openParen,
+            ctorParameters,
+            closeParen);
+    }
+
+    /// <summary>
+    /// Parses a primary constructor parameter.
+    /// </summary>
+    /// <returns>The parsed <see cref="PrimaryConstructorParameterSyntax"/>.</returns>
+    private PrimaryConstructorParameterSyntax ParsePrimaryConstructorParameter()
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Parses the modifiers of a primary constructor parameter that could make it a member.
+    /// Can return null, if the parameter is not a member.
+    /// </summary>
+    /// <returns>The parsed <see cref="PrimaryConstructorParameterModifiersSyntax"/>, or null
+    /// if the parameter is not a member.</returns>
+    private PrimaryConstructorParameterModifiersSyntax? ParsePrimaryConstructorParameterModifiers()
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Parses the body of a class.
+    /// </summary>
+    /// <returns>The parsed <see cref="ClassBodySyntax"/>.</returns>
+    private ClassBodySyntax ParseClassBody()
+    {
+        switch (this.Peek())
+        {
+        case TokenKind.Semicolon:
+            return this.ParseEmptyClassBody();
+        case TokenKind.CurlyOpen:
+            return this.ParseBlockClassBody();
+        default:
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Parses an empty class body, which is just a semicolon.
+    /// </summary>
+    /// <returns>The parsed <see cref="EmptyClassBodySyntax"/>.</returns>
+    private EmptyClassBodySyntax ParseEmptyClassBody()
+    {
+        var semicolon = this.Expect(TokenKind.Semicolon);
+        return new EmptyClassBodySyntax(semicolon);
+    }
+
+    /// <summary>
+    /// Parses a block class body declared with curly braces.
+    /// </summary>
+    /// <returns>The parsed <see cref="BlockClassBodySyntax"/>.</returns>
+    private BlockClassBodySyntax ParseBlockClassBody()
+    {
+        // TODO
         throw new NotImplementedException();
     }
 

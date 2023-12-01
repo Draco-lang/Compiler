@@ -325,7 +325,7 @@
       A single parameter declaration in a primary constructor parameter list.
     </Documentation>
 
-    <Field Name="MemberModifiers" Type="PrimaryConstructorParameterModifiersSyntax?">
+    <Field Name="MemberModifiers" Type="PrimaryConstructorParameterMemberModifiersSyntax?">
       <Documentation>
         Optional modifiers for the parameter, in case it is manifested as a member.
       </Documentation>
@@ -358,7 +358,7 @@
     </Field>
   </Node>
 
-  <Node Name="PrimaryConstructorParameterModifiersSyntax" Base="SyntaxNode">
+  <Node Name="PrimaryConstructorParameterMemberModifiersSyntax" Base="SyntaxNode">
     <Documentation>
       Modifiers for a primary constructor parameter, in case it is manifested as a member.
     </Documentation>

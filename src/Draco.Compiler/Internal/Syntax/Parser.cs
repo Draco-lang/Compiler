@@ -465,8 +465,17 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="PrimaryConstructorParameterSyntax"/>.</returns>
     private PrimaryConstructorParameterSyntax ParsePrimaryConstructorParameter()
     {
-        // TODO
-        throw new NotImplementedException();
+        var memberModifiers = this.ParsePrimaryConstructorParameterMemberModifiers();
+        this.Matches(TokenKind.Ellipsis, out var variadic);
+        var name = this.Expect(TokenKind.Identifier);
+        var colon = this.Expect(TokenKind.Colon);
+        var type = this.ParseType();
+        return new(
+            memberModifiers,
+            variadic,
+            name,
+            colon,
+            type);
     }
 
     /// <summary>
@@ -475,10 +484,29 @@ internal sealed class Parser
     /// </summary>
     /// <returns>The parsed <see cref="PrimaryConstructorParameterModifiersSyntax"/>, or null
     /// if the parameter is not a member.</returns>
-    private PrimaryConstructorParameterModifiersSyntax? ParsePrimaryConstructorParameterModifiers()
+    private PrimaryConstructorParameterMemberModifiersSyntax? ParsePrimaryConstructorParameterMemberModifiers()
     {
-        // TODO
-        throw new NotImplementedException();
+        var visibilityModifier = this.ParseVisibilityModifier();
+        this.Matches(TokenKind.KeywordField, out var fieldToken);
+
+        var peek = this.Peek();
+        if (peek is TokenKind.KeywordVar or TokenKind.KeywordVal)
+        {
+            var keyword = this.Advance();
+            return new PrimaryConstructorParameterMemberModifiersSyntax(
+                visibilityModifier,
+                fieldToken,
+                keyword);
+        }
+        else if (visibilityModifier is not null || fieldToken is not null)
+        {
+            // TODO: Error
+            throw new NotImplementedException();
+        }
+        else
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -515,8 +543,19 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="BlockClassBodySyntax"/>.</returns>
     private BlockClassBodySyntax ParseBlockClassBody()
     {
-        // TODO
-        throw new NotImplementedException();
+        var openBrace = this.Expect(TokenKind.CurlyOpen);
+        var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
+        while (true)
+        {
+            // Break on the end of the block
+            if (this.Peek() is TokenKind.EndOfInput or TokenKind.CurlyClose) break;
+
+            // Parse a declaration
+            var decl = this.ParseDeclaration(DeclarationContext.Global);
+            decls.Add(decl);
+        }
+        var closeBrace = this.Expect(TokenKind.CurlyClose);
+        return new(openBrace, decls.ToSyntaxList(), closeBrace);
     }
 
     /// <summary>

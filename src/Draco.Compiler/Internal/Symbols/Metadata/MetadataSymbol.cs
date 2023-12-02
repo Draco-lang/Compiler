@@ -45,7 +45,7 @@ internal static class MetadataSymbol
                     if (methodName != ".ctor") continue;
 
                     // This is a constructor, synthetize a function overload
-                    var ctor = SynthetizeConstructor(typeSymbol, method);
+                    var ctor = new MetadataConstructorFunctionSymbol(typeSymbol, method);
                     results.Add(ctor);
                 }
             }
@@ -105,10 +105,6 @@ internal static class MetadataSymbol
             _ => throw new ArgumentOutOfRangeException(nameof(constant)),
         };
     }
-
-    private static FunctionSymbol SynthetizeConstructor(
-        MetadataTypeSymbol type,
-        MethodDefinition ctorMethod) => new MetadataConstructorFunctionSymbol(type, ctorMethod);
 
     /// <summary>
     /// Gets the documentation XML as text for the given <paramref name="symbol"/>.

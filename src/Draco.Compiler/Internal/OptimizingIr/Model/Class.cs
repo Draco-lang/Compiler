@@ -24,8 +24,9 @@ internal sealed class Class : IClass
 
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
 
-    // TODO
-    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Constructors => throw new NotImplementedException();
+    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
+
+    private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
 
     public Class(Module declaringModule, Class? declaringClass, TypeSymbol symbol)
     {

@@ -45,13 +45,11 @@ internal interface IClass
     // TODO: Base class
     // TODO: Interfaces? (we might wanna keep them external)
     // TODO: Nested classes
-
-    /// <summary>
-    /// The constructors defined on this class.
-    /// </summary>
-    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Constructors { get; }
-
     // TODO: fields
     // TODO: properties
-    // TODO: methods
+
+    /// <summary>
+    /// The procedures defined on this class.
+    /// </summary>
+    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }
 }

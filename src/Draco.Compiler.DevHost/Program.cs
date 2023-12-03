@@ -8,6 +8,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
+using static Basic.Reference.Assemblies.Net70;
 
 namespace Draco.Compiler.DevHost;
 
@@ -142,6 +143,8 @@ internal class Program
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
+            // TODO: Add references from CLI?
+            metadataReferences: BclReferences.ToImmutableArray(),
             rootModulePath: rootModule?.FullName);
         using var irStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(irStream: irStream);

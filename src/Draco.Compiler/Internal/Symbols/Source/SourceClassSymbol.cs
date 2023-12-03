@@ -2,13 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
-using Draco.Compiler.Internal.Symbols.Metadata;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -17,7 +14,9 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceClassSymbol : TypeSymbol
 {
-    // TODO: Defined members
+    public override IEnumerable<Symbol> DefinedMembers =>
+        InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
+    private ImmutableArray<Symbol> definedMembers;
 
     public override string Name => this.DeclaringSyntax.Name.Text;
 
@@ -56,6 +55,22 @@ internal sealed class SourceClassSymbol : TypeSymbol
             .Select(syntax => new SourceTypeParameterSymbol(this, syntax))
             .Cast<TypeParameterSymbol>()
             .ToImmutableArray();
+    }
+
+    private ImmutableArray<Symbol> BuildMembers()
+    {
+        var result = ImmutableArray.CreateBuilder<Symbol>();
+
+        // TODO: Check for secondary constructors
+        // If there is no constructor, add a default one
+        if (this.DeclaringSyntax.PrimaryConstructor is null)
+        {
+            // TODO: add a default constructor
+            throw new NotImplementedException();
+        }
+
+        // Done
+        return result.ToImmutable();
     }
 
     private SymbolDocumentation BuildDocumentation() =>

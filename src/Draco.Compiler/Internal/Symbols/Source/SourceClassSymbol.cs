@@ -6,6 +6,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -65,8 +66,7 @@ internal sealed class SourceClassSymbol : TypeSymbol
         // If there is no constructor, add a default one
         if (this.DeclaringSyntax.PrimaryConstructor is null)
         {
-            // TODO: add a default constructor
-            throw new NotImplementedException();
+            result.Add(new DefaultConstructorSymbol(this));
         }
 
         // Done

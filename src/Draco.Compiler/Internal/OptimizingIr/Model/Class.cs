@@ -34,4 +34,20 @@ internal sealed class Class : IClass
         this.DeclaringClass = declaringClass;
         this.Symbol = symbol;
     }
+
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+
+        // TODO: Modifiers
+
+        result.AppendLine($"class {this.Name}");
+        result.AppendLine("{");
+
+        // TODO: add members
+
+        result.AppendLine("}");
+
+        return result.ToString();
+    }
 }

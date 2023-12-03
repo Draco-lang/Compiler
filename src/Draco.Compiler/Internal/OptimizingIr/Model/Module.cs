@@ -17,6 +17,7 @@ internal sealed class Module : IModule
     public string Name => this.Symbol.Name;
 
     public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
+    public IReadOnlyDictionary<TypeSymbol, IClass> Classes => this.classes;
 
     public IReadOnlySet<GlobalSymbol> Globals => this.globals;
 
@@ -32,6 +33,7 @@ internal sealed class Module : IModule
     IModule? IModule.Parent => this.Parent;
 
     private readonly HashSet<GlobalSymbol> globals = new();
+    private readonly Dictionary<TypeSymbol, IClass> classes = new();
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
     private readonly Dictionary<ModuleSymbol, IModule> submodules = new();
 
@@ -69,6 +71,16 @@ internal sealed class Module : IModule
         return (Procedure)result;
     }
 
+    public Class DefineClass(TypeSymbol typeSymbol)
+    {
+        if (!this.classes.TryGetValue(typeSymbol, out var result))
+        {
+            result = new Class(this, null, typeSymbol);
+            this.classes.Add(typeSymbol, result);
+        }
+        return (Class)result;
+    }
+
     public Module DefineModule(ModuleSymbol moduleSymbol)
     {
         if (!this.submodules.TryGetValue(moduleSymbol, out var result))
@@ -83,11 +95,14 @@ internal sealed class Module : IModule
     {
         var result = new StringBuilder();
         result.AppendLine($"module {this.Symbol.Name}");
+        result.AppendLine("{");
         result.AppendJoin(Environment.NewLine, this.globals);
+        // TODO: Also print classes
         if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.procedures.Values);
         if (this.procedures.Count > 0 && this.submodules.Count > 0) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.submodules.Values);
+        result.AppendLine("}");
         return result.ToString();
     }
 }

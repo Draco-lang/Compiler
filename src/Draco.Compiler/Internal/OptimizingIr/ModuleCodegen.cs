@@ -46,8 +46,12 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (typeSymbol is not SourceClassSymbol sourceClass) return;
 
-        // TODO: Add class
-        throw new System.NotImplementedException();
+        // Add it to the module
+        var @class = this.module.DefineClass(sourceClass);
+
+        // Invoke codegen
+        var classCodegen = new ClassCodegen(this, @class);
+        sourceClass.Accept(classCodegen);
     }
 
     public override void VisitGlobal(GlobalSymbol globalSymbol)

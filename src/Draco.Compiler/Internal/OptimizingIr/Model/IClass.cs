@@ -23,6 +23,11 @@ internal interface IClass
     public string Name { get; }
 
     /// <summary>
+    /// The parent class this class is defined in, if any.
+    /// </summary>
+    public IClass? DeclaringClass { get; }
+
+    /// <summary>
     /// The module this class is defined in.
     /// </summary>
     public IModule DeclaringModule { get; }

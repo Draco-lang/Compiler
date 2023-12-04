@@ -94,15 +94,24 @@ internal sealed class Module : IModule
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.AppendLine($"module {this.Symbol.Name}");
-        result.AppendLine("{");
+        result.AppendLine($"module {this.Symbol.Name} {{");
         result.AppendJoin(Environment.NewLine, this.globals);
-        // TODO: Also print classes
-        if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
-        result.AppendJoin(doubleNewline, this.procedures.Values);
-        if (this.procedures.Count > 0 && this.submodules.Count > 0) result.Append(doubleNewline);
-        result.AppendJoin(doubleNewline, this.submodules.Values);
-        result.AppendLine("}");
+
+        var haveNewline = this.globals.Count == 0;
+        void PrintComponents(IEnumerable<object> components)
+        {
+            if (!components.Any()) return;
+            if (!haveNewline) result!.Append(doubleNewline);
+            result!.AppendJoin(doubleNewline, components);
+            haveNewline = false;
+        }
+
+        PrintComponents(this.procedures.Values);
+        PrintComponents(this.classes.Values);
+        PrintComponents(this.submodules.Values);
+
+        if (!haveNewline) result.AppendLine();
+        result.Append('}');
         return result.ToString();
     }
 }

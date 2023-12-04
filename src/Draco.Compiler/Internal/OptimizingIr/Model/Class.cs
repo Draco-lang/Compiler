@@ -41,12 +41,11 @@ internal sealed class Class : IClass
 
         // TODO: Modifiers
 
-        result.AppendLine($"class {this.Name}");
-        result.AppendLine("{");
+        result.AppendLine($"class {this.Name} {{");
 
         // TODO: add members
 
-        result.AppendLine("}");
+        result.Append('}');
 
         return result.ToString();
     }

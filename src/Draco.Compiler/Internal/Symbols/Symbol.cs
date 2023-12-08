@@ -123,12 +123,12 @@ internal abstract partial class Symbol
     /// <summary>
     /// The static members within this symbol.
     /// </summary>
-    public virtual IEnumerable<Symbol> StaticMembers => this.Members.Where(x => x is IMemberSymbol mem && mem.IsStatic);
+    public IEnumerable<Symbol> StaticMembers => this.Members.Where(x => x is IMemberSymbol mem && mem.IsStatic);
 
     /// <summary>
     /// The instance members within this symbol.
     /// </summary>
-    public virtual IEnumerable<Symbol> InstanceMembers => this.Members.Where(x => x is IMemberSymbol mem && !mem.IsStatic);
+    public IEnumerable<Symbol> InstanceMembers => this.Members.Where(x => x is IMemberSymbol mem && !mem.IsStatic);
 
     /// <summary>
     /// The structured documentation attached to this symbol.
@@ -256,7 +256,7 @@ internal abstract partial class Symbol
     /// </summary>
     /// <returns>The generic parameters or arguments between angle brackets, or an empty string,
     /// if this symbol is not a generic definition or instantiation.</returns>
-    public string GenericsToString()
+    private protected string GenericsToString()
     {
         if (this.IsGenericDefinition) return $"<{string.Join(", ", this.GenericParameters)}>";
         if (this.IsGenericInstance) return $"<{string.Join(", ", this.GenericArguments)}>";

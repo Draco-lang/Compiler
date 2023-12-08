@@ -68,7 +68,9 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public IEnumerable<FunctionSymbol> DefinedPropertyAccessors =>
         this.DefinedMembers.OfType<PropertySymbol>().SelectMany(p => p.Accessors);
 
+    // NOTE: We override for covariant return type
     public override TypeSymbol? GenericDefinition => null;
+
     public bool IsStatic => true;
 
     public override bool CanBeShadowedBy(Symbol other)

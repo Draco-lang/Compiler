@@ -7,8 +7,6 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal abstract class SynthetizedFunctionSymbol : FunctionSymbol
 {
-    public override Symbol? ContainingSymbol => null;
-
     public override abstract string Name { get; }
 
     public override bool IsStatic => true;

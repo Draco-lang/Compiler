@@ -16,7 +16,6 @@ internal sealed class ErrorPropertySymbol : PropertySymbol
     public override bool IsError => true;
     public override bool IsIndexer => false;
     public override bool IsStatic => false;
-    public override Symbol? ContainingSymbol => null;
 
     public ErrorPropertySymbol(string name)
     {

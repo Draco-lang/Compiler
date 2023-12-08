@@ -23,7 +23,7 @@ internal abstract partial class Symbol
     /// <summary>
     /// The symbol directly containing this one.
     /// </summary>
-    public abstract Symbol? ContainingSymbol { get; }
+    public virtual Symbol? ContainingSymbol => null;
 
     /// <summary>
     /// The ancestor chain of this symbol, starting with this one.

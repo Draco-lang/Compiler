@@ -14,8 +14,6 @@ internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol, IMemberSymbo
 
     public override bool IsError => true;
 
-    public override Symbol? ContainingSymbol => null;
-
     public TypeSymbol Type => IntrinsicSymbols.ErrorType;
 
     public bool IsStatic => true;

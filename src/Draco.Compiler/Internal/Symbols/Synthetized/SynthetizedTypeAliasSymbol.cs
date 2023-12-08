@@ -6,7 +6,6 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 internal sealed class SynthetizedTypeAliasSymbol : TypeAliasSymbol
 {
     public override string Name { get; }
-    public override Symbol? ContainingSymbol => null;
     public override TypeSymbol Substitution { get; }
 
     public SynthetizedTypeAliasSymbol(string name, TypeSymbol substitution)

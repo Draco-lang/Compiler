@@ -10,8 +10,6 @@ internal sealed class NeverTypeSymbol : TypeSymbol
     /// </summary>
     public static NeverTypeSymbol Instance { get; } = new();
 
-    public override Symbol? ContainingSymbol => null;
-
     private NeverTypeSymbol()
     {
     }

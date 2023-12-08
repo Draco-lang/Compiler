@@ -13,7 +13,6 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 internal sealed class MetadataConstructorFunctionSymbol : IrFunctionSymbol
 {
     public override string Name => this.instantiatedType.Name;
-    public override Symbol? ContainingSymbol => null;
     public override bool IsSpecialName => true;
     public override bool IsStatic => true;
 

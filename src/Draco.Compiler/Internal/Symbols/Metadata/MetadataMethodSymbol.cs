@@ -45,7 +45,6 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         }
     }
 
-    public override bool IsMember => !this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override bool IsVirtual
     {
         get

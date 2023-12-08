@@ -69,11 +69,6 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     public abstract bool IsStatic { get; }
 
     /// <summary>
-    /// If true, this is a member function.
-    /// </summary>
-    public virtual bool IsMember => false;
-
-    /// <summary>
     /// If true, this is a virtual function.
     /// </summary>
     public virtual bool IsVirtual => false;
@@ -83,17 +78,14 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// </summary>
     public bool IsVariadic => this.Parameters.Length > 0 && this.Parameters[^1].IsVariadic;
 
+    // NOTE: We override for covariant return type
     public override FunctionSymbol? GenericDefinition => null;
 
-    public override Api.Semantics.Visibility Visibility
+    public override Api.Semantics.Visibility Visibility => this.DeclaringSyntax switch
     {
-        get
-        {
-            var syntax = this.DeclaringSyntax as FunctionDeclarationSyntax;
-            if (syntax is null) return Api.Semantics.Visibility.Internal; // Default
-            return GetVisibilityFromTokenKind(syntax.VisibilityModifier?.Kind);
-        }
-    }
+        FunctionDeclarationSyntax funcDecl => GetVisibilityFromTokenKind(funcDecl.VisibilityModifier?.Kind),
+        _ => Api.Semantics.Visibility.Internal,
+    };
 
     public override IEnumerable<Symbol> Members => this.Parameters;
 

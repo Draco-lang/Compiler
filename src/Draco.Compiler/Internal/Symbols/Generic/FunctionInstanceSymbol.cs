@@ -89,7 +89,6 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // Either way:
         //  - We have generic parameters, this is still a generic definition
         //  - Non-generic
-        //
         return base.ToString();
     }
 

@@ -86,13 +86,9 @@ internal sealed class ConstructorFunctionSymbol : IrFunctionSymbol
         ? this.InstantiatedType
         : this.InstantiatedType.GenericInstantiate(this.InstantiatedType.ContainingSymbol, this.Context.Value);
 
-    private FunctionSymbol BuildConstructorSymbol()
-    {
-        // TODO
-        // var ctorSymbol = new MetadataMethodSymbol(this.ReturnType, this.ctorDefinition) as FunctionSymbol;
-        if (this.Context is not null) ctorSymbol = ctorSymbol.GenericInstantiate(this.ReturnType, this.Context.Value);
-        return ctorSymbol;
-    }
+    private FunctionSymbol BuildConstructorSymbol() => this.Context is null
+        ? this.ctorDefinition
+        : this.ctorDefinition.GenericInstantiate(this.ReturnType, this.Context.Value);
 
     private GenericContext? BuildContext()
     {

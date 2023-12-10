@@ -45,6 +45,12 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
         }
     }
 
+    public override bool IsConstructor =>
+           this.methodDefinition.Attributes.HasFlag(MethodAttributes.SpecialName)
+        && this.Name == ".ctor";
+
+    public override bool IsSpecialName => this.methodDefinition.Attributes.HasFlag(MethodAttributes.SpecialName);
+
     public override bool IsVirtual
     {
         get

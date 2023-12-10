@@ -31,10 +31,25 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsInterface => false;
 
     /// <summary>
+    /// True, if this type is abstract.
+    /// </summary>
+    public virtual bool IsAbstract => false;
+
+    /// <summary>
+    /// True, if this type is sealed.
+    /// </summary>
+    public virtual bool IsSealed => false;
+
+    /// <summary>
     /// The substituted type of this one, in case this is a type variable.
     /// It's this instance itself, if not a type variable, or not substituted.
     /// </summary>
     public virtual TypeSymbol Substitution => this;
+
+    /// <summary>
+    /// The primary base type of this type (typically class inheritance).
+    /// </summary>
+    public TypeSymbol? BaseType => this.ImmediateBaseTypes.FirstOrDefault(s => !s.IsInterface);
 
     /// <summary>
     /// The immediate base types of this type.
@@ -58,6 +73,18 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// The members defined directly in this type doesn't include members from <see cref="ImmediateBaseTypes"/>.
     /// </summary>
     public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
+
+    /// <summary>
+    /// The constructors defined directly in this type.
+    /// </summary>
+    public IEnumerable<FunctionSymbol> Constructors => this.DefinedMembers
+        .OfType<FunctionSymbol>()
+        .Where(f => f.IsConstructor);
+
+    /// <summary>
+    /// All members within this type that are not special members.
+    /// </summary>
+    public IEnumerable<Symbol> NonSpecialMembers => this.Members.Where(m => !m.IsSpecialName);
 
     public override sealed IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
@@ -100,6 +127,9 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 
         foreach (var member in relevantBases.SelectMany(x => x.DefinedMembers))
         {
+            // Ignore constructors in base types
+            if (member.ContainingSymbol != this && member is FunctionSymbol { IsConstructor: true }) continue;
+
             if (ignore.Any(member.CanBeShadowedBy)) continue;
             ignore.Add(member);
             builder.Add(member);

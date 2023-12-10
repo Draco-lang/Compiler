@@ -78,6 +78,13 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// </summary>
     public bool IsVariadic => this.Parameters.Length > 0 && this.Parameters[^1].IsVariadic;
 
+    /// <summary>
+    /// True, if this is a constructor.
+    /// </summary>
+    public virtual bool IsConstructor => false;
+
+    public override bool IsSpecialName => this.IsConstructor;
+
     // NOTE: We override for covariant return type
     public override FunctionSymbol? GenericDefinition => null;
 

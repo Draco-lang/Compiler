@@ -8,11 +8,11 @@ using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
 /// <summary>
-/// A constructor function for a metadata type.
+/// A constructor function for types.
 /// </summary>
-internal sealed class MetadataConstructorFunctionSymbol : IrFunctionSymbol
+internal sealed class ConstructorFunctionSymbol : IrFunctionSymbol
 {
-    public override string Name => this.instantiatedType.Name;
+    public override string Name => this.InstantiatedType.Name;
     public override bool IsSpecialName => true;
     public override bool IsStatic => true;
 
@@ -27,13 +27,10 @@ internal sealed class MetadataConstructorFunctionSymbol : IrFunctionSymbol
     public override TypeSymbol ReturnType => InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
-    private FunctionSymbol ConstructorSymbol => InterlockedUtils.InitializeNull(ref this.constructorSymbol, this.BuildConstructorSymbol);
-    private FunctionSymbol? constructorSymbol;
-
     public override CodegenDelegate Codegen => (codegen, target, args) =>
     {
         var instance = target.Type;
-        var ctorSymbol = this.ConstructorSymbol;
+        var ctorSymbol = this.constructorSymbol;
         if (instance.IsGenericInstance && this.IsGenericDefinition)
         {
             ctorSymbol = ctorSymbol.GenericInstantiate(instance, ((IGenericInstanceSymbol)instance).Context);
@@ -63,40 +60,33 @@ internal sealed class MetadataConstructorFunctionSymbol : IrFunctionSymbol
     private volatile bool contextNeedsBuild = true;
     private readonly object contextBuildLock = new();
 
-    private readonly MetadataTypeSymbol instantiatedType;
-    private readonly MethodDefinition ctorDefinition;
+    private TypeSymbol InstantiatedType => (TypeSymbol)this.constructorSymbol.ContainingSymbol!;
 
-    public MetadataConstructorFunctionSymbol(MetadataTypeSymbol instantiatedType, MethodDefinition ctorDefinition)
+    private readonly FunctionSymbol constructorSymbol;
+
+    public ConstructorFunctionSymbol(FunctionSymbol ctorSymbol)
     {
-        this.instantiatedType = instantiatedType;
-        this.ctorDefinition = ctorDefinition;
+        this.constructorSymbol = ctorSymbol;
     }
 
-    private ImmutableArray<TypeParameterSymbol> BuildGenericParameters() => this.instantiatedType.GenericParameters
+    private ImmutableArray<TypeParameterSymbol> BuildGenericParameters() => this.InstantiatedType.GenericParameters
         .Select(p => new SynthetizedTypeParameterSymbol(this, p.Name))
         .Cast<TypeParameterSymbol>()
         .ToImmutableArray();
 
-    private ImmutableArray<ParameterSymbol> BuildParameters() => this.ConstructorSymbol.Parameters
+    private ImmutableArray<ParameterSymbol> BuildParameters() => this.constructorSymbol.Parameters
         .Select(p => new SynthetizedParameterSymbol(this, p.Name, p.Type))
         .Cast<ParameterSymbol>()
         .ToImmutableArray();
 
     private TypeSymbol BuildReturnType() => this.Context is null
-        ? this.instantiatedType
-        : this.instantiatedType.GenericInstantiate(this.instantiatedType.ContainingSymbol, this.Context.Value);
-
-    private FunctionSymbol BuildConstructorSymbol()
-    {
-        var ctorSymbol = new MetadataMethodSymbol(this.ReturnType, this.ctorDefinition) as FunctionSymbol;
-        if (this.Context is not null) ctorSymbol = ctorSymbol.GenericInstantiate(this.ReturnType, this.Context.Value);
-        return ctorSymbol;
-    }
+        ? this.InstantiatedType
+        : this.InstantiatedType.GenericInstantiate(this.InstantiatedType.ContainingSymbol, this.Context.Value);
 
     private GenericContext? BuildContext()
     {
         if (this.GenericParameters.Length == 0) return null;
-        var substitutions = this.instantiatedType.GenericParameters
+        var substitutions = this.InstantiatedType.GenericParameters
             .Zip(this.GenericParameters)
             .ToImmutableDictionary(p => p.First, p => p.Second as TypeSymbol);
         return new(substitutions);

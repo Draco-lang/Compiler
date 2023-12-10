@@ -38,7 +38,7 @@ internal static class MetadataSymbol
             if (!typeSymbol.IsAbstract)
             {
                 // Synthetize function overloads for constructors
-                results.AddRange(typeSymbol.Constructors.Select(c => new ConstructorFunctionSymbol(c)));
+                results.AddRange(typeSymbol.Constructors.Select(c => new ConstructorFunctionSymbol(typeSymbol, c)));
             }
             return results;
         }

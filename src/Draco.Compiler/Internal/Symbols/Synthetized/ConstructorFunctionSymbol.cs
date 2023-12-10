@@ -27,10 +27,13 @@ internal sealed class ConstructorFunctionSymbol : IrFunctionSymbol
     public override TypeSymbol ReturnType => InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
+    private FunctionSymbol ConstructorSymbol => InterlockedUtils.InitializeNull(ref this.constructorSymbol, this.BuildConstructorSymbol);
+    private FunctionSymbol? constructorSymbol;
+
     public override CodegenDelegate Codegen => (codegen, target, args) =>
     {
         var instance = target.Type;
-        var ctorSymbol = this.constructorSymbol;
+        var ctorSymbol = this.ConstructorSymbol;
         if (instance.IsGenericInstance && this.IsGenericDefinition)
         {
             ctorSymbol = ctorSymbol.GenericInstantiate(instance, ((IGenericInstanceSymbol)instance).Context);
@@ -60,13 +63,13 @@ internal sealed class ConstructorFunctionSymbol : IrFunctionSymbol
     private volatile bool contextNeedsBuild = true;
     private readonly object contextBuildLock = new();
 
-    private TypeSymbol InstantiatedType => (TypeSymbol)this.constructorSymbol.ContainingSymbol!;
+    private TypeSymbol InstantiatedType => (TypeSymbol)this.ctorDefinition.ContainingSymbol!;
 
-    private readonly FunctionSymbol constructorSymbol;
+    private readonly FunctionSymbol ctorDefinition;
 
-    public ConstructorFunctionSymbol(FunctionSymbol ctorSymbol)
+    public ConstructorFunctionSymbol(FunctionSymbol ctorDefinition)
     {
-        this.constructorSymbol = ctorSymbol;
+        this.ctorDefinition = ctorDefinition;
     }
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters() => this.InstantiatedType.GenericParameters
@@ -74,7 +77,7 @@ internal sealed class ConstructorFunctionSymbol : IrFunctionSymbol
         .Cast<TypeParameterSymbol>()
         .ToImmutableArray();
 
-    private ImmutableArray<ParameterSymbol> BuildParameters() => this.constructorSymbol.Parameters
+    private ImmutableArray<ParameterSymbol> BuildParameters() => this.ConstructorSymbol.Parameters
         .Select(p => new SynthetizedParameterSymbol(this, p.Name, p.Type))
         .Cast<ParameterSymbol>()
         .ToImmutableArray();
@@ -82,6 +85,14 @@ internal sealed class ConstructorFunctionSymbol : IrFunctionSymbol
     private TypeSymbol BuildReturnType() => this.Context is null
         ? this.InstantiatedType
         : this.InstantiatedType.GenericInstantiate(this.InstantiatedType.ContainingSymbol, this.Context.Value);
+
+    private FunctionSymbol BuildConstructorSymbol()
+    {
+        // TODO
+        // var ctorSymbol = new MetadataMethodSymbol(this.ReturnType, this.ctorDefinition) as FunctionSymbol;
+        if (this.Context is not null) ctorSymbol = ctorSymbol.GenericInstantiate(this.ReturnType, this.Context.Value);
+        return ctorSymbol;
+    }
 
     private GenericContext? BuildContext()
     {

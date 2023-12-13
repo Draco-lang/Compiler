@@ -72,7 +72,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
     {
         // We handle synthetized functions a bit specially, as they are not part of our symbol
-        // tree, so we compile them, in case they have not been yet
+        // tree, so we compile them, in case they have not yet been
         var compiledAlready = this.procedure.DeclaringModule.Procedures.ContainsKey(func);
         var proc = this.procedure.DeclaringModule.DefineProcedure(func);
         if (!compiledAlready)
@@ -276,14 +276,13 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var callResult = this.DefineRegister(node.TypeRequired);
 
         var proc = this.TranslateFunctionSymbol(node.Method);
-        var irFunc = ExtractIrFunction(proc);
-        if (irFunc is not null)
+        if (proc.Codegen is { } codegen)
         {
             if (receiver is not null)
             {
                 throw new System.NotImplementedException();
             }
-            irFunc.Codegen(this, callResult, args);
+            codegen(this, callResult, args);
         }
         else
         {
@@ -399,9 +398,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // Patch
             PatchLoadTarget(leftLoad, leftValue);
             this.Write(leftLoad);
-            if (node.CompoundOperator is IrFunctionSymbol irFunction)
+            if (node.CompoundOperator.Codegen is { } codegen)
             {
-                irFunction.Codegen(this, tmp, ImmutableArray.Create(leftValue, right));
+                codegen(this, tmp, ImmutableArray.Create(leftValue, right));
             }
             else
             {
@@ -535,6 +534,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitBinaryExpression(BoundBinaryExpression node) =>
         throw new System.InvalidOperationException();
 
+    // TODO: This will likely disappear once all globals can have a constant value
     private static MetadataStaticFieldSymbol? ExtractMetadataStaticField(GlobalSymbol global) => global switch
     {
         MetadataStaticFieldSymbol m => m,

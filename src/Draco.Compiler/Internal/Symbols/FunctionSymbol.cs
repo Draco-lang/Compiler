@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.OptimizingIr.Model;
+using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -11,6 +14,17 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSymbol, IOverridableSymbol
 {
+    /// <summary>
+    /// A delegate to generate IR code.
+    /// </summary>
+    /// <param name="codegen">The code generator.</param>
+    /// <param name="target">The register to store the result at.</param>
+    /// <param name="operands">The compiled operand references.</param>
+    public delegate void CodegenDelegate(
+        FunctionBodyCodegen codegen,
+        Register target,
+        ImmutableArray<IOperand> operands);
+
     /// <summary>
     /// Retrieves the name for the unary operator that is referenced by a given token.
     /// </summary>
@@ -100,6 +114,23 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     private TypeSymbol? type;
 
     public virtual Symbol? Override => null;
+
+    /// <summary>
+    /// The bound body of this function, if it has one.
+    /// This is the case for in-source and certain synthesized functions.
+    /// </summary>
+    public virtual BoundStatement? Body => null;
+
+    /// <summary>
+    /// The code generator for this function, if it has one.
+    /// This is the case for certain synthesized functions.
+    /// </summary>
+    public virtual CodegenDelegate? Codegen => null;
+
+    /// <summary>
+    /// True, if this function must be inlined.
+    /// </summary>
+    public virtual bool ForceInline => false;
 
     public override string ToString()
     {

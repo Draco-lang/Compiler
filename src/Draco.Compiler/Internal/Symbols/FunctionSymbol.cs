@@ -80,7 +80,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// </summary>
     public abstract TypeSymbol ReturnType { get; }
 
-    public abstract bool IsStatic { get; }
+    public virtual bool IsStatic => true;
 
     /// <summary>
     /// If true, this is a virtual function.

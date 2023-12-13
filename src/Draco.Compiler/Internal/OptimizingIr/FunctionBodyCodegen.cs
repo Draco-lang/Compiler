@@ -541,11 +541,4 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // TODO: Global instances?
         _ => null,
     };
-
-    private static IrFunctionSymbol? ExtractIrFunction(FunctionSymbol symbol) => symbol switch
-    {
-        IrFunctionSymbol i => i,
-        FunctionInstanceSymbol i => ExtractIrFunction(i.GenericDefinition),
-        _ => null,
-    };
 }

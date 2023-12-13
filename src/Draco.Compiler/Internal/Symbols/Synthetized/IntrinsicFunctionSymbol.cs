@@ -13,7 +13,6 @@ internal sealed class IntrinsicFunctionSymbol : FunctionSymbol
 
     public override TypeSymbol ReturnType { get; }
     public override bool IsSpecialName => true;
-    public override bool IsStatic => true;
 
     public override string Name { get; }
 

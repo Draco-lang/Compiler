@@ -10,11 +10,10 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// A constructor function for types.
 /// </summary>
-internal sealed class ConstructorFunctionSymbol : IrFunctionSymbol
+internal sealed class ConstructorFunctionSymbol : FunctionSymbol
 {
     public override string Name => this.InstantiatedType.Name;
     public override bool IsSpecialName => true;
-    public override bool IsStatic => true;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);

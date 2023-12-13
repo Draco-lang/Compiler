@@ -167,20 +167,20 @@ internal sealed partial class IntrinsicSymbols
         TokenKind token,
         TypeSymbol operandType,
         TypeSymbol returnType,
-        IrFunctionSymbol.CodegenDelegate codegen) =>
+        FunctionSymbol.CodegenDelegate codegen) =>
         DelegateIrFunctionSymbol.UnaryOperator(token, operandType, returnType, codegen);
     private FunctionSymbol Binary(
         TokenKind token,
         TypeSymbol leftType,
         TypeSymbol rightType,
         TypeSymbol returnType,
-        IrFunctionSymbol.CodegenDelegate codegen) =>
+        FunctionSymbol.CodegenDelegate codegen) =>
         DelegateIrFunctionSymbol.BinaryOperator(token, leftType, rightType, returnType, codegen);
     private FunctionSymbol Comparison(
         TokenKind token,
         TypeSymbol leftType,
         TypeSymbol rightType,
-        IrFunctionSymbol.CodegenDelegate codegen) =>
+        FunctionSymbol.CodegenDelegate codegen) =>
         DelegateIrFunctionSymbol.ComparisonOperator(token, leftType, rightType, this.Bool, codegen);
 
     // Codegen

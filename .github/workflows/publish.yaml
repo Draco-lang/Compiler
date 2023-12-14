@@ -8,10 +8,10 @@ on:
         description: Deploy components of the SDK (Compiler, Toolset, Sdk, ProjectTemplates)
       deploy-langserver:
         type: boolean
-        description: Deploy the language server (Compiler, LanguageServer)
+        description: Deploy the language server (Compiler, LanguageServer, Lsp)
       deploy-debugadapter:
         type: boolean
-        description: Deploy the debug adapter (DebugAdapter)
+        description: Deploy the debug adapter (DebugAdapter, Dap)
       deploy-vscext:
         type: boolean
         description: Deploy the VS Code extension
@@ -58,8 +58,8 @@ jobs:
       run: |
         cd src
         $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
-        $langserverProjects = "Compiler", "LanguageServer"
-        $debugadapterProjects = @("DebugAdapter")
+        $langserverProjects = "Compiler", "LanguageServer", "Lsp"
+        $debugadapterProjects = "DebugAdapter", "Dap"
         $projects = @()
 
         if ($${{ github.event.inputs.deploy-sdk }}) { $projects += $sdkProjects; }

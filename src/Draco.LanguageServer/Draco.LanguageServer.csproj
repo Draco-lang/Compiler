@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <PackageReference Include="NuGet.Protocol" Version="6.4.0" />
+    <PackageReference Include="NuGet.Protocol" Version="6.8.0" />
     <!-- NOTE: Temporary until we solve MSBuild communication -->
     <PackageReference Include="Basic.Reference.Assemblies.Net70" Version="1.4.1" />
   </ItemGroup>

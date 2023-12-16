@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection.Metadata;
 using Draco.Compiler.Internal.Symbols.Generic;
-using Draco.Compiler.Internal.Symbols.Metadata;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;

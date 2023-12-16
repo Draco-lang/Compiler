@@ -3,8 +3,8 @@ using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;

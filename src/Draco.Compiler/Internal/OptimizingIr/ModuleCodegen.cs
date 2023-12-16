@@ -79,13 +79,13 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     public override void VisitFunction(FunctionSymbol functionSymbol)
     {
-        if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
+        if (functionSymbol.Body is null) return;
 
         // Add procedure
         var procedure = this.module.DefineProcedure(functionSymbol);
 
         // Create the body
-        var body = this.RewriteBody(sourceFunction.Body);
+        var body = this.RewriteBody(functionSymbol.Body);
         // Yank out potential local functions and closures
         var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
         // Compile it

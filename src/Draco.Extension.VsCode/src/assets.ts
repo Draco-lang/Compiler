@@ -2,52 +2,50 @@
  * Asset handling.
  */
 
-import * as fs from "fs/promises";
-import * as path from "path";
 import * as vscode from "vscode";
-import { PathLike } from "fs";
 import { glob } from "glob";
+import { Uri, workspace } from "vscode";
 
 /**
  * Aids in asset generation.
  */
 export class AssetGenerator {
-    private readonly workspaceRoot: string;
+    private readonly workspaceRoot: Uri;
 
     /**
      * Initializes an asset generator.
      * @param workspaceRoot The workspace root.
      */
-    public constructor(workspaceRoot: string) {
+    public constructor(workspaceRoot: Uri) {
         this.workspaceRoot = workspaceRoot;
     }
 
     /**
      * The '.vscode' path of the workspace.
      */
-    public get vscodePath(): string {
-        return path.join(this.workspaceRoot, '.vscode');
+    public get vscodePath(): Uri {
+        return Uri.joinPath(this.workspaceRoot, '.vscode');
     }
 
     /**
      * The 'settings.json' file path of the workspace.
      */
-    public get settingsJsonPath(): string {
-        return path.join(this.vscodePath, 'settings.json');
+    public get settingsJsonPath(): Uri {
+        return Uri.joinPath(this.vscodePath, 'settings.json');
     }
 
     /**
      * The 'tasks.json' file path of the workspace.
      */
-    public get tasksJsonPath(): string {
-        return path.join(this.vscodePath, 'tasks.json');
+    public get tasksJsonPath(): Uri {
+        return Uri.joinPath(this.vscodePath, 'tasks.json');
     }
 
     /**
      * The 'launch.json' file path of the workspace.
      */
-    public get launchJsonPath(): string {
-        return path.join(this.vscodePath, 'launch.json');
+    public get launchJsonPath(): Uri {
+        return Uri.joinPath(this.vscodePath, 'launch.json');
     }
 
     /**
@@ -63,7 +61,7 @@ export class AssetGenerator {
      */
     public async ensureVscodeFolderExists() {
         if (!await exists(this.vscodePath)) {
-            await fs.mkdir(this.vscodePath);
+            await vscode.workspace.fs.createDirectory(this.vscodePath);
         }
     }
 
@@ -71,10 +69,10 @@ export class AssetGenerator {
      * Retrieves all file paths with the '.dracoproj' extension,
      * relative to the workspace root.
      */
-    public async getDracoprojFilePaths(): Promise<string[]> {
-        const pattern = path.join(this.workspaceRoot, '**', '*.dracoproj').replace(/\\/g, '/');
-        const paths = await globAsync(pattern);
-        return paths.map(p => path.relative(this.workspaceRoot, p));
+    public async getDracoprojFilePaths(): Promise<Uri[]> {
+        const pattern = Uri.joinPath(this.workspaceRoot, '**', '*.dracoproj'); // should we keep this ? .replace(/\\/g, '/');
+        const paths = [] as string[]; // TODO FIXME await globAsync(pattern);
+        return paths.map(p => Uri.joinPath(this.workspaceRoot, p));
     }
 
     /**
@@ -82,7 +80,7 @@ export class AssetGenerator {
      * @param project The projectfile path.
      * @returns The single task descriptor to be used within 'tasks.json'.
      */
-    public getBuildTaskDescriptionForProject(project: string): any {
+    public getBuildTaskDescriptionForProject(project: Uri): any {
         return {
             label: 'build',
             command: 'dotnet',
@@ -100,15 +98,18 @@ export class AssetGenerator {
      * @param project The projectfile path.
      * @returns The single launch configuration to be used within 'launch.json'.
      */
-    public getLaunchDescriptionForProject(project: string): vscode.DebugConfiguration {
-        const dllName = `${path.parse(project).name}.dll`;
+    public getLaunchDescriptionForProject(project: Uri): vscode.DebugConfiguration {
+        const filename = project.path.split('/').at(-1)!;
+        // care of multiple dot in filename
+        const filenameWithoutExtension = filename.split('.').slice(0, -1).join('.');
+        const dllName = `${filenameWithoutExtension}.dll`;
         return {
             name: 'Draco: Launch Console App',
             type: 'dracodbg',
             request: 'launch',
             preLaunchTask: 'build',
             // TODO: Hardcoded config and framework
-            program: path.join('${workspaceFolder}', 'bin', 'Debug', 'net7.0', dllName),
+            program: `'\${workspaceFolder}/bin/Debug/net7.0/${dllName})`,
             stopAtEntry: false,
         };
     }
@@ -136,9 +137,9 @@ async function globAsync(pattern: string): Promise<string[]> {
  * @param path The path to check.
  * @returns True, if the path exists and can be written, false otherwise.
  */
-async function exists(path: PathLike): Promise<boolean> {
+async function exists(path: Uri): Promise<boolean> {
     try {
-        await fs.access(path, fs.constants.W_OK);
+        await workspace.fs.stat(path);
         return true;
     } catch {
         return false;

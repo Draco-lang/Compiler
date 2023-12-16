@@ -29,7 +29,7 @@ class DracoDebugConfigurationProvider implements vscode.DebugConfigurationProvid
             return [];
         }
 
-        const generator = new AssetGenerator(folder.uri.fsPath);
+        const generator = new AssetGenerator(folder.uri);
         const projectFiles = await generator.getDracoprojFilePaths();
         return projectFiles.map(generator.getLaunchDescriptionForProject);
     }

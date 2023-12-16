@@ -3,7 +3,6 @@
  * Most logic in here should only be querying settings, showing prompts and calling out to other APIs.
  */
 
-import * as fs from "fs/promises";
 import { ConfigurationTarget, TextEditor, Uri, window, workspace } from "vscode";
 import { DebugAdapterCommandName, DebugAdapterToolName, LanguageServerCommandName, LanguageServerToolName, checkForDotnetToolUpdates, installDotnetTool, isDotnetCommandAvailable, isDotnetToolAvailable, updateDotnetTool } from "./tools";
 import { PromptKind, PromptResult, prompt } from "./prompt";
@@ -40,7 +39,7 @@ export async function promptUserToCreateLaunchAndTasksConfig() {
     }
 
     // TODO: We assume a singular workspace folder, quite inflexible
-    const workspaceFolder = workspace.workspaceFolders[0].uri.fsPath;
+    const workspaceFolder = workspace.workspaceFolders[0].uri;
 
     const assets = new AssetGenerator(workspaceFolder);
     if (await assets.vscodeFolderExists()) {
@@ -72,9 +71,8 @@ export async function promptUserToCreateLaunchAndTasksConfig() {
         version: '2.0.0',
         configurations: projectFiles.map(assets.getLaunchDescriptionForProject),
     };
-
-    await fs.writeFile(assets.tasksJsonPath, JSON.stringify(tasksDescription, null, 4));
-    await fs.writeFile(assets.launchJsonPath, JSON.stringify(launchDescription, null, 4));
+    await workspace.fs.writeFile(assets.tasksJsonPath, Buffer.from(JSON.stringify(tasksDescription, null, 4)));
+    await workspace.fs.writeFile(assets.launchJsonPath, Buffer.from(JSON.stringify(launchDescription, null, 4)));
 }
 
 /**
@@ -96,12 +94,12 @@ export async function interactivelyCheckForDotnet(): Promise<boolean> {
 
         if (workspace.workspaceFolders && workspace.workspaceFolders.length > 0) {
             // TODO: We assume a singular workspace folder, quite inflexible
-            const workspaceFolder = workspace.workspaceFolders[0].uri.fsPath;
+            const workspaceFolder = workspace.workspaceFolders[0].uri;
 
             const assets = new AssetGenerator(workspaceFolder);
 
             await updateWithDefaultSettings(ConfigurationTarget.Workspace);
-            await openDocument(Uri.file(assets.settingsJsonPath));
+            await openDocument(assets.settingsJsonPath);
         }
 
         return false;

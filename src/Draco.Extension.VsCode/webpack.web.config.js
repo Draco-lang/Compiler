@@ -29,10 +29,8 @@ const webExtensionConfig = {
       // Webpack 5 no longer polyfills Node.js core modules automatically.
       // see https://webpack.js.org/configuration/resolve/#resolvefallback
       // for the list of Node.js core module polyfills.
-      path: require.resolve("path-browserify"),
-      assert: require.resolve("assert/"),
-      util: require.resolve("util/"),
-      process: require.resolve("process/browser")
+      assert: require.resolve("assert"),
+      "path": require.resolve("path-browserify"),
     },
   },
   module: {

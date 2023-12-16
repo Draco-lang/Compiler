@@ -3,8 +3,7 @@
  */
 
 import * as vscode from "vscode";
-import { glob } from "glob";
-import { Uri, workspace } from "vscode";
+import { RelativePattern, Uri, workspace } from "vscode";
 
 /**
  * Aids in asset generation.
@@ -70,9 +69,7 @@ export class AssetGenerator {
      * relative to the workspace root.
      */
     public async getDracoprojFilePaths(): Promise<Uri[]> {
-        const pattern = Uri.joinPath(this.workspaceRoot, '**', '*.dracoproj'); // should we keep this ? .replace(/\\/g, '/');
-        const paths = [] as string[]; // TODO FIXME await globAsync(pattern);
-        return paths.map(p => Uri.joinPath(this.workspaceRoot, p));
+        return await workspace.findFiles(new RelativePattern(this.workspaceRoot, '**/*.dracoproj'));
     }
 
     /**
@@ -113,23 +110,6 @@ export class AssetGenerator {
             stopAtEntry: false,
         };
     }
-}
-
-/**
- * Searches the filesystem using a glob pattern.
- * @param pattern The pattern to search.
- * @returns The matching file paths.
- */
-async function globAsync(pattern: string): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-        glob(pattern, (err, files) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(files);
-            }
-        });
-    });
 }
 
 /**

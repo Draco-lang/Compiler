@@ -23,7 +23,6 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
     /// </summary>
     public int Rank { get; }
 
-    public override Symbol? ContainingSymbol => null;
     public override string Name => this.Rank switch
     {
         1 => "Array",

@@ -10,7 +10,9 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class ModuleSymbol : Symbol, IMemberSymbol
 {
-    public override Visibility Visibility => this.Members.Any(x => x.Visibility == Visibility.Public) ? Visibility.Public : Visibility.Internal;
+    public override Visibility Visibility => this.Members.Any(x => x.Visibility == Visibility.Public)
+        ? Visibility.Public
+        : Visibility.Internal;
 
     public bool IsStatic => true;
 

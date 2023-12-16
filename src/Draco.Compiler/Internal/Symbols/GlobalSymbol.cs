@@ -11,6 +11,9 @@ internal abstract partial class GlobalSymbol : VariableSymbol, IMemberSymbol
 {
     public bool IsStatic => true;
 
+    // NOTE: Override for covariant return type
+    public override GlobalSymbol? GenericDefinition => null;
+
     public override ISymbol ToApiSymbol() => new Api.Semantics.GlobalSymbol(this);
 
     public override GlobalSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>

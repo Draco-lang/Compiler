@@ -35,19 +35,10 @@ internal static class MetadataSymbol
             // Non-static classes get constructor methods injected, in case they are not abstract
             var typeSymbol = new MetadataTypeSymbol(containingSymbol, type);
             var results = new List<Symbol>() { typeSymbol };
-            if (!type.Attributes.HasFlag(TypeAttributes.Abstract))
+            if (!typeSymbol.IsAbstract)
             {
-                // Look for the constructors
-                foreach (var methodHandle in type.GetMethods())
-                {
-                    var method = metadataReader.GetMethodDefinition(methodHandle);
-                    var methodName = metadataReader.GetString(method.Name);
-                    if (methodName != ".ctor") continue;
-
-                    // This is a constructor, synthetize a function overload
-                    var ctor = new MetadataConstructorFunctionSymbol(typeSymbol, method);
-                    results.Add(ctor);
-                }
+                // Synthetize function overloads for constructors
+                results.AddRange(typeSymbol.Constructors.Select(c => new ConstructorFunctionSymbol(c)));
             }
             return results;
         }

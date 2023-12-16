@@ -221,7 +221,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                     e
                         .MethodSignature(
                             genericParameterCount: func.GenericParameters.Length,
-                            isInstanceMethod: func.IsMember)
+                            isInstanceMethod: !func.IsStatic)
                         .Parameters(func.Parameters.Length, out var returnType, out var parameters);
                     this.EncodeReturnType(returnType, func.ReturnType);
                     foreach (var param in func.Parameters)

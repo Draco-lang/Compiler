@@ -6,7 +6,6 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class ErrorTypeSymbol : TypeSymbol
 {
     public override bool IsError => true;
-    public override Symbol? ContainingSymbol => null;
 
     /// <summary>
     /// The display name of the type.

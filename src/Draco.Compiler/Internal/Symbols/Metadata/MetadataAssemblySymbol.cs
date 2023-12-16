@@ -29,7 +29,6 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     public override string Name => this.MetadataName;
     // NOTE: We don't emit the name of the module in fully qualified names
     public override string FullName => string.Empty;
-    public override Symbol? ContainingSymbol => null;
 
     /// <summary>
     /// The <see cref="System.Reflection.AssemblyName"/> of this referenced assembly.

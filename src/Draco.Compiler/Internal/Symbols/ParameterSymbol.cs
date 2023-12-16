@@ -16,6 +16,9 @@ internal abstract partial class ParameterSymbol : LocalSymbol
 
     public override bool IsMutable => false;
 
+    // NOTE: Override for covariant return type
+    public override ParameterSymbol? GenericDefinition => null;
+
     public override ParameterSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (ParameterSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override ParameterSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>

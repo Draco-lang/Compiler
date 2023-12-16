@@ -11,7 +11,6 @@ internal sealed class ReferenceTypeSymbol : TypeSymbol
     public TypeSymbol ElementType { get; }
 
     public override bool IsValueType => true;
-    public override Symbol? ContainingSymbol => null;
 
     public ReferenceTypeSymbol(TypeSymbol elementType)
     {

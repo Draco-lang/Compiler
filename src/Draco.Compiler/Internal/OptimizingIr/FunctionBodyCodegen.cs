@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Binding;
@@ -69,10 +70,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
-    private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
+    private Procedure SynthetizeProcedure(FunctionSymbol func)
     {
+        Debug.Assert(func.Body is not null);
+
         // We handle synthetized functions a bit specially, as they are not part of our symbol
-        // tree, so we compile them, in case they have not been yet
+        // tree, so we compile them, in case they have not yet been
         var compiledAlready = this.procedure.DeclaringModule.Procedures.ContainsKey(func);
         var proc = this.procedure.DeclaringModule.DefineProcedure(func);
         if (!compiledAlready)
@@ -276,14 +279,13 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var callResult = this.DefineRegister(node.TypeRequired);
 
         var proc = this.TranslateFunctionSymbol(node.Method);
-        var irFunc = ExtractIrFunction(proc);
-        if (irFunc is not null)
+        if (proc.Codegen is { } codegen)
         {
             if (receiver is not null)
             {
                 throw new System.NotImplementedException();
             }
-            irFunc.Codegen(this, callResult, args);
+            codegen(this, callResult, args);
         }
         else
         {
@@ -399,9 +401,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             // Patch
             PatchLoadTarget(leftLoad, leftValue);
             this.Write(leftLoad);
-            if (node.CompoundOperator is IrFunctionSymbol irFunction)
+            if (node.CompoundOperator.Codegen is { } codegen)
             {
-                irFunction.Codegen(this, tmp, ImmutableArray.Create(leftValue, right));
+                codegen(this, tmp, ImmutableArray.Create(leftValue, right));
             }
             else
             {
@@ -502,11 +504,16 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private FunctionSymbol TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
     {
-        SourceFunctionSymbol func => this.DefineProcedure(func).Symbol,
-        SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func).Symbol,
-        MetadataMethodSymbol m => m,
+        // Generic functions
         FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
-        IrFunctionSymbol i => i,
+        // Functions with synthetized body
+        FunctionSymbol f when f.DeclaringSyntax is null && f.Body is not null => this.SynthetizeProcedure(f).Symbol,
+        // Functions with inline codegen
+        FunctionSymbol f when f.Codegen is not null => f,
+        // Source functions
+        SourceFunctionSymbol func => this.DefineProcedure(func).Symbol,
+        // Metadata functions
+        MetadataMethodSymbol m => m,
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 
@@ -535,17 +542,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitBinaryExpression(BoundBinaryExpression node) =>
         throw new System.InvalidOperationException();
 
+    // TODO: This will likely disappear once all globals can have a constant value
     private static MetadataStaticFieldSymbol? ExtractMetadataStaticField(GlobalSymbol global) => global switch
     {
         MetadataStaticFieldSymbol m => m,
         // TODO: Global instances?
-        _ => null,
-    };
-
-    private static IrFunctionSymbol? ExtractIrFunction(FunctionSymbol symbol) => symbol switch
-    {
-        IrFunctionSymbol i => i,
-        FunctionInstanceSymbol i => ExtractIrFunction(i.GenericDefinition),
         _ => null,
     };
 }

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using Draco.Compiler.Internal.BoundTree;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -47,9 +48,11 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     private TypeSymbol? returnType;
 
     public override string Name => this.GenericDefinition.Name;
-    public override bool IsMember => this.GenericDefinition.IsMember;
     public override bool IsVirtual => this.GenericDefinition.IsVirtual;
     public override bool IsStatic => this.GenericDefinition.IsStatic;
+    public override bool ForceInline => this.GenericDefinition.ForceInline;
+    public override BoundStatement? Body => this.GenericDefinition.Body;
+    public override CodegenDelegate? Codegen => this.GenericDefinition.Codegen;
 
     public override Symbol? ContainingSymbol { get; }
     public override FunctionSymbol GenericDefinition { get; }
@@ -90,7 +93,6 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // Either way:
         //  - We have generic parameters, this is still a generic definition
         //  - Non-generic
-        //
         return base.ToString();
     }
 

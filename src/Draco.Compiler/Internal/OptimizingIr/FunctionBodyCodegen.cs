@@ -504,6 +504,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private FunctionSymbol TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
     {
+        // Generic functions
+        FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
         // Functions with synthetized body
         FunctionSymbol f when f.DeclaringSyntax is null && f.Body is not null => this.SynthetizeProcedure(f).Symbol,
         // Functions with inline codegen
@@ -512,8 +514,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         SourceFunctionSymbol func => this.DefineProcedure(func).Symbol,
         // Metadata functions
         MetadataMethodSymbol m => m,
-        // Generic functions
-        FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 

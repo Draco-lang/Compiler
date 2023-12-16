@@ -43,6 +43,10 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
             return ExpressionStatement(ReturnExpression(UnitExpression()));
         }
 
+        // TODO: Filtering for 0 args is not correct
+        // while it is fine for metadata functions, for source functions "this" is explicit so it has 1 arg
+        // We either kill this asimmetry, or we never make assumptions about the number of args
+
         // We have a base type, call base constructor
         var defaultCtor = this.ContainingSymbol.BaseType.Constructors
             .FirstOrDefault(ctor => ctor.Parameters.Length == 0);

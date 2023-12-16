@@ -66,7 +66,7 @@ internal sealed class SourceClassSymbol : TypeSymbol
         // If there is no constructor, add a default one
         if (this.DeclaringSyntax.PrimaryConstructor is null)
         {
-            // result.Add(new DefaultConstructorSymbol(this));
+            result.Add(new DefaultConstructorSymbol(this));
         }
 
         // Done

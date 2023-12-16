@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// A default constructor for in-source types.
 /// </summary>
-internal sealed class DefaultConstructorSymbol : SynthetizedFunctionSymbol
+internal sealed class DefaultConstructorSymbol : FunctionSymbol
 {
     public override Symbol ContainingSymbol { get; }
 

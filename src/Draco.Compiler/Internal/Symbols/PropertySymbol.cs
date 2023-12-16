@@ -30,6 +30,9 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
 
     public virtual Symbol? Override => null;
 
+    // NOTE: Override for covariant return type
+    public override PropertySymbol? GenericDefinition => null;
+
     /// <summary>
     /// The parameters of this property.
     /// </summary>

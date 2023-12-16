@@ -12,7 +12,6 @@ internal sealed class UndefinedPropertyAccessorSymbol : FunctionSymbol, IPropert
     public override TypeSymbol ReturnType => IntrinsicSymbols.ErrorType;
     public override bool IsError => true;
     public override bool IsStatic => false;
-    public override Symbol? ContainingSymbol => null;
     public PropertySymbol Property { get; }
 
     public UndefinedPropertyAccessorSymbol(PropertySymbol property)

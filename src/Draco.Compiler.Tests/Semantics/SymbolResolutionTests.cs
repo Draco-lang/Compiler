@@ -3902,7 +3902,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);
@@ -3954,7 +3954,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);
@@ -4013,7 +4013,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);
@@ -4065,7 +4065,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);
@@ -4117,7 +4117,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);

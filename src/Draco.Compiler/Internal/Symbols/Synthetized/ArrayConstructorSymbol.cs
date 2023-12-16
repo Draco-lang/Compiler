@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// A global constructor for arrays.
 /// </summary>
-internal sealed class ArrayConstructorSymbol : SynthetizedFunctionSymbol
+internal sealed class ArrayConstructorSymbol : FunctionSymbol
 {
     public override string Name => this.Rank switch
     {

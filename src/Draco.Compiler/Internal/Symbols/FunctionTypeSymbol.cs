@@ -17,8 +17,6 @@ internal sealed class FunctionTypeSymbol : TypeSymbol
     /// </summary>
     public TypeSymbol ReturnType { get; }
 
-    public override Symbol? ContainingSymbol => null;
-
     public FunctionTypeSymbol(ImmutableArray<ParameterSymbol> parameters, TypeSymbol returnType)
     {
         this.Parameters = parameters;

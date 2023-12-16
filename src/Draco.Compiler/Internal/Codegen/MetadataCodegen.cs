@@ -464,7 +464,9 @@ internal sealed class MetadataCodegen : MetadataWriter
         var startFieldIndex = fieldIndex;
         var startProcIndex = procIndex;
 
-        // TODO: Go through members
+        foreach (var proc in @class.Procedures.Values) this.EncodeProcedure(proc);
+
+        // TODO: Go through the rest of the members
 
         var visibility = @class.Symbol.Visibility == Api.Semantics.Visibility.Public
             ? (parent is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public)
@@ -535,7 +537,8 @@ internal sealed class MetadataCodegen : MetadataWriter
             hasDynamicStackAllocation: false);
 
         // Determine attributes
-        var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
+        var attributes = MethodAttributes.HideBySig;
+        if (procedure.Symbol.IsStatic) attributes |= MethodAttributes.Static;
         attributes |= specialName is null
             ? visibility
             : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
@@ -582,11 +585,17 @@ internal sealed class MetadataCodegen : MetadataWriter
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {
         e
-            .MethodSignature(genericParameterCount: procedure.Generics.Count)
-            .Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
+            .MethodSignature(
+                genericParameterCount: procedure.Generics.Count,
+                isInstanceMethod: !procedure.Symbol.IsStatic)
+            .Parameters(
+                procedure.Symbol.IsStatic ? procedure.Parameters.Count : procedure.Parameters.Count - 1,
+                out var retEncoder,
+                out var paramsEncoder);
         this.EncodeReturnType(retEncoder, procedure.ReturnType);
         foreach (var param in procedure.Parameters)
         {
+            if (param.IsThis) continue;
             this.EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
         }
     });

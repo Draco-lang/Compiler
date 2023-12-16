@@ -14,6 +14,11 @@ internal abstract partial class ParameterSymbol : LocalSymbol
     /// </summary>
     public virtual bool IsVariadic => false;
 
+    /// <summary>
+    /// True, if this is the "this" parameter.
+    /// </summary>
+    public virtual bool IsThis => false;
+
     public override bool IsMutable => false;
 
     // NOTE: Override for covariant return type

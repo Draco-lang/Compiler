@@ -74,6 +74,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         Debug.Assert(func.Body is not null);
 
+        // TODO: This might not be necessarily correct, as we might be within a class
+        // and not a module
+
         // We handle synthetized functions a bit specially, as they are not part of our symbol
         // tree, so we compile them, in case they have not yet been
         var compiledAlready = this.procedure.DeclaringModule.Procedures.ContainsKey(func);

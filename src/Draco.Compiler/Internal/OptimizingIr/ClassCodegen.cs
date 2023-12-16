@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 
@@ -26,15 +28,38 @@ internal sealed class ClassCodegen : SymbolVisitor
         this.@class = @class;
     }
 
+    // TODO: Copypasta from ModuleCodegen
     public override void VisitFunction(FunctionSymbol functionSymbol)
     {
-        // TODO
-        throw new NotImplementedException();
+        if (functionSymbol.Body is null) return;
+
+        // Add procedure
+        var procedure = this.@class.DefineProcedure(functionSymbol);
+
+        // Create the body
+        var body = this.RewriteBody(functionSymbol.Body);
+        // Yank out potential local functions and closures
+        var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
+        // Compile it
+        var bodyCodegen = new FunctionBodyCodegen(this.Compilation, procedure);
+        bodyWithoutLocalFunctions.Accept(bodyCodegen);
+
+        // Compile the local functions
+        foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
     }
 
     public override void VisitField(FieldSymbol fieldSymbol)
     {
         // TODO
         throw new NotImplementedException();
+    }
+
+    // TODO: Copypasta from ModuleCodegen
+    private BoundNode RewriteBody(BoundNode body)
+    {
+        // If needed, inject sequence points
+        if (this.EmitSequencePoints) body = SequencePointInjector.Inject(body);
+        // Desugar it
+        return body.Accept(new LocalRewriter(this.Compilation));
     }
 }

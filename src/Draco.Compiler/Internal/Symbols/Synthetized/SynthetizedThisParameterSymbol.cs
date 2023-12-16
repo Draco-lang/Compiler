@@ -14,6 +14,7 @@ internal sealed class SynthetizedThisParameterSymbol : ParameterSymbol
     public override FunctionSymbol ContainingSymbol { get; }
     public override TypeSymbol Type => (TypeSymbol)this.ContainingSymbol.ContainingSymbol!;
     public override string Name => "this";
+    public override bool IsThis => true;
 
     public SynthetizedThisParameterSymbol(FunctionSymbol containingSymbol)
     {

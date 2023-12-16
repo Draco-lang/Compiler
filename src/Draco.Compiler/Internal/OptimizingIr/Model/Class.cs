@@ -35,6 +35,16 @@ internal sealed class Class : IClass
         this.Symbol = symbol;
     }
 
+    public Procedure DefineProcedure(FunctionSymbol functionSymbol)
+    {
+        if (!this.procedures.TryGetValue(functionSymbol, out var result))
+        {
+            result = new Procedure(this.DeclaringModule, functionSymbol);
+            this.procedures.Add(functionSymbol, result);
+        }
+        return (Procedure)result;
+    }
+
     public override string ToString()
     {
         var result = new StringBuilder();

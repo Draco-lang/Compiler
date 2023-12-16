@@ -18,6 +18,7 @@ internal interface IProcedure
     /// </summary>
     public string Name { get; }
 
+    // TODO: Declaring class?
     /// <summary>
     /// The module this procedure is defined in.
     /// </summary>

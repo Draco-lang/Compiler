@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Binding;
@@ -69,8 +70,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
-    private Procedure SynthetizeProcedure(SynthetizedFunctionSymbol func)
+    private Procedure SynthetizeProcedure(FunctionSymbol func)
     {
+        Debug.Assert(func.Body is not null);
+
         // We handle synthetized functions a bit specially, as they are not part of our symbol
         // tree, so we compile them, in case they have not yet been
         var compiledAlready = this.procedure.DeclaringModule.Procedures.ContainsKey(func);
@@ -501,11 +504,16 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     private FunctionSymbol TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
     {
-        SourceFunctionSymbol func => this.DefineProcedure(func).Symbol,
-        SynthetizedFunctionSymbol func => this.SynthetizeProcedure(func).Symbol,
-        MetadataMethodSymbol m => m,
-        FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
+        // Functions with synthetized body
+        FunctionSymbol f when f.DeclaringSyntax is null && f.Body is not null => this.SynthetizeProcedure(f).Symbol,
+        // Functions with inline codegen
         FunctionSymbol f when f.Codegen is not null => f,
+        // Source functions
+        SourceFunctionSymbol func => this.DefineProcedure(func).Symbol,
+        // Metadata functions
+        MetadataMethodSymbol m => m,
+        // Generic functions
+        FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
     };
 

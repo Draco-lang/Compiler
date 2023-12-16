@@ -45,12 +45,17 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
 
         // We have a base type, call base constructor
         var defaultCtor = this.ContainingSymbol.BaseType.Constructors
-            .FirstOrDefault(ctor => ctor.Parameters.Length == 1);
+            .FirstOrDefault(ctor => ctor.Parameters.Length == 0);
         // TODO: Error if base has no default constructor?
         if (defaultCtor is null) throw new NotImplementedException();
-        return ExpressionStatement(CallExpression(
-            receiver: ParameterExpression(this.Parameters[0]),
-            method: defaultCtor,
-            arguments: ImmutableArray<BoundExpression>.Empty));
+        return ExpressionStatement(BlockExpression(
+            locals: ImmutableArray<LocalSymbol>.Empty,
+            statements: ImmutableArray.Create<BoundStatement>(
+                ExpressionStatement(CallExpression(
+                    receiver: ParameterExpression(this.Parameters[0]),
+                    method: defaultCtor,
+                    arguments: ImmutableArray<BoundExpression>.Empty)),
+                ExpressionStatement(ReturnExpression(BoundUnitExpression.Default))),
+            value: BoundUnitExpression.Default));
     }
 }

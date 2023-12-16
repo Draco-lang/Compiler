@@ -28,6 +28,10 @@ internal sealed class SourceClassSymbol : TypeSymbol
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
+    public override ImmutableArray<TypeSymbol> ImmediateBaseTypes =>
+        InterlockedUtils.InitializeDefault(ref this.immediateBaseTypes, this.BuildImmediateBaseTypes);
+    private ImmutableArray<TypeSymbol> immediateBaseTypes;
+
     public override bool IsValueType => this.DeclaringSyntax.ValueModifier is not null;
 
     public override Symbol ContainingSymbol { get; }
@@ -56,6 +60,15 @@ internal sealed class SourceClassSymbol : TypeSymbol
             .Select(syntax => new SourceTypeParameterSymbol(this, syntax))
             .Cast<TypeParameterSymbol>()
             .ToImmutableArray();
+    }
+
+    private ImmutableArray<TypeSymbol> BuildImmediateBaseTypes()
+    {
+        var result = ImmutableArray.CreateBuilder<TypeSymbol>();
+        // NOTE: For now we always just inherit from object
+        result.Add(this.DeclaringCompilation!.WellKnownTypes.SystemObject);
+        // Done
+        return result.ToImmutable();
     }
 
     private ImmutableArray<Symbol> BuildMembers()

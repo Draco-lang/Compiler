@@ -55,10 +55,11 @@ internal sealed class ClassCodegen : SymbolVisitor
     }
 
     // TODO: Copypasta from ModuleCodegen
+    // TODO: Except we check for syntax not being null because we can have synthetized symbols
     private BoundNode RewriteBody(BoundNode body)
     {
         // If needed, inject sequence points
-        if (this.EmitSequencePoints) body = SequencePointInjector.Inject(body);
+        if (body.Syntax is not null && this.EmitSequencePoints) body = SequencePointInjector.Inject(body);
         // Desugar it
         return body.Accept(new LocalRewriter(this.Compilation));
     }

@@ -20,6 +20,7 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
     public override TypeSymbol ReturnType => IntrinsicSymbols.Unit;
     public override bool IsStatic => false;
     public override bool IsSpecialName => true;
+    public override bool IsConstructor => true;
     public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     public override ImmutableArray<ParameterSymbol> Parameters =>

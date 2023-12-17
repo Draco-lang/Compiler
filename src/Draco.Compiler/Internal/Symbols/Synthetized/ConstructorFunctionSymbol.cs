@@ -12,6 +12,7 @@ internal sealed class ConstructorFunctionSymbol : FunctionSymbol
 {
     public override string Name => this.InstantiatedType.Name;
     public override bool IsSpecialName => true;
+    public override Api.Semantics.Visibility Visibility => this.ctorDefinition.Visibility;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);

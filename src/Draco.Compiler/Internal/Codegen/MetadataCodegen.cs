@@ -420,7 +420,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
 
         // Compile global initializer too
-        this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
+        this.EncodeProcedure(module.GlobalInitializer);
         ++procIndex;
 
         var visibility = module.Symbol.Visibility == Api.Semantics.Visibility.Public
@@ -505,7 +505,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             signature: this.EncodeGlobalSignature(global));
     }
 
-    private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
+    private MethodDefinitionHandle EncodeProcedure(IProcedure procedure)
     {
         var visibility = procedure.Symbol.Visibility switch
         {
@@ -537,11 +537,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             hasDynamicStackAllocation: false);
 
         // Determine attributes
-        var attributes = MethodAttributes.HideBySig;
+        var attributes = MethodAttributes.HideBySig | visibility;
         if (procedure.Symbol.IsStatic) attributes |= MethodAttributes.Static;
-        attributes |= specialName is null
-            ? visibility
-            : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+        if (procedure.Symbol.IsSpecialName) attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
         // Parameters
         var parameterList = this.NextParameterHandle;
@@ -557,7 +555,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         var definitionHandle = this.MetadataBuilder.AddMethodDefinition(
             attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
-            name: this.GetOrAddString(specialName ?? procedure.Name),
+            name: this.GetOrAddString(procedure.Name),
             signature: this.EncodeProcedureSignature(procedure),
             bodyOffset: methodBodyOffset,
             parameterList: parameterList);

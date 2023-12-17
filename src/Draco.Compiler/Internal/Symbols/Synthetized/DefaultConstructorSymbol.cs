@@ -19,6 +19,7 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
     public override string Name => ".ctor";
     public override TypeSymbol ReturnType => IntrinsicSymbols.Unit;
     public override bool IsStatic => false;
+    public override bool IsSpecialName => true;
 
     public override ImmutableArray<ParameterSymbol> Parameters =>
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);

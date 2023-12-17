@@ -41,7 +41,7 @@ internal sealed class Module : IModule
     {
         this.Symbol = symbol;
         this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
-            name: "<global initializer>",
+            name: ".cctor",
             paramTypes: Enumerable.Empty<TypeSymbol>(),
             returnType: IntrinsicSymbols.Unit));
         this.Assembly = assembly;

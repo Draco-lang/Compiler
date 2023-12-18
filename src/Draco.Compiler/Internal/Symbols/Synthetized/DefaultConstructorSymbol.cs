@@ -23,9 +23,7 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
     public override bool IsConstructor => true;
     public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
-    public override ImmutableArray<ParameterSymbol> Parameters =>
-        InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
-    private ImmutableArray<ParameterSymbol> parameters;
+    public override ImmutableArray<ParameterSymbol> Parameters => ImmutableArray<ParameterSymbol>.Empty;
 
     public override BoundStatement Body => this.body ??= this.BuildBody();
     private BoundStatement? body;
@@ -35,9 +33,6 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
         this.ContainingSymbol = containingSymbol;
     }
 
-    private ImmutableArray<ParameterSymbol> BuildParameters() =>
-        ImmutableArray.Create<ParameterSymbol>(new SynthetizedThisParameterSymbol(this));
-
     private BoundStatement BuildBody()
     {
         if (this.ContainingSymbol.BaseType is null)
@@ -45,10 +40,6 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
             // No base type, no need to call base constructor
             return ExpressionStatement(ReturnExpression(UnitExpression()));
         }
-
-        // TODO: Filtering for 0 args is not correct
-        // while it is fine for metadata functions, for source functions "this" is explicit so it has 1 arg
-        // We either kill this asimmetry, or we never make assumptions about the number of args
 
         // We have a base type, call base constructor
         var defaultCtor = this.ContainingSymbol.BaseType.Constructors
@@ -59,7 +50,7 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
             locals: ImmutableArray<LocalSymbol>.Empty,
             statements: ImmutableArray.Create<BoundStatement>(
                 ExpressionStatement(CallExpression(
-                    receiver: ParameterExpression(this.Parameters[0]),
+                    receiver: ParameterExpression(new SynthetizedThisParameterSymbol(this)),
                     method: defaultCtor,
                     arguments: ImmutableArray<BoundExpression>.Empty)),
                 ExpressionStatement(ReturnExpression(BoundUnitExpression.Default))),

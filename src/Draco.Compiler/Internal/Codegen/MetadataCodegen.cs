@@ -587,13 +587,12 @@ internal sealed class MetadataCodegen : MetadataWriter
                 genericParameterCount: procedure.Generics.Count,
                 isInstanceMethod: !procedure.Symbol.IsStatic)
             .Parameters(
-                procedure.Symbol.IsStatic ? procedure.Parameters.Count : procedure.Parameters.Count - 1,
+                procedure.Parameters.Count,
                 out var retEncoder,
                 out var paramsEncoder);
         this.EncodeReturnType(retEncoder, procedure.ReturnType);
         foreach (var param in procedure.Parameters)
         {
-            if (param.IsThis) continue;
             this.EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
         }
     });
@@ -720,6 +719,17 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (type is ReferenceTypeSymbol referenceType)
         {
             this.EncodeSignatureType(encoder.Pointer(), referenceType.ElementType);
+            return;
+        }
+
+        if (type is SourceClassSymbol sourceClass)
+        {
+            encoder.Type(
+                type: this.GetOrAddTypeReference(
+                    parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
+                    @namespace: null,
+                    name: sourceClass.MetadataName),
+                isValueType: sourceClass.IsValueType);
             return;
         }
 

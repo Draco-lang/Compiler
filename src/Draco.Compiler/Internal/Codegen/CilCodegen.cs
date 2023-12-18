@@ -74,7 +74,9 @@ internal sealed class CilCodegen
     private EntityHandle GetHandle(Symbol symbol) => this.metadataCodegen.GetEntityHandle(symbol);
 
     // TODO: Parameters don't handle unit yet, it introduces some signature problems
-    private int GetParameterIndex(ParameterSymbol parameter) => this.procedure.GetParameterIndex(parameter);
+    private int GetParameterIndex(ParameterSymbol parameter) => parameter.IsThis
+        ? 0
+        : this.procedure.GetParameterIndex(parameter) + (parameter.ContainingSymbol.IsStatic ? 0 : 1);
 
     private AllocatedLocal? GetAllocatedLocal(LocalSymbol local)
     {

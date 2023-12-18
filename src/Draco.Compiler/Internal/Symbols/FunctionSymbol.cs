@@ -71,6 +71,13 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     };
 
     /// <summary>
+    /// The receiver of this function, if it has one.
+    /// </summary>
+    public TypeSymbol? Receiver => this.IsStatic
+        ? null
+        : this.ContainingSymbol as TypeSymbol;
+
+    /// <summary>
     /// The parameters of this function.
     /// </summary>
     public abstract ImmutableArray<ParameterSymbol> Parameters { get; }

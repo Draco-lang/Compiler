@@ -71,20 +71,37 @@ internal sealed class SourceClassSymbol : TypeSymbol
         return result.ToImmutable();
     }
 
+    // TODO: Check for illegal shadowing
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
-        // TODO: Check for secondary constructors
-        // If there is no constructor, add a default one
         if (this.DeclaringSyntax.PrimaryConstructor is null)
         {
+            // TODO: Check for secondary constructors
+            // If there is no constructor, add a default one
             result.Add(new DefaultConstructorSymbol(this));
         }
         else
         {
             // We have a primary constructor, add it
             result.Add(new SourcePrimaryConstructorSymbol(this, this.DeclaringSyntax.PrimaryConstructor));
+
+            // Also check for fields/props
+            foreach (var param in this.DeclaringSyntax.PrimaryConstructor.ParameterList.Values)
+            {
+                // Skip non-members
+                if (param.MemberModifiers is null) continue;
+
+                // TODO: Implement properties
+                if (param.MemberModifiers.FieldModifier is null)
+                {
+                    throw new NotImplementedException();
+                }
+
+                // Add field
+                result.Add(new SourceFieldSymbol(this, param));
+            }
         }
 
         // Done

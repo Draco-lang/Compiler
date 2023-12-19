@@ -91,7 +91,42 @@ internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol, ISourceSy
 
     private BoundStatement BuildBody()
     {
-        // TODO: Later we'll need to initialize fields
-        return ExpressionStatement(ReturnExpression(BoundUnitExpression.Default));
+        var thisSymbol = new SynthetizedThisParameterSymbol(this);
+
+        var statements = ImmutableArray.CreateBuilder<BoundStatement>();
+        foreach (var (paramSyntax, paramSymbol) in this.DeclaringSyntax.ParameterList.Values.Zip(this.Parameters))
+        {
+            // Skip non-members
+            if (paramSyntax.MemberModifiers is null) continue;
+
+            var isField = paramSyntax.MemberModifiers.FieldModifier is not null;
+            var name = paramSyntax.Parameter.Name.Text;
+
+            // Search for the field or property
+            // NOTE: There should _not_ be an error here, the symbols should already be present
+            var memberSymbol = this.ContainingSymbol.DefinedMembers
+                .Where(x => isField ? x is FieldSymbol : x is PropertySymbol)
+                .First(m => m.Name == name);
+
+            // Build the initializer
+            var initializer = ExpressionStatement(AssignmentExpression(
+                compoundOperator: null,
+                // TODO: Handle properties
+                left: FieldLvalue(
+                    receiver: ParameterExpression(thisSymbol),
+                    field: (FieldSymbol)memberSymbol),
+                right: ParameterExpression(paramSymbol)));
+
+            // Add it
+            statements.Add(initializer);
+        }
+
+        // Add a return statement
+        statements.Add(ExpressionStatement(ReturnExpression(BoundUnitExpression.Default)));
+
+        return ExpressionStatement(BlockExpression(
+            locals: ImmutableArray<LocalSymbol>.Empty,
+            statements: statements.ToImmutable(),
+            value: BoundUnitExpression.Default));
     }
 }

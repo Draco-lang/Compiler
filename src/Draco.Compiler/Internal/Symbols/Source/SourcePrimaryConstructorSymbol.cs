@@ -7,14 +7,16 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
 /// <summary>
 /// Primary constructor defined in-source.
 /// </summary>
-internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol
+internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol, ISourceSymbol
 {
     public override TypeSymbol ContainingSymbol { get; }
 
@@ -23,16 +25,27 @@ internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol
     public override bool IsStatic => false;
     public override bool IsSpecialName => true;
     public override bool IsConstructor => true;
+    public override Api.Semantics.Visibility Visibility => GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier?.Kind);
 
     public override ImmutableArray<ParameterSymbol> Parameters => this.BindParametersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<ParameterSymbol> parameters;
 
     public override PrimaryConstructorSyntax DeclaringSyntax { get; }
 
+    public override BoundStatement Body => InterlockedUtils.InitializeNull(ref this.body, this.BuildBody);
+    private BoundStatement? body;
+
     public SourcePrimaryConstructorSymbol(TypeSymbol containingSymbol, PrimaryConstructorSyntax declaringSyntax)
     {
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = declaringSyntax;
+    }
+
+    public void Bind(IBinderProvider binderProvider)
+    {
+        this.BindParametersIfNeeded(binderProvider);
+        // Force binding of parameters, as the type is lazy too
+        foreach (var param in this.Parameters.Cast<SourceParameterSymbol>()) param.Bind(binderProvider);
     }
 
     private ImmutableArray<ParameterSymbol> BindParametersIfNeeded(IBinderProvider binderProvider) =>
@@ -74,5 +87,11 @@ internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol
         }
 
         return parameters.ToImmutable();
+    }
+
+    private BoundStatement BuildBody()
+    {
+        // TODO: Later we'll need to initialize fields
+        return ExpressionStatement(ReturnExpression(BoundUnitExpression.Default));
     }
 }

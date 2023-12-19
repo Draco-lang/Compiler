@@ -81,6 +81,11 @@ internal sealed class SourceClassSymbol : TypeSymbol
         {
             result.Add(new DefaultConstructorSymbol(this));
         }
+        else
+        {
+            // We have a primary constructor, add it
+            result.Add(new SourcePrimaryConstructorSymbol(this, this.DeclaringSyntax.PrimaryConstructor));
+        }
 
         // Done
         return result.ToImmutable();

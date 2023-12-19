@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,11 @@ internal sealed class Class : IClass
     IAssembly IClass.Assembly => this.Assembly;
 
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
+
+    public IReadOnlyList<FieldSymbol> Fields => InterlockedUtils.InitializeDefault(
+        ref this.fields,
+        () => this.Symbol.DefinedMembers.OfType<FieldSymbol>().ToImmutableArray());
+    private ImmutableArray<FieldSymbol> fields;
 
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
 

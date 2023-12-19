@@ -45,8 +45,12 @@ internal interface IClass
     // TODO: Base class
     // TODO: Interfaces? (we might wanna keep them external)
     // TODO: Nested classes
-    // TODO: fields
     // TODO: properties
+
+    /// <summary>
+    /// The fields defined on this class.
+    /// </summary>
+    public IReadOnlyList<FieldSymbol> Fields { get; }
 
     /// <summary>
     /// The procedures defined on this class.

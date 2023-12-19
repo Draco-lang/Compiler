@@ -464,7 +464,18 @@ internal sealed class MetadataCodegen : MetadataWriter
         var startFieldIndex = fieldIndex;
         var startProcIndex = procIndex;
 
-        foreach (var proc in @class.Procedures.Values) this.EncodeProcedure(proc);
+        foreach (var proc in @class.Procedures.Values)
+        {
+            this.EncodeProcedure(proc);
+            ++procIndex;
+        }
+
+        foreach (var field in @class.Fields)
+        {
+
+            this.EncodeField(field);
+            ++fieldIndex;
+        }
 
         // TODO: Go through the rest of the members
 
@@ -490,13 +501,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private FieldDefinitionHandle EncodeGlobal(GlobalSymbol global)
     {
-        var visibility = global.Visibility switch
-        {
-            Api.Semantics.Visibility.Public => FieldAttributes.Public,
-            Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
-            Api.Semantics.Visibility.Private => FieldAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(global.Visibility)),
-        };
+        var visibility = GetFieldVisibility(global.Visibility);
 
         // Definition
         return this.AddFieldDefinition(
@@ -505,15 +510,21 @@ internal sealed class MetadataCodegen : MetadataWriter
             signature: this.EncodeGlobalSignature(global));
     }
 
+    private FieldDefinitionHandle EncodeField(FieldSymbol field)
+    {
+        var visibility = GetFieldVisibility(field.Visibility);
+        var mutability = field.IsMutable ? default : FieldAttributes.InitOnly;
+
+        // Definition
+        return this.AddFieldDefinition(
+            attributes: visibility | mutability,
+            name: field.Name,
+            signature: this.EncodeFieldSignature(field));
+    }
+
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure)
     {
-        var visibility = procedure.Symbol.Visibility switch
-        {
-            Api.Semantics.Visibility.Public => MethodAttributes.Public,
-            Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
-            Api.Semantics.Visibility.Private => MethodAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(procedure.Symbol.Visibility)),
-        };
+        var visibility = GetMethodVisibility(procedure.Symbol.Visibility);
 
         // Encode instructions
         var cilCodegen = new CilCodegen(this, procedure);
@@ -579,6 +590,9 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private BlobHandle EncodeGlobalSignature(GlobalSymbol global) =>
         this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), global.Type));
+
+    private BlobHandle EncodeFieldSignature(FieldSymbol field) =>
+        this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), field.Type));
 
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {
@@ -756,4 +770,20 @@ internal sealed class MetadataCodegen : MetadataWriter
         var contentId = peBuilder.Serialize(peBlob);
         peBlob.WriteContentTo(peStream);
     }
+
+    private static FieldAttributes GetFieldVisibility(Api.Semantics.Visibility visibility) => visibility switch
+    {
+        Api.Semantics.Visibility.Public => FieldAttributes.Public,
+        Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
+        Api.Semantics.Visibility.Private => FieldAttributes.Private,
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
+    };
+
+    private static MethodAttributes GetMethodVisibility(Api.Semantics.Visibility visibility) => visibility switch
+    {
+        Api.Semantics.Visibility.Public => MethodAttributes.Public,
+        Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
+        Api.Semantics.Visibility.Private => MethodAttributes.Private,
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
+    };
 }

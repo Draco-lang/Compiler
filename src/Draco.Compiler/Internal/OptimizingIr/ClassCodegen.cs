@@ -50,8 +50,7 @@ internal sealed class ClassCodegen : SymbolVisitor
 
     public override void VisitField(FieldSymbol fieldSymbol)
     {
-        // TODO
-        throw new NotImplementedException();
+        // No-op, the Class model reads it up from the symbol
     }
 
     // TODO: Copypasta from ModuleCodegen

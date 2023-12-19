@@ -330,30 +330,9 @@
         Optional modifiers for the parameter, in case it is manifested as a member.
       </Documentation>
     </Field>
-    <Field Name="Variadic" Type="SyntaxToken?">
+    <Field Name="Parameter" Type="ParameterSyntax">
       <Documentation>
-        The ellipsis token, in case it's variadic.
-      </Documentation>
-
-      <Token Kind="Ellipsis" />
-    </Field>
-    <Field Name="Name" Type="SyntaxToken">
-      <Documentation>
-        The name of the parameter.
-      </Documentation>
-
-      <Token Kind="Identifier" />
-    </Field>
-    <Field Name="Colon" Type="SyntaxToken">
-      <Documentation>
-        The colon token between the name and the type.
-      </Documentation>
-
-      <Token Kind="Colon" />
-    </Field>
-    <Field Name="Type" Type="TypeSyntax">
-      <Documentation>
-        The type of the parameter.
+        The parameter declaration.
       </Documentation>
     </Field>
   </Node>

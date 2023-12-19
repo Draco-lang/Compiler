@@ -466,16 +466,8 @@ internal sealed class Parser
     private PrimaryConstructorParameterSyntax ParsePrimaryConstructorParameter()
     {
         var memberModifiers = this.ParsePrimaryConstructorParameterMemberModifiers();
-        this.Matches(TokenKind.Ellipsis, out var variadic);
-        var name = this.Expect(TokenKind.Identifier);
-        var colon = this.Expect(TokenKind.Colon);
-        var type = this.ParseType();
-        return new(
-            memberModifiers,
-            variadic,
-            name,
-            colon,
-            type);
+        var param = this.ParseParameter();
+        return new(memberModifiers, param);
     }
 
     /// <summary>

@@ -41,7 +41,9 @@ internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol
     // TODO: Copypaste from SourceFunctionSymbol
     private ImmutableArray<ParameterSymbol> BindParameters(IBinderProvider binderProvider)
     {
-        var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
+        var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values
+            .Select(v => v.Parameter)
+            .ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
         for (var i = 0; i < parameterSyntaxes.Count; ++i)

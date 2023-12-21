@@ -15,7 +15,7 @@ internal sealed class SourceAutoPropertySymbol : PropertySymbol, ISourceSymbol
 {
     public override TypeSymbol ContainingSymbol { get; }
 
-    public override TypeSymbol Type => this.BackingField.Type;
+    public override TypeSymbol Type => throw new NotImplementedException();
 
     public override FunctionSymbol Getter => throw new NotImplementedException();
     public override FunctionSymbol? Setter => this.Modifiers.Keyword.Kind == TokenKind.KeywordVal

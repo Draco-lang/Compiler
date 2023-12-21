@@ -464,19 +464,6 @@ internal sealed class MetadataCodegen : MetadataWriter
         var startFieldIndex = fieldIndex;
         var startProcIndex = procIndex;
 
-        foreach (var proc in @class.Procedures.Values)
-        {
-            this.EncodeProcedure(proc);
-            ++procIndex;
-        }
-
-        foreach (var field in @class.Fields)
-        {
-
-            this.EncodeField(field);
-            ++fieldIndex;
-        }
-
         // TODO: Go through the rest of the members
 
         var visibility = @class.Symbol.Visibility == Api.Semantics.Visibility.Public
@@ -495,12 +482,39 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         // Properties
         PropertyDefinitionHandle? firstProperty = null;
+        var propertyHandleMap = new Dictionary<Symbol, PropertyDefinitionHandle>();
         foreach (var prop in @class.Properties)
         {
             var propHandle = this.EncodeProperty(createdClass, prop);
             firstProperty ??= propHandle;
+            propertyHandleMap.Add(prop, propHandle);
         }
         if (firstProperty is not null) this.MetadataBuilder.AddPropertyMap(createdClass, firstProperty.Value);
+
+        // Procedures
+        foreach (var proc in @class.Procedures.Values)
+        {
+            var handle = this.EncodeProcedure(proc);
+            ++procIndex;
+
+            if (proc.Symbol is IPropertyAccessorSymbol propAccessor)
+            {
+                // This is an accessor
+                var isGetter = propAccessor.Property.Getter == propAccessor;
+                this.MetadataBuilder.AddMethodSemantics(
+                    association: propertyHandleMap[propAccessor.Property],
+                    semantics: isGetter ? MethodSemanticsAttributes.Getter : MethodSemanticsAttributes.Setter,
+                    methodDefinition: handle);
+            }
+        }
+
+        // Properties
+        foreach (var field in @class.Fields)
+        {
+
+            this.EncodeField(field);
+            ++fieldIndex;
+        }
 
         // If this isn't top level module, we specify nested relationship
         if (parent is not null) this.MetadataBuilder.AddNestedType(createdClass, parent.Value);

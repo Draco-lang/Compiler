@@ -17,7 +17,7 @@ internal sealed class SourceAutoPropertySymbol : PropertySymbol, ISourceSymbol
 
     public override TypeSymbol Type => throw new NotImplementedException();
 
-    public override FunctionSymbol? Getter => throw new NotImplementedException();
+    public override FunctionSymbol Getter => throw new NotImplementedException();
     public override FunctionSymbol? Setter => throw new NotImplementedException();
 
     /// <summary>

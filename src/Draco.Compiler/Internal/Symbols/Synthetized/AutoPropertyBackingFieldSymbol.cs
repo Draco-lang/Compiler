@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// Auto-generated backing field for an auto-property.
 /// </summary>
-internal sealed class PropertyBackingFieldSymbol : FieldSymbol
+internal sealed class AutoPropertyBackingFieldSymbol : FieldSymbol
 {
     public override TypeSymbol ContainingSymbol { get; }
 
@@ -20,7 +20,7 @@ internal sealed class PropertyBackingFieldSymbol : FieldSymbol
 
     public PropertySymbol Property { get; }
 
-    public PropertyBackingFieldSymbol(TypeSymbol containingSymbol, PropertySymbol property)
+    public AutoPropertyBackingFieldSymbol(TypeSymbol containingSymbol, PropertySymbol property)
     {
         this.ContainingSymbol = containingSymbol;
         this.Property = property;

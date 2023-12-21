@@ -93,14 +93,21 @@ internal sealed class SourceClassSymbol : TypeSymbol
                 // Skip non-members
                 if (param.MemberModifiers is null) continue;
 
-                // TODO: Implement properties
                 if (param.MemberModifiers.FieldModifier is null)
                 {
-                    throw new NotImplementedException();
+                    // Property
+                    var prop = new SourceAutoPropertySymbol(this, param);
+                    // Add property, getter, setter and backing field
+                    result.Add(prop);
+                    result.Add(prop.Getter);
+                    if (prop.Setter is not null) result.Add(prop.Setter);
+                    result.Add(prop.BackingField);
                 }
-
-                // Add field
-                result.Add(new SourceFieldSymbol(this, param));
+                else
+                {
+                    // Add field
+                    result.Add(new SourceFieldSymbol(this, param));
+                }
             }
         }
 

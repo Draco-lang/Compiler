@@ -30,6 +30,11 @@ internal sealed class Class : IClass
         () => this.Symbol.DefinedMembers.OfType<FieldSymbol>().ToImmutableArray());
     private ImmutableArray<FieldSymbol> fields;
 
+    public IReadOnlyList<PropertySymbol> Properties => InterlockedUtils.InitializeDefault(
+        ref this.properties,
+        () => this.Symbol.DefinedMembers.OfType<PropertySymbol>().ToImmutableArray());
+    private ImmutableArray<PropertySymbol> properties;
+
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
 
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();

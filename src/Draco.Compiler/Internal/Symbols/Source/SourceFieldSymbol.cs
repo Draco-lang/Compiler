@@ -42,7 +42,6 @@ internal sealed class SourceFieldSymbol : FieldSymbol, ISourceSymbol
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        // TODO: Why do we even need this cast?
         return binder.BindTypeToTypeSymbol(this.DeclaringSyntax.Parameter.Type, binderProvider.DiagnosticBag);
     }
 }

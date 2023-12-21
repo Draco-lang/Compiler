@@ -102,19 +102,22 @@ internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol, ISourceSy
             var isField = paramSyntax.MemberModifiers.FieldModifier is not null;
             var name = paramSyntax.Parameter.Name.Text;
 
-            // Search for the field or property
-            // NOTE: There should _not_ be an error here, the symbols should already be present
-            var memberSymbol = this.ContainingSymbol.DefinedMembers
-                .Where(x => isField ? x is FieldSymbol : x is PropertySymbol)
-                .First(m => m.Name == name);
+            // Search for the field to initialize
+            FieldSymbol memberSymbol = isField
+                ? this.ContainingSymbol.DefinedMembers
+                    .OfType<FieldSymbol>()
+                    .First(m => m.Name == name)
+                : this.ContainingSymbol.DefinedMembers
+                    .OfType<SourceAutoPropertySymbol>()
+                    .First(m => m.Name == name)
+                    .BackingField;
 
             // Build the initializer
             var initializer = ExpressionStatement(AssignmentExpression(
                 compoundOperator: null,
-                // TODO: Handle properties
                 left: FieldLvalue(
                     receiver: ParameterExpression(thisSymbol),
-                    field: (FieldSymbol)memberSymbol),
+                    field: memberSymbol),
                 right: ParameterExpression(paramSymbol)));
 
             // Add it

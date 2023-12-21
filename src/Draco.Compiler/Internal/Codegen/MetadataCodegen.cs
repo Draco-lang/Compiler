@@ -493,6 +493,15 @@ internal sealed class MetadataCodegen : MetadataWriter
             fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
             methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));
 
+        // Properties
+        PropertyDefinitionHandle? firstProperty = null;
+        foreach (var prop in @class.Properties)
+        {
+            var propHandle = this.EncodeProperty(createdClass, prop);
+            firstProperty ??= propHandle;
+        }
+        if (firstProperty is not null) this.MetadataBuilder.AddPropertyMap(createdClass, firstProperty.Value);
+
         // If this isn't top level module, we specify nested relationship
         if (parent is not null) this.MetadataBuilder.AddNestedType(createdClass, parent.Value);
 
@@ -586,6 +595,20 @@ internal sealed class MetadataCodegen : MetadataWriter
         this.PdbCodegen?.EncodeProcedureDebugInfo(procedure, definitionHandle);
 
         return definitionHandle;
+    }
+
+    private PropertyDefinitionHandle EncodeProperty(TypeDefinitionHandle declaringType, PropertySymbol prop)
+    {
+        return this.MetadataBuilder.AddProperty(
+            attributes: PropertyAttributes.None,
+            name: this.GetOrAddString(prop.Name),
+            signature: this.EncodeBlob(e =>
+            {
+                e
+                    .PropertySignature(isInstanceProperty: !prop.IsStatic)
+                    .Parameters(0, out var returnType, out _);
+                this.EncodeReturnType(returnType, prop.Type);
+            }));
     }
 
     private BlobHandle EncodeGlobalSignature(GlobalSymbol global) =>

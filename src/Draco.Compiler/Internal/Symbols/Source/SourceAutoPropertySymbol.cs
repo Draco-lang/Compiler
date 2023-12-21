@@ -27,8 +27,10 @@ internal sealed class SourceAutoPropertySymbol : PropertySymbol, ISourceSymbol
     /// </summary>
     public FieldSymbol BackingField => throw new NotImplementedException();
 
+    public override string Name => this.DeclaringSyntax.Parameter.Name.Text;
     public override bool IsIndexer => false;
     public override bool IsStatic => false;
+    public override Api.Semantics.Visibility Visibility => GetVisibilityFromTokenKind(this.Modifiers.VisibilityModifier?.Kind);
 
     // TODO: Not necessarily this type, only for primary constructors
     public override PrimaryConstructorParameterSyntax DeclaringSyntax { get; }

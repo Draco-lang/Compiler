@@ -15,10 +15,12 @@ internal sealed class SourceAutoPropertySymbol : PropertySymbol, ISourceSymbol
 {
     public override TypeSymbol ContainingSymbol { get; }
 
-    public override TypeSymbol Type => throw new NotImplementedException();
+    public override TypeSymbol Type => this.BackingField.Type;
 
     public override FunctionSymbol Getter => throw new NotImplementedException();
-    public override FunctionSymbol? Setter => throw new NotImplementedException();
+    public override FunctionSymbol? Setter => this.Modifiers.Keyword.Kind == TokenKind.KeywordVal
+        ? null
+        : throw new NotImplementedException();
 
     /// <summary>
     /// The backing field of this auto-prop.
@@ -30,6 +32,7 @@ internal sealed class SourceAutoPropertySymbol : PropertySymbol, ISourceSymbol
 
     // TODO: Not necessarily this type, only for primary constructors
     public override PrimaryConstructorParameterSyntax DeclaringSyntax { get; }
+    private PrimaryConstructorParameterMemberModifiersSyntax Modifiers => this.DeclaringSyntax.MemberModifiers!;
 
     public SourceAutoPropertySymbol(TypeSymbol containingSymbol, PrimaryConstructorParameterSyntax declaringSyntax)
     {

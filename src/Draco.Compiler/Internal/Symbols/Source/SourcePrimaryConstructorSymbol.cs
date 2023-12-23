@@ -92,8 +92,23 @@ internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol, ISourceSy
     private BoundStatement BuildBody()
     {
         var thisSymbol = new SynthetizedThisParameterSymbol(this);
-
         var statements = ImmutableArray.CreateBuilder<BoundStatement>();
+
+        // Call base constructor
+        if (!this.ContainingSymbol.IsValueType)
+        {
+            // We have a base type, call base constructor
+            var defaultCtor = this.ContainingSymbol.BaseType!.Constructors
+                .FirstOrDefault(ctor => ctor.Parameters.Length == 0);
+            // TODO: Error if base has no default constructor?
+            if (defaultCtor is null) throw new NotImplementedException();
+            statements.Add(ExpressionStatement(CallExpression(
+                receiver: ParameterExpression(thisSymbol),
+                method: defaultCtor,
+                arguments: ImmutableArray<BoundExpression>.Empty)));
+        }
+
+        // Member initialization
         foreach (var (paramSyntax, paramSymbol) in this.DeclaringSyntax.ParameterList.Values.Zip(this.Parameters))
         {
             // Skip non-members
@@ -103,7 +118,7 @@ internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol, ISourceSy
             var name = paramSyntax.Parameter.Name.Text;
 
             // Search for the field to initialize
-            FieldSymbol memberSymbol = isField
+            var memberSymbol = isField
                 ? this.ContainingSymbol.DefinedMembers
                     .OfType<FieldSymbol>()
                     .First(m => m.Name == name)

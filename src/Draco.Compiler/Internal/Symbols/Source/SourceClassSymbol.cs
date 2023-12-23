@@ -65,8 +65,14 @@ internal sealed class SourceClassSymbol : TypeSymbol
     private ImmutableArray<TypeSymbol> BuildImmediateBaseTypes()
     {
         var result = ImmutableArray.CreateBuilder<TypeSymbol>();
-        // NOTE: For now we always just inherit from object
-        result.Add(this.DeclaringCompilation!.WellKnownTypes.SystemObject);
+        if (this.IsValueType)
+        {
+            result.Add(this.DeclaringCompilation!.WellKnownTypes.SystemValueType);
+        }
+        else
+        {
+            result.Add(this.DeclaringCompilation!.WellKnownTypes.SystemObject);
+        }
         // Done
         return result.ToImmutable();
     }
@@ -78,9 +84,13 @@ internal sealed class SourceClassSymbol : TypeSymbol
 
         if (this.DeclaringSyntax.PrimaryConstructor is null)
         {
-            // TODO: Check for secondary constructors
-            // If there is no constructor, add a default one
-            result.Add(new DefaultConstructorSymbol(this));
+            // We only synthetize a default ctor, if this is a reference type
+            if (!this.IsValueType)
+            {
+                // TODO: Check for secondary constructors
+                // If there is no constructor, add a default one
+                result.Add(new DefaultConstructorSymbol(this));
+            }
         }
         else
         {

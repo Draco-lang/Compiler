@@ -466,10 +466,12 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         // TODO: Go through the rest of the members
 
+        // Build up attributes
         var visibility = @class.Symbol.Visibility == Api.Semantics.Visibility.Public
             ? (parent is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public)
             : (parent is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic);
         var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
+        if (@class.Symbol.IsValueType) attributes |= TypeAttributes.SequentialLayout;
 
         // Create the type
         var createdClass = this.AddTypeDefinition(

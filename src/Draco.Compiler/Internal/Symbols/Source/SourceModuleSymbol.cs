@@ -79,6 +79,9 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
                 var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
                 result.Add(member);
 
+                // Overloading is legal, shadowing is checked by the functions themselves
+                if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
+
                 // We chech for illegal shadowing
                 if (earlierMember is null) continue;
                 if (!earlierMember.CanBeShadowedBy(member)) continue;

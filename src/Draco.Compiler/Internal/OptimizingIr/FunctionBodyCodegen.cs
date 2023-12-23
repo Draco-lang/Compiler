@@ -70,9 +70,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
-    private Procedure SynthetizeProcedure(FunctionSymbol func)
+    private FunctionSymbol SynthetizeProcedure(FunctionSymbol func)
     {
         Debug.Assert(func.Body is not null);
+
+        // Only synthetize, if this is the relevant place for it
+        if (func.ContainingSymbol != this.procedure.Symbol.ContainingSymbol) return func;
 
         // TODO: This might not be necessarily correct, as we might be within a class
         // and not a module
@@ -86,7 +89,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var codegen = new FunctionBodyCodegen(this.compilation, proc);
             func.Body.Accept(codegen);
         }
-        return proc;
+        return func;
     }
 
     private static bool NeedsBoxing(TypeSymbol targetType, TypeSymbol sourceType)
@@ -510,7 +513,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // Generic functions
         FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
         // Functions with synthetized body
-        FunctionSymbol f when f.DeclaringSyntax is null && f.Body is not null => this.SynthetizeProcedure(f).Symbol,
+        FunctionSymbol f when f.DeclaringSyntax is null && f.Body is not null => this.SynthetizeProcedure(f),
         // Functions with inline codegen
         FunctionSymbol f when f.Codegen is not null => f,
         // Source functions

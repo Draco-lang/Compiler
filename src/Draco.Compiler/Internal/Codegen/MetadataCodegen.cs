@@ -510,10 +510,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             }
         }
 
-        // Properties
+        // Fields
         foreach (var field in @class.Fields)
         {
-
             this.EncodeField(field);
             ++fieldIndex;
         }

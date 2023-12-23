@@ -478,7 +478,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             attributes: attributes,
             @namespace: default,
             name: @class.Name,
-            baseType: this.systemObjectReference,
+            baseType: @class.Symbol.BaseType is null
+                ? this.systemObjectReference
+                : (TypeReferenceHandle)this.GetEntityHandle(@class.Symbol.BaseType),
             fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
             methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));
 
@@ -515,6 +517,15 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             this.EncodeField(field);
             ++fieldIndex;
+        }
+
+        // If this is a valuetype without fields, we add .pack 0 and .size 1
+        if (@class.Symbol.IsValueType && @class.Fields.Count == 0)
+        {
+            this.MetadataBuilder.AddTypeLayout(
+                type: createdClass,
+                packingSize: 0,
+                size: 1);
         }
 
         // If this isn't top level module, we specify nested relationship

@@ -127,6 +127,8 @@ internal sealed class SourcePrimaryConstructorSymbol : FunctionSymbol, ISourceSy
                     .First(m => m.Name == name)
                     .BackingField;
 
+            // TODO: If a property has a setter, we probably want to call that instead for
+            // potential side-effects
             // Build the initializer
             var initializer = ExpressionStatement(AssignmentExpression(
                 compoundOperator: null,

@@ -12,12 +12,22 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 internal sealed class SynthetizedThisParameterSymbol : ParameterSymbol
 {
     public override FunctionSymbol ContainingSymbol { get; }
-    public override TypeSymbol Type => (TypeSymbol)this.ContainingSymbol.ContainingSymbol!;
     public override string Name => "this";
     public override bool IsThis => true;
+
+    public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
+    private TypeSymbol? type;
 
     public SynthetizedThisParameterSymbol(FunctionSymbol containingSymbol)
     {
         this.ContainingSymbol = containingSymbol;
+    }
+
+    private TypeSymbol BuildType()
+    {
+        var thisType = (TypeSymbol)this.ContainingSymbol.ContainingSymbol!;
+        return thisType.IsValueType
+            ? new ReferenceTypeSymbol(thisType)
+            : thisType;
     }
 }

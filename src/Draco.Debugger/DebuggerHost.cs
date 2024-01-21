@@ -11,9 +11,9 @@ namespace Draco.Debugger;
 /// </summary>
 public sealed class DebuggerHost
 {
-    public static DebuggerHost Create(string dbgshimPath)
+    public static DebuggerHost Create()
     {
-        var dbgshim = new XplatDbgShim(NativeLibrary.Load(dbgshimPath));
+        var dbgshim = new XplatDbgShim(NativeLibrary.Load("dbgshim", typeof(DebuggerHost).Assembly, null));
         return new(dbgshim);
     }
 

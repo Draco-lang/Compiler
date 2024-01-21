@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="ClrDebug" Version="0.3.0" />
+    <PackageReference Include="Microsoft.Diagnostics.DbgShim" Version="8.0.505301" />
   </ItemGroup>
 
 </Project>

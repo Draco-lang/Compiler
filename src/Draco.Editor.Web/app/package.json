@@ -1,8 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "build-debug": "tsc -noEmit && node build.js ../bin/Debug/net8.0",
-    "build-release": "tsc -noEmit && node build.js ../bin/Release/net8.0"
+    "build-debug": "tsc -noEmit && node build.js ../../artifacts/bin/Draco.Editor.Web/debug",
+    "build-release": "tsc -noEmit && node build.js ../../artifacts/bin/Draco.Editor.Web/release"
   },
   "dependencies": {
     "@octokit/auth-token": "^4.0.0",

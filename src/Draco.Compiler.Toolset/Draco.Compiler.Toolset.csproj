@@ -2,7 +2,6 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
-    <TargetFramework>$(DracoToolsTargetFramework)</TargetFramework>
     <HasRuntimeOutput>true</HasRuntimeOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>    

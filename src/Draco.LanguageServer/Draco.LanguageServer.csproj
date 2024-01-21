@@ -2,10 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <LangVersion>11</LangVersion>
-
+    
     <!-- Dotnet tool -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>draco-langserver</ToolCommandName>

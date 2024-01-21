@@ -1,11 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <PublishTrimmed>false</PublishTrimmed>
-    <LangVersion>11</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsPackable>false</IsPackable>
 
     <!-- Disable WebCIL for now. We have custom code to tell mono to start running .NET Code, this will need a refactoring to support WebCIL.  -->

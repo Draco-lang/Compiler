@@ -1,6 +1,9 @@
 <Project>
   <PropertyGroup>
-    <DracoToolsTargetFramework>net8.0</DracoToolsTargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <!-- Package metadata -->

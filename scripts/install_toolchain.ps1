@@ -1,3 +1,4 @@
+$ErrorActionPreference = "Stop"
 # Check if a path argument was passed in
 if ($args.Length -eq 0) {
     Write-Error "Please specify a path argument"

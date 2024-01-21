@@ -1,4 +1,4 @@
-import { createActionAuth } from '@octokit/auth-action';
+import { createTokenAuth } from '@octokit/auth-token';
 import { build } from 'esbuild';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -114,15 +114,16 @@ fs.writeFileSync(path.join(outDir, 'favicon.svg'), favicon); // Write favicon to
 console.log('Downloading vs themes...');
 
 let octokit;
-if (process.env.GITHUB_TOKEN != undefined && process.env.GITHUB_TOKEN.length > 0) {
-    const auth = createActionAuth();
+if (process.env.GITHUB_TOKEN !== undefined && process.env.GITHUB_TOKEN.length > 0) {
+    const auth = createTokenAuth(process.env.GITHUB_TOKEN);
     const authentication = await auth();
     octokit = new Octokit({
-        auth: authentication.token
+        auth: authentication.token,
     });
 } else {
     octokit = new Octokit();
 }
+
 
 const response = await octokit.repos.getContent({
     owner: 'microsoft',

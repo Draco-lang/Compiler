@@ -10,8 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="ICSharpCode.Decompiler" Version="8.2.0.7535" ExcludeAssets="contentfiles" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0" />
-    <PackageReference Include="Microsoft.JSInterop" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.1" />
+    <PackageReference Include="Microsoft.JSInterop" Version="8.0.1" />
   </ItemGroup>
 
   <Target Name="JSSetup" AfterTargets="AfterBuild">

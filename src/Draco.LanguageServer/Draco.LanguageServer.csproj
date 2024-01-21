@@ -6,7 +6,6 @@
     <!-- Dotnet tool -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>draco-langserver</ToolCommandName>
-    <PackageOutputPath>./nupkg</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

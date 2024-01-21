@@ -261,6 +261,13 @@ internal sealed class Parser
         switch (this.Peek())
         {
         case TokenKind.KeywordImport:
+            if (modifier is not null)
+            {
+                var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifierBeforeImport, formatArgs: "declaration");
+                var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: modifier.Width);
+                this.AddDiagnostic(modifier, diag);
+                return new UnexpectedDeclarationSyntax(modifier, SyntaxList.Create(Array.Empty<SyntaxNode>()));
+            }
             return this.ParseImportDeclaration();
 
         case TokenKind.KeywordFunc:

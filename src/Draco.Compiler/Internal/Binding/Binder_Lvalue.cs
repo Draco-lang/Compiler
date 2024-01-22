@@ -167,7 +167,7 @@ internal partial class Binder
                 template: SymbolResolutionErrors.NoSettableIndexerInType,
                 location: syntax.Location,
                 formatArgs: receiverType));
-            ConstraintSolver.UnifyAsserted(returnType, IntrinsicSymbols.ErrorType);
+            ConstraintSolver.UnifyAsserted(returnType, WellKnownTypes.ErrorType);
             var errorProp = new ErrorPropertySymbol("operator[]");
             indexerTask = SolverTask.FromResult<FunctionSymbol>(errorProp.Setter);
         }

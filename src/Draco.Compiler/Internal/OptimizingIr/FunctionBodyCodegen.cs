@@ -170,7 +170,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // In case the condition is a never type, we don't bother writing out the then and else bodies,
         // as they can not be evaluated
         // Note, that for side-effects we still emit the condition code
-        if (SymbolEqualityComparer.Default.Equals(node.Condition.TypeRequired, IntrinsicSymbols.Never)) return default(Void);
+        if (SymbolEqualityComparer.Default.Equals(node.Condition.TypeRequired, WellKnownTypes.Never)) return default(Void);
 
         // Allocate blocks
         var thenBlock = this.DefineBasicBlock(node.Target);
@@ -471,7 +471,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
             var defaultValue = metadataGlobal.DefaultValue;
             // NOTE: Literals possibly have a different type than the signature of the global
-            if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.IntrinsicSymbols, out var literalType))
+            if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.WellKnownTypes, out var literalType))
             {
                 throw new System.InvalidOperationException();
             }

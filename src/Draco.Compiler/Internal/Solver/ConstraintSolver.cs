@@ -95,7 +95,7 @@ internal sealed partial class ConstraintSolver
             var unwrappedLocalType = local.Type.Substitution;
             if (unwrappedLocalType is TypeVariable typeVar)
             {
-                UnifyAsserted(typeVar, IntrinsicSymbols.UninferredType);
+                UnifyAsserted(typeVar, WellKnownTypes.UninferredType);
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
                     location: local.DeclaringSyntax?.Location,

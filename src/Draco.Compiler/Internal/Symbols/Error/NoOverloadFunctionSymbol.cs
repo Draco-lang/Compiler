@@ -12,13 +12,13 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
     // TODO: Is this enough? Do we want to take this as a parameter too?
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray<TypeParameterSymbol>.Empty;
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
-    public override TypeSymbol ReturnType => IntrinsicSymbols.ErrorType;
+    public override TypeSymbol ReturnType => WellKnownTypes.ErrorType;
 
     public override bool IsError => true;
 
     public NoOverloadFunctionSymbol(int parameterCount)
     {
-        this.Parameters = Enumerable.Repeat(IntrinsicSymbols.ErrorType, parameterCount)
+        this.Parameters = Enumerable.Repeat(WellKnownTypes.ErrorType, parameterCount)
             .Select(t => new SynthetizedParameterSymbol(this, t))
             .Cast<ParameterSymbol>()
             .ToImmutableArray();

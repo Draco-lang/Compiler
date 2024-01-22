@@ -11,7 +11,7 @@ internal sealed class ErrorPropertySymbol : PropertySymbol
     public override FunctionSymbol Setter { get; }
     public override string Name { get; }
 
-    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
+    public override TypeSymbol Type => WellKnownTypes.ErrorType;
 
     public override bool IsError => true;
     public override bool IsIndexer => false;

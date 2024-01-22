@@ -41,12 +41,12 @@ internal partial class BoundExpression
 {
     public virtual TypeSymbol? Type => null;
 
-    public TypeSymbol TypeRequired => this.Type ?? IntrinsicSymbols.ErrorType;
+    public TypeSymbol TypeRequired => this.Type ?? WellKnownTypes.ErrorType;
 }
 
 internal partial class BoundUnexpectedExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
+    public override TypeSymbol Type => WellKnownTypes.ErrorType;
 }
 
 internal partial class BoundSequencePointExpression
@@ -57,17 +57,17 @@ internal partial class BoundSequencePointExpression
 internal partial class BoundUnitExpression
 {
     public static BoundUnitExpression Default { get; } = new(null);
-    public override TypeSymbol Type => IntrinsicSymbols.Unit;
+    public override TypeSymbol Type => WellKnownTypes.Unit;
 }
 
 internal partial class BoundGotoExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Never;
+    public override TypeSymbol Type => WellKnownTypes.Never;
 }
 
 internal partial class BoundReturnExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Never;
+    public override TypeSymbol Type => WellKnownTypes.Never;
 }
 
 internal partial class BoundBlockExpression
@@ -77,12 +77,12 @@ internal partial class BoundBlockExpression
 
 internal partial class BoundWhileExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Unit;
+    public override TypeSymbol Type => WellKnownTypes.Unit;
 }
 
 internal partial class BoundForExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.Unit;
+    public override TypeSymbol Type => WellKnownTypes.Unit;
 }
 
 internal partial class BoundParameterExpression
@@ -127,7 +127,7 @@ internal partial class BoundLocalExpression
 
 internal partial class BoundReferenceErrorExpression
 {
-    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
+    public override TypeSymbol Type => WellKnownTypes.ErrorType;
 }
 
 internal partial class BoundAndExpression
@@ -185,12 +185,12 @@ internal partial class BoundLvalue
 
 internal partial class BoundUnexpectedLvalue
 {
-    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
+    public override TypeSymbol Type => WellKnownTypes.ErrorType;
 }
 
 internal partial class BoundIllegalLvalue
 {
-    public override TypeSymbol Type => IntrinsicSymbols.ErrorType;
+    public override TypeSymbol Type => WellKnownTypes.ErrorType;
 }
 
 internal partial class BoundLocalLvalue

@@ -335,6 +335,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="ImportDeclarationSyntax"/>.</returns>
     private ImportDeclarationSyntax ParseImportDeclaration(SyntaxToken? modifier)
     {
+        // There shouldn't be a modifier on import.
         if (modifier is not null)
         {
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifierBeforeImport, formatArgs: "declaration");

@@ -261,14 +261,7 @@ internal sealed class Parser
         switch (this.Peek())
         {
         case TokenKind.KeywordImport:
-            if (modifier is not null)
-            {
-                var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifierBeforeImport, formatArgs: "declaration");
-                var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: modifier.Width);
-                this.AddDiagnostic(modifier, diag);
-                return new UnexpectedDeclarationSyntax(modifier, SyntaxList.Create(Array.Empty<SyntaxNode>()));
-            }
-            return this.ParseImportDeclaration();
+            return this.ParseImportDeclaration(modifier);
 
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration(modifier);
@@ -340,15 +333,21 @@ internal sealed class Parser
     /// Parses an <see cref="ImportDeclarationSyntax"/>.
     /// </summary>
     /// <returns>The parsed <see cref="ImportDeclarationSyntax"/>.</returns>
-    private ImportDeclarationSyntax ParseImportDeclaration()
+    private ImportDeclarationSyntax ParseImportDeclaration(SyntaxToken? modifier)
     {
+        if (modifier is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifierBeforeImport, formatArgs: "declaration");
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: modifier.Width);
+            this.AddDiagnostic(modifier, diag);
+        }
         // Import keyword
         var importKeyword = this.Expect(TokenKind.KeywordImport);
         // Path
         var path = this.ParseImportPath();
         // Ending semicolon
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new ImportDeclarationSyntax(importKeyword, path, semicolon);
+        return new ImportDeclarationSyntax(modifier, importKeyword, path, semicolon);
     }
 
     /// <summary>

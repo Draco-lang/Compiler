@@ -1812,9 +1812,15 @@ public sealed class ParserTests
     {
         this.ParseDeclaration("public import Foo;");
 
-        this.N<UnexpectedDeclarationSyntax>();
+        this.N<ImportDeclarationSyntax>();
         {
             this.InvalidT(TokenKind.KeywordPublic);
+            this.T(TokenKind.KeywordImport);
+            this.N<RootImportPathSyntax>();
+            {
+                this.T(TokenKind.Identifier, "Foo");
+            }
+            this.T(TokenKind.Semicolon);
         }
     }
 }

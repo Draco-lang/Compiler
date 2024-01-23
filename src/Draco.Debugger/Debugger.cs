@@ -98,6 +98,11 @@ public sealed class Debugger
 
     private readonly SessionCache sessionCache = new();
 
+    /// <summary>
+    /// Unused, but signal ownership, help debugging...
+    /// </summary>
+    private readonly Task ioWorkerTask;
+
     private Breakpoint? entryPointBreakpoint;
     private Module? mainModule;
     private Thread? mainThread;
@@ -111,7 +116,7 @@ public sealed class Debugger
         this.ioWorker = ioWorker;
 
         this.InitializeEventHandler(cb);
-        ioWorker.Run(this.terminateTokenSource.Token);
+        this.ioWorkerTask = ioWorker.Run(this.terminateTokenSource.Token);
     }
 
     private void ClearCache()

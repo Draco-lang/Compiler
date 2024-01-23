@@ -43,36 +43,34 @@ internal sealed class IoWorker<TProcess>
     /// </summary>
     /// <param name="cancellationToken">Can be used to cancel the worker.</param>
     /// <returns>The task of the worker loop.</returns>
-    public Task Run(CancellationToken cancellationToken) => Task.Run(async () =>
+    public async Task Run(CancellationToken cancellationToken) => await Task.WhenAll(
+            this.ReadStdout(cancellationToken),
+            this.ReadStderr(cancellationToken)
+        );
+
+    private async Task ReadStdout(CancellationToken cancellationToken)
     {
         var stdoutReader = new StreamReader(this.handles.StandardOutputReader);
-        var stderrReader = new StreamReader(this.handles.StandardErrorReader);
-
         var stdoutBuffer = new char[BufferSize];
-        var stderrBuffer = new char[BufferSize];
-
-        var stdoutTask = null as Task<int>;
-        var stderrTask = null as Task<int>;
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            stdoutTask ??= stdoutReader.ReadAsync(stdoutBuffer, cancellationToken).AsTask();
-            stderrTask ??= stderrReader.ReadAsync(stderrBuffer, cancellationToken).AsTask();
-
-            await Task.WhenAny(stdoutTask, stderrTask);
-
-            if (stdoutTask.IsCompleted)
-            {
-                var str = new string(stdoutBuffer, 0, stdoutTask.Result);
-                this.OnStandardOut?.Invoke(this.process, str);
-                stdoutTask = null;
-            }
-            if (stderrTask.IsCompleted)
-            {
-                var str = new string(stderrBuffer, 0, stderrTask.Result);
-                this.OnStandardError?.Invoke(this.process, str);
-                stderrTask = null;
-            }
+            var result = await stdoutReader.ReadAsync(stdoutBuffer, cancellationToken).AsTask();
+            var str = new string(stdoutBuffer, 0, result);
+            this.OnStandardOut?.Invoke(this.process, str);
         }
-    }, cancellationToken);
+    }
+
+    private async Task ReadStderr(CancellationToken cancellationToken)
+    {
+        var stderrReader = new StreamReader(this.handles.StandardErrorReader);
+        var stderrBuffer = new char[BufferSize];
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var result = await stderrReader.ReadAsync(stderrBuffer, cancellationToken).AsTask();
+            var str = new string(stderrBuffer, 0, result);
+            this.OnStandardError?.Invoke(this.process, str);
+        }
+    }
 }

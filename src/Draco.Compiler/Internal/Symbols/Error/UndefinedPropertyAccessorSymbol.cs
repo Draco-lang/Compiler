@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class UndefinedPropertyAccessorSymbol : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters => ImmutableArray<ParameterSymbol>.Empty;
-    public override TypeSymbol ReturnType => IntrinsicSymbols.ErrorType;
+    public override TypeSymbol ReturnType => WellKnownTypes.ErrorType;
     public override bool IsError => true;
     public override bool IsStatic => false;
     public PropertySymbol Property { get; }

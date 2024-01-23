@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// </summary>
 internal readonly record struct Void : IOperand
 {
-    public TypeSymbol Type => IntrinsicSymbols.Unit;
+    public TypeSymbol Type => WellKnownTypes.Unit;
 
     public override string ToString() => this.ToOperandString();
     public string ToOperandString() => "unit";

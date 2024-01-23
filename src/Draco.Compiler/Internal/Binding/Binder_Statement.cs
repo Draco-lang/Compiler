@@ -65,7 +65,7 @@ internal partial class Binder
         // TODO: Do we want to handle this here, or during DFA?
         // If this function returns unit, we implicitly append a return expression
         var function = (FunctionSymbol)this.ContainingSymbol!;
-        if (SymbolEqualityComparer.Default.Equals(function.ReturnType, IntrinsicSymbols.Unit))
+        if (SymbolEqualityComparer.Default.Equals(function.ReturnType, WellKnownTypes.Unit))
         {
             statementsTask.Add(FromResult(new BoundExpressionStatement(
                 syntax: null,

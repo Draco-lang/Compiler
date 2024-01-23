@@ -62,7 +62,7 @@ internal sealed class CilCodegen
         this.InstructionEncoder = new InstructionEncoder(codeBuilder, controlFlowBuilder);
 
         this.allocatedLocals = procedure.Locals
-            .Where(local => !SymbolEqualityComparer.Default.Equals(local.Type, IntrinsicSymbols.Unit))
+            .Where(local => !SymbolEqualityComparer.Default.Equals(local.Type, WellKnownTypes.Unit))
             .Select((local, index) => (Local: local, Index: index))
             .ToImmutableDictionary(pair => pair.Local, pair => new AllocatedLocal(pair.Local, pair.Index));
 
@@ -85,7 +85,7 @@ internal sealed class CilCodegen
     private int? GetLocalIndex(LocalSymbol local) => this.GetAllocatedLocal(local)?.Index;
     private int? GetRegisterIndex(Register register)
     {
-        if (SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit)) return null;
+        if (SymbolEqualityComparer.Default.Equals(register.Type, WellKnownTypes.Unit)) return null;
         if (this.stackifier.RegisterUses[register] == 0) return null;
         if (!this.allocatedRegisters.TryGetValue(register, out var allocatedRegister))
         {
@@ -492,7 +492,7 @@ internal sealed class CilCodegen
         var index = this.GetRegisterIndex(register);
         if (index is null)
         {
-            if (!SymbolEqualityComparer.Default.Equals(register.Type, IntrinsicSymbols.Unit))
+            if (!SymbolEqualityComparer.Default.Equals(register.Type, WellKnownTypes.Unit))
             {
                 // Need to pop
                 this.InstructionEncoder.OpCode(ILOpCode.Pop);

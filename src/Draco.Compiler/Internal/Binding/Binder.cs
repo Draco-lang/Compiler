@@ -26,7 +26,7 @@ internal abstract partial class Binder
     /// <summary>
     /// Utility accessor for intrinsics.
     /// </summary>
-    protected IntrinsicSymbols IntrinsicSymbols => this.Compilation.IntrinsicSymbols;
+    protected WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
 
     /// <summary>
     /// The parent binder of this one.
@@ -124,7 +124,7 @@ internal abstract partial class Binder
                 location: global.DeclaringSyntax.Location,
                 formatArgs: global.Name));
             // We use an error type
-            declaredType = IntrinsicSymbols.ErrorType;
+            declaredType = WellKnownTypes.ErrorType;
         }
 
         // Done

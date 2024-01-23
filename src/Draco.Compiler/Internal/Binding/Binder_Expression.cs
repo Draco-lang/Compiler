@@ -65,7 +65,7 @@ internal partial class Binder
 
     private BindingTask<BoundExpression> BindLiteralExpression(LiteralExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        if (!BinderFacts.TryGetLiteralType(syntax.Literal.Value, this.IntrinsicSymbols, out var literalType))
+        if (!BinderFacts.TryGetLiteralType(syntax.Literal.Value, this.WellKnownTypes, out var literalType))
         {
             throw new InvalidOperationException("can not determine literal type");
         }
@@ -108,7 +108,7 @@ internal partial class Binder
                 throw new ArgumentOutOfRangeException();
             }
         }
-        return new BoundStringExpression(syntax, await BindingTask.WhenAll(partsTask), this.IntrinsicSymbols.String);
+        return new BoundStringExpression(syntax, await BindingTask.WhenAll(partsTask), this.WellKnownTypes.SystemString);
     }
 
     private BindingTask<BoundExpression> BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -161,7 +161,7 @@ internal partial class Binder
 
         // Condition must be bool
         _ = constraints.SameType(
-            this.IntrinsicSymbols.Bool,
+            this.WellKnownTypes.SystemBoolean,
             conditionTask.GetResultType(syntax.Condition, constraints, diagnostics),
             syntax);
 
@@ -199,14 +199,14 @@ internal partial class Binder
         var conditionTask = binder.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
         _ = constraints.SameType(
-            this.IntrinsicSymbols.Bool,
+            this.WellKnownTypes.SystemBoolean,
             conditionTask.GetResultType(syntax.Condition, constraints, diagnostics),
             syntax);
 
         var thenTask = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
         _ = constraints.SameType(
-            IntrinsicSymbols.Unit,
+            WellKnownTypes.Unit,
             thenTask.GetResultType(ExtractValueSyntax(syntax.Then), constraints, diagnostics),
             ExtractValueSyntax(syntax.Then));
 
@@ -241,7 +241,7 @@ internal partial class Binder
         var thenTask = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
         _ = constraints.SameType(
-            IntrinsicSymbols.Unit,
+            WellKnownTypes.Unit,
             thenTask.GetResultType(ExtractValueSyntax(syntax.Then), constraints, diagnostics),
             ExtractValueSyntax(syntax.Then));
 
@@ -263,7 +263,7 @@ internal partial class Binder
         var getEnumeratorMembers = await getEnumeratorMembersTask;
         if (getEnumeratorMembers.IsError)
         {
-            ConstraintSolver.UnifyAsserted(iterator.Type, IntrinsicSymbols.ErrorType);
+            ConstraintSolver.UnifyAsserted(iterator.Type, WellKnownTypes.ErrorType);
             return new BoundForExpression(
                 syntax,
                 iterator,
@@ -310,7 +310,7 @@ internal partial class Binder
                 syntax.Sequence);
             // MoveNext should return bool
             _ = constraints.SameType(
-                this.IntrinsicSymbols.Bool,
+                this.WellKnownTypes.SystemBoolean,
                 moveNextReturnType,
                 syntax.Sequence);
         }
@@ -450,11 +450,11 @@ internal partial class Binder
 
             // Both left and right must be bool
             _ = constraints.SameType(
-                this.IntrinsicSymbols.Bool,
+                this.WellKnownTypes.SystemBoolean,
                 leftTask.GetResultType(syntax.Left, constraints, diagnostics),
                 syntax.Left);
             _ = constraints.SameType(
-                this.IntrinsicSymbols.Bool,
+                this.WellKnownTypes.SystemBoolean,
                 rightTask.GetResultType(syntax.Left, constraints, diagnostics),
                 syntax.Right);
 
@@ -570,7 +570,7 @@ internal partial class Binder
             syntax,
             await first,
             await BindingTask.WhenAll(comparisons),
-            this.IntrinsicSymbols.Bool);
+            this.WellKnownTypes.SystemBoolean);
     }
 
     private async BindingTask<BoundComparison> BindComparison(
@@ -595,7 +595,7 @@ internal partial class Binder
             out var resultType,
             syntax.Operator);
         // For safety, we assume it has to be bool
-        _ = constraints.SameType(this.IntrinsicSymbols.Bool, resultType, syntax.Operator);
+        _ = constraints.SameType(this.WellKnownTypes.SystemBoolean, resultType, syntax.Operator);
 
         return new BoundComparison(syntax, await symbolPromise, await right);
     }
@@ -745,7 +745,7 @@ internal partial class Binder
 
                 // Return a sentinel
                 // NOTE: Is this the right one to return?
-                return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
+                return new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType);
             }
             else
             {
@@ -770,7 +770,7 @@ internal partial class Binder
 
                 // Return a sentinel
                 // NOTE: Is this the right one to return?
-                return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
+                return new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType);
             }
             return new BoundTypeExpression(syntax, type.Type.GenericInstantiate(type.Type.ContainingSymbol, args));
         }
@@ -783,7 +783,7 @@ internal partial class Binder
 
             // Return a sentinel
             // NOTE: Is this the right one to return?
-            return new BoundReferenceErrorExpression(syntax, IntrinsicSymbols.ErrorType);
+            return new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType);
         }
     }
 

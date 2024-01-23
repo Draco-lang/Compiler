@@ -33,7 +33,7 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.IllegalExpression,
                     location: syntax?.Location));
-                type = IntrinsicSymbols.ErrorType;
+                type = WellKnownTypes.ErrorType;
             }
             return type;
         }
@@ -56,7 +56,7 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
                 this.diagnostics?.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.IllegalExpression,
                     location: this.syntax?.Location));
-                type = IntrinsicSymbols.ErrorType;
+                type = WellKnownTypes.ErrorType;
                 // NOTE: Might fail, we don't care
                 _ = ConstraintSolver.Unify(this.resultType, type);
             }

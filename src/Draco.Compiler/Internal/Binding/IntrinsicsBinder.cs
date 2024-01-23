@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// </summary>
 internal sealed class IntrinsicsBinder : Binder
 {
-    public override IEnumerable<Symbol> DeclaredSymbols => this.IntrinsicSymbols.AllSymbols;
+    public override IEnumerable<Symbol> DeclaredSymbols => this.WellKnownTypes.AllSymbols;
 
     public IntrinsicsBinder(Compilation compilation)
         : base(compilation)

@@ -41,7 +41,7 @@ internal sealed class Module : IModule
         this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
             name: "<global initializer>",
             paramTypes: Enumerable.Empty<TypeSymbol>(),
-            returnType: IntrinsicSymbols.Unit));
+            returnType: WellKnownTypes.Unit));
         this.Assembly = assembly;
         this.Parent = Parent;
     }

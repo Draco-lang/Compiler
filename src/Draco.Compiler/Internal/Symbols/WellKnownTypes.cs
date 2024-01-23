@@ -11,6 +11,7 @@ using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
+using System;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -182,7 +183,8 @@ internal sealed partial class WellKnownTypes
         var assemblyName = new AssemblyName() { Name = name };
         assemblyName.SetPublicKeyToken(token);
         return this.compilation.MetadataAssemblies.Values
-            .Single(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName));
+            .SingleOrDefault(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName))
+            ?? throw new InvalidOperationException($"Failed to locate assembly with name '{name}' and public key token '{BitConverter.ToString(token)}'.");
     }
 
     #endregion

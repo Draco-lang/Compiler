@@ -17,7 +17,7 @@ public sealed class Debugger
     /// <summary>
     /// The task that is completed, when the process has terminated.
     /// </summary>
-    public Task Terminated => this.terminatedCompletionSource.Task;
+    public Task Terminated => this.ioWorker.WorkLoopTask;
 
     /// <summary>
     /// The main user-module.
@@ -94,14 +94,8 @@ public sealed class Debugger
     private readonly IoWorker<CorDebugProcess> ioWorker;
 
     private readonly TaskCompletionSource terminatedCompletionSource = new();
-    private readonly CancellationTokenSource terminateTokenSource = new();
 
     private readonly SessionCache sessionCache = new();
-
-    /// <summary>
-    /// Unused, but signal ownership, help debugging...
-    /// </summary>
-    private readonly Task ioWorkerTask;
 
     private Breakpoint? entryPointBreakpoint;
     private Module? mainModule;
@@ -116,7 +110,7 @@ public sealed class Debugger
         this.ioWorker = ioWorker;
 
         this.InitializeEventHandler(cb);
-        this.ioWorkerTask = ioWorker.Run(this.terminateTokenSource.Token);
+        ioWorker.Start();
     }
 
     private void ClearCache()
@@ -327,8 +321,7 @@ public sealed class Debugger
 
     private void OnExitProcessHandler(object? sender, ExitProcessCorDebugManagedCallbackEventArgs args)
     {
-        this.terminateTokenSource.Cancel();
-        this.terminatedCompletionSource.SetResult();
+        this.ioWorker.SignalStop();
         // TODO: Get exit code properly
         this.OnExited?.Invoke(sender, 0);
         this.Continue();

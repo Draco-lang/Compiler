@@ -32,8 +32,6 @@ internal sealed class IoWorker<TProcess>
     /// The task of the worker loop. Is always completed when the loop is not running.
     /// </summary>
     public Task WorkLoopTask { get; private set; } = Task.CompletedTask;
-
-
     private readonly TProcess process;
     private readonly RemoteIoHandles handles;
     private readonly CancellationTokenSource _readCTS = new();

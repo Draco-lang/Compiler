@@ -36,7 +36,6 @@ internal sealed class IoWorker<TProcess>
     private readonly RemoteIoHandles handles;
     private readonly CancellationTokenSource _readCTS = new();
 
-
     public IoWorker(TProcess process, RemoteIoHandles handles)
     {
         this.process = process;

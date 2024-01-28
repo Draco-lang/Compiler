@@ -202,8 +202,7 @@ public partial class Debugger
 
     private void OnExitProcessHandler(object? sender, ExitProcessCorDebugManagedCallbackEventArgs args)
     {
-        this.terminateTokenSource.Cancel();
-        this.terminatedCompletionSource.SetResult();
+        this.ioWorker.SignalStop();
         foreach (var thread in this.sessionCache.Breakpoints)
         {
             thread.HitTcs.TrySetCanceled();

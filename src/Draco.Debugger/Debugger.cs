@@ -18,7 +18,7 @@ public sealed partial class Debugger
     /// <summary>
     /// The task that is completed, when the process has terminated.
     /// </summary>
-    public Task Terminated => this.terminatedCompletionSource.Task;
+    public Task Terminated => this.ioWorker.WorkLoopTask;
 
     /// <summary>
     /// The main user-module.
@@ -57,9 +57,6 @@ public sealed partial class Debugger
     private readonly CorDebugProcess corDebugProcess;
     private readonly IoWorker<CorDebugProcess> ioWorker;
 
-    private readonly TaskCompletionSource terminatedCompletionSource = new();
-    private readonly CancellationTokenSource terminateTokenSource = new();
-
     private readonly TaskCompletionSource readyTCS = new();
 
     private readonly SessionCache sessionCache = new();
@@ -77,7 +74,7 @@ public sealed partial class Debugger
         this.ioWorker = ioWorker;
 
         this.InitializeEventHandler(cb);
-        ioWorker.Run(this.terminateTokenSource.Token);
+        ioWorker.Start();
     }
 
     private void ClearCache()

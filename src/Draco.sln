@@ -44,7 +44,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.DebugAdapter", "Draco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Benchmarks", "Draco.Compiler.Benchmarks\Draco.Compiler.Benchmarks.csproj", "{067C2F6D-8C70-4BA6-83BE-F7B351D09188}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.JsonRpc", "Draco.JsonRpc\Draco.JsonRpc.csproj", "{5C56C907-C614-49EE-B433-D88CB9CE8983}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.JsonRpc", "Draco.JsonRpc\Draco.JsonRpc.csproj", "{5C56C907-C614-49EE-B433-D88CB9CE8983}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Debugger.Tests", "Draco.Debugger.Tests\Draco.Debugger.Tests.csproj", "{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -161,6 +163,12 @@ Global
 		{5C56C907-C614-49EE-B433-D88CB9CE8983}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{5C56C907-C614-49EE-B433-D88CB9CE8983}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C56C907-C614-49EE-B433-D88CB9CE8983}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

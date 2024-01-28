@@ -55,6 +55,8 @@ internal sealed class SessionCache
         return cached;
     }
 
+    public IReadOnlyCollection<Breakpoint> Breakpoints => this.breakpoints.Values;
+
     public bool RemoveBreakpoint(CorDebugBreakpoint breakpoint) => this.breakpoints.Remove(breakpoint.Raw);
 
     private Breakpoint BuildBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint) => breakpoint switch

@@ -58,28 +58,36 @@ internal sealed class IoWorker<TProcess>
 
     private async Task ReadStdout()
     {
-        var stdoutReader = new StreamReader(this.handles.StandardOutputReader);
-        var stdoutBuffer = new char[BufferSize];
-        var cancellationToken = this._readCTS.Token;
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            var result = await stdoutReader.ReadAsync(stdoutBuffer, cancellationToken);
-            var str = new string(stdoutBuffer, 0, result);
-            this.OnStandardOut?.Invoke(this.process, str);
+            var stdoutReader = new StreamReader(this.handles.StandardOutputReader);
+            var stdoutBuffer = new char[BufferSize];
+            var cancellationToken = this._readCTS.Token;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var result = await stdoutReader.ReadAsync(stdoutBuffer, cancellationToken);
+                var str = new string(stdoutBuffer, 0, result);
+                this.OnStandardOut?.Invoke(this.process, str);
+            }
         }
+        catch (OperationCanceledException) { }
     }
 
     private async Task ReadStderr()
     {
-        var stderrReader = new StreamReader(this.handles.StandardErrorReader);
-        var stderrBuffer = new char[BufferSize];
-        var cancellationToken = this._readCTS.Token;
-
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            var result = await stderrReader.ReadAsync(stderrBuffer, cancellationToken);
-            var str = new string(stderrBuffer, 0, result);
-            this.OnStandardError?.Invoke(this.process, str);
+            var stderrReader = new StreamReader(this.handles.StandardErrorReader);
+            var stderrBuffer = new char[BufferSize];
+            var cancellationToken = this._readCTS.Token;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var result = await stderrReader.ReadAsync(stderrBuffer, cancellationToken);
+                var str = new string(stderrBuffer, 0, result);
+                this.OnStandardError?.Invoke(this.process, str);
+            }
         }
+        catch (OperationCanceledException) { }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Reflection.Metadata.Ecma335;
 using ClrDebug;
@@ -82,7 +83,7 @@ public sealed class StackFrame
         var localScopes = pdbReader.GetLocalScopes(this.Method.MethodDefinitionHandle);
 
         var result = ImmutableDictionary.CreateBuilder<string, object?>();
-
+        var duplicatesCounter = new Dictionary<string, int>();
         // Process locals
         foreach (var scopeHandle in localScopes)
         {
@@ -96,8 +97,25 @@ public sealed class StackFrame
                 var local = pdbReader.GetLocalVariable(localHandle);
                 var localName = pdbReader.GetString(local.Name);
                 var localValue = ilFrame.GetLocalVariable(local.Index);
-                result.Add(localName, localValue.ToBrowsableObject());
+                var localValueObject = localValue.ToBrowsableObject();
+                if (!result.TryAdd(localName, localValueObject))
+                {
+                    duplicatesCounter ??= new Dictionary<string, int>();
+                    if (!duplicatesCounter.TryGetValue(localName, out var count))
+                    {
+                        count = 0;
+                    }
+                    count++;
+                    duplicatesCounter[localName] = count;
+                    result.Add($"{localName}<{count}>", localValueObject);
+                }
             }
+        }
+
+        foreach (var duplicate in duplicatesCounter)
+        {
+            result.Remove(duplicate.Key, out var value);
+            result.Add($"{duplicate.Key}<0>", value);
         }
 
         return result.ToImmutable();

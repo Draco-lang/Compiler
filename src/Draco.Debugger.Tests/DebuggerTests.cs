@@ -77,35 +77,32 @@ public class DebuggerTests
         await debugger.Terminated;
     }
 
-    //[Fact]
-    //public async Task hidden_locals_does_not_throw()
-    //{
-    //    var host = DebuggerHost.Create(TextDebuggerHelper.FindDbgShim());
-    //    var (debugger, file) = await host.DebugAsync("""
-    //        import System.Console;
-    //        func main() {
-    //            var i = 0;
-    //            while(i < 1) {
-    //                i += 1;
-    //                WriteLine("test.txt", "\{i.ToString()}a");
-    //                WriteLine("test.txt", "\{i.ToString()}b");
-    //                WriteLine("test.txt", "\{i.ToString()}c");
-    //            }
-    //        }
-    //        """);
+    [Fact]
+    public async Task hidden_locals_does_not_throw()
+    {
+        var host = DebuggerHost.Create(TextDebuggerHelper.FindDbgShim());
+        var (debugger, file) = await host.DebugAsync("""
+            import System.Console;
+            func main() {
+                var i = 1;
+                WriteLine("\{i.ToString()}a");
+                WriteLine("\{i.ToString()}b");
+                WriteLine("\{i.ToString()}c");
+            }
+            """);
 
-    //    if (!file.TryPlaceBreakpoint(5, out var breakpoint))
-    //    {
-    //        throw new InvalidOperationException("Failed to place breakpoint");
-    //    }
-    //    debugger.Continue();
-    //    await breakpoint.Hit;
-    //    var callstack = debugger.MainThread.CallStack;
-    //    var frame = callstack.Single();
-    //    var haveLocal = frame.Locals.TryGetValue("i", out var value);
-    //    Assert.True(haveLocal);
-    //    Assert.Equal(1, value);
-    //    debugger.Continue();
-    //    await debugger.Terminated;
-    //}
+        if (!file.TryPlaceBreakpoint(4, out var breakpoint))
+        {
+            throw new InvalidOperationException("Failed to place breakpoint");
+        }
+        debugger.Continue();
+        await breakpoint.Hit;
+        var callstack = debugger.MainThread.CallStack;
+        var frame = callstack.Single();
+        var haveLocal = frame.Locals.TryGetValue("i", out var value);
+        Assert.True(haveLocal);
+        Assert.Equal(1, value);
+        debugger.Continue();
+        await debugger.Terminated;
+    }
 }

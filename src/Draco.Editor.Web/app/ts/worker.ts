@@ -61,11 +61,18 @@ async function main() {
     const monoCfg = await firstMessagePromise;
     console.log(monoCfg);
     console.log('Received boot config.');
-    monoCfg['assets'].forEach(s => {
+    const assets = monoCfg['assets'];
+    assets.forEach(s => {
         if (s['buffer'] != undefined) {
             s['buffer'] = Uint8Array.from(atob(s['buffer']), c => c.charCodeAt(0));
         }
     });
+
+    const runtimeAsset = assets.find(s => s['behavior'] == 'js-module-runtime');
+    runtimeAsset['moduleExports'] = await import('/_framework/' + runtimeAsset['name']);
+    const nativeAsset = assets.find(s => s['behavior'] == 'js-module-native');
+    nativeAsset['moduleExports'] = await import('/_framework/' + nativeAsset['name']);
+
     firstMessagePromise = undefined;
     const dotnet = self.dotnet.dotnet;
 

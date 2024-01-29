@@ -20,7 +20,7 @@ export function fromBase64(str) {
     return new Uint8Array(atob(str).split('').map(c => c.charCodeAt(0)));
 }
 
-export function blobToBase64(blob: Blob) : Promise<string> {
+export function blobToBase64(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(blob);

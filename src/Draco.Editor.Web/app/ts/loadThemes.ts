@@ -52,23 +52,23 @@ export async function loadThemes() {
     const registry = new Registry({
         getGrammarDefinition: async (scopeName) => {
             switch (scopeName) {
-            case 'source.draco':
-                return {
-                    format: 'json',
-                    content: grammarDefinition
-                };
-            case 'source.cs':
-                return {
-                    format: 'json',
-                    content: await (await fetch('csharp.tmLanguage.json')).text()
-                };
-            case 'source.il':
-                return {
-                    format: 'json',
-                    content: await (await fetch('il.tmLanguage.json')).text()
-                };
-            default:
-                return null;
+                case 'source.draco':
+                    return {
+                        format: 'json',
+                        content: grammarDefinition
+                    };
+                case 'source.cs':
+                    return {
+                        format: 'json',
+                        content: await (await fetch('csharp.tmLanguage.json')).text()
+                    };
+                case 'source.il':
+                    return {
+                        format: 'json',
+                        content: await (await fetch('il.tmLanguage.json')).text()
+                    };
+                default:
+                    return null;
             }
 
         }

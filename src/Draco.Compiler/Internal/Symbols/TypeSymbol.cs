@@ -102,7 +102,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 
     public override bool CanBeShadowedBy(Symbol other)
     {
-        if (other is not TypeSymbol type) return false;
+        if (other is not TypeSymbol) return false;
         if (this.Name != other.Name) return false;
         return this.GenericParameters.Length == other.GenericParameters.Length;
     }

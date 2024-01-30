@@ -89,9 +89,7 @@ internal partial class Binder
     {
         var instantiated = this.BindType(syntax.Instantiated, diagnostics);
         var args = syntax.Arguments.Values
-            .Select(arg => this.BindType(arg, diagnostics))
-            // TODO: Why do we even need this cast?
-            .Cast<TypeSymbol>()
+            .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
             .ToImmutableArray();
 
         if (instantiated.GenericParameters.Length != args.Length)

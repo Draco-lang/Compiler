@@ -124,7 +124,7 @@ public sealed class Compilation : IBinderProvider
     /// <summary>
     /// A global diagnostic bag to hold non-local diagnostic messages.
     /// </summary>
-    internal DiagnosticBag GlobalDiagnosticBag { get; } = new();
+    internal DiagnosticBag GlobalDiagnosticBag { get; } = new ConcurrentDiagnosticBag();
     DiagnosticBag IBinderProvider.DiagnosticBag => this.GlobalDiagnosticBag;
 
     /// <summary>

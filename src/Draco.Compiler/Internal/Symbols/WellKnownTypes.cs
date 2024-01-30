@@ -108,12 +108,6 @@ internal sealed partial class WellKnownTypes
             yield return this.Comparison(TokenKind.LessEqual, this.SystemChar, this.SystemChar, this.CodegenLessEqual);
         }
 
-        // Add additional symbols for some metadata builtins
-        foreach (var metadataType in new[] { this.SystemString })
-        {
-            foreach (var additionalSym in metadataType.AdditionalSymbols) yield return additionalSym;
-        }
-
         // String addition
         yield return this.Binary(TokenKind.Plus, this.SystemString, this.SystemString, this.SystemString, (codegen, target, operands) =>
             codegen.Write(Call(target, this.SystemString_Concat, operands)));

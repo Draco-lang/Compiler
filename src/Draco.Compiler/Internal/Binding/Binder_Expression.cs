@@ -391,15 +391,31 @@ internal partial class Binder
 
     private async BindingTask<BoundExpression> BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        // Get the unary operator symbol
+        // Get the unary operator symbol name
         var operatorName = FunctionSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
-        var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
+
+        // Search globally
+        var globalOperatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
+
         var operandTask = this.BindExpression(syntax.Operand, constraints, diagnostics);
+
+        // Search within the operand type
+        // NOTE: this constraint is silent
+        // A non-existing operator will be reported by the overload constraint either way
+        var operandType = operandTask.GetResultType(syntax.Operand, constraints, diagnostics);
+        var memberOperatorTask = constraints.Member(
+            operandType,
+            operatorName,
+            out _,
+            syntax,
+            silent: true);
+        var memberOperatorSymbol = await memberOperatorTask;
 
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
             operatorName,
-            GetFunctions(operatorSymbol),
+            // We search within all global and member operators
+            GetFunctionsMerged(globalOperatorSymbol, memberOperatorSymbol),
             ImmutableArray.Create(constraints.Arg(syntax.Operand, operandTask, diagnostics)),
             out _,
             syntax.Operator);
@@ -464,17 +480,36 @@ internal partial class Binder
         }
         else if (SyntaxFacts.TryGetOperatorOfCompoundAssignment(syntax.Operator.Kind, out var nonCompound))
         {
-            // Get the binary operator symbol
+            // Get the binary operator symbol globally
             var operatorName = FunctionSymbol.GetBinaryOperatorName(nonCompound);
-            var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
+            var globalOperatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
 
             var leftTask = this.BindLvalue(syntax.Left, constraints, diagnostics);
             var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
+            // Get it from either operand type
+            // NOTE: The tasks are silent
+            var leftType = leftTask.GetResultType(syntax.Left, constraints, diagnostics);
+            var rightType = rightTask.GetResultType(syntax.Right, constraints, diagnostics);
+            var leftMemberTask = constraints.Member(
+                leftType,
+                operatorName,
+                out _,
+                syntax,
+                silent: true);
+            var rightMemberTask = constraints.Member(
+                rightType,
+                operatorName,
+                out _,
+                syntax,
+                silent: true);
+            var leftMemberSymbol = await leftMemberTask;
+            var rightMemberSymbol = await rightMemberTask;
+
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 operatorName,
-                GetFunctions(operatorSymbol),
+                GetFunctionsMerged(globalOperatorSymbol, leftMemberSymbol, rightMemberSymbol),
                 ImmutableArray.Create(
                     constraints.Arg(syntax.Left, leftTask, diagnostics),
                     constraints.Arg(syntax.Right, rightTask, diagnostics)),
@@ -534,16 +569,35 @@ internal partial class Binder
         }
         else
         {
-            // Get the binary operator symbol
+            // Get the binary operator symbol globally
             var operatorName = FunctionSymbol.GetBinaryOperatorName(syntax.Operator.Kind);
             var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
             var leftTask = this.BindExpression(syntax.Left, constraints, diagnostics);
             var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
+            // Get it from either operand type
+            // NOTE: The tasks are silent
+            var leftType = leftTask.GetResultType(syntax.Left, constraints, diagnostics);
+            var rightType = rightTask.GetResultType(syntax.Right, constraints, diagnostics);
+            var leftMemberTask = constraints.Member(
+                leftType,
+                operatorName,
+                out _,
+                syntax,
+                silent: true);
+            var rightMemberTask = constraints.Member(
+                rightType,
+                operatorName,
+                out _,
+                syntax,
+                silent: true);
+            var leftMemberSymbol = await leftMemberTask;
+            var rightMemberSymbol = await rightMemberTask;
+
             // Resolve symbol overload
             var symbolPromise = constraints.Overload(
                 operatorName,
-                GetFunctions(operatorSymbol),
+                GetFunctionsMerged(operatorSymbol, leftMemberSymbol, rightMemberSymbol),
                 ImmutableArray.Create(
                     constraints.Arg(syntax.Left, leftTask, diagnostics),
                     constraints.Arg(syntax.Right, rightTask, diagnostics)),
@@ -580,15 +634,34 @@ internal partial class Binder
         ConstraintSolver constraints,
         DiagnosticBag diagnostics)
     {
-        // Get the comparison operator symbol
+        // Get the comparison operator symbol globally
         var operatorName = FunctionSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
-        var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
+        var globalOperatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
+
+        // Get the operator from either operand types
+        // NOTE: The constraints can be silent here
+        var leftType = left.GetResultType(syntax, constraints, diagnostics);
+        var rightType = right.GetResultType(syntax, constraints, diagnostics);
+        var leftMemberTask = constraints.Member(
+            leftType,
+            operatorName,
+            out _,
+            syntax,
+            silent: true);
+        var rightMemberTask = constraints.Member(
+            rightType,
+            operatorName,
+            out _,
+            syntax,
+            silent: true);
+        var leftMemberSymbol = await leftMemberTask;
+        var rightMemberSymbol = await rightMemberTask;
 
         // NOTE: We know it must be bool, no need to pass it on to comparison
         // Resolve symbol overload
         var symbolPromise = constraints.Overload(
             operatorName,
-            GetFunctions(operatorSymbol),
+            GetFunctionsMerged(globalOperatorSymbol, leftMemberSymbol, rightMemberSymbol),
             ImmutableArray.Create(
                 constraints.Arg(syntax, left, diagnostics),
                 constraints.Arg(syntax, right, diagnostics)),
@@ -827,11 +900,19 @@ internal partial class Binder
         _ => null,
     };
 
-    private static ImmutableArray<FunctionSymbol> GetFunctions(Symbol symbol) => symbol switch
+    private static ImmutableArray<FunctionSymbol> GetFunctions(Symbol symbol) =>
+        GetFunctionsImpl(symbol).ToImmutableArray();
+
+    private static ImmutableArray<FunctionSymbol> GetFunctionsMerged(params Symbol[] symbols) => symbols
+        .SelectMany(GetFunctionsImpl)
+        .Distinct(SymbolEqualityComparer.Default)
+        .ToImmutableArray();
+
+    private static IEnumerable<FunctionSymbol> GetFunctionsImpl(Symbol symbol) => symbol switch
     {
-        FunctionSymbol f => ImmutableArray.Create(f),
+        FunctionSymbol f => new[] { f },
         OverloadSymbol o => o.Functions,
-        _ => ImmutableArray<FunctionSymbol>.Empty,
+        _ => Enumerable.Empty<FunctionSymbol>(),
     };
 
     [return: NotNullIfNotNull(nameof(syntax))]

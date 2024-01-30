@@ -61,26 +61,6 @@ internal static class MetadataSymbol
                 yield return ctorFunction;
             }
         }
-
-        // We look for operator symbols
-        foreach (var methodHandle in typeDefinition.GetMethods())
-        {
-            var method = metadataReader.GetMethodDefinition(methodHandle);
-
-            // Skip private
-            if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
-
-            // Skip non-specialname
-            if (!method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
-
-            // Name must start with "op_"
-            var methodName = metadataReader.GetString(method.Name);
-            if (!methodName.StartsWith("op_")) continue;
-
-            // This is an operator, synthetize a function overload
-            var op = new MetadataMethodSymbol(typeSymbol, method);
-            yield return op;
-        }
     }
 
     public static string? GetDefaultMemberAttributeName(TypeDefinition typeDefinition, Compilation compilation, MetadataReader reader)

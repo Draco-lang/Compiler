@@ -149,9 +149,12 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         foreach (var methodHandle in this.typeDefinition.GetMethods())
         {
             var method = this.MetadataReader.GetMethodDefinition(methodHandle);
-            // Skip special name, if not a constructor
-            if (method.Attributes.HasFlag(MethodAttributes.SpecialName)
-             && this.MetadataReader.GetString(method.Name) != ".ctor") continue;
+            // Skip special name, if not a constructor or operator
+            if (method.Attributes.HasFlag(MethodAttributes.SpecialName))
+            {
+                var name = this.MetadataReader.GetString(method.Name);
+                if (name != ".ctor" && !name.StartsWith("op_")) continue;
+            }
             // Skip private
             if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
             // Add it

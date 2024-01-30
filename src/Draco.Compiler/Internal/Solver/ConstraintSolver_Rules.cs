@@ -199,7 +199,7 @@ internal sealed partial class ConstraintSolver
         }
 
         // Not a type variable, we can look into members
-        var membersWithName = accessed.InstanceMembers
+        var membersWithName = accessed.Members
             .Where(m => m.Name == constraint.MemberName)
             .ToImmutableArray();
 

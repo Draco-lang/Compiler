@@ -156,7 +156,14 @@
     <Documentation>
       An import declaration.
     </Documentation>
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        An unexpected visibility starting the import.
+      </Documentation>
 
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
     <Field Name="ImportKeyword" Type="SyntaxToken">
       <Documentation>
         The 'import' keyword starting the delcaration.

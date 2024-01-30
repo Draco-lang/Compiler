@@ -51,6 +51,7 @@ public sealed class DracoCompiler : ToolTask
 
     protected override string GenerateResponseFileCommands()
     {
+        this.ProjectDirectory = "\"" + this.ProjectDirectory + "\"";
         var sb = new StringBuilder($"compile");
         sb.AppendLine();
 

@@ -121,6 +121,7 @@ public static partial class SyntaxFactory
         ModuleDeclaration(name, declarations.AsEnumerable());
 
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
+        null,
         Import,
         path.Aggregate(
             RootImportPath(Name(root)) as ImportPathSyntax,

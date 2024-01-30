@@ -135,4 +135,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "illegal language element {0} in context",
         code: Code(14));
+
+    /// <summary>
+    /// There is a visibility modifier before an import statement.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedVisibilityModifierBeforeImport = DiagnosticTemplate.Create(
+        title: "unexpected visibility modifier before import statement",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected {0} before import statement",
+        code: Code(15));
 }

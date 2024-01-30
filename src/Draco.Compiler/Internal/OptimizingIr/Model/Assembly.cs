@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal sealed class Assembly : IAssembly
 {
     private Procedure? entryPoint;
-    private Module rootModule;
+    private readonly Module rootModule;
 
     public string Name { get; set; } = "output";
     public Procedure? EntryPoint

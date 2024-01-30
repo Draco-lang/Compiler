@@ -56,8 +56,9 @@ internal static class MetadataSymbol
                 if (methodName != ".ctor") continue;
 
                 // This is a public constructor, synthetize a function overload
-                var ctor = new MetadataConstructorFunctionSymbol((MetadataTypeSymbol)typeSymbol, method);
-                yield return ctor;
+                var ctor = new MetadataMethodSymbol(typeSymbol, method);
+                var ctorFunction = new ConstructorFunctionSymbol(ctor);
+                yield return ctorFunction;
             }
         }
 

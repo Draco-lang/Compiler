@@ -132,21 +132,23 @@ internal sealed class LocalBinder : Binder
         var declarationsBuilder = ImmutableArray.CreateBuilder<Symbol>();
         var localDeclarationsBuilder = ImmutableArray.CreateBuilder<LocalDeclaration>();
         var position = 0;
+        var localCount = 0;
         foreach (var syntax in EnumerateNodesInSameScope(this.DeclaringSyntax))
         {
             // First off, we add to the position translator
             relativePositionsBuilder.Add(syntax, position);
             // Next, we check if the syntax defines some kind of symbol
-            var symbol = this.BuildSymbol(syntax);
+            var symbol = this.BuildSymbol(syntax, localCount);
             if (symbol is not null)
             {
                 // There is a symbol being built
                 // If it's a local, it depends on position, otherwise we don't care
-                if (symbol is UntypedLocalSymbol)
+                if (symbol is LocalSymbol)
                 {
                     // Locals need to be offset by their width
                     var width = EnumerateNodesInSameScope(syntax).Count();
                     localDeclarationsBuilder.Add(new(position + width, symbol));
+                    ++localCount;
                 }
                 else
                 {
@@ -162,13 +164,11 @@ internal sealed class LocalBinder : Binder
         Volatile.Write(ref this.relativePositions, relativePositionsBuilder.ToImmutable());
     }
 
-    private Symbol? BuildSymbol(SyntaxNode syntax) => syntax switch
+    private Symbol? BuildSymbol(SyntaxNode syntax, int localCount) => syntax switch
     {
         FunctionDeclarationSyntax function => new SourceFunctionSymbol(this.ContainingSymbol, function),
         ParameterSyntax parameter => new SourceParameterSymbol(this.ContainingSymbol, parameter),
-        // NOTE: Locals are special, we have no type-info about them
-        // They are remapped at the end of binding to 'SourceLocalSymbol's
-        VariableDeclarationSyntax variable => new UntypedLocalSymbol(this.ContainingSymbol, variable),
+        VariableDeclarationSyntax variable => new SourceLocalSymbol(this.ContainingSymbol, new TypeVariable(localCount), variable),
         LabelDeclarationSyntax label => new SourceLabelSymbol(this.ContainingSymbol, label),
         _ => null,
     };

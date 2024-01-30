@@ -92,4 +92,31 @@ public sealed class SyntaxTreeFormatterTests
         var actual = SyntaxTree.Parse(input).Format().ToString();
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
+
+    [Fact]
+    public void TestFormattingInlineMethod()
+    {
+        var input = """
+            import System.Console;
+
+            func max(a:int32, b:int32): int32 = if (a > b) a else b;
+
+            func main() {
+                WriteLine(max(12, 34));
+            }
+            """;
+
+        var expected = """
+            import System.Console;
+
+            func max(a:int32, b:int32): int32 = if (a > b) a else b;
+
+            func main() {
+                WriteLine(max(12, 34));
+            }
+
+            """;
+        var actual = SyntaxTree.Parse(input).Format().ToString();
+        Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
+    }
 }

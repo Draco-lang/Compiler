@@ -34,7 +34,7 @@ internal partial class Binder
                 template: SymbolResolutionErrors.IllegalModuleType,
                 location: syntax.Location,
                 formatArgs: syntax));
-            return IntrinsicSymbols.ErrorType;
+            return WellKnownTypes.ErrorType;
         }
         else
         {
@@ -101,7 +101,7 @@ internal partial class Binder
                 template: TypeCheckingErrors.GenericTypeParamCountMismatch,
                 location: syntax.Location,
                 formatArgs: new object[] { instantiated, args.Length }));
-            return IntrinsicSymbols.ErrorType;
+            return WellKnownTypes.ErrorType;
         }
         // Ok, instantiate
         return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);

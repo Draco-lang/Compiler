@@ -1,3 +1,4 @@
+$ErrorActionPreference = "Stop"
 # Check if a path argument was passed in
 if ($args.Length -eq 0) {
     Write-Error "Please specify a path argument"
@@ -28,12 +29,12 @@ Push-Location
 Set-Location $path
 
 # Create a test project in Draco if one doesn't exist yet
-if (!(Get-ChildItem -Path $path -Filter *.dracoproj)) {
+if (!(Get-ChildItem -Filter *.dracoproj)) {
     dotnet new console --language draco
 }
 
 # Add the toolchain as the primary nuget source and change the restore direcotry
-$nugetConfigPath = Join-Path -Path $path -ChildPath "nuget.config"
+$nugetConfigPath = "nuget.config"
 if (!(Test-Path $nugetConfigPath)) {
     $nugetConfig = '<?xml version="1.0" encoding="utf-8"?>
     <configuration>

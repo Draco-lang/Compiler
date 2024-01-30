@@ -43,6 +43,10 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     public override bool IsInterface => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
 
+    public override bool IsAbstract => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Abstract);
+
+    public override bool IsSealed => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Sealed);
+
     public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
     private ImmutableArray<TypeSymbol> baseTypes;
 
@@ -145,10 +149,11 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         foreach (var methodHandle in this.typeDefinition.GetMethods())
         {
             var method = this.MetadataReader.GetMethodDefinition(methodHandle);
+            // Skip special name, if not a constructor
+            if (method.Attributes.HasFlag(MethodAttributes.SpecialName)
+             && this.MetadataReader.GetString(method.Name) != ".ctor") continue;
             // Skip private
             if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
-            // Skip special name
-            if (method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
             // Add it
             var methodSymbol = new MetadataMethodSymbol(
                 containingSymbol: this,

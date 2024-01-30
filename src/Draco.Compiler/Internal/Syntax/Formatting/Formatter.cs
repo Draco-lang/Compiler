@@ -172,6 +172,7 @@ internal sealed class Formatter : SyntaxVisitor
         this.Place(node.Value);
         this.Place(node.Semicolon);
         this.Unindent();
+        this.Newline(2);
     }
 
     public override void VisitGenericType(GenericTypeSyntax node)

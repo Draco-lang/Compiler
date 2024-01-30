@@ -12,12 +12,12 @@ internal sealed class ParameterInstanceSymbol : ParameterSymbol, IGenericInstanc
     public override bool IsVariadic => this.GenericDefinition.IsVariadic;
     public override string Name => this.GenericDefinition.Name;
 
-    public override Symbol? ContainingSymbol { get; }
+    public override FunctionSymbol ContainingSymbol { get; }
     public override ParameterSymbol GenericDefinition { get; }
 
     public GenericContext Context { get; }
 
-    public ParameterInstanceSymbol(Symbol? containingSymbol, ParameterSymbol genericDefinition, GenericContext context)
+    public ParameterInstanceSymbol(FunctionSymbol containingSymbol, ParameterSymbol genericDefinition, GenericContext context)
     {
         this.ContainingSymbol = containingSymbol;
         this.GenericDefinition = genericDefinition;

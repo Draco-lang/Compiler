@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
-using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
+using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -38,9 +38,11 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
         InterlockedUtils.InitializeNull(ref this.elementType, this.BuildElementType);
     private TypeParameterSymbol? elementType;
 
-    public override BoundStatement Body =>
-        InterlockedUtils.InitializeNull(ref this.body, this.BuildBody);
-    private BoundStatement? body;
+    public override CodegenDelegate Codegen => (codegen, target, operands) =>
+    {
+        var elementType = target.Type.Substitution.GenericArguments[0];
+        codegen.Write(NewArray(target, elementType, operands));
+    };
 
     private readonly ArrayTypeSymbol genericArrayType;
 
@@ -61,13 +63,4 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
     private TypeSymbol BuildReturnType() => this.genericArrayType.GenericInstantiate(this.ElementType);
 
     private TypeParameterSymbol BuildElementType() => new SynthetizedTypeParameterSymbol(this, "T");
-
-    private BoundStatement BuildBody() => ExpressionStatement(ReturnExpression(
-        value: ArrayCreationExpression(
-            elementType: this.ElementType,
-            sizes: this.Parameters
-                .Select(ParameterExpression)
-                .Cast<BoundExpression>()
-                .ToImmutableArray(),
-            type: this.ReturnType)));
 }

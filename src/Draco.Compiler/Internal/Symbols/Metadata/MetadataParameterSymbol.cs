@@ -12,7 +12,7 @@ internal sealed class MetadataParameterSymbol : ParameterSymbol, IMetadataSymbol
     public override string MetadataName => this.MetadataReader.GetString(this.parameterDefinition.Name);
 
     public override TypeSymbol Type { get; }
-    public override Symbol ContainingSymbol { get; }
+    public override FunctionSymbol ContainingSymbol { get; }
 
     // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
@@ -22,7 +22,7 @@ internal sealed class MetadataParameterSymbol : ParameterSymbol, IMetadataSymbol
 
     private readonly Parameter parameterDefinition;
 
-    public MetadataParameterSymbol(Symbol containingSymbol, Parameter parameterDefinition, TypeSymbol type)
+    public MetadataParameterSymbol(FunctionSymbol containingSymbol, Parameter parameterDefinition, TypeSymbol type)
     {
         this.ContainingSymbol = containingSymbol;
         this.Type = type;

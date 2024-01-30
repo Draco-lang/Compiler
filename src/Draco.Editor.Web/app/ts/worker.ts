@@ -69,9 +69,13 @@ async function main() {
     });
 
     const runtimeAsset = assets.find(s => s['behavior'] == 'js-module-runtime');
-    runtimeAsset['moduleExports'] = await import('/_framework/' + runtimeAsset['name']);
+    if (runtimeAsset != undefined) {
+        runtimeAsset['moduleExports'] = await import('/_framework/' + runtimeAsset['name']);
+    }
     const nativeAsset = assets.find(s => s['behavior'] == 'js-module-native');
-    nativeAsset['moduleExports'] = await import('/_framework/' + nativeAsset['name']);
+    if (nativeAsset != undefined) {
+        nativeAsset['moduleExports'] = await import('/_framework/' + nativeAsset['name']);
+    }
 
     firstMessagePromise = undefined;
     const dotnet = self.dotnet.dotnet;

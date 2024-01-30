@@ -33,6 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NETCore.App.Ref" Version="8.0.1" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net8.0\*.dll" LogicalName="ReferenceAssembly.%(Filename)%(Extension)" Visible="false" Link="Reference Assemblies\%(Filename)%(Extension)" />
   </ItemGroup>
 

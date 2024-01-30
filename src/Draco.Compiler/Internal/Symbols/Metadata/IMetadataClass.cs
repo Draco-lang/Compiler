@@ -18,7 +18,7 @@ internal interface IMetadataClass : IMetadataSymbol
     public string? DefaultMemberAttributeName { get; }
 
     /// <summary>
-    /// The additional symbols that can potentially leak out of the class, like constructors or operators.
+    /// The additional symbols that can potentially leak out of the class, like constructors.
     /// </summary>
     /// <returns>The additional symbols that should be in the same scope as the class definition.</returns>
     public IEnumerable<Symbol> AdditionalSymbols { get; }

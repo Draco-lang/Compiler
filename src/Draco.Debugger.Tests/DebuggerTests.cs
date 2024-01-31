@@ -8,7 +8,7 @@ public class DebuggerTests
     [Fact]
     public async Task simple_program_terminate()
     {
-        var host = DebuggerHost.Create(TextDebuggerHelper.FindDbgShim());
+        var host = DebuggerHost.Create();
         var (debugger, file) = await host.DebugAsync("""
             func main() {
                 var i = 0;
@@ -24,7 +24,7 @@ public class DebuggerTests
     [Fact]
     public async Task single_breakpoint()
     {
-        var host = DebuggerHost.Create(TextDebuggerHelper.FindDbgShim());
+        var host = DebuggerHost.Create();
         var (debugger, file) = await host.DebugAsync("""
             import System.Console;
             func main() {
@@ -48,7 +48,7 @@ public class DebuggerTests
     [Fact]
     public async Task multiple_breakpoint_break()
     {
-        var host = DebuggerHost.Create(TextDebuggerHelper.FindDbgShim());
+        var host = DebuggerHost.Create();
         var (debugger, file) = await host.DebugAsync("""
             import System.IO;
             func main() {
@@ -80,7 +80,7 @@ public class DebuggerTests
     [Fact]
     public async Task hidden_locals_does_not_throw()
     {
-        var host = DebuggerHost.Create(TextDebuggerHelper.FindDbgShim());
+        var host = DebuggerHost.Create();
         var (debugger, file) = await host.DebugAsync("""
             import System.Console;
             func main() {

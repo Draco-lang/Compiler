@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -117,7 +118,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
         switch (obj)
         {
         default:
-            throw new ArgumentOutOfRangeException(nameof(obj));
+            return RuntimeHelpers.GetHashCode(obj);
         }
     }
 

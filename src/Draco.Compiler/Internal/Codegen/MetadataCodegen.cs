@@ -61,7 +61,6 @@ internal sealed class MetadataCodegen : MetadataWriter
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
 
     private WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
-    private IntrinsicSymbols IntrinsicSymbols => this.Compilation.IntrinsicSymbols;
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
@@ -220,7 +219,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                     e
                         .MethodSignature(
                             genericParameterCount: func.GenericParameters.Length,
-                            isInstanceMethod: func.IsMember)
+                            isInstanceMethod: !func.IsStatic)
                         .Parameters(func.Parameters.Length, out var returnType, out var parameters);
                     this.EncodeReturnType(returnType, func.ReturnType);
                     foreach (var param in func.Parameters)
@@ -570,7 +569,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     public void EncodeReturnType(ReturnTypeEncoder encoder, TypeSymbol type)
     {
-        if (SymbolEqualityComparer.Default.Equals(type, IntrinsicSymbols.Unit)) { encoder.Void(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, WellKnownTypes.Unit)) { encoder.Void(); return; }
 
         this.EncodeSignatureType(encoder.Type(), type);
     }
@@ -586,24 +585,24 @@ internal sealed class MetadataCodegen : MetadataWriter
             return;
         }
 
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Bool)) { encoder.Boolean(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Char)) { encoder.Char(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemBoolean)) { encoder.Boolean(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemChar)) { encoder.Char(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int8)) { encoder.SByte(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int16)) { encoder.Int16(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int32)) { encoder.Int32(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Int64)) { encoder.Int64(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemSByte)) { encoder.SByte(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemInt16)) { encoder.Int16(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemInt32)) { encoder.Int32(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemInt64)) { encoder.Int64(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint8)) { encoder.Byte(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint16)) { encoder.UInt16(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint32)) { encoder.UInt32(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Uint64)) { encoder.UInt64(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemByte)) { encoder.Byte(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemUInt16)) { encoder.UInt16(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemUInt32)) { encoder.UInt32(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemUInt64)) { encoder.UInt64(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Float32)) { encoder.Single(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Float64)) { encoder.Double(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemSingle)) { encoder.Single(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemDouble)) { encoder.Double(); return; }
 
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.String)) { encoder.String(); return; }
-        if (SymbolEqualityComparer.Default.Equals(type, this.IntrinsicSymbols.Object)) { encoder.Object(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemString)) { encoder.String(); return; }
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemObject)) { encoder.Object(); return; }
 
         if (type.GenericArguments.Length > 0)
         {

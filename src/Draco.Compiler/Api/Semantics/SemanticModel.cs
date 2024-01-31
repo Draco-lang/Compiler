@@ -40,7 +40,7 @@ public sealed partial class SemanticModel : IBinderProvider
     // Filled out by incremental binding
     private readonly ConcurrentDictionary<SourceFunctionSymbol, BoundStatement> boundFunctions = new();
     private readonly ConcurrentDictionary<SourceGlobalSymbol, (Internal.Symbols.TypeSymbol Type, BoundExpression? Value)> boundGlobals = new();
-    private readonly ConcurrentDictionary<(SyntaxNode, System.Type), BoundNode> boundNodeMap = new();
+    private readonly ConcurrentDictionary<SyntaxNode, BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 
     internal SemanticModel(Compilation compilation, SyntaxTree tree)
@@ -124,8 +124,7 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.compilation.GetBinder(node);
         while (binder is not null)
         {
-            var symbols = binder.DeclaredSymbols
-                .Select(x => x is UntypedLocalSymbol loc ? this.GetDeclaredSymbol(loc.DeclaringSyntax)! : x.ToApiSymbol());
+            var symbols = binder.DeclaredSymbols.Select(x => x.ToApiSymbol());
             foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;
         }
@@ -167,11 +166,6 @@ public sealed partial class SemanticModel : IBinderProvider
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
-            if (symbol is UntypedLocalSymbol)
-            {
-                // NOTE: Special case, locals are untyped, we need the typed variant
-                symbol = this.symbolMap[syntax];
-            }
             return symbol?.ToApiSymbol();
         }
         case SourceModuleSymbol module:
@@ -268,7 +262,7 @@ public sealed partial class SemanticModel : IBinderProvider
     /// or null if it does not evaluate to a value with type.</returns>
     public ITypeSymbol? TypeOf(ExpressionSyntax syntax)
     {
-        if (this.TryGetBoundNode(syntax, typeof(BoundExpression), out var existing))
+        if (this.TryGetBoundNode(syntax, out var existing))
         {
             return (existing as BoundExpression)?.Type?.ToApiSymbol();
         }
@@ -298,12 +292,12 @@ public sealed partial class SemanticModel : IBinderProvider
         }
 
         // Attempt to retrieve
-        this.TryGetBoundNode(syntax, typeof(BoundExpression), out var node);
+        this.TryGetBoundNode(syntax, out var node);
         return (node as BoundExpression)?.Type?.ToApiSymbol();
     }
 
-    private bool TryGetBoundNode(SyntaxNode syntax, System.Type type, [MaybeNullWhen(false)] out BoundNode node) =>
-        this.boundNodeMap.TryGetValue((syntax, type), out node);
+    private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node) =>
+        this.boundNodeMap.TryGetValue(syntax, out node);
 
     /// <summary>
     /// Retrieves the function overloads referenced by <paramref name="syntax"/>.
@@ -325,9 +319,7 @@ public sealed partial class SemanticModel : IBinderProvider
         while (binder is not null)
         {
             var symbols = binder.DeclaredSymbols
-                .Select(x => x is UntypedLocalSymbol loc
-                    ? this.GetDeclaredSymbol(loc.DeclaringSyntax)!
-                    : x.ToApiSymbol())
+                .Select(x => x.ToApiSymbol())
                 .Where(x => x is FunctionSymbol && x.Name == syntax.ToString());
             foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;

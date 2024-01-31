@@ -23,7 +23,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     /// <summary>
     /// The arguments the function was called with.
     /// </summary>
-    public ImmutableArray<object> Arguments { get; }
+    public ImmutableArray<ConstraintSolver.Argument> Arguments { get; }
 
     /// <summary>
     /// The return type of the call.
@@ -33,7 +33,7 @@ internal sealed class OverloadConstraint : Constraint<FunctionSymbol>
     public OverloadConstraint(
         string name,
         ImmutableArray<FunctionSymbol> candidates,
-        ImmutableArray<object> arguments,
+        ImmutableArray<ConstraintSolver.Argument> arguments,
         TypeSymbol returnType,
         ConstraintLocator locator)
         : base(locator)

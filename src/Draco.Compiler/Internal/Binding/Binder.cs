@@ -26,7 +26,7 @@ internal abstract partial class Binder
     /// <summary>
     /// Utility accessor for intrinsics.
     /// </summary>
-    protected IntrinsicSymbols IntrinsicSymbols => this.Compilation.IntrinsicSymbols;
+    protected WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
 
     /// <summary>
     /// The parent binder of this one.
@@ -76,10 +76,9 @@ internal abstract partial class Binder
     {
         var functionName = function.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(function.DeclaringSyntax, $"function {functionName}");
-        var untypedStatement = this.BindStatement(function.DeclaringSyntax.Body, constraints, diagnostics);
+        var statementTask = this.BindStatement(function.DeclaringSyntax.Body, constraints, diagnostics);
         constraints.Solve(diagnostics);
-        var boundStatement = this.TypeStatement(untypedStatement, constraints, diagnostics);
-        return boundStatement;
+        return statementTask.Result;
     }
 
     public virtual (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
@@ -92,22 +91,27 @@ internal abstract partial class Binder
 
         // Bind type and value
         var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
-        var untypedValue = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
+        var valueTask = valueSyntax is null
+            ? null
+            : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
 
         // Infer declared type
         var declaredType = type ?? constraints.AllocateTypeVariable(track: false);
 
         // Add assignability constraint, if needed
-        if (untypedValue is not null)
+        if (valueTask is not null)
         {
-            constraints.Assignable(declaredType, untypedValue.TypeRequired, global.DeclaringSyntax.Value!.Value);
+            _ = constraints.Assignable(
+                declaredType,
+                valueTask.GetResultType(valueSyntax, constraints, diagnostics),
+                global.DeclaringSyntax.Value!.Value);
         }
 
         // Solve
         constraints.Solve(diagnostics);
 
         // Type out the expression, if needed
-        var boundValue = untypedValue is null ? null : this.TypeExpression(untypedValue, constraints, diagnostics);
+        var boundValue = valueTask?.Result;
 
         // Unwrap the type
         declaredType = declaredType.Substitution;
@@ -120,7 +124,7 @@ internal abstract partial class Binder
                 location: global.DeclaringSyntax.Location,
                 formatArgs: global.Name));
             // We use an error type
-            declaredType = IntrinsicSymbols.ErrorType;
+            declaredType = WellKnownTypes.ErrorType;
         }
 
         // Done
@@ -144,7 +148,7 @@ internal abstract partial class Binder
                 template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
                 location: syntax?.Location,
                 prop.FullName));
-            result = new NoOverloadFunctionSymbol(0);
+            result = new UndefinedPropertyAccessorSymbol(prop);
         }
         return result;
     }
@@ -158,7 +162,7 @@ internal abstract partial class Binder
                 template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
                 location: syntax?.Location,
                 prop.FullName));
-            result = new NoOverloadFunctionSymbol(1);
+            result = new UndefinedPropertyAccessorSymbol(prop);
         }
         return result;
     }

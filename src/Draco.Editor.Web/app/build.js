@@ -124,6 +124,7 @@ if (process.env.GITHUB_TOKEN !== undefined && process.env.GITHUB_TOKEN.length > 
     octokit = new Octokit();
 }
 
+
 const response = await octokit.repos.getContent({
     owner: 'microsoft',
     repo: 'vscode',

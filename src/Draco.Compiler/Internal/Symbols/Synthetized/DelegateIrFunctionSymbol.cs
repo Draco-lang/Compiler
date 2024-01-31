@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// An <see cref="IrFunctionSymbol"/> backed by a delegate.
 /// </summary>
-internal sealed class DelegateIrFunctionSymbol : IrFunctionSymbol
+internal sealed class DelegateIrFunctionSymbol : FunctionSymbol
 {
     /// <summary>
     /// Constructs a function symbol for an unary operator.
@@ -62,9 +62,8 @@ internal sealed class DelegateIrFunctionSymbol : IrFunctionSymbol
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
 
     public override TypeSymbol ReturnType { get; }
-    public override Symbol? ContainingSymbol => null;
     public override bool IsSpecialName => true;
-    public override bool IsStatic => true;
+    public override bool ForceInline => true;
 
     public override string Name { get; }
 

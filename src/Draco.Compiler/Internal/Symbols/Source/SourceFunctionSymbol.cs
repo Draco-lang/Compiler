@@ -29,11 +29,10 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public override Symbol ContainingSymbol { get; }
     public override string Name => this.DeclaringSyntax.Name.Text;
-    public override bool IsStatic => true;
 
     public override FunctionDeclarationSyntax DeclaringSyntax { get; }
 
-    public BoundStatement Body => this.BindBodyIfNeeded(this.DeclaringCompilation!);
+    public override BoundStatement Body => this.BindBodyIfNeeded(this.DeclaringCompilation!);
     private BoundStatement? body;
 
     public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
@@ -179,7 +178,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private TypeSymbol BindReturnType(IBinderProvider binderProvider)
     {
         // If the return type is unspecified, it's assumed to be unit
-        if (this.DeclaringSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
+        if (this.DeclaringSyntax.ReturnType is null) return WellKnownTypes.Unit;
 
         // Otherwise, we need to resolve
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);

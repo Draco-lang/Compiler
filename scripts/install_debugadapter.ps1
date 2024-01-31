@@ -1,3 +1,8 @@
+$ErrorActionPreference = "Stop"
+Push-Location $PSScriptRoot
 dotnet pack ../src/Draco.DebugAdapter --output .
-try { dotnet tool uninstall --global Draco.DebugAdapter } catch {}
+if ((dotnet tool list --global) -match "Draco.DebugAdapter") {
+    dotnet tool uninstall --global Draco.DebugAdapter
+}
 dotnet tool install --global --add-source . Draco.DebugAdapter
+Pop-Location

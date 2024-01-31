@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -38,7 +37,6 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="symbol"/> can be referenced in a value-context.</returns>
     public static bool IsValueSymbol(Symbol symbol) => symbol
         is LocalSymbol
-        or UntypedLocalSymbol
         or GlobalSymbol
         or FieldSymbol
         or PropertySymbol
@@ -161,55 +159,55 @@ internal static class BinderFacts
     /// Checks, if a literal value has a corresponding type.
     /// </summary>
     /// <param name="value">The literal value.</param>
-    /// <param name="intrinsics">The intrinsics from the compilation.</param>
+    /// <param name="wellKnownType">The intrinsics from the compilation.</param>
     /// <param name="type">The type of the literal, if could be determined.</param>
     /// <returns>True, if the <paramref name="type"/> of <paramref name="value"/> could be determined,
     /// false otherwise.</returns>
     public static bool TryGetLiteralType(
         object? value,
-        IntrinsicSymbols intrinsics,
+        WellKnownTypes wellKnownType,
         [MaybeNullWhen(false)] out TypeSymbol type)
     {
         switch (value)
         {
         case bool:
-            type = intrinsics.Bool;
+            type = wellKnownType.SystemBoolean;
             return true;
         case byte:
-            type = intrinsics.Uint8;
+            type = wellKnownType.SystemByte;
             return true;
         case ushort:
-            type = intrinsics.Uint16;
+            type = wellKnownType.SystemUInt16;
             return true;
         case uint:
-            type = intrinsics.Uint32;
+            type = wellKnownType.SystemUInt32;
             return true;
         case ulong:
-            type = intrinsics.Uint64;
+            type = wellKnownType.SystemUInt64;
             return true;
         case sbyte:
-            type = intrinsics.Int8;
+            type = wellKnownType.SystemByte;
             return true;
         case short:
-            type = intrinsics.Int16;
+            type = wellKnownType.SystemInt16;
             return true;
         case int:
-            type = intrinsics.Int32;
+            type = wellKnownType.SystemInt32;
             return true;
         case long:
-            type = intrinsics.Int64;
+            type = wellKnownType.SystemInt64;
             return true;
         case float:
-            type = intrinsics.Float32;
+            type = wellKnownType.SystemSingle;
             return true;
         case double:
-            type = intrinsics.Float64;
+            type = wellKnownType.SystemDouble;
             return true;
         case Rune:
-            type = intrinsics.Char;
+            type = wellKnownType.SystemChar;
             return true;
         case string:
-            type = intrinsics.String;
+            type = wellKnownType.SystemString;
             return true;
         default:
             type = null;

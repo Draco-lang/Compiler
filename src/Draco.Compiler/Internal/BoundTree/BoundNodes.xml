@@ -110,12 +110,6 @@
     <Field Name="CurrentProperty" Type="Symbol" />
   </Node>
 
-  <Node Name="BoundMemberExpression" Base="BoundExpression">
-    <Field Name="Receiver" Type="BoundExpression" />
-    <Field Name="Member" Type="Symbol" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
-  </Node>
-
   <Node Name="BoundCallExpression" Base="BoundExpression">
     <Field Name="Receiver" Type="BoundExpression?" />
     <Field Name="Method" Type="FunctionSymbol" />
@@ -131,14 +125,12 @@
   <Node Name="BoundUnaryExpression" Base="BoundExpression">
     <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Operand" Type="BoundExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundBinaryExpression" Base="BoundExpression">
     <Field Name="Operator" Type="FunctionSymbol" />
     <Field Name="Left" Type="BoundExpression" />
     <Field Name="Right" Type="BoundExpression" />
-    <Field Name="Type" Type="TypeSymbol" Override="true" />
   </Node>
 
   <Node Name="BoundAndExpression" Base="BoundExpression">
@@ -178,6 +170,14 @@
     <Field Name="Array" Type="BoundExpression" />
   </Node>
 
+  <Node Name="BoundModuleExpression" Base="BoundExpression">
+    <Field Name="Module" Type="ModuleSymbol" />
+  </Node>
+
+  <Node Name="BoundTypeExpression" Base="BoundExpression">
+    <Field Name="Type" Type="TypeSymbol" />
+  </Node>
+
   <Node Name="BoundLocalExpression" Base="BoundExpression">
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
@@ -211,8 +211,8 @@
   <Node Name="BoundIndexSetExpression" Base="BoundExpression">
     <Field Name="Receiver" Type="BoundExpression"/>
     <Field Name="Setter" Type="FunctionSymbol" />
-    <Field Name="Value" Type="BoundExpression"/>
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
+    <Field Name="Value" Type="BoundExpression"/>
   </Node>
 
   <Node Name="BoundParameterExpression" Base="BoundExpression">
@@ -220,6 +220,7 @@
   </Node>
 
   <Node Name="BoundFunctionGroupExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?" />
     <Field Name="Functions" Type="ImmutableArray&lt;FunctionSymbol&gt;" />
   </Node>
 
@@ -284,8 +285,19 @@
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
+  <Node Name="BoundPropertySetLvalue" Base="BoundLvalue">
+    <Field Name="Receiver" Type="BoundExpression?"/>
+    <Field Name="Setter" Type="FunctionSymbol" />
+  </Node>
+
   <Node Name="BoundArrayAccessLvalue" Base="BoundLvalue">
     <Field Name="Array" Type="BoundExpression" />
+    <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
+  </Node>
+
+  <Node Name="BoundIndexSetLvalue" Base="BoundLvalue">
+    <Field Name="Receiver" Type="BoundExpression" />
+    <Field Name="Setter" Type="FunctionSymbol" />
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
   </Node>
 </Tree>

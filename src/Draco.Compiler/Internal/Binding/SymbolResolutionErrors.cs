@@ -78,29 +78,11 @@ internal static class SymbolResolutionErrors
     /// <summary>
     /// A module was used as an expression.
     /// </summary>
-    public static readonly DiagnosticTemplate IllegalModuleExpression = DiagnosticTemplate.Create(
-        title: "illegal expression",
-        severity: DiagnosticSeverity.Error,
-        format: "the module name {0} is illegal in expression context",
-        code: Code(8));
-
-    /// <summary>
-    /// A type was used as an expression.
-    /// </summary>
-    public static readonly DiagnosticTemplate IllegalTypeExpression = DiagnosticTemplate.Create(
-        title: "illegal expression",
-        severity: DiagnosticSeverity.Error,
-        format: "the type name {0} is illegal in expression context",
-        code: Code(9));
-
-    /// <summary>
-    /// A module was used as an expression.
-    /// </summary>
     public static readonly DiagnosticTemplate IllegalModuleType = DiagnosticTemplate.Create(
         title: "illegal type",
         severity: DiagnosticSeverity.Error,
         format: "the module name {0} is illegal in type context",
-        code: Code(10));
+        code: Code(8));
 
     /// <summary>
     /// Import is not at the top of the scope.
@@ -109,16 +91,16 @@ internal static class SymbolResolutionErrors
         title: "import not at the top of the scope",
         severity: DiagnosticSeverity.Error,
         format: "import directives must appear at the top of the scope",
-        code: Code(11));
+        code: Code(9));
 
     /// <summary>
     /// A function group was used as an expression.
     /// </summary>
-    public static readonly DiagnosticTemplate IllegalFounctionGroupExpression = DiagnosticTemplate.Create(
+    public static readonly DiagnosticTemplate IllegalFunctionGroupExpression = DiagnosticTemplate.Create(
         title: "illegal expression",
         severity: DiagnosticSeverity.Error,
         format: "the function group {0} is illegal in expression context",
-        code: Code(12));
+        code: Code(10));
 
     /// <summary>
     /// File path is outside of root path.
@@ -127,7 +109,7 @@ internal static class SymbolResolutionErrors
         title: "file path is outside of root path",
         severity: DiagnosticSeverity.Error,
         format: "the file path {0} is outside of the root path {1}",
-        code: Code(13));
+        code: Code(11));
 
     /// <summary>
     /// Can not set get only property.
@@ -136,7 +118,7 @@ internal static class SymbolResolutionErrors
         title: "can not set get-only property",
         severity: DiagnosticSeverity.Error,
         format: "can not set get-only property {0}",
-        code: Code(14));
+        code: Code(12));
 
     /// <summary>
     /// Can not get set only property.
@@ -145,7 +127,7 @@ internal static class SymbolResolutionErrors
         title: "can not get set-only property",
         severity: DiagnosticSeverity.Error,
         format: "can not get set-only property {0}",
-        code: Code(15));
+        code: Code(13));
 
     /// <summary>
     /// No settable indexer was found in type.
@@ -154,7 +136,7 @@ internal static class SymbolResolutionErrors
         title: "no settable indexer was found in type",
         severity: DiagnosticSeverity.Error,
         format: "no settable indexer was found in type {0}",
-        code: Code(16));
+        code: Code(14));
 
     /// <summary>
     /// No gettable indexer was found in type.
@@ -163,7 +145,7 @@ internal static class SymbolResolutionErrors
         title: "no gettable indexer was found in type",
         severity: DiagnosticSeverity.Error,
         format: "no gettable indexer was found in type {0}",
-        code: Code(17));
+        code: Code(15));
 
     /// <summary>
     /// A variadic parameter was not last in a parameter list.
@@ -172,7 +154,7 @@ internal static class SymbolResolutionErrors
         title: "variadic parameter was not last",
         severity: DiagnosticSeverity.Error,
         format: "the variadic parameter {0} must be last in the parameter list",
-        code: Code(18));
+        code: Code(16));
 
     /// <summary>
     /// The member is not a gettable property.
@@ -181,5 +163,5 @@ internal static class SymbolResolutionErrors
         title: "not a gettable property",
         severity: DiagnosticSeverity.Error,
         format: "the member {0} must be a gettable property",
-        code: Code(19));
+        code: Code(17));
 }

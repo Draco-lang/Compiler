@@ -4,10 +4,12 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Binding.Tasks;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
-using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Solver;
@@ -17,6 +19,13 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal sealed partial class ConstraintSolver
 {
+    /// <summary>
+    /// Represents an argument for a call.
+    /// </summary>
+    /// <param name="Syntax">The syntax of the argument, if any.</param>
+    /// <param name="Type">The type of the argument.</param>
+    public readonly record struct Argument(SyntaxNode? Syntax, TypeSymbol Type);
+
     /// <summary>
     /// The context being inferred.
     /// </summary>
@@ -31,18 +40,34 @@ internal sealed partial class ConstraintSolver
     private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = new();
-    // Type variable substitutions
-    private readonly Dictionary<TypeVariable, TypeSymbol> substitutions = new();
-    // The declared/inferred types of locals
-    private readonly Dictionary<UntypedLocalSymbol, TypeSymbol> inferredLocalTypes = new(ReferenceEqualityComparer.Instance);
-    // All locals that have a typed variant constructed
-    private readonly Dictionary<UntypedLocalSymbol, LocalSymbol> typedLocals = new(ReferenceEqualityComparer.Instance);
+    // The registered local variables
+    private readonly List<LocalSymbol> localVariables = new();
 
     public ConstraintSolver(SyntaxNode context, string contextName)
     {
         this.Context = context;
         this.ContextName = contextName;
     }
+
+    /// <summary>
+    /// Constructs an argument for a call constraint.
+    /// </summary>
+    /// <param name="syntax">The argument syntax.</param>
+    /// <param name="expression">The argument expression.</param>
+    /// <param name="diagnostics">The diagnostics to report to.</param>
+    /// <returns>The constructed argument descriptor.</returns>
+    public Argument Arg(SyntaxNode? syntax, BindingTask<BoundExpression> expression, DiagnosticBag diagnostics) =>
+        new(syntax, expression.GetResultType(syntax, this, diagnostics));
+
+    /// <summary>
+    /// Constructs an argument for a call constraint.
+    /// </summary>
+    /// <param name="syntax">The argument syntax.</param>
+    /// <param name="lvalue">The argument lvalue.</param>
+    /// <param name="diagnostics">The diagnostics to report to.</param>
+    /// <returns>The constructed argument descriptor.</returns>
+    public Argument Arg(SyntaxNode? syntax, BindingTask<BoundLvalue> lvalue, DiagnosticBag diagnostics) =>
+        new(syntax, lvalue.GetResultType(syntax, this, diagnostics));
 
     /// <summary>
     /// Solves all diagnostics added to this solver.
@@ -65,15 +90,15 @@ internal sealed partial class ConstraintSolver
 
     private void CheckForUninferredLocals(DiagnosticBag diagnostics)
     {
-        foreach (var (local, localType) in this.inferredLocalTypes)
+        foreach (var local in this.localVariables)
         {
-            var unwrappedLocalType = localType.Substitution;
+            var unwrappedLocalType = local.Type.Substitution;
             if (unwrappedLocalType is TypeVariable typeVar)
             {
-                this.UnifyAsserted(typeVar, IntrinsicSymbols.UninferredType);
+                UnifyAsserted(typeVar, WellKnownTypes.UninferredType);
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
-                    location: local.DeclaringSyntax.Location,
+                    location: local.DeclaringSyntax?.Location,
                     formatArgs: local.Name));
             }
         }
@@ -99,40 +124,7 @@ internal sealed partial class ConstraintSolver
     /// Adds a local to the solver.
     /// </summary>
     /// <param name="local">The symbol of the untyped local.</param>
-    /// <param name="type">The optional declared type for the local.</param>
-    /// <returns>The type the local was declared with.</returns>
-    public TypeSymbol DeclareLocal(UntypedLocalSymbol local, TypeSymbol? type)
-    {
-        var inferredType = type ?? this.AllocateTypeVariable();
-        this.inferredLocalTypes.Add(local, inferredType);
-        return inferredType;
-    }
-
-    /// <summary>
-    /// Retrieves the declared/inferred type of a local.
-    /// </summary>
-    /// <param name="local">The local to get the type of.</param>
-    /// <returns>The type of the local inferred so far.</returns>
-    public TypeSymbol GetLocalType(UntypedLocalSymbol local) => this.inferredLocalTypes[local].Substitution;
-
-    /// <summary>
-    /// Retrieves the typed variant of an untyped local symbol. In case this is the first time the local is
-    /// retrieved and the variable type could not be inferred, an error is reported.
-    /// </summary>
-    /// <param name="local">The untyped local to get the typed equivalent of.</param>
-    /// <param name="diagnostics">The diagnostics to report errors to.</param>
-    /// <returns>The typed equivalent of <paramref name="local"/>.</returns>
-    public LocalSymbol GetTypedLocal(UntypedLocalSymbol local, DiagnosticBag diagnostics)
-    {
-        if (!this.typedLocals.TryGetValue(local, out var typedLocal))
-        {
-            var localType = this.GetLocalType(local);
-            Debug.Assert(!localType.IsTypeVariable);
-            typedLocal = new SourceLocalSymbol(local, localType);
-            this.typedLocals.Add(local, typedLocal);
-        }
-        return typedLocal;
-    }
+    public void DeclareLocal(LocalSymbol local) => this.localVariables.Add(local);
 
     /// <summary>
     /// Allocates a type-variable.
@@ -142,48 +134,30 @@ internal sealed partial class ConstraintSolver
     /// <returns>A new, unique type-variable.</returns>
     public TypeVariable AllocateTypeVariable(bool track = true)
     {
-        var typeVar = new TypeVariable(this, this.typeVariables.Count);
+        var typeVar = new TypeVariable(this.typeVariables.Count);
         if (track) this.typeVariables.Add(typeVar);
         return typeVar;
     }
 
     /// <summary>
-    /// Unwraps the given type from potential variable substitutions.
+    /// Unwraps the potential type-variable until it is a non-type-variable type.
     /// </summary>
     /// <param name="type">The type to unwrap.</param>
-    /// <returns>The unwrapped type, which might be <paramref name="type"/> itself, or the substitution, if it was
-    /// a type variable that already got substituted.</returns>
-    public TypeSymbol Unwrap(TypeSymbol type)
+    /// <returns>The task that completes when <paramref name="type"/> is subsituted as a non-type-variable.</returns>
+    public static async SolverTask<TypeSymbol> Substituted(TypeSymbol type)
     {
-        // If not a type-variable, we consider it substituted
-        if (type is not TypeVariable typeVar) return type;
-        // If it is, but has no substitutions, just return it as-is
-        if (!this.substitutions.TryGetValue(typeVar, out var substitution)) return typeVar;
-        // If the substitution is also a type-variable, we prune
-        if (substitution.IsTypeVariable)
-        {
-            substitution = substitution.Substitution;
-            this.substitutions[typeVar] = substitution;
-        }
-        return substitution;
+        while (type is TypeVariable tv) type = await tv.Substituted;
+        return type;
     }
-
-    /// <summary>
-    /// Substitutes the given type variable for a type symbol.
-    /// </summary>
-    /// <param name="var">The type variable to substitute.</param>
-    /// <param name="type">The substitution.</param>
-    public void Substitute(TypeVariable var, TypeSymbol type) =>
-        this.substitutions.Add(var, type);
 
     /// <summary>
     /// Unifies two types, asserting their success.
     /// </summary>
     /// <param name="first">The first type to unify.</param>
     /// <param name="second">The second type to unify.</param>
-    public void UnifyAsserted(TypeSymbol first, TypeSymbol second)
+    public static void UnifyAsserted(TypeSymbol first, TypeSymbol second)
     {
-        if (this.Unify(first, second)) return;
+        if (Unify(first, second)) return;
         throw new System.InvalidOperationException($"could not unify {first} and {second}");
     }
 
@@ -193,7 +167,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="first">The first type to unify.</param>
     /// <param name="second">The second type to unify.</param>
     /// <returns>True, if unification was successful, false otherwise.</returns>
-    private bool Unify(TypeSymbol first, TypeSymbol second)
+    public static bool Unify(TypeSymbol first, TypeSymbol second)
     {
         first = first.Substitution;
         second = second.Substitution;
@@ -211,17 +185,17 @@ internal sealed partial class ConstraintSolver
             // NOTE: Referential equality is OK here, we are checking for CIRCULARITY
             // which is  referential check
             if (ReferenceEquals(v1, v2)) return true;
-            this.Substitute(v1, v2);
+            v1.Substitute(v2);
             return true;
         }
         case (TypeVariable v, TypeSymbol other):
         {
-            this.Substitute(v, other);
+            v.Substitute(other);
             return true;
         }
         case (TypeSymbol other, TypeVariable v):
         {
-            this.Substitute(v, other);
+            v.Substitute(other);
             return true;
         }
 
@@ -243,9 +217,9 @@ internal sealed partial class ConstraintSolver
             if (f1.Parameters.Length != f2.Parameters.Length) return false;
             for (var i = 0; i < f1.Parameters.Length; ++i)
             {
-                if (!this.Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
+                if (!Unify(f1.Parameters[i].Type, f2.Parameters[i].Type)) return false;
             }
-            return this.Unify(f1.ReturnType, f2.ReturnType);
+            return Unify(f1.ReturnType, f2.ReturnType);
         }
 
         case (_, _) when first.IsGenericInstance && second.IsGenericInstance:
@@ -254,10 +228,10 @@ internal sealed partial class ConstraintSolver
             Debug.Assert(first.GenericDefinition is not null);
             Debug.Assert(second.GenericDefinition is not null);
             if (first.GenericArguments.Length != second.GenericArguments.Length) return false;
-            if (!this.Unify(first.GenericDefinition, second.GenericDefinition)) return false;
+            if (!Unify(first.GenericDefinition, second.GenericDefinition)) return false;
             for (var i = 0; i < first.GenericArguments.Length; ++i)
             {
-                if (!this.Unify(first.GenericArguments[i], second.GenericArguments[i])) return false;
+                if (!Unify(first.GenericArguments[i], second.GenericArguments[i])) return false;
             }
             return true;
         }

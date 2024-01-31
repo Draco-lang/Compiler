@@ -28,13 +28,6 @@ internal abstract class ConstraintLocator
     public static ConstraintLocator Constraint(IConstraint constraint) => new ReferenceConstraintLocator(constraint);
 
     /// <summary>
-    /// Creates a constraint locator based on a constraint promise.
-    /// </summary>
-    /// <param name="promise">The promise to base the locator on.</param>
-    /// <returns>The locator that will point point wherever the locator of the promises constraint would point to.</returns>
-    public static ConstraintLocator Promise(IConstraintPromise promise) => Constraint(promise.Constraint);
-
-    /// <summary>
     /// Locates information for the constraint.
     /// </summary>
     /// <param name="diagnostic">The diagnostic builder to help the location for.</param>
@@ -97,7 +90,7 @@ internal abstract class ConstraintLocator
     private sealed class WithRelatedInfoConstraintLocator : ConstraintLocator
     {
         private readonly ConstraintLocator underlying;
-        private DiagnosticRelatedInformation relatedInfo;
+        private readonly DiagnosticRelatedInformation relatedInfo;
 
         public WithRelatedInfoConstraintLocator(
             ConstraintLocator underlying,

@@ -852,7 +852,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(localSymbol.Type.IsError);
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleExpression);
+        AssertDiagnostic(diags, TypeCheckingErrors.IllegalExpression);
     }
 
     [Fact]
@@ -888,7 +888,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalFounctionGroupExpression);
+        AssertDiagnostic(diags, TypeCheckingErrors.IllegalExpression);
     }
 
     [Fact]
@@ -2741,7 +2741,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+        var fooSym = GetInternalSymbol<ErrorPropertySymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
 
         // Assert
         Assert.Single(diags);
@@ -2896,7 +2896,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+        var fooSym = GetInternalSymbol<ErrorPropertySymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
 
         // Assert
         Assert.Single(diags);
@@ -3039,7 +3039,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetInternalSymbol<NoOverloadFunctionSymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
+        var fooSym = GetInternalSymbol<ErrorPropertySymbol>(semanticModel.GetReferencedSymbol(fooAssignRef));
 
         // Assert
         Assert.Single(diags);
@@ -3658,7 +3658,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(baseTypeSym.IsGenericDefinition);
         Assert.Same(parentTypeDecl, baseTypeSym.GenericDefinition);
         Assert.Single(baseTypeSym.GenericArguments);
-        Assert.Same(compilation.IntrinsicSymbols.Int32, baseTypeSym.GenericArguments[0]);
+        Assert.Same(compilation.WellKnownTypes.SystemInt32, baseTypeSym.GenericArguments[0]);
     }
 
     [Fact]
@@ -3805,7 +3805,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(baseInterfaceSym.IsGenericDefinition);
         Assert.Same(parentInterfaceDecl, baseInterfaceSym.GenericDefinition);
         Assert.Single(baseInterfaceSym.GenericArguments);
-        Assert.Same(compilation.IntrinsicSymbols.Int32, baseInterfaceSym.GenericArguments[0]);
+        Assert.Same(compilation.WellKnownTypes.SystemInt32, baseInterfaceSym.GenericArguments[0]);
     }
 
     [Fact]
@@ -3902,7 +3902,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);
@@ -3954,7 +3954,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);
@@ -4013,7 +4013,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);
@@ -4065,7 +4065,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);
@@ -4117,7 +4117,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var diags = semanticModel.Diagnostics;
         var derivedSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(derivedRef)).ReturnType;
         var derivedDecl = GetMetadataSymbol(compilation, null, "Derived");
-        var nonObjectSymbols = derivedSym.Members.Where(x => x.ContainingSymbol?.FullName != "System.Object");
+        var nonObjectSymbols = derivedSym.NonSpecialMembers.Where(x => x.ContainingSymbol?.FullName != "System.Object");
 
         // Assert
         Assert.Empty(diags);

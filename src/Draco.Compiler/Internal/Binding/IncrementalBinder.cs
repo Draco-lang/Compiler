@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.UntypedTree;
 
 // NOTE: We don't follow the file-hierarchy here
 // The reason is because this is a nested class of semantic model
@@ -68,14 +68,14 @@ public sealed partial class SemanticModel
 
         // Memoizing overrides /////////////////////////////////////////////////
 
-        internal override BoundStatement TypeStatement(UntypedStatement statement, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.TypeNode(statement, () => base.TypeStatement(statement, constraints, diagnostics));
+        protected override BindingTask<BoundStatement> BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.MemoizeBinding(syntax, constraints, () => base.BindStatement(syntax, constraints, diagnostics));
 
-        internal override BoundExpression TypeExpression(UntypedExpression expression, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.TypeNode(expression, () => base.TypeExpression(expression, constraints, diagnostics));
+        protected override BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.MemoizeBinding(syntax, constraints, () => base.BindExpression(syntax, constraints, diagnostics));
 
-        internal override BoundLvalue TypeLvalue(UntypedLvalue lvalue, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
-            this.TypeNode(lvalue, () => base.TypeLvalue(lvalue, constraints, diagnostics));
+        protected override BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+            this.MemoizeBinding(syntax, constraints, () => base.BindLvalue(syntax, constraints, diagnostics));
 
         internal override Symbol BindLabel(LabelSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.BindSymbol(syntax, () => base.BindLabel(syntax, constraints, diagnostics));
@@ -95,29 +95,24 @@ public sealed partial class SemanticModel
 
         // Memo logic
 
-        private TBoundNode TypeNode<TUntypedNode, TBoundNode>(TUntypedNode untyped, Func<TBoundNode> binder)
-            where TUntypedNode : UntypedNode
+        private async BindingTask<TBoundNode> MemoizeBinding<TBoundNode>(SyntaxNode syntax, ConstraintSolver constraints, Func<BindingTask<TBoundNode>> binder)
             where TBoundNode : BoundNode
         {
-            if (untyped.Syntax is null) return binder();
+            if (!this.semanticModel.boundNodeMap.TryGetValue(syntax, out var node))
+            {
+                node = await binder();
+                this.semanticModel.boundNodeMap.TryAdd(syntax, node);
 
-            return (TBoundNode)this.semanticModel.boundNodeMap.GetOrAdd(
-                key: (untyped.Syntax, typeof(TBoundNode)),
-                valueFactory: _ =>
+                var symbol = ExtractSymbol(node);
+                if (symbol is not null)
                 {
-                    var node = binder();
-                    if (untyped.Syntax is null) return node;
-
-                    var symbol = ExtractSymbol(node);
-                    if (symbol is null) return node;
-
-                    foreach (var syntax in EnumerateSyntaxesWithSameSymbol(untyped.Syntax))
+                    foreach (var childSyntax in EnumerateSyntaxesWithSameSymbol(syntax))
                     {
-                        this.semanticModel.symbolMap[syntax] = symbol;
+                        this.semanticModel.symbolMap[childSyntax] = symbol;
                     }
-
-                    return node;
-                });
+                }
+            }
+            return (TBoundNode)node;
         }
 
         private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder) => this.semanticModel.symbolMap.GetOrAdd(
@@ -140,7 +135,6 @@ public sealed partial class SemanticModel
             BoundReferenceErrorExpression e => e.Symbol,
             BoundLocalLvalue l => l.Local,
             BoundGlobalLvalue g => g.Global,
-            BoundMemberExpression m => m.Member,
             BoundCallExpression c => c.Method,
             BoundFieldLvalue f => f.Field,
             BoundFieldExpression f => f.Field,

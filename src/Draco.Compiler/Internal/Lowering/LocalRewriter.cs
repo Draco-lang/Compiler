@@ -29,7 +29,6 @@ internal partial class LocalRewriter : BoundTreeRewriter
         BoundStatement Assignment);
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
-    private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
 
@@ -40,7 +39,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
     private BoundLiteralExpression LiteralExpression(object? value)
     {
-        if (!BinderFacts.TryGetLiteralType(value, this.IntrinsicSymbols, out var literalType))
+        if (!BinderFacts.TryGetLiteralType(value, this.WellKnownTypes, out var literalType))
         {
             throw new ArgumentOutOfRangeException(nameof(value));
         }
@@ -148,7 +147,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                     right: ArrayCreationExpression(
                         elementType: elementType,
                         sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(varArgCount)),
-                        type: this.IntrinsicSymbols.InstantiateArray(elementType)))))
+                        type: this.WellKnownTypes.InstantiateArray(elementType)))))
                 .Concat(varArgAssignments)
                 .ToImmutableArray(),
             value: CallExpression(
@@ -260,9 +259,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 LabelStatement(node.ContinueLabel),
                 ConditionalGotoStatement(
                     condition: UnaryExpression(
-                        @operator: this.IntrinsicSymbols.Bool_Not,
-                        operand: condition,
-                        type: this.IntrinsicSymbols.Bool),
+                        @operator: this.WellKnownTypes.Bool_Not,
+                        operand: condition),
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
@@ -347,8 +345,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             var result = BinaryExpression(
                 left: left,
                 @operator: node.Comparisons[0].Operator,
-                right: right,
-                type: this.IntrinsicSymbols.Bool);
+                right: right);
             return result.Accept(this);
         }
 
@@ -382,8 +379,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             comparisons.Add(BinaryExpression(
                 left: left,
                 @operator: op,
-                right: right,
-                type: this.IntrinsicSymbols.Bool));
+                right: right));
         }
 
         // Fold them into conjunctions
@@ -418,7 +414,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: right,
             @else: this.LiteralExpression(false),
-            type: this.IntrinsicSymbols.Bool);
+            type: this.WellKnownTypes.SystemBoolean);
         // If-expressions can be lowered too
         return result.Accept(this);
     }
@@ -438,7 +434,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             condition: left,
             then: this.LiteralExpression(true),
             @else: right,
-            type: this.IntrinsicSymbols.Bool);
+            type: this.WellKnownTypes.SystemBoolean);
         // If-expressions can be lowered too
         return result.Accept(this);
     }
@@ -481,7 +477,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             }
         }
 
-        var arrayType = this.IntrinsicSymbols.Array.GenericInstantiate(this.IntrinsicSymbols.Object);
+        var arrayType = this.WellKnownTypes.ArrayType.GenericInstantiate(this.WellKnownTypes.SystemObject);
         var arrayLocal = new SynthetizedLocalSymbol(arrayType, true);
 
         var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
@@ -490,9 +486,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
         arrayAssignmentBuilder.Add(LocalDeclaration(
             local: arrayLocal,
             value: ArrayCreationExpression(
-                elementType: this.IntrinsicSymbols.Object,
+                elementType: this.WellKnownTypes.SystemObject,
                 sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(args.Count)),
-                type: this.IntrinsicSymbols.InstantiateArray(this.IntrinsicSymbols.Object))));
+                type: this.WellKnownTypes.InstantiateArray(this.WellKnownTypes.SystemObject))));
 
         for (var i = 0; i < args.Count; i++)
         {

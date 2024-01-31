@@ -12,9 +12,8 @@ internal sealed class IntrinsicFunctionSymbol : FunctionSymbol
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
 
     public override TypeSymbol ReturnType { get; }
-    public override Symbol? ContainingSymbol => null;
     public override bool IsSpecialName => true;
-    public override bool IsStatic => true;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Private;
 
     public override string Name { get; }
 

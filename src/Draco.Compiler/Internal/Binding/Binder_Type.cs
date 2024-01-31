@@ -34,7 +34,7 @@ internal partial class Binder
                 template: SymbolResolutionErrors.IllegalModuleType,
                 location: syntax.Location,
                 formatArgs: syntax));
-            return IntrinsicSymbols.ErrorType;
+            return WellKnownTypes.ErrorType;
         }
         else
         {
@@ -89,9 +89,7 @@ internal partial class Binder
     {
         var instantiated = this.BindType(syntax.Instantiated, diagnostics);
         var args = syntax.Arguments.Values
-            .Select(arg => this.BindType(arg, diagnostics))
-            // TODO: Why do we even need this cast?
-            .Cast<TypeSymbol>()
+            .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
             .ToImmutableArray();
 
         if (instantiated.GenericParameters.Length != args.Length)
@@ -101,7 +99,7 @@ internal partial class Binder
                 template: TypeCheckingErrors.GenericTypeParamCountMismatch,
                 location: syntax.Location,
                 formatArgs: new object[] { instantiated, args.Length }));
-            return IntrinsicSymbols.ErrorType;
+            return WellKnownTypes.ErrorType;
         }
         // Ok, instantiate
         return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);

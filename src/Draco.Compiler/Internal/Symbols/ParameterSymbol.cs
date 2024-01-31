@@ -9,6 +9,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class ParameterSymbol : LocalSymbol
 {
+    public override abstract FunctionSymbol ContainingSymbol { get; }
+
     /// <summary>
     /// True, if this a variadic parameter.
     /// </summary>
@@ -16,10 +18,13 @@ internal abstract partial class ParameterSymbol : LocalSymbol
 
     public override bool IsMutable => false;
 
+    // NOTE: Override for covariant return type
+    public override ParameterSymbol? GenericDefinition => null;
+
     public override ParameterSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (ParameterSymbol)base.GenericInstantiate(containingSymbol, arguments);
     public override ParameterSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
-        new ParameterInstanceSymbol(containingSymbol, this, context);
+        new ParameterInstanceSymbol((FunctionSymbol)containingSymbol!, this, context);
 
     public override IParameterSymbol ToApiSymbol() => new Api.Semantics.ParameterSymbol(this);
 

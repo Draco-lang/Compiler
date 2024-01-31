@@ -7,7 +7,6 @@ internal sealed class SynthetizedLocalSymbol : LocalSymbol
 {
     public override TypeSymbol Type { get; }
     public override bool IsMutable { get; }
-    public override Symbol? ContainingSymbol => null;
 
     public SynthetizedLocalSymbol(TypeSymbol type, bool isMutable)
     {

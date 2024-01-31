@@ -5,7 +5,7 @@ namespace Draco.JsonRpc;
 /// <summary>
 /// A registered JSON RPC method handler.
 /// </summary>
-public interface IJsonRpcMethodHandler
+internal interface IJsonRpcMethodHandler
 {
     /// <summary>
     /// The name of the method this handles.

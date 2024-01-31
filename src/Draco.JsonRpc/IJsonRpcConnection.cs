@@ -3,7 +3,7 @@ namespace Draco.JsonRpc;
 /// <summary>
 /// Represents a JSON RPC connection.
 /// </summary>
-public interface IJsonRpcConnection
+internal interface IJsonRpcConnection
 {
     /// <summary>
     /// Registers a message handler.

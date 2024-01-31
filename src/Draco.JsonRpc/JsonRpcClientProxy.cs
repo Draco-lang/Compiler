@@ -6,7 +6,7 @@ namespace Draco.JsonRpc;
 /// <summary>
 /// A proxy type for a JSON-RPC client.
 /// </summary>
-public abstract class JsonRpcClientProxy : DispatchProxy
+internal abstract class JsonRpcClientProxy : DispatchProxy
 {
     /// <summary>
     /// The connection of the client.

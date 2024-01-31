@@ -38,7 +38,7 @@ public static class DebugAdapter
     /// <returns>The task that completes when the communication is over.</returns>
     public static async Task RunAsync(this IDebugClient client, IDebugAdapter adapter)
     {
-        var connection = client.Connection;
+        var connection = ((DebugClientProxy)client).Connection;
 
         // Register adapter methods
         RegisterAdapterRpcMethods(adapter, connection);

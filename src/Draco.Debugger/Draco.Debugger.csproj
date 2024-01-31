@@ -1,12 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="ClrDebug" Version="0.2.1" />
+    <PackageReference Include="ClrDebug" Version="0.3.2" />
+    <PackageReference Include="Microsoft.Diagnostics.DbgShim" Version="8.0.505301" />
   </ItemGroup>
 
 </Project>

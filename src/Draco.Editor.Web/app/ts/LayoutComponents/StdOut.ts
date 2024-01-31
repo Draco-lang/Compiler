@@ -17,7 +17,7 @@ export class StdOut {
         this.rootElement.appendChild(div);
         div.classList.add('editor-container');
         div.classList.add('output-viewer');
-        this.terminal = new Terminal({convertEol: true});
+        this.terminal = new Terminal({ convertEol: true });
         const fitAddon = new FitAddon();
         this.terminal.loadAddon(fitAddon);
         this.terminal.open(div);
@@ -26,8 +26,8 @@ export class StdOut {
             fitAddon.fit();
         });
 
-        container.on('shown', ()=> {
-            setTimeout(()=> { // without that, the terminal is not resized, WTF
+        container.on('shown', () => {
+            setTimeout(() => { // without that, the terminal is not resized, WTF
                 fitAddon.fit();
             }, 1);
         });

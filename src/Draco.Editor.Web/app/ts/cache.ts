@@ -35,7 +35,7 @@ export async function downloadAssemblies(cfg: unknown) {
     if (assets != null) {
         const promises = assets.map(async (asset) => {
             if (asset['buffer'] == null) {
-                await downloadAssembly(cfg['assemblyRootFolder'], asset);
+                await downloadAssembly('_framework', asset);
             }
         });
         await Promise.all(promises);

@@ -10,21 +10,12 @@ namespace Draco.Debugger;
 internal sealed class XplatDbgShim : DbgShim, IDisposable
 {
     private bool disposedValue;
+    private readonly nint hModule;
 
     public XplatDbgShim(IntPtr hModule)
         : base(hModule)
     {
-    }
-
-    protected override T GetDelegate<T>(string procName)
-    {
-        var procAddress = NativeLibrary.GetExport(this.hModule, procName);
-        if (procAddress == IntPtr.Zero)
-        {
-            throw new InvalidOperationException($"failed to get address of procedure '{procName}': {(HRESULT)Marshal.GetLastPInvokeError()}");
-        }
-
-        return Marshal.GetDelegateForFunctionPointer<T>(procAddress);
+        this.hModule = hModule;
     }
 
     private void DisposeImpl()

@@ -45,7 +45,7 @@ static class TextDebuggerHelper
         var sourceText = SourceText.FromFile(Path.GetFullPath(mainPath));
         var syntaxTree = SyntaxTree.Parse(sourceText);
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            syntaxTrees: [syntaxTree],
             metadataReferences: BclReferences.ToImmutableArray()
         );
         var dllLocation = $"{testName}.dll";
@@ -59,10 +59,10 @@ static class TextDebuggerHelper
         File.WriteAllText($"{testName}.runtimeconfig.json", """
             {
               "runtimeOptions": {
-                "tfm": "net7.0",
+                "tfm": "net8.0",
                 "framework": {
                   "name": "Microsoft.NETCore.App",
-                  "version": "7.0.0"
+                  "version": "8.0.0"
                 }
               }
             }

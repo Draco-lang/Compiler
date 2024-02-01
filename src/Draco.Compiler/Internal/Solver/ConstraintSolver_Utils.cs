@@ -15,7 +15,8 @@ internal sealed partial class ConstraintSolver
 
     private FunctionTypeSymbol MakeMismatchedFunctionType(ImmutableArray<Argument> args, TypeSymbol returnType) => new(
         args
-            .Select(a => new SynthetizedParameterSymbol(null, a.Type))
+            // TODO: We are passing null here...
+            .Select(a => new SynthetizedParameterSymbol(null!, a.Type))
             .Cast<ParameterSymbol>()
             .ToImmutableArray(),
         returnType);

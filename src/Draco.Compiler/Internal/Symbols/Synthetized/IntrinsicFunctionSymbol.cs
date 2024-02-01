@@ -13,6 +13,7 @@ internal sealed class IntrinsicFunctionSymbol : FunctionSymbol
 
     public override TypeSymbol ReturnType { get; }
     public override bool IsSpecialName => true;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Private;
 
     public override string Name { get; }
 

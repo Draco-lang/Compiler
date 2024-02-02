@@ -391,36 +391,20 @@ internal partial class Binder
 
     private async BindingTask<BoundExpression> BindUnaryExpression(UnaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
+        // Bind operand
+        var operandTask = this.BindExpression(syntax.Operand, constraints, diagnostics);
+
         // Get the unary operator symbol name
         var operatorName = FunctionSymbol.GetUnaryOperatorName(syntax.Operator.Kind);
 
-        // Search globally
-        var globalOperatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
-
-        var operandTask = this.BindExpression(syntax.Operand, constraints, diagnostics);
-
-        // Search within the operand type
-        // NOTE: this constraint is silent
-        // A non-existing operator will be reported by the overload constraint either way
-        var operandType = operandTask.GetResultType(syntax.Operand, constraints, diagnostics);
-        var memberOperatorTask = constraints.Member(
-            operandType,
+        // Search for the operator
+        var operatorTask = this.LookupOperator(
             operatorName,
-            out _,
             syntax,
-            silent: true);
-        var memberOperatorSymbol = await memberOperatorTask;
+            ImmutableArray.Create(operandTask.GetResultType(syntax.Operand, constraints, diagnostics)),
+            constraints);
 
-        // Resolve symbol overload
-        var symbolPromise = constraints.Overload(
-            operatorName,
-            // We search within all global and member operators
-            GetFunctionsMerged(globalOperatorSymbol, memberOperatorSymbol),
-            ImmutableArray.Create(constraints.Arg(syntax.Operand, operandTask, diagnostics)),
-            out _,
-            syntax.Operator);
-
-        return new BoundUnaryExpression(syntax, await symbolPromise, await operandTask);
+        return new BoundUnaryExpression(syntax, await operatorTask, await operandTask);
     }
 
     private async BindingTask<BoundExpression> BindBinaryExpression(BinaryExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -480,48 +464,20 @@ internal partial class Binder
         }
         else if (SyntaxFacts.TryGetOperatorOfCompoundAssignment(syntax.Operator.Kind, out var nonCompound))
         {
-            // Get the binary operator symbol globally
-            var operatorName = FunctionSymbol.GetBinaryOperatorName(nonCompound);
-            var globalOperatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
-
             var leftTask = this.BindLvalue(syntax.Left, constraints, diagnostics);
             var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            // Get it from either operand type
-            // NOTE: The tasks are silent
-            var leftType = leftTask.GetResultType(syntax.Left, constraints, diagnostics);
-            var rightType = rightTask.GetResultType(syntax.Right, constraints, diagnostics);
-            var leftMemberTask = constraints.Member(
-                leftType,
-                operatorName,
-                out _,
-                syntax,
-                silent: true);
-            var rightMemberTask = constraints.Member(
-                rightType,
-                operatorName,
-                out _,
-                syntax,
-                silent: true);
-            var leftMemberSymbol = await leftMemberTask;
-            var rightMemberSymbol = await rightMemberTask;
+            // Get the binary operator name
+            var operatorName = FunctionSymbol.GetBinaryOperatorName(nonCompound);
 
-            // Resolve symbol overload
-            var symbolPromise = constraints.Overload(
+            // Get the operator symbol
+            var operatorTask = this.LookupOperator(
                 operatorName,
-                GetFunctionsMerged(globalOperatorSymbol, leftMemberSymbol, rightMemberSymbol),
+                syntax,
                 ImmutableArray.Create(
-                    constraints.Arg(syntax.Left, leftTask, diagnostics),
-                    constraints.Arg(syntax.Right, rightTask, diagnostics)),
-                out var resultType,
-                syntax.Operator);
-            // The result of the binary operator must be assignable to the left-hand side
-            // For example, a + b in the form of a += b means that a + b has to result in a type
-            // that is assignable to a, hence the extra constraint
-            _ = constraints.Assignable(
-                leftTask.GetResultType(syntax.Left, constraints, diagnostics),
-                resultType,
-                syntax);
+                    leftTask.GetResultType(syntax.Left, constraints, diagnostics),
+                    rightTask.GetResultType(syntax.Right, constraints, diagnostics)),
+                constraints);
 
             var left = await leftTask;
             if (left is BoundPropertySetLvalue propertySet)
@@ -535,7 +491,7 @@ internal partial class Binder
                     propertySet.Setter,
                     new BoundBinaryExpression(
                         syntax,
-                        await symbolPromise,
+                        await operatorTask,
                         new BoundPropertyGetExpression(
                             syntax,
                             propertySet.Receiver,
@@ -554,7 +510,7 @@ internal partial class Binder
                     indexSet.Indices,
                     new BoundBinaryExpression(
                         syntax,
-                        await symbolPromise,
+                        await operatorTask,
                         new BoundIndexGetExpression(
                             syntax,
                             indexSet.Receiver,
@@ -564,47 +520,27 @@ internal partial class Binder
             }
             else
             {
-                return new BoundAssignmentExpression(syntax, await symbolPromise, await leftTask, await rightTask);
+                return new BoundAssignmentExpression(syntax, await operatorTask, await leftTask, await rightTask);
             }
         }
         else
         {
-            // Get the binary operator symbol globally
-            var operatorName = FunctionSymbol.GetBinaryOperatorName(syntax.Operator.Kind);
-            var operatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
             var leftTask = this.BindExpression(syntax.Left, constraints, diagnostics);
             var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
-            // Get it from either operand type
-            // NOTE: The tasks are silent
-            var leftType = leftTask.GetResultType(syntax.Left, constraints, diagnostics);
-            var rightType = rightTask.GetResultType(syntax.Right, constraints, diagnostics);
-            var leftMemberTask = constraints.Member(
-                leftType,
-                operatorName,
-                out _,
-                syntax,
-                silent: true);
-            var rightMemberTask = constraints.Member(
-                rightType,
-                operatorName,
-                out _,
-                syntax,
-                silent: true);
-            var leftMemberSymbol = await leftMemberTask;
-            var rightMemberSymbol = await rightMemberTask;
+            // Get the binary operator name
+            var operatorName = FunctionSymbol.GetBinaryOperatorName(syntax.Operator.Kind);
 
-            // Resolve symbol overload
-            var symbolPromise = constraints.Overload(
+            // Look up the operator
+            var operatorTask = this.LookupOperator(
                 operatorName,
-                GetFunctionsMerged(operatorSymbol, leftMemberSymbol, rightMemberSymbol),
+                syntax,
                 ImmutableArray.Create(
-                    constraints.Arg(syntax.Left, leftTask, diagnostics),
-                    constraints.Arg(syntax.Right, rightTask, diagnostics)),
-                out _,
-                syntax.Operator);
+                    leftTask.GetResultType(syntax.Left, constraints, diagnostics),
+                    rightTask.GetResultType(syntax.Right, constraints, diagnostics)),
+                constraints);
 
-            return new BoundBinaryExpression(syntax, await symbolPromise, await leftTask, await rightTask);
+            return new BoundBinaryExpression(syntax, await operatorTask, await leftTask, await rightTask);
         }
     }
 
@@ -634,43 +570,24 @@ internal partial class Binder
         ConstraintSolver constraints,
         DiagnosticBag diagnostics)
     {
-        // Get the comparison operator symbol globally
+        // Get the comparison operator name
         var operatorName = FunctionSymbol.GetComparisonOperatorName(syntax.Operator.Kind);
-        var globalOperatorSymbol = this.LookupValueSymbol(operatorName, syntax, diagnostics);
 
-        // Get the operator from either operand types
-        // NOTE: The constraints can be silent here
-        var leftType = left.GetResultType(syntax, constraints, diagnostics);
-        var rightType = right.GetResultType(syntax, constraints, diagnostics);
-        var leftMemberTask = constraints.Member(
-            leftType,
+        // Look up operator
+        var operatorTask = this.LookupOperator(
             operatorName,
-            out _,
             syntax,
-            silent: true);
-        var rightMemberTask = constraints.Member(
-            rightType,
-            operatorName,
-            out _,
-            syntax,
-            silent: true);
-        var leftMemberSymbol = await leftMemberTask;
-        var rightMemberSymbol = await rightMemberTask;
-
-        // NOTE: We know it must be bool, no need to pass it on to comparison
-        // Resolve symbol overload
-        var symbolPromise = constraints.Overload(
-            operatorName,
-            GetFunctionsMerged(globalOperatorSymbol, leftMemberSymbol, rightMemberSymbol),
             ImmutableArray.Create(
-                constraints.Arg(syntax, left, diagnostics),
-                constraints.Arg(syntax, right, diagnostics)),
-            out var resultType,
-            syntax.Operator);
-        // For safety, we assume it has to be bool
-        _ = constraints.SameType(this.WellKnownTypes.SystemBoolean, resultType, syntax.Operator);
+                left.GetResultType(syntax, constraints, diagnostics),
+                right.GetResultType(syntax, constraints, diagnostics)),
+            constraints);
 
-        return new BoundComparison(syntax, await symbolPromise, await right);
+        // NOTE: We used to assume it has to be boolean for safety
+        // Not anymore, as it would have made for a more cumbersome API
+        // And in practice, we should enforce this at an operator definition level anyway,
+        // and we can't do anything about external operators that break this rule
+
+        return new BoundComparison(syntax, await operatorTask, await right);
     }
 
     private async BindingTask<BoundExpression> BindMemberExpression(MemberExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -898,21 +815,6 @@ internal partial class Binder
         BoundModuleExpression m => m.Module,
         BoundTypeExpression t => t.Type,
         _ => null,
-    };
-
-    private static ImmutableArray<FunctionSymbol> GetFunctions(Symbol symbol) =>
-        GetFunctionsImpl(symbol).ToImmutableArray();
-
-    private static ImmutableArray<FunctionSymbol> GetFunctionsMerged(params Symbol[] symbols) => symbols
-        .SelectMany(GetFunctionsImpl)
-        .Distinct(SymbolEqualityComparer.Default)
-        .ToImmutableArray();
-
-    private static IEnumerable<FunctionSymbol> GetFunctionsImpl(Symbol symbol) => symbol switch
-    {
-        FunctionSymbol f => new[] { f },
-        OverloadSymbol o => o.Functions,
-        _ => Enumerable.Empty<FunctionSymbol>(),
     };
 
     [return: NotNullIfNotNull(nameof(syntax))]

@@ -3,7 +3,9 @@ using System.Runtime.CompilerServices;
 using Basic.Reference.Assemblies;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Draco.Debugger.Tests;
 
@@ -29,6 +31,11 @@ public class TestDebugSession
     public string RuntimeConfigLocation { get; }
     public static async Task<TestDebugSession> DebugAsync(string code, ITestOutputHelper output, [CallerMemberName] string? testName = null)
     {
+        if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+        {
+            throw SkipException.ForSkip("Debugger only works on windows now");
+        }
+
         var host = DebuggerHost.Create();
         ArgumentNullException.ThrowIfNull(testName);
         var path = $"{testName}-{Guid.NewGuid()}";

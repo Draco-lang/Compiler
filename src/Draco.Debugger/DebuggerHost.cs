@@ -13,7 +13,7 @@ public sealed class DebuggerHost
 {
     public static DebuggerHost Create()
     {
-        var dbgshim = new XplatDbgShim(NativeLibrary.Load("dbgshim", typeof(DebuggerHost).Assembly, null));
+        var dbgshim = new DbgShim(NativeLibrary.Load("dbgshim", typeof(DebuggerHost).Assembly, null));
         return new(dbgshim);
     }
 

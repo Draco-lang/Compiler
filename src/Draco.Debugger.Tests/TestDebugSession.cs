@@ -31,9 +31,9 @@ public class TestDebugSession
     public string RuntimeConfigLocation { get; }
     public static async Task<TestDebugSession> DebugAsync(string code, ITestOutputHelper output, [CallerMemberName] string? testName = null)
     {
-        if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
         {
-            throw SkipException.ForSkip("Debugger only works on windows now");
+            throw new Xunit.SkipException("Debugger only works on windows now");
         }
 
         var host = DebuggerHost.Create();

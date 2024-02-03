@@ -24,7 +24,7 @@ public sealed class DebuggerTests
         await task; // await the task to throw any exceptions it might have thrown.
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SimpleProgramTerminate()
     {
         await Timeout(async () =>
@@ -44,7 +44,7 @@ public sealed class DebuggerTests
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task SingleBreakpoint()
     {
         await Timeout(async () =>
@@ -70,7 +70,7 @@ public sealed class DebuggerTests
 
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task MultipleBreakpointBreak()
     {
         await Timeout(async () =>
@@ -105,7 +105,7 @@ public sealed class DebuggerTests
 
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task HiddenLocalsDoesNotThrow()
     {
         await Timeout(async () =>

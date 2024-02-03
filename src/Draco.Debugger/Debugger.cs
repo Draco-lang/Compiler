@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Reflection.Metadata.Ecma335;
-using System.Threading;
 using System.Threading.Tasks;
 using ClrDebug;
 using Draco.Debugger.IO;
@@ -56,7 +53,6 @@ public sealed partial class Debugger
 
     private readonly CorDebugProcess corDebugProcess;
     private readonly IoWorker<CorDebugProcess> ioWorker;
-
     private readonly TaskCompletionSource readyTCS = new();
 
     private readonly SessionCache sessionCache = new();
@@ -72,7 +68,6 @@ public sealed partial class Debugger
     {
         this.corDebugProcess = corDebugProcess;
         this.ioWorker = ioWorker;
-
         this.InitializeEventHandler(cb);
         ioWorker.Start();
     }

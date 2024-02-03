@@ -1,4 +1,3 @@
-using System;
 using System.CommandLine;
 using System.IO;
 using System.Linq;

@@ -3,7 +3,6 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using static Draco.Compiler.Tests.TestUtilities;
 

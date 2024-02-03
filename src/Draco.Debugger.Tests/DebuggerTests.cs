@@ -1,108 +1,138 @@
+using System.Reflection;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Draco.Debugger.Tests;
 
-public class DebuggerTests
+public sealed class DebuggerTests
 {
+    private readonly ITestOutputHelper output;
+
+    public DebuggerTests(ITestOutputHelper output)
+    {
+        this.output = output;
+    }
+
+    private static async Task Timeout(Func<Task> action, int timeoutSecs = 10)
+    {
+        var task = action();
+        await task.WaitAsync(TimeSpan.FromSeconds(timeoutSecs));
+        if (!task.IsCompleted)
+        {
+            throw new TimeoutException();
+        }
+        await task; // await the task to throw any exceptions it might have thrown.
+    }
 
     [Fact]
-    public async Task simple_program_terminate()
+    public async Task SimpleProgramTerminate()
     {
-        var host = DebuggerHost.Create();
-        var (debugger, file) = await host.DebugAsync("""
+        await Timeout(async () =>
+        {
+            var session = await TestDebugSession.DebugAsync("""
             func main() {
                 var i = 0;
                 while(i < 10) {
                     i += 1;
                 }
             }
-            """);
-        debugger.Continue();
-        await debugger.Terminated;
+            """,
+            this.output);
+            var debugger = session.Debugger;
+            debugger.Continue();
+            await debugger.Terminated;
+        });
     }
 
     [Fact]
-    public async Task single_breakpoint()
+    public async Task SingleBreakpoint()
     {
-        var host = DebuggerHost.Create();
-        var (debugger, file) = await host.DebugAsync("""
-            import System.Console;
-            func main() {
-                WriteLine("A");
-                WriteLine("B");
-                WriteLine("C");
-            }
-            """);
-        if (!file.TryPlaceBreakpoint(3, out var breakpoint))
+        await Timeout(async () =>
         {
-            throw new InvalidOperationException("Failed to place breakpoint");
-        }
-        debugger.Continue();
-
-        await breakpoint.Hit;
-        debugger.Continue();
-
-        await debugger.Terminated;
-    }
-
-    [Fact]
-    public async Task multiple_breakpoint_break()
-    {
-        var host = DebuggerHost.Create();
-        var (debugger, file) = await host.DebugAsync("""
-            import System.IO;
-            func main() {
-                var i = 0;
-                while(i < 10) {
-                    i += 1;
+            var session = await TestDebugSession.DebugAsync("""
+                import System.Console;
+                func main() {
+                    WriteLine("A");
+                    WriteLine("B");
+                    WriteLine("C");
                 }
-            }
-            """);
+                """,
+            this.output);
+            var debugger = session.Debugger;
+            Assert.True(session.File.TryPlaceBreakpoint(3, out var breakpoint));
+            debugger.Continue();
 
-        if (!file.TryPlaceBreakpoint(5, out var breakpoint))
+            await breakpoint.Hit;
+            debugger.Continue();
+
+            await debugger.Terminated;
+        });
+
+    }
+
+    [Fact]
+    public async Task MultipleBreakpointBreak()
+    {
+        await Timeout(async () =>
         {
-            throw new InvalidOperationException("Failed to place breakpoint");
-        }
-        debugger.Continue();
-        for (var i = 0; i < 10; i++)
+            var session = await TestDebugSession.DebugAsync("""
+                import System.IO;
+                func main() {
+                    var i = 0;
+                    while(i < 10) {
+                        i += 1;
+                    }
+                }
+                """,
+                this.output);
+
+            Assert.True(session.File.TryPlaceBreakpoint(5, out var breakpoint));
+
+            var debugger = session.Debugger;
+            debugger.Continue();
+            for (var i = 0; i < 10; i++)
+            {
+                await breakpoint.Hit;
+                var callstack = debugger.MainThread.CallStack;
+                var frame = callstack.Single();
+                var haveLocal = frame.Locals.TryGetValue("i", out var value);
+                Assert.True(haveLocal);
+                Assert.Equal(i, value);
+                debugger.Continue();
+            }
+            await debugger.Terminated;
+        });
+
+    }
+
+    [Fact]
+    public async Task HiddenLocalsDoesNotThrow()
+    {
+        await Timeout(async () =>
         {
+            var session = await TestDebugSession.DebugAsync("""
+                import System.Console;
+                func main() {
+                    var i = 1;
+                    WriteLine("\{i.ToString()}a");
+                    WriteLine("\{i.ToString()}b");
+                    WriteLine("\{i.ToString()}c");
+                }
+                """,
+                this.output);
+
+            var debugger = session.Debugger;
+
+            Assert.True(session.File.TryPlaceBreakpoint(4, out var breakpoint));
+            debugger.Continue();
             await breakpoint.Hit;
             var callstack = debugger.MainThread.CallStack;
             var frame = callstack.Single();
             var haveLocal = frame.Locals.TryGetValue("i", out var value);
             Assert.True(haveLocal);
-            Assert.Equal(i, value);
+            Assert.Equal(1, value);
             debugger.Continue();
-        }
-        await debugger.Terminated;
-    }
-
-    [Fact]
-    public async Task hidden_locals_does_not_throw()
-    {
-        var host = DebuggerHost.Create();
-        var (debugger, file) = await host.DebugAsync("""
-            import System.Console;
-            func main() {
-                var i = 1;
-                WriteLine("\{i.ToString()}a");
-                WriteLine("\{i.ToString()}b");
-                WriteLine("\{i.ToString()}c");
-            }
-            """);
-
-        if (!file.TryPlaceBreakpoint(4, out var breakpoint))
-        {
-            throw new InvalidOperationException("Failed to place breakpoint");
-        }
-        debugger.Continue();
-        await breakpoint.Hit;
-        var callstack = debugger.MainThread.CallStack;
-        var frame = callstack.Single();
-        var haveLocal = frame.Locals.TryGetValue("i", out var value);
-        Assert.True(haveLocal);
-        Assert.Equal(1, value);
-        debugger.Continue();
-        await debugger.Terminated;
+            await debugger.Terminated;
+        });
     }
 }

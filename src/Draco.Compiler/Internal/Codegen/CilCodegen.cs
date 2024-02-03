@@ -9,7 +9,6 @@ using System.Text;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
 using Void = Draco.Compiler.Internal.OptimizingIr.Model.Void;
 

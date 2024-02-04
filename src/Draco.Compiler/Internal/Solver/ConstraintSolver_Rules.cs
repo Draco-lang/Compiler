@@ -64,7 +64,7 @@ internal sealed partial class ConstraintSolver
             var assignmentsWithSameTarget = this
                 .Enumerate<AssignableConstraint>(a => SymbolEqualityComparer.AllowTypeVariables.Equals(assignable.TargetType, a.TargetType))
                 .ToList();
-            if (assignmentsWithSameTarget.Count == 0)
+            if (assignmentsWithSameTarget.Count == 0 || assignable.TargetType.IsGroundType)
             {
                 // No, assume same type
                 UnifyAsserted(assignable.TargetType, assignable.AssignedType);

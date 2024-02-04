@@ -1,3 +1,4 @@
+using System;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.FlowAnalysis;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
@@ -570,5 +571,49 @@ public sealed class FlowAnalysisTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+    }
+
+    [Fact]
+    public void Issue378()
+    {
+        //func main()
+        //{
+        //    var front = Array2D(width, height);
+        //    var back = Array2D(width, height);
+
+        //    front[3, 3] = true;
+        //    front[2, 5] = true; // if we delete this line, the error goes away.
+
+        //    val temp = front;
+        //    front = back;
+        //    back = temp;
+        //}
+
+        // Arrange
+        var tree = SyntaxTree.Create(
+            CompilationUnit(
+                FunctionDeclaration(
+                    "main",
+                    ParameterList(),
+                    null,
+                    BlockFunctionBody(
+                        DeclarationStatement(ImmutableVariableDeclaration("width", NameType("int32"), LiteralExpression(0))),
+                        DeclarationStatement(ImmutableVariableDeclaration("height", NameType("int32"), LiteralExpression(0))),
+                        DeclarationStatement(VariableDeclaration("front", null, CallExpression(NameExpression("Array2D"), NameExpression("width"), NameExpression("height")))),
+                        DeclarationStatement(VariableDeclaration("back", null, CallExpression(NameExpression("Array2D"), NameExpression("width"), NameExpression("height")))),
+                        ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("front"), LiteralExpression(3), LiteralExpression(3)), Assign, LiteralExpression(true))),
+                        ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("front"), LiteralExpression(2), LiteralExpression(5)), Assign, LiteralExpression(true))),
+                        ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("front"), LiteralExpression(2), LiteralExpression(5)), Assign, LiteralExpression(true))),
+                        DeclarationStatement(ImmutableVariableDeclaration("temp", null, NameExpression("front"))),
+                        ExpressionStatement(BinaryExpression(NameExpression("front"), Assign, NameExpression("back"))),
+                        ExpressionStatement(BinaryExpression(NameExpression("back"), Assign, NameExpression("temp")))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
     }
 }

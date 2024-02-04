@@ -64,7 +64,7 @@ internal sealed partial class ConstraintSolver
             var assignmentsWithSameTarget = this
                 .Enumerate<AssignableConstraint>(a => SymbolEqualityComparer.AllowTypeVariables.Equals(assignable.TargetType, a.TargetType))
                 .ToList();
-            if (assignmentsWithSameTarget.Count == 0 || assignable.TargetType.IsGroundType)
+            if (assignmentsWithSameTarget.Count == 0 )
             {
                 // No, assume same type
                 UnifyAsserted(assignable.TargetType, assignable.AssignedType);
@@ -97,11 +97,11 @@ internal sealed partial class ConstraintSolver
             var commonNonTypeVars = common2.AlternativeTypes
                 .Where(t => !t.Substitution.IsTypeVariable)
                 .ToImmutableHashSet(SymbolEqualityComparer.AllowTypeVariables);
-            if (commonNonTypeVars.Count != 1) continue;
+            if (commonNonTypeVars.Count != 1 && !common2.CommonType.IsGroundType) continue;
 
             // NOTE: We do NOT remove the constraint, will be resolved in a future iteration
             // Only one non-type-var, the rest are type variables
-            var nonTypeVar = commonNonTypeVars.Single();
+            var nonTypeVar = commonNonTypeVars.SingleOrDefault() ?? common2.CommonType;
             foreach (var tv in commonTypeVars) UnifyAsserted(tv, nonTypeVar);
             return true;
         }

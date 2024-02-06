@@ -25,11 +25,9 @@ public sealed class DebuggerTests
     }
 
     [SkippableFact]
-    public async Task SimpleProgramTerminate()
+    public async Task SimpleProgramTerminate() => await Timeout(async () =>
     {
-        await Timeout(async () =>
-        {
-            var session = await TestDebugSession.DebugAsync("""
+        var session = await TestDebugSession.DebugAsync("""
             func main() {
                 var i = 0;
                 while(i < 10) {
@@ -37,45 +35,38 @@ public sealed class DebuggerTests
                 }
             }
             """,
-            this.output);
-            var debugger = session.Debugger;
-            debugger.Continue();
-            await debugger.Terminated;
-        });
-    }
+        this.output);
+        var debugger = session.Debugger;
+        debugger.Continue();
+        await debugger.Terminated;
+    });
 
     [SkippableFact]
-    public async Task SingleBreakpoint()
+    public async Task SingleBreakpoint() => await Timeout(async () =>
     {
-        await Timeout(async () =>
-        {
-            var session = await TestDebugSession.DebugAsync("""
-                import System.Console;
-                func main() {
-                    WriteLine("A");
-                    WriteLine("B");
-                    WriteLine("C");
-                }
-                """,
-            this.output);
-            var debugger = session.Debugger;
-            Assert.True(session.File.TryPlaceBreakpoint(3, out var breakpoint));
-            debugger.Continue();
+        var session = await TestDebugSession.DebugAsync("""
+import System.Console;
+func main() {
+    WriteLine("A");
+    WriteLine("B");
+    WriteLine("C");
+}
+""",
+                                        this.output);
+        var debugger = session.Debugger;
+        Assert.True(session.File.TryPlaceBreakpoint(3, out var breakpoint));
+        debugger.Continue();
 
-            await breakpoint.Hit;
-            debugger.Continue();
+        await breakpoint.Hit;
+        debugger.Continue();
 
-            await debugger.Terminated;
-        });
-
-    }
+        await debugger.Terminated;
+    });
 
     [SkippableFact]
-    public async Task MultipleBreakpointBreak()
+    public async Task MultipleBreakpointBreak() => await Timeout(async () =>
     {
-        await Timeout(async () =>
-        {
-            var session = await TestDebugSession.DebugAsync("""
+        var session = await TestDebugSession.DebugAsync("""
                 import System.IO;
                 func main() {
                     var i = 0;
@@ -84,33 +75,29 @@ public sealed class DebuggerTests
                     }
                 }
                 """,
-                this.output);
+            this.output);
 
-            Assert.True(session.File.TryPlaceBreakpoint(5, out var breakpoint));
+        Assert.True(session.File.TryPlaceBreakpoint(5, out var breakpoint));
 
-            var debugger = session.Debugger;
+        var debugger = session.Debugger;
+        debugger.Continue();
+        for (var i = 0; i < 10; i++)
+        {
+            await breakpoint.Hit;
+            var callstack = debugger.MainThread.CallStack;
+            var frame = callstack.Single();
+            var haveLocal = frame.Locals.TryGetValue("i", out var value);
+            Assert.True(haveLocal);
+            Assert.Equal(i, value);
             debugger.Continue();
-            for (var i = 0; i < 10; i++)
-            {
-                await breakpoint.Hit;
-                var callstack = debugger.MainThread.CallStack;
-                var frame = callstack.Single();
-                var haveLocal = frame.Locals.TryGetValue("i", out var value);
-                Assert.True(haveLocal);
-                Assert.Equal(i, value);
-                debugger.Continue();
-            }
-            await debugger.Terminated;
-        });
-
-    }
+        }
+        await debugger.Terminated;
+    });
 
     [SkippableFact]
-    public async Task HiddenLocalsDoesNotThrow()
+    public async Task HiddenLocalsDoesNotThrow() => await Timeout(async () =>
     {
-        await Timeout(async () =>
-        {
-            var session = await TestDebugSession.DebugAsync("""
+        var session = await TestDebugSession.DebugAsync("""
                 import System.Console;
                 func main() {
                     var i = 1;
@@ -119,20 +106,19 @@ public sealed class DebuggerTests
                     WriteLine("\{i.ToString()}c");
                 }
                 """,
-                this.output);
+            this.output);
 
-            var debugger = session.Debugger;
+        var debugger = session.Debugger;
 
-            Assert.True(session.File.TryPlaceBreakpoint(4, out var breakpoint));
-            debugger.Continue();
-            await breakpoint.Hit;
-            var callstack = debugger.MainThread.CallStack;
-            var frame = callstack.Single();
-            var haveLocal = frame.Locals.TryGetValue("i", out var value);
-            Assert.True(haveLocal);
-            Assert.Equal(1, value);
-            debugger.Continue();
-            await debugger.Terminated;
-        });
-    }
+        Assert.True(session.File.TryPlaceBreakpoint(4, out var breakpoint));
+        debugger.Continue();
+        await breakpoint.Hit;
+        var callstack = debugger.MainThread.CallStack;
+        var frame = callstack.Single();
+        var haveLocal = frame.Locals.TryGetValue("i", out var value);
+        Assert.True(haveLocal);
+        Assert.Equal(1, value);
+        debugger.Continue();
+        await debugger.Terminated;
+    });
 }

@@ -3,6 +3,7 @@ using System.Reflection.Metadata.Ecma335;
 using ClrDebug;
 
 namespace Draco.Debugger;
+
 public partial class Debugger
 {
     private void InitializeEventHandler(CorDebugManagedCallback cb)

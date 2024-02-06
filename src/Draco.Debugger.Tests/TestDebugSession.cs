@@ -9,9 +9,13 @@ using Xunit.Sdk;
 
 namespace Draco.Debugger.Tests;
 
-public class TestDebugSession
+public sealed class TestDebugSession
 {
-
+    public Debugger Debugger { get; }
+    public SourceFile File { get; }
+    public string DllLocation { get; }
+    public string PdbLocation { get; }
+    public string RuntimeConfigLocation { get; }
     private static IEnumerable<MetadataReference> BclReferences => Net80.ReferenceInfos.All
        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
 
@@ -24,11 +28,6 @@ public class TestDebugSession
         this.RuntimeConfigLocation = runtimeConfigLocation;
     }
 
-    public Debugger Debugger { get; }
-    public SourceFile File { get; }
-    public string DllLocation { get; }
-    public string PdbLocation { get; }
-    public string RuntimeConfigLocation { get; }
     public static async Task<TestDebugSession> DebugAsync(string code, ITestOutputHelper output, [CallerMemberName] string? testName = null)
     {
         if (Environment.OSVersion.Platform != PlatformID.Win32NT)

@@ -574,7 +574,7 @@ public sealed class FlowAnalysisTests : SemanticTestsBase
     }
 
     [Fact]
-    public void Issue378()
+    public void MultipleIndexerAssignationInfersType()
     {
         //func main()
         //{

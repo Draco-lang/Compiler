@@ -58,7 +58,7 @@ public sealed class Thread
     {
         foreach (var breakpoint in this.currentlyHitBreakpoints)
         {
-            if(!breakpoint.HitTcs.Task.IsCompleted) throw new InvalidOperationException("Unexpected not-hit breakpoint.");
+            if (!breakpoint.HitTcs.Task.IsCompleted) throw new InvalidOperationException("Unexpected not-hit breakpoint.");
             breakpoint.HitTcs = new();
         }
         this.currentlyHitBreakpoints.Clear();

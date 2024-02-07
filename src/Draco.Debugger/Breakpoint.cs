@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using ClrDebug;
 
 namespace Draco.Debugger;
@@ -7,6 +8,11 @@ namespace Draco.Debugger;
 /// </summary>
 public abstract class Breakpoint
 {
+    /// <summary>
+    /// The <see cref="TaskCompletionSource"/> that controls the <see cref="Hit"/> <see cref="Task"/>.
+    /// </summary>
+    internal TaskCompletionSource HitTcs = new();
+
     /// <summary>
     /// The cache for this object.
     /// </summary>
@@ -36,6 +42,11 @@ public abstract class Breakpoint
     /// The source range of this breakpoint.
     /// </summary>
     public virtual SourceRange? Range => null;
+
+    /// <summary>
+    /// A task that resolves when this breakpoint is hit.
+    /// </summary>
+    public Task Hit => this.HitTcs.Task;
 
     private protected Breakpoint(SessionCache sessionCache)
     {

@@ -3,7 +3,6 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using static Draco.Compiler.Tests.TestUtilities;
 
@@ -662,7 +661,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main, foo),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
@@ -712,7 +711,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main, foo),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
@@ -2207,7 +2206,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: ImmutableArray.Create(main),
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
                 .ToImmutableArray());

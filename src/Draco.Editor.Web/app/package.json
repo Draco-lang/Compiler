@@ -1,8 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "build-debug": "tsc -noEmit && node build.js ../bin/Debug/net7.0",
-    "build-release": "tsc -noEmit && node build.js ../bin/Release/net7.0"
+    "build-debug": "tsc -noEmit && node build.js ../../artifacts/bin/Draco.Editor.Web/debug",
+    "build-release": "tsc -noEmit && node build.js ../../artifacts/bin/Draco.Editor.Web/release"
   },
   "dependencies": {
     "@octokit/auth-token": "^4.0.0",
@@ -20,7 +20,7 @@
     "xterm-addon-fit": "^0.7.0"
   },
   "devDependencies": {
-    "@octokit/rest": "^19.0.5",
+    "@octokit/rest": "^20.0.2",
     "@types/node": "^18.11.9",
     "@types/pako": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^5.42.1",

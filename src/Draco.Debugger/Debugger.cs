@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Immutable;
 using System.IO;
-using System.Reflection.Metadata.Ecma335;
-using System.Threading;
 using System.Threading.Tasks;
 using ClrDebug;
 using Draco.Debugger.IO;
@@ -12,7 +10,7 @@ namespace Draco.Debugger;
 /// <summary>
 /// Represents a debugger for a single process.
 /// </summary>
-public sealed class Debugger
+public sealed partial class Debugger
 {
     /// <summary>
     /// The task that is completed, when the process has terminated.
@@ -38,52 +36,15 @@ public sealed class Debugger
     private readonly ImmutableArray<Thread>.Builder threads = ImmutableArray.CreateBuilder<Thread>();
 
     /// <summary>
-    /// The event that triggers when the process writes to its STDOUT.
+    /// This represent the fact that the debugger is ready to be used.
     /// </summary>
-    public event EventHandler<string> OnStandardOut
-    {
-        add => this.ioWorker.OnStandardOut += value;
-        remove => this.ioWorker.OnStandardOut -= value;
-    }
-
-    /// <summary>
-    /// The event that triggers when the process writes to its STDERR.
-    /// </summary>
-    public event EventHandler<string> OnStandardError
-    {
-        add => this.ioWorker.OnStandardError += value;
-        remove => this.ioWorker.OnStandardError -= value;
-    }
+    public Task Ready => this.readyTCS.Task;
 
     /// <summary>
     /// A writer to the processes standard input.
     /// </summary>
     public StreamWriter StandardInput => this.ioWorker.StandardInput;
 
-    /// <summary>
-    /// The debuggee has exited.
-    /// </summary>
-    public event EventHandler<int>? OnExited;
-
-    /// <summary>
-    /// The event that triggers, when a breakpoint is hit.
-    /// </summary>
-    public event EventHandler<OnBreakpointEventArgs>? OnBreakpoint;
-
-    /// <summary>
-    /// The event that triggers, when a step is complete.
-    /// </summary>
-    public event EventHandler<OnStepEventArgs>? OnStep;
-
-    /// <summary>
-    /// The event that triggers, when the program is paused.
-    /// </summary>
-    public event EventHandler? OnPause;
-
-    /// <summary>
-    /// The event that is triggered on a debugger event logged.
-    /// </summary>
-    public event EventHandler<string>? OnEventLog;
 
     /// <summary>
     /// True, if the debugger should stop at the entry-point.
@@ -92,8 +53,7 @@ public sealed class Debugger
 
     private readonly CorDebugProcess corDebugProcess;
     private readonly IoWorker<CorDebugProcess> ioWorker;
-
-    private readonly TaskCompletionSource terminatedCompletionSource = new();
+    private readonly TaskCompletionSource readyTCS = new();
 
     private readonly SessionCache sessionCache = new();
 
@@ -108,7 +68,6 @@ public sealed class Debugger
     {
         this.corDebugProcess = corDebugProcess;
         this.ioWorker = ioWorker;
-
         this.InitializeEventHandler(cb);
         ioWorker.Start();
     }
@@ -133,222 +92,12 @@ public sealed class Debugger
     /// <summary>
     /// Resumes the execution of the program.
     /// </summary>
-    public void Continue() => this.corDebugProcess.TryContinue(false);
-
-    private void InitializeEventHandler(CorDebugManagedCallback cb)
+    public void Continue()
     {
-        cb.OnAnyEvent += this.OnAnyEventHandler;
-        cb.OnCreateProcess += this.OnCreateProcessHandler;
-        cb.OnCreateAppDomain += this.OnCreateAppDomainHandler;
-        cb.OnLoadAssembly += this.OnLoadAssemblyHandler;
-        cb.OnLoadModule += this.OnLoadModuleHandler;
-        cb.OnNameChange += this.OnNameChangeHandler;
-        cb.OnCreateThread += this.OnCreateThreadHandler;
-        cb.OnExitThread += this.OnExitThreadHandler;
-        cb.OnUnloadModule += this.OnUnloadModuleHandler;
-        cb.OnBreakpoint += this.OnBreakpointHandler;
-        cb.OnStepComplete += this.OnStepCompleteHandler;
-        cb.OnExitProcess += this.OnExitProcessHandler;
-    }
-
-    private void OnAnyEventHandler(object? sender, CorDebugManagedCallbackEventArgs args)
-    {
-        switch (args.Kind)
+        foreach (var thread in this.Threads)
         {
-        case CorDebugManagedCallbackKind.CreateProcess:
-        {
-            var a = (CreateProcessCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, $"process {a.Process.Id} created");
-            break;
+            thread.ClearCurrentlyHitBreakpoints();
         }
-        case CorDebugManagedCallbackKind.CreateAppDomain:
-        {
-            var a = (CreateAppDomainCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, $"app domain {a.AppDomain.Id} created");
-            break;
-        }
-        case CorDebugManagedCallbackKind.LoadAssembly:
-        {
-            var a = (LoadAssemblyCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, $"assembly {a.Assembly.Name} loaded");
-            break;
-        }
-        case CorDebugManagedCallbackKind.LoadModule:
-        {
-            var a = (LoadModuleCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, $"module {a.Module.Name} loaded");
-            break;
-        }
-        case CorDebugManagedCallbackKind.NameChange:
-        {
-            var a = (NameChangeCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, "name change");
-            break;
-        }
-        case CorDebugManagedCallbackKind.CreateThread:
-        {
-            var a = (CreateThreadCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, $"thread {a.Thread.Id} created");
-            break;
-        }
-        case CorDebugManagedCallbackKind.Breakpoint:
-        {
-            var a = (BreakpointCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, "breakpoint hit");
-            break;
-        }
-        case CorDebugManagedCallbackKind.ExitThread:
-        {
-            var a = (ExitThreadCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, $"thread {a.Thread.Id} exited");
-            break;
-        }
-        case CorDebugManagedCallbackKind.ExitProcess:
-        {
-            var a = (ExitProcessCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, $"process {a.Process.Id} exited");
-            break;
-        }
-        case CorDebugManagedCallbackKind.StepComplete:
-        {
-            var a = (StepCompleteCorDebugManagedCallbackEventArgs)args;
-            this.OnEventLog?.Invoke(this, "step complete");
-            break;
-        }
-        default:
-            throw new ArgumentOutOfRangeException(nameof(args));
-        }
-    }
-
-    private void OnCreateProcessHandler(object? sender, CreateProcessCorDebugManagedCallbackEventArgs args)
-    {
-        this.Continue();
-    }
-
-    private void OnCreateAppDomainHandler(object? sender, CreateAppDomainCorDebugManagedCallbackEventArgs args)
-    {
-        this.Continue();
-    }
-
-    private void OnLoadAssemblyHandler(object? sender, LoadAssemblyCorDebugManagedCallbackEventArgs args)
-    {
-        this.Continue();
-    }
-
-    private void OnLoadModuleHandler(object? sender, LoadModuleCorDebugManagedCallbackEventArgs args)
-    {
-        var module = this.sessionCache.GetModule(args.Module);
-        this.HandleEntrypoint(module);
-        this.Continue();
-    }
-
-    private void OnNameChangeHandler(object? sender, NameChangeCorDebugManagedCallbackEventArgs args)
-    {
-        if (args.Thread is not null)
-        {
-            // Clear cached name
-            var thread = this.sessionCache.GetThread(args.Thread);
-            thread.Name = null;
-        }
-
-        this.Continue();
-    }
-
-    private void OnCreateThreadHandler(object? sender, CreateThreadCorDebugManagedCallbackEventArgs args)
-    {
-        var thread = this.sessionCache.GetThread(args.Thread);
-        this.threads.Add(thread);
-
-        // Set main thread, which is guaranteed to be the first created one
-        if (this.mainThread is null)
-        {
-            this.mainThread = thread;
-            this.mainThread.Name = "Main Thread";
-        }
-
-        this.Continue();
-    }
-
-    private void OnExitThreadHandler(object? sender, ExitThreadCorDebugManagedCallbackEventArgs args)
-    {
-        var thread = this.sessionCache.GetThread(args.Thread);
-        this.threads.Remove(thread);
-
-        this.Continue();
-    }
-
-    private void OnBreakpointHandler(object? sender, BreakpointCorDebugManagedCallbackEventArgs args)
-    {
-        this.ClearCache();
-
-        var breakpoint = this.sessionCache.GetBreakpoint(args.Breakpoint);
-        if (this.entryPointBreakpoint == breakpoint)
-        {
-            // This was the entry point breakpoint, remove it
-            this.entryPointBreakpoint.Remove();
-        }
-
-        this.OnBreakpoint?.Invoke(sender, new()
-        {
-            Thread = this.sessionCache.GetThread(args.Thread),
-            Breakpoint = breakpoint,
-        });
-    }
-
-    private void OnStepCompleteHandler(object? sender, StepCompleteCorDebugManagedCallbackEventArgs args)
-    {
-        this.ClearCache();
-
-        var frame = args.Thread.ActiveFrame;
-        if (frame is not CorDebugILFrame ilFrame) return;
-
-        var offset = ilFrame.IP.pnOffset;
-        var function = this.sessionCache.GetMethod(args.Thread.ActiveFrame.Function);
-        var range = function.GetSourceRangeForIlOffset(offset);
-
-        this.OnStep?.Invoke(sender, new()
-        {
-            Thread = this.sessionCache.GetThread(args.Thread),
-            Method = function,
-            Range = range,
-        });
-    }
-
-    private void OnUnloadModuleHandler(object? sender, UnloadModuleCorDebugManagedCallbackEventArgs args)
-    {
-        this.Continue();
-    }
-
-    private void OnExitProcessHandler(object? sender, ExitProcessCorDebugManagedCallbackEventArgs args)
-    {
-        this.ioWorker.SignalStop();
-        // TODO: Get exit code properly
-        this.OnExited?.Invoke(sender, 0);
-        this.Continue();
-    }
-
-    private void HandleEntrypoint(Module module)
-    {
-        // We determine if this is the entry point by looking up the entry point token
-        var entryPointToken = module.PeReader.GetEntryPoint();
-        if (entryPointToken.IsNil) return;
-
-        // It is, save it
-        this.mainModule = module;
-
-        // Set it up
-        var corModule = module.CorDebugModule;
-        corModule.JITCompilerFlags = CorDebugJITCompilerFlags.CORDEBUG_JIT_DISABLE_OPTIMIZATION;
-        corModule.SetJMCStatus(true, 0, null);
-
-        // Check, if we need to set up a breakpoint
-        if (this.entryPointBreakpoint is not null || !this.StopAtEntryPoint) return;
-
-        // We do
-        var method = corModule.GetFunctionFromToken(MetadataTokens.GetToken(entryPointToken));
-        var code = method.ILCode;
-        var corDebugBreakpoint = code.CreateBreakpoint(0);
-        // Cache it
-        this.entryPointBreakpoint = this.sessionCache.GetBreakpoint(corDebugBreakpoint, isEntryPoint: true);
+        this.corDebugProcess.TryContinue(false);
     }
 }

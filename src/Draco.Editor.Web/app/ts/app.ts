@@ -61,7 +61,7 @@ if (hash != null && hash.trim().length > 0) {
 
 const layoutElement = document.querySelector('#layoutContainer') as HTMLElement;
 
-const config : LayoutConfig = {
+const config: LayoutConfig = {
     root: {
         type: 'row',
         content: [

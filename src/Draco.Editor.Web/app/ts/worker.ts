@@ -61,20 +61,34 @@ async function main() {
     const monoCfg = await firstMessagePromise;
     console.log(monoCfg);
     console.log('Received boot config.');
-    monoCfg['assets'].forEach(s => {
+    const assets = monoCfg['assets'];
+    assets.forEach(s => {
         if (s['buffer'] != undefined) {
             s['buffer'] = Uint8Array.from(atob(s['buffer']), c => c.charCodeAt(0));
         }
     });
+
+    const runtimeAsset = assets.find(s => s['behavior'] == 'js-module-runtime');
+    if (runtimeAsset != undefined) {
+        runtimeAsset['moduleExports'] = await import('/_framework/' + runtimeAsset['name']);
+    }
+    const nativeAsset = assets.find(s => s['behavior'] == 'js-module-native');
+    if (nativeAsset != undefined) {
+        nativeAsset['moduleExports'] = await import('/_framework/' + nativeAsset['name']);
+    }
+
     firstMessagePromise = undefined;
     const dotnet = self.dotnet.dotnet;
 
-    dotnet.moduleConfig.configSrc = null;
     const { setModuleImports, getAssemblyExports, } = await dotnet
         .withConfig(
             monoCfg
         ).withModuleConfig({
             print: (txt: string) => sendMessage('stdout', txt)
+        })
+        .withResourceLoader((type: WebAssemblyBootResourceType, name: string, defaultUri: string, integrity: string, behavior: AssetBehaviors) => {
+            // inject "_framework" behind the name. in defaultUri.
+            return defaultUri.replace(name, '_framework/' + name);
         })
         .create();
 
@@ -88,6 +102,7 @@ async function main() {
                 }
             }
         );
+        if (monoCfg['mainAssemblyName'] == undefined) throw new Error('mainAssemblyName is undefined');
         const exports = await getAssemblyExports(monoCfg['mainAssemblyName']);
         csOnMessage = exports.Draco.Editor.Web.Interop.OnMessage;
     }
@@ -96,3 +111,66 @@ async function main() {
     await dotnet.run();
 }
 main();
+
+//https://github.com/dotnet/runtime/blob/784537a9cdc97bc5f45f6606f3f9837a7f755236/src/mono/wasm/runtime/types/index.ts#L183
+type WebAssemblyBootResourceType = 'assembly' | 'pdb' | 'dotnetjs' | 'dotnetwasm' | 'globalization' | 'manifest' | 'configuration';
+type SingleAssetBehaviors =
+    /**
+     * The binary of the dotnet runtime.
+     */
+    | 'dotnetwasm'
+    /**
+     * The javascript module for loader.
+     */
+    | 'js-module-dotnet'
+    /**
+     * The javascript module for threads.
+     */
+    | 'js-module-threads'
+    /**
+     * The javascript module for runtime.
+     */
+    | 'js-module-runtime'
+    /**
+     * The javascript module for emscripten.
+     */
+    | 'js-module-native'
+    /**
+     * Typically blazor.boot.json
+     */
+    | 'manifest';
+
+type AssetBehaviors = SingleAssetBehaviors |
+    /**
+     * Load asset as a managed resource assembly.
+     */
+    'resource'
+    /**
+     * Load asset as a managed assembly.
+     */
+    | 'assembly'
+    /**
+     * Load asset as a managed debugging information.
+     */
+    | 'pdb'
+    /**
+     * Store asset into the native heap.
+     */
+    | 'heap'
+    /**
+     * Load asset as an ICU data archive.
+     */
+    | 'icu'
+    /**
+     * Load asset into the virtual filesystem (for fopen, File.Open, etc).
+     */
+    | 'vfs'
+    /**
+     * The javascript module that came from nuget package .
+     */
+    | 'js-module-library-initializer'
+    /**
+     * The javascript module for threads.
+     */
+    | 'symbols'
+

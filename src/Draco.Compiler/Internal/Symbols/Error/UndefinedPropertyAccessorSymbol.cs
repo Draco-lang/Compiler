@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Error;
 

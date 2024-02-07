@@ -51,7 +51,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         // Some empty defaults
         this.compilation = Compilation.Create(
             syntaxTrees: ImmutableArray<SyntaxTree>.Empty,
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
 
@@ -76,7 +76,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
             // NOTE: Temporary until we solve MSBuild communication
-            metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
             rootModulePath: rootPath);

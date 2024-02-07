@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices.JavaScript;
 
 namespace Draco.Editor.Web;

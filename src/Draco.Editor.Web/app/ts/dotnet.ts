@@ -2,8 +2,9 @@ import { downloadAssemblies } from './cache.js';
 
 const compilerWorker = new Worker('worker.js'); // first thing: we start the worker so it loads in parallel.
 let runtimeWorker: Worker | undefined;
-let listeners: ((arg: {outputType: string; value: string; clear: boolean}) => void)[] = [];
-
+let listeners: ((arg: { outputType: string; value: string; clear: boolean }) => void)[] = [];
+let jsModuleNativeName: string | undefined;
+let jsModuleRuntimeName: string | undefined;
 compilerWorker.onmessage = async (ev) => {
     const msg = ev.data as {
         type: string;
@@ -24,14 +25,23 @@ compilerWorker.onmessage = async (ev) => {
         const cfg = JSON.parse(msg.message);
         console.log('Starting worker with boot config:');
         cfg['disableInterop'] = true;
+        const assets = cfg['assets'];
+        assets.unshift({
+            name: jsModuleNativeName,
+            behavior: 'js-module-native',
+        });
+        assets.unshift({
+            name: jsModuleRuntimeName,
+            behavior: 'js-module-runtime',
+        });
         await downloadAssemblies(cfg);
         runtimeWorker.postMessage(cfg);
         let shouldClean = true;
         runtimeWorker.onmessage = (e) => {
             const runtimeMsg = e.data as {
-                    type: string;
-                    message: string;
-                };
+                type: string;
+                message: string;
+            };
             switch (runtimeMsg.type) {
             case 'stdout':
                 onOutputChange('stdout', runtimeMsg.message + '\n', shouldClean);
@@ -65,17 +75,18 @@ function onOutputChange(outputType: string, value: string, clear: boolean) {
     }));
 }
 
-export function subscribeOutputChange(listener: (arg: {outputType: string; value: string; clear:boolean}) => void) {
+export function subscribeOutputChange(listener: (arg: { outputType: string; value: string; clear: boolean }) => void) {
     listeners.push(listener);
 }
 
-export function unsubscribeOutputChange(listener: (arg: {outputType: string; value: string}) => void) {
+export function unsubscribeOutputChange(listener: (arg: { outputType: string; value: string }) => void) {
     listeners = listeners.filter(s => s != listener);
 }
 
 export async function initDotnetWorkers(initCode: string) {
     const cfg = await (await fetch('_framework/blazor.boot.json')).json();
-    const dlls: unknown[] = Object.keys(cfg.resources.assembly).map(
+    console.log(cfg);
+    const assets: unknown[] = Object.keys(cfg.resources.assembly).map(
         s => {
             return {
                 'behavior': 'assembly',
@@ -83,16 +94,27 @@ export async function initDotnetWorkers(initCode: string) {
             };
         }
     );
-    dlls.push({
+    assets.unshift({
         'behavior': 'dotnetwasm',
-        'name': 'dotnet.wasm'
+        'name': 'dotnet.native.wasm'
     });
+    jsModuleNativeName = Object.keys(cfg['resources']['jsModuleNative'])[0];
+    assets.unshift({
+        name: jsModuleNativeName,
+        behavior: 'js-module-native',
+    });
+    jsModuleRuntimeName = Object.keys(cfg['resources']['jsModuleRuntime'])[0];
+    assets.unshift({
+        name: jsModuleRuntimeName,
+        behavior: 'js-module-runtime',
+    });
+
     const bootCfg = {
-        mainAssemblyName: cfg.entryAssembly,
-        assemblyRootFolder: '_framework',
-        assets: dlls,
+        mainAssemblyName: cfg.mainAssemblyName,
+        assets: assets,
     };
     await downloadAssemblies(bootCfg);
+    console.log(bootCfg);
     compilerWorker.postMessage(bootCfg);
     compilerWorker.postMessage({
         type: 'CodeChange',

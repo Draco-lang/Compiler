@@ -29,7 +29,7 @@ async function dotnetjsBuild() {
                 formats: ['umd']
             },
             rollupOptions: {
-                external: ['dotnet.wasm'],
+                external: ['dotnet.native.wasm'],
                 output: {
                     esModule: false,
                     format: 'cjs',
@@ -44,7 +44,7 @@ async function dotnetjsBuild() {
     // So I rename the file by hand instead...
     fs.renameSync(path.join(outDir, 'dotnet.umd.cjs'), path.join(outDir, 'dotnet.js'));
 
-    fs.copyFileSync(path.join(binFolder, 'dotnet.wasm'), path.join(outDir, 'dotnet.wasm'));
+    fs.copyFileSync(path.join(binFolder, 'dotnet.native.wasm'), path.join(outDir, 'dotnet.native.wasm'));
 }
 
 await dotnetjsBuild();
@@ -92,7 +92,7 @@ await build({
                 filter: /metadata.ts$/,
             })
     ],
-    external: ['dotnet.wasm']
+    external: ['dotnet.native.wasm']
 });
 
 // Bundle the worker.

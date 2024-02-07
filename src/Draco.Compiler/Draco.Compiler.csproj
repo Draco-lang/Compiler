@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   
   <ItemGroup>
+    <InternalsVisibleTo Include="Draco.Compiler.Tests" />
+    <InternalsVisibleTo Include="Draco.Compiler.Benchmarks" />
+    <InternalsVisibleTo Include="Draco.Compiler.Fuzzer" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AdditionalFiles Include="Internal\Syntax\Syntax.xml" />
     <AdditionalFiles Include="Internal\BoundTree\BoundNodes.xml" />
     <AdditionalFiles Include="Internal\Symbols\WellKnownTypes.xml" />

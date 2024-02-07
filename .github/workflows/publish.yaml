@@ -58,8 +58,8 @@ jobs:
       run: |
         cd src
         $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
-        $langserverProjects = "Compiler", "LanguageServer", "Lsp"
-        $debugadapterProjects = "DebugAdapter", "Dap"
+        $langserverProjects = "Compiler", "LanguageServer", "Lsp", "JsonRpc"
+        $debugadapterProjects = "DebugAdapter", "Dap", "JsonRpc"
         $projects = @()
 
         if ($${{ github.event.inputs.deploy-sdk }}) { $projects += $sdkProjects; }

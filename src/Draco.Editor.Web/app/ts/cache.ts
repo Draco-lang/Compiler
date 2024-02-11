@@ -16,21 +16,7 @@ export function getDownloadViewElement() {
 }
 
 export async function downloadAssemblies(cfg: unknown) {
-    try {
-        const cache = await caches.open('assembly-cache');
-        const result = await cache.match('appBuildDate');
-        const cachedDate = await result.text();
-        console.log(`Current build: ${buildDate} cache build: ${cachedDate}`);
-
-        if (result == null || cachedDate != buildDate) {
-            console.log('Cache nuked.');
-            await caches.delete('assembly-cache');
-            const newCache = await caches.open('assembly-cache');
-            await newCache.put('appBuildDate', new Response(buildDate));
-        }
-    } catch (e) {
-        console.log('Could not open cache: ', e);
-    }
+    await ensureCacheUpToDate();
     const assets = cfg['assets'];
     if (assets != null) {
         const promises = assets.map(async (asset) => {
@@ -41,6 +27,24 @@ export async function downloadAssemblies(cfg: unknown) {
         await Promise.all(promises);
     }
     setDownloadViewVisible(false);
+}
+
+async function ensureCacheUpToDate() {
+    try {
+        const cache = await caches.open('assembly-cache');
+        const result = await cache.match('appBuildDate');
+        const cachedDate = await result?.text();
+        console.log(`Current build: ${buildDate} cache build: ${cachedDate ?? 'none'}`);
+
+        if (result == null || cachedDate != buildDate) {
+            console.log('Cache nuked.');
+            await caches.delete('assembly-cache');
+            const newCache = await caches.open('assembly-cache');
+            await newCache.put('appBuildDate', new Response(buildDate));
+        }
+    } catch (e) {
+        console.log('Could not open cache: ', e);
+    }
 }
 
 async function downloadAssembly(dlPath: string, asset: unknown): Promise<void> {

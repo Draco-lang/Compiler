@@ -34,7 +34,7 @@
 
   <ItemGroup>
     <PackageDownload Include="Microsoft.NETCore.App.Ref" Version="[8.0.1]" />
-    <EmbeddedResource Include="$(NuGetPackageRoot)Microsoft.NETCore.App.Ref\8.0.1\ref\net8.0\*.dll"
+    <EmbeddedResource Include="$(NuGetPackageRoot)microsoft.netcore.app.ref\8.0.1\ref\net8.0\*.dll"
                       LogicalName="ReferenceAssembly.%(Filename)%(Extension)"
                       Visible="false"
                       Link="Reference Assemblies\%(Filename)%(Extension)" />

@@ -51,9 +51,20 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         // TODO: Consider no-debug
         this.debugger = this.debuggerHost.StartProcess("dotnet", toRun);
 
+        this.debugger.OnEventLog += async (_, e) => await this.client.SendOutputAsync(new()
+        {
+            Category = OutputEvent.OutputCategory.Console,
+            Output = e,
+        });
+
         this.debugger.OnStandardOut += async (_, args) => await this.client.SendOutputAsync(new()
         {
             Category = OutputEvent.OutputCategory.Stdout,
+            Output = args,
+        });
+        this.debugger.OnStandardError += async (_, args) => await this.client.SendOutputAsync(new()
+        {
+            Category = OutputEvent.OutputCategory.Stderr,
             Output = args,
         });
         this.debugger.OnExited += async (_, e) => await this.OnDebuggerExited(e);

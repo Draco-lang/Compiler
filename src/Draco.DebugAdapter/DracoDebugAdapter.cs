@@ -54,7 +54,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         this.debugger.OnEventLog += async (_, e) => await this.client.SendOutputAsync(new()
         {
             Category = OutputEvent.OutputCategory.Console,
-            Output = e,
+            Output = e + "\n",
         });
 
         this.debugger.OnStandardOut += async (_, args) => await this.client.SendOutputAsync(new()

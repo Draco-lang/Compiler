@@ -30,4 +30,7 @@ public interface IDebugClient
 
     [Event("terminated")]
     public Task DebuggerTerminatedAsync(TerminatedEvent args);
+
+    [Event("module")]
+    public Task UpdateModuleAsync(ModuleEvent args);
 }

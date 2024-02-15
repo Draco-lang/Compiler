@@ -29,6 +29,9 @@ public partial class Debugger
     /// </summary>
     public event EventHandler<string>? OnEventLog;
 
+    public event EventHandler<Module> OnModuleLoaded;
+    public event EventHandler<Module> OnModuleUnloaded;
+
     /// <summary>
     /// The event that triggers when the process writes to its STDOUT.
     /// </summary>

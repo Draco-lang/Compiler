@@ -32,7 +32,7 @@ public sealed class TestDebugSession
     {
         if (Environment.OSVersion.Platform != PlatformID.Win32NT)
         {
-            //throw new Xunit.SkipException("Debugger only works on windows now");
+            throw new Xunit.SkipException("Debugger only works on windows now");
         }
 
         var host = DebuggerHost.Create();

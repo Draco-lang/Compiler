@@ -3,9 +3,7 @@ using System.Runtime.CompilerServices;
 using Basic.Reference.Assemblies;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
-using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Draco.Debugger.Tests;
 

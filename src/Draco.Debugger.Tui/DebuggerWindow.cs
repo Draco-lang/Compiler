@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ClrDebug.DbgEng;
 using Terminal.Gui;
 using Attribute = Terminal.Gui.Attribute;
 

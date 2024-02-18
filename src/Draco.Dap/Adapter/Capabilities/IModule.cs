@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Draco.Dap.Attributes;
 
 namespace Draco.Dap.Adapter.Capabilities;
+
 public interface IModule
 {
     [Capability(nameof(Model.Capabilities.SupportsModulesRequest))]

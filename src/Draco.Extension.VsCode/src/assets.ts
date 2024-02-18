@@ -108,7 +108,7 @@ export class AssetGenerator {
             request: 'launch',
             preLaunchTask: 'build',
             // TODO: Hardcoded config and framework
-            program: path.join('${workspaceFolder}', 'bin', 'Debug', 'net7.0', dllName),
+            program: path.join('${workspaceFolder}', 'bin', 'Debug', 'net8.0', dllName),
             stopAtEntry: false,
         };
     }

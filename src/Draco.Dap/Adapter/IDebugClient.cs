@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Draco.Dap.Attributes;
 using Draco.Dap.Model;
-using Draco.JsonRpc;
 
 namespace Draco.Dap.Adapter;
 
@@ -30,4 +29,7 @@ public interface IDebugClient
 
     [Event("terminated")]
     public Task DebuggerTerminatedAsync(TerminatedEvent args);
+
+    [Event("module")]
+    public Task UpdateModuleAsync(ModuleEvent args);
 }

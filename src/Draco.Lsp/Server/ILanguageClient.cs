@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Draco.JsonRpc;
 using Draco.Lsp.Attributes;
 using Draco.Lsp.Model;
 

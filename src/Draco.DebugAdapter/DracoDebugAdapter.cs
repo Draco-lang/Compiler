@@ -51,9 +51,20 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         // TODO: Consider no-debug
         this.debugger = this.debuggerHost.StartProcess("dotnet", toRun);
 
+        this.debugger.OnEventLog += async (_, e) => await this.client.SendOutputAsync(new()
+        {
+            Category = OutputEvent.OutputCategory.Console,
+            Output = e + "\n",
+        });
+
         this.debugger.OnStandardOut += async (_, args) => await this.client.SendOutputAsync(new()
         {
             Category = OutputEvent.OutputCategory.Stdout,
+            Output = args,
+        });
+        this.debugger.OnStandardError += async (_, args) => await this.client.SendOutputAsync(new()
+        {
+            Category = OutputEvent.OutputCategory.Stderr,
             Output = args,
         });
         this.debugger.OnExited += async (_, e) => await this.OnDebuggerExited(e);
@@ -74,10 +85,23 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
             await this.BreakAt(thread, StoppedEvent.StoppedReason.Pause);
         };
 
+        this.debugger.OnModuleLoaded += async (_, m) => await this.client.UpdateModuleAsync(new ModuleEvent()
+        {
+            Reason = ModuleEvent.ModuleReason.New,
+            Module = this.translator.ToDap(m)
+        });
+
+        this.debugger.OnModuleUnloaded += async (_, m) => await this.client.UpdateModuleAsync(new ModuleEvent()
+        {
+            Reason = ModuleEvent.ModuleReason.Removed,
+            Module = this.translator.ToDap(m)
+        });
+
         await this.client.ProcessStartedAsync(new()
         {
             Name = toRun,
         });
+
 
         return new LaunchResponse();
     }

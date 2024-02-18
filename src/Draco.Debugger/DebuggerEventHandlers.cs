@@ -115,6 +115,7 @@ public partial class Debugger
     {
         var module = this.sessionCache.GetModule(args.Module);
         this.HandleEntrypoint(module);
+        this.OnModuleLoaded?.Invoke(sender, module);
         this.Continue();
     }
 
@@ -194,6 +195,8 @@ public partial class Debugger
 
     private void OnUnloadModuleHandler(object? sender, UnloadModuleCorDebugManagedCallbackEventArgs args)
     {
+        var module = this.sessionCache.GetModule(args.Module);
+        this.OnModuleUnloaded?.Invoke(sender, module);
         this.Continue();
     }
 

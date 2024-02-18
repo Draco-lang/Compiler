@@ -30,6 +30,16 @@ public partial class Debugger
     public event EventHandler<string>? OnEventLog;
 
     /// <summary>
+    /// The event that triggers when a module is loaded.
+    /// </summary>
+    public event EventHandler<Module> OnModuleLoaded;
+
+    /// <summary>
+    /// The event that triggers when a module is unloaded.
+    /// </summary>
+    public event EventHandler<Module> OnModuleUnloaded;
+
+    /// <summary>
     /// The event that triggers when the process writes to its STDOUT.
     /// </summary>
     public event EventHandler<string> OnStandardOut

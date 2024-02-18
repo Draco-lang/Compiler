@@ -1,4 +1,3 @@
-using System.Reflection;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -120,5 +119,25 @@ func main() {
         Assert.Equal(1, value);
         debugger.Continue();
         await debugger.Terminated;
+    });
+
+    [SkippableFact]
+    public async Task CanStartProcess() => await Timeout(async () =>
+    {
+        var session = await TestDebugSession.DebugAsync("""
+                import System.Console;
+                func main() {
+                    WriteLine("Hello, World!");
+                }
+                """,
+                this.output);
+
+        var debugger = session.Debugger;
+        var output = null as string;
+        debugger.OnStandardOut += (s, e) => output = e;
+        debugger.Continue();
+
+        await debugger.Terminated;
+        Assert.Equal($"Hello, World!{Environment.NewLine}", output);
     });
 }

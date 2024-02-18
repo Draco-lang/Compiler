@@ -70,6 +70,8 @@ internal class Program
             debugger.OnEventLog += (_, text) => debuggerWindow.Log(text);
             debugger.OnStandardOut += (_, text) => debuggerWindow.AppendStdout(text);
             debugger.OnStandardError += (_, text) => debuggerWindow.AppendStderr(text);
+            debugger.OnModuleLoaded += (_, module) => debuggerWindow.AddModule(module);
+            debugger.OnModuleUnloaded += (_, module) => debuggerWindow.RemoveModule(module);
 
             debugger.OnBreakpoint += (_, a) => BreakAt(a.Thread, a.Breakpoint.Method, a.Breakpoint.Range);
             debugger.OnStep += (_, a) => BreakAt(a.Thread, a.Method, a.Range);

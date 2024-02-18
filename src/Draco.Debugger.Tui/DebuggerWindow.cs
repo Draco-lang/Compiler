@@ -27,7 +27,6 @@ internal sealed class DebuggerWindow : Window
     private readonly TableView localsTable;
     private readonly TextView logText;
     private readonly TableView moduleList;
-    private readonly TableView processList;
 
     private readonly MenuBar menu;
     private readonly StatusBar statusBar;

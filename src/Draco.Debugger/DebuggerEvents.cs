@@ -29,7 +29,14 @@ public partial class Debugger
     /// </summary>
     public event EventHandler<string>? OnEventLog;
 
+    /// <summary>
+    /// The event that triggers when a module is loaded.
+    /// </summary>
     public event EventHandler<Module> OnModuleLoaded;
+
+    /// <summary>
+    /// The event that triggers when a module is unloaded.
+    /// </summary>
     public event EventHandler<Module> OnModuleUnloaded;
 
     /// <summary>

@@ -165,7 +165,7 @@ internal sealed class Translator
         Name = module.Name,
         //Version = module.PdbReader.MetadataVersion, // not sure...
         SymbolFilePath = module.PdbName,
-        Path = module.Name
+        Path = module.Name,
     };
 
     public (int Line, int Column) ToDap(DebuggerApi.SourcePosition position) =>

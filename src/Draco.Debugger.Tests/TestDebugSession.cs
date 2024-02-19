@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Basic.Reference.Assemblies;
 using Draco.Compiler.Api;
@@ -28,11 +29,6 @@ public sealed class TestDebugSession
 
     public static async Task<TestDebugSession> DebugAsync(string code, ITestOutputHelper output, [CallerMemberName] string? testName = null)
     {
-        if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-        {
-            throw new Xunit.SkipException("Debugger only works on windows now");
-        }
-
         var host = DebuggerHost.Create();
         ArgumentNullException.ThrowIfNull(testName);
         var path = $"{testName}-{Guid.NewGuid()}";
@@ -68,7 +64,12 @@ public sealed class TestDebugSession
             """);
 
         var debugger = host.StartProcess("dotnet", dllLocation);
-        debugger.OnEventLog += (s, e) => output.WriteLine(e);
+        debugger.OnEventLog += (s, e) =>
+        {
+            output.WriteLine(e);
+            Console.WriteLine(e);
+            Trace.WriteLine(e);
+        };
         await debugger.Ready;
         return new TestDebugSession(debugger, debugger.MainModule.SourceFiles.Single(), dllLocation, pdbLocation, runtimeConfigLocation);
     }

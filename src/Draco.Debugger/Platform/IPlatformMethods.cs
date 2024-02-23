@@ -8,9 +8,13 @@ namespace Draco.Debugger.Platform;
 internal interface IPlatformMethods
 {
     /// <summary>
-    /// Replaces the standard IO handles for this process.
+    /// Gets the standard IO handles of the current process.
     /// </summary>
-    /// <param name="newHandles">The new handles to be used by the process.</param>
-    /// <returns>The old IO handles.</returns>
-    public IoHandles ReplaceStdioHandles(IoHandles newHandles);
+    /// <returns></returns>
+    public IoHandles GetStdioHandles();
+    /// <summary>
+    /// Sets the standard IO handles of the current process.
+    /// </summary>
+    /// <param name="handles"></param>
+    public void SetStdioHandles(IoHandles handles);
 }

@@ -32,8 +32,8 @@ internal static class IoUtils
             StandardInput: stdinRemote.SafePipeHandle.DangerousGetHandle(),
             StandardOutput: stdoutRemote.SafePipeHandle.DangerousGetHandle(),
             StandardError: stderrRemote.SafePipeHandle.DangerousGetHandle());
-
-        var oldHandles = PlatformUtils.Methods.ReplaceStdioHandles(pipeHandles);
+        var oldHandles = PlatformUtils.Methods.GetStdioHandles();
+        PlatformUtils.Methods.SetStdioHandles(pipeHandles);
 
         var processResult = startProcess();
 
@@ -41,7 +41,7 @@ internal static class IoUtils
         stdoutLocal.DisposeLocalCopyOfClientHandle();
         stderrLocal.DisposeLocalCopyOfClientHandle();
 
-        PlatformUtils.Methods.ReplaceStdioHandles(oldHandles);
+        PlatformUtils.Methods.SetStdioHandles(oldHandles);
 
         Console.SetIn(new StreamReader(Console.OpenStandardInput()));
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });

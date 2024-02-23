@@ -107,7 +107,12 @@ internal sealed partial class WellKnownTypes
             yield return this.Comparison(TokenKind.GreaterEqual, this.SystemChar, this.SystemChar, this.CodegenGreaterEqual);
             yield return this.Comparison(TokenKind.LessEqual, this.SystemChar, this.SystemChar, this.CodegenLessEqual);
         }
+
+        // String addition
+        yield return this.Binary(TokenKind.Plus, this.SystemString, this.SystemString, this.SystemString, (codegen, target, operands) =>
+            codegen.Write(Call(target, this.SystemString_Concat, operands)));
     }
+
     private static TypeAliasSymbol Alias(string name, TypeSymbol type) =>
         new SynthetizedTypeAliasSymbol(name, type);
     #endregion
@@ -143,6 +148,20 @@ internal sealed partial class WellKnownTypes
                 m.Name == "Format"
              && m.Parameters is [_, { Type: TypeInstanceSymbol { GenericDefinition: ArrayTypeSymbol } }]));
     private MetadataMethodSymbol? systemString_Format;
+
+    /// <summary>
+    /// string.Concat(string str1, string str2).
+    /// </summary>
+    public MetadataMethodSymbol SystemString_Concat => InterlockedUtils.InitializeNull(
+        ref this.systemString_Concat,
+        () => this.SystemString
+            .Members
+            .OfType<MetadataMethodSymbol>()
+            .First(m =>
+                m.Name == "Concat"
+             && m.Parameters.Length == 2
+             && m.Parameters.All(p => SymbolEqualityComparer.Default.Equals(p.Type, this.SystemString))));
+    private MetadataMethodSymbol? systemString_Concat;
 
     public TypeSymbol InstantiateArray(TypeSymbol elementType, int rank = 1) => rank switch
     {

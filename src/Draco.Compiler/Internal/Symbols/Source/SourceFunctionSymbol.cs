@@ -74,8 +74,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this);
-        var discardBag = new DiagnosticBag();
-        var overloads = binder.LookupValueSymbol(this.Name, this.DeclaringSyntax, discardBag);
+        var overloads = binder.LookupValueSymbol(this.Name, this.DeclaringSyntax, DiagnosticBag.Empty);
         // If not found, do nothing
         if (overloads.IsError) return;
         // If this is the same instance, do nothing

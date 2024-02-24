@@ -12,6 +12,7 @@ using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 using System;
+using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -123,7 +124,7 @@ internal sealed partial class WellKnownTypes
     /// <summary>
     /// object.ToString().
     /// </summary>
-    public MetadataMethodSymbol SystemObject_ToString => InterlockedUtils.InitializeNull(
+    public MetadataMethodSymbol SystemObject_ToString => LazyInitializer.EnsureInitialized(
         ref this.object_ToString,
         () => this.SystemObject
             .Members
@@ -134,7 +135,7 @@ internal sealed partial class WellKnownTypes
     /// <summary>
     /// string.Format(string formatString, object[] args).
     /// </summary>
-    public MetadataMethodSymbol SystemString_Format => InterlockedUtils.InitializeNull(
+    public MetadataMethodSymbol SystemString_Format => LazyInitializer.EnsureInitialized(
         ref this.systemString_Format,
         () => this.SystemString
             .Members
@@ -158,10 +159,10 @@ internal sealed partial class WellKnownTypes
         this.compilation = compilation;
     }
 
-    public ArrayTypeSymbol ArrayType => InterlockedUtils.InitializeNull(ref this.array, () => new(1, this.SystemInt32));
+    public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(1, this.SystemInt32));
     private ArrayTypeSymbol? array;
 
-    public ArrayConstructorSymbol ArrayCtor => InterlockedUtils.InitializeNull(ref this.arrayCtor, () => new(this.ArrayType));
+    public ArrayConstructorSymbol ArrayCtor => LazyInitializer.EnsureInitialized(ref this.arrayCtor, () => new(this.ArrayType));
     private ArrayConstructorSymbol? arrayCtor;
 
 
@@ -211,7 +212,7 @@ internal sealed partial class WellKnownTypes
         FunctionSymbol.CodegenDelegate codegen) =>
         DelegateIrFunctionSymbol.ComparisonOperator(token, leftType, rightType, this.SystemBoolean, codegen);
 
-    public FunctionSymbol Bool_Not => InterlockedUtils.InitializeNull(
+    public FunctionSymbol Bool_Not => LazyInitializer.EnsureInitialized(
        ref this.bool_not,
        () => this.Unary(TokenKind.KeywordNot, this.SystemBoolean, this.SystemBoolean, this.CodegenNot));
     private FunctionSymbol? bool_not;

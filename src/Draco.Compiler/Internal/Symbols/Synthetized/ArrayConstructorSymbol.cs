@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
@@ -22,7 +23,7 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
     private ImmutableArray<ParameterSymbol> parameters;
 
     public override TypeSymbol ReturnType =>
-        InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
+        LazyInitializer.EnsureInitialized(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
     /// <summary>
@@ -34,7 +35,7 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
     /// The array element type.
     /// </summary>
     public TypeParameterSymbol ElementType =>
-        InterlockedUtils.InitializeNull(ref this.elementType, this.BuildElementType);
+        LazyInitializer.EnsureInitialized(ref this.elementType, this.BuildElementType);
     private TypeParameterSymbol? elementType;
 
     public override CodegenDelegate Codegen => (codegen, target, operands) =>

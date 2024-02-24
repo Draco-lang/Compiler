@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -23,7 +24,7 @@ internal sealed class MemorySourceText : Api.Syntax.SourceText
 
     internal override Api.Syntax.SyntaxPosition IndexToSyntaxPosition(int index)
     {
-        var lineStarts = InterlockedUtils.InitializeNull(ref this.lineStarts, this.BuildLineStarts);
+        var lineStarts = LazyInitializer.EnsureInitialized(ref this.lineStarts, this.BuildLineStarts);
         var lineIndex = lineStarts.BinarySearch(index);
         // No exact match, we need the previous line
         if (lineIndex < 0) lineIndex = ~lineIndex - 1;
@@ -34,7 +35,7 @@ internal sealed class MemorySourceText : Api.Syntax.SourceText
 
     internal override int SyntaxPositionToIndex(Api.Syntax.SyntaxPosition position)
     {
-        var lineStarts = InterlockedUtils.InitializeNull(ref this.lineStarts, this.BuildLineStarts);
+        var lineStarts = LazyInitializer.EnsureInitialized(ref this.lineStarts, this.BuildLineStarts);
 
         // Avoid over-indexing
         if (position.Line >= lineStarts.Count) return this.content.Length;

@@ -1,3 +1,4 @@
+using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Documentation;
@@ -18,7 +19,7 @@ internal sealed class SourceLocalSymbol : LocalSymbol, ISourceSymbol
     public override TypeSymbol Type => this.type.Substitution;
     private readonly TypeSymbol type;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
     internal override string RawDocumentation => this.DeclaringSyntax.Documentation;

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Draco.Compiler.Internal.BoundTree;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
@@ -44,7 +45,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType => InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
+    public override TypeSymbol ReturnType => LazyInitializer.EnsureInitialized(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
     public override string Name => this.GenericDefinition.Name;

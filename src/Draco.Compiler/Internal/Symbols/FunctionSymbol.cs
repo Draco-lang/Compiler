@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
+using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr;
@@ -110,7 +111,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     public override IEnumerable<Symbol> Members => this.Parameters;
 
-    public TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
+    public TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public virtual Symbol? Override => null;

@@ -16,11 +16,11 @@ public sealed class DebuggerTests
     private static async Task Timeout(Func<Task> action, int timeoutSecs = 10)
     {
         var task = action();
-        //await task.WaitAsync(TimeSpan.FromSeconds(timeoutSecs));
-        //if (!task.IsCompleted)
-        //{
-        //    throw new TimeoutException();
-        //}
+        await task.WaitAsync(TimeSpan.FromSeconds(timeoutSecs));
+        if (!task.IsCompleted)
+        {
+            throw new TimeoutException();
+        }
         await task; // await the task to throw any exceptions it might have thrown.
     }
 

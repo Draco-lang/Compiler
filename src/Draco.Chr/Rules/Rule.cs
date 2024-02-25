@@ -18,7 +18,7 @@ public abstract class Rule
     /// <summary>
     /// The vareiable bindings of the rule.
     /// </summary>
-    internal IReadOnlyDictionary<Var, List<IConstraint>> VariableBindings => this.variableBindings;
+    internal ImmutableDictionary<Var, ImmutableArray<int>> VariableBindings { get; } = ImmutableDictionary<Var, ImmutableArray<int>>.Empty;
 
     /// <summary>
     /// The name of this rule.
@@ -33,7 +33,59 @@ public abstract class Rule
     /// <summary>
     /// The types of the head elements.
     /// </summary>
-    public ImmutableArray<Type> HeadTyőes { get; }
+    public ImmutableArray<Type> HeadTypes { get; }
 
-    private readonly Dictionary<Var, List<IConstraint>> variableBindings = [];
+    /// <summary>
+    /// The head definitions of the rule.
+    /// </summary>
+    public ImmutableArray<Head> HeadDefinitions { get; }
+
+    /// <summary>
+    /// The way the heads were specified.
+    /// </summary>
+    internal HeadListType DefinitionType
+    {
+        get
+        {
+            if (this.HeadTypes.IsDefault && this.HeadDefinitions.IsDefault) return HeadListType.SizeSpecified;
+            if (!this.HeadTypes.IsDefault && this.HeadDefinitions.IsDefault) return HeadListType.TypesSpecified;
+            return HeadListType.ComplexDefinition;
+        }
+    }
+
+    protected Rule(string name, int headCount)
+    {
+        if (headCount < 1) throw new ArgumentOutOfRangeException(nameof(headCount), "at least one head must be present");
+
+        this.Name = name;
+        this.HeadCount = headCount;
+    }
+
+    protected Rule(string name, ImmutableArray<Type> headTypes)
+        : this(name, headTypes.Length)
+    {
+        this.HeadTypes = headTypes;
+    }
+
+    protected Rule(string name, ImmutableArray<Head> headDefinitions)
+        : this(name, headDefinitions.Length)
+    {
+        this.HeadDefinitions = headDefinitions;
+
+        var variableBindings = new Dictionary<Var, ImmutableArray<int>.Builder>();
+        for (var i = 0; i < this.HeadDefinitions.Length; ++i)
+        {
+            var headDef = this.HeadDefinitions[i];
+            if (headDef.BoundTo is null) continue;
+
+            if (!variableBindings.TryGetValue(headDef.BoundTo, out var indexList))
+            {
+                indexList = ImmutableArray.CreateBuilder<int>();
+                variableBindings.Add(headDef.BoundTo, indexList);
+            }
+            indexList.Add(i);
+        }
+
+        this.VariableBindings = variableBindings.ToImmutableDictionary(kvp => kvp.Key, kvp => kvp.Value.ToImmutable());
+    }
 }

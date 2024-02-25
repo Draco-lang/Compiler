@@ -153,7 +153,7 @@ internal sealed partial class WellKnownTypes
     /// <summary>
     /// string.Concat(string str1, string str2).
     /// </summary>
-    public MetadataMethodSymbol SystemString_Concat => InterlockedUtils.InitializeNull(
+    public MetadataMethodSymbol SystemString_Concat => LazyInitializer.EnsureInitialized(
         ref this.systemString_Concat,
         () => this.SystemString
             .Members

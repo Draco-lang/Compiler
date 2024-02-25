@@ -51,8 +51,8 @@ public sealed partial class Debugger
     /// </summary>
     internal bool StopAtEntryPoint { get; init; }
 
-    private readonly CorDebugProcess corDebugProcess;
-    private readonly IoWorker<CorDebugProcess> ioWorker;
+    private CorDebugProcess corDebugProcess = null!;
+    private IoWorker<CorDebugProcess> ioWorker = null!;
     private readonly TaskCompletionSource readyTCS = new();
 
     private readonly SessionCache sessionCache = new();
@@ -61,14 +61,15 @@ public sealed partial class Debugger
     private Module? mainModule;
     private Thread? mainThread;
 
-    internal Debugger(
-        CorDebugProcess corDebugProcess,
-        IoWorker<CorDebugProcess> ioWorker,
-        CorDebugManagedCallback cb)
+    internal Debugger( CorDebugManagedCallback cb)
+    {
+        this.InitializeEventHandler(cb);
+    }
+
+    internal void Init(CorDebugProcess corDebugProcess, IoWorker<CorDebugProcess> ioWorker)
     {
         this.corDebugProcess = corDebugProcess;
         this.ioWorker = ioWorker;
-        this.InitializeEventHandler(cb);
         ioWorker.Start();
     }
 

@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Draco.Debugger.Tests" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <PackageReference Include="ClrDebug" Version="0.3.2" />
     <PackageReference Include="Microsoft.Diagnostics.DbgShim" Version="8.0.505301" />
   </ItemGroup>

@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Draco.Debugger.IO;
 
 namespace Draco.Debugger.Platform;
@@ -26,22 +27,22 @@ internal sealed class Win32PlatformMethods : IPlatformMethods
     [DllImport(Kernel32, SetLastError = true)]
     private static extern bool SetStdHandle(StandardHandleType nStdHandle, nint hHandle);
 
-    private static nint ReplaceStdioHandle(StandardHandleType old, nint @new)
+    public IoHandles GetStdioHandles()
     {
-        var oldCopy = GetStdHandle(old);
-        if (oldCopy == INVALID_HANDLE_VALUE) throw new InvalidOperationException($"could not get {old} handle");
+        var stdin = GetStdHandle(StandardHandleType.STD_INPUT_HANDLE);
+        if (stdin == INVALID_HANDLE_VALUE) throw new InvalidOperationException($"could not get {stdin} handle");
+        var stdout = GetStdHandle(StandardHandleType.STD_OUTPUT_HANDLE);
+        if (stdout == INVALID_HANDLE_VALUE) throw new InvalidOperationException($"could not get {stdout} handle");
+        var stderr = GetStdHandle(StandardHandleType.STD_ERROR_HANDLE);
+        if (stderr == INVALID_HANDLE_VALUE) throw new InvalidOperationException($"could not get {stderr} handle");
 
-        if (!SetStdHandle(old, @new)) throw new InvalidOperationException($"could not set {@old} handle");
-
-        return oldCopy;
+        return new(stdin, stdout, stderr);
     }
 
-    public IoHandles ReplaceStdioHandles(IoHandles newHandles)
+    public void SetStdioHandles(IoHandles handles)
     {
-        var oldStdin = ReplaceStdioHandle(StandardHandleType.STD_INPUT_HANDLE, newHandles.StandardInput);
-        var oldStdout = ReplaceStdioHandle(StandardHandleType.STD_OUTPUT_HANDLE, newHandles.StandardOutput);
-        var oldStderr = ReplaceStdioHandle(StandardHandleType.STD_ERROR_HANDLE, newHandles.StandardError);
-
-        return new(oldStdin, oldStdout, oldStderr);
+        if (!SetStdHandle(StandardHandleType.STD_INPUT_HANDLE, handles.StandardInput)) throw new InvalidOperationException($"could not set {handles.StandardInput} handle");
+        if (!SetStdHandle(StandardHandleType.STD_OUTPUT_HANDLE, handles.StandardOutput)) throw new InvalidOperationException($"could not set {handles.StandardOutput} handle");
+        if (!SetStdHandle(StandardHandleType.STD_ERROR_HANDLE, handles.StandardError)) throw new InvalidOperationException($"could not set {handles.StandardError} handle");
     }
 }

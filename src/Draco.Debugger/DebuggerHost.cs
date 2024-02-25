@@ -50,15 +50,13 @@ public sealed class DebuggerHost
 
                 var cb = new CorDebugManagedCallback();
                 pCordb.SetManagedHandler(cb);
-
-                var corDbgProcess = pCordb.DebugActiveProcess(process.ProcessId, win32Attach: false);
-                debugger = new(
-                    corDebugProcess: corDbgProcess,
-                    ioWorker: new(corDbgProcess, ioHandles),
-                    cb: cb)
+                debugger = new(cb: cb) // We must create the debugger which register event before starting the debugger, or there is are concurrency issues.
                 {
                     StopAtEntryPoint = true,
                 };
+                var corDbgProcess = pCordb.DebugActiveProcess(process.ProcessId, win32Attach: false);
+
+                debugger.Init(corDebugProcess: corDbgProcess, ioWorker: new(corDbgProcess, ioHandles));
 
                 wait.Set();
             });

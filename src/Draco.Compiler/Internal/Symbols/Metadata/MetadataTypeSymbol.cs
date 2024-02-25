@@ -61,6 +61,10 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
+    public IEnumerable<Symbol> AdditionalSymbols =>
+        InterlockedUtils.InitializeDefault(ref this.additionalSymbols, this.BuildAdditionalSymbols);
+    private ImmutableArray<Symbol> additionalSymbols;
+
     private readonly TypeDefinition typeDefinition;
 
     public MetadataTypeSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
@@ -135,17 +139,23 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
             // Skip non-public
             if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
-            var symbols = MetadataSymbol.ToSymbol(this, typeDef, this.MetadataReader);
-            result.AddRange(symbols);
+            // Turn into a symbol
+            var symbol = MetadataSymbol.ToSymbol(this, typeDef);
+            result.Add(symbol);
+            // Add additional symbols
+            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
         }
 
         // Methods
         foreach (var methodHandle in this.typeDefinition.GetMethods())
         {
             var method = this.MetadataReader.GetMethodDefinition(methodHandle);
-            // Skip special name, if not a constructor
-            if (method.Attributes.HasFlag(MethodAttributes.SpecialName)
-             && this.MetadataReader.GetString(method.Name) != ".ctor") continue;
+            // Skip special name, if not a constructor or operator
+            if (method.Attributes.HasFlag(MethodAttributes.SpecialName))
+            {
+                var name = this.MetadataReader.GetString(method.Name);
+                if (name != ".ctor" && !name.StartsWith("op_")) continue;
+            }
             // Skip private
             if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
             // Add it
@@ -189,4 +199,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private string BuildRawDocumentation() =>
         MetadataSymbol.GetDocumentation(this);
+
+    private ImmutableArray<Symbol> BuildAdditionalSymbols() =>
+        MetadataSymbol.GetAdditionalSymbols(this, this.typeDefinition, this.MetadataReader).ToImmutableArray();
 }

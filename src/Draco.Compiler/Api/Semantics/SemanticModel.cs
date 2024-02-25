@@ -32,7 +32,7 @@ public sealed partial class SemanticModel : IBinderProvider
         InterlockedUtils.InitializeDefault(ref this.diagnostics, () => this.GetDiagnostics());
     private ImmutableArray<Diagnostic> diagnostics;
 
-    internal DiagnosticBag DiagnosticBag { get; } = new();
+    internal DiagnosticBag DiagnosticBag { get; } = new ConcurrentDiagnosticBag();
     DiagnosticBag IBinderProvider.DiagnosticBag => this.DiagnosticBag;
 
     private readonly Compilation compilation;

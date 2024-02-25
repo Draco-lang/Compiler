@@ -3,7 +3,7 @@ namespace Draco.Chr.Rules;
 /// <summary>
 /// The way set of heads were specified to match.
 /// </summary>
-internal enum HeadSpecificationType
+internal enum HeadListType
 {
     /// <summary>
     /// Only the number of heads was specified.

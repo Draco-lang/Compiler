@@ -12,6 +12,7 @@ internal interface IPlatformMethods
     /// </summary>
     /// <returns></returns>
     public IoHandles GetStdioHandles();
+    
     /// <summary>
     /// Sets the standard IO handles of the current process.
     /// </summary>

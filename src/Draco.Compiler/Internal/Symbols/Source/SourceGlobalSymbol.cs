@@ -21,7 +21,7 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
     internal override string RawDocumentation => this.DeclaringSyntax.Documentation;

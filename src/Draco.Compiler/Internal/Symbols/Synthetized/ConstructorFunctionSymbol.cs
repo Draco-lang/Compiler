@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Internal.Symbols.Generic;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
@@ -22,10 +23,10 @@ internal sealed class ConstructorFunctionSymbol : FunctionSymbol
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType => InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
+    public override TypeSymbol ReturnType => LazyInitializer.EnsureInitialized(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
-    private FunctionSymbol ConstructorSymbol => InterlockedUtils.InitializeNull(ref this.constructorSymbol, this.BuildConstructorSymbol);
+    private FunctionSymbol ConstructorSymbol => LazyInitializer.EnsureInitialized(ref this.constructorSymbol, this.BuildConstructorSymbol);
     private FunctionSymbol? constructorSymbol;
 
     public override CodegenDelegate Codegen => (codegen, target, args) =>

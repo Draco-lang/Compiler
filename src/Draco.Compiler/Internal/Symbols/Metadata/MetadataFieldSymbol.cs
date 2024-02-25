@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Threading;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -11,7 +12,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 {
-    public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
+    public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
@@ -35,10 +36,10 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
         }
     }
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
-    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
+    internal override string RawDocumentation => LazyInitializer.EnsureInitialized(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
     public override Symbol? ContainingSymbol { get; }

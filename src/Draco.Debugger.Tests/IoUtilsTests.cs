@@ -3,7 +3,8 @@ using Draco.Debugger.IO;
 using Xunit;
 
 namespace Draco.Debugger.Tests;
-public class IoUtilsTests
+
+public sealed class IoUtilsTests
 {
     [Fact]
     public async Task CapturedIOReadsReturnsZero()

@@ -30,9 +30,6 @@ internal sealed class UnixPlatformMethods : IPlatformMethods
         var stdin = (IntPtr)dup((int)FileDescriptor.STDIN_FILENO);
         var stdout = (IntPtr)dup((int)FileDescriptor.STDOUT_FILENO);
         var stderr = (IntPtr)dup((int)FileDescriptor.STDERR_FILENO);
-        //var stdin = (IntPtr)FileDescriptor.STDIN_FILENO; // investigate why this doesn't works.
-        //var stdout = (IntPtr)FileDescriptor.STDOUT_FILENO;
-        //var stderr = (IntPtr)FileDescriptor.STDERR_FILENO;
         return new IoHandles(stdin, stdout, stderr);
     }
 

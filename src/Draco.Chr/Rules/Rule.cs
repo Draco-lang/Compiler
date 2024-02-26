@@ -88,4 +88,18 @@ public abstract class Rule
 
         this.VariableBindings = variableBindings.ToImmutableDictionary(kvp => kvp.Key, kvp => kvp.Value.ToImmutable());
     }
+
+    /// <summary>
+    /// Checks, if the given constraints match the head of this rule.
+    /// </summary>
+    /// <param name="constraints">The constraints to check.</param>
+    /// <returns>True, if the constraints match the head of this rule and can be applied, false otherwise.</returns>
+    public abstract bool Accepts(ImmutableArray<IConstraint> constraints);
+
+    /// <summary>
+    /// Applies the rule to the given constraints.
+    /// </summary>
+    /// <param name="constraints">The constraints that were matched with the rule head.</param>
+    /// <returns>The sequence of constraints the rule produced.</returns>
+    public abstract IEnumerable<IConstraint> Apply(ImmutableArray<IConstraint> constraints);
 }

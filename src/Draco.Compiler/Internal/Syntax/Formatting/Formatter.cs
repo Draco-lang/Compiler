@@ -2,22 +2,58 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Solver.Tasks;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-/// <summary>
-/// A formatter for the syntax tree.
-/// </summary>
+static class MaybeWhitespaceExtension
+{
+    public static WhiteSpaceOrToken AsMaybe(this SyntaxToken token) => new(token, false, 0);
+}
+
+class WhiteSpaceOrToken
+{
+    public WhiteSpaceOrToken(SyntaxToken? token, bool HasReturnLine, int whiteSpaceCount)
+    {
+        this.Token = token;
+        this.DoesReturnLine = HasReturnLine;
+        this.WhiteSpaceCount = whiteSpaceCount;
+    }
+
+    public SyntaxToken? Token { get; }
+    public virtual bool DoesReturnLine { get; set; }
+    public int WhiteSpaceCount { get; set; }
+
+    public static WhiteSpaceOrToken NewLine(int whiteSpaceCount) => new(null, true, whiteSpaceCount);
+}
+
+class MaybeWhiteSpace : WhiteSpaceOrToken
+{
+    public MaybeWhiteSpace(int whiteSpaceCount) : base(null, false, whiteSpaceCount)
+    {
+    }
+
+    public bool Collapsed { get; set; }
+}
+
+
+
 internal sealed class Formatter : SyntaxVisitor
 {
+    private readonly List<WhiteSpaceOrToken> _tokens = new();
+    private readonly Stack<int> _indents = new();
+    private int CurrentWhiteSpaceCount => this._indents.Sum();
+
     /// <summary>
     /// Formats the given syntax tree.
     /// </summary>
     /// <param name="tree">The syntax tree to format.</param>
     /// <param name="settings">The formatter settings to use.</param>
     /// <returns>The formatted tree.</returns>
-    public static SyntaxTree Format(SyntaxTree tree, FormatterSettings? settings = null)
+    public static IEnumerable<SyntaxToken> Format(SyntaxTree tree, FormatterSettings? settings = null)
     {
         settings ??= FormatterSettings.Default;
         var formatter = new Formatter(settings);
@@ -25,25 +61,6 @@ internal sealed class Formatter : SyntaxVisitor
         // Construct token sequence
         tree.GreenRoot.Accept(formatter);
 
-        // Apply constraints
-        formatter.ApplyConstraints();
-
-        // Re-parse into tree
-        var tokens = formatter.tokens
-            .Select(t => t.Build())
-            .ToArray();
-        var tokenSource = TokenSource.From(tokens.AsMemory());
-        // TODO: Pass in anything for diagnostics?
-        var parser = new Parser(tokenSource, diagnostics: new());
-        // TODO: Is it correct to assume compilation unit?
-        var formattedRoot = parser.ParseCompilationUnit();
-
-        return new SyntaxTree(
-            // TODO: Is this correct to pass it in?
-            sourceText: tree.SourceText,
-            greenRoot: formattedRoot,
-            // TODO: Anything smarter to pass in?
-            syntaxDiagnostics: new());
     }
 
     /// <summary>
@@ -51,595 +68,73 @@ internal sealed class Formatter : SyntaxVisitor
     /// </summary>
     public FormatterSettings Settings { get; }
 
-    private readonly List<SyntaxToken.Builder> tokens = new();
-    private readonly SyntaxList<SyntaxTrivia>.Builder currentTrivia = new();
-    // A list of groups of indices of tokens that should be aligned together
-    private readonly List<ImmutableArray<int>> alignmentGroupIndices = new();
-    private int indentation;
-
     private Formatter(FormatterSettings settings)
     {
         this.Settings = settings;
     }
 
-    // Constraints /////////////////////////////////////////////////////////////
-
-    private void ApplyConstraints()
-    {
-        foreach (var group in this.alignmentGroupIndices) this.ApplyAlignmentConstraint(group);
-    }
-
-    private void ApplyAlignmentConstraint(ImmutableArray<int> indices)
-    {
-        // Compute the offset of each token
-        var tokensWithOffsets = indices
-            .Select(i => (Index: i, Offset: this.GetColumnOfToken(i)))
-            .ToList();
-
-        // Find the largest offset among the tokens
-        var maxColumn = tokensWithOffsets.Max(p => p.Offset);
-
-        // Add padding to all tokens
-        foreach (var (index, offset) in tokensWithOffsets)
-        {
-            var token = this.tokens[index];
-            var padding = maxColumn - offset;
-            if (padding > 0) token.LeadingTrivia.Add(this.Settings.PaddingTrivia(padding));
-        }
-    }
-
-    // Formatters //////////////////////////////////////////////////////////////
-
-    public override void VisitCompilationUnit(CompilationUnitSyntax node)
-    {
-        this.FormatWithImports(node.Declarations);
-        // NOTE: Is is safe to clear this?
-        this.currentTrivia.Clear();
-        this.Newline();
-        this.Place(node.End);
-    }
-
-    public override void VisitDeclarationStatement(DeclarationStatementSyntax node)
-    {
-        this.Place(node.Declaration);
-        this.Newline();
-    }
-
     public override void VisitImportDeclaration(ImportDeclarationSyntax node)
     {
-        this.Place(node.ImportKeyword);
-        this.Space();
-        this.Place(node.Path);
-        this.Place(node.Semicolon);
-        this.Newline();
-    }
-
-    public override void VisitLabelDeclaration(LabelDeclarationSyntax node)
-    {
-        this.Unindent();
-        this.Place(node.Name);
-        this.Place(node.Colon);
-        this.Indent();
-    }
-
-    public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
-    {
-        this.Place(node.Keyword);
-        this.Space();
-        this.Place(node.Name);
-        this.Place(node.Type);
-        this.Place(node.Value);
-        this.Place(node.Semicolon);
-    }
-
-    public override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
-    {
-        this.Place(node.FunctionKeyword);
-        this.Space();
-        this.Place(node.Name);
-        this.Place(node.Generics);
-        this.Place(node.OpenParen);
-        this.AfterSeparator(node.ParameterList, this.Space);
-        this.Place(node.CloseParen);
-        this.Place(node.ReturnType);
-        this.Space();
-        this.Place(node.Body);
-    }
-
-    public override void VisitGenericParameterList(GenericParameterListSyntax node)
-    {
-        this.Place(node.OpenBracket);
-        this.AfterSeparator(node.Parameters, this.Space);
-        this.Place(node.CloseBracket);
-    }
-
-    public override void VisitBlockFunctionBody(BlockFunctionBodySyntax node)
-    {
-        this.Place(node.OpenBrace);
-        if (node.Statements.Count > 0) this.Newline();
-        this.Indent();
-        this.FormatWithImports(node.Statements);
-        this.Unindent();
-        this.Place(node.CloseBrace);
-        this.Newline(2);
-    }
-
-    public override void VisitInlineFunctionBody(InlineFunctionBodySyntax node)
-    {
-        this.Place(node.Assign);
-        this.Space();
-        this.Indent();
-        this.Place(node.Value);
-        this.Place(node.Semicolon);
-        this.Unindent();
-        this.Newline(2);
-    }
-
-    public override void VisitGenericType(GenericTypeSyntax node)
-    {
-        this.Place(node.Instantiated);
-        this.Place(node.OpenBracket);
-        this.AfterSeparator(node.Arguments, this.Space);
-        this.Place(node.CloseBracket);
-    }
-
-    public override void VisitExpressionStatement(ExpressionStatementSyntax node)
-    {
-        this.Place(node.Expression);
-        this.Place(node.Semicolon);
-        this.Newline();
-    }
-
-    public override void VisitReturnExpression(ReturnExpressionSyntax node)
-    {
-        this.Place(node.ReturnKeyword);
-        this.SpaceBeforeNotNull(node.Value);
-    }
-
-    public override void VisitGotoExpression(GotoExpressionSyntax node)
-    {
-        this.Place(node.GotoKeyword);
-        this.Space();
-        this.Place(node.Target);
-    }
-
-    public override void VisitIfExpression(IfExpressionSyntax node)
-    {
-        this.Place(node.IfKeyword);
-        this.Space();
-        this.Place(node.OpenParen);
-        this.Place(node.Condition);
-        this.Place(node.CloseParen);
-        this.Space();
-        this.Place(node.Then);
-        this.SpaceBeforeNotNull(node.Else);
-    }
-
-    public override void VisitElseClause(ElseClauseSyntax node)
-    {
-        this.Place(node.ElseKeyword);
-        this.Space();
-        this.Place(node.Expression);
-    }
-
-    public override void VisitWhileExpression(WhileExpressionSyntax node)
-    {
-        this.Place(node.WhileKeyword);
-        this.Space();
-        this.Place(node.OpenParen);
-        this.Place(node.Condition);
-        this.Place(node.CloseParen);
-        this.Space();
-        this.Place(node.Then);
-    }
-
-    public override void VisitForExpression(ForExpressionSyntax node)
-    {
-        this.Place(node.ForKeyword);
-        this.Space();
-        this.Place(node.OpenParen);
-        this.Place(node.Iterator);
-        this.Place(node.ElementType);
-        this.Space();
-        this.Place(node.InKeyword);
-        this.Space();
-        this.Place(node.Sequence);
-        this.Place(node.CloseParen);
-        this.Space();
-        this.Place(node.Then);
-    }
-
-    public override void VisitBlockExpression(BlockExpressionSyntax node)
-    {
-        this.Place(node.OpenBrace);
-        if (node.Statements.Count > 0 || node.Value is not null) this.Newline();
-        this.Indent();
-        this.FormatWithImports(node.Statements);
-        if (node.Value is not null)
-        {
-            this.Place(node.Value);
-            this.Newline();
-        }
-        this.Unindent();
-        this.Place(node.CloseBrace);
+        this._tokens.AddRange(node.Tokens.Select(s => s.AsMaybe()));
+        this._tokens.Add(WhiteSpaceOrToken.NewLine(this.CurrentWhiteSpaceCount));
     }
 
     public override void VisitCallExpression(CallExpressionSyntax node)
     {
-        this.Place(node.Function);
-        this.Place(node.OpenParen);
-        this.AfterSeparator(node.ArgumentList, this.Space);
-        this.Place(node.CloseParen);
+        //this._tokens.Add(WhiteSpaceOrToken.NewLine(CurrentWhiteSpaceCount));
+        base.VisitCallExpression(node);
     }
+}
 
-    public override void VisitGenericExpression(GenericExpressionSyntax node)
-    {
-        this.Place(node.Instantiated);
-        this.Place(node.OpenBracket);
-        this.AfterSeparator(node.Arguments, this.Space);
-        this.Place(node.CloseBracket);
-    }
+internal class CollapsibleBool
+{
+    private readonly SolverTaskCompletionSource<bool> tcs = new();
 
-    public override void VisitUnaryExpression(UnaryExpressionSyntax node)
-    {
-        this.Place(node.Operator);
-        if (SyntaxFacts.IsKeyword(node.Operator.Kind)) this.Space();
-        this.Place(node.Operand);
-    }
+    public void Collapse(bool collapse) => this.tcs.SetResult(collapse);
 
-    public override void VisitBinaryExpression(BinaryExpressionSyntax node)
-    {
-        this.Place(node.Left);
-        this.Space();
-        this.Place(node.Operator);
-        this.Space();
-        this.Place(node.Right);
-    }
+    public SolverTask<bool> Collapsed => this.tcs.Task;
+}
 
-    public override void VisitComparisonElement(ComparisonElementSyntax node)
-    {
-        this.Space();
-        this.Place(node.Operator);
-        this.Space();
-        this.Place(node.Right);
-    }
+internal class CollapsibleInt(int CurrentValue)
+{
+    private readonly SolverTaskCompletionSource<int> tcs = new();
 
-    public override void VisitTypeSpecifier(TypeSpecifierSyntax node)
-    {
-        this.Place(node.Colon);
-        this.Space();
-        this.Place(node.Type);
-    }
+    // order by desc
+    private List<(int Value, SolverTaskCompletionSource<Unit> Tcs)>? _whenTcs;
 
-    public override void VisitValueSpecifier(ValueSpecifierSyntax node)
+    public void Add(int toAdd)
     {
-        this.Space();
-        this.Place(node.Assign);
-        this.Space();
-        this.Place(node.Value);
-    }
-
-    // Formatting a list with potential import declarations within
-    private void FormatWithImports<T>(SyntaxList<T> list)
-        where T : SyntaxNode
-    {
-        var lastWasImport = false;
-        foreach (var item in list)
+        CurrentValue += toAdd;
+        if (this._whenTcs is null) return;
+        var i = this._whenTcs.Count;
+        for (; i >= 0; i--)
         {
-            if (item is ImportDeclarationSyntax)
-            {
-                if (!lastWasImport) this.Newline(2);
-                lastWasImport = true;
-            }
-            else
-            {
-                if (lastWasImport) this.Newline(2);
-                lastWasImport = false;
-            }
-            this.Place(item);
+            var (value, tcs) = this._whenTcs![i];
+            if (CurrentValue < value) break;
+            tcs.SetResult(new Unit());
         }
+        this._whenTcs.RemoveRange(i, this._whenTcs.Count - i + 1);
     }
 
-    public override void VisitStringExpression(StringExpressionSyntax node)
+    public void Collapse() => this.tcs.SetResult(CurrentValue);
+
+    public SolverTask<int> Collapsed => this.tcs.Task;
+
+    public SolverTask<Unit> WhenReaching(int number)
     {
-        var isMultiline = node.OpenQuotes.Kind == TokenKind.MultiLineStringStart;
-        var cutoff = SyntaxFacts.ComputeCutoff(node);
-
-        this.Place(node.OpenQuotes);
-        if (isMultiline)
-        {
-            this.Newline();
-            this.Indent();
-        }
-
-        var cutoffString = this.Settings.IndentationString(this.indentation);
-
-        var isNewLine = true;
-        foreach (var part in node.Parts)
-        {
-            var toInsert = part;
-            if (isMultiline && isNewLine)
-            {
-                if (part is TextStringPartSyntax { Content.Kind: TokenKind.StringContent } textPart)
-                {
-                    var content = textPart.Content.ToBuilder();
-                    if (content.Text is not null && content.Text.StartsWith(cutoff))
-                    {
-                        content.Text = content.Text[cutoff.Length..];
-                        content.Text = string.Concat(cutoffString, content.Text);
-                        content.Value = content.Text;
-                    }
-                    toInsert = new TextStringPartSyntax(content.Build());
-                }
-            }
-            this.Place(toInsert);
-            isNewLine = part is TextStringPartSyntax { Content.Kind: TokenKind.StringNewline };
-        }
-
-        if (isMultiline) this.Newline();
-        this.Place(node.CloseQuotes);
-        if (isMultiline) this.Unindent();
+        if (CurrentValue >= number) return SolverTask.FromResult(new Unit());
+        this._whenTcs ??= [];
+        var index = this._whenTcs.BinarySearch((number, null!), Comparer.Instance);
+        if (index > 0) return this._whenTcs[index].Tcs.Task;
+        var tcs = new SolverTaskCompletionSource<Unit>();
+        this._whenTcs.Insert(~index, (number, tcs));
+        return tcs.Task;
     }
 
-    // ELemental token formatting
-    public override void VisitSyntaxToken(SyntaxToken node)
+    private class Comparer : IComparer<(int, SolverTaskCompletionSource<Unit>)>
     {
-        var builder = node.ToBuilder();
-
-        if (this.Settings.NormalizeStringNewline && builder.Kind == TokenKind.StringNewline)
-        {
-            builder.Text = this.Settings.Newline;
-        }
-
-        if (!IsStringContent(node.Kind))
-        {
-            // Normalize trivia
-            this.NormalizeLeadingTrivia(builder.LeadingTrivia, this.indentation);
-            this.NormalizeTrailingTrivia(builder.TrailingTrivia, this.indentation);
-        }
-
-        // Add what is accumulated
-        builder.LeadingTrivia.InsertRange(0, this.currentTrivia);
-
-        // Indent
-        if (this.tokens.Count > 0 && !IsStringContent(node.Kind))
-        {
-            this.EnsureIndentation(this.tokens[^1].TrailingTrivia, builder.LeadingTrivia, this.indentation);
-        }
-
-        // Clear state
-        this.currentTrivia.Clear();
-
-        // Append
-        this.tokens.Add(builder);
+        public static Comparer Instance { get; } = new Comparer();
+        // reverse comparison.
+        public int Compare((int, SolverTaskCompletionSource<Unit>) x, (int, SolverTaskCompletionSource<Unit>) y) => y.Item1.CompareTo(x.Item1);
     }
-
-    // Format actions //////////////////////////////////////////////////////////
-
-    private int Place(SyntaxNode? node)
-    {
-        var index = this.tokens.Count;
-        node?.Accept(this);
-        return index;
-    }
-    private void Indent() => ++this.indentation;
-    private void Unindent() => --this.indentation;
-    private void Space()
-    {
-        if (this.tokens.Count == 0) return;
-        this.EnsureSpace(this.tokens[^1].TrailingTrivia, this.currentTrivia);
-    }
-    private void Newline(int amount = 1)
-    {
-        if (this.tokens.Count == 0) return;
-        this.EnsureNewline(this.tokens[^1].TrailingTrivia, this.currentTrivia, amount);
-    }
-    private void SpaceBeforeNotNull(SyntaxNode? node)
-    {
-        if (node is null) return;
-        this.Space();
-        this.Place(node);
-    }
-    private void AfterSeparator<T>(SeparatedSyntaxList<T> list, Action afterSep)
-        where T : SyntaxNode
-    {
-        var isSeparator = false;
-        foreach (var item in list)
-        {
-            this.Place(item);
-            if (isSeparator) afterSep();
-            isSeparator = !isSeparator;
-        }
-    }
-
-    // Low level utilities /////////////////////////////////////////////////////
-
-    private void NormalizeLeadingTrivia(
-        SyntaxList<SyntaxTrivia>.Builder trivia,
-        int indentation)
-    {
-        static bool IsSpace(SyntaxTrivia trivia) =>
-            trivia.Kind is TriviaKind.Newline or TriviaKind.Whitespace;
-
-        static bool IsComment(SyntaxTrivia trivia) =>
-            trivia.Kind is TriviaKind.LineComment or TriviaKind.DocumentationComment;
-
-        // Remove all space
-        for (var i = 0; i < trivia.Count;)
-        {
-            if (IsSpace(trivia[i])) trivia.RemoveAt(i);
-            else ++i;
-        }
-
-        // Indent the trivia if needed
-        if (this.tokens.Count > 0)
-        {
-            this.EnsureIndentation(this.tokens[^1].TrailingTrivia, trivia, indentation);
-        }
-
-        // Before each comment or doc comment, we add a newline, then indentation
-        // Except the first one, which just got indented
-        var isFirst = true;
-        for (var i = 0; i < trivia.Count; ++i)
-        {
-            if (!IsComment(trivia[i])) continue;
-            if (isFirst)
-            {
-                isFirst = false;
-                continue;
-            }
-            // A comment comes next, add newline then indentation
-            trivia.Insert(i, this.Settings.NewlineTrivia);
-            if (indentation > 0) trivia.Insert(i + 1, this.Settings.IndentationTrivia(indentation));
-        }
-    }
-
-    private void NormalizeTrailingTrivia(
-        SyntaxList<SyntaxTrivia>.Builder trivia,
-        int indentation)
-    {
-        static bool IsSpace(SyntaxTrivia trivia) =>
-            trivia.Kind is TriviaKind.Newline or TriviaKind.Whitespace;
-
-        // Remove all space
-        for (var i = 0; i < trivia.Count;)
-        {
-            if (IsSpace(trivia[i])) trivia.RemoveAt(i);
-            else ++i;
-        }
-
-        // If nonempty, add a space and a newline at the end
-        if (trivia.Count > 0)
-        {
-            trivia.Insert(0, this.Settings.SpaceTrivia);
-            trivia.Add(this.Settings.NewlineTrivia);
-        }
-    }
-
-    private void EnsureIndentation(
-        SyntaxList<SyntaxTrivia>.Builder first,
-        SyntaxList<SyntaxTrivia>.Builder second,
-        int indentation)
-    {
-        // The first didn't end in a newline, no need to indent
-        if (first.Count == 0) return;
-        if (first[^1].Kind != TriviaKind.Newline) return;
-
-        // Trim the second one
-        TrimLeft(second, TriviaKind.Whitespace);
-
-        // Add the indentation, if it's > 0
-        if (indentation > 0) second.Insert(0, this.Settings.IndentationTrivia(indentation));
-    }
-
-    private void EnsureSpace(
-        SyntaxList<SyntaxTrivia>.Builder first,
-        SyntaxList<SyntaxTrivia>.Builder second)
-    {
-        static bool IsSpace(SyntaxTrivia trivia) =>
-            trivia.Kind is TriviaKind.Newline or TriviaKind.Whitespace;
-
-        if (first.Count > 0 && IsSpace(first[^1])) return;
-        if (second.Count > 0 && IsSpace(second[0])) return;
-
-        // We can just append at the end of the first
-        first.Add(this.Settings.SpaceTrivia);
-    }
-
-    private void EnsureNewline(
-        SyntaxList<SyntaxTrivia>.Builder first,
-        SyntaxList<SyntaxTrivia>.Builder second,
-        int amount)
-    {
-        // Count existing
-        var firstNewlines = 0;
-        for (var i = first.Count - 1; i >= 0; --i)
-        {
-            if (first[i].Kind != TriviaKind.Newline) break;
-            ++firstNewlines;
-        }
-        var secondNewlines = 0;
-        for (var i = 0; i < second.Count; ++i)
-        {
-            if (second[i].Kind != TriviaKind.Newline) break;
-            ++secondNewlines;
-        }
-
-        // Append any that's needed
-        var missing = amount - (firstNewlines + secondNewlines);
-        for (var i = 0; i < missing; ++i)
-        {
-            if (i == 0 && firstNewlines == 0)
-            {
-                // The first didn't end in a newline, its trailing trivia can end in a newline
-                // Add the first one there
-                first.Add(this.Settings.NewlineTrivia);
-            }
-            else
-            {
-                // Add to second
-                second.Insert(0, this.Settings.NewlineTrivia);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Computes the starting column of a token.
-    /// </summary>
-    /// <param name="tokenIndex">The index of the token in question.</param>
-    /// <returns>The offset of the token from the start of its line.</returns>
-    private int GetColumnOfToken(int tokenIndex)
-    {
-        var token = this.tokens[tokenIndex];
-        var offset = 0;
-        // First consider leading trivia
-        for (var i = token.LeadingTrivia.Count - 1; i >= 0; --i)
-        {
-            var trivia = token.LeadingTrivia[i];
-            if (trivia.Kind == TriviaKind.Newline) return offset;
-            offset += trivia.FullWidth;
-        }
-        // Then all other tokens previously
-        for (var i = tokenIndex - 1; i >= 0; --i)
-        {
-            var prevToken = this.tokens[i];
-            // Consider its trailing trivia
-            for (var j = prevToken.TrailingTrivia.Count - 1; j >= 0; --j)
-            {
-                var trivia = prevToken.TrailingTrivia[j];
-                if (trivia.Kind == TriviaKind.Newline) return offset;
-                offset += trivia.FullWidth;
-            }
-            // Then the token itself
-            offset += prevToken.Text?.Length ?? 0;
-            // Then its leading trivia
-            for (var j = prevToken.LeadingTrivia.Count - 1; j >= 0; --j)
-            {
-                var trivia = prevToken.LeadingTrivia[j];
-                if (trivia.Kind == TriviaKind.Newline) return offset;
-                offset += trivia.FullWidth;
-            }
-        }
-        // We're at the start of the token sequence, we were in the first line
-        return offset;
-    }
-
-    private static void TrimLeft(SyntaxList<SyntaxTrivia>.Builder builder, params TriviaKind[] toTrim)
-    {
-        var n = 0;
-        while (builder.Count > n && toTrim.Contains(builder[n].Kind)) ++n;
-        builder.RemoveRange(0, n);
-    }
-
-    private static void TrimRight(SyntaxList<SyntaxTrivia>.Builder builder, params TriviaKind[] toTrim)
-    {
-        var n = 0;
-        while (builder.Count > n && toTrim.Contains(builder[builder.Count - n - 1].Kind)) ++n;
-        builder.RemoveRange(builder.Count - n - 1, n);
-    }
-
-    // Token facts /////////////////////////////////////////////////////////////
-
-    private static bool IsStringContent(TokenKind kind) =>
-        kind is TokenKind.StringContent or TokenKind.StringNewline;
 }

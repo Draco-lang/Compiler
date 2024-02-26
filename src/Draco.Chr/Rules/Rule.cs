@@ -11,6 +11,41 @@ namespace Draco.Chr.Rules;
 public abstract class Rule
 {
     /// <summary>
+    /// A delegate that can be used to guard a rule application.
+    /// </summary>
+    /// <param name="head">The list of constraints matching the rule.</param>
+    /// <returns>True, if the guard allows rule application.</returns>
+    public delegate bool GuardDelegate(ImmutableArray<IConstraint> head);
+
+    /// <summary>
+    /// A delegate that can be used to guard a simpagation rule application.
+    /// </summary>
+    /// <param name="headKeep">The list of constraints that matched and will be kept.</param>
+    /// <param name="headRemove">The list of constraints that matched and will be discarded.</param>
+    /// <returns>True, if the guard allows rule application.</returns>
+    public delegate bool SimpagationGuardDelegate(
+        ImmutableArray<IConstraint> headKeep,
+        ImmutableArray<IConstraint> headRemove);
+
+    /// <summary>
+    /// A delegate that specifies the rule action.
+    /// </summary>
+    /// <param name="head">The list of constraints matching the rule.</param>
+    /// <param name="store">The store that will be manipulated when executed.</param>
+    public delegate void BodyDelegate(ImmutableArray<IConstraint> head, ConstraintStore store);
+
+    /// <summary>
+    /// A delegate that specifies the simpagation rule action.
+    /// </summary>
+    /// <param name="headKeep">The list of constraints that matched and will be kept.</param>
+    /// <param name="headRemove">The list of constraints that matched and will be discarded.</param>
+    /// <param name="store">The store that will be manipulated when executed.</param>
+    public delegate void SimpagationBodyDelegate(
+        ImmutableArray<IConstraint> headKeep,
+        ImmutableArray<IConstraint> headRemove,
+        ConstraintStore store);
+
+    /// <summary>
     /// True, if the rule application should be saved in the propagation history, false otherwise.
     /// </summary>
     public virtual bool SaveHistory => false;

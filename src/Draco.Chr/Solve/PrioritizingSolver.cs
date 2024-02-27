@@ -103,46 +103,23 @@ public abstract class PrioritizingSolver : ISolver
             {
                 matchingHeads[pointer] = currentEnum.Current;
 
-                if (rule.SaveHistory)
+                if (AllUnique(matchingHeads)
+                 && CheckBindings(rule.VariableBindings, matchingHeads)
+                 && (!rule.SaveHistory || !history.IsInHistory(rule, matchingHeads))
+                 && rule.Accepts(matchingHeads))
                 {
-                    if (AllUnique(matchingHeads)
-                     && CheckBindings(rule.VariableBindings, matchingHeads)
-                     && !history.IsInHistory(rule, matchingHeads)
-                     && rule.Accepts(matchingHeads))
-                    {
-                        return matchingHeads.ToImmutable();
-                    }
-                }
-                else
-                {
-                    if (AllUnique(matchingHeads)
-                     && CheckBindings(rule.VariableBindings, matchingHeads)
-                     && rule.Accepts(matchingHeads))
-                    {
-                        return matchingHeads.ToImmutable();
-                    }
+                    return matchingHeads.ToImmutable();
                 }
             }
             else if (hasNext)
             {
                 matchingHeads[pointer] = currentEnum.Current;
 
-                if (rule.SaveHistory)
+                if (AllUnique(matchingHeads)
+                 && (!rule.SaveHistory || !history.IsInHistory(rule, matchingHeads))
+                 && rule.Accepts(matchingHeads))
                 {
-                    if (AllUnique(matchingHeads)
-                     && !history.IsInHistory(rule, matchingHeads)
-                     && rule.Accepts(matchingHeads))
-                    {
-                        return matchingHeads.ToImmutable();
-                    }
-                }
-                else
-                {
-                    if (AllUnique(matchingHeads)
-                     && rule.Accepts(matchingHeads))
-                    {
-                        return matchingHeads.ToImmutable();
-                    }
+                    return matchingHeads.ToImmutable();
                 }
             }
             else if (pointer > 0)

@@ -33,13 +33,13 @@ public abstract class PrioritizingSolver : ISolver
     public ConstraintStore Solve(ConstraintStore store)
     {
         var history = new PropagationHistory();
-        var iteratorStack = new Stack<IEnumerator<IConstraint>>();
+        var enumeratorStack = new Stack<IEnumerator<IConstraint>>();
 
         this.Tracer.Start(store);
 
         while (true)
         {
-            var maybeRuleAndMatch = this.FindRuleAndMatch(store, history, iteratorStack);
+            var maybeRuleAndMatch = this.FindRuleAndMatch(store, history, enumeratorStack);
             if (maybeRuleAndMatch is null) break;
 
             var ruleAndMatch = maybeRuleAndMatch.Value;
@@ -66,11 +66,11 @@ public abstract class PrioritizingSolver : ISolver
     private RuleAndMatch? FindRuleAndMatch(
         ConstraintStore store,
         PropagationHistory history,
-        Stack<IEnumerator<IConstraint>> iteratorStack)
+        Stack<IEnumerator<IConstraint>> enumeratorStack)
     {
         foreach (var rule in this.Rules)
         {
-            var matchingConstraints = FindMatchingHeadsForRule(rule, store, iteratorStack, history);
+            var matchingConstraints = FindMatchingHeadsForRule(rule, store, enumeratorStack, history);
             if (matchingConstraints is not null) return new RuleAndMatch(rule, matchingConstraints.Value);
         }
         return null;
@@ -79,38 +79,124 @@ public abstract class PrioritizingSolver : ISolver
     private static ImmutableArray<IConstraint>? FindMatchingHeadsForRule(
         Rule rule,
         ConstraintStore store,
-        Stack<IEnumerator<IConstraint>> iteratorStack,
+        Stack<IEnumerator<IConstraint>> enumeratorStack,
         PropagationHistory history)
     {
         if (store.Count < rule.HeadCount) return null;
 
         var pointer = 0;
         var matchingHeads = ImmutableArray.CreateBuilder<IConstraint>(rule.HeadCount);
+        var currentEnum = GetHeadEnumerator(rule, store, pointer);
 
+        while (true)
+        {
+            var hasNext = currentEnum.MoveNext();
+            if (pointer < rule.HeadCount - 1 && hasNext)
+            {
+                matchingHeads[pointer] = currentEnum.Current;
+                enumeratorStack.Push(currentEnum);
 
+                ++pointer;
+                currentEnum = GetHeadEnumerator(rule, store, pointer);
+            }
+            else if (hasNext && rule.DefinitionType == HeadListType.ComplexDefinition)
+            {
+                matchingHeads[pointer] = currentEnum.Current;
+
+                if (rule.SaveHistory)
+                {
+                    if (AllUnique(matchingHeads)
+                     && CheckBindings(rule.VariableBindings, matchingHeads)
+                     && !history.IsInHistory(rule, matchingHeads)
+                     && rule.Accepts(matchingHeads))
+                    {
+                        return matchingHeads.ToImmutable();
+                    }
+                }
+                else
+                {
+                    if (AllUnique(matchingHeads)
+                     && CheckBindings(rule.VariableBindings, matchingHeads)
+                     && rule.Accepts(matchingHeads))
+                    {
+                        return matchingHeads.ToImmutable();
+                    }
+                }
+            }
+            else if (hasNext)
+            {
+                matchingHeads[pointer] = currentEnum.Current;
+
+                if (rule.SaveHistory)
+                {
+                    if (AllUnique(matchingHeads)
+                     && !history.IsInHistory(rule, matchingHeads)
+                     && rule.Accepts(matchingHeads))
+                    {
+                        return matchingHeads.ToImmutable();
+                    }
+                }
+                else
+                {
+                    if (AllUnique(matchingHeads)
+                     && rule.Accepts(matchingHeads))
+                    {
+                        return matchingHeads.ToImmutable();
+                    }
+                }
+            }
+            else if (pointer > 0)
+            {
+                --pointer;
+                currentEnum = enumeratorStack.Pop();
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return null;
     }
 
     private static IEnumerator<IConstraint> GetHeadEnumerator(Rule rule, ConstraintStore store, int pointer) => rule.DefinitionType switch
     {
-        HeadListType.SizeSpecified => GetDefaultIterator(store),
-        HeadListType.TypesSpecified => GetTypedHeadIterator(store, rule, pointer),
-        HeadListType.ComplexDefinition => GetComplexHeadIterator(store, rule, pointer),
+        HeadListType.SizeSpecified => GetDefaultEnumerator(store),
+        HeadListType.TypesSpecified => GetTypedHeadEnumerator(store, rule, pointer),
+        HeadListType.ComplexDefinition => GetComplexHeadEnumerator(store, rule, pointer),
         _ => throw new InvalidOperationException(),
     };
 
-    private static IEnumerator<IConstraint> GetDefaultIterator(ConstraintStore store) =>
+    private static IEnumerator<IConstraint> GetDefaultEnumerator(ConstraintStore store) =>
         store.GetEnumerator();
-    private static IEnumerator<IConstraint> GetTypedHeadIterator(ConstraintStore store, Rule rule, int pointer) =>
+    private static IEnumerator<IConstraint> GetTypedHeadEnumerator(ConstraintStore store, Rule rule, int pointer) =>
         store.ConstraintsOfType(rule.HeadTypes[pointer]).GetEnumerator();
-    private static IEnumerator<IConstraint> GetComplexHeadIterator(ConstraintStore store, Rule rule, int pointer)
+    private static IEnumerator<IConstraint> GetComplexHeadEnumerator(ConstraintStore store, Rule rule, int pointer)
     {
         var head = rule.HeadDefinitions[pointer];
         return head.HeadContains switch
         {
-            HeadContains.Any => GetDefaultIterator(store),
+            HeadContains.Any => GetDefaultEnumerator(store),
             HeadContains.Type => store.ConstraintsOfType(head.Type!).GetEnumerator(),
             HeadContains.Value => store.ConstraintsWithValue(head.Value!).GetEnumerator(),
             _ => throw new InvalidOperationException(),
         };
+    }
+
+    private static bool AllUnique(ImmutableArray<IConstraint>.Builder constraints) =>
+        constraints.Count == constraints.Distinct().Count();
+
+    private static bool CheckBindings(
+        IReadOnlyDictionary<Var, ImmutableArray<int>> variableBindings,
+        ImmutableArray<IConstraint>.Builder heads)
+    {
+        foreach (var bound in variableBindings.Values)
+        {
+            for (var i = 0; i < bound.Length - 1; ++i)
+            {
+                if (!Equals(heads[bound[i]], heads[bound[i + 1]])) return false;
+            }
+        }
+        return true;
     }
 }

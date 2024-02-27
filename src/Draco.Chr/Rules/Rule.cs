@@ -15,7 +15,7 @@ public abstract class Rule
     /// </summary>
     /// <param name="head">The list of constraints matching the rule.</param>
     /// <returns>True, if the guard allows rule application.</returns>
-    public delegate bool GuardDelegate(ImmutableArray<IConstraint> head);
+    public delegate bool GuardDelegate(IReadOnlyList<IConstraint> head);
 
     /// <summary>
     /// A delegate that can be used to guard a simpagation rule application.
@@ -24,8 +24,8 @@ public abstract class Rule
     /// <param name="headRemove">The list of constraints that matched and will be discarded.</param>
     /// <returns>True, if the guard allows rule application.</returns>
     public delegate bool SimpagationGuardDelegate(
-        ImmutableArray<IConstraint> headKeep,
-        ImmutableArray<IConstraint> headRemove);
+        IReadOnlyList<IConstraint> headKeep,
+        IReadOnlyList<IConstraint> headRemove);
 
     /// <summary>
     /// A delegate that specifies the rule action.
@@ -129,7 +129,7 @@ public abstract class Rule
     /// </summary>
     /// <param name="constraints">The constraints to check.</param>
     /// <returns>True, if the constraints match the head of this rule and can be applied, false otherwise.</returns>
-    public abstract bool Accepts(ImmutableArray<IConstraint> constraints);
+    public abstract bool Accepts(IReadOnlyList<IConstraint> constraints);
 
     /// <summary>
     /// Applies the rule to the given constraints.

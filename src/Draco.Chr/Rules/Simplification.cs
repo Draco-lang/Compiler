@@ -28,8 +28,8 @@ public sealed class Simplification : Rule
     {
     }
 
-    public override bool Accepts(ImmutableArray<IConstraint> constraints) =>
-        constraints.Length == this.HeadCount && this.guard(constraints);
+    public override bool Accepts(IReadOnlyList<IConstraint> constraints) =>
+        constraints.Count == this.HeadCount && this.guard(constraints);
 
     public override IEnumerable<IConstraint> Apply(ImmutableArray<IConstraint> constraints)
     {

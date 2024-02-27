@@ -45,12 +45,12 @@ public sealed class Simpagation : Rule
         if (this.HeadRemoveCount < 1) throw new ArgumentOutOfRangeException(arg2, "at least one head must be removed");
     }
 
-    public override bool Accepts(ImmutableArray<IConstraint> constraints)
+    public override bool Accepts(IReadOnlyList<IConstraint> constraints)
     {
-        if (constraints.Length != this.HeadCount) return false;
+        if (constraints.Count != this.HeadCount) return false;
 
-        var headKeep = constraints.Take(this.headKeepCount).ToImmutableArray();
-        var headRemove = constraints.Skip(this.headKeepCount).ToImmutableArray();
+        var headKeep = constraints.Take(this.headKeepCount).ToList();
+        var headRemove = constraints.Skip(this.headKeepCount).ToList();
 
         return this.guard(headKeep, headRemove);
     }

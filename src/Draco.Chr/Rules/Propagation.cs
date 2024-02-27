@@ -30,8 +30,8 @@ public sealed class Propagation : Rule
     {
     }
 
-    public override bool Accepts(ImmutableArray<IConstraint> constraints) =>
-        this.HeadCount == constraints.Length && this.guard(constraints);
+    public override bool Accepts(IReadOnlyList<IConstraint> constraints) =>
+        this.HeadCount == constraints.Count && this.guard(constraints);
 
     public override IEnumerable<IConstraint> Apply(ImmutableArray<IConstraint> constraints)
     {

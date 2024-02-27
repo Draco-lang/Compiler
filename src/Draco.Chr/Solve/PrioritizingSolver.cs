@@ -99,23 +99,12 @@ public abstract class PrioritizingSolver : ISolver
                 ++pointer;
                 currentEnum = GetHeadEnumerator(rule, store, pointer);
             }
-            else if (hasNext && rule.DefinitionType == HeadListType.ComplexDefinition)
-            {
-                matchingHeads[pointer] = currentEnum.Current;
-
-                if (AllUnique(matchingHeads)
-                 && CheckBindings(rule.VariableBindings, matchingHeads)
-                 && (!rule.SaveHistory || !history.IsInHistory(rule, matchingHeads))
-                 && rule.Accepts(matchingHeads))
-                {
-                    return matchingHeads.ToImmutable();
-                }
-            }
             else if (hasNext)
             {
                 matchingHeads[pointer] = currentEnum.Current;
 
                 if (AllUnique(matchingHeads)
+                 && (rule.DefinitionType != HeadListType.ComplexDefinition || CheckBindings(rule.VariableBindings, matchingHeads))
                  && (!rule.SaveHistory || !history.IsInHistory(rule, matchingHeads))
                  && rule.Accepts(matchingHeads))
                 {

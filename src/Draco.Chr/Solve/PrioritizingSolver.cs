@@ -161,7 +161,7 @@ public abstract class PrioritizingSolver : ISolver
         {
             for (var i = 0; i < bound.Length - 1; ++i)
             {
-                if (!Equals(heads[bound[i]], heads[bound[i + 1]])) return false;
+                if (!Equals(heads[bound[i]].Value, heads[bound[i + 1]].Value)) return false;
             }
         }
         return true;

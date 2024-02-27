@@ -86,6 +86,7 @@ public abstract class PrioritizingSolver : ISolver
 
         var pointer = 0;
         var matchingHeads = ImmutableArray.CreateBuilder<IConstraint>(rule.HeadCount);
+        matchingHeads.Count = rule.HeadCount;
         var currentEnum = GetHeadEnumerator(rule, store, pointer);
 
         while (true)
@@ -144,7 +145,7 @@ public abstract class PrioritizingSolver : ISolver
         {
             HeadContains.Any => GetDefaultEnumerator(store),
             HeadContains.Type => store.ConstraintsOfType(head.Type!).GetEnumerator(),
-            HeadContains.Value => store.ConstraintsWithValue(head.Value!).GetEnumerator(),
+            HeadContains.Value => store.ConstraintsOfValue(head.Value!).GetEnumerator(),
             _ => throw new InvalidOperationException(),
         };
     }

@@ -27,6 +27,6 @@ public sealed class ConstraintStore : ICollection<IConstraint>
 
     public IEnumerable<IConstraint> ConstraintsOfType(Type type) =>
         this.constraints.Where(c => c.IsOfType(type));
-    public IEnumerable<IConstraint> ConstraintsWithValue(object value) =>
+    public IEnumerable<IConstraint> ConstraintsOfValue(object value) =>
         this.constraints.Where(c => Equals(c.Value, value));
 }

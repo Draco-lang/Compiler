@@ -35,7 +35,7 @@ public sealed class Simpagation : Rule
     public Simpagation(string name, int headKeepCount, ImmutableArray<Head> headDefinitions)
         : base(name, headDefinitions)
     {
-        if (headKeepCount < 1) throw new ArgumentOutOfRangeException(nameof(headKeepCount));
+        this.headKeepCount = headKeepCount;
         this.CheckHeadCounts(nameof(headKeepCount), nameof(headDefinitions));
     }
 

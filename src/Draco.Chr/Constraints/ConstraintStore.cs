@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Draco.Chr.Constraints;
 
@@ -22,4 +24,9 @@ public sealed class ConstraintStore : ICollection<IConstraint>
     public void CopyTo(IConstraint[] array, int arrayIndex) => this.constraints.CopyTo(array, arrayIndex);
     public IEnumerator<IConstraint> GetEnumerator() => this.constraints.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+    public IEnumerable<IConstraint> ConstraintsOfType(Type type) =>
+        this.constraints.Where(c => c.IsOfType(type));
+    public IEnumerable<IConstraint> ConstraintsWithValue(object value) =>
+        this.constraints.Where(c => Equals(c.Value, value));
 }

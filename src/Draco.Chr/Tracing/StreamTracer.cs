@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using Draco.Chr.Constraints;
@@ -34,8 +35,8 @@ public sealed class StreamTracer : ITracer
 
     public void Step(
         Rule appliedRule,
-        ImmutableArray<IConstraint> matchedConstraints,
-        ImmutableArray<IConstraint> newConstraints)
+        IEnumerable<IConstraint> matchedConstraints,
+        IEnumerable<IConstraint> newConstraints)
     {
         this.writer.WriteLine($"applied '{appliedRule.Name}'");
         this.writer.WriteLine($"  matched: {string.Join(", ", matchedConstraints)}");

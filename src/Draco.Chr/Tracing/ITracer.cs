@@ -1,6 +1,8 @@
 using Draco.Chr.Constraints;
 using System.Collections.Immutable;
 using Draco.Chr.Rules;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Draco.Chr.Tracing;
 
@@ -17,8 +19,8 @@ public interface ITracer
     /// <param name="newConstraints">The constraints that were created.</param>
     public void Step(
         Rule appliedRule,
-        ImmutableArray<IConstraint> matchedConstraints,
-        ImmutableArray<IConstraint> newConstraints);
+        IEnumerable<IConstraint> matchedConstraints,
+        IEnumerable<IConstraint> newConstraints);
 
     /// <summary>
     /// Called when the solver is started.

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
@@ -20,8 +21,8 @@ public sealed class NullTracer : ITracer
 
     public void Step(
         Rule appliedRule,
-        ImmutableArray<IConstraint> matchedConstraints,
-        ImmutableArray<IConstraint> newConstraints)
+        IEnumerable<IConstraint> matchedConstraints,
+        IEnumerable<IConstraint> newConstraints)
     {
     }
 

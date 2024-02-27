@@ -15,6 +15,7 @@ public sealed class ConstraintStore : ICollection<IConstraint>
 
     public void Add(IConstraint item) => this.constraints.Add(item);
     public void AddRange(IEnumerable<IConstraint> items) => this.constraints.UnionWith(items);
+    public void RemoveRange(IEnumerable<IConstraint> items) => this.constraints.ExceptWith(items);
     public bool Remove(IConstraint item) => this.constraints.Remove(item);
     public void Clear() => this.constraints.Clear();
     public bool Contains(IConstraint item) => this.constraints.Contains(item);

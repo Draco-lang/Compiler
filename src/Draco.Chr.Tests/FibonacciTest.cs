@@ -21,7 +21,7 @@ public sealed class FibonacciTest
         var solver = new DefinitionOrderSolver(ConstructRules());
         var store = new ConstraintStore()
         {
-            Constraint.Create(amount - 1),
+            amount - 1,
         };
         solver.Solve(store);
 
@@ -56,8 +56,8 @@ public sealed class FibonacciTest
         yield return new Propagation("seed", ImmutableArray.Create(Head.OfType(typeof(int))))
             .WithBody((_, store) =>
             {
-                store.Add(Constraint.Create(new Fib(0, 0)));
-                store.Add(Constraint.Create(new Fib(1, 1)));
+                store.Add(new Fib(0, 0));
+                store.Add(new Fib(1, 1));
             });
         yield return new Propagation(
             "acc",
@@ -72,7 +72,7 @@ public sealed class FibonacciTest
                 var index = ((Fib)head[2].Value).Index;
                 var a = ((Fib)head[1].Value).Value;
                 var b = ((Fib)head[2].Value).Value;
-                store.Add(Constraint.Create(new Fib(index + 1, a + b)));
+                store.Add(new Fib(index + 1, a + b));
             });
         yield return new Simpagation("term", 1, ImmutableArray.Create(Head.OfType(typeof(Fib)), Head.OfType(typeof(int))))
             .WithGuard((keep, remove) => remove[0].Value.Equals(((Fib)keep[0].Value).Index));

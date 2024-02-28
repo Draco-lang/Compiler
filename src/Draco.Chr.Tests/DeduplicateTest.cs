@@ -16,7 +16,7 @@ public sealed class DeduplicateTest
 
         var solver = new DefinitionOrderSolver(ConstructRules());
         var store = new ConstraintStore();
-        store.AddRange(numbers.Select(Constraint.Create));
+        store.AddRange(numbers);
 
         solver.Solve(store);
 

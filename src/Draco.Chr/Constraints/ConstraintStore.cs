@@ -29,4 +29,11 @@ public sealed class ConstraintStore : ICollection<IConstraint>
         this.constraints.Where(c => c.IsOfType(type));
     public IEnumerable<IConstraint> ConstraintsOfValue(object value) =>
         this.constraints.Where(c => Equals(c.Value, value));
+
+    // Convenience mutators
+
+    public void Add<T>(T item)
+        where T : notnull => this.Add(Constraint.Create(item));
+    public void AddRange<T>(IEnumerable<T> items)
+        where T : notnull => this.AddRange(items.Select(Constraint.Create));
 }

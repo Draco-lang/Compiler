@@ -18,22 +18,22 @@ public sealed class Simpagation : Rule
 
     private readonly int headKeepCount;
 
-    public Simpagation(string name, int headKeepCount, int headRemoveCount)
-        : base(name, headKeepCount + headRemoveCount)
+    public Simpagation(int headKeepCount, int headRemoveCount)
+        : base(headKeepCount + headRemoveCount)
     {
         this.headKeepCount = headKeepCount;
         this.CheckHeadCounts(nameof(headKeepCount), nameof(headRemoveCount));
     }
 
-    public Simpagation(string name, int headKeepCount, ImmutableArray<Type> headTypes)
-        : base(name, headTypes)
+    public Simpagation(int headKeepCount, ImmutableArray<Type> headTypes)
+        : base(headTypes)
     {
         this.headKeepCount = headKeepCount;
         this.CheckHeadCounts(nameof(headKeepCount), nameof(headTypes));
     }
 
-    public Simpagation(string name, int headKeepCount, ImmutableArray<Head> headDefinitions)
-        : base(name, headDefinitions)
+    public Simpagation(int headKeepCount, ImmutableArray<Head> headDefinitions)
+        : base(headDefinitions)
     {
         this.headKeepCount = headKeepCount;
         this.CheckHeadCounts(nameof(headKeepCount), nameof(headDefinitions));

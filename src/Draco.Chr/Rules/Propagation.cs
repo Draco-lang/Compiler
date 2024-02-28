@@ -15,18 +15,18 @@ public sealed class Propagation : Rule
     private GuardDelegate guard = _ => true;
     private BodyDelegate body = (_, _) => { };
 
-    public Propagation(string name, int headCount)
-        : base(name, headCount)
+    public Propagation(int headCount)
+        : base(headCount)
     {
     }
 
-    public Propagation(string name, ImmutableArray<Type> headTypes)
-        : base(name, headTypes)
+    public Propagation(ImmutableArray<Type> headTypes)
+        : base(headTypes)
     {
     }
 
-    public Propagation(string name, ImmutableArray<Head> headDefinitions)
-        : base(name, headDefinitions)
+    public Propagation(ImmutableArray<Head> headDefinitions)
+        : base(headDefinitions)
     {
     }
 

@@ -58,7 +58,7 @@ public abstract class Rule
     /// <summary>
     /// The name of this rule.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; set; } = "unnamed";
 
     /// <summary>
     /// The number of head elements.
@@ -88,22 +88,21 @@ public abstract class Rule
         }
     }
 
-    protected Rule(string name, int headCount)
+    protected Rule(int headCount)
     {
         if (headCount < 1) throw new ArgumentOutOfRangeException(nameof(headCount), "at least one head must be present");
 
-        this.Name = name;
         this.HeadCount = headCount;
     }
 
-    protected Rule(string name, ImmutableArray<Type> headTypes)
-        : this(name, headTypes.Length)
+    protected Rule(ImmutableArray<Type> headTypes)
+        : this(headTypes.Length)
     {
         this.HeadTypes = headTypes;
     }
 
-    protected Rule(string name, ImmutableArray<Head> headDefinitions)
-        : this(name, headDefinitions.Length)
+    protected Rule(ImmutableArray<Head> headDefinitions)
+        : this(headDefinitions.Length)
     {
         this.HeadDefinitions = headDefinitions;
 
@@ -122,6 +121,17 @@ public abstract class Rule
         }
 
         this.VariableBindings = variableBindings.ToImmutableDictionary(kvp => kvp.Key, kvp => kvp.Value.ToImmutable());
+    }
+
+    /// <summary>
+    /// Sets the name of this rule.
+    /// </summary>
+    /// <param name="name">The name of the rule.</param>
+    /// <returns>The rule itself.</returns>
+    public Rule WithName(string name)
+    {
+        this.Name = name;
+        return this;
     }
 
     /// <summary>

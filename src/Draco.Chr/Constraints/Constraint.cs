@@ -10,9 +10,10 @@ public static class Constraint
     /// <summary>
     /// Creates a new constraint with the given value.
     /// </summary>
+    /// <typeparam name="T">The type of the constraint value.</typeparam>
     /// <param name="value">The value of the constraint.</param>
     /// <returns>A new constraint with the given value.</returns>
-    public static IConstraint Create<T>(T value)
+    public static IConstraint<T> Create<T>(T value)
         where T : notnull => new Constraint<T>(value);
 }
 
@@ -20,7 +21,7 @@ public static class Constraint
 /// A generic constraint implementation.
 /// </summary>
 /// <typeparam name="T">The type of the constraint.</typeparam>
-internal sealed class Constraint<T>(T value) : IConstraint
+internal sealed class Constraint<T>(T value) : IConstraint<T>
     where T : notnull
 {
     /// <summary>

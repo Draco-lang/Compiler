@@ -13,18 +13,18 @@ public sealed class Simplification : Rule
     private GuardDelegate guard = _ => true;
     private BodyDelegate body = (_, _) => { };
 
-    public Simplification(string name, int headCount)
-        : base(name, headCount)
+    public Simplification(int headCount)
+        : base(headCount)
     {
     }
 
-    public Simplification(string name, ImmutableArray<Type> headTypes)
-        : base(name, headTypes)
+    public Simplification(ImmutableArray<Type> headTypes)
+        : base(headTypes)
     {
     }
 
-    public Simplification(string name, ImmutableArray<Head> headDefinitions)
-        : base(name, headDefinitions)
+    public Simplification(ImmutableArray<Head> headDefinitions)
+        : base(headDefinitions)
     {
     }
 

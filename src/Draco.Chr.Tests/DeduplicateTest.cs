@@ -28,7 +28,7 @@ public sealed class DeduplicateTest
     {
         var X = new Var("X");
 
-        yield return new Simpagation("dedup", 1, ImmutableArray.Create(
+        yield return new Simpagation(1, ImmutableArray.Create(
             Head.Any().Bind(X),
             Head.Any().Bind(X)));
     }

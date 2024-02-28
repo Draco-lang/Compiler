@@ -53,14 +53,13 @@ public sealed class FibonacciTest
 
     private static IEnumerable<Rule> ConstructRules()
     {
-        yield return new Propagation("seed", ImmutableArray.Create(Head.OfType(typeof(int))))
+        yield return new Propagation(ImmutableArray.Create(Head.OfType(typeof(int))))
             .WithBody((_, store) =>
             {
                 store.Add(new Fib(0, 0));
                 store.Add(new Fib(1, 1));
             });
         yield return new Propagation(
-            "acc",
             ImmutableArray.Create(
                 Head.OfType(typeof(int)),
                 Head.OfType(typeof(Fib)),
@@ -74,7 +73,7 @@ public sealed class FibonacciTest
                 var b = ((Fib)head[2].Value).Value;
                 store.Add(new Fib(index + 1, a + b));
             });
-        yield return new Simpagation("term", 1, ImmutableArray.Create(Head.OfType(typeof(Fib)), Head.OfType(typeof(int))))
+        yield return new Simpagation(1, ImmutableArray.Create(Head.OfType(typeof(Fib)), Head.OfType(typeof(int))))
             .WithGuard((keep, remove) => remove[0].Value.Equals(((Fib)keep[0].Value).Index));
     }
 }

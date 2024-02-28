@@ -1,0 +1,88 @@
+using System;
+using System.Collections.Immutable;
+using Draco.Chr.Constraints;
+
+namespace Draco.Chr.Rules;
+
+{{include 'Utils.sbncs'}}
+
+public static partial class RuleFactory
+{
+{{for $nCases in 1..MaxCases}}
+    {{$generics = ''}}
+    {{for $i in 1..$nCases}}
+        {{if $i > 1}}{{$generics += ','}}{{end}}
+        {{$generics += 'T' + $i}}
+    {{end}}
+
+    {{$notNullGenerics = ''}}
+    {{for $i in 1..$nCases}}
+        {{$notNullGenerics += 'where T' + $i + ' : notnull '}}
+    {{end}}
+
+    {{# Propagation #}}
+    public readonly record struct TypedPropagation<{{$generics}}>(Propagation Propagation);
+
+    public static TypedPropagation<{{$generics}}> Propagation<{{$generics}}>()
+        {{$notNullGenerics}} => new(new Propagation(ImmutableArray.Create({{wrap separated(', ', 1..$nCases)}}
+            typeof(T{{$element}})
+        {{end}})));
+
+    public static TypedPropagation<{{$generics}}> Propagation<{{$generics}}>({{wrap separated(', ', 1..$nCases)}}
+        T{{$element}} v{{$element}}
+    {{end}})
+        {{$notNullGenerics}} => new(new Propagation(ImmutableArray.Create({{wrap separated(', ', 1..$nCases)}}
+            Head.OfValue(v{{$element}})
+        {{end}})));
+
+    public static TypedPropagation<{{$generics}}> Named<{{$generics}}>(
+        this TypedPropagation<{{$generics}}> rule,
+        string name)
+        {{$notNullGenerics}}
+    {
+        rule.Propagation.WithName(name);
+        return rule;
+    }
+
+    public static TypedPropagation<{{$generics}}> Guard<{{$generics}}>(
+        this TypedPropagation<{{$generics}}> rule,
+        Func<
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint
+            {{end}}
+            , bool> guard)
+        {{$notNullGenerics}}
+    {
+        rule.Propagation.WithGuard(constraints => guard({{wrap separated(', ', 1..$nCases)}}
+            constraints[{{$element - 1}}]
+        {{end}}));
+        return rule;
+    }
+
+    public static TypedPropagation<{{$generics}}> Guard<{{$generics}}>(
+        this TypedPropagation<{{$generics}}> rule,
+        Func<
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint<T{{$element}}>
+            {{end}}
+            , bool> guard)
+        {{$notNullGenerics}}
+    {
+        rule.Propagation.WithGuard(constraints => guard({{wrap separated(', ', 1..$nCases)}}
+            (IConstraint<T{{$element}}>)constraints[{{$element - 1}}]
+        {{end}}));
+        return rule;
+    }
+
+    public static TypedPropagation<{{$generics}}> Guard<{{$generics}}>(
+        this TypedPropagation<{{$generics}}> rule,
+        Func<{{$generics}}, bool> guard)
+        {{$notNullGenerics}}
+    {
+        rule.Propagation.WithGuard(constraints => guard({{wrap separated(', ', 1..$nCases)}}
+            (T{{$element}})constraints[{{$element - 1}}].Value!
+        {{end}}));
+        return rule;
+    }
+{{end}}
+}

@@ -21,7 +21,10 @@ public static partial class RuleFactory
     {{end}}
 
     {{# Propagation #}}
-    public readonly record struct TypedPropagation<{{$generics}}>(Propagation Propagation);
+    public readonly record struct TypedPropagation<{{$generics}}>(Propagation Propagation)
+    {
+        public static implicit operator Propagation(TypedPropagation<{{$generics}}> rule) => rule.Propagation;
+    }
 
     public static TypedPropagation<{{$generics}}> Propagation<{{$generics}}>()
         {{$notNullGenerics}} => new(new Propagation(ImmutableArray.Create({{wrap separated(', ', 1..$nCases)}}
@@ -80,6 +83,74 @@ public static partial class RuleFactory
         {{$notNullGenerics}}
     {
         rule.Propagation.WithGuard(constraints => guard({{wrap separated(', ', 1..$nCases)}}
+            (T{{$element}})constraints[{{$element - 1}}].Value!
+        {{end}}));
+        return rule;
+    }
+
+    {{# Simplification #}}
+    public readonly record struct TypedSimplification<{{$generics}}>(Simplification Simplification)
+    {
+        public static implicit operator Simplification(TypedSimplification<{{$generics}}> rule) => rule.Simplification;
+    }
+
+    public static TypedSimplification<{{$generics}}> Simplification<{{$generics}}>()
+        {{$notNullGenerics}} => new(new Simplification(ImmutableArray.Create({{wrap separated(', ', 1..$nCases)}}
+            typeof(T{{$element}})
+        {{end}})));
+
+    public static TypedSimplification<{{$generics}}> Simplification<{{$generics}}>({{wrap separated(', ', 1..$nCases)}}
+        T{{$element}} v{{$element}}
+    {{end}})
+        {{$notNullGenerics}} => new(new Simplification(ImmutableArray.Create({{wrap separated(', ', 1..$nCases)}}
+            Head.OfValue(v{{$element}})
+        {{end}})));
+
+    public static TypedSimplification<{{$generics}}> Named<{{$generics}}>(
+        this TypedSimplification<{{$generics}}> rule,
+        string name)
+        {{$notNullGenerics}}
+    {
+        rule.Simplification.WithName(name);
+        return rule;
+    }
+
+    public static TypedSimplification<{{$generics}}> Guard<{{$generics}}>(
+        this TypedSimplification<{{$generics}}> rule,
+        Func<
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint
+            {{end}}
+            , bool> guard)
+        {{$notNullGenerics}}
+    {
+        rule.Simplification.WithGuard(constraints => guard({{wrap separated(', ', 1..$nCases)}}
+            constraints[{{$element - 1}}]
+        {{end}}));
+        return rule;
+    }
+
+    public static TypedSimplification<{{$generics}}> Guard<{{$generics}}>(
+        this TypedSimplification<{{$generics}}> rule,
+        Func<
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint<T{{$element}}>
+            {{end}}
+            , bool> guard)
+        {{$notNullGenerics}}
+    {
+        rule.Simplification.WithGuard(constraints => guard({{wrap separated(', ', 1..$nCases)}}
+            (IConstraint<T{{$element}}>)constraints[{{$element - 1}}]
+        {{end}}));
+        return rule;
+    }
+
+    public static TypedSimplification<{{$generics}}> Guard<{{$generics}}>(
+        this TypedSimplification<{{$generics}}> rule,
+        Func<{{$generics}}, bool> guard)
+        {{$notNullGenerics}}
+    {
+        rule.Simplification.WithGuard(constraints => guard({{wrap separated(', ', 1..$nCases)}}
             (T{{$element}})constraints[{{$element - 1}}].Value!
         {{end}}));
         return rule;

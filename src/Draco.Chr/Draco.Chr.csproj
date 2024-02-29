@@ -1,11 +1,2 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <AdditionalFiles Include="Chr.xml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Draco.SourceGeneration\Draco.SourceGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
-  </ItemGroup>
-
 </Project>

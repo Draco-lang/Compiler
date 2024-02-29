@@ -33,7 +33,28 @@ public sealed class ConstraintStore : ICollection<IConstraint>
     // Convenience mutators
 
     public void Add<T>(T item)
-        where T : notnull => this.Add(Constraint.Create(item));
+        where T : notnull
+    {
+        if (typeof(T).IsAssignableTo(typeof(IConstraint)))
+        {
+            this.Add((IConstraint)item);
+        }
+        else
+        {
+            this.Add((IConstraint)Constraint.Create(item));
+        }
+    }
+
     public void AddRange<T>(IEnumerable<T> items)
-        where T : notnull => this.AddRange(items.Select(Constraint.Create));
+        where T : notnull
+    {
+        if (typeof(T).IsAssignableTo(typeof(IConstraint)))
+        {
+            this.AddRange(items.Cast<IConstraint>());
+        }
+        else
+        {
+            this.AddRange(items.Select(Constraint.Create).Cast<IConstraint>());
+        }
+    }
 }

@@ -3,6 +3,7 @@ using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
 using Draco.Chr.Solve;
 using Xunit;
+using static Draco.Chr.Rules.RuleFactory;
 
 namespace Draco.Chr.Tests;
 
@@ -53,27 +54,20 @@ public sealed class FibonacciTest
 
     private static IEnumerable<Rule> ConstructRules()
     {
-        yield return new Propagation(ImmutableArray.Create(Head.OfType(typeof(int))))
-            .WithBody((_, store) =>
+        yield return Propagation<int>()
+            .Action((ConstraintStore store, int _) =>
             {
                 store.Add(new Fib(0, 0));
                 store.Add(new Fib(1, 1));
             });
-        yield return new Propagation(
-            ImmutableArray.Create(
-                Head.OfType(typeof(int)),
-                Head.OfType(typeof(Fib)),
-                Head.OfType(typeof(Fib))))
-            .WithGuard(head => ((Fib)head[1].Value).Index == ((Fib)head[2].Value).Index - 1
-                            && ((Fib)head[2].Value).Index < ((int)head[0].Value))
-            .WithBody((head, store) =>
-            {
-                var index = ((Fib)head[2].Value).Index;
-                var a = ((Fib)head[1].Value).Value;
-                var b = ((Fib)head[2].Value).Value;
-                store.Add(new Fib(index + 1, a + b));
-            });
-        yield return new Simpagation(1, ImmutableArray.Create(Head.OfType(typeof(Fib)), Head.OfType(typeof(int))))
-            .WithGuard((keep, remove) => remove[0].Value.Equals(((Fib)keep[0].Value).Index));
+
+        yield return Propagation<int, Fib, Fib>()
+            .Guard((int idx, Fib f1, Fib f2) => f1.Index == f2.Index - 1
+                                             && f2.Index < idx)
+            .Action((ConstraintStore store, int _, Fib f1, Fib f2) =>
+                store.Add(new Fib(f2.Index + 1, f1.Value + f2.Value)));
+
+        yield return Simpagation<Fib, int>(1)
+            .Guard((Fib fib, int idx) => idx == fib.Index);
     }
 }

@@ -54,20 +54,20 @@ public sealed class FibonacciTest
 
     private static IEnumerable<Rule> ConstructRules()
     {
-        yield return Propagation<int>()
-            .Action((ConstraintStore store, int _) =>
+        yield return Propagation(typeof(int))
+            .Body((ConstraintStore store, int _) =>
             {
                 store.Add(new Fib(0, 0));
                 store.Add(new Fib(1, 1));
             });
 
-        yield return Propagation<int, Fib, Fib>()
+        yield return Propagation(typeof(int), typeof(Fib), typeof(Fib))
             .Guard((int idx, Fib f1, Fib f2) => f1.Index == f2.Index - 1
                                              && f2.Index < idx)
-            .Action((ConstraintStore store, int _, Fib f1, Fib f2) =>
+            .Body((ConstraintStore store, int _, Fib f1, Fib f2) =>
                 store.Add(new Fib(f2.Index + 1, f1.Value + f2.Value)));
 
-        yield return Simpagation<Fib, int>(1)
+        yield return Simpagation(typeof(Fib), Sep, typeof(int))
             .Guard((Fib fib, int idx) => idx == fib.Index);
     }
 }

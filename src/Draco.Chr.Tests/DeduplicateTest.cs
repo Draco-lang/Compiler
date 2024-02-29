@@ -3,6 +3,7 @@ using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
 using Draco.Chr.Solve;
 using Xunit;
+using static Draco.Chr.Rules.RuleFactory;
 
 namespace Draco.Chr.Tests;
 
@@ -28,8 +29,6 @@ public sealed class DeduplicateTest
     {
         var X = new Var("X");
 
-        yield return new Simpagation(1, ImmutableArray.Create(
-            Head.Any().Bind(X),
-            Head.Any().Bind(X)));
+        yield return Simpagation(X, Sep, X);
     }
 }

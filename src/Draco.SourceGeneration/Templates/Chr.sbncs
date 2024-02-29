@@ -88,6 +88,47 @@ public static partial class RuleFactory
         return rule;
     }
 
+    public static TypedPropagation<{{$generics}}> Action<{{$generics}}>(
+        this TypedPropagation<{{$generics}}> rule,
+        Action<
+            ConstraintStore,
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint
+            {{end}}> action)
+        {{$notNullGenerics}}
+    {
+        rule.Propagation.WithBody((constraints, store) => action(store, {{wrap separated(', ', 1..$nCases)}}
+            constraints[{{$element - 1}}]
+        {{end}}));
+        return rule;
+    }
+
+    public static TypedPropagation<{{$generics}}> Action<{{$generics}}>(
+        this TypedPropagation<{{$generics}}> rule,
+        Action<
+            ConstraintStore,
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint<T{{$element}}>
+            {{end}}> action)
+        {{$notNullGenerics}}
+    {
+        rule.Propagation.WithBody((constraints, store) => action(store, {{wrap separated(', ', 1..$nCases)}}
+            (IConstraint<T{{$element}}>)constraints[{{$element - 1}}]
+        {{end}}));
+        return rule;
+    }
+
+    public static TypedPropagation<{{$generics}}> Action<{{$generics}}>(
+        this TypedPropagation<{{$generics}}> rule,
+        Action<ConstraintStore, {{$generics}}> action)
+        {{$notNullGenerics}}
+    {
+        rule.Propagation.WithBody((constraints, store) => action(store, {{wrap separated(', ', 1..$nCases)}}
+            (T{{$element}})constraints[{{$element - 1}}].Value!
+        {{end}}));
+        return rule;
+    }
+
     {{# Simplification #}}
     public readonly record struct TypedSimplification<{{$generics}}>(Simplification Simplification)
     {
@@ -153,6 +194,236 @@ public static partial class RuleFactory
         rule.Simplification.WithGuard(constraints => guard({{wrap separated(', ', 1..$nCases)}}
             (T{{$element}})constraints[{{$element - 1}}].Value!
         {{end}}));
+        return rule;
+    }
+
+    public static TypedSimplification<{{$generics}}> Action<{{$generics}}>(
+        this TypedSimplification<{{$generics}}> rule,
+        Action<
+            ConstraintStore,
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint
+            {{end}}> action)
+        {{$notNullGenerics}}
+    {
+        rule.Simplification.WithBody((constraints, store) => action(store, {{wrap separated(', ', 1..$nCases)}}
+            constraints[{{$element - 1}}]
+        {{end}}));
+        return rule;
+    }
+
+    public static TypedSimplification<{{$generics}}> Action<{{$generics}}>(
+        this TypedSimplification<{{$generics}}> rule,
+        Action<
+            ConstraintStore,
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint<T{{$element}}>
+            {{end}}> action)
+        {{$notNullGenerics}}
+    {
+        rule.Simplification.WithBody((constraints, store) => action(store, {{wrap separated(', ', 1..$nCases)}}
+            (IConstraint<T{{$element}}>)constraints[{{$element - 1}}]
+        {{end}}));
+        return rule;
+    }
+
+    public static TypedSimplification<{{$generics}}> Action<{{$generics}}>(
+        this TypedSimplification<{{$generics}}> rule,
+        Action<ConstraintStore, {{$generics}}> action)
+        {{$notNullGenerics}}
+    {
+        rule.Simplification.WithBody((constraints, store) => action(store, {{wrap separated(', ', 1..$nCases)}}
+            (T{{$element}})constraints[{{$element - 1}}].Value!
+        {{end}}));
+        return rule;
+    }
+
+    {{# Simpagation #}}
+    {{if $nCases == 1}}{{continue}}{{end}}
+
+    public readonly record struct TypedSimpagation<{{$generics}}>(Simpagation Simpagation)
+    {
+        public static implicit operator Simpagation(TypedSimpagation<{{$generics}}> rule) => rule.Simpagation;
+    }
+
+    public static TypedSimpagation<{{$generics}}> Simpagation<{{$generics}}>(int keepCount)
+        {{$notNullGenerics}} => new(new Simpagation(keepCount, ImmutableArray.Create({{wrap separated(', ', 1..$nCases)}}
+            typeof(T{{$element}})
+        {{end}})));
+
+    public static TypedSimpagation<{{$generics}}> Simpagation<{{$generics}}>(int keepCount, {{wrap separated(', ', 1..$nCases)}}
+        T{{$element}} v{{$element}}
+    {{end}})
+        {{$notNullGenerics}} => new(new Simpagation(keepCount, ImmutableArray.Create({{wrap separated(', ', 1..$nCases)}}
+            Head.OfValue(v{{$element}})
+        {{end}})));
+
+    public static TypedSimpagation<{{$generics}}> Named<{{$generics}}>(
+        this TypedSimpagation<{{$generics}}> rule,
+        string name)
+        {{$notNullGenerics}}
+    {
+        rule.Simpagation.WithName(name);
+        return rule;
+    }
+
+    public static TypedSimpagation<{{$generics}}> Guard<{{$generics}}>(
+        this TypedSimpagation<{{$generics}}> rule,
+        Func<
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint
+            {{end}}
+            , bool> guard)
+        {{$notNullGenerics}}
+    {
+        switch (rule.Simpagation.HeadKeepCount)
+        {
+    {{for keepCount in 1..($nCases - 1)}}
+        case {{keepCount}}:
+            rule.Simpagation.WithGuard((keep, remove) => guard(
+                {{wrap separated(', ', 1..keepCount)}}
+                    keep[{{$element - 1}}]
+                {{end}},
+                {{wrap separated(', ', (keepCount + 1)..$nCases)}}
+                    remove[{{$element - keepCount - 1}}]
+                {{end}}));
+            break;
+    {{end}}
+        default:
+            throw new ArgumentOutOfRangeException(nameof(rule.Simpagation.HeadKeepCount));
+        }
+        return rule;
+    }
+
+    public static TypedSimpagation<{{$generics}}> Guard<{{$generics}}>(
+        this TypedSimpagation<{{$generics}}> rule,
+        Func<
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint<T{{$element}}>
+            {{end}}
+            , bool> guard)
+        {{$notNullGenerics}}
+    {
+        switch (rule.Simpagation.HeadKeepCount)
+        {
+    {{for keepCount in 1..($nCases - 1)}}
+        case {{keepCount}}:
+            rule.Simpagation.WithGuard((keep, remove) => guard(
+                {{wrap separated(', ', 1..keepCount)}}
+                    (IConstraint<T{{$element}}>)keep[{{$element - 1}}]
+                {{end}},
+                {{wrap separated(', ', (keepCount+ 1)..$nCases)}}
+                    (IConstraint<T{{$element}}>)remove[{{$element - keepCount - 1}}]
+                {{end}}));
+            break;
+    {{end}}
+        default:
+            throw new ArgumentOutOfRangeException(nameof(rule.Simpagation.HeadKeepCount));
+        }
+        return rule;
+    }
+
+    public static TypedSimpagation<{{$generics}}> Guard<{{$generics}}>(
+        this TypedSimpagation<{{$generics}}> rule,
+        Func<{{$generics}}, bool> guard)
+        {{$notNullGenerics}}
+    {
+        switch (rule.Simpagation.HeadKeepCount)
+        {
+    {{for keepCount in 1..($nCases - 1)}}
+        case {{keepCount}}:
+            rule.Simpagation.WithGuard((keep, remove) => guard(
+                {{wrap separated(', ', 1..keepCount)}}
+                    (T{{$element}})keep[{{$element - 1}}].Value!
+                {{end}},
+                {{wrap separated(', ', (keepCount + 1)..$nCases)}}
+                    (T{{$element}})remove[{{$element - keepCount - 1}}].Value!
+                {{end}}));
+            break;
+    {{end}}
+        default:
+            throw new ArgumentOutOfRangeException(nameof(rule.Simpagation.HeadKeepCount));
+        }
+        return rule;
+    }
+
+    public static TypedSimpagation<{{$generics}}> Action<{{$generics}}>(
+        this TypedSimpagation<{{$generics}}> rule,
+        Action<
+            ConstraintStore,
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint
+            {{end}}> action)
+        {{$notNullGenerics}}
+    {
+        switch (rule.Simpagation.HeadKeepCount)
+        {
+    {{for keepCount in 1..($nCases - 1)}}
+        case {{keepCount}}:
+            rule.Simpagation.WithBody((keep, remove, store) => action(store,
+                {{wrap separated(', ', 1..keepCount)}}
+                    keep[{{$element - 1}}]
+                {{end}},
+                {{wrap separated(', ', (keepCount + 1)..$nCases)}}
+                    remove[{{$element - keepCount - 1}}]
+                {{end}}));
+            break;
+    {{end}}
+        default:
+            throw new ArgumentOutOfRangeException(nameof(rule.Simpagation.HeadKeepCount));
+        }
+        return rule;
+    }
+
+    public static TypedSimpagation<{{$generics}}> Action<{{$generics}}>(
+        this TypedSimpagation<{{$generics}}> rule,
+        Action<
+            ConstraintStore,
+            {{wrap separated(', ', 1..$nCases)}}
+                IConstraint<T{{$element}}>
+            {{end}}> action)
+        {{$notNullGenerics}}
+    {
+        switch (rule.Simpagation.HeadKeepCount)
+        {
+    {{for keepCount in 1..($nCases - 1)}}
+        case {{keepCount}}:
+            rule.Simpagation.WithBody((keep, remove, store) => action(store,
+                {{wrap separated(', ', 1..keepCount)}}
+                    (IConstraint<T{{$element}}>)keep[{{$element - 1}}]
+                {{end}},
+                {{wrap separated(', ', (keepCount + 1)..$nCases)}}
+                    (IConstraint<T{{$element}}>)remove[{{$element - keepCount - 1}}]
+                {{end}}));
+            break;
+    {{end}}
+        default:
+            throw new ArgumentOutOfRangeException(nameof(rule.Simpagation.HeadKeepCount));
+        }
+        return rule;
+    }
+
+    public static TypedSimpagation<{{$generics}}> Action<{{$generics}}>(
+        this TypedSimpagation<{{$generics}}> rule,
+        Action<ConstraintStore, {{$generics}}> action)
+        {{$notNullGenerics}}
+    {
+        switch (rule.Simpagation.HeadKeepCount)
+        {
+    {{for keepCount in 1..($nCases - 1)}}
+        case {{keepCount}}:
+            rule.Simpagation.WithBody((keep, remove, store) => action(store,
+                {{wrap separated(', ', 1..keepCount)}}
+                    (T{{$element}})keep[{{$element - 1}}].Value!
+                {{end}},
+                {{wrap separated(', ', (keepCount + 1)..$nCases)}}
+                    (T{{$element}})remove[{{$element - keepCount - 1}}].Value!
+                {{end}}));
+            break;
+    {{end}}
+        default:
+            throw new ArgumentOutOfRangeException(nameof(rule.Simpagation.HeadKeepCount));
+        }
         return rule;
     }
 {{end}}

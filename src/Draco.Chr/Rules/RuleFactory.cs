@@ -220,9 +220,9 @@ public static partial class RuleFactory
     private static Rule.SimpagationBodyDelegate CreateSimpagationBodyDelegate(Rule rule, Delegate body)
     {
         var parameters = body.Method.GetParameters();
-        if (parameters.Length != rule.HeadCount + 2)
+        if (parameters.Length != rule.HeadCount + 1)
         {
-            throw new ArgumentException("body must have the same number of parameters as the rule has heads plus two");
+            throw new ArgumentException("body must have the same number of parameters as the rule has heads plus one");
         }
 
         if (!parameters[0].ParameterType.IsAssignableTo(typeof(ConstraintStore)))

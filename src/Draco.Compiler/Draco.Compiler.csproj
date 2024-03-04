@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Draco.Chr\Draco.Chr.csproj" />
     <ProjectReference Include="..\Draco.SourceGeneration\Draco.SourceGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="False" />
   </ItemGroup>
 

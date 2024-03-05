@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -25,9 +26,20 @@ public abstract class PrioritizingSolver : ISolver
     /// </summary>
     public ITracer Tracer { get; set; }
 
-    public PrioritizingSolver(ITracer? tracer = null)
+    /// <summary>
+    /// The comparer used for values.
+    /// </summary>
+    public IEqualityComparer ValueComparer { get; }
+
+    public PrioritizingSolver(IEqualityComparer? comparer = null, ITracer? tracer = null)
     {
+        this.ValueComparer = comparer ?? EqualityComparer<object>.Default;
         this.Tracer = tracer ?? NullTracer.Instance;
+    }
+
+    public PrioritizingSolver(ITracer? tracer = null)
+        : this(null, tracer)
+    {
     }
 
     public ConstraintStore Solve(ConstraintStore store)

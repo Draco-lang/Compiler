@@ -27,8 +27,11 @@ public sealed class ConstraintStore : ICollection<IConstraint>
 
     public IEnumerable<IConstraint> ConstraintsOfType(Type type) =>
         this.constraints.Where(c => c.IsOfType(type));
-    public IEnumerable<IConstraint> ConstraintsOfValue(object value) =>
-        this.constraints.Where(c => Equals(c.Value, value));
+    public IEnumerable<IConstraint> ConstraintsOfValue(object value, IEqualityComparer? comparer = null)
+    {
+        comparer ??= EqualityComparer<IConstraint>.Default;
+        return this.constraints.Where(c => comparer.Equals(c.Value, value));
+    }
 
     // Convenience mutators
 

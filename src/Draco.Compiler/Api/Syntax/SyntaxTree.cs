@@ -157,7 +157,7 @@ public sealed class SyntaxTree
     /// Syntactically formats this <see cref="SyntaxTree"/>.
     /// </summary>
     /// <returns>The formatted tree.</returns>
-    public SyntaxTree Format() => Formatter.Format(this);
+    public string Format() => Formatter.Format(this);
 
     /// <summary>
     /// The internal root of the tree.

@@ -179,7 +179,7 @@ internal class Program
     {
         var syntaxTree = GetSyntaxTrees(input).First();
         using var outputStream = OpenOutputOrStdout(output);
-        new StreamWriter(outputStream).Write(syntaxTree.Format().ToString());
+        new StreamWriter(outputStream).Write(syntaxTree.Format());
     }
 
     private static ImmutableArray<SyntaxTree> GetSyntaxTrees(params FileInfo[] input)

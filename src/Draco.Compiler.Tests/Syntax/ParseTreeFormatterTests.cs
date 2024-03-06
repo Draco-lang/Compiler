@@ -1,9 +1,18 @@
 using Draco.Compiler.Api.Syntax;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
+using Xunit.Abstractions;
 
 namespace Draco.Compiler.Tests.Syntax;
 
 public sealed class SyntaxTreeFormatterTests
 {
+    private readonly ITestOutputHelper logger;
+
+    public SyntaxTreeFormatterTests(ITestOutputHelper logger)
+    {
+        this.logger = logger;
+    }
+
     [Fact]
     public void TestFormatting()
     {
@@ -89,7 +98,9 @@ public sealed class SyntaxTreeFormatterTests
 
             """";
 
-        var actual = SyntaxTree.Parse(input).Format().ToString();
+        var actual = SyntaxTree.Parse(input).Format();
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -116,7 +127,7 @@ public sealed class SyntaxTreeFormatterTests
             }
 
             """;
-        var actual = SyntaxTree.Parse(input).Format().ToString();
+        var actual = SyntaxTree.Parse(input).Format();
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 }

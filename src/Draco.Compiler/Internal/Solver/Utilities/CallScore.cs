@@ -116,7 +116,7 @@ internal readonly struct CallScore
     /// </summary>
     /// <param name="param">The variadic function parameter.</param>
     /// <param name="argTypes">The passed in argument types.</param>
-    /// <returns>The score of the match.</returns>
+    /// <returns>The score of the match. Null, if it can not be decided yet.</returns>
     public static int? ScoreVariadicArguments(ParameterSymbol param, IEnumerable<TypeSymbol> argTypes)
     {
         if (!param.IsVariadic) throw new ArgumentException("the provided parameter is not variadic", nameof(param));
@@ -134,7 +134,7 @@ internal readonly struct CallScore
     /// </summary>
     /// <param name="param">The function parameter.</param>
     /// <param name="argType">The passed in argument type.</param>
-    /// <returns>The score of the match.</returns>
+    /// <returns>The score of the match. Null, if can not be decided yet.</returns>
     public static int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
     {
         if (param.IsVariadic) throw new ArgumentException("the provided parameter variadic", nameof(param));

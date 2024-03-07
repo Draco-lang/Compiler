@@ -1,5 +1,6 @@
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Solver.Constraints;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -25,7 +26,7 @@ internal abstract class ConstraintLocator
     /// </summary>
     /// <param name="constraint">The constraint to base the locator on.</param>
     /// <returns>The locator that will point point wherever the locator of the constraint would point to.</returns>
-    public static ConstraintLocator Constraint(IConstraint constraint) => new ReferenceConstraintLocator(constraint);
+    public static ConstraintLocator Constraint(ConstraintBase constraint) => new ReferenceConstraintLocator(constraint);
 
     /// <summary>
     /// Locates information for the constraint.
@@ -76,15 +77,15 @@ internal abstract class ConstraintLocator
 
     private sealed class ReferenceConstraintLocator : ConstraintLocator
     {
-        private readonly IConstraint constraint;
+        private readonly ConstraintBase constraint;
 
-        public ReferenceConstraintLocator(IConstraint constraint)
+        public ReferenceConstraintLocator(ConstraintBase constraint)
         {
             this.constraint = constraint;
         }
 
         public override void Locate(Diagnostic.Builder diagnostic) =>
-            this.constraint.Locator.Locate(diagnostic);
+            this.constraint.Locator?.Locate(diagnostic);
     }
 
     private sealed class WithRelatedInfoConstraintLocator : ConstraintLocator

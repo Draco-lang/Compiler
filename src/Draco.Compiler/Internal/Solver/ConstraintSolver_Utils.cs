@@ -11,8 +11,6 @@ namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
-    private readonly record struct OverloadCandidate(FunctionSymbol Symbol, CallScore Score);
-
     private FunctionTypeSymbol MakeMismatchedFunctionType(ImmutableArray<Argument> args, TypeSymbol returnType) => new(
         args
             // TODO: We are passing null here...
@@ -20,26 +18,6 @@ internal sealed partial class ConstraintSolver
             .Cast<ParameterSymbol>()
             .ToImmutableArray(),
         returnType);
-
-    private static ImmutableArray<FunctionSymbol> GetDominatingCandidates(IReadOnlyList<OverloadCandidate> candidates)
-    {
-        // For a single candidate, don't bother
-        if (candidates.Count == 1) return ImmutableArray.Create(candidates[0].Symbol);
-
-        // We have more than one, find the max dominator
-        // NOTE: This might not be the actual dominator in case of mutual non-dominance
-        var bestScore = CallScore.FindBest(candidates.Select(c => c.Score));
-        // We keep every candidate that dominates this score, or there is mutual non-dominance
-        var dominatingCandidates = candidates
-            .Where(pair => bestScore is null
-                        || CallScore.Compare(bestScore.Value, pair.Score)
-                               is CallScoreComparison.Equal
-                               or CallScoreComparison.NoDominance)
-            .Select(pair => pair.Symbol)
-            .ToImmutableArray();
-        Debug.Assert(dominatingCandidates.Length > 0);
-        return dominatingCandidates;
-    }
 
     private FunctionSymbol ChooseSymbol(FunctionSymbol chosen)
     {
@@ -183,76 +161,5 @@ internal sealed partial class ConstraintSolver
             scoreVector[^1] = score;
         }
         return changed;
-    }
-
-    /// <summary>
-    /// Scores a sequence of variadic function call argument.
-    /// </summary>
-    /// <param name="param">The variadic function parameter.</param>
-    /// <param name="argTypes">The passed in argument types.</param>
-    /// <returns>The score of the match.</returns>
-    private static int? ScoreVariadicArguments(ParameterSymbol param, IEnumerable<TypeSymbol> argTypes)
-    {
-        if (!param.IsVariadic) throw new ArgumentException("the provided parameter is not variadic", nameof(param));
-        if (!BinderFacts.TryGetVariadicElementType(param.Type, out var elementType)) return 0;
-
-        return argTypes
-            .Select(argType => ScoreArgument(elementType, argType))
-            .Append(FullScore)
-            .Select(s => s / 2)
-            .Min();
-    }
-
-    /// <summary>
-    /// Scores a function call argument.
-    /// </summary>
-    /// <param name="param">The function parameter.</param>
-    /// <param name="argType">The passed in argument type.</param>
-    /// <returns>The score of the match.</returns>
-    private static int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
-    {
-        if (param.IsVariadic) throw new ArgumentException("the provided parameter variadic", nameof(param));
-        return ScoreArgument(param.Type, argType);
-    }
-
-    private const int FullScore = 16;
-    private const int HalfScore = 8;
-    private const int ZeroScore = 0;
-
-    private static int? ScoreArgument(TypeSymbol paramType, TypeSymbol argType)
-    {
-        paramType = paramType.Substitution;
-        argType = argType.Substitution;
-
-        // If either are still not ground types, we can't decide
-        if (!paramType.IsGroundType || !argType.IsGroundType) return null;
-
-        // Exact equality is max score
-        if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return FullScore;
-
-        // Base type match is half score
-        if (SymbolEqualityComparer.Default.IsBaseOf(paramType, argType)) return HalfScore;
-
-        // TODO: Unspecified what happens for generics
-        // For now we require an exact match and score is the lowest score among generic args
-        if (paramType.IsGenericInstance && argType.IsGenericInstance)
-        {
-            var paramGenericDefinition = paramType.GenericDefinition!;
-            var argGenericDefinition = argType.GenericDefinition!;
-
-            if (!SymbolEqualityComparer.Default.Equals(paramGenericDefinition, argGenericDefinition)) return ZeroScore;
-
-            Debug.Assert(paramType.GenericArguments.Length == argType.GenericArguments.Length);
-            return paramType.GenericArguments
-                .Zip(argType.GenericArguments)
-                .Select(pair => ScoreArgument(pair.First, pair.Second))
-                .Min();
-        }
-
-        // Type parameter match is half score
-        if (paramType is TypeParameterSymbol) return HalfScore;
-
-        // Otherwise, no match
-        return ZeroScore;
     }
 }

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Chr.Constraints;
+using Draco.Chr.Solve;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -8,6 +10,7 @@ using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver.Tasks;
+using Draco.Compiler.Internal.Solver.Utilities;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -20,13 +23,6 @@ namespace Draco.Compiler.Internal.Solver;
 internal sealed partial class ConstraintSolver
 {
     /// <summary>
-    /// Represents an argument for a call.
-    /// </summary>
-    /// <param name="Syntax">The syntax of the argument, if any.</param>
-    /// <param name="Type">The type of the argument.</param>
-    public readonly record struct Argument(SyntaxNode? Syntax, TypeSymbol Type);
-
-    /// <summary>
     /// The context being inferred.
     /// </summary>
     public SyntaxNode Context { get; }
@@ -36,8 +32,8 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     public string ContextName { get; }
 
-    // The raw constraints
-    private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
+    // The constraint store
+    private readonly ConstraintStore store = new();
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = new();
     // The registered local variables
@@ -54,7 +50,7 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="syntax">The argument syntax.</param>
     /// <param name="type">The argument type.</param>
-    public Argument Arg(SyntaxNode? syntax, TypeSymbol type) => new(syntax, type);
+    public ArgumentDescription Arg(SyntaxNode? syntax, TypeSymbol type) => new(syntax, type);
 
     /// <summary>
     /// Constructs an argument for a call constraint.
@@ -63,7 +59,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="expression">The argument expression.</param>
     /// <param name="diagnostics">The diagnostics to report to.</param>
     /// <returns>The constructed argument descriptor.</returns>
-    public Argument Arg(SyntaxNode? syntax, BindingTask<BoundExpression> expression, DiagnosticBag diagnostics) =>
+    public ArgumentDescription Arg(SyntaxNode? syntax, BindingTask<BoundExpression> expression, DiagnosticBag diagnostics) =>
         new(syntax, expression.GetResultType(syntax, this, diagnostics));
 
     /// <summary>
@@ -73,7 +69,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="lvalue">The argument lvalue.</param>
     /// <param name="diagnostics">The diagnostics to report to.</param>
     /// <returns>The constructed argument descriptor.</returns>
-    public Argument Arg(SyntaxNode? syntax, BindingTask<BoundLvalue> lvalue, DiagnosticBag diagnostics) =>
+    public ArgumentDescription Arg(SyntaxNode? syntax, BindingTask<BoundLvalue> lvalue, DiagnosticBag diagnostics) =>
         new(syntax, lvalue.GetResultType(syntax, this, diagnostics));
 
     /// <summary>
@@ -82,11 +78,9 @@ internal sealed partial class ConstraintSolver
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
-        while (this.constraints.Count > 0)
-        {
-            // Apply rules once
-            if (!this.ApplyRules(diagnostics)) break;
-        }
+        // TODO: Pass in rules
+        var solver = new DefinitionOrderSolver(null!);
+        solver.Solve(this.store);
 
         // Check for uninferred locals
         this.CheckForUninferredLocals(diagnostics);
@@ -113,7 +107,7 @@ internal sealed partial class ConstraintSolver
 
     private void CheckForIncompleteInference(DiagnosticBag diagnostics)
     {
-        var inferenceFailed = this.constraints.Count > 0
+        var inferenceFailed = this.store.Count > 0
                            || this.typeVariables.Select(t => t.Substitution).Any(t => t.IsTypeVariable);
         if (!inferenceFailed) return;
 

@@ -23,7 +23,7 @@ internal abstract record class ConstraintBase(ConstraintLocator? Locator)
         var relevantProps = this
             .GetType()
             .GetProperties()
-            .Where(p => p.Name != nameof(this.Locator));
+            .Where(p => p.Name != nameof(this.Locator) && p.Name != nameof(Member.CompletionSource));
 
         var result = new StringBuilder();
         result.Append(this.GetType().Name);

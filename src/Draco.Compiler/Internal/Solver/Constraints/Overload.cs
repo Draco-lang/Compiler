@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver.Constraints;
@@ -16,4 +17,10 @@ internal sealed record class Overload(
     string Name,
     ImmutableArray<FunctionSymbol> Candidates,
     ImmutableArray<ConstraintSolver.Argument> Arguments,
-    TypeSymbol ReturnType) : ConstraintBase(Locator);
+    TypeSymbol ReturnType) : ConstraintBase(Locator)
+{
+    /// <summary>
+    /// The completion source for the resolved overload symbol.
+    /// </summary>
+    public SolverTaskCompletionSource<FunctionSymbol> CompletionSource { get; } = new();
+}

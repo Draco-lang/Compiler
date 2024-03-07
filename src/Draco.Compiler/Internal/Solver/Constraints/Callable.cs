@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Solver.Utilities;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver.Constraints;
@@ -13,5 +14,5 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 internal sealed record class Callable(
     ConstraintLocator? Locator,
     TypeSymbol CalledType,
-    ImmutableArray<ConstraintSolver.Argument> Arguments,
+    ImmutableArray<ArgumentDescription> Arguments,
     TypeSymbol ReturnType) : ConstraintBase(Locator);

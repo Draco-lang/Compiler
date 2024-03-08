@@ -31,7 +31,7 @@ public abstract class PrioritizingSolver : ISolver
     /// </summary>
     public IEqualityComparer ValueComparer { get; }
 
-    public PrioritizingSolver(IEqualityComparer? comparer = null, ITracer? tracer = null)
+    public PrioritizingSolver(IEqualityComparer? comparer, ITracer? tracer = null)
     {
         this.ValueComparer = comparer ?? EqualityComparer<object>.Default;
         this.Tracer = tracer ?? NullTracer.Instance;
@@ -82,13 +82,13 @@ public abstract class PrioritizingSolver : ISolver
     {
         foreach (var rule in this.Rules)
         {
-            var matchingConstraints = FindMatchingHeadsForRule(rule, store, enumeratorStack, history);
+            var matchingConstraints = this.FindMatchingHeadsForRule(rule, store, enumeratorStack, history);
             if (matchingConstraints is not null) return new RuleAndMatch(rule, matchingConstraints.Value);
         }
         return null;
     }
 
-    private static ImmutableArray<IConstraint>? FindMatchingHeadsForRule(
+    private ImmutableArray<IConstraint>? FindMatchingHeadsForRule(
         Rule rule,
         ConstraintStore store,
         Stack<IEnumerator<IConstraint>> enumeratorStack,
@@ -99,7 +99,7 @@ public abstract class PrioritizingSolver : ISolver
         var pointer = 0;
         var matchingHeads = ImmutableArray.CreateBuilder<IConstraint>(rule.HeadCount);
         matchingHeads.Count = rule.HeadCount;
-        var currentEnum = GetHeadEnumerator(rule, store, pointer);
+        var currentEnum = this.GetHeadEnumerator(rule, store, pointer);
 
         while (true)
         {
@@ -110,7 +110,7 @@ public abstract class PrioritizingSolver : ISolver
                 enumeratorStack.Push(currentEnum);
 
                 ++pointer;
-                currentEnum = GetHeadEnumerator(rule, store, pointer);
+                currentEnum = this.GetHeadEnumerator(rule, store, pointer);
             }
             else if (hasNext)
             {
@@ -138,11 +138,11 @@ public abstract class PrioritizingSolver : ISolver
         return null;
     }
 
-    private static IEnumerator<IConstraint> GetHeadEnumerator(Rule rule, ConstraintStore store, int pointer) => rule.DefinitionType switch
+    private IEnumerator<IConstraint> GetHeadEnumerator(Rule rule, ConstraintStore store, int pointer) => rule.DefinitionType switch
     {
         HeadListType.SizeSpecified => GetDefaultEnumerator(store),
         HeadListType.TypesSpecified => GetTypedHeadEnumerator(store, rule, pointer),
-        HeadListType.ComplexDefinition => GetComplexHeadEnumerator(store, rule, pointer),
+        HeadListType.ComplexDefinition => this.GetComplexHeadEnumerator(store, rule, pointer),
         _ => throw new InvalidOperationException(),
     };
 
@@ -150,14 +150,14 @@ public abstract class PrioritizingSolver : ISolver
         store.GetEnumerator();
     private static IEnumerator<IConstraint> GetTypedHeadEnumerator(ConstraintStore store, Rule rule, int pointer) =>
         store.ConstraintsOfType(rule.HeadTypes[pointer]).GetEnumerator();
-    private static IEnumerator<IConstraint> GetComplexHeadEnumerator(ConstraintStore store, Rule rule, int pointer)
+    private IEnumerator<IConstraint> GetComplexHeadEnumerator(ConstraintStore store, Rule rule, int pointer)
     {
         var head = rule.HeadDefinitions[pointer];
         return head.HeadContains switch
         {
             HeadContains.Any => GetDefaultEnumerator(store),
             HeadContains.Type => store.ConstraintsOfType(head.Type!).GetEnumerator(),
-            HeadContains.Value => store.ConstraintsOfValue(head.Value!).GetEnumerator(),
+            HeadContains.Value => store.ConstraintsOfValue(head.Value!, this.ValueComparer).GetEnumerator(),
             _ => throw new InvalidOperationException(),
         };
     }

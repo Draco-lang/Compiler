@@ -26,6 +26,7 @@ public sealed class SyntaxTreeFormatterTests
              val singleLineString =   ""  ;
                     var   multilineString   =  #"""
                     something
+                    test
                 """# ;
                 val  y
                 =   4-2
@@ -67,6 +68,7 @@ public sealed class SyntaxTreeFormatterTests
                 val singleLineString = "";
                 var multilineString = #"""
                         something
+                        test
                     """#;
                 val y = 4 - 2 mod 4 + 3;
                 while (true) {

@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Data.Common;
-using System.Diagnostics;
-using System.Diagnostics.Metrics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Utilities;
@@ -15,18 +11,13 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 {
-    private readonly List<TokenDecoration> tokenDecorations = new();
+    private TokenDecoration[] tokenDecorations = [];
+    private int currentIdx;
     private readonly Stack<ScopeInfo> scopes = new();
-
-    private TokenDecoration CurrentToken
-    {
-        get => this.tokenDecorations[^1];
-        set => this.tokenDecorations[^1] = value;
-    }
+    private readonly SyntaxTree tree;
+    private ref TokenDecoration CurrentToken => ref this.tokenDecorations[this.currentIdx];
 
     private ScopeInfo CurrentScope => this.scopes.Peek();
-
-    private void SetTokenDecoration(Func<TokenDecoration, SolverTask<string>> stableWhen) => this.tokenDecorations[^1] = TokenDecoration.Create(stableWhen);
 
     public static async SolverTask<string> GetIndentation(IReadOnlyCollection<ScopeInfo> scopes)
     {
@@ -51,7 +42,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     public static string Format(SyntaxTree tree, FormatterSettings? settings = null)
     {
         settings ??= FormatterSettings.Default;
-        var formatter = new Formatter(settings);
+
+        var formatter = new Formatter(settings, tree);
 
         // Construct token sequence
         tree.Root.Accept(formatter);
@@ -64,11 +56,11 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 continue;
             var decoration = formatter.tokenDecorations[i];
 
-            if (decoration is not null) builder.Append(decoration.Indentation);
+            if (decoration.Indentation is not null) builder.Append(decoration.Indentation.Result);
             builder.Append(token.Text);
-            if (decoration is not null)
+            builder.Append(decoration.RightPadding);
+            if (decoration.DoesReturnLineCollapsible is not null)
             {
-                builder.Append(decoration.RightPadding);
                 builder.Append(decoration.DoesReturnLineCollapsible.Collapsed.Result ? "\n" : ""); // will default to false if not collapsed, that what we want.
             }
             i++;
@@ -81,34 +73,70 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     /// </summary>
     public FormatterSettings Settings { get; }
 
-    private Formatter(FormatterSettings settings)
+    private Formatter(FormatterSettings settings, SyntaxTree tree)
     {
         this.Settings = settings;
+        this.tree = tree;
+    }
+
+    public override void VisitCompilationUnit(Api.Syntax.CompilationUnitSyntax node)
+    {
+        this.tokenDecorations = new TokenDecoration[node.Tokens.Count()];
+        base.VisitCompilationUnit(node);
     }
 
     public override void VisitSyntaxToken(Api.Syntax.SyntaxToken node)
     {
         switch (node.Kind)
         {
+        case TokenKind.Minus:
+        case TokenKind.Plus:
         case TokenKind.Assign:
-            this.tokenDecorations.Add(TokenDecoration.Create(token =>
-            {
-                token.RightPadding = " ";
-                return SolverTask.FromResult(" ");
-            }));
+        case TokenKind.KeywordMod:
+            this.CurrentToken.SetWhitespace();
+            this.CurrentToken.Indentation = SolverTask.FromResult(" ");
             break;
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
         case TokenKind.KeywordFunc:
         case TokenKind.KeywordReturn:
         case TokenKind.KeywordGoto:
-            this.tokenDecorations.Add(TokenDecoration.Whitespace());
-            break;
-        default:
-            this.tokenDecorations.Add(null!);
+        case TokenKind.Colon:
+        case TokenKind.KeywordWhile:
+            this.CurrentToken.SetWhitespace();
             break;
         }
         base.VisitSyntaxToken(node);
+        this.currentIdx++;
+    }
+
+    public override void VisitStringExpression(Api.Syntax.StringExpressionSyntax node)
+    {
+        if (node.OpenQuotes.Kind != TokenKind.MultiLineStringStart)
+        {
+            base.VisitStringExpression(node);
+            return;
+        }
+        this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.Create(true);
+        var i = 0;
+        for (; i < node.Parts.Count; i++)
+        {
+            if (node.Parts[i].Children.SingleOrDefault() is Api.Syntax.SyntaxToken and { Kind: TokenKind.StringNewline })
+            {
+                continue;
+            }
+            ref var currentToken = ref this.tokenDecorations[this.currentIdx + i + 1];
+            currentToken.Indentation = GetIndentation(this.scopes.ToArray());
+        }
+        this.tokenDecorations[this.currentIdx + i].SetNewline();
+        using var _ = this.CreateScope(this.Settings.Indentation, true);
+        this.tokenDecorations[this.currentIdx + i + 1].Indentation = GetIndentation(this.scopes.ToArray());
+        base.VisitStringExpression(node);
+    }
+
+    public override void VisitTextStringPart(Api.Syntax.TextStringPartSyntax node)
+    {
+        base.VisitTextStringPart(node);
     }
 
     public override void VisitMemberExpression(Api.Syntax.MemberExpressionSyntax node)
@@ -117,69 +145,44 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.CurrentScope.ItemsCount.Add(1);
     }
 
+    public override void VisitSeparatedSyntaxList<TNode>(Api.Syntax.SeparatedSyntaxList<TNode> node)
+    {
+        base.VisitSeparatedSyntaxList(node);
+        this.CurrentToken.SetWhitespace();
+    }
+
     public override void VisitBlockFunctionBody(Api.Syntax.BlockFunctionBodySyntax node)
     {
-        using var _ = this.CreateScope(this.Settings.Indentation);
-        var openIdx = this.tokenDecorations.Count;
+        using var _ = this.CreateScope(this.Settings.Indentation, true);
+        this.CurrentScope.IsMaterialized.Collapse(true);
+        this.CurrentToken.SetNewline();
         base.VisitBlockFunctionBody(node);
-        Debug.Assert(this.tokenDecorations[openIdx] is null);
-        Debug.Assert(this.CurrentToken is null);
-
-        this.tokenDecorations[openIdx] = TokenDecoration.Create(decoration =>
-        {
-            decoration.DoesReturnLineCollapsible.Collapse(true);
-            return SolverTask.FromResult(" ");
-        });
-
-        this.CurrentToken = TokenDecoration.Create(async decoration =>
-        {
-            decoration.DoesReturnLineCollapsible.Collapse(true);
-            return await GetIndentation(this.scopes.Skip(1).ToArray());
-        });
     }
 
 
     public override void VisitCallExpression(Api.Syntax.CallExpressionSyntax node)
     {
-        using var _ = this.CreateScope(this.Settings.Indentation);
+        using var _ = this.CreateScope(this.Settings.Indentation, false);
         base.VisitCallExpression(node);
-    }
-
-    public override void VisitBlockExpression(Api.Syntax.BlockExpressionSyntax node)
-    {
-        using var _ = this.CreateScope(this.Settings.Indentation);
-        var idx = this.tokenDecorations.Count;
-        base.VisitBlockExpression(node);
-        Debug.Assert(this.tokenDecorations[idx] is null);
-        Debug.Assert(this.CurrentToken is null);
-        var task = TokenDecoration.Create(async decoration =>
-        {
-            decoration.DoesReturnLineCollapsible.Collapse(true);
-            return await GetIndentation(this.scopes.Skip(1).ToArray());
-        });
-        this.tokenDecorations[idx] = task;
-        this.CurrentToken = task;
     }
 
     public override void VisitStatement(Api.Syntax.StatementSyntax node)
     {
-        var idx = this.tokenDecorations.Count;
         base.VisitStatement(node);
-        this.tokenDecorations[idx] = TokenDecoration.Create(async token =>
-        {
-            token.DoesReturnLineCollapsible.Collapse(false);
-            return await GetIndentation(this.scopes.Skip(1).ToArray());
-        });
-        this.CurrentToken = TokenDecoration.Create(token =>
-        {
-            token.DoesReturnLineCollapsible.Collapse(true);
-            return SolverTask.FromResult("");
-        });
+        ref var firstToken = ref this.tokenDecorations[this.currentIdx];
+        firstToken.DoesReturnLineCollapsible = CollapsibleBool.Create(false);
+        firstToken.Indentation = GetIndentation(this.scopes.ToArray());
+
+        var endIdx = this.currentIdx + node.Tokens.Count() - 1;
+        ref var lastToken = ref this.tokenDecorations[endIdx];
+        lastToken.DoesReturnLineCollapsible = CollapsibleBool.Create(true);
+        lastToken.Indentation = SolverTask.FromResult("");
     }
 
-    private IDisposable CreateScope(string indentation)
+    private IDisposable CreateScope(string indentation, bool tangible)
     {
         var scope = new ScopeInfo(indentation);
+        if (tangible) scope.IsMaterialized.Collapse(true);
         this.scopes.Push(scope);
         return new DisposeAction(() => this.scopes.Pop());
     }
@@ -210,40 +213,60 @@ internal class ScopeInfo(string indentation)
     public string Indentation { get; } = indentation;
 }
 
-internal class TokenDecoration
-{
-    private readonly SolverTaskCompletionSource<Unit> _stableTcs = new();
 
-    public static TokenDecoration Create(Func<TokenDecoration, SolverTask<string>> stableWhen)
+internal static class TokenDecorationExtensions
+{
+    public static void SetNewline(this ref TokenDecoration decoration) => decoration.DoesReturnLineCollapsible = CollapsibleBool.Create(true);
+    public static void SetWhitespace(this ref TokenDecoration decoration) => decoration.RightPadding = " ";
+
+}
+
+internal struct TokenDecoration
+{
+    private string? rightPadding;
+    private SolverTask<string>? indentation;
+    private CollapsibleBool? doesReturnLineCollapsible;
+
+    [DisallowNull]
+    public CollapsibleBool? DoesReturnLineCollapsible
     {
-        var tokenDecoration = new TokenDecoration();
-        var awaiter = stableWhen(tokenDecoration).Awaiter;
-        awaiter.OnCompleted(() =>
+        readonly get => this.doesReturnLineCollapsible;
+        set
         {
-            tokenDecoration.SetStable();
-            tokenDecoration.Indentation = awaiter.GetResult();
-        });
-        return tokenDecoration;
+            if (value.Equals(this.doesReturnLineCollapsible)) return;
+            if (this.doesReturnLineCollapsible is not null) throw new InvalidOperationException("DoesReturnLineCollapsible already set.");
+            this.doesReturnLineCollapsible = value;
+        }
     }
 
-    public static TokenDecoration Whitespace() => Create(token =>
+    [DisallowNull]
+    public SolverTask<string>? Indentation
     {
-        token.DoesReturnLineCollapsible.Collapse(false);
-        token.RightPadding = " ";
-        return SolverTask.FromResult("");
-    });
+        readonly get => this.indentation;
+        set
+        {
+            if (this.indentation is not null)
+            {
+                if (this.indentation.IsCompleted && value.IsCompleted && this.indentation.Result == value.Result) return;
+                throw new InvalidOperationException("Indentation already set.");
+            }
+            this.indentation = value;
+        }
+    }
 
-    public CollapsibleBool DoesReturnLineCollapsible { get; } = CollapsibleBool.Create();
-
-    public SolverTask<Unit> WhenStable => this._stableTcs.Task;
-    public string Indentation { get; private set; } = "";
-    public string RightPadding { get; set; } = "";
-
-    private void SetStable() => this._stableTcs.SetResult(new Unit());
+    public string? RightPadding
+    {
+        readonly get => this.rightPadding;
+        set
+        {
+            if (this.rightPadding is not null) throw new InvalidOperationException("Right padding already set.");
+            this.rightPadding = value;
+        }
+    }
 }
 
 
-internal class CollapsibleBool
+internal class CollapsibleBool : IEquatable<CollapsibleBool>
 {
     private readonly SolverTaskCompletionSource<bool>? tcs;
     private readonly SolverTask<bool> task;
@@ -262,6 +285,25 @@ internal class CollapsibleBool
     public static CollapsibleBool Create(bool value) => new(SolverTask.FromResult(value));
 
     public void Collapse(bool collapse) => this.tcs?.SetResult(collapse);
+    public bool Equals(CollapsibleBool? other)
+    {
+        if (other is null) return false;
+
+        if (this.tcs is null)
+        {
+            if (other.tcs is not null) return false;
+            return this.task.Result == other.task.Result;
+        }
+        if (other.tcs is null) return false;
+        if (this.tcs.IsCompleted && other.tcs.IsCompleted) return this.task.Result == other.task.Result;
+        return false;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is CollapsibleBool collapsibleBool) return this.Equals(collapsibleBool);
+        return false;
+    }
 
     public SolverTask<bool> Collapsed => this.task;
 }

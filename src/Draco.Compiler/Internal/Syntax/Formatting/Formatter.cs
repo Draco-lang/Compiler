@@ -19,7 +19,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     private ScopeInfo CurrentScope => this.scopes.Peek();
 
-    public static async SolverTask<string> GetIndentation(IReadOnlyCollection<ScopeInfo> scopes)
+    public static async SolverTask<string?> GetIndentation(IReadOnlyCollection<ScopeInfo> scopes)
     {
         var indentation = "";
         foreach (var scope in scopes)
@@ -50,21 +50,21 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
         var builder = new StringBuilder();
         var i = 0;
-        foreach (var node in tree.PreOrderTraverse())
+        foreach (var token in tree.Root.Tokens)
         {
-            if (node is not Api.Syntax.SyntaxToken token)
-                continue;
             var decoration = formatter.tokenDecorations[i];
 
-            if (decoration.Indentation is not null) builder.Append(decoration.Indentation.Result);
-            builder.Append(token.Text);
-            builder.Append(decoration.RightPadding);
-            if (decoration.DoesReturnLineCollapsible is not null)
+            if (decoration.DoesReturnLineCollapsible is not null && !decoration.IndentationDontReturnLine)
             {
                 builder.Append(decoration.DoesReturnLineCollapsible.Collapsed.Result ? "\n" : ""); // will default to false if not collapsed, that what we want.
             }
+            if (decoration.Indentation is not null) builder.Append(decoration.Indentation.Result);
+            builder.Append(decoration.LeftPadding);
+            builder.Append(token.Text);
+            builder.Append(decoration.RightPadding);
             i++;
         }
+        builder.AppendLine();
         return builder.ToString();
     }
 
@@ -91,19 +91,26 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         {
         case TokenKind.Minus:
         case TokenKind.Plus:
+        case TokenKind.Star:
+        case TokenKind.Slash:
+        case TokenKind.GreaterThan:
+        case TokenKind.LessThan:
+        case TokenKind.GreaterEqual:
+        case TokenKind.LessEqual:
+        case TokenKind.Equal:
         case TokenKind.Assign:
         case TokenKind.KeywordMod:
-            this.CurrentToken.SetWhitespace();
-            this.CurrentToken.Indentation = SolverTask.FromResult(" ");
+            this.CurrentToken.RightPadding = " ";
+            this.CurrentToken.LeftPadding = " ";
             break;
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
         case TokenKind.KeywordFunc:
         case TokenKind.KeywordReturn:
         case TokenKind.KeywordGoto:
-        case TokenKind.Colon:
         case TokenKind.KeywordWhile:
-            this.CurrentToken.SetWhitespace();
+        case TokenKind.KeywordIf:
+            this.CurrentToken.RightPadding = " ";
             break;
         }
         base.VisitSyntaxToken(node);
@@ -117,7 +124,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             base.VisitStringExpression(node);
             return;
         }
-        this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.Create(true);
         var i = 0;
         for (; i < node.Parts.Count; i++)
         {
@@ -127,17 +133,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             }
             ref var currentToken = ref this.tokenDecorations[this.currentIdx + i + 1];
             currentToken.Indentation = GetIndentation(this.scopes.ToArray());
+            currentToken.IndentationDontReturnLine = i != 0;
         }
-        this.tokenDecorations[this.currentIdx + i].SetNewline();
         using var _ = this.CreateScope(this.Settings.Indentation, true);
         this.tokenDecorations[this.currentIdx + i + 1].Indentation = GetIndentation(this.scopes.ToArray());
         base.VisitStringExpression(node);
     }
 
-    public override void VisitTextStringPart(Api.Syntax.TextStringPartSyntax node)
-    {
-        base.VisitTextStringPart(node);
-    }
 
     public override void VisitMemberExpression(Api.Syntax.MemberExpressionSyntax node)
     {
@@ -145,38 +147,107 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.CurrentScope.ItemsCount.Add(1);
     }
 
-    public override void VisitSeparatedSyntaxList<TNode>(Api.Syntax.SeparatedSyntaxList<TNode> node)
-    {
-        base.VisitSeparatedSyntaxList(node);
-        this.CurrentToken.SetWhitespace();
-    }
-
     public override void VisitBlockFunctionBody(Api.Syntax.BlockFunctionBodySyntax node)
     {
-        using var _ = this.CreateScope(this.Settings.Indentation, true);
-        this.CurrentScope.IsMaterialized.Collapse(true);
-        this.CurrentToken.SetNewline();
-        base.VisitBlockFunctionBody(node);
-    }
-
-
-    public override void VisitCallExpression(Api.Syntax.CallExpressionSyntax node)
-    {
-        using var _ = this.CreateScope(this.Settings.Indentation, false);
-        base.VisitCallExpression(node);
+        this.CurrentToken.LeftPadding = " ";
+        this.CreateScope(this.Settings.Indentation, true, () => base.VisitBlockFunctionBody(node));
+        this.tokenDecorations[this.currentIdx - 1].Indentation = GetIndentation(this.scopes.ToArray());
     }
 
     public override void VisitStatement(Api.Syntax.StatementSyntax node)
     {
-        base.VisitStatement(node);
-        ref var firstToken = ref this.tokenDecorations[this.currentIdx];
-        firstToken.DoesReturnLineCollapsible = CollapsibleBool.Create(false);
-        firstToken.Indentation = GetIndentation(this.scopes.ToArray());
+        this.CurrentScope.ItemsCount.Add(1);
 
-        var endIdx = this.currentIdx + node.Tokens.Count() - 1;
-        ref var lastToken = ref this.tokenDecorations[endIdx];
-        lastToken.DoesReturnLineCollapsible = CollapsibleBool.Create(true);
-        lastToken.Indentation = SolverTask.FromResult("");
+        if (node is Api.Syntax.DeclarationStatementSyntax { Declaration: Api.Syntax.LabelDeclarationSyntax })
+        {
+            this.CurrentToken.Indentation = GetIndentation(this.scopes.Skip(1).ToArray());
+        }
+        else if (node.Parent is Api.Syntax.BlockExpressionSyntax)
+        {
+            this.CurrentToken.Indentation = GetIndentation(this.scopes.ToArray());
+        }
+        else
+        {
+            async SolverTask<string?> Indentation()
+            {
+                var scope = this.CurrentScope;
+                var haveMoreThanOneStatement = await scope.ItemsCount.WhenGreaterOrEqual(2);
+                if (haveMoreThanOneStatement) return await GetIndentation(this.scopes.ToArray());
+                return null;
+            }
+            this.CurrentToken.Indentation = Indentation();
+
+        }
+        base.VisitStatement(node);
+    }
+
+    public override void VisitWhileExpression(Api.Syntax.WhileExpressionSyntax node)
+    {
+        this.tokenDecorations[this.currentIdx + 2 + node.Condition.Tokens.Count()].RightPadding = " ";
+        this.CreateScope(this.Settings.Indentation, false, () => base.VisitWhileExpression(node));
+    }
+
+    public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node)
+    {
+        this.tokenDecorations[this.currentIdx + 2 + node.Condition.Tokens.Count()].RightPadding = " ";
+        this.CreateScope(this.Settings.Indentation, false, () =>
+        {
+            this.VisitExpression(node);
+            node.IfKeyword.Accept(this);
+            node.OpenParen.Accept(this);
+            node.Condition.Accept(this);
+            node.CloseParen.Accept(this);
+            node.Then.Accept(this);
+        });
+        node.Else?.Accept(this);
+    }
+
+    public override void VisitElseClause(Api.Syntax.ElseClauseSyntax node)
+    {
+        this.CurrentToken.RightPadding = " ";
+        if (node.Parent!.Parent is Api.Syntax.ExpressionStatementSyntax)
+        {
+            this.CurrentToken.Indentation = GetIndentation(this.scopes.ToArray());
+        }
+        else
+        {
+            this.CurrentToken.LeftPadding = " ";
+        }
+        this.CreateScope(this.Settings.Indentation, false, () => base.VisitElseClause(node));
+    }
+
+    public override void VisitBlockExpression(Api.Syntax.BlockExpressionSyntax node)
+    {
+        // this means we are in a if/while/else, and *can* create an indentation with a regular expression folding:
+        // if (blabla) an expression;
+        // it can fold:
+        // if (blabla)
+        //     an expression;
+        // but since we are in a block we create our own scope and the if/while/else will never create it's own scope.
+        if (!this.CurrentScope.IsMaterialized.Collapsed.IsCompleted)
+        {
+            this.CurrentScope.IsMaterialized.Collapse(false);
+        }
+
+        this.CreateScope(this.Settings.Indentation, true, () =>
+        {
+            this.VisitExpression(node);
+            node.OpenBrace.Accept(this);
+            node.Statements.Accept(this);
+            if (node.Value != null)
+            {
+                this.CurrentToken.Indentation = GetIndentation(this.scopes.ToArray());
+                node.Value.Accept(this);
+            }
+            node.CloseBrace.Accept(this);
+        });
+        this.tokenDecorations[this.currentIdx - 1].Indentation = GetIndentation(this.scopes.ToArray());
+    }
+
+    public override void VisitTypeSpecifier(Api.Syntax.TypeSpecifierSyntax node)
+    {
+        this.CurrentToken.RightPadding = " ";
+        base.VisitTypeSpecifier(node);
     }
 
     private IDisposable CreateScope(string indentation, bool tangible)
@@ -184,7 +255,15 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var scope = new ScopeInfo(indentation);
         if (tangible) scope.IsMaterialized.Collapse(true);
         this.scopes.Push(scope);
-        return new DisposeAction(() => this.scopes.Pop());
+        return new DisposeAction(() =>
+        {
+            var scope = this.scopes.Pop();
+            scope.Dispose();
+        });
+    }
+    private void CreateScope(string indentation, bool tangible, Action action)
+    {
+        using (this.CreateScope(indentation, tangible)) action();
     }
 }
 
@@ -193,7 +272,7 @@ internal class DisposeAction(Action action) : IDisposable
     public void Dispose() => action();
 }
 
-internal class ScopeInfo(string indentation)
+internal class ScopeInfo(string indentation) : IDisposable
 {
     private readonly SolverTaskCompletionSource<Unit> _stableTcs = new();
     public SolverTask<Unit> WhenStable => this._stableTcs.Task;
@@ -211,36 +290,24 @@ internal class ScopeInfo(string indentation)
     public CollapsibleBool IsMaterialized { get; } = CollapsibleBool.Create();
     public CollapsibleInt ItemsCount { get; } = CollapsibleInt.Create();
     public string Indentation { get; } = indentation;
-}
 
-
-internal static class TokenDecorationExtensions
-{
-    public static void SetNewline(this ref TokenDecoration decoration) => decoration.DoesReturnLineCollapsible = CollapsibleBool.Create(true);
-    public static void SetWhitespace(this ref TokenDecoration decoration) => decoration.RightPadding = " ";
-
+    public void Dispose() => this.ItemsCount.Collapse();
 }
 
 internal struct TokenDecoration
 {
     private string? rightPadding;
-    private SolverTask<string>? indentation;
-    private CollapsibleBool? doesReturnLineCollapsible;
+    private string? leftPadding;
+    private SolverTask<string?>? indentation;
 
     [DisallowNull]
-    public CollapsibleBool? DoesReturnLineCollapsible
-    {
-        readonly get => this.doesReturnLineCollapsible;
-        set
-        {
-            if (value.Equals(this.doesReturnLineCollapsible)) return;
-            if (this.doesReturnLineCollapsible is not null) throw new InvalidOperationException("DoesReturnLineCollapsible already set.");
-            this.doesReturnLineCollapsible = value;
-        }
-    }
+    public CollapsibleBool? DoesReturnLineCollapsible { get; private set; }
+
+    public bool IndentationDontReturnLine { get; set; }
+
 
     [DisallowNull]
-    public SolverTask<string>? Indentation
+    public SolverTask<string?>? Indentation
     {
         readonly get => this.indentation;
         set
@@ -250,10 +317,25 @@ internal struct TokenDecoration
                 if (this.indentation.IsCompleted && value.IsCompleted && this.indentation.Result == value.Result) return;
                 throw new InvalidOperationException("Indentation already set.");
             }
+            var doesReturnLine = this.DoesReturnLineCollapsible = CollapsibleBool.Create();
             this.indentation = value;
+            var myThis = this;
+            this.indentation.Awaiter.OnCompleted(() =>
+            {
+                doesReturnLine.Collapse(value.Result != null);
+            });
         }
     }
 
+    public string? LeftPadding
+    {
+        readonly get => this.leftPadding;
+        set
+        {
+            if (this.leftPadding is not null) throw new InvalidOperationException("Left padding already set.");
+            this.leftPadding = value;
+        }
+    }
     public string? RightPadding
     {
         readonly get => this.rightPadding;
@@ -329,41 +411,56 @@ internal class CollapsibleInt
 
 
     // order by desc
-    private List<(int Value, SolverTaskCompletionSource<Unit> Tcs)>? _whenTcs;
+    private List<(int Value, SolverTaskCompletionSource<bool> Tcs)>? _whenTcs;
 
     public void Add(int toAdd)
     {
         this.MinimumCurrentValue += toAdd;
         if (this._whenTcs is null) return;
-        var i = this._whenTcs.Count;
-        for (; i >= 0; i--)
+        var i = this._whenTcs.Count - 1;
+        if (i < 0) return;
+        while (true)
         {
             var (value, tcs) = this._whenTcs![i];
             if (this.MinimumCurrentValue < value) break;
-            tcs.SetResult(new Unit());
+            tcs.SetResult(true);
+            if (i == 0) break;
+            i--;
         }
-        this._whenTcs.RemoveRange(i, this._whenTcs.Count - i + 1);
+        this._whenTcs.RemoveRange(i, this._whenTcs.Count - i);
     }
 
-    public void Collapse() => this.tcs?.SetResult(this.MinimumCurrentValue);
+    public void Collapse()
+    {
+        if (this._whenTcs is not null)
+        {
+            foreach (var (_, Tcs) in this._whenTcs ?? Enumerable.Empty<(int Value, SolverTaskCompletionSource<bool> Tcs)>())
+            {
+                Tcs.SetResult(false);
+            }
+            this._whenTcs = null;
+        }
+
+        this.tcs?.SetResult(this.MinimumCurrentValue);
+    }
 
     public SolverTask<int> Collapsed => this.task;
 
-    public SolverTask<Unit> WhenReaching(int number)
+    public SolverTask<bool> WhenGreaterOrEqual(int number)
     {
-        if (this.MinimumCurrentValue >= number) return SolverTask.FromResult(new Unit());
+        if (this.MinimumCurrentValue >= number) return SolverTask.FromResult(true);
         this._whenTcs ??= [];
         var index = this._whenTcs.BinarySearch((number, null!), Comparer.Instance);
         if (index > 0) return this._whenTcs[index].Tcs.Task;
-        var tcs = new SolverTaskCompletionSource<Unit>();
+        var tcs = new SolverTaskCompletionSource<bool>();
         this._whenTcs.Insert(~index, (number, tcs));
         return tcs.Task;
     }
 
-    private class Comparer : IComparer<(int, SolverTaskCompletionSource<Unit>)>
+    private class Comparer : IComparer<(int, SolverTaskCompletionSource<bool>)>
     {
         public static Comparer Instance { get; } = new Comparer();
         // reverse comparison.
-        public int Compare((int, SolverTaskCompletionSource<Unit>) x, (int, SolverTaskCompletionSource<Unit>) y) => y.Item1.CompareTo(x.Item1);
+        public int Compare((int, SolverTaskCompletionSource<bool>) x, (int, SolverTaskCompletionSource<bool>) y) => y.Item1.CompareTo(x.Item1);
     }
 }

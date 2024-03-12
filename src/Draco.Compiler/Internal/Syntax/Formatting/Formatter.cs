@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver.Tasks;
@@ -14,7 +15,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     private TokenDecoration[] tokenDecorations = [];
     private int currentIdx;
     private readonly Stack<ScopeInfo> scopes = new();
-    private readonly SyntaxTree tree;
+    private readonly SyntaxTree tree; // debugging helper, to remove
     private ref TokenDecoration CurrentToken => ref this.tokenDecorations[this.currentIdx];
 
     private ScopeInfo CurrentScope => this.scopes.Peek();
@@ -52,11 +53,12 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var i = 0;
         foreach (var token in tree.Root.Tokens)
         {
+            if (token.Kind == TokenKind.StringNewline) continue;
             var decoration = formatter.tokenDecorations[i];
 
-            if (decoration.DoesReturnLineCollapsible is not null && !decoration.IndentationDontReturnLine)
+            if (decoration.DoesReturnLineCollapsible is not null)
             {
-                builder.Append(decoration.DoesReturnLineCollapsible.Collapsed.Result ? "\n" : ""); // will default to false if not collapsed, that what we want.
+                builder.Append(decoration.DoesReturnLineCollapsible.Collapsed.Result ? settings.Newline : ""); // will default to false if not collapsed, that what we want.
             }
             if (decoration.Indentation is not null) builder.Append(decoration.Indentation.Result);
             builder.Append(decoration.LeftPadding);
@@ -89,6 +91,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         switch (node.Kind)
         {
+        case TokenKind.StringNewline: // we ignore and don't render string newlines. our own indentation will take care of it.
+            return;
         case TokenKind.Minus:
         case TokenKind.Plus:
         case TokenKind.Star:
@@ -110,10 +114,12 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         case TokenKind.KeywordGoto:
         case TokenKind.KeywordWhile:
         case TokenKind.KeywordIf:
+        case TokenKind.KeywordImport:
             this.CurrentToken.RightPadding = " ";
             break;
         }
         base.VisitSyntaxToken(node);
+        this.CurrentToken.TokenSize = node.Green.Width;
         this.currentIdx++;
     }
 
@@ -133,7 +139,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             }
             ref var currentToken = ref this.tokenDecorations[this.currentIdx + i + 1];
             currentToken.Indentation = GetIndentation(this.scopes.ToArray());
-            currentToken.IndentationDontReturnLine = i != 0;
         }
         using var _ = this.CreateScope(this.Settings.Indentation, true);
         this.tokenDecorations[this.currentIdx + i + 1].Indentation = GetIndentation(this.scopes.ToArray());
@@ -250,6 +255,12 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         base.VisitTypeSpecifier(node);
     }
 
+    public override void VisitDeclaration(Api.Syntax.DeclarationSyntax node)
+    {
+        this.tokenDecorations[this.currentIdx + node.Tokens.Count()].Indentation = GetIndentation(this.scopes.ToArray());
+        base.VisitDeclaration(node);
+    }
+
     private IDisposable CreateScope(string indentation, bool tangible)
     {
         var scope = new ScopeInfo(indentation);
@@ -264,6 +275,37 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     private void CreateScope(string indentation, bool tangible, Action action)
     {
         using (this.CreateScope(indentation, tangible)) action();
+    }
+
+
+
+    private void FormatTooLongLine(int index)
+    {
+        async SolverTask<int> GetLineWidth(int index)
+        {
+            var sum = 0;
+            while (index > 0)
+            {
+                index--;
+                var tokenDecoration = this.tokenDecorations[index];
+                sum += tokenDecoration.TokenSize;
+                if (tokenDecoration.DoesReturnLineCollapsible is null) continue;
+                var doesReturnLine = await tokenDecoration.DoesReturnLineCollapsible.Collapsed;
+                if (doesReturnLine)
+                {
+                    sum += tokenDecoration.Indentation!.Result!.Length;
+                    break;
+                }
+            }
+            return sum;
+        }
+
+        async SolverTask<Unit> TrySplitLine(int index, int maxLine)
+        {
+            var width = await GetLineWidth(index);
+            if (width <= maxLine) return default;
+
+        }
     }
 }
 
@@ -299,12 +341,11 @@ internal struct TokenDecoration
     private string? rightPadding;
     private string? leftPadding;
     private SolverTask<string?>? indentation;
+    public int TokenSize { get; set; }
+    public int TotalSize => this.TokenSize + (this.leftPadding?.Length ?? 0) + (this.rightPadding?.Length ?? 0);
 
     [DisallowNull]
     public CollapsibleBool? DoesReturnLineCollapsible { get; private set; }
-
-    public bool IndentationDontReturnLine { get; set; }
-
 
     [DisallowNull]
     public SolverTask<string?>? Indentation
@@ -345,6 +386,7 @@ internal struct TokenDecoration
             this.rightPadding = value;
         }
     }
+
 }
 
 

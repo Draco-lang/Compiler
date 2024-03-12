@@ -101,8 +101,6 @@ public sealed class SyntaxTreeFormatterTests
             """";
 
         var actual = SyntaxTree.Parse(input).Format();
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -130,6 +128,26 @@ public sealed class SyntaxTreeFormatterTests
 
             """;
         var actual = SyntaxTree.Parse(input).Format();
+
+        Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void TestFoldExpression()
+    {
+        var input = """
+            func aLongMethodName() = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
+            """;
+        var actual = """
+            func aLongMethodName()
+                = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
+            """;
+        var expected = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
+        {
+            LineWidth = 60
+        });
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 }

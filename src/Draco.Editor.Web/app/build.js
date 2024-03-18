@@ -130,31 +130,33 @@ const response = await octokit.repos.getContent({
     repo: 'vscode',
     path: 'extensions/theme-defaults/themes'
 });
+// const timeout = setTimeout(() => controller.abort(), 100000); 
+// const themes = await Promise.all(response.data.map(async s => {
+//     const resp = await fetch(s.download_url, {
+//         signal: timeout
+//     });
+//     const txt = await resp.text();
+//     const parsed = JSON5.parse(txt);
+//     const converted = convertTheme(parsed);
+//     return {
+//         name: parsed.name,
+//         filename: s.name,
+//         theme: converted
+//     };
+// }));
+// const themeObj = {};
+// const themePackageJson = await (await fetch('https://raw.githubusercontent.com/microsoft/vscode/main/extensions/theme-defaults/package.json')).json();
+// const themesMetadata = themePackageJson.contributes.themes;
 
-const themes = await Promise.all(response.data.map(async s => {
-    const resp = await fetch(s.download_url);
-    const txt = await resp.text();
-    const parsed = JSON5.parse(txt);
-    const converted = convertTheme(parsed);
-    return {
-        name: parsed.name,
-        filename: s.name,
-        theme: converted
-    };
-}));
-const themeObj = {};
-const themePackageJson = await (await fetch('https://raw.githubusercontent.com/microsoft/vscode/main/extensions/theme-defaults/package.json')).json();
-const themesMetadata = themePackageJson.contributes.themes;
+// themes.forEach(s => {
+//     themeObj[s.name] = s.theme;
+//     themeObj[s.name].base = themesMetadata.find(t => path.basename(t.path) == s.filename).uiTheme;
+// });
 
-themes.forEach(s => {
-    themeObj[s.name] = s.theme;
-    themeObj[s.name].base = themesMetadata.find(t => path.basename(t.path) == s.filename).uiTheme;
-});
-
-const themeListJson = JSON.stringify(themeObj);
-fs.writeFileSync(path.join(outDir, 'themes.json'), themeListJson);
-const csharpTextmateYml = await (await fetch('https://raw.githubusercontent.com/dotnet/csharp-tmLanguage/main/src/csharp.tmLanguage.yml')).text();
-const csharpTextmate = JSON.stringify(YAML.parse(csharpTextmateYml));
-fs.writeFileSync(path.join(outDir, 'csharp.tmLanguage.json'), csharpTextmate);
-const ilTextmate = await (await fetch('https://raw.githubusercontent.com/soltys/vscode-il/master/syntaxes/il.json')).text();
-fs.writeFileSync(path.join(outDir, 'il.tmLanguage.json'), ilTextmate);
+// const themeListJson = JSON.stringify(themeObj);
+// fs.writeFileSync(path.join(outDir, 'themes.json'), themeListJson);
+// const csharpTextmateYml = await (await fetch('https://raw.githubusercontent.com/dotnet/csharp-tmLanguage/main/src/csharp.tmLanguage.yml')).text();
+// const csharpTextmate = JSON.stringify(YAML.parse(csharpTextmateYml));
+// fs.writeFileSync(path.join(outDir, 'csharp.tmLanguage.json'), csharpTextmate);
+// const ilTextmate = await (await fetch('https://raw.githubusercontent.com/soltys/vscode-il/master/syntaxes/il.json')).text();
+// fs.writeFileSync(path.join(outDir, 'il.tmLanguage.json'), ilTextmate);

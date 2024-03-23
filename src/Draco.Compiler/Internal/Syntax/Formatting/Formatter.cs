@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver.Tasks;
@@ -15,15 +15,25 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     private ScopeInfo scope;
     private readonly SyntaxTree tree; // debugging helper, to remove
     private ref TokenDecoration CurrentToken => ref this.tokenDecorations[this.currentIdx];
+    bool isInImportBlock;
+    bool isInAnImport;
+    bool firstDeclaration = true;
 
     public static async SolverTask<string?> GetIndentation(IEnumerable<ScopeInfo> scopes)
     {
         var indentation = "";
+        var prevKind = MaterialisationKind.Normal;
         foreach (var scope in scopes)
         {
             var isMaterialized = await scope.IsMaterialized.Collapsed;
             if (isMaterialized)
             {
+                var previousIsStrong = prevKind == MaterialisationKind.Strong;
+                prevKind = scope.MaterialisationKind;
+                if (scope.MaterialisationKind == MaterialisationKind.Weak && previousIsStrong)
+                {
+                    continue;
+                }
                 indentation += scope.Indentation;
             }
         }
@@ -42,7 +52,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
         var formatter = new Formatter(settings, tree);
 
-        // Construct token sequence
         tree.Root.Accept(formatter);
         var decorations = formatter.tokenDecorations;
         var currentLineLength = 0;
@@ -146,6 +155,65 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.currentIdx++;
     }
 
+    public override void VisitImportDeclaration(Api.Syntax.ImportDeclarationSyntax node)
+    {
+        this.isInAnImport = true;
+        this.isInImportBlock = true;
+        base.VisitImportDeclaration(node);
+        this.isInAnImport = false;
+    }
+    int parameterCount = 0;
+    public override void VisitSeparatedSyntaxList<TNode>(Api.Syntax.SeparatedSyntaxList<TNode> node)
+    {
+        if (node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ParameterSyntax>)
+        {
+            this.CreateFoldableScope(this.Settings.Indentation,
+                MaterialisationKind.Normal,
+                SolverTask.FromResult(FoldPriority.AsSoonAsPossible),
+                () => base.VisitSeparatedSyntaxList(node)
+            );
+            this.parameterCount = 0;
+        }
+        else
+        {
+            base.VisitSeparatedSyntaxList(node);
+        }
+    }
+
+    public override void VisitParameter(Api.Syntax.ParameterSyntax node)
+    {
+        static async SolverTask<string?> VariableIndentation(ScopeInfo scope)
+        {
+            return await scope.IsMaterialized.Collapsed ? scope.Indentation[..^1] : null;
+        }
+        if (this.parameterCount > 0)
+        {
+            this.CurrentToken.LeftPadding = " ";
+        }
+        this.CurrentToken.SetIndentation(VariableIndentation(this.scope));
+        base.VisitParameter(node);
+        this.parameterCount++;
+    }
+
+    public override void VisitDeclaration(Api.Syntax.DeclarationSyntax node)
+    {
+        if (!this.isInAnImport && this.isInImportBlock)
+        {
+            this.isInImportBlock = false;
+            async SolverTask<string?> DoubleNewLine() => this.Settings.Newline + await GetIndentation(this.scope.ThisAndParents);
+            this.CurrentToken.SetIndentation(DoubleNewLine());
+        }
+        else if (this.firstDeclaration) this.firstDeclaration = false;
+        else
+        {
+            if (node.Parent is not Api.Syntax.DeclarationStatementSyntax)
+            {
+                this.CurrentToken.SetIndentation(GetIndentation(this.scope.ThisAndParents));
+            }
+        }
+        base.VisitDeclaration(node);
+    }
+
     public override void VisitStringExpression(Api.Syntax.StringExpressionSyntax node)
     {
         if (node.OpenQuotes.Kind != TokenKind.MultiLineStringStart)
@@ -161,10 +229,10 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 continue;
             }
             ref var currentToken = ref this.tokenDecorations[this.currentIdx + i + 1];
-            currentToken.SetIndentation(GetIndentation(this.scope.All));
+            currentToken.SetIndentation(GetIndentation(this.scope.ThisAndParents));
         }
-        using var _ = this.CreateFoldedScope(this.Settings.Indentation);
-        this.tokenDecorations[this.currentIdx + i + 1].SetIndentation(GetIndentation(this.scope.All));
+        using var _ = this.CreateFoldedScope(this.Settings.Indentation, MaterialisationKind.Normal);
+        this.tokenDecorations[this.currentIdx + i + 1].SetIndentation(GetIndentation(this.scope.ThisAndParents));
         base.VisitStringExpression(node);
     }
 
@@ -174,7 +242,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var kind = node.Operator.Kind;
         if (!(this.scope.Data?.Equals(kind) ?? false))
         {
-            closeScope = this.CreateFoldableScope(this.Settings.Indentation, SolverTask.FromResult(FoldPriority.AsLateAsPossible));
+            closeScope = this.CreateFoldableScope("", MaterialisationKind.Normal, SolverTask.FromResult(FoldPriority.AsLateAsPossible));
             this.scope.Data = kind;
         }
         node.Left.Accept(this);
@@ -183,7 +251,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         {
             var isCollapsed = await scope.IsMaterialized.Collapsed;
             if (!isCollapsed) return null;
-            return await GetIndentation(scope.All);
+            return await GetIndentation(scope.ThisAndParents);
         }
 
         this.CurrentToken.SetIndentation(Indentation(this.scope));
@@ -198,11 +266,26 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.scope.ItemsCount.Add(1);
     }
 
+    public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
+    {
+        base.VisitFunctionDeclaration(node);
+    }
+
     public override void VisitBlockFunctionBody(Api.Syntax.BlockFunctionBodySyntax node)
     {
         this.CurrentToken.LeftPadding = " ";
-        this.CreateFoldedScope(this.Settings.Indentation, () => base.VisitBlockFunctionBody(node));
-        this.tokenDecorations[this.currentIdx - 1].SetIndentation(GetIndentation(this.scope.All));
+        this.CreateFoldedScope(this.Settings.Indentation, MaterialisationKind.Strong, () => base.VisitBlockFunctionBody(node));
+        this.tokenDecorations[this.currentIdx - 1].SetIndentation(GetIndentation(this.scope.ThisAndParents));
+    }
+
+    public override void VisitInlineFunctionBody(Api.Syntax.InlineFunctionBodySyntax node)
+    {
+        var parent = (Api.Syntax.FunctionDeclarationSyntax)node.Parent!;
+        using var _ = this.CreateFoldableScope(new string(' ', 7 + parent.Name.Span.Length + parent.ParameterList.Span.Length),
+            MaterialisationKind.Weak,
+            SolverTask.FromResult(FoldPriority.AsSoonAsPossible)
+        );
+        base.VisitInlineFunctionBody(node);
     }
 
     public override void VisitStatement(Api.Syntax.StatementSyntax node)
@@ -215,14 +298,14 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         }
         else if (node.Parent is Api.Syntax.BlockExpressionSyntax)
         {
-            this.CurrentToken.SetIndentation(GetIndentation(this.scope.All));
+            this.CurrentToken.SetIndentation(GetIndentation(this.scope.ThisAndParents));
         }
         else
         {
             async SolverTask<string?> Indentation()
             {
                 var haveMoreThanOneStatement = await this.scope.ItemsCount.WhenGreaterOrEqual(2);
-                if (haveMoreThanOneStatement) return await GetIndentation(this.scope.All);
+                if (haveMoreThanOneStatement) return await GetIndentation(this.scope.ThisAndParents);
                 return null;
             }
             this.CurrentToken.SetIndentation(Indentation());
@@ -234,13 +317,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     public override void VisitWhileExpression(Api.Syntax.WhileExpressionSyntax node)
     {
         this.tokenDecorations[this.currentIdx + 2 + node.Condition.Tokens.Count()].RightPadding = " ";
-        this.CreateFoldableScope(this.Settings.Indentation, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), () => base.VisitWhileExpression(node));
+        this.CreateFoldableScope(this.Settings.Indentation, MaterialisationKind.Normal, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), () => base.VisitWhileExpression(node));
     }
 
     public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node)
     {
         this.tokenDecorations[this.currentIdx + 2 + node.Condition.Tokens.Count()].RightPadding = " ";
-        this.CreateFoldableScope(this.Settings.Indentation, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), () =>
+        this.CreateFoldableScope(this.Settings.Indentation, MaterialisationKind.Normal, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), () =>
         {
             this.VisitExpression(node);
             node.IfKeyword.Accept(this);
@@ -257,13 +340,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.CurrentToken.RightPadding = " ";
         if (node.Parent!.Parent is Api.Syntax.ExpressionStatementSyntax)
         {
-            this.CurrentToken.SetIndentation(GetIndentation(this.scope.All));
+            this.CurrentToken.SetIndentation(GetIndentation(this.scope.ThisAndParents));
         }
         else
         {
             this.CurrentToken.LeftPadding = " ";
         }
-        this.CreateFoldableScope(this.Settings.Indentation, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), () => base.VisitElseClause(node));
+        this.CreateFoldableScope(this.Settings.Indentation, MaterialisationKind.Normal, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), () => base.VisitElseClause(node));
     }
 
     public override void VisitBlockExpression(Api.Syntax.BlockExpressionSyntax node)
@@ -276,19 +359,19 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         // but since we are in a block we create our own scope and the if/while/else will never create it's own scope.
         this.scope.IsMaterialized.TryCollapse(false);
 
-        this.CreateFoldedScope(this.Settings.Indentation, () =>
+        this.CreateFoldedScope(this.Settings.Indentation, MaterialisationKind.Strong, () =>
         {
             this.VisitExpression(node);
             node.OpenBrace.Accept(this);
             node.Statements.Accept(this);
             if (node.Value != null)
             {
-                this.CurrentToken.SetIndentation(GetIndentation(this.scope.All));
+                this.CurrentToken.SetIndentation(GetIndentation(this.scope.ThisAndParents));
                 node.Value.Accept(this);
             }
             node.CloseBrace.Accept(this);
         });
-        this.tokenDecorations[this.currentIdx - 1].SetIndentation(GetIndentation(this.scope.All));
+        this.tokenDecorations[this.currentIdx - 1].SetIndentation(GetIndentation(this.scope.ThisAndParents));
     }
 
     public override void VisitTypeSpecifier(Api.Syntax.TypeSpecifierSyntax node)
@@ -297,10 +380,11 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         base.VisitTypeSpecifier(node);
     }
 
-    private IDisposable CreateFoldedScope(string indentation)
+    private IDisposable CreateFoldedScope(string indentation, MaterialisationKind materialisationKind)
     {
         this.scope = new ScopeInfo(this.scope, indentation);
         this.scope.IsMaterialized.Collapse(true);
+        this.scope.MaterialisationKind = materialisationKind;
         return new DisposeAction(() =>
         {
             this.scope.Dispose();
@@ -308,14 +392,17 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         });
     }
 
-    private void CreateFoldedScope(string indentation, Action action)
+    private void CreateFoldedScope(string indentation, MaterialisationKind materialisationKind, Action action)
     {
-        using (this.CreateFoldedScope(indentation)) action();
+        using (this.CreateFoldedScope(indentation, materialisationKind)) action();
     }
 
-    private IDisposable CreateFoldableScope(string indentation, SolverTask<FoldPriority> foldBehavior)
+    private IDisposable CreateFoldableScope(string indentation, MaterialisationKind materialisationKind, SolverTask<FoldPriority> foldBehavior)
     {
-        this.scope = new ScopeInfo(this.scope, indentation, foldBehavior);
+        this.scope = new ScopeInfo(this.scope, indentation, foldBehavior)
+        {
+            MaterialisationKind = materialisationKind
+        };
         return new DisposeAction(() =>
         {
             this.scope.Dispose();
@@ -323,8 +410,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         });
     }
 
-    private void CreateFoldableScope(string indentation, SolverTask<FoldPriority> foldBehavior, Action action)
+    private void CreateFoldableScope(string indentation, MaterialisationKind materialisationKind, SolverTask<FoldPriority> foldBehavior, Action action)
     {
-        using (this.CreateFoldableScope(indentation, foldBehavior)) action();
+        using (this.CreateFoldableScope(indentation, materialisationKind, foldBehavior)) action();
     }
 }

@@ -101,8 +101,6 @@ public sealed class SyntaxTreeFormatterTests
             """";
 
         var actual = SyntaxTree.Parse(input).Format();
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -130,7 +128,8 @@ public sealed class SyntaxTreeFormatterTests
 
             """;
         var actual = SyntaxTree.Parse(input).Format();
-
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -151,6 +150,7 @@ public sealed class SyntaxTreeFormatterTests
                                    + 8
                                    + 9
                                    + 10;
+
             """;
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
         {
@@ -158,6 +158,7 @@ public sealed class SyntaxTreeFormatterTests
         });
         Console.WriteLine(actual);
         this.logger.WriteLine(actual);
+        this.logger.WriteLine(expected);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 }

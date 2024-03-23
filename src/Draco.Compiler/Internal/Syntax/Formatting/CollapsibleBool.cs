@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;

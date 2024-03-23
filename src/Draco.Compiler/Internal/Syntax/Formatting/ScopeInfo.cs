@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -7,10 +7,20 @@ using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal class ScopeInfo(ScopeInfo? parent, string indentation, SolverTask<FoldPriority>? foldPriority = null) : IDisposable
+internal class ScopeInfo : IDisposable
 {
-    public ScopeInfo? Parent { get; } = parent;
+    public ScopeInfo? Parent { get; }
+    public List<ScopeInfo> Childs { get; } = [];
     private readonly SolverTaskCompletionSource<Unit> _stableTcs = new();
+
+    public ScopeInfo(ScopeInfo? parent, string indentation, SolverTask<FoldPriority>? foldPriority = null)
+    {
+        this.Parent = parent;
+        parent?.Childs.Add(this);
+        this.Indentation = indentation;
+        this.FoldPriority = foldPriority;
+    }
+
     public SolverTask<Unit> WhenStable => this._stableTcs.Task;
 
     public object? Data { get; set; }
@@ -27,11 +37,39 @@ internal class ScopeInfo(ScopeInfo? parent, string indentation, SolverTask<FoldP
     /// </code>
     /// </summary>
     public CollapsibleBool IsMaterialized { get; } = CollapsibleBool.Create();
+    public MaterialisationKind MaterialisationKind { get; set; }
     public CollapsibleInt ItemsCount { get; } = CollapsibleInt.Create();
-    public string Indentation { get; } = indentation;
+    public string Indentation { get; }
 
-    public SolverTask<FoldPriority>? FoldPriority { get; } = foldPriority;
-    public IEnumerable<ScopeInfo> All => this.Parents.Prepend(this);
+    public SolverTask<FoldPriority>? FoldPriority { get; }
+
+    public IEnumerable<ScopeInfo> ThisAndAllChilds => this.AllChilds.Prepend(this);
+    public IEnumerable<ScopeInfo> AllChilds
+    {
+        get
+        {
+            foreach (var child in this.Childs)
+            {
+                yield return child;
+                foreach (var subChild in child.AllChilds)
+                {
+                    yield return subChild;
+                }
+            }
+        }
+    }
+
+    public ScopeInfo Root
+    {
+        get
+        {
+            if (this.Parent == null) return this;
+            return this.Parent.Root;
+        }
+    }
+
+    public IEnumerable<ScopeInfo> ThisAndParents => this.Parents.Prepend(this);
+
     public IEnumerable<ScopeInfo> Parents
     {
         get
@@ -47,7 +85,7 @@ internal class ScopeInfo(ScopeInfo? parent, string indentation, SolverTask<FoldP
 
     public bool Fold()
     {
-        foreach (var item in this.All.Reverse())
+        foreach (var item in this.ThisAndParents.Reverse())
         {
             if (item.IsMaterialized.Collapsed.IsCompleted) continue;
             Debug.Assert(item.FoldPriority!.IsCompleted);
@@ -58,7 +96,7 @@ internal class ScopeInfo(ScopeInfo? parent, string indentation, SolverTask<FoldP
             }
         }
 
-        foreach (var item in this.All)
+        foreach (var item in this.ThisAndParents)
         {
             if (item.IsMaterialized.Collapsed.IsCompleted) continue;
             Debug.Assert(item.FoldPriority!.IsCompleted);

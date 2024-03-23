@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Internal.Solver.Tasks;
 
@@ -42,8 +42,7 @@ internal struct TokenDecoration
         }
         var doesReturnLine = this.DoesReturnLineCollapsible = CollapsibleBool.Create();
         this.indentation = value;
-        var myThis = this;
-        this.indentation.Awaiter.OnCompleted(() =>
+        this.indentation!.Awaiter.OnCompleted(() =>
         {
             doesReturnLine.Collapse(value.Result != null);
         });

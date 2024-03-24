@@ -101,6 +101,8 @@ public sealed class SyntaxTreeFormatterTests
             """";
 
         var actual = SyntaxTree.Parse(input).Format();
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 

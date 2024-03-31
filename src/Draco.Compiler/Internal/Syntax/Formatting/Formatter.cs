@@ -154,7 +154,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.currentIdx++;
     }
 
-    private int parameterCount = 0;
     public override void VisitSeparatedSyntaxList<TNode>(Api.Syntax.SeparatedSyntaxList<TNode> node)
     {
         if (node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ParameterSyntax>
@@ -165,7 +164,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 SolverTask.FromResult(FoldPriority.AsSoonAsPossible),
                 () => base.VisitSeparatedSyntaxList(node)
             );
-            this.parameterCount = 0;
         }
         else
         {
@@ -179,17 +177,20 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         {
             return await scope.IsMaterialized.Collapsed ? scope.Indentation[..^1] : null;
         }
-        if (this.parameterCount > 0)
+        if (node.Index > 0)
         {
             this.CurrentToken.LeftPadding = " ";
         }
         this.CurrentToken.SetIndentation(VariableIndentation(this.scope));
         base.VisitParameter(node);
-        this.parameterCount++;
     }
 
     public override void VisitExpression(Api.Syntax.ExpressionSyntax node)
     {
+        if (node.ArgumentIndex > 0)
+        {
+            this.CurrentToken.LeftPadding = " ";
+        }
         base.VisitExpression(node);
     }
 

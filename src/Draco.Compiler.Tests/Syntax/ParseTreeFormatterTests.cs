@@ -14,7 +14,7 @@ public sealed class SyntaxTreeFormatterTests
     }
 
     [Fact]
-    public void TestFormatting()
+    public void SomeCodeSampleShouldBeFormattedCorrectly()
     {
         var input = """"
              func  main  ( )  {
@@ -107,7 +107,7 @@ public sealed class SyntaxTreeFormatterTests
     }
 
     [Fact]
-    public void TestFormattingInlineMethod()
+    public void InlineMethodShouldBeFormattedCorrectly()
     {
         var input = """
             import System.Console;
@@ -136,7 +136,7 @@ public sealed class SyntaxTreeFormatterTests
     }
 
     [Fact]
-    public void TestFoldExpression()
+    public void SimpleExpressionShouldBeFormattedCorrectly()
     {
         var input = """
             func aLongMethodName() = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
@@ -161,6 +161,35 @@ public sealed class SyntaxTreeFormatterTests
         Console.WriteLine(actual);
         this.logger.WriteLine(actual);
         this.logger.WriteLine(expected);
+        Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void ExpressionInMultiLineStringFolds()
+    {
+        var input = """"
+            func main()
+            {
+                val someMultiLineString = """
+                    the result:\{1 + 2 + 3 + 4 + 5
+                    + 6 + 7 + 8 + 9 + 10}
+                    """;
+            }
+            """";
+        var expected = """"
+            func main() {
+                val someMultiLineString = """
+                    the result:\{1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10}
+                    """;
+            }
+
+            """";
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
+        {
+            LineWidth = 50
+        });
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 }

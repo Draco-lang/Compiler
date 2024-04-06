@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
@@ -52,4 +53,7 @@ internal class CollapsibleBool : IEquatable<CollapsibleBool>
     }
 
     public SolverTask<bool> Collapsed => this.task;
+
+    public static bool operator ==(CollapsibleBool? left, CollapsibleBool? right) => EqualityComparer<CollapsibleBool>.Default.Equals(left, right);
+    public static bool operator !=(CollapsibleBool? left, CollapsibleBool? right) => !(left == right);
 }

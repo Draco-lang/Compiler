@@ -10,7 +10,18 @@ internal struct TokenDecoration
     private string? leftPadding;
     private SolverTask<string?>? indentation;
     private ScopeInfo scopeInfo;
+    private string? tokenOverride;
 
+    [DisallowNull]
+    public string? TokenOverride
+    {
+        get => this.tokenOverride;
+        set
+        {
+            if (this.tokenOverride != null) throw new InvalidOperationException("Override already set");
+            this.tokenOverride = value;
+        }
+    }
     public int TokenSize { get; set; }
     public readonly int CurrentTotalSize => this.TokenSize + (this.leftPadding?.Length ?? 0) + (this.rightPadding?.Length ?? 0) + this.CurrentIndentationSize;
 

@@ -92,7 +92,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             }
             if (decoration.Indentation is not null) builder.Append(decoration.Indentation.Result);
             builder.Append(decoration.LeftPadding);
-            builder.Append(token.Text);
+
+            builder.Append(decoration.TokenOverride ?? token.Text);
             builder.Append(decoration.RightPadding);
             i++;
         }
@@ -220,19 +221,69 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             base.VisitStringExpression(node);
             return;
         }
+        node.OpenQuotes.Accept(this);
+        using var _ = this.CreateFoldedScope(this.Settings.Indentation, MaterialisationKind.Normal);
+        var blockCurrentIndentCount = node.CloseQuotes.LeadingTrivia.Aggregate(0, (value, right) =>
+        {
+            if (right.Kind == TriviaKind.Newline) return 0;
+            return value + right.Span.Length;
+        });
         var i = 0;
+        var newLineCount = 1;
+        var shouldIndent = true;
+
         for (; i < node.Parts.Count; i++)
         {
-            if (node.Parts[i].Children.SingleOrDefault() is Api.Syntax.SyntaxToken and { Kind: TokenKind.StringNewline })
+            var curr = node.Parts[i];
+
+            var isNewLine = curr.Children.Count() == 1 && curr.Children.SingleOrDefault() is Api.Syntax.SyntaxToken and { Kind: TokenKind.StringNewline };
+            if (shouldIndent)
             {
-                continue;
+                var tokenText = curr.Tokens.First().ValueText!;
+                if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
+                this.tokenDecorations[this.currentIdx].TokenOverride = tokenText.Substring(blockCurrentIndentCount);
+                MultiIndent(newLineCount);
+                shouldIndent = false;
             }
-            ref var currentToken = ref this.tokenDecorations[this.currentIdx + i + 1];
-            currentToken.SetIndentation(GetIndentation(this.scope.ThisAndParents));
+
+            if (isNewLine)
+            {
+                newLineCount++;
+                shouldIndent = true;
+            }
+            else
+            {
+                newLineCount = 0;
+            }
+
+            var tokenCount = curr.Tokens.Count();
+            for (var j = 0; j < tokenCount; j++)
+            {
+                ref var decoration = ref this.tokenDecorations[this.currentIdx + j];
+                if (decoration.Indentation is null)
+                {
+                    decoration.SetIndentation(SolverTask.FromResult<string?>(null));
+                }
+            }
+            curr.Accept(this);
         }
-        using var _ = this.CreateFoldedScope(this.Settings.Indentation, MaterialisationKind.Normal);
-        this.tokenDecorations[this.currentIdx + i + 1].SetIndentation(GetIndentation(this.scope.ThisAndParents));
-        base.VisitStringExpression(node);
+        MultiIndent(newLineCount);
+        this.tokenDecorations[this.currentIdx].SetIndentation(GetIndentation(this.scope.ThisAndParents));
+        node.CloseQuotes.Accept(this);
+
+
+        void MultiIndent(int newLineCount)
+        {
+            if (newLineCount > 0)
+            {
+                ref var currentToken = ref this.tokenDecorations[this.currentIdx];
+                currentToken.SetIndentation(GetIndentation(this.scope.ThisAndParents));
+                if (newLineCount > 1)
+                {
+                    currentToken.LeftPadding = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLineCount - 1));
+                }
+            }
+        }
     }
 
     public override void VisitBinaryExpression(Api.Syntax.BinaryExpressionSyntax node)
@@ -252,8 +303,10 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             if (!isCollapsed) return null;
             return await GetIndentation(scope.ThisAndParents);
         }
-
-        this.CurrentToken.SetIndentation(Indentation(this.scope));
+        if(this.CurrentToken.Indentation is null)
+        {
+            this.CurrentToken.SetIndentation(Indentation(this.scope));
+        }
         node.Operator.Accept(this);
         node.Right.Accept(this);
         closeScope?.Dispose();

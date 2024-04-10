@@ -192,4 +192,31 @@ public sealed class SyntaxTreeFormatterTests
         this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
+
+    [Fact]
+    public void IfElseChainFormatsCorrectly()
+    {
+        var input = """"
+            func main() {
+                if (false)
+                expr1
+                else if (false)
+                    expr2
+            else if (false) expr3
+                else    expr4
+            }
+            """";
+        var expected = """"
+            func main() {
+                if (false) expr1
+                else if (false) expr2
+                else if (false) expr3
+                else expr4
+            }
+            """";
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
+        Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
+    }
 }

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Internal.Solver.Tasks;
 
@@ -8,7 +8,7 @@ internal class CollapsibleInt
 {
     private readonly SolverTaskCompletionSource<int>? tcs;
     private readonly SolverTask<int> task;
-    private int MinimumCurrentValue;
+    public int MinimumCurrentValue { get; private set; }
     private CollapsibleInt(SolverTaskCompletionSource<int> tcs)
     {
         this.tcs = tcs;

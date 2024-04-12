@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver.Tasks;
+using Draco.Compiler.Internal.Solver.Utilities;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
@@ -16,54 +17,8 @@ internal sealed partial class ConstraintSolver
     /// Adds the given constraint to the solver.
     /// </summary>
     /// <param name="constraint">The constraint to add.</param>
-    public void Add(IConstraint constraint) =>
-        this.constraints.Add(constraint);
-
-    /// <summary>
-    /// Removes the given constraint from the solver.
-    /// </summary>
-    /// <param name="constraint">The constraint to remove.</param>
-    /// <returns>True, if <paramref name="constraint"/> could be removed, false otherwise.</returns>
-    public bool Remove(IConstraint constraint) => this.constraints.Remove(constraint);
-
-    /// <summary>
-    /// Enumerates constraints in this solver.
-    /// </summary>
-    /// <typeparam name="TConstraint">The type of constraints to enumerate.</typeparam>
-    /// <param name="filter">An optional constraint filter.</param>
-    /// <returns>All constraints of type <typeparamref name="TConstraint"/> that satisfy <paramref name="filter"/>.</returns>
-    public IEnumerable<TConstraint> Enumerate<TConstraint>(
-        Func<TConstraint, bool>? filter = null)
-    {
-        filter ??= _ => true;
-        return this.constraints
-            .OfType<TConstraint>()
-            .Where(filter);
-    }
-
-    /// <summary>
-    /// Attempts to remove a constraint from this solver.
-    /// </summary>
-    /// <typeparam name="TConstraint">The type of constraints to remove.</typeparam>
-    /// <param name="constraint">The constraint is written here, if one satisfying the conditions is found.</param>
-    /// <param name="filter">An optional filter that <paramref name="constraint"/> has to satisfy.</param>
-    /// <returns>True, if a constraint of type <typeparamref name="TConstraint"/> that satisfies
-    /// <paramref name="filter"/> was found and removed.</returns>
-    public bool TryDequeue<TConstraint>(
-        [MaybeNullWhen(false)] out TConstraint constraint,
-        Func<TConstraint, bool>? filter = null)
-        where TConstraint : IConstraint
-    {
-        constraint = this
-            .Enumerate(filter)
-            .FirstOrDefault();
-        if (constraint is not null)
-        {
-            this.constraints.Remove(constraint);
-            return true;
-        }
-        return false;
-    }
+    private void Add(Constraints.ConstraintBase constraint) =>
+        this.store.Add(constraint);
 
     /// <summary>
     /// Adds a same-type constraint to the solver.
@@ -71,12 +26,10 @@ internal sealed partial class ConstraintSolver
     /// <param name="first">The type that is constrained to be the same as <paramref name="second"/>.</param>
     /// <param name="second">The type that is constrained to be the same as <paramref name="first"/>.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
-    /// <returns>The promise for the constraint added.</returns>
-    public SolverTask<Unit> SameType(TypeSymbol first, TypeSymbol second, SyntaxNode syntax)
+    public void SameType(TypeSymbol first, TypeSymbol second, SyntaxNode syntax)
     {
-        var constraint = new SameTypeConstraint(ImmutableArray.Create(first, second), ConstraintLocator.Syntax(syntax));
+        var constraint = new Constraints.Same(ConstraintLocator.Syntax(syntax), ImmutableArray.Create(first, second));
         this.Add(constraint);
-        return constraint.CompletionSource.Task;
     }
 
     /// <summary>
@@ -85,8 +38,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="targetType">The type being assigned to.</param>
     /// <param name="assignedType">The type assigned.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
-    /// <returns>The promise for the constraint added.</returns>
-    public SolverTask<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, SyntaxNode syntax) =>
+    public void Assignable(TypeSymbol targetType, TypeSymbol assignedType, SyntaxNode syntax) =>
         this.Assignable(targetType, assignedType, ConstraintLocator.Syntax(syntax));
 
     /// <summary>
@@ -95,12 +47,10 @@ internal sealed partial class ConstraintSolver
     /// <param name="targetType">The type being assigned to.</param>
     /// <param name="assignedType">The type assigned.</param>
     /// <param name="locator">The locator for the constraint.</param>
-    /// <returns>The promise for the constraint added.</returns>
-    public SolverTask<Unit> Assignable(TypeSymbol targetType, TypeSymbol assignedType, ConstraintLocator locator)
+    public void Assignable(TypeSymbol targetType, TypeSymbol assignedType, ConstraintLocator locator)
     {
-        var constraint = new AssignableConstraint(targetType, assignedType, locator);
+        var constraint = new Constraints.Assignable(locator, targetType, assignedType);
         this.Add(constraint);
-        return constraint.CompletionSource.Task;
     }
 
     /// <summary>
@@ -109,8 +59,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="commonType">The common type of the provided alternative types.</param>
     /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
-    /// <returns>The promise of the constraint added.</returns>
-    public SolverTask<Unit> CommonType(
+    public void CommonType(
         TypeSymbol commonType,
         ImmutableArray<TypeSymbol> alternativeTypes,
         SyntaxNode syntax) => this.CommonType(commonType, alternativeTypes, ConstraintLocator.Syntax(syntax));
@@ -121,15 +70,13 @@ internal sealed partial class ConstraintSolver
     /// <param name="commonType">The common type of the provided alternative types.</param>
     /// <param name="alternativeTypes">The alternative types to find the common type of.</param>
     /// <param name="locator">The locator for this constraint.</param>
-    /// <returns>The promise of the constraint added.</returns>
-    public SolverTask<Unit> CommonType(
+    public void CommonType(
         TypeSymbol commonType,
         ImmutableArray<TypeSymbol> alternativeTypes,
         ConstraintLocator locator)
     {
-        var constraint = new CommonTypeConstraint(commonType, alternativeTypes, locator);
+        var constraint = new Constraints.CommonAncestor(locator, commonType, alternativeTypes);
         this.Add(constraint);
-        return constraint.CompletionSource.Task;
     }
 
     /// <summary>
@@ -145,11 +92,10 @@ internal sealed partial class ConstraintSolver
         TypeSymbol accessedType,
         string memberName,
         out TypeSymbol memberType,
-        SyntaxNode syntax,
-        bool silent = false)
+        SyntaxNode syntax)
     {
         memberType = this.AllocateTypeVariable();
-        var constraint = new MemberConstraint(accessedType, memberName, memberType, silent, ConstraintLocator.Syntax(syntax));
+        var constraint = new Constraints.Member(ConstraintLocator.Syntax(syntax), accessedType, memberName, memberType);
         this.Add(constraint);
         return constraint.CompletionSource.Task;
     }
@@ -161,17 +107,15 @@ internal sealed partial class ConstraintSolver
     /// <param name="args">The calling arguments.</param>
     /// <param name="returnType">The return type.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
-    /// <returns>The promise of the constraint.</returns>
-    public SolverTask<Unit> Call(
+    public void Call(
         TypeSymbol calledType,
-        ImmutableArray<Argument> args,
+        ImmutableArray<ArgumentDescription> args,
         out TypeSymbol returnType,
         SyntaxNode syntax)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new CallConstraint(calledType, args, returnType, ConstraintLocator.Syntax(syntax));
+        var constraint = new Constraints.Callable(ConstraintLocator.Syntax(syntax), calledType, args, returnType);
         this.Add(constraint);
-        return constraint.CompletionSource.Task;
     }
 
     // TODO: Do we still need the return type as an out?
@@ -187,12 +131,12 @@ internal sealed partial class ConstraintSolver
     public SolverTask<FunctionSymbol> Overload(
         string name,
         ImmutableArray<FunctionSymbol> functions,
-        ImmutableArray<Argument> args,
+        ImmutableArray<ArgumentDescription> args,
         out TypeSymbol returnType,
         SyntaxNode syntax)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new OverloadConstraint(name, functions, args, returnType, ConstraintLocator.Syntax(syntax));
+        var constraint = new Constraints.Overload(ConstraintLocator.Syntax(syntax), name, functions, args, returnType);
         this.Add(constraint);
         return constraint.CompletionSource.Task;
     }

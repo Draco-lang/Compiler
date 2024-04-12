@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
+using Draco.Compiler.Internal.Solver.Utilities;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -179,7 +180,7 @@ internal partial class Binder
                 argsTask
                     .Zip(syntax.IndexList.Values)
                     .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
-                    .Append(new ConstraintSolver.Argument(null, returnType))
+                    .Append(new ArgumentDescription(null, returnType))
                     .ToImmutableArray(),
                 // NOTE: We don't care about the return type, this is an lvalue
                 out _,

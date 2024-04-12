@@ -118,7 +118,8 @@ internal sealed partial class ConstraintSolver
             formatArgs: this.ContextName));
 
         // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-        this.FailRemainingRules();
+        // TODO: See if we still have to do this
+        // this.FailRemainingRules();
     }
 
     /// <summary>

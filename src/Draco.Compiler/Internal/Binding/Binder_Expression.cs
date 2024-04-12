@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
+using Draco.Compiler.Internal.Solver.Utilities;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -160,7 +161,7 @@ internal partial class Binder
         var conditionTask = this.BindExpression(syntax.Condition, constraints, diagnostics);
 
         // Condition must be bool
-        _ = constraints.SameType(
+        constraints.SameType(
             this.WellKnownTypes.SystemBoolean,
             conditionTask.GetResultType(syntax.Condition, constraints, diagnostics),
             syntax);
@@ -174,7 +175,7 @@ internal partial class Binder
         var resultType = constraints.AllocateTypeVariable();
         var thenType = thenTask.GetResultType(ExtractValueSyntax(syntax.Then), constraints, diagnostics);
         var elseType = elseTask.GetResultType(ExtractValueSyntax(syntax.Else?.Expression), constraints, diagnostics);
-        _ = constraints.CommonType(
+        constraints.CommonType(
             resultType,
             ImmutableArray.Create(thenType, elseType),
             // The location will point at the else value, assuming that the latter expression is
@@ -198,14 +199,14 @@ internal partial class Binder
 
         var conditionTask = binder.BindExpression(syntax.Condition, constraints, diagnostics);
         // Condition must be bool
-        _ = constraints.SameType(
+        constraints.SameType(
             this.WellKnownTypes.SystemBoolean,
             conditionTask.GetResultType(syntax.Condition, constraints, diagnostics),
             syntax);
 
         var thenTask = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
-        _ = constraints.SameType(
+        constraints.SameType(
             WellKnownTypes.Unit,
             thenTask.GetResultType(ExtractValueSyntax(syntax.Then), constraints, diagnostics),
             ExtractValueSyntax(syntax.Then));
@@ -240,7 +241,7 @@ internal partial class Binder
 
         var thenTask = binder.BindExpression(syntax.Then, constraints, diagnostics);
         // Body must be unit
-        _ = constraints.SameType(
+        constraints.SameType(
             WellKnownTypes.Unit,
             thenTask.GetResultType(ExtractValueSyntax(syntax.Then), constraints, diagnostics),
             ExtractValueSyntax(syntax.Then));
@@ -281,7 +282,7 @@ internal partial class Binder
         var getEnumeratorTask = constraints.Overload(
             "GetEnumerator",
             getEnumeratorFunctions,
-            ImmutableArray<ConstraintSolver.Argument>.Empty,
+            ImmutableArray<ArgumentDescription>.Empty,
             out var enumeratorType,
             syntax.Sequence);
 
@@ -305,11 +306,11 @@ internal partial class Binder
             moveNextTask = constraints.Overload(
                 "MoveNext",
                 moveNextFunctions,
-                ImmutableArray<ConstraintSolver.Argument>.Empty,
+                ImmutableArray<ArgumentDescription>.Empty,
                 out var moveNextReturnType,
                 syntax.Sequence);
             // MoveNext should return bool
-            _ = constraints.SameType(
+            constraints.SameType(
                 this.WellKnownTypes.SystemBoolean,
                 moveNextReturnType,
                 syntax.Sequence);
@@ -323,7 +324,7 @@ internal partial class Binder
             syntax.Sequence);
 
         // Element type of the Enumerator must be assignable to the iterator type of the for loop
-        _ = constraints.Assignable(
+        constraints.Assignable(
             iterator.Type,
             currentType,
             syntax.ElementType as SyntaxNode ?? syntax.Iterator);
@@ -380,7 +381,7 @@ internal partial class Binder
         }
         else
         {
-            var callPromise = constraints.Call(
+            constraints.Call(
                 method.TypeRequired,
                 argsForConstraints,
                 out var resultType,
@@ -415,7 +416,7 @@ internal partial class Binder
             var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
             // Right must be assignable to left
-            _ = constraints.Assignable(
+            constraints.Assignable(
                 leftTask.GetResultType(syntax.Left, constraints, diagnostics),
                 rightTask.GetResultType(syntax.Right, constraints, diagnostics),
                 syntax);
@@ -449,11 +450,11 @@ internal partial class Binder
             var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
 
             // Both left and right must be bool
-            _ = constraints.SameType(
+            constraints.SameType(
                 this.WellKnownTypes.SystemBoolean,
                 leftTask.GetResultType(syntax.Left, constraints, diagnostics),
                 syntax.Left);
-            _ = constraints.SameType(
+            constraints.SameType(
                 this.WellKnownTypes.SystemBoolean,
                 rightTask.GetResultType(syntax.Left, constraints, diagnostics),
                 syntax.Right);

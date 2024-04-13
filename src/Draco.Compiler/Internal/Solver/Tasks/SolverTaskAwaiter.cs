@@ -21,6 +21,7 @@ internal sealed class SolverTaskAwaiter<T> : INotifyCompletion
         {
             completion();
         }
+        this.completions = null; // avoid completing the completion multiples times.
     }
 
     internal void SetException(Exception? exception)

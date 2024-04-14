@@ -1,3 +1,4 @@
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 
@@ -14,7 +15,7 @@ internal sealed record class Member(
     ConstraintLocator? Locator,
     TypeSymbol Receiver,
     string MemberName,
-    TypeSymbol MemberType) : ConstraintBase(Locator)
+    TypeSymbol MemberType) : ConstraintBase(Locator, SymbolResolutionErrors.MemberNotFound)
 {
     /// <summary>
     /// The completion source for the resolved member symbol.

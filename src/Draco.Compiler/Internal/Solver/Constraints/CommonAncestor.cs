@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver.Constraints;
@@ -12,4 +13,4 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 internal sealed record class CommonAncestor(
     ConstraintLocator? Locator,
     TypeSymbol CommonType,
-    ImmutableArray<TypeSymbol> AlternativeTypes) : ConstraintBase(Locator);
+    ImmutableArray<TypeSymbol> AlternativeTypes) : ConstraintBase(Locator, TypeCheckingErrors.NoCommonType);

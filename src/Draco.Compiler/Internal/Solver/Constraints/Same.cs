@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver.Constraints;
@@ -10,4 +11,4 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 /// <param name="Types">The types that all should be the same.</param>
 internal sealed record class Same(
     ConstraintLocator? Locator,
-    ImmutableArray<TypeSymbol> Types) : ConstraintBase(Locator);
+    ImmutableArray<TypeSymbol> Types) : ConstraintBase(Locator, TypeCheckingErrors.TypeMismatch);

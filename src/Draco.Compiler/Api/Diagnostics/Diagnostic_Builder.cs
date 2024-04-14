@@ -58,7 +58,7 @@ public sealed partial class Diagnostic
             return result;
         }
 
-        public Builder WithTemplate(DiagnosticTemplate template)
+        public Builder WithTemplate(DiagnosticTemplate? template)
         {
             this.Template = template;
             return this;

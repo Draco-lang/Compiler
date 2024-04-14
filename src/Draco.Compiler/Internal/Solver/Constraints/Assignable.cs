@@ -1,3 +1,4 @@
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver.Constraints;
@@ -11,4 +12,4 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 internal sealed record class Assignable(
     ConstraintLocator? Locator,
     TypeSymbol TargetType,
-    TypeSymbol AssignedType) : ConstraintBase(Locator);
+    TypeSymbol AssignedType) : ConstraintBase(Locator, TypeCheckingErrors.TypeMismatch);

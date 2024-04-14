@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Api.Diagnostics;
 
@@ -66,6 +67,12 @@ public sealed partial class Diagnostic
         public Builder WithFormatArgs(params object?[] args)
         {
             this.FormatArgs = args;
+            return this;
+        }
+
+        internal Builder WithLocation(ConstraintLocator? locator)
+        {
+            locator?.Locate(this);
             return this;
         }
 

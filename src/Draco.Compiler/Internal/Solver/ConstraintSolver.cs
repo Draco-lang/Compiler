@@ -78,7 +78,7 @@ internal sealed partial class ConstraintSolver
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
-        var solver = new DefinitionOrderSolver(ConstructRules());
+        var solver = new DefinitionOrderSolver(this.ConstructRules(diagnostics));
         solver.Solve(this.store);
 
         // Check for uninferred locals

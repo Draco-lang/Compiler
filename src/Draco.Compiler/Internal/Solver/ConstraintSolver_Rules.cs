@@ -12,6 +12,7 @@ namespace Draco.Compiler.Internal.Solver;
 internal sealed partial class ConstraintSolver
 {
     private IEnumerable<Rule> ConstructRules(DiagnosticBag diagnostics) => [
+            // Trivial same-type constraint, unify all
             Simplification(typeof(Same))
                 .Body((ConstraintStore store, Same same) =>
                 {

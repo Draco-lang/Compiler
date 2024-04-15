@@ -13,4 +13,7 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 internal sealed record class CommonAncestor(
     ConstraintLocator? Locator,
     TypeSymbol CommonType,
-    ImmutableArray<TypeSymbol> AlternativeTypes) : ConstraintBase(Locator, TypeCheckingErrors.NoCommonType);
+    ImmutableArray<TypeSymbol> AlternativeTypes) : ConstraintBase(Locator, TypeCheckingErrors.NoCommonType)
+{
+    public override string ToString() => base.ToString();
+}

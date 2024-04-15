@@ -11,4 +11,7 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 /// <param name="Types">The types that all should be the same.</param>
 internal sealed record class Same(
     ConstraintLocator? Locator,
-    ImmutableArray<TypeSymbol> Types) : ConstraintBase(Locator, TypeCheckingErrors.TypeMismatch);
+    ImmutableArray<TypeSymbol> Types) : ConstraintBase(Locator, TypeCheckingErrors.TypeMismatch)
+{
+    public override string ToString() => base.ToString();
+}

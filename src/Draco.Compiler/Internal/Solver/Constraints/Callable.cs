@@ -15,4 +15,7 @@ internal sealed record class Callable(
     ConstraintLocator? Locator,
     TypeSymbol CalledType,
     ImmutableArray<ArgumentDescription> Arguments,
-    TypeSymbol ReturnType) : ConstraintBase(Locator);
+    TypeSymbol ReturnType) : ConstraintBase(Locator)
+{
+    public override string ToString() => base.ToString();
+}

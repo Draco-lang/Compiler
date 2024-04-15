@@ -24,4 +24,6 @@ internal sealed record class Overload(
     /// The completion source for the resolved overload symbol.
     /// </summary>
     public SolverTaskCompletionSource<FunctionSymbol> CompletionSource { get; } = new();
+
+    public override string ToString() => base.ToString();
 }

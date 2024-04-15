@@ -12,4 +12,7 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 internal sealed record class Assignable(
     ConstraintLocator? Locator,
     TypeSymbol TargetType,
-    TypeSymbol AssignedType) : ConstraintBase(Locator, TypeCheckingErrors.TypeMismatch);
+    TypeSymbol AssignedType) : ConstraintBase(Locator, TypeCheckingErrors.TypeMismatch)
+{
+    public override string ToString() => base.ToString();
+}

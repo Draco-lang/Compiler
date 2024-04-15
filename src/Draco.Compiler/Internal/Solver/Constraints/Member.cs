@@ -21,4 +21,6 @@ internal sealed record class Member(
     /// The completion source for the resolved member symbol.
     /// </summary>
     public SolverTaskCompletionSource<Symbol> CompletionSource { get; } = new();
+
+    public override string ToString() => base.ToString();
 }

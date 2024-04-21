@@ -8,7 +8,7 @@ using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal sealed class Formatter : Api.Syntax.SyntaxVisitor
+internal sealed class Formatter
 {
     /// <summary>
     /// Formats the given syntax tree.
@@ -21,8 +21,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         settings ??= FormatterSettings.Default;
 
         var formatter = new Formatter(settings, tree);
-        var dracoToFormattingTreeVisitor = new DracoToFormattingTreeVisitor();
-        var res = tree.Root.Accept(dracoToFormattingTreeVisitor);
+        var res = DracoToFormattingTreeVisitor.Convert(null!, tree.Root);
         var resStr = res.ToString();
         tree.Root.Accept(formatter);
         return null;
@@ -37,6 +36,34 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         this.Settings = settings;
     }
+}
+
+class Token
+{
+
+}
+
+enum TokenBehavior
+{
+    Inline,
+    OpenScope,
+    CloseScope,
+    NewLine,
+}
+
+class ScopeOrLine
+{
+
+}
+
+class Line
+{
+
+}
+
+class Scope
+{
+    public List<ScopeOrLine> Childrens { get; } = new List<ScopeOrLine>();
 }
 
 

@@ -20,9 +20,16 @@ internal class CollapsibleBool : IEquatable<CollapsibleBool>
     }
 
     public static CollapsibleBool Create() => new(new SolverTaskCompletionSource<bool>());
-    public static CollapsibleBool Create(bool value) => new(SolverTask.FromResult(value));
+    public static CollapsibleBool Create(SolverTask<bool> solverTask) => new(solverTask);
+    public static CollapsibleBool True { get; } = new(SolverTask.FromResult(true));
+    public static CollapsibleBool False { get; } = new(SolverTask.FromResult(false));
 
-    public void Collapse(bool collapse) => this.tcs?.SetResult(collapse);
+    public void Collapse(bool collapse)
+    {
+        if (this.tcs is null) throw new InvalidOperationException();
+        this.tcs?.SetResult(collapse);
+    }
+
     public bool TryCollapse(bool collapse)
     {
         if (!this.Collapsed.IsCompleted)

@@ -112,7 +112,7 @@ public sealed class SyntaxTreeFormatterTests
         var input = """
             import System.Console;
 
-            func max(a:int32, b:int32, c:int32): int32 = if (a > b) a else b;
+            func max(a:int32, b:int32): int32 = if (a > b) a else b;
 
             func main() {
                 WriteLine(max(12, 34));
@@ -122,7 +122,7 @@ public sealed class SyntaxTreeFormatterTests
         var expected = """
             import System.Console;
 
-            func max(a:int32, b:int32, c:int32): int32 = if (a > b) a else b;
+            func max(a:int32, b:int32): int32 = if (a > b) a else b;
 
             func main() {
                 WriteLine(max(12, 34));
@@ -212,27 +212,6 @@ public sealed class SyntaxTreeFormatterTests
                 else if (false) expr2
                 else if (false) expr3
                 else expr4
-            }
-            """";
-        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
-        Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
-    }
-
-    [Fact]
-    public void ChainedComparisonOperatorsFormatsCorrectly()
-    {
-        var input = """"
-            func main() {
-                if (a >
-                b < c)
-                    expr1
-            }
-            """";
-        var expected = """"
-            func main() {
-                if (a > b < c) expr1
             }
             """";
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());

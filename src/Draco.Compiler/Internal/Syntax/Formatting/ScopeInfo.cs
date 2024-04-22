@@ -37,6 +37,7 @@ internal class ScopeInfo : IDisposable
     /// </code>
     /// </summary>
     public CollapsibleBool IsMaterialized { get; } = CollapsibleBool.Create();
+    public MaterialisationKind MaterialisationKind { get; set; }
     public CollapsibleInt ItemsCount { get; } = CollapsibleInt.Create();
     public string Indentation { get; }
 

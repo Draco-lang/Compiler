@@ -26,6 +26,8 @@ html, body, #app {
 
 .settings div {
     padding: 15px;
+    display: flex;
+    flex-direction: column;
 }
 
 @media (prefers-color-scheme: dark) {

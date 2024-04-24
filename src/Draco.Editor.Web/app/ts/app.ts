@@ -28,7 +28,9 @@ self.MonacoEnvironment = {
         return './editor.worker.js';
     }
 };
-
+const isCsharp = window.location.pathname.startsWith('/csharp');
+debugger
+Settings.isCsharp = isCsharp;
 const hash = window.location.hash.slice(1);
 export let inputCode = `import System.Console;
 
@@ -106,7 +108,6 @@ goldenLayout.registerComponentConstructor('TextInput', TextInput);
 goldenLayout.registerComponentConstructor('StdOut', StdOut);
 goldenLayout.registerComponentConstructor('TextDisplay', TextDisplay);
 goldenLayout.registerComponentConstructor('Settings', Settings);
-
 goldenLayout.loadLayout(config);
 const inputEditor = TextInput.editors[0];
 inputEditor.getModel().onDidChangeContent(() => {

@@ -90,8 +90,9 @@ internal class ScopeInfo : IDisposable
             for (var i = startLine; i < this.levelingToken.Value.tokens.Count; i++)
             {
                 var curr = this.levelingToken.Value.tokens[i];
-                stateMachine.AddToken(curr, )
+                stateMachine.AddToken(curr, curr.Token);
             }
+            return [new string(' ', stateMachine.LineWidth)];
 
         }
     }

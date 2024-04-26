@@ -44,7 +44,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 stateMachine = new LineStateMachine(string.Concat(curr.ScopeInfo.CurrentTotalIndent));
                 currentLineStart = x;
             }
-            stateMachine.AddToken(curr, token, settings);
+            stateMachine.AddToken(curr, token);
             if (stateMachine.LineWidth > settings.LineWidth)
             {
                 if (curr.ScopeInfo.Fold())
@@ -76,7 +76,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 builder.Append(settings.Newline);
             }
 
-            stateMachine.AddToken(decoration, token, settings);
+            stateMachine.AddToken(decoration, token);
         }
         builder.Append(stateMachine);
         builder.AppendLine();
@@ -232,7 +232,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             {
                 var tokenText = curr.Tokens.First().ValueText!;
                 if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
-                this.tokenDecorations[this.currentIdx].TokenOverride = tokenText.Substring(blockCurrentIndentCount);
+                this.tokenDecorations[this.currentIdx].TokenOverride = tokenText[blockCurrentIndentCount..];
                 MultiIndent(newLineCount);
                 shouldIndent = false;
             }
@@ -323,24 +323,19 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
     {
-        var stateMachine = new LineStateMachine(string.Concat(this.scope.CurrentTotalIndent));
-        if (node.VisibilityModifier != null)
-        {
-            stateMachine.AddToken(this.CurrentToken, node.FunctionKeyword, this.Settings);
-        }
         node.VisibilityModifier?.Accept(this);
-        stateMachine.AddToken(this.CurrentToken, node.FunctionKeyword, this.Settings);
         node.FunctionKeyword.Accept(this);
-        stateMachine.AddToken(this.CurrentToken, node.Name, this.Settings);
         node.Name.Accept(this);
-
-        node.Generics?.Accept(this);
+        if (node.Generics is not null)
+        {
+            this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
+        }
         node.OpenParen.Accept(this);
-
-
         this.CreateFoldableScope()
-        TODO.
-        base.VisitFunctionDeclaration(node);
+        node.ParameterList.Accept(this);
+        node.CloseParen.Accept(this);
+        node.ReturnType?.Accept(this);
+        node.Body.Accept(this);
     }
 
     public override void VisitStatement(Api.Syntax.StatementSyntax node)
@@ -464,58 +459,4 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         using (this.CreateFoldableScope(indentation, foldBehavior)) action();
     }
-}
-
-[Flags]
-internal enum FormattingTokenKind
-{
-    NoFormatting = 0,
-    PadLeft = 1,
-    PadRight = 1 << 1,
-    PadAround = PadLeft | PadRight,
-    TreatAsWhitespace = 1 << 2,
-    Semicolon = 1 << 3,
-    ExtraNewline = 1 << 4
-}
-
-internal class LineStateMachine
-{
-    private readonly StringBuilder sb = new();
-    private readonly string indentation;
-    private bool previousIsWhitespace = true;
-    public LineStateMachine(string indentation)
-    {
-        this.sb.Append(indentation);
-        this.LineWidth = indentation.Length;
-        this.indentation = indentation;
-    }
-
-    public int LineWidth { get; set; }
-    public void AddToken(TokenDecoration decoration, Api.Syntax.SyntaxToken token, FormatterSettings settings)
-    {
-        if (decoration.Kind.HasFlag(FormattingTokenKind.PadLeft) && !this.previousIsWhitespace)
-        {
-            this.sb.Append(' ');
-            this.LineWidth++;
-        }
-        var text = decoration.TokenOverride ?? token.Text;
-        this.sb.Append(text);
-        if (decoration.Kind.HasFlag(FormattingTokenKind.PadRight))
-        {
-            this.sb.Append(' ');
-            this.LineWidth++;
-        }
-        this.previousIsWhitespace = decoration.Kind.HasFlag(FormattingTokenKind.TreatAsWhitespace) || decoration.Kind.HasFlag(FormattingTokenKind.PadRight);
-        this.LineWidth += text.Length;
-    }
-
-    public void Reset()
-    {
-        this.sb.Clear();
-        this.sb.Append(this.indentation);
-        this.LineWidth = this.indentation.Length;
-    }
-
-
-    public override string ToString() => this.sb.ToString();
 }

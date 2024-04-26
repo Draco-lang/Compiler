@@ -6,11 +6,30 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 internal struct TokenDecoration
 {
-    private string? rightPadding;
-    private string? leftPadding;
     private ScopeInfo scopeInfo;
     private string? tokenOverride;
     private CollapsibleBool? doesReturnLineCollapsible;
+    private FormattingTokenKind kind;
+    private Api.Syntax.SyntaxToken token;
+    private bool _kindIsSet;
+    public FormattingTokenKind Kind
+    {
+        readonly get => this.kind;
+        set
+        {
+            if (this._kindIsSet) throw new InvalidOperationException("Kind already set");
+            this.kind = value;
+            this._kindIsSet = true;
+        }
+    }
+    public Api.Syntax.SyntaxToken Token
+    {
+        readonly get => this.token; set
+        {
+            if (this.token != null) throw new InvalidOperationException("Token already set");
+            this.token = value;
+        }
+    }
 
     [DisallowNull]
     public string? TokenOverride
@@ -22,7 +41,6 @@ internal struct TokenDecoration
             this.tokenOverride = value;
         }
     }
-    public int TokenSize { get; set; }
 
     [DisallowNull]
     public CollapsibleBool? DoesReturnLineCollapsible
@@ -47,24 +65,4 @@ internal struct TokenDecoration
             this.scopeInfo = value;
         }
     }
-
-    public string? LeftPadding
-    {
-        readonly get => this.leftPadding;
-        set
-        {
-            if (this.leftPadding is not null) throw new InvalidOperationException("Left padding already set.");
-            this.leftPadding = value;
-        }
-    }
-    public string? RightPadding
-    {
-        readonly get => this.rightPadding;
-        set
-        {
-            if (this.rightPadding is not null) throw new InvalidOperationException("Right padding already set.");
-            this.rightPadding = value;
-        }
-    }
-
 }

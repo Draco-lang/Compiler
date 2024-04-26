@@ -13,7 +13,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     private TokenDecoration[] tokenDecorations = [];
     private int currentIdx;
     private ScopeInfo scope;
-    private readonly SyntaxTree tree; // debugging helper, to remove
     private ref TokenDecoration CurrentToken => ref this.tokenDecorations[this.currentIdx];
 
     private bool firstDeclaration = true;
@@ -28,30 +27,58 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         settings ??= FormatterSettings.Default;
 
-        var formatter = new Formatter(settings, tree);
+        var formatter = new Formatter(settings);
 
         tree.Root.Accept(formatter);
-        var builder = new StringBuilder();
-        var i = 0;
-        foreach (var token in tree.Root.Tokens)
+
+        var decorations = formatter.tokenDecorations;
+        var tokens = tree.Root.Tokens.ToArray();
+        var stateMachine = new LineStateMachine(string.Concat(decorations[0].ScopeInfo.CurrentTotalIndent));
+        var currentLineStart = 0;
+        for (var x = 0; x < decorations.Length; x++)
         {
-            if (token.Kind == TokenKind.StringNewline)
+            var curr = decorations[x];
+            var token = tokens[x];
+            if (curr.DoesReturnLineCollapsible?.Collapsed.Result ?? false)
             {
-                i++;
-                continue;
+                stateMachine = new LineStateMachine(string.Concat(curr.ScopeInfo.CurrentTotalIndent));
+                currentLineStart = x;
             }
-            var decoration = formatter.tokenDecorations[i];
-
-            if (decoration.DoesReturnLineCollapsible is not null)
+            stateMachine.AddToken(curr, token, settings);
+            if (stateMachine.LineWidth > settings.LineWidth)
             {
-                builder.Append(decoration.DoesReturnLineCollapsible.Collapsed.Result ? settings.Newline : ""); // will default to false if not collapsed, that what we want.
+                if (curr.ScopeInfo.Fold())
+                {
+                    x = currentLineStart - 1;
+                    stateMachine.Reset();
+                    continue;
+                }
             }
-            builder.Append(decoration.LeftPadding);
-
-            builder.Append(decoration.TokenOverride ?? token.Text);
-            builder.Append(decoration.RightPadding);
-            i++;
         }
+
+        var builder = new StringBuilder();
+        stateMachine = new LineStateMachine(string.Concat(decorations[0].ScopeInfo.CurrentTotalIndent));
+        for (var x = 0; x < decorations.Length; x++)
+        {
+            var token = tokens[x];
+            if (token.Kind == TokenKind.StringNewline) continue;
+
+            var decoration = decorations[x];
+
+            if (decoration.DoesReturnLineCollapsible?.Collapsed.Result ?? false)
+            {
+                builder.Append(stateMachine);
+                builder.Append(settings.Newline);
+                stateMachine = new LineStateMachine(string.Concat(decoration.ScopeInfo.CurrentTotalIndent));
+            }
+            if (decoration.Kind.HasFlag(FormattingTokenKind.ExtraNewline) && x > 0)
+            {
+                builder.Append(settings.Newline);
+            }
+
+            stateMachine.AddToken(decoration, token, settings);
+        }
+        builder.Append(stateMachine);
         builder.AppendLine();
         return builder.ToString();
     }
@@ -61,11 +88,10 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     /// </summary>
     public FormatterSettings Settings { get; }
 
-    private Formatter(FormatterSettings settings, SyntaxTree tree)
+    private Formatter(FormatterSettings settings)
     {
         this.Settings = settings;
-        this.tree = tree;
-        this.scope = new(null, "");
+        this.scope = new(null, FoldPriority.Never, "");
         this.scope.IsMaterialized.Collapse(true);
     }
 
@@ -77,37 +103,66 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitSyntaxToken(Api.Syntax.SyntaxToken node)
     {
-        this.CurrentToken.ScopeInfo = this.scope;
-        switch (node.Kind)
+        static FormattingTokenKind GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
         {
-        case TokenKind.Minus:
-        case TokenKind.Plus:
-        case TokenKind.Star:
-        case TokenKind.Slash:
-        case TokenKind.GreaterThan:
-        case TokenKind.LessThan:
-        case TokenKind.GreaterEqual:
-        case TokenKind.LessEqual:
-        case TokenKind.Equal:
-        case TokenKind.Assign:
-        case TokenKind.KeywordMod:
-            this.CurrentToken.RightPadding = " ";
-            this.CurrentToken.LeftPadding = " ";
-            break;
-        case TokenKind.KeywordVar:
-        case TokenKind.KeywordVal:
-        case TokenKind.KeywordFunc:
-        case TokenKind.KeywordReturn:
-        case TokenKind.KeywordGoto:
-        case TokenKind.KeywordWhile:
-        case TokenKind.KeywordIf:
-        case TokenKind.KeywordElse:
-        case TokenKind.KeywordImport:
-            this.CurrentToken.RightPadding = " ";
-            break;
-        }
+            TokenKind.KeywordAnd => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordElse => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordFalse => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordFor => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordGoto => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordImport => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordIn => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordInternal => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordMod => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordModule => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordOr => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordRem => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordReturn => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordPublic => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordTrue => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordVar => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordVal => FormattingTokenKind.PadLeft,
+
+
+            TokenKind.KeywordFunc => FormattingTokenKind.ExtraNewline,
+
+            TokenKind.KeywordIf => FormattingTokenKind.PadAround,
+            TokenKind.KeywordWhile => FormattingTokenKind.PadAround,
+
+            TokenKind.Semicolon => FormattingTokenKind.Semicolon,
+            TokenKind.CurlyOpen => FormattingTokenKind.PadLeft | FormattingTokenKind.TreatAsWhitespace,
+            TokenKind.ParenOpen => FormattingTokenKind.TreatAsWhitespace,
+            TokenKind.InterpolationStart => FormattingTokenKind.TreatAsWhitespace,
+            TokenKind.Dot => FormattingTokenKind.TreatAsWhitespace,
+
+            TokenKind.Assign => FormattingTokenKind.PadLeft,
+            TokenKind.LineStringStart => FormattingTokenKind.PadLeft,
+            TokenKind.MultiLineStringStart => FormattingTokenKind.PadLeft,
+            TokenKind.Plus => FormattingTokenKind.PadLeft,
+            TokenKind.Minus => FormattingTokenKind.PadLeft,
+            TokenKind.Star => FormattingTokenKind.PadLeft,
+            TokenKind.Slash => FormattingTokenKind.PadLeft,
+            TokenKind.PlusAssign => FormattingTokenKind.PadLeft,
+            TokenKind.MinusAssign => FormattingTokenKind.PadLeft,
+            TokenKind.StarAssign => FormattingTokenKind.PadLeft,
+            TokenKind.SlashAssign => FormattingTokenKind.PadLeft,
+            TokenKind.GreaterEqual => FormattingTokenKind.PadLeft,
+            TokenKind.GreaterThan => FormattingTokenKind.PadLeft,
+            TokenKind.LessEqual => FormattingTokenKind.PadLeft,
+            TokenKind.LessThan => FormattingTokenKind.PadLeft,
+
+            TokenKind.LiteralFloat => FormattingTokenKind.PadLeft,
+            TokenKind.LiteralInteger => FormattingTokenKind.PadLeft,
+
+            TokenKind.Identifier => FormattingTokenKind.PadLeft,
+
+            _ => FormattingTokenKind.NoFormatting
+        };
+
+        this.CurrentToken.ScopeInfo = this.scope;
+        this.CurrentToken.Kind = GetFormattingTokenKind(node);
+        this.CurrentToken.Token = node;
         base.VisitSyntaxToken(node);
-        this.CurrentToken.TokenSize = node.Green.Width;
         this.currentIdx++;
     }
 
@@ -117,8 +172,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             || node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ExpressionSyntax>)
         {
             this.CreateFoldableScope(this.Settings.Indentation,
-                MaterialisationKind.Normal,
-                SolverTask.FromResult(FoldPriority.AsSoonAsPossible),
+                FoldPriority.AsSoonAsPossible,
                 () => base.VisitSeparatedSyntaxList(node)
             );
         }
@@ -130,28 +184,14 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitParameter(Api.Syntax.ParameterSyntax node)
     {
-        if (node.Index > 0)
-        {
-            this.CurrentToken.LeftPadding = " ";
-        }
         this.CurrentToken.DoesReturnLineCollapsible = this.scope.IsMaterialized;
         base.VisitParameter(node);
-    }
-
-    public override void VisitExpression(Api.Syntax.ExpressionSyntax node)
-    {
-        if (node.ArgumentIndex > 0)
-        {
-            this.CurrentToken.LeftPadding = " ";
-        }
-        base.VisitExpression(node);
     }
 
     public override void VisitDeclaration(Api.Syntax.DeclarationSyntax node)
     {
         if (node.Parent is not Api.Syntax.DeclarationStatementSyntax)
         {
-
             if (!this.firstDeclaration)
             {
                 this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.True;
@@ -173,7 +213,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             return;
         }
         node.OpenQuotes.Accept(this);
-        using var _ = this.CreateFoldedScope(this.Settings.Indentation, MaterialisationKind.Normal);
+        using var _ = this.CreateFoldedScope(this.Settings.Indentation);
         var blockCurrentIndentCount = node.CloseQuotes.LeadingTrivia.Aggregate(0, (value, right) =>
         {
             if (right.Kind == TriviaKind.Newline) return 0;
@@ -231,7 +271,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 currentToken.DoesReturnLineCollapsible = CollapsibleBool.True;
                 if (newLineCount > 1)
                 {
-                    currentToken.LeftPadding = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLineCount - 1));
+                    // TODO
+                    //currentToken.LeftPadding = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLineCount - 1));
                 }
             }
         }
@@ -243,7 +284,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var kind = node.Operator.Kind;
         if (!(this.scope.Data?.Equals(kind) ?? false))
         {
-            closeScope = this.CreateFoldableScope("", MaterialisationKind.Normal, SolverTask.FromResult(FoldPriority.AsLateAsPossible));
+            closeScope = this.CreateFoldableScope("", FoldPriority.AsLateAsPossible);
             this.scope.Data = kind;
         }
         node.Left.Accept(this);
@@ -265,19 +306,41 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitBlockFunctionBody(Api.Syntax.BlockFunctionBodySyntax node)
     {
-        this.CurrentToken.LeftPadding = " ";
-        this.CreateFoldedScope(this.Settings.Indentation, MaterialisationKind.Strong, () => base.VisitBlockFunctionBody(node));
-        this.tokenDecorations[this.currentIdx - 1].DoesReturnLineCollapsible = CollapsibleBool.True;
+        node.OpenBrace.Accept(this);
+        this.CreateFoldedScope(this.Settings.Indentation, () => node.Statements.Accept(this));
+        this.tokenDecorations[this.currentIdx].DoesReturnLineCollapsible = CollapsibleBool.True;
+        node.CloseBrace.Accept(this);
     }
 
     public override void VisitInlineFunctionBody(Api.Syntax.InlineFunctionBodySyntax node)
     {
         var parent = (Api.Syntax.FunctionDeclarationSyntax)node.Parent!;
         using var _ = this.CreateFoldableScope(new string(' ', 7 + parent.Name.Span.Length + parent.ParameterList.Span.Length),
-            MaterialisationKind.Weak,
-            SolverTask.FromResult(FoldPriority.AsSoonAsPossible)
+            FoldPriority.AsSoonAsPossible
         );
         base.VisitInlineFunctionBody(node);
+    }
+
+    public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
+    {
+        var stateMachine = new LineStateMachine(string.Concat(this.scope.CurrentTotalIndent));
+        if (node.VisibilityModifier != null)
+        {
+            stateMachine.AddToken(this.CurrentToken, node.FunctionKeyword, this.Settings);
+        }
+        node.VisibilityModifier?.Accept(this);
+        stateMachine.AddToken(this.CurrentToken, node.FunctionKeyword, this.Settings);
+        node.FunctionKeyword.Accept(this);
+        stateMachine.AddToken(this.CurrentToken, node.Name, this.Settings);
+        node.Name.Accept(this);
+
+        node.Generics?.Accept(this);
+        node.OpenParen.Accept(this);
+
+
+        this.CreateFoldableScope()
+        TODO.
+        base.VisitFunctionDeclaration(node);
     }
 
     public override void VisitStatement(Api.Syntax.StatementSyntax node)
@@ -302,13 +365,11 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitWhileExpression(Api.Syntax.WhileExpressionSyntax node)
     {
-        this.tokenDecorations[this.currentIdx + 2 + node.Condition.Tokens.Count()].RightPadding = " ";
-        this.CreateFoldableScope(this.Settings.Indentation, MaterialisationKind.Normal, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), () => base.VisitWhileExpression(node));
+        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => base.VisitWhileExpression(node));
     }
 
     public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node)
     {
-        this.tokenDecorations[this.currentIdx + 2 + node.Condition.Tokens.Count()].RightPadding = " ";
         void Visit()
         {
             this.VisitExpression(node);
@@ -325,7 +386,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         }
         else
         {
-            this.CreateFoldableScope(this.Settings.Indentation, MaterialisationKind.Normal, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), Visit);
+            this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, Visit);
         }
         node.Else?.Accept(this);
     }
@@ -338,15 +399,9 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         }
         else
         {
-            this.CurrentToken.LeftPadding = " ";
             this.CurrentToken.DoesReturnLineCollapsible = this.scope.IsMaterialized;
         }
-        this.CreateFoldableScope(this.Settings.Indentation, MaterialisationKind.Normal, SolverTask.FromResult(FoldPriority.AsSoonAsPossible), () => base.VisitElseClause(node));
-    }
-
-    private static async SolverTask<string?> VariableIndentation(ScopeInfo scope)
-    {
-        return await scope.IsMaterialized.Collapsed ? scope.Indentation[..^1] : null;
+        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => base.VisitElseClause(node));
     }
 
     public override void VisitBlockExpression(Api.Syntax.BlockExpressionSyntax node)
@@ -359,7 +414,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         // but since we are in a block we create our own scope and the if/while/else will never create it's own scope.
         this.scope.IsMaterialized.TryCollapse(false);
 
-        this.CreateFoldedScope(this.Settings.Indentation, MaterialisationKind.Strong, () =>
+        this.CreateFoldedScope(this.Settings.Indentation, () =>
         {
             this.VisitExpression(node);
             node.OpenBrace.Accept(this);
@@ -376,15 +431,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitTypeSpecifier(Api.Syntax.TypeSpecifierSyntax node)
     {
-        this.CurrentToken.RightPadding = " ";
         base.VisitTypeSpecifier(node);
     }
 
-    private IDisposable CreateFoldedScope(string indentation, MaterialisationKind materialisationKind)
+    private IDisposable CreateFoldedScope(string indentation)
     {
-        this.scope = new ScopeInfo(this.scope, indentation);
+        this.scope = new ScopeInfo(this.scope, FoldPriority.Never, indentation);
         this.scope.IsMaterialized.Collapse(true);
-        this.scope.MaterialisationKind = materialisationKind;
         return new DisposeAction(() =>
         {
             this.scope.Dispose();
@@ -392,17 +445,14 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         });
     }
 
-    private void CreateFoldedScope(string indentation, MaterialisationKind materialisationKind, Action action)
+    private void CreateFoldedScope(string indentation, Action action)
     {
-        using (this.CreateFoldedScope(indentation, materialisationKind)) action();
+        using (this.CreateFoldedScope(indentation)) action();
     }
 
-    private IDisposable CreateFoldableScope(string indentation, MaterialisationKind materialisationKind, SolverTask<FoldPriority> foldBehavior)
+    private IDisposable CreateFoldableScope(string indentation, FoldPriority foldBehavior)
     {
-        this.scope = new ScopeInfo(this.scope, indentation, foldBehavior)
-        {
-            MaterialisationKind = materialisationKind
-        };
+        this.scope = new ScopeInfo(this.scope, foldBehavior, indentation);
         return new DisposeAction(() =>
         {
             this.scope.Dispose();
@@ -410,8 +460,62 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         });
     }
 
-    private void CreateFoldableScope(string indentation, MaterialisationKind materialisationKind, SolverTask<FoldPriority> foldBehavior, Action action)
+    private void CreateFoldableScope(string indentation, FoldPriority foldBehavior, Action action)
     {
-        using (this.CreateFoldableScope(indentation, materialisationKind, foldBehavior)) action();
+        using (this.CreateFoldableScope(indentation, foldBehavior)) action();
     }
+}
+
+[Flags]
+internal enum FormattingTokenKind
+{
+    NoFormatting = 0,
+    PadLeft = 1,
+    PadRight = 1 << 1,
+    PadAround = PadLeft | PadRight,
+    TreatAsWhitespace = 1 << 2,
+    Semicolon = 1 << 3,
+    ExtraNewline = 1 << 4
+}
+
+internal class LineStateMachine
+{
+    private readonly StringBuilder sb = new();
+    private readonly string indentation;
+    private bool previousIsWhitespace = true;
+    public LineStateMachine(string indentation)
+    {
+        this.sb.Append(indentation);
+        this.LineWidth = indentation.Length;
+        this.indentation = indentation;
+    }
+
+    public int LineWidth { get; set; }
+    public void AddToken(TokenDecoration decoration, Api.Syntax.SyntaxToken token, FormatterSettings settings)
+    {
+        if (decoration.Kind.HasFlag(FormattingTokenKind.PadLeft) && !this.previousIsWhitespace)
+        {
+            this.sb.Append(' ');
+            this.LineWidth++;
+        }
+        var text = decoration.TokenOverride ?? token.Text;
+        this.sb.Append(text);
+        if (decoration.Kind.HasFlag(FormattingTokenKind.PadRight))
+        {
+            this.sb.Append(' ');
+            this.LineWidth++;
+        }
+        this.previousIsWhitespace = decoration.Kind.HasFlag(FormattingTokenKind.TreatAsWhitespace) || decoration.Kind.HasFlag(FormattingTokenKind.PadRight);
+        this.LineWidth += text.Length;
+    }
+
+    public void Reset()
+    {
+        this.sb.Clear();
+        this.sb.Append(this.indentation);
+        this.LineWidth = this.indentation.Length;
+    }
+
+
+    public override string ToString() => this.sb.ToString();
 }

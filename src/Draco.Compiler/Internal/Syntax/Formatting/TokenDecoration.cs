@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
@@ -8,20 +9,11 @@ internal struct TokenDecoration
 {
     private ScopeInfo scopeInfo;
     private string? tokenOverride;
-    private CollapsibleBool? doesReturnLineCollapsible;
-    private FormattingTokenKind kind;
+    private Box<bool?>? doesReturnLine;
     private Api.Syntax.SyntaxToken token;
-    private bool _kindIsSet;
-    public FormattingTokenKind Kind
-    {
-        readonly get => this.kind;
-        set
-        {
-            if (this._kindIsSet) throw new InvalidOperationException("Kind already set");
-            this.kind = value;
-            this._kindIsSet = true;
-        }
-    }
+
+    public FormattingTokenKind Kind { get; set; }
+
     public Api.Syntax.SyntaxToken Token
     {
         readonly get => this.token; set
@@ -34,7 +26,7 @@ internal struct TokenDecoration
     [DisallowNull]
     public string? TokenOverride
     {
-        get => this.tokenOverride;
+        readonly get => this.tokenOverride;
         set
         {
             if (this.tokenOverride != null) throw new InvalidOperationException("Override already set");
@@ -43,13 +35,13 @@ internal struct TokenDecoration
     }
 
     [DisallowNull]
-    public CollapsibleBool? DoesReturnLineCollapsible
+    public Box<bool?>? DoesReturnLine
     {
-        readonly get => this.doesReturnLineCollapsible;
+        readonly get => this.doesReturnLine;
         set
         {
-            if (this.doesReturnLineCollapsible != null) throw new InvalidOperationException("Collapsible already set");
-            this.doesReturnLineCollapsible = value;
+            if (this.doesReturnLine != null) throw new InvalidOperationException("DoesReturnLine already set");
+            this.doesReturnLine = value;
         }
     }
 

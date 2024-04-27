@@ -25,34 +25,34 @@ internal class CollapsibleInt
 
 
     // order by desc
-    private List<(int Value, SolverTaskCompletionSource<bool> Tcs)>? _whenTcs;
+    private List<(int Value, MutableBox<bool?> Box)>? _boxes;
 
     public void Add(int toAdd)
     {
         this.MinimumCurrentValue += toAdd;
-        if (this._whenTcs is null) return;
-        var i = this._whenTcs.Count - 1;
+        if (this._boxes is null) return;
+        var i = this._boxes.Count - 1;
         if (i < 0) return;
         while (true)
         {
-            var (value, tcs) = this._whenTcs![i];
+            var (value, box) = this._boxes![i];
             if (this.MinimumCurrentValue < value) break;
-            tcs.SetResult(true);
+            box.Value = true;
             if (i == 0) break;
             i--;
         }
-        this._whenTcs.RemoveRange(i, this._whenTcs.Count - i);
+        this._boxes.RemoveRange(i, this._boxes.Count - i);
     }
 
     public void Collapse()
     {
-        if (this._whenTcs is not null)
+        if (this._boxes is not null)
         {
-            foreach (var (_, Tcs) in this._whenTcs ?? Enumerable.Empty<(int Value, SolverTaskCompletionSource<bool> Tcs)>())
+            foreach (var (_, box) in this._boxes ?? Enumerable.Empty<(int Value, MutableBox<bool?> Tcs)>())
             {
-                Tcs.SetResult(false);
+                box.Value = false;
             }
-            this._whenTcs = null;
+            this._boxes = null;
         }
 
         this.tcs?.SetResult(this.MinimumCurrentValue);
@@ -60,21 +60,27 @@ internal class CollapsibleInt
 
     public SolverTask<int> Collapsed => this.task;
 
-    public SolverTask<bool> WhenGreaterOrEqual(int number)
+    public Box<bool?> WhenGreaterOrEqual(int number)
     {
-        if (this.MinimumCurrentValue >= number) return SolverTask.FromResult(true);
-        this._whenTcs ??= [];
-        var index = this._whenTcs.BinarySearch((number, null!), Comparer.Instance);
-        if (index > 0) return this._whenTcs[index].Tcs.Task;
-        var tcs = new SolverTaskCompletionSource<bool>();
-        this._whenTcs.Insert(~index, (number, tcs));
-        return tcs.Task;
+        if (this.MinimumCurrentValue >= number) return true;
+        this._boxes ??= [];
+        var index = this._boxes.BinarySearch((number, null!), Comparer.Instance);
+        if (index > 0)
+        {
+            return this._boxes[index].Box;
+        }
+        else
+        {
+            var box = new MutableBox<bool?>(null, true);
+            this._boxes.Insert(~index, (number, box));
+            return box;
+        }
     }
 
-    private class Comparer : IComparer<(int, SolverTaskCompletionSource<bool>)>
+    private class Comparer : IComparer<(int, MutableBox<bool?>)>
     {
         public static Comparer Instance { get; } = new Comparer();
         // reverse comparison.
-        public int Compare((int, SolverTaskCompletionSource<bool>) x, (int, SolverTaskCompletionSource<bool>) y) => y.Item1.CompareTo(x.Item1);
+        public int Compare((int, MutableBox<bool?>) x, (int, MutableBox<bool?>) y) => y.Item1.CompareTo(x.Item1);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -32,26 +33,62 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         tree.Root.Accept(formatter);
 
         var decorations = formatter.tokenDecorations;
-        var tokens = tree.Root.Tokens.ToArray();
         var stateMachine = new LineStateMachine(string.Concat(decorations[0].ScopeInfo.CurrentTotalIndent));
         var currentLineStart = 0;
+        List<ScopeInfo> foldedScopes = new();
         for (var x = 0; x < decorations.Length; x++)
         {
             var curr = decorations[x];
-            var token = tokens[x];
-            if (curr.DoesReturnLineCollapsible?.Collapsed.Result ?? false)
+            if (curr.DoesReturnLine?.Value ?? false)
             {
                 stateMachine = new LineStateMachine(string.Concat(curr.ScopeInfo.CurrentTotalIndent));
                 currentLineStart = x;
+                foldedScopes.Clear();
             }
-            stateMachine.AddToken(curr, token);
+            stateMachine.AddToken(curr, settings);
             if (stateMachine.LineWidth > settings.LineWidth)
             {
-                if (curr.ScopeInfo.Fold())
+                var folded = curr.ScopeInfo.Fold();
+                if (folded != null)
                 {
                     x = currentLineStart - 1;
+                    foldedScopes.Add(folded);
                     stateMachine.Reset();
                     continue;
+                }
+                else if (curr.ScopeInfo.Parent != null)
+                {
+                    // we can't fold the current scope anymore, so we revert our folding, and we fold the previous scopes on the line.
+                    // there can be other strategy taken in the future, parametrable through settings.
+
+                    // first rewind and fold any "as soon as possible" scopes.
+                    for (var i = x - 1; i >= currentLineStart; i--)
+                    {
+                        var scope = decorations[i].ScopeInfo;
+                        if (scope.IsMaterialized?.Value ?? false) continue;
+                        if (scope.FoldPriority != FoldPriority.AsSoonAsPossible) continue;
+                        var prevFolded = scope.Fold();
+                        if (prevFolded != null) goto folded;
+                    }
+                    // there was no high priority scope to fold, we try to get the low priority then.
+                    for (var i = x - 1; i >= currentLineStart; i--)
+                    {
+                        var scope = decorations[i].ScopeInfo;
+                        if (scope.IsMaterialized?.Value ?? false) continue;
+                        var prevFolded = scope.Fold();
+                        if (prevFolded != null) goto folded;
+                    }
+
+                    // we couldn't fold any scope, we just give up.
+                    continue;
+
+                folded:
+                    foreach (var scope in foldedScopes)
+                    {
+                        scope.IsMaterialized.Value = null;
+                    }
+                    foldedScopes.Clear();
+                    x = currentLineStart - 1;
                 }
             }
         }
@@ -60,12 +97,11 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         stateMachine = new LineStateMachine(string.Concat(decorations[0].ScopeInfo.CurrentTotalIndent));
         for (var x = 0; x < decorations.Length; x++)
         {
-            var token = tokens[x];
-            if (token.Kind == TokenKind.StringNewline) continue;
 
             var decoration = decorations[x];
+            if (decoration.Token.Kind == TokenKind.StringNewline) continue;
 
-            if (decoration.DoesReturnLineCollapsible?.Collapsed.Result ?? false)
+            if (decoration.DoesReturnLine?.Value ?? false)
             {
                 builder.Append(stateMachine);
                 builder.Append(settings.Newline);
@@ -76,7 +112,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 builder.Append(settings.Newline);
             }
 
-            stateMachine.AddToken(decoration, token);
+            stateMachine.AddToken(decoration, settings);
         }
         builder.Append(stateMachine);
         builder.AppendLine();
@@ -91,8 +127,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     private Formatter(FormatterSettings settings)
     {
         this.Settings = settings;
-        this.scope = new(null, FoldPriority.Never, "");
-        this.scope.IsMaterialized.Collapse(true);
+        this.scope = new(null, settings, FoldPriority.Never, "");
+        this.scope.IsMaterialized.Value = true;
     }
 
     public override void VisitCompilationUnit(Api.Syntax.CompilationUnitSyntax node)
@@ -103,39 +139,40 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitSyntaxToken(Api.Syntax.SyntaxToken node)
     {
-        static FormattingTokenKind GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
+        FormattingTokenKind GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
         {
-            TokenKind.KeywordAnd => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordElse => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordFalse => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordFor => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordGoto => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordImport => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordIn => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordInternal => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordMod => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordModule => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordOr => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordRem => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordReturn => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordPublic => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordTrue => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordVar => FormattingTokenKind.PadLeft,
-            TokenKind.KeywordVal => FormattingTokenKind.PadLeft,
+            TokenKind.KeywordAnd => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordElse => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordFor => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordGoto => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordImport => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordIn => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordInternal => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordModule => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordOr => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordReturn => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordPublic => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordVar => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordVal => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordIf => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordWhile => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+
+            TokenKind.KeywordTrue => FormattingTokenKind.PadAround,
+            TokenKind.KeywordFalse => FormattingTokenKind.PadAround,
+            TokenKind.KeywordMod => FormattingTokenKind.PadAround,
+            TokenKind.KeywordRem => FormattingTokenKind.PadAround,
+
+            TokenKind.KeywordFunc => this.currentIdx == 0 ? FormattingTokenKind.PadAround : FormattingTokenKind.ExtraNewline,
 
 
-            TokenKind.KeywordFunc => FormattingTokenKind.ExtraNewline,
+            TokenKind.Semicolon => FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken,
+            TokenKind.CurlyOpen => FormattingTokenKind.PadLeft | FormattingTokenKind.BehaveAsWhiteSpaceForNextToken,
+            TokenKind.ParenOpen => FormattingTokenKind.Whitespace,
+            TokenKind.ParenClose => FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken,
+            TokenKind.InterpolationStart => FormattingTokenKind.Whitespace,
+            TokenKind.Dot => FormattingTokenKind.Whitespace,
 
-            TokenKind.KeywordIf => FormattingTokenKind.PadAround,
-            TokenKind.KeywordWhile => FormattingTokenKind.PadAround,
-
-            TokenKind.Semicolon => FormattingTokenKind.Semicolon,
-            TokenKind.CurlyOpen => FormattingTokenKind.PadLeft | FormattingTokenKind.TreatAsWhitespace,
-            TokenKind.ParenOpen => FormattingTokenKind.TreatAsWhitespace,
-            TokenKind.InterpolationStart => FormattingTokenKind.TreatAsWhitespace,
-            TokenKind.Dot => FormattingTokenKind.TreatAsWhitespace,
-
-            TokenKind.Assign => FormattingTokenKind.PadLeft,
+            TokenKind.Assign => FormattingTokenKind.PadAround,
             TokenKind.LineStringStart => FormattingTokenKind.PadLeft,
             TokenKind.MultiLineStringStart => FormattingTokenKind.PadLeft,
             TokenKind.Plus => FormattingTokenKind.PadLeft,
@@ -150,7 +187,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             TokenKind.GreaterThan => FormattingTokenKind.PadLeft,
             TokenKind.LessEqual => FormattingTokenKind.PadLeft,
             TokenKind.LessThan => FormattingTokenKind.PadLeft,
-
+            TokenKind.Equal => FormattingTokenKind.PadLeft,
             TokenKind.LiteralFloat => FormattingTokenKind.PadLeft,
             TokenKind.LiteralInteger => FormattingTokenKind.PadLeft,
 
@@ -160,7 +197,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         };
 
         this.CurrentToken.ScopeInfo = this.scope;
-        this.CurrentToken.Kind = GetFormattingTokenKind(node);
+        this.CurrentToken.Kind |= GetFormattingTokenKind(node);
         this.CurrentToken.Token = node;
         base.VisitSyntaxToken(node);
         this.currentIdx++;
@@ -184,7 +221,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitParameter(Api.Syntax.ParameterSyntax node)
     {
-        this.CurrentToken.DoesReturnLineCollapsible = this.scope.IsMaterialized;
+        this.CurrentToken.DoesReturnLine = this.scope.IsMaterialized;
         base.VisitParameter(node);
     }
 
@@ -192,14 +229,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         if (node.Parent is not Api.Syntax.DeclarationStatementSyntax)
         {
-            if (!this.firstDeclaration)
-            {
-                this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.True;
-            }
-            else
-            {
-                this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.False;
-            }
+            this.CurrentToken.DoesReturnLine = !this.firstDeclaration;
             this.firstDeclaration = false;
         }
         base.VisitDeclaration(node);
@@ -246,20 +276,28 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             {
                 newLineCount = 0;
             }
-
+            var startIdx = this.currentIdx;
             var tokenCount = curr.Tokens.Count();
+            foreach (var token in curr.Tokens)
+            {
+                var newLines = token.TrailingTrivia.Where(t => t.Kind == TriviaKind.Newline).ToArray();
+                if (newLines.Length > 0)
+                {
+                    this.tokenDecorations[this.currentIdx + 1].DoesReturnLine = true;
+
+                    this.CurrentToken.TokenOverride = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLines.Length - 1).Prepend(token.Text));
+                }
+                token.Accept(this);
+            }
+
             for (var j = 0; j < tokenCount; j++)
             {
-                ref var decoration = ref this.tokenDecorations[this.currentIdx + j];
-                if (decoration.DoesReturnLineCollapsible is null)
-                {
-                    decoration.DoesReturnLineCollapsible = CollapsibleBool.False;
-                }
+                ref var decoration = ref this.tokenDecorations[startIdx + j];
+                decoration.DoesReturnLine ??= false;
             }
-            curr.Accept(this);
         }
         MultiIndent(newLineCount);
-        this.tokenDecorations[this.currentIdx].DoesReturnLineCollapsible = CollapsibleBool.True;
+        this.tokenDecorations[this.currentIdx].DoesReturnLine = true;
         node.CloseQuotes.Accept(this);
 
 
@@ -268,7 +306,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             if (newLineCount > 0)
             {
                 ref var currentToken = ref this.tokenDecorations[this.currentIdx];
-                currentToken.DoesReturnLineCollapsible = CollapsibleBool.True;
+                currentToken.DoesReturnLine = true;
                 if (newLineCount > 1)
                 {
                     // TODO
@@ -289,9 +327,9 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         }
         node.Left.Accept(this);
 
-        if (this.CurrentToken.DoesReturnLineCollapsible is null)
+        if (this.CurrentToken.DoesReturnLine is null)
         {
-            this.CurrentToken.DoesReturnLineCollapsible = this.scope.IsMaterialized;
+            this.CurrentToken.DoesReturnLine = this.scope.IsMaterialized;
         }
         node.Operator.Accept(this);
         node.Right.Accept(this);
@@ -308,21 +346,24 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         node.OpenBrace.Accept(this);
         this.CreateFoldedScope(this.Settings.Indentation, () => node.Statements.Accept(this));
-        this.tokenDecorations[this.currentIdx].DoesReturnLineCollapsible = CollapsibleBool.True;
+        this.tokenDecorations[this.currentIdx].DoesReturnLine = true;
         node.CloseBrace.Accept(this);
     }
 
     public override void VisitInlineFunctionBody(Api.Syntax.InlineFunctionBodySyntax node)
     {
         var parent = (Api.Syntax.FunctionDeclarationSyntax)node.Parent!;
-        using var _ = this.CreateFoldableScope(new string(' ', 7 + parent.Name.Span.Length + parent.ParameterList.Span.Length),
-            FoldPriority.AsSoonAsPossible
-        );
-        base.VisitInlineFunctionBody(node);
+        var curr = this.currentIdx;
+        node.Assign.Accept(this);
+
+        using var _ = this.CreateFoldableScope(curr, FoldPriority.AsSoonAsPossible);
+        node.Value.Accept(this);
+        node.Semicolon.Accept(this);
     }
 
     public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
     {
+        this.VisitDeclaration(node);
         node.VisibilityModifier?.Accept(this);
         node.FunctionKeyword.Accept(this);
         node.Name.Accept(this);
@@ -331,7 +372,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
         }
         node.OpenParen.Accept(this);
-        this.CreateFoldableScope()
         node.ParameterList.Accept(this);
         node.CloseParen.Accept(this);
         node.ReturnType?.Accept(this);
@@ -344,59 +384,54 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
         if (node is Api.Syntax.DeclarationStatementSyntax { Declaration: Api.Syntax.LabelDeclarationSyntax })
         {
-            // TODO: special case where we un-nest a level.
-            this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.True;
+            this.CurrentToken.DoesReturnLine = true;
+            this.CurrentToken.Kind = FormattingTokenKind.RemoveOneIndentation;
         }
         else if (node.Parent is Api.Syntax.BlockExpressionSyntax || node.Parent is Api.Syntax.BlockFunctionBodySyntax)
         {
-            this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.True;
+            this.CurrentToken.DoesReturnLine = true;
         }
         else
         {
-            this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.Create(this.scope.ItemsCount.WhenGreaterOrEqual(2));
+            this.CurrentToken.DoesReturnLine = this.scope.ItemsCount.WhenGreaterOrEqual(2);
         }
         base.VisitStatement(node);
     }
 
     public override void VisitWhileExpression(Api.Syntax.WhileExpressionSyntax node)
     {
-        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => base.VisitWhileExpression(node));
+        node.WhileKeyword.Accept(this);
+        node.OpenParen.Accept(this);
+        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
+        node.CloseParen.Accept(this);
+        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
     }
 
-    public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node)
-    {
-        void Visit()
+    public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node) =>
+        this.CreateFoldableScope("", FoldPriority.AsSoonAsPossible, () =>
         {
-            this.VisitExpression(node);
             node.IfKeyword.Accept(this);
             node.OpenParen.Accept(this);
-            node.Condition.Accept(this);
+            this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
             node.CloseParen.Accept(this);
-            node.Then.Accept(this);
-        }
 
-        if (this.scope.ItemsCount.MinimumCurrentValue > 1)
-        {
-            Visit();
-        }
-        else
-        {
-            this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, Visit);
-        }
-        node.Else?.Accept(this);
-    }
+            this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
+
+            node.Else?.Accept(this);
+        });
 
     public override void VisitElseClause(Api.Syntax.ElseClauseSyntax node)
     {
         if (node.IsElseIf || node.Parent!.Parent is Api.Syntax.ExpressionStatementSyntax)
         {
-            this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.True;
+            this.CurrentToken.DoesReturnLine = true;
         }
         else
         {
-            this.CurrentToken.DoesReturnLineCollapsible = this.scope.IsMaterialized;
+            this.CurrentToken.DoesReturnLine = this.scope.IsMaterialized;
         }
-        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => base.VisitElseClause(node));
+        node.ElseKeyword.Accept(this);
+        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Expression.Accept(this));
     }
 
     public override void VisitBlockExpression(Api.Syntax.BlockExpressionSyntax node)
@@ -407,21 +442,21 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         // if (blabla)
         //     an expression;
         // but since we are in a block we create our own scope and the if/while/else will never create it's own scope.
-        this.scope.IsMaterialized.TryCollapse(false);
+        this.scope.IsMaterialized.Value ??= false;
+
+        node.OpenBrace.Accept(this);
 
         this.CreateFoldedScope(this.Settings.Indentation, () =>
         {
-            this.VisitExpression(node);
-            node.OpenBrace.Accept(this);
             node.Statements.Accept(this);
             if (node.Value != null)
             {
-                this.CurrentToken.DoesReturnLineCollapsible = CollapsibleBool.True;
+                this.CurrentToken.DoesReturnLine = true;
                 node.Value.Accept(this);
             }
-            node.CloseBrace.Accept(this);
         });
-        this.tokenDecorations[this.currentIdx - 1].DoesReturnLineCollapsible = CollapsibleBool.True;
+        node.CloseBrace.Accept(this);
+        this.tokenDecorations[this.currentIdx - 1].DoesReturnLine = true;
     }
 
     public override void VisitTypeSpecifier(Api.Syntax.TypeSpecifierSyntax node)
@@ -431,8 +466,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     private IDisposable CreateFoldedScope(string indentation)
     {
-        this.scope = new ScopeInfo(this.scope, FoldPriority.Never, indentation);
-        this.scope.IsMaterialized.Collapse(true);
+        this.scope = new ScopeInfo(this.scope, Settings, FoldPriority.Never, indentation);
+        this.scope.IsMaterialized.Value = true;
         return new DisposeAction(() =>
         {
             this.scope.Dispose();
@@ -447,7 +482,17 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     private IDisposable CreateFoldableScope(string indentation, FoldPriority foldBehavior)
     {
-        this.scope = new ScopeInfo(this.scope, foldBehavior, indentation);
+        this.scope = new ScopeInfo(this.scope, Settings, foldBehavior, indentation);
+        return new DisposeAction(() =>
+        {
+            this.scope.Dispose();
+            this.scope = this.scope.Parent!;
+        });
+    }
+
+    private IDisposable CreateFoldableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
+    {
+        this.scope = new ScopeInfo(this.scope, Settings, foldBehavior, (this.tokenDecorations, indexOfLevelingToken));
         return new DisposeAction(() =>
         {
             this.scope.Dispose();

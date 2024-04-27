@@ -16,25 +16,27 @@ internal class ScopeInfo : IDisposable
     private readonly SolverTaskCompletionSource<Unit> _stableTcs = new();
     private readonly string? indentation;
     private readonly (IReadOnlyList<TokenDecoration> tokens, int indexOfLevelingToken)? levelingToken;
+    private readonly FormatterSettings settings;
 
     [MemberNotNullWhen(true, nameof(levelingToken))]
     [MemberNotNullWhen(false, nameof(indentation))]
     private bool DrivenByLevelingToken => this.levelingToken.HasValue;
 
-    public ScopeInfo(ScopeInfo? parent, FoldPriority foldPriority)
+    private ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority)
     {
         this.Parent = parent;
+        this.settings = settings;
         this.FoldPriority = foldPriority;
         parent?.Childs.Add(this);
     }
 
-    public ScopeInfo(ScopeInfo? parent, FoldPriority foldPriority, string indentation) : this(parent, foldPriority)
+    public ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority, string indentation) : this(parent, settings, foldPriority)
     {
         this.indentation = indentation;
     }
 
-    public ScopeInfo(ScopeInfo? parent, FoldPriority foldPriority, (IReadOnlyList<TokenDecoration> tokens, int indexOfLevelingToken) levelingToken)
-        : this(parent, foldPriority)
+    public ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority, (IReadOnlyList<TokenDecoration> tokens, int indexOfLevelingToken) levelingToken)
+        : this(parent, settings, foldPriority)
     {
         this.levelingToken = levelingToken;
     }
@@ -54,16 +56,22 @@ internal class ScopeInfo : IDisposable
     ///     .ToList()
     /// </code>
     /// </summary>
-    public CollapsibleBool IsMaterialized { get; } = CollapsibleBool.Create();
+    public MutableBox<bool?> IsMaterialized { get; } = new MutableBox<bool?>(null, true);
+    private bool IsMaterializedValue => this.IsMaterialized.Value ?? false;
     public CollapsibleInt ItemsCount { get; } = CollapsibleInt.Create();
     public TokenDecoration? TokenDecoration { get; set; }
-
 
 
     public IEnumerable<string> CurrentTotalIndent
     {
         get
         {
+            if (!this.IsMaterializedValue)
+            {
+                if (this.Parent is null) return [];
+                return this.Parent.CurrentTotalIndent;
+            }
+
             if (!this.DrivenByLevelingToken)
             {
                 if (this.Parent is null) return [this.indentation];
@@ -76,7 +84,7 @@ internal class ScopeInfo : IDisposable
             {
                 for (var i = indexOfLevelingToken; i >= 0; i--)
                 {
-                    if (tokens[i].DoesReturnLineCollapsible?.Collapsed.Result ?? false)
+                    if (tokens[i].DoesReturnLine?.Value ?? false)
                     {
                         return i;
                     }
@@ -87,12 +95,13 @@ internal class ScopeInfo : IDisposable
             var startLine = GetStartLineTokenIndex();
             var startToken = this.levelingToken.Value.tokens[startLine];
             var stateMachine = new LineStateMachine(string.Concat(startToken.ScopeInfo.CurrentTotalIndent));
-            for (var i = startLine; i < this.levelingToken.Value.tokens.Count; i++)
+            for (var i = startLine; i <= indexOfLevelingToken; i++)
             {
                 var curr = this.levelingToken.Value.tokens[i];
-                stateMachine.AddToken(curr, curr.Token);
+                stateMachine.AddToken(curr, this.settings);
             }
-            return [new string(' ', stateMachine.LineWidth)];
+            var levelingToken = this.levelingToken.Value.tokens[indexOfLevelingToken];
+            return [new string(' ', stateMachine.LineWidth - levelingToken.Token.Text.Length)];
 
         }
     }
@@ -139,28 +148,28 @@ internal class ScopeInfo : IDisposable
         }
     }
 
-    public bool Fold()
+    public ScopeInfo? Fold()
     {
         foreach (var item in this.ThisAndParents.Reverse())
         {
-            if (item.IsMaterialized.Collapsed.IsCompleted) continue;
+            if (item.IsMaterialized.Value.HasValue) continue;
             if (item.FoldPriority == FoldPriority.AsSoonAsPossible)
             {
-                item.IsMaterialized.Collapse(true);
-                return true;
+                item.IsMaterialized.Value = true;
+                return item;
             }
         }
 
         foreach (var item in this.ThisAndParents)
         {
-            if (item.IsMaterialized.Collapsed.IsCompleted) continue;
+            if (item.IsMaterialized.Value.HasValue) continue;
             if (item.FoldPriority == FoldPriority.AsLateAsPossible)
             {
-                item.IsMaterialized.Collapse(true);
-                return true;
+                item.IsMaterialized.Value = true;
+                return item;
             }
         }
-        return false;
+        return null;
     }
 
     public void Dispose() => this.ItemsCount.Collapse();

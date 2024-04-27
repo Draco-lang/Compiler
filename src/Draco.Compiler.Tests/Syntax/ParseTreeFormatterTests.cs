@@ -165,21 +165,13 @@ public sealed class SyntaxTreeFormatterTests
     }
 
     [Fact]
-    public void ExpressionInMultiLineStringFolds()
+    public void ExpressionInMultiLineStringDoesNotChange()
     {
         var input = """"
-            func main()
-            {
+            func main() {
                 val someMultiLineString = """
                     the result:\{1 + 2 + 3 + 4 + 5
                     + 6 + 7 + 8 + 9 + 10}
-                    """;
-            }
-            """";
-        var expected = """"
-            func main() {
-                val someMultiLineString = """
-                    the result:\{1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10}
                     """;
             }
 
@@ -190,7 +182,7 @@ public sealed class SyntaxTreeFormatterTests
         });
         Console.WriteLine(actual);
         this.logger.WriteLine(actual);
-        Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
+        Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 
     [Fact]
@@ -216,6 +208,29 @@ public sealed class SyntaxTreeFormatterTests
 
             """";
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
+        Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void TooLongArgsFoldsInsteadOfExpr()
+    {
+        var input = """
+            func main(lots: Of, arguments: That, will: Be, fold: But) = nnot + this;
+            """;
+        var expected = """
+            func main(
+                lots: Of,
+                arguments: That,
+                will: Be,
+                fold: But) = nnot + this;
+
+            """;
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
+        {
+            LineWidth = 60
+        });
         Console.WriteLine(actual);
         this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
@@ -7,6 +7,7 @@ internal class LineStateMachine
     private readonly StringBuilder sb = new();
     private readonly string indentation;
     private bool previousIsWhitespace = true;
+    private bool prevTokenNeedRightPad = false;
     public LineStateMachine(string indentation)
     {
         this.sb.Append(indentation);
@@ -15,22 +16,32 @@ internal class LineStateMachine
     }
 
     public int LineWidth { get; set; }
-    public void AddToken(TokenDecoration decoration, Api.Syntax.SyntaxToken token)
+    public void AddToken(TokenDecoration decoration, FormatterSettings settings)
     {
-        if (decoration.Kind.HasFlag(FormattingTokenKind.PadLeft) && !this.previousIsWhitespace)
+        if (decoration.Kind.HasFlag(FormattingTokenKind.RemoveOneIndentation))
         {
+            this.sb.Remove(0, settings.Indentation.Length);
+        }
+        var shouldLeftPad = (this.prevTokenNeedRightPad || decoration.Kind.HasFlag(FormattingTokenKind.PadLeft))
+            && !decoration.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken)
+            && !this.previousIsWhitespace;
+        if (shouldLeftPad)
+        {
+            this.previousIsWhitespace = true;
             this.sb.Append(' ');
             this.LineWidth++;
         }
-        var text = decoration.TokenOverride ?? token.Text;
+        var text = decoration.TokenOverride ?? decoration.Token.Text;
         this.sb.Append(text);
-        if (decoration.Kind.HasFlag(FormattingTokenKind.PadRight))
+        this.LineWidth += text.Length;
+        if (decoration.Kind.HasFlag(FormattingTokenKind.ForceRightPad))
         {
             this.sb.Append(' ');
             this.LineWidth++;
         }
-        this.previousIsWhitespace = decoration.Kind.HasFlag(FormattingTokenKind.TreatAsWhitespace) || decoration.Kind.HasFlag(FormattingTokenKind.PadRight);
-        this.LineWidth += text.Length;
+        this.prevTokenNeedRightPad = decoration.Kind.HasFlag(FormattingTokenKind.PadRight);
+
+        this.previousIsWhitespace = decoration.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForNextToken) | decoration.Kind.HasFlag(FormattingTokenKind.ForceRightPad);
     }
 
     public void Reset()

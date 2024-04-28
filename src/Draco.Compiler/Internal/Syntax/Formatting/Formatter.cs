@@ -239,7 +239,14 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         if (node.OpenQuotes.Kind != TokenKind.MultiLineStringStart)
         {
-            base.VisitStringExpression(node);
+            node.OpenQuotes.Accept(this);
+            foreach (var item in node.Parts.Tokens)
+            {
+                this.CurrentToken.DoesReturnLine = false;
+                item.Accept(this);
+            }
+            node.CloseQuotes.Accept(this);
+            this.CurrentToken.DoesReturnLine = false;
             return;
         }
         node.OpenQuotes.Accept(this);

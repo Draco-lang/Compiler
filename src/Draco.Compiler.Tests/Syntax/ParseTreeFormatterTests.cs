@@ -235,4 +235,92 @@ public sealed class SyntaxTreeFormatterTests
         this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
+
+    [Fact]
+    public void NoLineReturnInSingleLineString()
+    {
+        var input = """"
+            func main() {
+                val value = "Value: \{if (input < value) "low" else "high"}";
+            }
+
+            """";
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
+        {
+            LineWidth = 10
+        });
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
+        Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void Sample1()
+    {
+        var input = """"
+            import System;
+            import System.Console;
+
+            func main() {
+                val value = Random.Shared.Next(1, 101);
+                while (true) {
+                    Write("Guess a number (1-100): ");
+                    val input = Convert.ToInt32(ReadLine());
+                    if (input == value) goto break;
+                    WriteLine("Incorrect. Too \{if (input < value) "low" else "high"}");
+                }
+                WriteLine("You guessed it!");
+            }
+
+            """";
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
+        {
+            LineWidth = 50
+        });
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
+        Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void Sample2()
+    {
+        var input = """"
+            //test
+            func //test
+                main
+                // another
+                (){
+                var opponent = "R";
+                var me = "P";
+                if(me == opponent) return println("draw");
+                if(me == "R"){
+                    println(
+                    if(opponent == "P") "lose"
+                    else "win"
+                    );
+                }
+                else if (me == "P"){
+                    println(
+                    if(opponent == "R") "win"
+                    else  "lose"
+                    );
+                } 
+                else if(me == "S") {
+                    println(
+                    if(opponent == "P") "win"
+                    else "lose"
+                    );
+                }
+            }
+
+            """";
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
+        {
+            LineWidth = 50
+        });
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
+        Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
+    }
 }

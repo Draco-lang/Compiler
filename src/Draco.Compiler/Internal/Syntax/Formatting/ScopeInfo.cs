@@ -1,19 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Reflection.Metadata;
-using Draco.Compiler.Internal.Solver.Tasks;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 internal class ScopeInfo : IDisposable
 {
     public ScopeInfo? Parent { get; }
-    public List<ScopeInfo> Childs { get; } = [];
-    private readonly SolverTaskCompletionSource<Unit> _stableTcs = new();
     private readonly string? indentation;
     private readonly (IReadOnlyList<TokenDecoration> tokens, int indexOfLevelingToken)? levelingToken;
     private readonly FormatterSettings settings;
@@ -27,7 +21,6 @@ internal class ScopeInfo : IDisposable
         this.Parent = parent;
         this.settings = settings;
         this.FoldPriority = foldPriority;
-        parent?.Childs.Add(this);
     }
 
     public ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority, string indentation) : this(parent, settings, foldPriority)
@@ -40,8 +33,6 @@ internal class ScopeInfo : IDisposable
     {
         this.levelingToken = levelingToken;
     }
-
-    public SolverTask<Unit> WhenStable => this._stableTcs.Task;
 
     public object? Data { get; set; }
 
@@ -107,22 +98,6 @@ internal class ScopeInfo : IDisposable
     }
 
     public FoldPriority FoldPriority { get; }
-
-    public IEnumerable<ScopeInfo> ThisAndAllChilds => this.AllChilds.Prepend(this);
-    public IEnumerable<ScopeInfo> AllChilds
-    {
-        get
-        {
-            foreach (var child in this.Childs)
-            {
-                yield return child;
-                foreach (var subChild in child.AllChilds)
-                {
-                    yield return subChild;
-                }
-            }
-        }
-    }
 
     public ScopeInfo Root
     {

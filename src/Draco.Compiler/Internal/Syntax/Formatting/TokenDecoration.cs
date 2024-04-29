@@ -58,6 +58,4 @@ internal struct TokenDecoration
             this.scopeInfo = value;
         }
     }
-
-    public string TrailingComment { get; set; }
 }

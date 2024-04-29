@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Principal;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Solver.Tasks;
@@ -202,10 +203,15 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var trivia = this.CurrentToken.Token.TrailingTrivia;
         if (trivia.Count > 0)
         {
-            this.CurrentToken.TrailingComment = trivia
+            var comment = trivia
                 .Where(x => x.Kind == TriviaKind.LineComment || x.Kind == TriviaKind.DocumentationComment)
                 .Select(x => x.Text)
                 .SingleOrDefault();
+            if (comment != null)
+            {
+                this.CurrentToken.TokenOverride = this.CurrentToken.Token.Text + " " + comment;
+                this.tokenDecorations[this.currentIdx + 1].DoesReturnLine = true;
+            }
         }
         base.VisitSyntaxToken(node);
         this.currentIdx++;
@@ -379,14 +385,25 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
     {
         this.VisitDeclaration(node);
-        node.VisibilityModifier?.Accept(this);
-        node.FunctionKeyword.Accept(this);
+        IDisposable disposable;
+        if (node.VisibilityModifier != null)
+        {
+            node.VisibilityModifier?.Accept(this);
+            disposable = this.CreateFoldedScope(this.Settings.Indentation);
+            node.FunctionKeyword.Accept(this);
+        }
+        else
+        {
+            node.FunctionKeyword.Accept(this);
+            disposable = this.CreateFoldedScope(this.Settings.Indentation);
+        }
         node.Name.Accept(this);
         if (node.Generics is not null)
         {
             this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
         }
         node.OpenParen.Accept(this);
+        disposable.Dispose();
         node.ParameterList.Accept(this);
         node.CloseParen.Accept(this);
         node.ReturnType?.Accept(this);

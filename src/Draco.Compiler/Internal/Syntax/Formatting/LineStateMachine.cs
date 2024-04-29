@@ -18,6 +18,20 @@ internal class LineStateMachine
     public int LineWidth { get; set; }
     public void AddToken(TokenDecoration decoration, FormatterSettings settings)
     {
+        if (decoration.LeadingComments.Count > 0)
+        {
+            foreach (var comment in decoration.LeadingComments)
+            {
+                this.sb.Append(comment);
+                this.LineWidth += comment.Length;
+                if (decoration.Token.Kind != Api.Syntax.TokenKind.EndOfInput)
+                {
+                    this.sb.Append(settings.Newline);
+                    this.sb.Append(this.indentation);
+                }
+            }
+        }
+
         if (decoration.Kind.HasFlag(FormattingTokenKind.RemoveOneIndentation))
         {
             this.sb.Remove(0, settings.Indentation.Length);

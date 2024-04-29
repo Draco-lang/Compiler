@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
@@ -10,7 +8,6 @@ internal struct TokenDecoration
 {
     private ScopeInfo scopeInfo;
     private string? tokenOverride;
-    private Box<bool?>? doesReturnLine;
     private Api.Syntax.SyntaxToken token;
 
     public FormattingTokenKind Kind { get; set; }
@@ -36,15 +33,7 @@ internal struct TokenDecoration
     }
 
     [DisallowNull]
-    public Box<bool?>? DoesReturnLine
-    {
-        readonly get => this.doesReturnLine;
-        set
-        {
-            if (this.doesReturnLine != null) throw new InvalidOperationException("DoesReturnLine already set");
-            this.doesReturnLine = value;
-        }
-    }
+    public Box<bool?>? DoesReturnLine { readonly get; set; }
 
     public ScopeInfo ScopeInfo
     {
@@ -58,4 +47,6 @@ internal struct TokenDecoration
             this.scopeInfo = value;
         }
     }
+
+    public IReadOnlyCollection<string> LeadingComments { get; set; }
 }

@@ -102,7 +102,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             var decoration = decorations[x];
             if (decoration.Token.Kind == TokenKind.StringNewline) continue;
 
-            if (decoration.DoesReturnLine?.Value ?? false)
+            if (x > 0 && (decoration.DoesReturnLine?.Value ?? false))
             {
                 builder.Append(stateMachine);
                 builder.Append(settings.Newline);
@@ -116,7 +116,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             stateMachine.AddToken(decoration, settings);
         }
         builder.Append(stateMachine);
-        builder.AppendLine();
+        builder.Append(settings.Newline);
         return builder.ToString();
     }
 
@@ -213,6 +213,16 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 this.tokenDecorations[this.currentIdx + 1].DoesReturnLine = true;
             }
         }
+        var leadingComments = this.CurrentToken.Token.LeadingTrivia
+            .Where(x => x.Kind == TriviaKind.LineComment || x.Kind == TriviaKind.DocumentationComment)
+            .Select(x => x.Text)
+            .ToArray();
+        this.CurrentToken.LeadingComments = leadingComments;
+        if (leadingComments.Length > 0)
+        {
+            this.CurrentToken.DoesReturnLine = true;
+        }
+
         base.VisitSyntaxToken(node);
         this.currentIdx++;
     }

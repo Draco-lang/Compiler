@@ -291,30 +291,22 @@ public sealed class SyntaxTreeFormatterTests
                 main
                 // another
                 // foobar
-                (){
+                () {
                 var opponent = "R";
                 var me = "P";
-                if(me == opponent) return println("draw");
-                if(me == "R"){
-                    println(
-                    if(opponent == "P") "lose"
-                    else "win"
-                    );
+                if (me == opponent) return println("draw");
+                if (me == "R") {
+                    println(if (opponent == "P") "lose" else "win");
                 }
-                else if (me == "P"){
-                    println(
-                    if(opponent == "R") "win"
-                    else  "lose"
-                    );
-                } 
-                else if(me == "S") {
-                    println(
-                    if(opponent == "P") "win"
-                    else "lose"
-                    );
+                else if (me == "P") {
+                    println(if (opponent == "R") "win" else "lose");
+                }
+                else if (me == "S") {
+                    println(if (opponent == "P") "win" else "lose");
                 }
             } // oh hello
             // oops.
+
             """";
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
         {

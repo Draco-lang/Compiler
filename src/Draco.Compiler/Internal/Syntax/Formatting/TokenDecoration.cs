@@ -59,5 +59,5 @@ internal struct TokenDecoration
         }
     }
 
-    public IReadOnlyCollection<string>? TrailingComments { get; set; }
+    public string TrailingComment { get; set; }
 }

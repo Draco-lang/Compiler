@@ -202,9 +202,10 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var trivia = this.CurrentToken.Token.TrailingTrivia;
         if (trivia.Count > 0)
         {
-            this.CurrentToken.TrailingComments = trivia
+            this.CurrentToken.TrailingComment = trivia
                 .Where(x => x.Kind == TriviaKind.LineComment || x.Kind == TriviaKind.DocumentationComment)
-                .Select(x => x.Text).ToArray();
+                .Select(x => x.Text)
+                .SingleOrDefault();
         }
         base.VisitSyntaxToken(node);
         this.currentIdx++;
@@ -252,8 +253,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 this.CurrentToken.DoesReturnLine = false;
                 item.Accept(this);
             }
-            node.CloseQuotes.Accept(this);
             this.CurrentToken.DoesReturnLine = false;
+            node.CloseQuotes.Accept(this);
             return;
         }
         node.OpenQuotes.Accept(this);

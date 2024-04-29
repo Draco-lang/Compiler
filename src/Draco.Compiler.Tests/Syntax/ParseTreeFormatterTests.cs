@@ -313,12 +313,11 @@ public sealed class SyntaxTreeFormatterTests
                     else "lose"
                     );
                 }
-            }
-
+            } // oh hello
+            // oops.
             """";
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
         {
-            LineWidth = 50
         });
         Console.WriteLine(actual);
         this.logger.WriteLine(actual);

@@ -199,6 +199,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.CurrentToken.ScopeInfo = this.scope;
         this.CurrentToken.Kind |= GetFormattingTokenKind(node);
         this.CurrentToken.Token = node;
+        var trivia = this.CurrentToken.Token.TrailingTrivia;
+        if (trivia.Count > 0)
+        {
+            this.CurrentToken.TrailingComments = trivia
+                .Where(x => x.Kind == TriviaKind.LineComment || x.Kind == TriviaKind.DocumentationComment)
+                .Select(x => x.Text).ToArray();
+        }
         base.VisitSyntaxToken(node);
         this.currentIdx++;
     }

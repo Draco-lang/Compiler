@@ -290,6 +290,7 @@ public sealed class SyntaxTreeFormatterTests
             func //test
                 main
                 // another
+                // foobar
                 (){
                 var opponent = "R";
                 var me = "P";

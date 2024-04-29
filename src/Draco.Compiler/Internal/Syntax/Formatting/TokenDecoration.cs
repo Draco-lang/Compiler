@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Internal.Solver.Tasks;
@@ -57,4 +58,6 @@ internal struct TokenDecoration
             this.scopeInfo = value;
         }
     }
+
+    public IReadOnlyCollection<string>? TrailingComments { get; set; }
 }

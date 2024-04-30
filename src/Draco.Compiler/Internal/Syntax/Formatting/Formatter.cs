@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Principal;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
@@ -367,11 +363,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         closeScope?.Dispose();
     }
 
-    public override void VisitMemberExpression(Api.Syntax.MemberExpressionSyntax node)
-    {
-        base.VisitMemberExpression(node);
-    }
-
     public override void VisitBlockFunctionBody(Api.Syntax.BlockFunctionBodySyntax node)
     {
         node.OpenBrace.Accept(this);
@@ -382,7 +373,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitInlineFunctionBody(Api.Syntax.InlineFunctionBodySyntax node)
     {
-        var parent = (Api.Syntax.FunctionDeclarationSyntax)node.Parent!;
         var curr = this.currentIdx;
         node.Assign.Accept(this);
 
@@ -495,12 +485,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.tokenDecorations[this.currentIdx - 1].DoesReturnLine = true;
     }
 
-    public override void VisitTypeSpecifier(Api.Syntax.TypeSpecifierSyntax node)
-    {
-        base.VisitTypeSpecifier(node);
-    }
-
-    private IDisposable CreateFoldedScope(string indentation)
+    private DisposeAction CreateFoldedScope(string indentation)
     {
         this.scope = new ScopeInfo(this.scope, Settings, FoldPriority.Never, indentation);
         this.scope.IsMaterialized.Value = true;
@@ -512,13 +497,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         using (this.CreateFoldedScope(indentation)) action();
     }
 
-    private IDisposable CreateFoldableScope(string indentation, FoldPriority foldBehavior)
+    private DisposeAction CreateFoldableScope(string indentation, FoldPriority foldBehavior)
     {
         this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, indentation);
         return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 
-    private IDisposable CreateFoldableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
+    private DisposeAction CreateFoldableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
     {
         this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, (this.tokenDecorations, indexOfLevelingToken));
         return new DisposeAction(() => this.scope = this.scope.Parent!);

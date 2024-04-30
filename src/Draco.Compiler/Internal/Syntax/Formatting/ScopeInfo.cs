@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal class ScopeInfo : IDisposable
+internal class ScopeInfo
 {
     public ScopeInfo? Parent { get; }
     private readonly string? indentation;
@@ -49,7 +49,6 @@ internal class ScopeInfo : IDisposable
     /// </summary>
     public MutableBox<bool?> IsMaterialized { get; } = new MutableBox<bool?>(null, true);
     private bool IsMaterializedValue => this.IsMaterialized.Value ?? false;
-    public CollapsibleInt ItemsCount { get; } = CollapsibleInt.Create();
     public TokenDecoration? TokenDecoration { get; set; }
 
 
@@ -146,6 +145,4 @@ internal class ScopeInfo : IDisposable
         }
         return null;
     }
-
-    public void Dispose() => this.ItemsCount.Collapse();
 }

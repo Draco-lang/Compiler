@@ -370,7 +370,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     public override void VisitMemberExpression(Api.Syntax.MemberExpressionSyntax node)
     {
         base.VisitMemberExpression(node);
-        this.scope.ItemsCount.Add(1);
     }
 
     public override void VisitBlockFunctionBody(Api.Syntax.BlockFunctionBodySyntax node)
@@ -422,20 +421,15 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitStatement(Api.Syntax.StatementSyntax node)
     {
-        this.scope.ItemsCount.Add(1);
-
         if (node is Api.Syntax.DeclarationStatementSyntax { Declaration: Api.Syntax.LabelDeclarationSyntax })
         {
             this.CurrentToken.DoesReturnLine = true;
             this.CurrentToken.Kind = FormattingTokenKind.RemoveOneIndentation;
         }
-        else if (node.Parent is Api.Syntax.BlockExpressionSyntax || node.Parent is Api.Syntax.BlockFunctionBodySyntax)
-        {
-            this.CurrentToken.DoesReturnLine = true;
-        }
         else
         {
-            this.CurrentToken.DoesReturnLine = this.scope.ItemsCount.WhenGreaterOrEqual(2);
+            var shouldBeMultiLine = node.Parent is Api.Syntax.BlockExpressionSyntax || node.Parent is Api.Syntax.BlockFunctionBodySyntax;
+            this.CurrentToken.DoesReturnLine = shouldBeMultiLine;
         }
         base.VisitStatement(node);
     }
@@ -510,11 +504,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         this.scope = new ScopeInfo(this.scope, Settings, FoldPriority.Never, indentation);
         this.scope.IsMaterialized.Value = true;
-        return new DisposeAction(() =>
-        {
-            this.scope.Dispose();
-            this.scope = this.scope.Parent!;
-        });
+        return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 
     private void CreateFoldedScope(string indentation, Action action)
@@ -524,22 +514,14 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     private IDisposable CreateFoldableScope(string indentation, FoldPriority foldBehavior)
     {
-        this.scope = new ScopeInfo(this.scope, Settings, foldBehavior, indentation);
-        return new DisposeAction(() =>
-        {
-            this.scope.Dispose();
-            this.scope = this.scope.Parent!;
-        });
+        this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, indentation);
+        return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 
     private IDisposable CreateFoldableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
     {
-        this.scope = new ScopeInfo(this.scope, Settings, foldBehavior, (this.tokenDecorations, indexOfLevelingToken));
-        return new DisposeAction(() =>
-        {
-            this.scope.Dispose();
-            this.scope = this.scope.Parent!;
-        });
+        this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, (this.tokenDecorations, indexOfLevelingToken));
+        return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 
     private void CreateFoldableScope(string indentation, FoldPriority foldBehavior, Action action)

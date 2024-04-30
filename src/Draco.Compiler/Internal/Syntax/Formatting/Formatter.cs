@@ -345,7 +345,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitBinaryExpression(Api.Syntax.BinaryExpressionSyntax node)
     {
-        IDisposable? closeScope = null;
+        DisposeAction? closeScope = null;
         var kind = node.Operator.Kind;
         if (!(this.scope.Data?.Equals(kind) ?? false))
         {
@@ -384,7 +384,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
     {
         this.VisitDeclaration(node);
-        IDisposable disposable;
+        DisposeAction disposable;
         if (node.VisibilityModifier != null)
         {
             node.VisibilityModifier?.Accept(this);
@@ -487,7 +487,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     private DisposeAction CreateFoldedScope(string indentation)
     {
-        this.scope = new ScopeInfo(this.scope, Settings, FoldPriority.Never, indentation);
+        this.scope = new ScopeInfo(this.scope, this.Settings, FoldPriority.Never, indentation);
         this.scope.IsMaterialized.Value = true;
         return new DisposeAction(() => this.scope = this.scope.Parent!);
     }

@@ -186,6 +186,26 @@ public sealed class SyntaxTreeFormatterTests
     }
 
     [Fact]
+    public void MultiReturnInMultiLineStringArePreserved()
+    {
+        var input = """"
+            func main() {
+                val someMultiLineString = """
+                    bla bla
+
+
+                    bla bla
+                    """;
+            }
+
+            """";
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
+        Console.WriteLine(actual);
+        this.logger.WriteLine(actual);
+        Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
     public void IfElseChainFormatsCorrectly()
     {
         var input = """"

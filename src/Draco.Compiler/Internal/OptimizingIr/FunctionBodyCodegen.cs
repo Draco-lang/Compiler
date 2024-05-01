@@ -276,7 +276,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             .Zip(node.Method.Parameters)
             .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
             .ToImmutableArray();
-        var callResult = this.DefineRegister(node.TypeRequired);
 
         var proc = this.TranslateFunctionSymbol(node.Method);
         if (proc.Codegen is { } codegen)
@@ -285,10 +284,11 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             {
                 throw new System.NotImplementedException();
             }
-            codegen(this, callResult, args);
+            return codegen(this, node.TypeRequired, args);
         }
         else
         {
+            var callResult = this.DefineRegister(node.TypeRequired);
             if (receiver is null)
             {
                 this.Write(Call(callResult, proc, args));
@@ -297,8 +297,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             {
                 this.Write(MemberCall(callResult, proc, receiver, args));
             }
+            return callResult;
         }
-        return callResult;
     }
 
     private IOperand? CompileReceiver(BoundCallExpression call)
@@ -396,14 +396,12 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         if (node.CompoundOperator is not null)
         {
             var leftValue = this.DefineRegister(node.Left.Type);
-            var tmp = this.DefineRegister(node.TypeRequired);
-            toStore = tmp;
             // Patch
             PatchLoadTarget(leftLoad, leftValue);
             this.Write(leftLoad);
             if (node.CompoundOperator.Codegen is { } codegen)
             {
-                codegen(this, tmp, ImmutableArray.Create(leftValue, right));
+                toStore = codegen(this, node.TypeRequired, ImmutableArray.Create(leftValue, right));
             }
             else
             {

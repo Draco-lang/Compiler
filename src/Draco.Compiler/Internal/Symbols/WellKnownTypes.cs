@@ -73,45 +73,45 @@ internal sealed partial class WellKnownTypes
         // Numeric operators
         foreach (var type in new[]
         {
-         this.SystemSByte, this.SystemInt16, this.SystemInt32, this.SystemInt64,
-         this.SystemByte, this.SystemUInt16, this.SystemUInt32, this.SystemUInt64,
-         this.SystemSingle, this.SystemDouble,
-     })
+            this.SystemSByte, this.SystemInt16, this.SystemInt32, this.SystemInt64,
+            this.SystemByte, this.SystemUInt16, this.SystemUInt32, this.SystemUInt64,
+             this.SystemSingle, this.SystemDouble,
+        })
         {
             // Comparison
-            yield return this.Comparison(TokenKind.Equal, type, type, this.CodegenEqual);
-            yield return this.Comparison(TokenKind.NotEqual, type, type, this.CodegenNotEqual);
-            yield return this.Comparison(TokenKind.GreaterThan, type, type, this.CodegenGreater);
-            yield return this.Comparison(TokenKind.LessThan, type, type, this.CodegenLess);
-            yield return this.Comparison(TokenKind.GreaterEqual, type, type, this.CodegenGreaterEqual);
-            yield return this.Comparison(TokenKind.LessEqual, type, type, this.CodegenLessEqual);
+            yield return this.Comparison(TokenKind.Equal, type, type, FromAllocating(this.CodegenEqual));
+            yield return this.Comparison(TokenKind.NotEqual, type, type, FromAllocating(this.CodegenNotEqual));
+            yield return this.Comparison(TokenKind.GreaterThan, type, type, FromAllocating(this.CodegenGreater));
+            yield return this.Comparison(TokenKind.LessThan, type, type, FromAllocating(this.CodegenLess));
+            yield return this.Comparison(TokenKind.GreaterEqual, type, type, FromAllocating(this.CodegenGreaterEqual));
+            yield return this.Comparison(TokenKind.LessEqual, type, type, FromAllocating(this.CodegenLessEqual));
 
             // Unary
             yield return this.Unary(TokenKind.Plus, type, type, this.CodegenPlus);
-            yield return this.Unary(TokenKind.Minus, type, type, this.CodegenMinus);
+            yield return this.Unary(TokenKind.Minus, type, type, FromAllocating(this.CodegenMinus));
 
             // Binary
-            yield return this.Binary(TokenKind.Plus, type, type, type, this.CodegenAdd);
-            yield return this.Binary(TokenKind.Minus, type, type, type, this.CodegenSub);
-            yield return this.Binary(TokenKind.Star, type, type, type, this.CodegenMul);
-            yield return this.Binary(TokenKind.Slash, type, type, type, this.CodegenDiv);
-            yield return this.Binary(TokenKind.KeywordMod, type, type, type, this.CodegenMod);
-            yield return this.Binary(TokenKind.KeywordRem, type, type, type, this.CodegenRem);
+            yield return this.Binary(TokenKind.Plus, type, type, type, FromAllocating(this.CodegenAdd));
+            yield return this.Binary(TokenKind.Minus, type, type, type, FromAllocating(this.CodegenSub));
+            yield return this.Binary(TokenKind.Star, type, type, type, FromAllocating(this.CodegenMul));
+            yield return this.Binary(TokenKind.Slash, type, type, type, FromAllocating(this.CodegenDiv));
+            yield return this.Binary(TokenKind.KeywordMod, type, type, type, FromAllocating(this.CodegenMod));
+            yield return this.Binary(TokenKind.KeywordRem, type, type, type, FromAllocating(this.CodegenRem));
         }
 
         // The operators that make sense for characters too
         {
-            yield return this.Comparison(TokenKind.Equal, this.SystemChar, this.SystemChar, this.CodegenEqual);
-            yield return this.Comparison(TokenKind.NotEqual, this.SystemChar, this.SystemChar, this.CodegenNotEqual);
-            yield return this.Comparison(TokenKind.GreaterThan, this.SystemChar, this.SystemChar, this.CodegenGreater);
-            yield return this.Comparison(TokenKind.LessThan, this.SystemChar, this.SystemChar, this.CodegenLess);
-            yield return this.Comparison(TokenKind.GreaterEqual, this.SystemChar, this.SystemChar, this.CodegenGreaterEqual);
-            yield return this.Comparison(TokenKind.LessEqual, this.SystemChar, this.SystemChar, this.CodegenLessEqual);
+            yield return this.Comparison(TokenKind.Equal, this.SystemChar, this.SystemChar, FromAllocating(this.CodegenEqual));
+            yield return this.Comparison(TokenKind.NotEqual, this.SystemChar, this.SystemChar, FromAllocating(this.CodegenNotEqual));
+            yield return this.Comparison(TokenKind.GreaterThan, this.SystemChar, this.SystemChar, FromAllocating(this.CodegenGreater));
+            yield return this.Comparison(TokenKind.LessThan, this.SystemChar, this.SystemChar, FromAllocating(this.CodegenLess));
+            yield return this.Comparison(TokenKind.GreaterEqual, this.SystemChar, this.SystemChar, FromAllocating(this.CodegenGreaterEqual));
+            yield return this.Comparison(TokenKind.LessEqual, this.SystemChar, this.SystemChar, FromAllocating(this.CodegenLessEqual));
         }
 
         // String addition
-        yield return this.Binary(TokenKind.Plus, this.SystemString, this.SystemString, this.SystemString, (codegen, target, operands) =>
-            codegen.Write(Call(target, this.SystemString_Concat, operands)));
+        yield return this.Binary(TokenKind.Plus, this.SystemString, this.SystemString, this.SystemString,
+            FromAllocating((codegen, target, operands) => codegen.Write(Call(target, this.SystemString_Concat, operands))));
     }
 
     private static TypeAliasSymbol Alias(string name, TypeSymbol type) =>
@@ -233,16 +233,28 @@ internal sealed partial class WellKnownTypes
 
     public FunctionSymbol Bool_Not => LazyInitializer.EnsureInitialized(
        ref this.bool_not,
-       () => this.Unary(TokenKind.KeywordNot, this.SystemBoolean, this.SystemBoolean, this.CodegenNot));
+       () => this.Unary(TokenKind.KeywordNot, this.SystemBoolean, this.SystemBoolean, FromAllocating(this.CodegenNot)));
     private FunctionSymbol? bool_not;
     #endregion
 
     #region Codegen Methods
 
-    private void CodegenPlus(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
-    {
-        // No-op
-    }
+    private delegate void AllocatingCodegenDelegate(
+        FunctionBodyCodegen codegen,
+        Register target,
+        ImmutableArray<IOperand> operands);
+
+    private static FunctionSymbol.CodegenDelegate FromAllocating(AllocatingCodegenDelegate codegen) =>
+        (body, targetType, operands) =>
+        {
+            var target = body.DefineRegister(targetType);
+            codegen(body, target, operands);
+            return target;
+        };
+
+    private IOperand CodegenPlus(FunctionBodyCodegen codegen, TypeSymbol targetType, ImmutableArray<IOperand> operands) =>
+        // Simply return the operand holding the value
+        operands[0];
 
     private void CodegenMinus(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Mul(target, operands[0], new Constant(-1, this.SystemInt32)));

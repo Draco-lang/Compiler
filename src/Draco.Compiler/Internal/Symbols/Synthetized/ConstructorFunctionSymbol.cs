@@ -29,15 +29,16 @@ internal sealed class ConstructorFunctionSymbol : FunctionSymbol
     private FunctionSymbol ConstructorSymbol => LazyInitializer.EnsureInitialized(ref this.constructorSymbol, this.BuildConstructorSymbol);
     private FunctionSymbol? constructorSymbol;
 
-    public override CodegenDelegate Codegen => (codegen, target, args) =>
+    public override CodegenDelegate Codegen => (codegen, targetType, args) =>
     {
-        var instance = target.Type;
+        var target = codegen.DefineRegister(targetType);
         var ctorSymbol = this.ConstructorSymbol;
-        if (instance.IsGenericInstance && this.IsGenericDefinition)
+        if (targetType.IsGenericInstance && this.IsGenericDefinition)
         {
-            ctorSymbol = ctorSymbol.GenericInstantiate(instance, ((IGenericInstanceSymbol)instance).Context);
+            ctorSymbol = ctorSymbol.GenericInstantiate(targetType, ((IGenericInstanceSymbol)targetType).Context);
         }
         codegen.Write(NewObject(target, ctorSymbol, args));
+        return target;
     };
 
     private GenericContext? Context

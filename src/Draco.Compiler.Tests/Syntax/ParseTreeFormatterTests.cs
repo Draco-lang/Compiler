@@ -6,13 +6,6 @@ namespace Draco.Compiler.Tests.Syntax;
 
 public sealed class SyntaxTreeFormatterTests
 {
-    private readonly ITestOutputHelper logger;
-
-    public SyntaxTreeFormatterTests(ITestOutputHelper logger)
-    {
-        this.logger = logger;
-    }
-
     [Fact]
     public void SomeCodeSampleShouldBeFormattedCorrectly()
     {
@@ -101,8 +94,6 @@ public sealed class SyntaxTreeFormatterTests
             """";
 
         var actual = SyntaxTree.Parse(input).Format();
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -130,8 +121,6 @@ public sealed class SyntaxTreeFormatterTests
 
             """;
         var actual = SyntaxTree.Parse(input).Format();
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -158,9 +147,6 @@ public sealed class SyntaxTreeFormatterTests
         {
             LineWidth = 60
         });
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
-        this.logger.WriteLine(expected);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -180,8 +166,6 @@ public sealed class SyntaxTreeFormatterTests
         {
             LineWidth = 50
         });
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -195,13 +179,32 @@ public sealed class SyntaxTreeFormatterTests
 
 
                     bla bla
+
                     """;
             }
 
             """";
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
+        Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void MultiReturnInMultiLineStringArePreserved2()
+    {
+        var input = """"
+            func main() {
+                val someMultiLineString = """
+                    bla bla
+
+
+                    bla bla
+
+
+                    """;
+            }
+
+            """";
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -228,8 +231,6 @@ public sealed class SyntaxTreeFormatterTests
 
             """";
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -251,8 +252,6 @@ public sealed class SyntaxTreeFormatterTests
         {
             LineWidth = 60
         });
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -269,8 +268,6 @@ public sealed class SyntaxTreeFormatterTests
         {
             LineWidth = 10
         });
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -297,8 +294,6 @@ public sealed class SyntaxTreeFormatterTests
         {
             LineWidth = 50
         });
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -312,9 +307,12 @@ public sealed class SyntaxTreeFormatterTests
                 // another
                 // foobar
                 () {
-                var opponent = "R";
+                var
+                    // test
+                    opponent = "R";
                 var me = "P";
-                if (me == opponent) return println("draw");
+                if // heh
+                    (me == opponent) return println("draw");
                 if (me == "R") {
                     println(if (opponent == "P") "lose" else "win");
                 }
@@ -331,8 +329,6 @@ public sealed class SyntaxTreeFormatterTests
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
         {
         });
-        Console.WriteLine(actual);
-        this.logger.WriteLine(actual);
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 }

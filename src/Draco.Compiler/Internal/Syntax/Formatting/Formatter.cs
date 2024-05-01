@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
@@ -11,7 +12,9 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     private TokenDecoration[] tokenDecorations = [];
     private int currentIdx;
     private ScopeInfo scope;
+    private ref TokenDecoration PreviousToken => ref this.tokenDecorations[this.currentIdx - 1];
     private ref TokenDecoration CurrentToken => ref this.tokenDecorations[this.currentIdx];
+    private ref TokenDecoration NextToken => ref this.tokenDecorations[this.currentIdx + 1];
 
     private bool firstDeclaration = true;
 
@@ -32,7 +35,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var decorations = formatter.tokenDecorations;
         var stateMachine = new LineStateMachine(string.Concat(decorations[0].ScopeInfo.CurrentTotalIndent));
         var currentLineStart = 0;
-        List<ScopeInfo> foldedScopes = new();
+        List<ScopeInfo> foldedScopes = [];
         for (var x = 0; x < decorations.Length; x++)
         {
             var curr = decorations[x];
@@ -206,7 +209,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             if (comment != null)
             {
                 this.CurrentToken.TokenOverride = this.CurrentToken.Token.Text + " " + comment;
-                this.tokenDecorations[this.currentIdx + 1].DoesReturnLine = true;
+                this.NextToken.DoesReturnLine = true;
             }
         }
         var leadingComments = this.CurrentToken.Token.LeadingTrivia
@@ -279,52 +282,58 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var i = 0;
         var newLineCount = 1;
         var shouldIndent = true;
-
         for (; i < node.Parts.Count; i++)
         {
             var curr = node.Parts[i];
 
             var isNewLine = curr.Children.Count() == 1 && curr.Children.SingleOrDefault() is Api.Syntax.SyntaxToken and { Kind: TokenKind.StringNewline };
-            if (shouldIndent)
-            {
-                var tokenText = curr.Tokens.First().ValueText!;
-                if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
-                this.tokenDecorations[this.currentIdx].TokenOverride = tokenText[blockCurrentIndentCount..];
-                MultiIndent(newLineCount);
-                shouldIndent = false;
-            }
-
             if (isNewLine)
             {
                 newLineCount++;
                 shouldIndent = true;
+                curr.Accept(this);
+                continue;
             }
-            else
+            if (shouldIndent)
             {
-                newLineCount = 0;
+                var tokenText = curr.Tokens.First().ValueText!;
+                if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
+                this.CurrentToken.TokenOverride = tokenText[blockCurrentIndentCount..];
+                MultiIndent(newLineCount);
+                shouldIndent = false;
             }
-            var startIdx = this.currentIdx;
-            var tokenCount = curr.Tokens.Count();
+
+            newLineCount = 0;
+            var startIdx = this.currentIdx; // capture position before visiting the tokens of this parts (this will move forward the position)
+
+            // for parts that contains expressions and have return lines.
             foreach (var token in curr.Tokens)
             {
                 var newLines = token.TrailingTrivia.Where(t => t.Kind == TriviaKind.Newline).ToArray();
                 if (newLines.Length > 0)
                 {
-                    this.tokenDecorations[this.currentIdx + 1].DoesReturnLine = true;
+                    this.NextToken.DoesReturnLine = true;
 
                     this.CurrentToken.TokenOverride = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLines.Length - 1).Prepend(token.Text));
                 }
                 token.Accept(this);
             }
 
+            // default all tokens to never return.
+            var tokenCount = curr.Tokens.Count();
+
             for (var j = 0; j < tokenCount; j++)
             {
-                ref var decoration = ref this.tokenDecorations[startIdx + j];
-                decoration.DoesReturnLine ??= false;
+                this.tokenDecorations[startIdx + j].DoesReturnLine ??= false;
             }
         }
         MultiIndent(newLineCount);
-        this.tokenDecorations[this.currentIdx].DoesReturnLine = true;
+        if (this.CurrentToken.DoesReturnLine?.Value ?? false)
+        {
+            var previousId = this.PreviousNonNewLineToken();
+            this.tokenDecorations[previousId].TokenOverride += this.Settings.Newline;
+        }
+        this.CurrentToken.DoesReturnLine = true;
         node.CloseQuotes.Accept(this);
 
 
@@ -332,15 +341,27 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         {
             if (newLineCount > 0)
             {
-                ref var currentToken = ref this.tokenDecorations[this.currentIdx];
-                currentToken.DoesReturnLine = true;
+                this.CurrentToken.DoesReturnLine = true;
                 if (newLineCount > 1)
                 {
-                    // TODO
-                    //currentToken.LeftPadding = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLineCount - 1));
+                    var previousId = this.PreviousNonNewLineToken();
+                    this.tokenDecorations[previousId].TokenOverride += string.Concat(Enumerable.Repeat(this.Settings.Newline, newLineCount - 1));
                 }
             }
         }
+    }
+
+    private int PreviousNonNewLineToken()
+    {
+        var previousId = 0;
+        for (var i = this.currentIdx - 1; i >= 0; i--)
+        {
+            if ((this.tokenDecorations[i].Token?.Kind ?? TokenKind.StringNewline) == TokenKind.StringNewline) continue;
+            previousId = i;
+            break;
+        }
+
+        return previousId;
     }
 
     public override void VisitBinaryExpression(Api.Syntax.BinaryExpressionSyntax node)
@@ -367,7 +388,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         node.OpenBrace.Accept(this);
         this.CreateFoldedScope(this.Settings.Indentation, () => node.Statements.Accept(this));
-        this.tokenDecorations[this.currentIdx].DoesReturnLine = true;
+        this.CurrentToken.DoesReturnLine = true;
         node.CloseBrace.Accept(this);
     }
 
@@ -482,7 +503,28 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             }
         });
         node.CloseBrace.Accept(this);
-        this.tokenDecorations[this.currentIdx - 1].DoesReturnLine = true;
+        this.PreviousToken.DoesReturnLine = true;
+    }
+
+    public override void VisitVariableDeclaration(Api.Syntax.VariableDeclarationSyntax node)
+    {
+        DisposeAction disposable;
+        if (node.VisibilityModifier != null)
+        {
+            node.VisibilityModifier.Accept(this);
+            disposable = this.CreateFoldedScope(this.Settings.Indentation);
+            node.Keyword.Accept(this);
+        }
+        else
+        {
+            node.Keyword.Accept(this);
+            disposable = this.CreateFoldedScope(this.Settings.Indentation);
+        }
+        node.Name.Accept(this);
+        disposable.Dispose();
+        node.Type?.Accept(this);
+        node.Value?.Accept(this);
+        node.Semicolon.Accept(this);
     }
 
     private DisposeAction CreateFoldedScope(string indentation)

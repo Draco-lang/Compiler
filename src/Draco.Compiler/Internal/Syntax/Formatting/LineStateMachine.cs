@@ -8,6 +8,7 @@ internal class LineStateMachine
     private readonly string indentation;
     private bool previousIsWhitespace = true;
     private bool prevTokenNeedRightPad = false;
+    private bool forceWhiteSpace = false;
     public LineStateMachine(string indentation)
     {
         this.sb.Append(indentation);
@@ -36,12 +37,15 @@ internal class LineStateMachine
         {
             this.sb.Remove(0, settings.Indentation.Length);
         }
+
         var shouldLeftPad = (this.prevTokenNeedRightPad || decoration.Kind.HasFlag(FormattingTokenKind.PadLeft))
             && !decoration.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken)
             && !this.previousIsWhitespace;
+        shouldLeftPad |= this.forceWhiteSpace;
         if (shouldLeftPad)
         {
             this.previousIsWhitespace = true;
+            this.forceWhiteSpace = false;
             this.sb.Append(' ');
             this.LineWidth++;
         }
@@ -50,8 +54,7 @@ internal class LineStateMachine
         this.LineWidth += text.Length;
         if (decoration.Kind.HasFlag(FormattingTokenKind.ForceRightPad))
         {
-            this.sb.Append(' ');
-            this.LineWidth++;
+            this.forceWhiteSpace = true;
         }
         this.prevTokenNeedRightPad = decoration.Kind.HasFlag(FormattingTokenKind.PadRight);
 

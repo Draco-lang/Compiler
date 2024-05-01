@@ -19,11 +19,12 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// A delegate to generate IR code.
     /// </summary>
     /// <param name="codegen">The code generator.</param>
-    /// <param name="target">The register to store the result at.</param>
+    /// <param name="targetType">The target type of the resulting value.</param>
     /// <param name="operands">The compiled operand references.</param>
-    public delegate void CodegenDelegate(
+    /// <returns>The operand that holds the result of the operation.</returns>
+    public delegate IOperand CodegenDelegate(
         FunctionBodyCodegen codegen,
-        Register target,
+        TypeSymbol targetType,
         ImmutableArray<IOperand> operands);
 
     /// <summary>

@@ -38,10 +38,12 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
         LazyInitializer.EnsureInitialized(ref this.elementType, this.BuildElementType);
     private TypeParameterSymbol? elementType;
 
-    public override CodegenDelegate Codegen => (codegen, target, operands) =>
+    public override CodegenDelegate Codegen => (codegen, targetType, operands) =>
     {
-        var elementType = target.Type.Substitution.GenericArguments[0];
+        var target = codegen.DefineRegister(targetType);
+        var elementType = targetType.Substitution.GenericArguments[0];
         codegen.Write(NewArray(target, elementType, operands));
+        return target;
     };
 
     private readonly ArrayTypeSymbol genericArrayType;

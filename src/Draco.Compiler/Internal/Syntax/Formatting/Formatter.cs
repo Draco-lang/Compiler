@@ -274,11 +274,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         }
         node.OpenQuotes.Accept(this);
         using var _ = this.CreateScope(this.Settings.Indentation);
-        var blockCurrentIndentCount = node.CloseQuotes.LeadingTrivia.Aggregate(0, (value, right) =>
-        {
-            if (right.Kind == TriviaKind.Newline) return 0;
-            return value + right.Span.Length;
-        });
+        var blockCurrentIndentCount = SyntaxFacts.ComputeCutoff(node).Length;
+
         var i = 0;
         var newLineCount = 1;
         var shouldIndent = true;

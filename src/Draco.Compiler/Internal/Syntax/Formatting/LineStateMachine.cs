@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal class LineStateMachine
+internal sealed class LineStateMachine
 {
     private readonly StringBuilder sb = new();
     private readonly string indentation;

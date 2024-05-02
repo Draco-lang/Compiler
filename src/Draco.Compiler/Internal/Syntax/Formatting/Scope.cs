@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal class Scope
+internal sealed class Scope
 {
     private readonly string? indentation;
     private readonly (IReadOnlyList<TokenMetadata> tokens, int indexOfLevelingToken)? levelingToken;

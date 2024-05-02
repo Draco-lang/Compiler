@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 internal class Box<T>(T value)
@@ -13,7 +9,7 @@ internal class Box<T>(T value)
     public static implicit operator Box<T>(T value) => new(value);
 }
 
-internal class MutableBox<T>(T value, bool canSetValue) : Box<T>(value)
+internal sealed class MutableBox<T>(T value, bool canSetValue) : Box<T>(value)
 {
     public bool CanSetValue { get; } = canSetValue;
     public new T Value

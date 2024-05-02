@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
@@ -9,12 +8,12 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 {
-    private TokenDecoration[] tokenDecorations = [];
+    private TokenMetadata[] tokensMetadata = [];
     private int currentIdx;
     private ScopeInfo scope;
-    private ref TokenDecoration PreviousToken => ref this.tokenDecorations[this.currentIdx - 1];
-    private ref TokenDecoration CurrentToken => ref this.tokenDecorations[this.currentIdx];
-    private ref TokenDecoration NextToken => ref this.tokenDecorations[this.currentIdx + 1];
+    private ref TokenMetadata PreviousToken => ref this.tokensMetadata[this.currentIdx - 1];
+    private ref TokenMetadata CurrentToken => ref this.tokensMetadata[this.currentIdx];
+    private ref TokenMetadata NextToken => ref this.tokensMetadata[this.currentIdx + 1];
 
     private bool firstDeclaration = true;
 
@@ -32,13 +31,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
         tree.Root.Accept(formatter);
 
-        var decorations = formatter.tokenDecorations;
-        var stateMachine = new LineStateMachine(string.Concat(decorations[0].ScopeInfo.CurrentTotalIndent));
+        var metadatas = formatter.tokensMetadata;
+        var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
         var currentLineStart = 0;
         List<ScopeInfo> foldedScopes = [];
-        for (var x = 0; x < decorations.Length; x++)
+        for (var x = 0; x < metadatas.Length; x++)
         {
-            var curr = decorations[x];
+            var curr = metadatas[x];
             if (curr.DoesReturnLine?.Value ?? false)
             {
                 stateMachine = new LineStateMachine(string.Concat(curr.ScopeInfo.CurrentTotalIndent));
@@ -64,7 +63,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                     // first rewind and fold any "as soon as possible" scopes.
                     for (var i = x - 1; i >= currentLineStart; i--)
                     {
-                        var scope = decorations[i].ScopeInfo;
+                        var scope = metadatas[i].ScopeInfo;
                         if (scope.IsMaterialized?.Value ?? false) continue;
                         if (scope.FoldPriority != FoldPriority.AsSoonAsPossible) continue;
                         var prevFolded = scope.Fold();
@@ -73,7 +72,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                     // there was no high priority scope to fold, we try to get the low priority then.
                     for (var i = x - 1; i >= currentLineStart; i--)
                     {
-                        var scope = decorations[i].ScopeInfo;
+                        var scope = metadatas[i].ScopeInfo;
                         if (scope.IsMaterialized?.Value ?? false) continue;
                         var prevFolded = scope.Fold();
                         if (prevFolded != null) goto folded;
@@ -94,25 +93,25 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         }
 
         var builder = new StringBuilder();
-        stateMachine = new LineStateMachine(string.Concat(decorations[0].ScopeInfo.CurrentTotalIndent));
-        for (var x = 0; x < decorations.Length; x++)
+        stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
+        for (var x = 0; x < metadatas.Length; x++)
         {
 
-            var decoration = decorations[x];
-            if (decoration.Token.Kind == TokenKind.StringNewline) continue;
+            var metadata = metadatas[x];
+            if (metadata.Token.Kind == TokenKind.StringNewline) continue;
 
-            if (x > 0 && (decoration.DoesReturnLine?.Value ?? false))
+            if (x > 0 && (metadata.DoesReturnLine?.Value ?? false))
             {
                 builder.Append(stateMachine);
                 builder.Append(settings.Newline);
-                stateMachine = new LineStateMachine(string.Concat(decoration.ScopeInfo.CurrentTotalIndent));
+                stateMachine = new LineStateMachine(string.Concat(metadata.ScopeInfo.CurrentTotalIndent));
             }
-            if (decoration.Kind.HasFlag(FormattingTokenKind.ExtraNewline) && x > 0)
+            if (metadata.Kind.HasFlag(FormattingTokenKind.ExtraNewline) && x > 0)
             {
                 builder.Append(settings.Newline);
             }
 
-            stateMachine.AddToken(decoration, settings);
+            stateMachine.AddToken(metadata, settings);
         }
         builder.Append(stateMachine);
         builder.Append(settings.Newline);
@@ -133,7 +132,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitCompilationUnit(Api.Syntax.CompilationUnitSyntax node)
     {
-        this.tokenDecorations = new TokenDecoration[node.Tokens.Count()];
+        this.tokensMetadata = new TokenMetadata[node.Tokens.Count()];
         base.VisitCompilationUnit(node);
     }
 
@@ -171,6 +170,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             TokenKind.ParenClose => FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken,
             TokenKind.InterpolationStart => FormattingTokenKind.Whitespace,
             TokenKind.Dot => FormattingTokenKind.Whitespace,
+            TokenKind.Colon => FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken,
 
             TokenKind.Assign => FormattingTokenKind.PadAround,
             TokenKind.LineStringStart => FormattingTokenKind.PadLeft,
@@ -231,7 +231,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         if (node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ParameterSyntax>
             || node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ExpressionSyntax>)
         {
-            this.CreateFoldableScope(this.Settings.Indentation,
+            this.CreateMaterializableScope(this.Settings.Indentation,
                 FoldPriority.AsSoonAsPossible,
                 () => base.VisitSeparatedSyntaxList(node)
             );
@@ -273,7 +273,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             return;
         }
         node.OpenQuotes.Accept(this);
-        using var _ = this.CreateFoldedScope(this.Settings.Indentation);
+        using var _ = this.CreateScope(this.Settings.Indentation);
         var blockCurrentIndentCount = node.CloseQuotes.LeadingTrivia.Aggregate(0, (value, right) =>
         {
             if (right.Kind == TriviaKind.Newline) return 0;
@@ -324,14 +324,14 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
             for (var j = 0; j < tokenCount; j++)
             {
-                this.tokenDecorations[startIdx + j].DoesReturnLine ??= false;
+                this.tokensMetadata[startIdx + j].DoesReturnLine ??= false;
             }
         }
         MultiIndent(newLineCount);
         if (this.CurrentToken.DoesReturnLine?.Value ?? false)
         {
             var previousId = this.PreviousNonNewLineToken();
-            this.tokenDecorations[previousId].TokenOverride += this.Settings.Newline;
+            this.tokensMetadata[previousId].TokenOverride += this.Settings.Newline;
         }
         this.CurrentToken.DoesReturnLine = true;
         node.CloseQuotes.Accept(this);
@@ -345,7 +345,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 if (newLineCount > 1)
                 {
                     var previousId = this.PreviousNonNewLineToken();
-                    this.tokenDecorations[previousId].TokenOverride += string.Concat(Enumerable.Repeat(this.Settings.Newline, newLineCount - 1));
+                    this.tokensMetadata[previousId].TokenOverride += string.Concat(Enumerable.Repeat(this.Settings.Newline, newLineCount - 1));
                 }
             }
         }
@@ -356,7 +356,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var previousId = 0;
         for (var i = this.currentIdx - 1; i >= 0; i--)
         {
-            if ((this.tokenDecorations[i].Token?.Kind ?? TokenKind.StringNewline) == TokenKind.StringNewline) continue;
+            if ((this.tokensMetadata[i].Token?.Kind ?? TokenKind.StringNewline) == TokenKind.StringNewline) continue;
             previousId = i;
             break;
         }
@@ -370,7 +370,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var kind = node.Operator.Kind;
         if (!(this.scope.Data?.Equals(kind) ?? false))
         {
-            closeScope = this.CreateFoldableScope("", FoldPriority.AsLateAsPossible);
+            closeScope = this.CreateMaterializableScope("", FoldPriority.AsLateAsPossible);
             this.scope.Data = kind;
         }
         node.Left.Accept(this);
@@ -387,7 +387,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     public override void VisitBlockFunctionBody(Api.Syntax.BlockFunctionBodySyntax node)
     {
         node.OpenBrace.Accept(this);
-        this.CreateFoldedScope(this.Settings.Indentation, () => node.Statements.Accept(this));
+        this.CreateScope(this.Settings.Indentation, () => node.Statements.Accept(this));
         this.CurrentToken.DoesReturnLine = true;
         node.CloseBrace.Accept(this);
     }
@@ -397,7 +397,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var curr = this.currentIdx;
         node.Assign.Accept(this);
 
-        using var _ = this.CreateFoldableScope(curr, FoldPriority.AsSoonAsPossible);
+        using var _ = this.CreateMaterializableScope(curr, FoldPriority.AsSoonAsPossible);
         node.Value.Accept(this);
         node.Semicolon.Accept(this);
     }
@@ -409,18 +409,18 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         if (node.VisibilityModifier != null)
         {
             node.VisibilityModifier?.Accept(this);
-            disposable = this.CreateFoldedScope(this.Settings.Indentation);
+            disposable = this.CreateScope(this.Settings.Indentation);
             node.FunctionKeyword.Accept(this);
         }
         else
         {
             node.FunctionKeyword.Accept(this);
-            disposable = this.CreateFoldedScope(this.Settings.Indentation);
+            disposable = this.CreateScope(this.Settings.Indentation);
         }
         node.Name.Accept(this);
         if (node.Generics is not null)
         {
-            this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
+            this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
         }
         node.OpenParen.Accept(this);
         disposable.Dispose();
@@ -449,20 +449,37 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         node.WhileKeyword.Accept(this);
         node.OpenParen.Accept(this);
-        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
+        this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
         node.CloseParen.Accept(this);
-        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
+        this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
     }
 
     public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node) =>
-        this.CreateFoldableScope("", FoldPriority.AsSoonAsPossible, () =>
+        this.CreateMaterializableScope("", FoldPriority.AsSoonAsPossible, () =>
         {
             node.IfKeyword.Accept(this);
+            DisposeAction? disposable = null;
             node.OpenParen.Accept(this);
-            this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
+            if (this.PreviousToken.DoesReturnLine?.Value ?? false)
+            {
+                // there is no reason for an OpenParen to return line except if there is a comment.
+                disposable = this.CreateScope(this.Settings.Indentation);
+                this.PreviousToken.ScopeInfo = this.scope; // it's easier to change our mind that compute ahead of time.
+            }
+            this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () =>
+            {
+                var firstTokenIdx = this.currentIdx;
+                node.Condition.Accept(this);
+                var firstToken = this.tokensMetadata[firstTokenIdx];
+                if (firstToken.DoesReturnLine?.Value ?? false)
+                {
+                    firstToken.ScopeInfo.IsMaterialized.Value = true;
+                }
+            });
             node.CloseParen.Accept(this);
+            disposable?.Dispose();
 
-            this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
+            this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
 
             node.Else?.Accept(this);
         });
@@ -478,7 +495,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             this.CurrentToken.DoesReturnLine = this.scope.IsMaterialized;
         }
         node.ElseKeyword.Accept(this);
-        this.CreateFoldableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Expression.Accept(this));
+        this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Expression.Accept(this));
     }
 
     public override void VisitBlockExpression(Api.Syntax.BlockExpressionSyntax node)
@@ -493,7 +510,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
         node.OpenBrace.Accept(this);
 
-        this.CreateFoldedScope(this.Settings.Indentation, () =>
+        this.CreateScope(this.Settings.Indentation, () =>
         {
             node.Statements.Accept(this);
             if (node.Value != null)
@@ -512,13 +529,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         if (node.VisibilityModifier != null)
         {
             node.VisibilityModifier.Accept(this);
-            disposable = this.CreateFoldedScope(this.Settings.Indentation);
+            disposable = this.CreateScope(this.Settings.Indentation);
             node.Keyword.Accept(this);
         }
         else
         {
             node.Keyword.Accept(this);
-            disposable = this.CreateFoldedScope(this.Settings.Indentation);
+            disposable = this.CreateScope(this.Settings.Indentation);
         }
         node.Name.Accept(this);
         disposable.Dispose();
@@ -527,32 +544,32 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         node.Semicolon.Accept(this);
     }
 
-    private DisposeAction CreateFoldedScope(string indentation)
+    private DisposeAction CreateScope(string indentation)
     {
         this.scope = new ScopeInfo(this.scope, this.Settings, FoldPriority.Never, indentation);
         this.scope.IsMaterialized.Value = true;
         return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 
-    private void CreateFoldedScope(string indentation, Action action)
+    private void CreateScope(string indentation, Action action)
     {
-        using (this.CreateFoldedScope(indentation)) action();
+        using (this.CreateScope(indentation)) action();
     }
 
-    private DisposeAction CreateFoldableScope(string indentation, FoldPriority foldBehavior)
+    private DisposeAction CreateMaterializableScope(string indentation, FoldPriority foldBehavior)
     {
         this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, indentation);
         return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 
-    private DisposeAction CreateFoldableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
+    private DisposeAction CreateMaterializableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
     {
-        this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, (this.tokenDecorations, indexOfLevelingToken));
+        this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, (this.tokensMetadata, indexOfLevelingToken));
         return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 
-    private void CreateFoldableScope(string indentation, FoldPriority foldBehavior, Action action)
+    private void CreateMaterializableScope(string indentation, FoldPriority foldBehavior, Action action)
     {
-        using (this.CreateFoldableScope(indentation, foldBehavior)) action();
+        using (this.CreateMaterializableScope(indentation, foldBehavior)) action();
     }
 }

@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace Draco.Compiler.Tests.Syntax;
 
-public sealed class SyntaxTreeFormatterTests
+public sealed class SyntaxTreeFormatterTests(ITestOutputHelper logger)
 {
     [Fact]
     public void SomeCodeSampleShouldBeFormattedCorrectly()
@@ -298,7 +298,7 @@ public sealed class SyntaxTreeFormatterTests
     }
 
     [Fact]
-    public void Sample2()
+    public void CursedSample()
     {
         var input = """"
             //test
@@ -313,10 +313,13 @@ public sealed class SyntaxTreeFormatterTests
                 var me = "P";
                 if // heh
                     (me == opponent) return println("draw");
-                if (me == "R") {
+                if (
+                    // heh
+                    me == "R") {
                     println(if (opponent == "P") "lose" else "win");
                 }
-                else if (me == "P") {
+                else if ( // heh
+                    me == "P") {
                     println(if (opponent == "R") "win" else "lose");
                 }
                 else if (me == "S") {
@@ -329,6 +332,28 @@ public sealed class SyntaxTreeFormatterTests
         var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
         {
         });
+        logger.WriteLine(actual);
+        Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void CursedSample2()
+    {
+        var input = """"
+            func foo(a: int32) {
+                if ({
+                    var x = a * 2;
+                    x > 50
+                }) {
+                    WriteLine("ohno");
+                }
+            }
+
+            """";
+        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
+        {
+        });
+        logger.WriteLine(actual);
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 }

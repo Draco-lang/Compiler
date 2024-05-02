@@ -17,15 +17,15 @@ internal class LineStateMachine
     }
 
     public int LineWidth { get; set; }
-    public void AddToken(TokenDecoration decoration, FormatterSettings settings)
+    public void AddToken(TokenMetadata metadata, FormatterSettings settings)
     {
-        if (decoration.LeadingComments.Count > 0)
+        if (metadata.LeadingComments.Count > 0)
         {
-            foreach (var comment in decoration.LeadingComments)
+            foreach (var comment in metadata.LeadingComments)
             {
                 this.sb.Append(comment);
                 this.LineWidth += comment.Length;
-                if (decoration.Token.Kind != Api.Syntax.TokenKind.EndOfInput)
+                if (metadata.Token.Kind != Api.Syntax.TokenKind.EndOfInput)
                 {
                     this.sb.Append(settings.Newline);
                     this.sb.Append(this.indentation);
@@ -33,13 +33,13 @@ internal class LineStateMachine
             }
         }
 
-        if (decoration.Kind.HasFlag(FormattingTokenKind.RemoveOneIndentation))
+        if (metadata.Kind.HasFlag(FormattingTokenKind.RemoveOneIndentation))
         {
             this.sb.Remove(0, settings.Indentation.Length);
         }
 
-        var shouldLeftPad = (this.prevTokenNeedRightPad || decoration.Kind.HasFlag(FormattingTokenKind.PadLeft))
-            && !decoration.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken)
+        var shouldLeftPad = (this.prevTokenNeedRightPad || metadata.Kind.HasFlag(FormattingTokenKind.PadLeft))
+            && !metadata.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken)
             && !this.previousIsWhitespace;
         shouldLeftPad |= this.forceWhiteSpace;
         if (shouldLeftPad)
@@ -49,16 +49,16 @@ internal class LineStateMachine
             this.sb.Append(' ');
             this.LineWidth++;
         }
-        var text = decoration.TokenOverride ?? decoration.Token.Text;
+        var text = metadata.TokenOverride ?? metadata.Token.Text;
         this.sb.Append(text);
         this.LineWidth += text.Length;
-        if (decoration.Kind.HasFlag(FormattingTokenKind.ForceRightPad))
+        if (metadata.Kind.HasFlag(FormattingTokenKind.ForceRightPad))
         {
             this.forceWhiteSpace = true;
         }
-        this.prevTokenNeedRightPad = decoration.Kind.HasFlag(FormattingTokenKind.PadRight);
+        this.prevTokenNeedRightPad = metadata.Kind.HasFlag(FormattingTokenKind.PadRight);
 
-        this.previousIsWhitespace = decoration.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForNextToken) | decoration.Kind.HasFlag(FormattingTokenKind.ForceRightPad);
+        this.previousIsWhitespace = metadata.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForNextToken) | metadata.Kind.HasFlag(FormattingTokenKind.ForceRightPad);
     }
 
     public void Reset()

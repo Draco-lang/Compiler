@@ -7,9 +7,8 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 internal class ScopeInfo
 {
-    public ScopeInfo? Parent { get; }
     private readonly string? indentation;
-    private readonly (IReadOnlyList<TokenDecoration> tokens, int indexOfLevelingToken)? levelingToken;
+    private readonly (IReadOnlyList<TokenMetadata> tokens, int indexOfLevelingToken)? levelingToken;
     private readonly FormatterSettings settings;
 
     [MemberNotNullWhen(true, nameof(levelingToken))]
@@ -28,12 +27,18 @@ internal class ScopeInfo
         this.indentation = indentation;
     }
 
-    public ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority, (IReadOnlyList<TokenDecoration> tokens, int indexOfLevelingToken) levelingToken)
+    public ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority, (IReadOnlyList<TokenMetadata> tokens, int indexOfLevelingToken) levelingToken)
         : this(parent, settings, foldPriority)
     {
         this.levelingToken = levelingToken;
     }
 
+    public ScopeInfo? Parent { get; }
+
+    /// <summary>
+    /// Arbitrary data that can be attached to the scope.
+    /// Currently only used to group similar binary expressions together.
+    /// </summary>
     public object? Data { get; set; }
 
     /// <summary>
@@ -48,15 +53,12 @@ internal class ScopeInfo
     /// </code>
     /// </summary>
     public MutableBox<bool?> IsMaterialized { get; } = new MutableBox<bool?>(null, true);
-    private bool IsMaterializedValue => this.IsMaterialized.Value ?? false;
-    public TokenDecoration? TokenDecoration { get; set; }
-
 
     public IEnumerable<string> CurrentTotalIndent
     {
         get
         {
-            if (!this.IsMaterializedValue)
+            if (!(this.IsMaterialized.Value ?? false))
             {
                 if (this.Parent is null) return [];
                 return this.Parent.CurrentTotalIndent;
@@ -97,15 +99,6 @@ internal class ScopeInfo
     }
 
     public FoldPriority FoldPriority { get; }
-
-    public ScopeInfo Root
-    {
-        get
-        {
-            if (this.Parent == null) return this;
-            return this.Parent.Root;
-        }
-    }
 
     public IEnumerable<ScopeInfo> ThisAndParents => this.Parents.Prepend(this);
 

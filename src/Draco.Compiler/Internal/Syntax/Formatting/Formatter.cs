@@ -28,9 +28,42 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         settings ??= FormatterSettings.Default;
 
         var formatter = new Formatter(settings);
-
         tree.Root.Accept(formatter);
 
+        var metadatas = formatter.tokensMetadata;
+        FoldTooLongLine(formatter, settings);
+
+        var builder = new StringBuilder();
+        var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
+
+        stateMachine.AddToken(metadatas[0], settings);
+
+        for (var x = 1; x < metadatas.Length; x++)
+        {
+            var metadata = metadatas[x];
+            // we ignore multiline string newline tokens because we handle them in the string expression visitor.
+            if (metadata.Token.Kind == TokenKind.StringNewline) continue;
+
+            if (metadata.DoesReturnLine?.Value ?? false)
+            {
+                builder.Append(stateMachine);
+                builder.Append(settings.Newline);
+                stateMachine = new LineStateMachine(string.Concat(metadata.ScopeInfo.CurrentTotalIndent));
+            }
+            if (metadata.Kind.HasFlag(WhitespaceBehavior.ExtraNewline))
+            {
+                builder.Append(settings.Newline);
+            }
+
+            stateMachine.AddToken(metadata, settings);
+        }
+        builder.Append(stateMachine);
+        builder.Append(settings.Newline);
+        return builder.ToString();
+    }
+
+    private static void FoldTooLongLine(Formatter formatter, FormatterSettings settings)
+    {
         var metadatas = formatter.tokensMetadata;
         var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
         var currentLineStart = 0;
@@ -91,31 +124,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 }
             }
         }
-
-        var builder = new StringBuilder();
-        stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
-        for (var x = 0; x < metadatas.Length; x++)
-        {
-
-            var metadata = metadatas[x];
-            if (metadata.Token.Kind == TokenKind.StringNewline) continue;
-
-            if (x > 0 && (metadata.DoesReturnLine?.Value ?? false))
-            {
-                builder.Append(stateMachine);
-                builder.Append(settings.Newline);
-                stateMachine = new LineStateMachine(string.Concat(metadata.ScopeInfo.CurrentTotalIndent));
-            }
-            if (metadata.Kind.HasFlag(WhitespaceBehavior.ExtraNewline) && x > 0)
-            {
-                builder.Append(settings.Newline);
-            }
-
-            stateMachine.AddToken(metadata, settings);
-        }
-        builder.Append(stateMachine);
-        builder.Append(settings.Newline);
-        return builder.ToString();
     }
 
     /// <summary>
@@ -138,7 +146,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitSyntaxToken(Api.Syntax.SyntaxToken node)
     {
-        WhitespaceBehavior GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
+        static WhitespaceBehavior GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
         {
             TokenKind.KeywordAnd => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
             TokenKind.KeywordElse => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
@@ -161,7 +169,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             TokenKind.KeywordMod => WhitespaceBehavior.PadAround,
             TokenKind.KeywordRem => WhitespaceBehavior.PadAround,
 
-            TokenKind.KeywordFunc => this.currentIdx == 0 ? WhitespaceBehavior.PadAround : WhitespaceBehavior.ExtraNewline,
+            TokenKind.KeywordFunc => WhitespaceBehavior.ExtraNewline,
 
 
             TokenKind.Semicolon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,

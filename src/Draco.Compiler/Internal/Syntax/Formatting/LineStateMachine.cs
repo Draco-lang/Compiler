@@ -17,48 +17,53 @@ internal sealed class LineStateMachine
     }
 
     public int LineWidth { get; set; }
+
     public void AddToken(TokenMetadata metadata, FormatterSettings settings)
+    {
+        this.HandleLeadingComments(metadata, settings);
+
+        if (metadata.Kind.HasFlag(WhitespaceBehavior.RemoveOneIndentation))
+        {
+            this.sb.Remove(0, settings.Indentation.Length);
+            this.LineWidth -= settings.Indentation.Length;
+        }
+
+        var requestedLeftPad = this.prevTokenNeedRightPad || metadata.Kind.HasFlag(WhitespaceBehavior.PadLeft);
+        var haveWhitespace = (metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken) || this.previousIsWhitespace);
+        var shouldLeftPad = (requestedLeftPad && !haveWhitespace) || this.forceWhiteSpace;
+
+        if (shouldLeftPad)
+        {
+            this.Append(" ");
+        }
+        this.Append(metadata.TokenOverride ?? metadata.Token.Text);
+
+        this.forceWhiteSpace = metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
+        this.prevTokenNeedRightPad = metadata.Kind.HasFlag(WhitespaceBehavior.PadRight);
+        this.previousIsWhitespace = metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken) || metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
+    }
+
+    private void HandleLeadingComments(TokenMetadata metadata, FormatterSettings settings)
     {
         if (metadata.LeadingComments.Count > 0)
         {
             foreach (var comment in metadata.LeadingComments)
             {
                 this.sb.Append(comment);
-                this.LineWidth += comment.Length;
                 if (metadata.Token.Kind != Api.Syntax.TokenKind.EndOfInput)
                 {
                     this.sb.Append(settings.Newline);
                     this.sb.Append(this.indentation);
+                    this.LineWidth = this.indentation.Length;
                 }
             }
         }
+    }
 
-        if (metadata.Kind.HasFlag(WhitespaceBehavior.RemoveOneIndentation))
-        {
-            this.sb.Remove(0, settings.Indentation.Length);
-        }
-
-        var shouldLeftPad = (this.prevTokenNeedRightPad || metadata.Kind.HasFlag(WhitespaceBehavior.PadLeft))
-            && !metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken)
-            && !this.previousIsWhitespace;
-        shouldLeftPad |= this.forceWhiteSpace;
-        if (shouldLeftPad)
-        {
-            this.previousIsWhitespace = true;
-            this.forceWhiteSpace = false;
-            this.sb.Append(' ');
-            this.LineWidth++;
-        }
-        var text = metadata.TokenOverride ?? metadata.Token.Text;
+    private void Append(string text)
+    {
         this.sb.Append(text);
         this.LineWidth += text.Length;
-        if (metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad))
-        {
-            this.forceWhiteSpace = true;
-        }
-        this.prevTokenNeedRightPad = metadata.Kind.HasFlag(WhitespaceBehavior.PadRight);
-
-        this.previousIsWhitespace = metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken) | metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
     }
 
     public void Reset()

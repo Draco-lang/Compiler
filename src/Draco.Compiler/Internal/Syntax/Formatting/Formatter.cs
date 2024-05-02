@@ -10,7 +10,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 {
     private TokenMetadata[] tokensMetadata = [];
     private int currentIdx;
-    private ScopeInfo scope;
+    private Scope scope;
     private ref TokenMetadata PreviousToken => ref this.tokensMetadata[this.currentIdx - 1];
     private ref TokenMetadata CurrentToken => ref this.tokensMetadata[this.currentIdx];
     private ref TokenMetadata NextToken => ref this.tokensMetadata[this.currentIdx + 1];
@@ -34,7 +34,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var metadatas = formatter.tokensMetadata;
         var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
         var currentLineStart = 0;
-        List<ScopeInfo> foldedScopes = [];
+        List<Scope> foldedScopes = [];
         for (var x = 0; x < metadatas.Length; x++)
         {
             var curr = metadatas[x];
@@ -106,7 +106,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 builder.Append(settings.Newline);
                 stateMachine = new LineStateMachine(string.Concat(metadata.ScopeInfo.CurrentTotalIndent));
             }
-            if (metadata.Kind.HasFlag(FormattingTokenKind.ExtraNewline) && x > 0)
+            if (metadata.Kind.HasFlag(WhitespaceBehavior.ExtraNewline) && x > 0)
             {
                 builder.Append(settings.Newline);
             }
@@ -138,62 +138,62 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitSyntaxToken(Api.Syntax.SyntaxToken node)
     {
-        FormattingTokenKind GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
+        WhitespaceBehavior GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
         {
-            TokenKind.KeywordAnd => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordElse => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordFor => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordGoto => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordImport => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordIn => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordInternal => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordModule => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordOr => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordReturn => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordPublic => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordVar => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordVal => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordIf => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
-            TokenKind.KeywordWhile => FormattingTokenKind.PadLeft | FormattingTokenKind.ForceRightPad,
+            TokenKind.KeywordAnd => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordElse => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordFor => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordGoto => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordImport => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordIn => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordInternal => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordModule => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordOr => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordReturn => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordPublic => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordVar => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordVal => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordIf => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+            TokenKind.KeywordWhile => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
 
-            TokenKind.KeywordTrue => FormattingTokenKind.PadAround,
-            TokenKind.KeywordFalse => FormattingTokenKind.PadAround,
-            TokenKind.KeywordMod => FormattingTokenKind.PadAround,
-            TokenKind.KeywordRem => FormattingTokenKind.PadAround,
+            TokenKind.KeywordTrue => WhitespaceBehavior.PadAround,
+            TokenKind.KeywordFalse => WhitespaceBehavior.PadAround,
+            TokenKind.KeywordMod => WhitespaceBehavior.PadAround,
+            TokenKind.KeywordRem => WhitespaceBehavior.PadAround,
 
-            TokenKind.KeywordFunc => this.currentIdx == 0 ? FormattingTokenKind.PadAround : FormattingTokenKind.ExtraNewline,
+            TokenKind.KeywordFunc => this.currentIdx == 0 ? WhitespaceBehavior.PadAround : WhitespaceBehavior.ExtraNewline,
 
 
-            TokenKind.Semicolon => FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken,
-            TokenKind.CurlyOpen => FormattingTokenKind.PadLeft | FormattingTokenKind.BehaveAsWhiteSpaceForNextToken,
-            TokenKind.ParenOpen => FormattingTokenKind.Whitespace,
-            TokenKind.ParenClose => FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken,
-            TokenKind.InterpolationStart => FormattingTokenKind.Whitespace,
-            TokenKind.Dot => FormattingTokenKind.Whitespace,
-            TokenKind.Colon => FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken,
+            TokenKind.Semicolon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
+            TokenKind.CurlyOpen => WhitespaceBehavior.PadLeft | WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,
+            TokenKind.ParenOpen => WhitespaceBehavior.Whitespace,
+            TokenKind.ParenClose => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
+            TokenKind.InterpolationStart => WhitespaceBehavior.Whitespace,
+            TokenKind.Dot => WhitespaceBehavior.Whitespace,
+            TokenKind.Colon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
 
-            TokenKind.Assign => FormattingTokenKind.PadAround,
-            TokenKind.LineStringStart => FormattingTokenKind.PadLeft,
-            TokenKind.MultiLineStringStart => FormattingTokenKind.PadLeft,
-            TokenKind.Plus => FormattingTokenKind.PadLeft,
-            TokenKind.Minus => FormattingTokenKind.PadLeft,
-            TokenKind.Star => FormattingTokenKind.PadLeft,
-            TokenKind.Slash => FormattingTokenKind.PadLeft,
-            TokenKind.PlusAssign => FormattingTokenKind.PadLeft,
-            TokenKind.MinusAssign => FormattingTokenKind.PadLeft,
-            TokenKind.StarAssign => FormattingTokenKind.PadLeft,
-            TokenKind.SlashAssign => FormattingTokenKind.PadLeft,
-            TokenKind.GreaterEqual => FormattingTokenKind.PadLeft,
-            TokenKind.GreaterThan => FormattingTokenKind.PadLeft,
-            TokenKind.LessEqual => FormattingTokenKind.PadLeft,
-            TokenKind.LessThan => FormattingTokenKind.PadLeft,
-            TokenKind.Equal => FormattingTokenKind.PadLeft,
-            TokenKind.LiteralFloat => FormattingTokenKind.PadLeft,
-            TokenKind.LiteralInteger => FormattingTokenKind.PadLeft,
+            TokenKind.Assign => WhitespaceBehavior.PadAround,
+            TokenKind.LineStringStart => WhitespaceBehavior.PadLeft,
+            TokenKind.MultiLineStringStart => WhitespaceBehavior.PadLeft,
+            TokenKind.Plus => WhitespaceBehavior.PadLeft,
+            TokenKind.Minus => WhitespaceBehavior.PadLeft,
+            TokenKind.Star => WhitespaceBehavior.PadLeft,
+            TokenKind.Slash => WhitespaceBehavior.PadLeft,
+            TokenKind.PlusAssign => WhitespaceBehavior.PadLeft,
+            TokenKind.MinusAssign => WhitespaceBehavior.PadLeft,
+            TokenKind.StarAssign => WhitespaceBehavior.PadLeft,
+            TokenKind.SlashAssign => WhitespaceBehavior.PadLeft,
+            TokenKind.GreaterEqual => WhitespaceBehavior.PadLeft,
+            TokenKind.GreaterThan => WhitespaceBehavior.PadLeft,
+            TokenKind.LessEqual => WhitespaceBehavior.PadLeft,
+            TokenKind.LessThan => WhitespaceBehavior.PadLeft,
+            TokenKind.Equal => WhitespaceBehavior.PadLeft,
+            TokenKind.LiteralFloat => WhitespaceBehavior.PadLeft,
+            TokenKind.LiteralInteger => WhitespaceBehavior.PadLeft,
 
-            TokenKind.Identifier => FormattingTokenKind.PadLeft,
+            TokenKind.Identifier => WhitespaceBehavior.PadLeft,
 
-            _ => FormattingTokenKind.NoFormatting
+            _ => WhitespaceBehavior.NoFormatting
         };
 
         this.CurrentToken.ScopeInfo = this.scope;
@@ -435,7 +435,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         if (node is Api.Syntax.DeclarationStatementSyntax { Declaration: Api.Syntax.LabelDeclarationSyntax })
         {
             this.CurrentToken.DoesReturnLine = true;
-            this.CurrentToken.Kind = FormattingTokenKind.RemoveOneIndentation;
+            this.CurrentToken.Kind = WhitespaceBehavior.RemoveOneIndentation;
         }
         else
         {
@@ -546,7 +546,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     private DisposeAction CreateScope(string indentation)
     {
-        this.scope = new ScopeInfo(this.scope, this.Settings, FoldPriority.Never, indentation);
+        this.scope = new Scope(this.scope, this.Settings, FoldPriority.Never, indentation);
         this.scope.IsMaterialized.Value = true;
         return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
@@ -558,13 +558,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     private DisposeAction CreateMaterializableScope(string indentation, FoldPriority foldBehavior)
     {
-        this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, indentation);
+        this.scope = new Scope(this.scope, this.Settings, foldBehavior, indentation);
         return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 
     private DisposeAction CreateMaterializableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
     {
-        this.scope = new ScopeInfo(this.scope, this.Settings, foldBehavior, (this.tokensMetadata, indexOfLevelingToken));
+        this.scope = new Scope(this.scope, this.Settings, foldBehavior, (this.tokensMetadata, indexOfLevelingToken));
         return new DisposeAction(() => this.scope = this.scope.Parent!);
     }
 

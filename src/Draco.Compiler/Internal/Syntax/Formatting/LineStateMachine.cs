@@ -33,13 +33,13 @@ internal class LineStateMachine
             }
         }
 
-        if (metadata.Kind.HasFlag(FormattingTokenKind.RemoveOneIndentation))
+        if (metadata.Kind.HasFlag(WhitespaceBehavior.RemoveOneIndentation))
         {
             this.sb.Remove(0, settings.Indentation.Length);
         }
 
-        var shouldLeftPad = (this.prevTokenNeedRightPad || metadata.Kind.HasFlag(FormattingTokenKind.PadLeft))
-            && !metadata.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForPreviousToken)
+        var shouldLeftPad = (this.prevTokenNeedRightPad || metadata.Kind.HasFlag(WhitespaceBehavior.PadLeft))
+            && !metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken)
             && !this.previousIsWhitespace;
         shouldLeftPad |= this.forceWhiteSpace;
         if (shouldLeftPad)
@@ -52,13 +52,13 @@ internal class LineStateMachine
         var text = metadata.TokenOverride ?? metadata.Token.Text;
         this.sb.Append(text);
         this.LineWidth += text.Length;
-        if (metadata.Kind.HasFlag(FormattingTokenKind.ForceRightPad))
+        if (metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad))
         {
             this.forceWhiteSpace = true;
         }
-        this.prevTokenNeedRightPad = metadata.Kind.HasFlag(FormattingTokenKind.PadRight);
+        this.prevTokenNeedRightPad = metadata.Kind.HasFlag(WhitespaceBehavior.PadRight);
 
-        this.previousIsWhitespace = metadata.Kind.HasFlag(FormattingTokenKind.BehaveAsWhiteSpaceForNextToken) | metadata.Kind.HasFlag(FormattingTokenKind.ForceRightPad);
+        this.previousIsWhitespace = metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken) | metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
     }
 
     public void Reset()

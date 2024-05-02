@@ -4,9 +4,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal record struct TokenMetadata(FormattingTokenKind Kind,
+internal record struct TokenMetadata(WhitespaceBehavior Kind,
     Api.Syntax.SyntaxToken Token,
     [DisallowNull] string? TokenOverride,
     [DisallowNull] Box<bool?>? DoesReturnLine,
-    ScopeInfo ScopeInfo,
+    Scope ScopeInfo,
     IReadOnlyCollection<string> LeadingComments);

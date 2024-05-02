@@ -3,7 +3,7 @@ using System;
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 [Flags]
-internal enum FormattingTokenKind
+internal enum WhitespaceBehavior
 {
     NoFormatting = 0,
     PadLeft = 1,

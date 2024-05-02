@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal class ScopeInfo
+internal class Scope
 {
     private readonly string? indentation;
     private readonly (IReadOnlyList<TokenMetadata> tokens, int indexOfLevelingToken)? levelingToken;
@@ -15,25 +15,25 @@ internal class ScopeInfo
     [MemberNotNullWhen(false, nameof(indentation))]
     private bool DrivenByLevelingToken => this.levelingToken.HasValue;
 
-    private ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority)
+    private Scope(Scope? parent, FormatterSettings settings, FoldPriority foldPriority)
     {
         this.Parent = parent;
         this.settings = settings;
         this.FoldPriority = foldPriority;
     }
 
-    public ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority, string indentation) : this(parent, settings, foldPriority)
+    public Scope(Scope? parent, FormatterSettings settings, FoldPriority foldPriority, string indentation) : this(parent, settings, foldPriority)
     {
         this.indentation = indentation;
     }
 
-    public ScopeInfo(ScopeInfo? parent, FormatterSettings settings, FoldPriority foldPriority, (IReadOnlyList<TokenMetadata> tokens, int indexOfLevelingToken) levelingToken)
+    public Scope(Scope? parent, FormatterSettings settings, FoldPriority foldPriority, (IReadOnlyList<TokenMetadata> tokens, int indexOfLevelingToken) levelingToken)
         : this(parent, settings, foldPriority)
     {
         this.levelingToken = levelingToken;
     }
 
-    public ScopeInfo? Parent { get; }
+    public Scope? Parent { get; }
 
     /// <summary>
     /// Arbitrary data that can be attached to the scope.
@@ -100,9 +100,9 @@ internal class ScopeInfo
 
     public FoldPriority FoldPriority { get; }
 
-    public IEnumerable<ScopeInfo> ThisAndParents => this.Parents.Prepend(this);
+    public IEnumerable<Scope> ThisAndParents => this.Parents.Prepend(this);
 
-    public IEnumerable<ScopeInfo> Parents
+    public IEnumerable<Scope> Parents
     {
         get
         {
@@ -115,7 +115,7 @@ internal class ScopeInfo
         }
     }
 
-    public ScopeInfo? Fold()
+    public Scope? Fold()
     {
         foreach (var item in this.ThisAndParents.Reverse())
         {

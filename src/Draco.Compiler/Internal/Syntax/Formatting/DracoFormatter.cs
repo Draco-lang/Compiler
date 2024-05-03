@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal sealed class Formatter : Api.Syntax.SyntaxVisitor
+internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 {
     private TokenMetadata[] tokensMetadata = [];
     private int currentIdx;
@@ -14,6 +12,18 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     private ref TokenMetadata PreviousToken => ref this.tokensMetadata[this.currentIdx - 1];
     private ref TokenMetadata CurrentToken => ref this.tokensMetadata[this.currentIdx];
     private ref TokenMetadata NextToken => ref this.tokensMetadata[this.currentIdx + 1];
+
+    /// <summary>
+    /// The settings of the formatter.
+    /// </summary>
+    public FormatterSettings Settings { get; }
+
+    private DracoFormatter(FormatterSettings settings)
+    {
+        this.Settings = settings;
+        this.scope = new(null, settings, FoldPriority.Never, "");
+        this.scope.IsMaterialized.Value = true;
+    }
 
     /// <summary>
     /// Formats the given syntax tree.
@@ -25,126 +35,12 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         settings ??= FormatterSettings.Default;
 
-        var formatter = new Formatter(settings);
+        var formatter = new DracoFormatter(settings);
         tree.Root.Accept(formatter);
 
         var metadatas = formatter.tokensMetadata;
-        var tokens = tree.Root.Tokens.ToArray();
-        FoldTooLongLine(formatter, settings, tokens);
 
-        var builder = new StringBuilder();
-        var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
-
-        stateMachine.AddToken(metadatas[0], settings, tokens[0].Kind == TokenKind.EndOfInput);
-
-        for (var x = 1; x < metadatas.Length; x++)
-        {
-            var metadata = metadatas[x];
-            // we ignore multiline string newline tokens because we handle them in the string expression visitor.
-
-            if (metadata.DoesReturnLine?.Value ?? false)
-            {
-                builder.Append(stateMachine);
-                builder.Append(settings.Newline);
-                stateMachine = new LineStateMachine(string.Concat(metadata.ScopeInfo.CurrentTotalIndent));
-            }
-            if (metadata.Kind.HasFlag(WhitespaceBehavior.ExtraNewline))
-            {
-                builder.Append(settings.Newline);
-            }
-
-            stateMachine.AddToken(metadata, settings, tokens[x].Kind == TokenKind.EndOfInput);
-        }
-        builder.Append(stateMachine);
-        builder.Append(settings.Newline);
-        return builder.ToString();
-    }
-
-    private static void FoldTooLongLine(Formatter formatter, FormatterSettings settings, IReadOnlyList<Api.Syntax.SyntaxToken> tokens)
-    {
-        var metadatas = formatter.tokensMetadata;
-        var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
-        var currentLineStart = 0;
-        List<Scope> foldedScopes = [];
-        for (var x = 0; x < metadatas.Length; x++)
-        {
-            var curr = metadatas[x];
-            if (curr.DoesReturnLine?.Value ?? false) // if it's a new line
-            {
-                // we recreate a state machine for the new line.
-                stateMachine = new LineStateMachine(string.Concat(curr.ScopeInfo.CurrentTotalIndent));
-                currentLineStart = x;
-                foldedScopes.Clear();
-            }
-
-            stateMachine.AddToken(curr, settings, tokens[x].Kind == TokenKind.EndOfInput);
-
-            if (stateMachine.LineWidth <= settings.LineWidth) continue;
-
-            // the line is too long...
-
-            var folded = curr.ScopeInfo.Fold(); // folding can fail if there is nothing else to fold.
-            if (folded != null)
-            {
-                x = currentLineStart - 1;
-                foldedScopes.Add(folded);
-                stateMachine.Reset();
-                continue;
-            }
-
-            // we can't fold the current scope anymore, so we revert our folding, and we fold the previous scopes on the line.
-            // there can be other strategy taken in the future, parametrable through settings.
-
-            // first rewind and fold any "as soon as possible" scopes.
-            for (var i = x - 1; i >= currentLineStart; i--)
-            {
-                var scope = metadatas[i].ScopeInfo;
-                if (scope.IsMaterialized?.Value ?? false) continue;
-                if (scope.FoldPriority != FoldPriority.AsSoonAsPossible) continue;
-                var prevFolded = scope.Fold();
-                if (prevFolded != null)
-                {
-                    ResetBacktracking();
-                    continue;
-                }
-            }
-            // there was no high priority scope to fold, we try to get the low priority then.
-            for (var i = x - 1; i >= currentLineStart; i--)
-            {
-                var scope = metadatas[i].ScopeInfo;
-                if (scope.IsMaterialized?.Value ?? false) continue;
-                var prevFolded = scope.Fold();
-                if (prevFolded != null)
-                {
-                    ResetBacktracking();
-                    continue;
-                }
-            }
-
-            // we couldn't fold any scope, we just give up.
-
-            void ResetBacktracking()
-            {
-                foreach (var scope in foldedScopes)
-                {
-                    scope.IsMaterialized.Value = null;
-                }
-                foldedScopes.Clear();
-                x = currentLineStart - 1;
-            }
-        }
-    }
-
-    /// <summary>
-    /// The settings of the formatter.
-    /// </summary>
-    public FormatterSettings Settings { get; }
-
-    private Formatter(FormatterSettings settings)
-    {
-        this.Settings = settings;
-        this.scope = new(null, settings, FoldPriority.Never, "");
-        this.scope.IsMaterialized.Value = true;
+        return CodeFormatter.Format(settings, metadatas);
     }
 
     public override void VisitCompilationUnit(Api.Syntax.CompilationUnitSyntax node)

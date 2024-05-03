@@ -16,6 +16,8 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 {
+    public int BodyRelativeVirtualAddress => this.methodDefinition.RelativeVirtualAddress;
+
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;

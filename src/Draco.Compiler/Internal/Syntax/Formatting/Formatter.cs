@@ -409,18 +409,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
     {
         this.VisitDeclaration(node);
-        DisposeAction disposable;
-        if (node.VisibilityModifier != null)
-        {
-            node.VisibilityModifier?.Accept(this);
-            disposable = this.CreateScope(this.Settings.Indentation);
-            node.FunctionKeyword.Accept(this);
-        }
-        else
-        {
-            node.FunctionKeyword.Accept(this);
-            disposable = this.CreateScope(this.Settings.Indentation);
-        }
+        var disposable = this.OpenScopeAtFirstToken(node.VisibilityModifier, node.FunctionKeyword);
         node.Name.Accept(this);
         if (node.Generics is not null)
         {
@@ -529,23 +518,24 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitVariableDeclaration(Api.Syntax.VariableDeclarationSyntax node)
     {
-        DisposeAction disposable;
-        if (node.VisibilityModifier != null)
-        {
-            node.VisibilityModifier.Accept(this);
-            disposable = this.CreateScope(this.Settings.Indentation);
-            node.Keyword.Accept(this);
-        }
-        else
-        {
-            node.Keyword.Accept(this);
-            disposable = this.CreateScope(this.Settings.Indentation);
-        }
+        var disposable = this.OpenScopeAtFirstToken(node.VisibilityModifier, node.Keyword);
         node.Name.Accept(this);
         disposable.Dispose();
         node.Type?.Accept(this);
         node.Value?.Accept(this);
         node.Semicolon.Accept(this);
+    }
+
+    private DisposeAction OpenScopeAtFirstToken(Api.Syntax.SyntaxToken? optionalToken, Api.Syntax.SyntaxToken token)
+    {
+        var disposable = null as DisposeAction;
+        if (optionalToken != null)
+        {
+            optionalToken.Accept(this);
+            disposable = this.CreateScope(this.Settings.Indentation);
+        }
+        token.Accept(this);
+        return disposable ?? this.CreateScope(this.Settings.Indentation);
     }
 
     private DisposeAction CreateScope(string indentation)

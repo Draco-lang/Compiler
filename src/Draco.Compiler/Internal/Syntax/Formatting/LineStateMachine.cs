@@ -45,17 +45,16 @@ internal sealed class LineStateMachine
 
     private void HandleLeadingComments(TokenMetadata metadata, FormatterSettings settings)
     {
-        if (metadata.LeadingComments.Count > 0)
+        if (metadata.LeadingComments.Count <= 0) return;
+
+        foreach (var comment in metadata.LeadingComments)
         {
-            foreach (var comment in metadata.LeadingComments)
+            this.sb.Append(comment);
+            if (metadata.Token.Kind != Api.Syntax.TokenKind.EndOfInput)
             {
-                this.sb.Append(comment);
-                if (metadata.Token.Kind != Api.Syntax.TokenKind.EndOfInput)
-                {
-                    this.sb.Append(settings.Newline);
-                    this.sb.Append(this.indentation);
-                    this.LineWidth = this.indentation.Length;
-                }
+                this.sb.Append(settings.Newline);
+                this.sb.Append(this.indentation);
+                this.LineWidth = this.indentation.Length;
             }
         }
     }

@@ -15,8 +15,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     private ref TokenMetadata CurrentToken => ref this.tokensMetadata[this.currentIdx];
     private ref TokenMetadata NextToken => ref this.tokensMetadata[this.currentIdx + 1];
 
-    private bool firstDeclaration = true;
-
     /// <summary>
     /// Formats the given syntax tree.
     /// </summary>
@@ -42,7 +40,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         {
             var metadata = metadatas[x];
             // we ignore multiline string newline tokens because we handle them in the string expression visitor.
-            if (metadata.Token.Kind == TokenKind.StringNewline) continue;
 
             if (metadata.DoesReturnLine?.Value ?? false)
             {
@@ -71,57 +68,68 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         for (var x = 0; x < metadatas.Length; x++)
         {
             var curr = metadatas[x];
-            if (curr.DoesReturnLine?.Value ?? false)
+            if (curr.DoesReturnLine?.Value ?? false) // if it's a new line
             {
+                // we recreate a state machine for the new line.
                 stateMachine = new LineStateMachine(string.Concat(curr.ScopeInfo.CurrentTotalIndent));
                 currentLineStart = x;
                 foldedScopes.Clear();
             }
+
             stateMachine.AddToken(curr, settings);
-            if (stateMachine.LineWidth > settings.LineWidth)
+
+            if (stateMachine.LineWidth <= settings.LineWidth) continue;
+
+            // the line is too long...
+
+            var folded = curr.ScopeInfo.Fold(); // folding can fail if there is nothing else to fold.
+            if (folded != null)
             {
-                var folded = curr.ScopeInfo.Fold();
-                if (folded != null)
+                x = currentLineStart - 1;
+                foldedScopes.Add(folded);
+                stateMachine.Reset();
+                continue;
+            }
+
+            // we can't fold the current scope anymore, so we revert our folding, and we fold the previous scopes on the line.
+            // there can be other strategy taken in the future, parametrable through settings.
+
+            // first rewind and fold any "as soon as possible" scopes.
+            for (var i = x - 1; i >= currentLineStart; i--)
+            {
+                var scope = metadatas[i].ScopeInfo;
+                if (scope.IsMaterialized?.Value ?? false) continue;
+                if (scope.FoldPriority != FoldPriority.AsSoonAsPossible) continue;
+                var prevFolded = scope.Fold();
+                if (prevFolded != null)
                 {
-                    x = currentLineStart - 1;
-                    foldedScopes.Add(folded);
-                    stateMachine.Reset();
+                    ResetBacktracking();
                     continue;
                 }
-                else if (curr.ScopeInfo.Parent != null)
+            }
+            // there was no high priority scope to fold, we try to get the low priority then.
+            for (var i = x - 1; i >= currentLineStart; i--)
+            {
+                var scope = metadatas[i].ScopeInfo;
+                if (scope.IsMaterialized?.Value ?? false) continue;
+                var prevFolded = scope.Fold();
+                if (prevFolded != null)
                 {
-                    // we can't fold the current scope anymore, so we revert our folding, and we fold the previous scopes on the line.
-                    // there can be other strategy taken in the future, parametrable through settings.
-
-                    // first rewind and fold any "as soon as possible" scopes.
-                    for (var i = x - 1; i >= currentLineStart; i--)
-                    {
-                        var scope = metadatas[i].ScopeInfo;
-                        if (scope.IsMaterialized?.Value ?? false) continue;
-                        if (scope.FoldPriority != FoldPriority.AsSoonAsPossible) continue;
-                        var prevFolded = scope.Fold();
-                        if (prevFolded != null) goto folded;
-                    }
-                    // there was no high priority scope to fold, we try to get the low priority then.
-                    for (var i = x - 1; i >= currentLineStart; i--)
-                    {
-                        var scope = metadatas[i].ScopeInfo;
-                        if (scope.IsMaterialized?.Value ?? false) continue;
-                        var prevFolded = scope.Fold();
-                        if (prevFolded != null) goto folded;
-                    }
-
-                    // we couldn't fold any scope, we just give up.
+                    ResetBacktracking();
                     continue;
-
-                folded:
-                    foreach (var scope in foldedScopes)
-                    {
-                        scope.IsMaterialized.Value = null;
-                    }
-                    foldedScopes.Clear();
-                    x = currentLineStart - 1;
                 }
+            }
+
+            // we couldn't fold any scope, we just give up.
+
+            void ResetBacktracking()
+            {
+                foreach (var scope in foldedScopes)
+                {
+                    scope.IsMaterialized.Value = null;
+                }
+                foldedScopes.Clear();
+                x = currentLineStart - 1;
             }
         }
     }
@@ -207,6 +215,14 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         this.CurrentToken.ScopeInfo = this.scope;
         this.CurrentToken.Kind |= GetFormattingTokenKind(node);
         this.CurrentToken.Token = node;
+        this.HandleTokenComments();
+
+        base.VisitSyntaxToken(node);
+        this.currentIdx++;
+    }
+
+    private void HandleTokenComments()
+    {
         var trivia = this.CurrentToken.Token.TrailingTrivia;
         if (trivia.Count > 0)
         {
@@ -229,9 +245,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         {
             this.CurrentToken.DoesReturnLine = true;
         }
-
-        base.VisitSyntaxToken(node);
-        this.currentIdx++;
     }
 
     public override void VisitSeparatedSyntaxList<TNode>(Api.Syntax.SeparatedSyntaxList<TNode> node)
@@ -260,8 +273,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
     {
         if (node.Parent is not Api.Syntax.DeclarationStatementSyntax)
         {
-            this.CurrentToken.DoesReturnLine = !this.firstDeclaration;
-            this.firstDeclaration = false;
+            this.CurrentToken.DoesReturnLine = this.currentIdx > 0; // don't create empty line on first line in file.
         }
         base.VisitDeclaration(node);
     }
@@ -285,7 +297,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         var blockCurrentIndentCount = SyntaxFacts.ComputeCutoff(node).Length;
 
         var i = 0;
-        var newLineCount = 1;
         var shouldIndent = true;
         for (; i < node.Parts.Count; i++)
         {
@@ -294,21 +305,25 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
             var isNewLine = curr.Children.Count() == 1 && curr.Children.SingleOrDefault() is Api.Syntax.SyntaxToken and { Kind: TokenKind.StringNewline };
             if (isNewLine)
             {
-                newLineCount++;
                 shouldIndent = true;
                 curr.Accept(this);
                 continue;
             }
+
             if (shouldIndent)
             {
+                shouldIndent = false;
+
                 var tokenText = curr.Tokens.First().ValueText!;
                 if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
                 this.CurrentToken.TokenOverride = tokenText[blockCurrentIndentCount..];
-                MultiIndent(newLineCount);
-                shouldIndent = false;
+                this.CurrentToken.DoesReturnLine = true;
+                if (this.PreviousToken.Token.Kind == TokenKind.StringNewline)
+                {
+                    this.PreviousToken.TokenOverride = ""; // PreviousToken is a newline, CurrentToken.DoesReturnLine will produce the newline.
+                }
             }
 
-            newLineCount = 0;
             var startIdx = this.currentIdx; // capture position before visiting the tokens of this parts (this will move forward the position)
 
             // for parts that contains expressions and have return lines.
@@ -318,7 +333,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 if (newLines.Length > 0)
                 {
                     this.NextToken.DoesReturnLine = true;
-
                     this.CurrentToken.TokenOverride = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLines.Length - 1).Prepend(token.Text));
                 }
                 token.Accept(this);
@@ -332,7 +346,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 this.tokensMetadata[startIdx + j].DoesReturnLine ??= false;
             }
         }
-        MultiIndent(newLineCount);
         if (this.CurrentToken.DoesReturnLine?.Value ?? false)
         {
             var previousId = this.PreviousNonNewLineToken();
@@ -340,20 +353,6 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         }
         this.CurrentToken.DoesReturnLine = true;
         node.CloseQuotes.Accept(this);
-
-
-        void MultiIndent(int newLineCount)
-        {
-            if (newLineCount > 0)
-            {
-                this.CurrentToken.DoesReturnLine = true;
-                if (newLineCount > 1)
-                {
-                    var previousId = this.PreviousNonNewLineToken();
-                    this.tokensMetadata[previousId].TokenOverride += string.Concat(Enumerable.Repeat(this.Settings.Newline, newLineCount - 1));
-                }
-            }
-        }
     }
 
     private int PreviousNonNewLineToken()

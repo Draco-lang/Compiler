@@ -115,6 +115,10 @@ internal sealed class Scope
         }
     }
 
+    /// <summary>
+    /// Try to fold a scope by materializing a scope.
+    /// </summary>
+    /// <returns> The scope that have been fold, else <see langword="null"/> if no scope can be fold. </returns>
     public Scope? Fold()
     {
         foreach (var item in this.ThisAndParents.Reverse())

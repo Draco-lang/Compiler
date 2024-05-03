@@ -214,9 +214,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         };
 
         this.CurrentToken.ScopeInfo = this.scope;
-        this.CurrentToken.Kind |= GetFormattingTokenKind(node);
-        //this.CurrentToken.Token = node;
-        this.CurrentToken.Text = node.Text;
+        this.CurrentToken.Kind |= GetFormattingTokenKind(node); // may have been set before visiting for convenience.
+        this.CurrentToken.Text ??= node.Text; // same
         this.HandleTokenComments(node);
 
         base.VisitSyntaxToken(node);
@@ -234,7 +233,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 .SingleOrDefault();
             if (comment != null)
             {
-                this.CurrentToken.TokenOverride = node.Text + " " + comment;
+                this.CurrentToken.Text = node.Text + " " + comment;
                 this.NextToken.DoesReturnLine = true;
             }
         }
@@ -317,12 +316,12 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
                 var tokenText = curr.Tokens.First().ValueText!;
                 if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
-                this.CurrentToken.TokenOverride = tokenText[blockCurrentIndentCount..];
+                this.CurrentToken.Text = tokenText[blockCurrentIndentCount..];
                 this.CurrentToken.DoesReturnLine = true;
 
                 if (i > 0 && node.Parts[i - 1].IsNewLine)
                 {
-                    this.PreviousToken.TokenOverride = ""; // PreviousToken is a newline, CurrentToken.DoesReturnLine will produce the newline.
+                    this.PreviousToken.Text = ""; // PreviousToken is a newline, CurrentToken.DoesReturnLine will produce the newline.
                 }
             }
 
@@ -335,7 +334,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 if (newLines.Length > 0)
                 {
                     this.NextToken.DoesReturnLine = true;
-                    this.CurrentToken.TokenOverride = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLines.Length - 1).Prepend(token.Text));
+                    this.CurrentToken.Text = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLines.Length - 1).Prepend(token.Text));
                 }
                 token.Accept(this);
             }

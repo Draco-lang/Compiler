@@ -36,7 +36,7 @@ internal sealed class LineStateMachine
         {
             this.Append(" ");
         }
-        this.Append(metadata.TokenOverride ?? metadata.Text);
+        this.Append(metadata.Text);
 
         this.forceWhiteSpace = metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
         this.prevTokenNeedRightPad = metadata.Kind.HasFlag(WhitespaceBehavior.PadRight);

@@ -18,9 +18,9 @@ internal sealed class LineStateMachine
 
     public int LineWidth { get; set; }
 
-    public void AddToken(TokenMetadata metadata, FormatterSettings settings)
+    public void AddToken(TokenMetadata metadata, FormatterSettings settings, bool endOfInput)
     {
-        this.HandleLeadingComments(metadata, settings);
+        this.HandleLeadingComments(metadata, settings, endOfInput);
 
         if (metadata.Kind.HasFlag(WhitespaceBehavior.RemoveOneIndentation))
         {
@@ -36,21 +36,21 @@ internal sealed class LineStateMachine
         {
             this.Append(" ");
         }
-        this.Append(metadata.TokenOverride ?? metadata.Token.Text);
+        this.Append(metadata.TokenOverride ?? metadata.Text);
 
         this.forceWhiteSpace = metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
         this.prevTokenNeedRightPad = metadata.Kind.HasFlag(WhitespaceBehavior.PadRight);
         this.previousIsWhitespace = metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken) || metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
     }
 
-    private void HandleLeadingComments(TokenMetadata metadata, FormatterSettings settings)
+    private void HandleLeadingComments(TokenMetadata metadata, FormatterSettings settings, bool endOfInput)
     {
         if (metadata.LeadingComments.Count <= 0) return;
 
         foreach (var comment in metadata.LeadingComments)
         {
             this.sb.Append(comment);
-            if (metadata.Token.Kind != Api.Syntax.TokenKind.EndOfInput)
+            if (!endOfInput)
             {
                 this.sb.Append(settings.Newline);
                 this.sb.Append(this.indentation);

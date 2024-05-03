@@ -90,10 +90,10 @@ internal sealed class Scope
             for (var i = startLine; i <= indexOfLevelingToken; i++)
             {
                 var curr = this.levelingToken.Value.tokens[i];
-                stateMachine.AddToken(curr, this.settings);
+                stateMachine.AddToken(curr, this.settings, false);
             }
             var levelingToken = this.levelingToken.Value.tokens[indexOfLevelingToken];
-            return [new string(' ', stateMachine.LineWidth - levelingToken.Token.Text.Length)];
+            return [new string(' ', stateMachine.LineWidth - levelingToken.Text.Length)];
 
         }
     }

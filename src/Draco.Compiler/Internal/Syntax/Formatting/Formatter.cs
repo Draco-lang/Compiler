@@ -29,12 +29,13 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         tree.Root.Accept(formatter);
 
         var metadatas = formatter.tokensMetadata;
-        FoldTooLongLine(formatter, settings);
+        var tokens = tree.Root.Tokens.ToArray();
+        FoldTooLongLine(formatter, settings, tokens);
 
         var builder = new StringBuilder();
         var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
 
-        stateMachine.AddToken(metadatas[0], settings);
+        stateMachine.AddToken(metadatas[0], settings, tokens[0].Kind == TokenKind.EndOfInput);
 
         for (var x = 1; x < metadatas.Length; x++)
         {
@@ -52,14 +53,14 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 builder.Append(settings.Newline);
             }
 
-            stateMachine.AddToken(metadata, settings);
+            stateMachine.AddToken(metadata, settings, tokens[x].Kind == TokenKind.EndOfInput);
         }
         builder.Append(stateMachine);
         builder.Append(settings.Newline);
         return builder.ToString();
     }
 
-    private static void FoldTooLongLine(Formatter formatter, FormatterSettings settings)
+    private static void FoldTooLongLine(Formatter formatter, FormatterSettings settings, IReadOnlyList<Api.Syntax.SyntaxToken> tokens)
     {
         var metadatas = formatter.tokensMetadata;
         var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
@@ -76,7 +77,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 foldedScopes.Clear();
             }
 
-            stateMachine.AddToken(curr, settings);
+            stateMachine.AddToken(curr, settings, tokens[x].Kind == TokenKind.EndOfInput);
 
             if (stateMachine.LineWidth <= settings.LineWidth) continue;
 
@@ -214,16 +215,17 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
 
         this.CurrentToken.ScopeInfo = this.scope;
         this.CurrentToken.Kind |= GetFormattingTokenKind(node);
-        this.CurrentToken.Token = node;
-        this.HandleTokenComments();
+        //this.CurrentToken.Token = node;
+        this.CurrentToken.Text = node.Text;
+        this.HandleTokenComments(node);
 
         base.VisitSyntaxToken(node);
         this.currentIdx++;
     }
 
-    private void HandleTokenComments()
+    private void HandleTokenComments(Api.Syntax.SyntaxToken node)
     {
-        var trivia = this.CurrentToken.Token.TrailingTrivia;
+        var trivia = node.TrailingTrivia;
         if (trivia.Count > 0)
         {
             var comment = trivia
@@ -232,11 +234,11 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 .SingleOrDefault();
             if (comment != null)
             {
-                this.CurrentToken.TokenOverride = this.CurrentToken.Token.Text + " " + comment;
+                this.CurrentToken.TokenOverride = node.Text + " " + comment;
                 this.NextToken.DoesReturnLine = true;
             }
         }
-        var leadingComments = this.CurrentToken.Token.LeadingTrivia
+        var leadingComments = node.LeadingTrivia
             .Where(x => x.Kind == TriviaKind.LineComment || x.Kind == TriviaKind.DocumentationComment)
             .Select(x => x.Text)
             .ToArray();
@@ -302,8 +304,7 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
         {
             var curr = node.Parts[i];
 
-            var isNewLine = curr.Children.Count() == 1 && curr.Children.SingleOrDefault() is Api.Syntax.SyntaxToken and { Kind: TokenKind.StringNewline };
-            if (isNewLine)
+            if (curr.IsNewLine)
             {
                 shouldIndent = true;
                 curr.Accept(this);
@@ -318,7 +319,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
                 this.CurrentToken.TokenOverride = tokenText[blockCurrentIndentCount..];
                 this.CurrentToken.DoesReturnLine = true;
-                if (this.PreviousToken.Token.Kind == TokenKind.StringNewline)
+
+                if (i > 0 && node.Parts[i - 1].IsNewLine)
                 {
                     this.PreviousToken.TokenOverride = ""; // PreviousToken is a newline, CurrentToken.DoesReturnLine will produce the newline.
                 }
@@ -346,26 +348,8 @@ internal sealed class Formatter : Api.Syntax.SyntaxVisitor
                 this.tokensMetadata[startIdx + j].DoesReturnLine ??= false;
             }
         }
-        if (this.CurrentToken.DoesReturnLine?.Value ?? false)
-        {
-            var previousId = this.PreviousNonNewLineToken();
-            this.tokensMetadata[previousId].TokenOverride += this.Settings.Newline;
-        }
         this.CurrentToken.DoesReturnLine = true;
         node.CloseQuotes.Accept(this);
-    }
-
-    private int PreviousNonNewLineToken()
-    {
-        var previousId = 0;
-        for (var i = this.currentIdx - 1; i >= 0; i--)
-        {
-            if ((this.tokensMetadata[i].Token?.Kind ?? TokenKind.StringNewline) == TokenKind.StringNewline) continue;
-            previousId = i;
-            break;
-        }
-
-        return previousId;
     }
 
     public override void VisitBinaryExpression(Api.Syntax.BinaryExpressionSyntax node)

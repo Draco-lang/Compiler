@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal sealed class Scope
+public sealed class Scope
 {
     private readonly string? indentation;
     private readonly (IReadOnlyList<TokenMetadata> tokens, int indexOfLevelingToken)? levelingToken;
@@ -52,7 +52,7 @@ internal sealed class Scope
     ///     .ToList()
     /// </code>
     /// </summary>
-    public MutableBox<bool?> IsMaterialized { get; } = new MutableBox<bool?>(null, true);
+    public MutableBox<bool?> IsMaterialized { get; } = new MutableBox<bool?>(null);
 
     public IEnumerable<string> CurrentTotalIndent
     {

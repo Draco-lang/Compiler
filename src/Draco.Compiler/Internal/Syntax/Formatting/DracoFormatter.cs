@@ -234,7 +234,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitBinaryExpression(Api.Syntax.BinaryExpressionSyntax node)
     {
-        DisposeAction? closeScope = null;
+        IDisposable? closeScope = null;
         var kind = node.Operator.Kind;
         if (!(this.formatter.Scope.Data?.Equals(kind) ?? false))
         {
@@ -273,7 +273,9 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
     {
         this.VisitDeclaration(node);
-        var disposable = this.OpenScopeAtFirstToken(node.VisibilityModifier, node.FunctionKeyword);
+        var disposable = this.formatter.CreateScopeAfterNextToken(this.settings.Indentation);
+        node.VisibilityModifier?.Accept(this);
+        node.FunctionKeyword.Accept(this);
         node.Name.Accept(this);
         if (node.Generics is not null)
         {
@@ -315,7 +317,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         this.formatter.CreateMaterializableScope("", FoldPriority.AsSoonAsPossible, () =>
         {
             node.IfKeyword.Accept(this);
-            DisposeAction? disposable = null;
+            IDisposable? disposable = null;
             node.OpenParen.Accept(this);
             if (this.formatter.PreviousToken.DoesReturnLine?.Value ?? false)
             {
@@ -382,22 +384,13 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitVariableDeclaration(Api.Syntax.VariableDeclarationSyntax node)
     {
-        var disposable = this.OpenScopeAtFirstToken(node.VisibilityModifier, node.Keyword);
+        var disposable = this.formatter.CreateScopeAfterNextToken(this.settings.Indentation);
+        node.VisibilityModifier?.Accept(this);
+        node.Keyword.Accept(this);
         node.Name.Accept(this);
         disposable.Dispose();
         node.Type?.Accept(this);
         node.Value?.Accept(this);
         node.Semicolon.Accept(this);
-    }
-    private DisposeAction OpenScopeAtFirstToken(Api.Syntax.SyntaxToken? optionalToken, Api.Syntax.SyntaxToken token)
-    {
-        var disposable = null as DisposeAction;
-        if (optionalToken != null)
-        {
-            optionalToken.Accept(this);
-            disposable = this.formatter.CreateScope(this.settings.Indentation);
-        }
-        token.Accept(this);
-        return disposable ?? this.formatter.CreateScope(this.settings.Indentation);
     }
 }

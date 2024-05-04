@@ -45,7 +45,7 @@ internal sealed class LineStateMachine
 
     private void HandleLeadingComments(TokenMetadata metadata, FormatterSettings settings, bool endOfInput)
     {
-        if (metadata.LeadingComments.Count <= 0) return;
+        if (metadata.LeadingComments == null) return;
 
         foreach (var comment in metadata.LeadingComments)
         {

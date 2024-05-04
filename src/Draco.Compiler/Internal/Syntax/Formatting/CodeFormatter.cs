@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 public static class CodeFormatter
 {
-    public static string Format(FormatterSettings settings, TokenMetadata[] metadatas)
+    public static string Format(FormatterSettings settings, IReadOnlyList<TokenMetadata> metadatas)
     {
         FoldTooLongLine(metadatas, settings);
         var builder = new StringBuilder();
@@ -14,7 +14,7 @@ public static class CodeFormatter
 
         stateMachine.AddToken(metadatas[0], settings, false);
 
-        for (var x = 1; x < metadatas.Length; x++)
+        for (var x = 1; x < metadatas.Count; x++)
         {
             var metadata = metadatas[x];
             // we ignore multiline string newline tokens because we handle them in the string expression visitor.
@@ -30,7 +30,7 @@ public static class CodeFormatter
                 builder.Append(settings.Newline);
             }
 
-            stateMachine.AddToken(metadata, settings, x != metadatas.Length - 1);
+            stateMachine.AddToken(metadata, settings, x == metadatas.Count - 1);
         }
         builder.Append(stateMachine);
         builder.Append(settings.Newline);

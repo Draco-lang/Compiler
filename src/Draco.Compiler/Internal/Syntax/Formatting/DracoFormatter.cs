@@ -6,23 +6,12 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 {
-    private TokenMetadata[] tokensMetadata = [];
-    private int currentIdx;
-    private Scope scope;
-    private ref TokenMetadata PreviousToken => ref this.tokensMetadata[this.currentIdx - 1];
-    private ref TokenMetadata CurrentToken => ref this.tokensMetadata[this.currentIdx];
-    private ref TokenMetadata NextToken => ref this.tokensMetadata[this.currentIdx + 1];
-
-    /// <summary>
-    /// The settings of the formatter.
-    /// </summary>
-    public FormatterSettings Settings { get; }
+    private readonly FormatterSettings settings;
+    private FormatterEngine formatter = null!;
 
     private DracoFormatter(FormatterSettings settings)
     {
-        this.Settings = settings;
-        this.scope = new(null, settings, FoldPriority.Never, "");
-        this.scope.IsMaterialized.Value = true;
+        this.settings = settings;
     }
 
     /// <summary>
@@ -38,14 +27,14 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         var formatter = new DracoFormatter(settings);
         tree.Root.Accept(formatter);
 
-        var metadatas = formatter.tokensMetadata;
+        var metadatas = formatter.formatter.TokensMetadata;
 
         return CodeFormatter.Format(settings, metadatas);
     }
 
     public override void VisitCompilationUnit(Api.Syntax.CompilationUnitSyntax node)
     {
-        this.tokensMetadata = new TokenMetadata[node.Tokens.Count()];
+        this.formatter = new FormatterEngine(node.Tokens.Count(), this.settings);
         base.VisitCompilationUnit(node);
     }
 
@@ -108,14 +97,10 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
             _ => WhitespaceBehavior.NoFormatting
         };
-
-        this.CurrentToken.ScopeInfo = this.scope;
-        this.CurrentToken.Kind |= GetFormattingTokenKind(node); // may have been set before visiting for convenience.
-        this.CurrentToken.Text ??= node.Text; // same
         this.HandleTokenComments(node);
+        this.formatter.SetCurrentTokenInfo(GetFormattingTokenKind(node), node.Text);
 
         base.VisitSyntaxToken(node);
-        this.currentIdx++;
     }
 
     private void HandleTokenComments(Api.Syntax.SyntaxToken node)
@@ -129,18 +114,18 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
                 .SingleOrDefault();
             if (comment != null)
             {
-                this.CurrentToken.Text = node.Text + " " + comment;
-                this.NextToken.DoesReturnLine = true;
+                this.formatter.CurrentToken.Text = node.Text + " " + comment;
+                this.formatter.NextToken.DoesReturnLine = true;
             }
         }
         var leadingComments = node.LeadingTrivia
             .Where(x => x.Kind == TriviaKind.LineComment || x.Kind == TriviaKind.DocumentationComment)
             .Select(x => x.Text)
             .ToArray();
-        this.CurrentToken.LeadingComments = leadingComments;
+        this.formatter.CurrentToken.LeadingComments = leadingComments;
         if (leadingComments.Length > 0)
         {
-            this.CurrentToken.DoesReturnLine = true;
+            this.formatter.CurrentToken.DoesReturnLine = true;
         }
     }
 
@@ -149,7 +134,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         if (node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ParameterSyntax>
             || node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ExpressionSyntax>)
         {
-            this.CreateMaterializableScope(this.Settings.Indentation,
+            this.formatter.CreateMaterializableScope(this.settings.Indentation,
                 FoldPriority.AsSoonAsPossible,
                 () => base.VisitSeparatedSyntaxList(node)
             );
@@ -162,7 +147,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitParameter(Api.Syntax.ParameterSyntax node)
     {
-        this.CurrentToken.DoesReturnLine = this.scope.IsMaterialized;
+        this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
         base.VisitParameter(node);
     }
 
@@ -170,7 +155,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         if (node.Parent is not Api.Syntax.DeclarationStatementSyntax)
         {
-            this.CurrentToken.DoesReturnLine = this.currentIdx > 0; // don't create empty line on first line in file.
+            this.formatter.CurrentToken.DoesReturnLine = this.formatter.CurrentIdx > 0; // don't create empty line on first line in file.
         }
         base.VisitDeclaration(node);
     }
@@ -182,15 +167,15 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
             node.OpenQuotes.Accept(this);
             foreach (var item in node.Parts.Tokens)
             {
-                this.CurrentToken.DoesReturnLine = false;
+                this.formatter.CurrentToken.DoesReturnLine = false;
                 item.Accept(this);
             }
-            this.CurrentToken.DoesReturnLine = false;
+            this.formatter.CurrentToken.DoesReturnLine = false;
             node.CloseQuotes.Accept(this);
             return;
         }
         node.OpenQuotes.Accept(this);
-        using var _ = this.CreateScope(this.Settings.Indentation);
+        using var _ = this.formatter.CreateScope(this.settings.Indentation);
         var blockCurrentIndentCount = SyntaxFacts.ComputeCutoff(node).Length;
 
         var i = 0;
@@ -212,16 +197,16 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
                 var tokenText = curr.Tokens.First().ValueText!;
                 if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
-                this.CurrentToken.Text = tokenText[blockCurrentIndentCount..];
-                this.CurrentToken.DoesReturnLine = true;
+                this.formatter.CurrentToken.Text = tokenText[blockCurrentIndentCount..];
+                this.formatter.CurrentToken.DoesReturnLine = true;
 
                 if (i > 0 && node.Parts[i - 1].IsNewLine)
                 {
-                    this.PreviousToken.Text = ""; // PreviousToken is a newline, CurrentToken.DoesReturnLine will produce the newline.
+                    this.formatter.PreviousToken.Text = ""; // PreviousToken is a newline, CurrentToken.DoesReturnLine will produce the newline.
                 }
             }
 
-            var startIdx = this.currentIdx; // capture position before visiting the tokens of this parts (this will move forward the position)
+            var startIdx = this.formatter.CurrentIdx; // capture position before visiting the tokens of this parts (this will move forward the position)
 
             // for parts that contains expressions and have return lines.
             foreach (var token in curr.Tokens)
@@ -229,8 +214,8 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
                 var newLines = token.TrailingTrivia.Where(t => t.Kind == TriviaKind.Newline).ToArray();
                 if (newLines.Length > 0)
                 {
-                    this.NextToken.DoesReturnLine = true;
-                    this.CurrentToken.Text = string.Concat(Enumerable.Repeat(this.Settings.Newline, newLines.Length - 1).Prepend(token.Text));
+                    this.formatter.NextToken.DoesReturnLine = true;
+                    this.formatter.CurrentToken.Text = string.Concat(Enumerable.Repeat(this.settings.Newline, newLines.Length - 1).Prepend(token.Text));
                 }
                 token.Accept(this);
             }
@@ -240,10 +225,10 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
             for (var j = 0; j < tokenCount; j++)
             {
-                this.tokensMetadata[startIdx + j].DoesReturnLine ??= false;
+                this.formatter.TokensMetadata[startIdx + j].DoesReturnLine ??= false;
             }
         }
-        this.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = true;
         node.CloseQuotes.Accept(this);
     }
 
@@ -251,16 +236,16 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         DisposeAction? closeScope = null;
         var kind = node.Operator.Kind;
-        if (!(this.scope.Data?.Equals(kind) ?? false))
+        if (!(this.formatter.Scope.Data?.Equals(kind) ?? false))
         {
-            closeScope = this.CreateMaterializableScope("", FoldPriority.AsLateAsPossible);
-            this.scope.Data = kind;
+            closeScope = this.formatter.CreateMaterializableScope("", FoldPriority.AsLateAsPossible);
+            this.formatter.Scope.Data = kind;
         }
         node.Left.Accept(this);
 
-        if (this.CurrentToken.DoesReturnLine is null)
+        if (this.formatter.CurrentToken.DoesReturnLine is null)
         {
-            this.CurrentToken.DoesReturnLine = this.scope.IsMaterialized;
+            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
         }
         node.Operator.Accept(this);
         node.Right.Accept(this);
@@ -270,17 +255,17 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     public override void VisitBlockFunctionBody(Api.Syntax.BlockFunctionBodySyntax node)
     {
         node.OpenBrace.Accept(this);
-        this.CreateScope(this.Settings.Indentation, () => node.Statements.Accept(this));
-        this.CurrentToken.DoesReturnLine = true;
+        this.formatter.CreateScope(this.settings.Indentation, () => node.Statements.Accept(this));
+        this.formatter.CurrentToken.DoesReturnLine = true;
         node.CloseBrace.Accept(this);
     }
 
     public override void VisitInlineFunctionBody(Api.Syntax.InlineFunctionBodySyntax node)
     {
-        var curr = this.currentIdx;
+        var curr = this.formatter.CurrentIdx;
         node.Assign.Accept(this);
 
-        using var _ = this.CreateMaterializableScope(curr, FoldPriority.AsSoonAsPossible);
+        using var _ = this.formatter.CreateMaterializableScope(curr, FoldPriority.AsSoonAsPossible);
         node.Value.Accept(this);
         node.Semicolon.Accept(this);
     }
@@ -292,7 +277,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         node.Name.Accept(this);
         if (node.Generics is not null)
         {
-            this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
+            this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
         }
         node.OpenParen.Accept(this);
         disposable.Dispose();
@@ -306,13 +291,13 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         if (node is Api.Syntax.DeclarationStatementSyntax { Declaration: Api.Syntax.LabelDeclarationSyntax })
         {
-            this.CurrentToken.DoesReturnLine = true;
-            this.CurrentToken.Kind = WhitespaceBehavior.RemoveOneIndentation;
+            this.formatter.CurrentToken.DoesReturnLine = true;
+            this.formatter.CurrentToken.Kind = WhitespaceBehavior.RemoveOneIndentation;
         }
         else
         {
             var shouldBeMultiLine = node.Parent is Api.Syntax.BlockExpressionSyntax || node.Parent is Api.Syntax.BlockFunctionBodySyntax;
-            this.CurrentToken.DoesReturnLine = shouldBeMultiLine;
+            this.formatter.CurrentToken.DoesReturnLine = shouldBeMultiLine;
         }
         base.VisitStatement(node);
     }
@@ -321,28 +306,28 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         node.WhileKeyword.Accept(this);
         node.OpenParen.Accept(this);
-        this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
+        this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
         node.CloseParen.Accept(this);
-        this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
+        this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
     }
 
     public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node) =>
-        this.CreateMaterializableScope("", FoldPriority.AsSoonAsPossible, () =>
+        this.formatter.CreateMaterializableScope("", FoldPriority.AsSoonAsPossible, () =>
         {
             node.IfKeyword.Accept(this);
             DisposeAction? disposable = null;
             node.OpenParen.Accept(this);
-            if (this.PreviousToken.DoesReturnLine?.Value ?? false)
+            if (this.formatter.PreviousToken.DoesReturnLine?.Value ?? false)
             {
                 // there is no reason for an OpenParen to return line except if there is a comment.
-                disposable = this.CreateScope(this.Settings.Indentation);
-                this.PreviousToken.ScopeInfo = this.scope; // it's easier to change our mind that compute ahead of time.
+                disposable = this.formatter.CreateScope(this.settings.Indentation);
+                this.formatter.PreviousToken.ScopeInfo = this.formatter.Scope; // it's easier to change our mind that compute ahead of time.
             }
-            this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () =>
+            this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () =>
             {
-                var firstTokenIdx = this.currentIdx;
+                var firstTokenIdx = this.formatter.CurrentIdx;
                 node.Condition.Accept(this);
-                var firstToken = this.tokensMetadata[firstTokenIdx];
+                var firstToken = this.formatter.TokensMetadata[firstTokenIdx];
                 if (firstToken.DoesReturnLine?.Value ?? false)
                 {
                     firstToken.ScopeInfo.IsMaterialized.Value = true;
@@ -351,7 +336,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
             node.CloseParen.Accept(this);
             disposable?.Dispose();
 
-            this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
+            this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
 
             node.Else?.Accept(this);
         });
@@ -360,14 +345,14 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         if (node.IsElseIf || node.Parent!.Parent is Api.Syntax.ExpressionStatementSyntax)
         {
-            this.CurrentToken.DoesReturnLine = true;
+            this.formatter.CurrentToken.DoesReturnLine = true;
         }
         else
         {
-            this.CurrentToken.DoesReturnLine = this.scope.IsMaterialized;
+            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
         }
         node.ElseKeyword.Accept(this);
-        this.CreateMaterializableScope(this.Settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Expression.Accept(this));
+        this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Expression.Accept(this));
     }
 
     public override void VisitBlockExpression(Api.Syntax.BlockExpressionSyntax node)
@@ -378,21 +363,21 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         // if (blabla)
         //     an expression;
         // but since we are in a block we create our own scope and the if/while/else will never create it's own scope.
-        this.scope.IsMaterialized.Value ??= false;
+        this.formatter.Scope.IsMaterialized.Value ??= false;
 
         node.OpenBrace.Accept(this);
 
-        this.CreateScope(this.Settings.Indentation, () =>
+        this.formatter.CreateScope(this.settings.Indentation, () =>
         {
             node.Statements.Accept(this);
             if (node.Value != null)
             {
-                this.CurrentToken.DoesReturnLine = true;
+                this.formatter.CurrentToken.DoesReturnLine = true;
                 node.Value.Accept(this);
             }
         });
         node.CloseBrace.Accept(this);
-        this.PreviousToken.DoesReturnLine = true;
+        this.formatter.PreviousToken.DoesReturnLine = true;
     }
 
     public override void VisitVariableDeclaration(Api.Syntax.VariableDeclarationSyntax node)
@@ -404,45 +389,15 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         node.Value?.Accept(this);
         node.Semicolon.Accept(this);
     }
-
     private DisposeAction OpenScopeAtFirstToken(Api.Syntax.SyntaxToken? optionalToken, Api.Syntax.SyntaxToken token)
     {
         var disposable = null as DisposeAction;
         if (optionalToken != null)
         {
             optionalToken.Accept(this);
-            disposable = this.CreateScope(this.Settings.Indentation);
+            disposable = this.formatter.CreateScope(this.settings.Indentation);
         }
         token.Accept(this);
-        return disposable ?? this.CreateScope(this.Settings.Indentation);
-    }
-
-    private DisposeAction CreateScope(string indentation)
-    {
-        this.scope = new Scope(this.scope, this.Settings, FoldPriority.Never, indentation);
-        this.scope.IsMaterialized.Value = true;
-        return new DisposeAction(() => this.scope = this.scope.Parent!);
-    }
-
-    private void CreateScope(string indentation, Action action)
-    {
-        using (this.CreateScope(indentation)) action();
-    }
-
-    private DisposeAction CreateMaterializableScope(string indentation, FoldPriority foldBehavior)
-    {
-        this.scope = new Scope(this.scope, this.Settings, foldBehavior, indentation);
-        return new DisposeAction(() => this.scope = this.scope.Parent!);
-    }
-
-    private DisposeAction CreateMaterializableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
-    {
-        this.scope = new Scope(this.scope, this.Settings, foldBehavior, (this.tokensMetadata, indexOfLevelingToken));
-        return new DisposeAction(() => this.scope = this.scope.Parent!);
-    }
-
-    private void CreateMaterializableScope(string indentation, FoldPriority foldBehavior, Action action)
-    {
-        using (this.CreateMaterializableScope(indentation, foldBehavior)) action();
+        return disposable ?? this.formatter.CreateScope(this.settings.Indentation);
     }
 }

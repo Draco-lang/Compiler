@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
+  </ItemGroup>
+</Project>

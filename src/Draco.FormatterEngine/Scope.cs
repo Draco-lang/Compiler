@@ -142,4 +142,6 @@ public sealed class Scope
         }
         return null;
     }
+
+    public override string ToString() => $"{(this.IsMaterialized.Value.HasValue ? this.IsMaterialized.Value.Value ? "M" : "U" : "?")}{this.FoldPriority}{this.indentation?.Length.ToString() ?? "L"}";
 }

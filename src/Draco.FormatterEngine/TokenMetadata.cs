@@ -15,7 +15,7 @@ public record struct TokenMetadata(
     {
         var merged = string.Join(
             ',',
-            this.ScopeInfo.Parents.Select(x => x.ToString())
+            this.ScopeInfo.ThisAndParents.Select(x => x.ToString())
         );
         var returnLine = this.DoesReturnLine == null ? "?" : !this.DoesReturnLine.Value.HasValue ? "?" : this.DoesReturnLine.Value.Value ? "Y" : "N";
         return $"{merged} {returnLine}";

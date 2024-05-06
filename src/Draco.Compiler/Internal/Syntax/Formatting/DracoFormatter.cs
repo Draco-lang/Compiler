@@ -156,15 +156,16 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         this.formatter.CurrentToken.DoesReturnLine = true;
         var type = node.GetType();
-        this.formatter.OnDifferent(node switch
+        var data = node switch
         {
             Api.Syntax.FunctionDeclarationSyntax _ => node, // always different, that what we want.
-            _ => type,
-        }, previous =>
-        {
-            if (previous == null) return;
-            this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
-        });
+            _ => type as object,
+        };
+        //this.formatter.OnDifferent(, previous =>
+        //{
+        //    if (previous == null) return;
+        //    this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
+        //});
         base.VisitDeclaration(node);
     }
 
@@ -244,10 +245,10 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         var closeScope = null as IDisposable;
         var kind = node.Operator.Kind;
-        this.formatter.OnDifferent(kind, _ =>
+        if (!(this.formatter.Scope.Data?.Equals(kind) ?? false))
         {
             closeScope = this.formatter.CreateMaterializableScope("", FoldPriority.AsLateAsPossible);
-        });
+        }
 
         node.Left.Accept(this);
 

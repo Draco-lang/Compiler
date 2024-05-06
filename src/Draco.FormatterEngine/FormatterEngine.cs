@@ -87,15 +87,6 @@ public sealed class FormatterEngine
         using (this.CreateMaterializableScope(indentation, foldBehavior)) action();
     }
 
-    public void OnDifferent(object? newData, Action<object?> onChange)
-    {
-        if (!(newData?.Equals(this.Scope.Data) ?? (this.Scope.Data == null)))
-        {
-            onChange(this.Scope.Data);
-            this.Scope.Data = newData;
-        }
-    }
-
     public static string Format(FormatterSettings settings, IReadOnlyList<TokenMetadata> metadatas)
     {
         FoldTooLongLine(metadatas, settings);

@@ -45,9 +45,9 @@ internal sealed class LineStateMachine
 
     private void HandleLeadingComments(TokenMetadata metadata, FormatterSettings settings, bool endOfInput)
     {
-        if (metadata.LeadingComments == null) return;
+        if (metadata.LeadingTrivia == null) return;
 
-        foreach (var comment in metadata.LeadingComments)
+        foreach (var comment in metadata.LeadingTrivia)
         {
             this.sb.Append(comment);
             if (!endOfInput)

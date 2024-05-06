@@ -11,7 +11,6 @@ public enum WhitespaceBehavior
     ForceRightPad = 1 << 2,
     BehaveAsWhiteSpaceForNextToken = 1 << 3,
     BehaveAsWhiteSpaceForPreviousToken = 1 << 4,
-    ExtraNewline = 1 << 5,
     RemoveOneIndentation = 1 << 6,
     PadAround = PadLeft | PadRight,
     Whitespace = BehaveAsWhiteSpaceForNextToken | BehaveAsWhiteSpaceForPreviousToken,

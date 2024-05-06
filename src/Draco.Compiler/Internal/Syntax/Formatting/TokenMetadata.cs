@@ -9,4 +9,4 @@ public record struct TokenMetadata(
     string Text,
     [DisallowNull] Box<bool?>? DoesReturnLine,
     Scope ScopeInfo,
-    IReadOnlyCollection<string> LeadingComments);
+    List<string> LeadingTrivia);

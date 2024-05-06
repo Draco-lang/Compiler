@@ -29,7 +29,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
         var metadatas = formatter.formatter.TokensMetadata;
 
-        return CodeFormatter.Format(settings, metadatas);
+        return FormatterEngine.Format(settings, metadatas);
     }
 
     public override void VisitCompilationUnit(Api.Syntax.CompilationUnitSyntax node)
@@ -63,7 +63,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
             TokenKind.KeywordMod => WhitespaceBehavior.PadAround,
             TokenKind.KeywordRem => WhitespaceBehavior.PadAround,
 
-            TokenKind.KeywordFunc => WhitespaceBehavior.ExtraNewline,
+            TokenKind.KeywordFunc => WhitespaceBehavior.PadAround,
 
 
             TokenKind.Semicolon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
@@ -122,8 +122,9 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
             .Where(x => x.Kind == TriviaKind.LineComment || x.Kind == TriviaKind.DocumentationComment)
             .Select(x => x.Text)
             .ToArray();
-        this.formatter.CurrentToken.LeadingComments = leadingComments;
-        if (leadingComments.Length > 0)
+        this.formatter.CurrentToken.LeadingTrivia ??= [];
+        this.formatter.CurrentToken.LeadingTrivia.AddRange(leadingComments);
+        if (this.formatter.CurrentToken.LeadingTrivia.Count > 0)
         {
             this.formatter.CurrentToken.DoesReturnLine = true;
         }
@@ -153,10 +154,17 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitDeclaration(Api.Syntax.DeclarationSyntax node)
     {
-        if (node.Parent is not Api.Syntax.DeclarationStatementSyntax)
+        this.formatter.CurrentToken.DoesReturnLine = true;
+        var type = node.GetType();
+        this.formatter.OnDifferent(node switch
         {
-            this.formatter.CurrentToken.DoesReturnLine = this.formatter.CurrentIdx > 0; // don't create empty line on first line in file.
-        }
+            Api.Syntax.FunctionDeclarationSyntax _ => node, // always different, that what we want.
+            _ => type,
+        }, previous =>
+        {
+            if (previous == null) return;
+            this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
+        });
         base.VisitDeclaration(node);
     }
 
@@ -236,11 +244,11 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         IDisposable? closeScope = null;
         var kind = node.Operator.Kind;
-        if (!(this.formatter.Scope.Data?.Equals(kind) ?? false))
+        this.formatter.OnDifferent(kind, _ =>
         {
             closeScope = this.formatter.CreateMaterializableScope("", FoldPriority.AsLateAsPossible);
-            this.formatter.Scope.Data = kind;
-        }
+        });
+
         node.Left.Accept(this);
 
         if (this.formatter.CurrentToken.DoesReturnLine is null)

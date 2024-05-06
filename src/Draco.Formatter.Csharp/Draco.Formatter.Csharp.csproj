@@ -3,6 +3,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
+    <ProjectReference Include="..\Draco.FormatterEngine\Draco.FormatterEngine.csproj" />
   </ItemGroup>
 </Project>

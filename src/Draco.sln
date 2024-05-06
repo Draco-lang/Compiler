@@ -53,6 +53,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Formatter.Csharp", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Formatter.CSharp.Tests", "Draco.Formatter.CSharp.Tests\Draco.Formatter.CSharp.Tests.csproj", "{FFCA2651-FA2D-4D0A-AA4A-B7DF1F19647C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.FormatterEngine", "Draco.FormatterEngine\Draco.FormatterEngine.csproj", "{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -192,6 +194,12 @@ Global
 		{FFCA2651-FA2D-4D0A-AA4A-B7DF1F19647C}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{FFCA2651-FA2D-4D0A-AA4A-B7DF1F19647C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FFCA2651-FA2D-4D0A-AA4A-B7DF1F19647C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

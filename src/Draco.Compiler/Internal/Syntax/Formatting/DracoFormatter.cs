@@ -38,65 +38,66 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         base.VisitCompilationUnit(node);
     }
 
+    private static WhitespaceBehavior GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
+    {
+        TokenKind.KeywordAnd => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordElse => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordFor => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordGoto => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordImport => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordIn => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordInternal => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordModule => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordOr => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordReturn => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordPublic => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordVar => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordVal => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordIf => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        TokenKind.KeywordWhile => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+
+        TokenKind.KeywordTrue => WhitespaceBehavior.PadAround,
+        TokenKind.KeywordFalse => WhitespaceBehavior.PadAround,
+        TokenKind.KeywordMod => WhitespaceBehavior.PadAround,
+        TokenKind.KeywordRem => WhitespaceBehavior.PadAround,
+
+        TokenKind.KeywordFunc => WhitespaceBehavior.PadAround,
+
+
+        TokenKind.Semicolon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
+        TokenKind.CurlyOpen => WhitespaceBehavior.PadLeft | WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,
+        TokenKind.ParenOpen => WhitespaceBehavior.Whitespace,
+        TokenKind.ParenClose => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
+        TokenKind.InterpolationStart => WhitespaceBehavior.Whitespace,
+        TokenKind.Dot => WhitespaceBehavior.Whitespace,
+        TokenKind.Colon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
+
+        TokenKind.Assign => WhitespaceBehavior.PadAround,
+        TokenKind.LineStringStart => WhitespaceBehavior.PadLeft,
+        TokenKind.MultiLineStringStart => WhitespaceBehavior.PadLeft,
+        TokenKind.Plus => WhitespaceBehavior.PadLeft,
+        TokenKind.Minus => WhitespaceBehavior.PadLeft,
+        TokenKind.Star => WhitespaceBehavior.PadLeft,
+        TokenKind.Slash => WhitespaceBehavior.PadLeft,
+        TokenKind.PlusAssign => WhitespaceBehavior.PadLeft,
+        TokenKind.MinusAssign => WhitespaceBehavior.PadLeft,
+        TokenKind.StarAssign => WhitespaceBehavior.PadLeft,
+        TokenKind.SlashAssign => WhitespaceBehavior.PadLeft,
+        TokenKind.GreaterEqual => WhitespaceBehavior.PadLeft,
+        TokenKind.GreaterThan => WhitespaceBehavior.PadLeft,
+        TokenKind.LessEqual => WhitespaceBehavior.PadLeft,
+        TokenKind.LessThan => WhitespaceBehavior.PadLeft,
+        TokenKind.Equal => WhitespaceBehavior.PadLeft,
+        TokenKind.LiteralFloat => WhitespaceBehavior.PadLeft,
+        TokenKind.LiteralInteger => WhitespaceBehavior.PadLeft,
+
+        TokenKind.Identifier => WhitespaceBehavior.PadLeft,
+
+        _ => WhitespaceBehavior.NoFormatting
+    };
+
     public override void VisitSyntaxToken(Api.Syntax.SyntaxToken node)
     {
-        static WhitespaceBehavior GetFormattingTokenKind(Api.Syntax.SyntaxToken token) => token.Kind switch
-        {
-            TokenKind.KeywordAnd => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordElse => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordFor => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordGoto => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordImport => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordIn => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordInternal => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordModule => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordOr => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordReturn => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordPublic => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordVar => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordVal => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordIf => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            TokenKind.KeywordWhile => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-
-            TokenKind.KeywordTrue => WhitespaceBehavior.PadAround,
-            TokenKind.KeywordFalse => WhitespaceBehavior.PadAround,
-            TokenKind.KeywordMod => WhitespaceBehavior.PadAround,
-            TokenKind.KeywordRem => WhitespaceBehavior.PadAround,
-
-            TokenKind.KeywordFunc => WhitespaceBehavior.PadAround,
-
-
-            TokenKind.Semicolon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
-            TokenKind.CurlyOpen => WhitespaceBehavior.PadLeft | WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,
-            TokenKind.ParenOpen => WhitespaceBehavior.Whitespace,
-            TokenKind.ParenClose => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
-            TokenKind.InterpolationStart => WhitespaceBehavior.Whitespace,
-            TokenKind.Dot => WhitespaceBehavior.Whitespace,
-            TokenKind.Colon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
-
-            TokenKind.Assign => WhitespaceBehavior.PadAround,
-            TokenKind.LineStringStart => WhitespaceBehavior.PadLeft,
-            TokenKind.MultiLineStringStart => WhitespaceBehavior.PadLeft,
-            TokenKind.Plus => WhitespaceBehavior.PadLeft,
-            TokenKind.Minus => WhitespaceBehavior.PadLeft,
-            TokenKind.Star => WhitespaceBehavior.PadLeft,
-            TokenKind.Slash => WhitespaceBehavior.PadLeft,
-            TokenKind.PlusAssign => WhitespaceBehavior.PadLeft,
-            TokenKind.MinusAssign => WhitespaceBehavior.PadLeft,
-            TokenKind.StarAssign => WhitespaceBehavior.PadLeft,
-            TokenKind.SlashAssign => WhitespaceBehavior.PadLeft,
-            TokenKind.GreaterEqual => WhitespaceBehavior.PadLeft,
-            TokenKind.GreaterThan => WhitespaceBehavior.PadLeft,
-            TokenKind.LessEqual => WhitespaceBehavior.PadLeft,
-            TokenKind.LessThan => WhitespaceBehavior.PadLeft,
-            TokenKind.Equal => WhitespaceBehavior.PadLeft,
-            TokenKind.LiteralFloat => WhitespaceBehavior.PadLeft,
-            TokenKind.LiteralInteger => WhitespaceBehavior.PadLeft,
-
-            TokenKind.Identifier => WhitespaceBehavior.PadLeft,
-
-            _ => WhitespaceBehavior.NoFormatting
-        };
         this.HandleTokenComments(node);
         this.formatter.SetCurrentTokenInfo(GetFormattingTokenKind(node), node.Text);
 
@@ -156,19 +157,19 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         this.formatter.CurrentToken.DoesReturnLine = true;
         var type = node.GetType();
-        var data = node switch
+        var newData = node switch
         {
             Api.Syntax.FunctionDeclarationSyntax _ => node, // always different, that what we want.
             _ => type as object,
         };
 
-        if (!data.Equals(this.formatter.Scope.Data))
+        if (!newData.Equals(this.formatter.Scope.Data))
         {
             if (this.formatter.Scope.Data != null)
             {
                 this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
             }
-            this.formatter.Scope.Data = data;
+            this.formatter.Scope.Data = newData;
         }
 
         base.VisitDeclaration(node);
@@ -192,9 +193,8 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         using var _ = this.formatter.CreateScope(this.settings.Indentation);
         var blockCurrentIndentCount = SyntaxFacts.ComputeCutoff(node).Length;
 
-        var i = 0;
         var shouldIndent = true;
-        for (; i < node.Parts.Count; i++)
+        for (var i = 0; i < node.Parts.Count; i++)
         {
             var curr = node.Parts[i];
 

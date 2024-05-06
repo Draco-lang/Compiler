@@ -25,9 +25,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Draco.Formatter.Csharp\Draco.Formatter.Csharp.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Xunit" />
-  </ItemGroup>
-
 </Project>

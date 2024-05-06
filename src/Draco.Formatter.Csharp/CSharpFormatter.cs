@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.Formatter.Csharp;
 
-public class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWalker(SyntaxWalkerDepth.Token)
+public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWalker(SyntaxWalkerDepth.Token)
 {
     private readonly FormatterSettings settings = settings;
     private FormatterEngine formatter = null!;
@@ -29,61 +29,61 @@ public class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWalker(Sy
         base.VisitCompilationUnit(node);
     }
 
+    private static WhitespaceBehavior GetFormattingTokenKind(SyntaxToken token) => token.Kind() switch
+    {
+        SyntaxKind.AndKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.ElseKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.ForKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.GotoKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.UsingDirective => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.InKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.InternalKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.ModuleKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.OrKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.ReturnKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.PublicKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.VarKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.IfKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.WhileKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.StaticKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+        SyntaxKind.SealedKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
+
+        SyntaxKind.TrueKeyword => WhitespaceBehavior.PadAround,
+        SyntaxKind.FalseKeyword => WhitespaceBehavior.PadAround,
+
+        SyntaxKind.SemicolonToken => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
+        SyntaxKind.OpenBraceToken => WhitespaceBehavior.PadLeft | WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,
+        SyntaxKind.OpenParenToken => WhitespaceBehavior.Whitespace,
+        SyntaxKind.OpenBracketToken => WhitespaceBehavior.Whitespace,
+        SyntaxKind.CloseParenToken => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
+        SyntaxKind.InterpolatedStringStartToken => WhitespaceBehavior.Whitespace,
+        SyntaxKind.DotToken => WhitespaceBehavior.Whitespace,
+
+        SyntaxKind.EqualsToken => WhitespaceBehavior.PadAround,
+        SyntaxKind.InterpolatedSingleLineRawStringStartToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.InterpolatedMultiLineRawStringStartToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.PlusToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.MinusToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.AsteriskToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.SlashToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.PlusEqualsToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.MinusEqualsToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.AsteriskEqualsToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.SlashEqualsToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.GreaterThanEqualsToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.GreaterThanToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.LessThanEqualsToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.LessThanToken => WhitespaceBehavior.PadLeft,
+        SyntaxKind.NumericLiteralToken => WhitespaceBehavior.PadLeft,
+
+        SyntaxKind.IdentifierToken => WhitespaceBehavior.PadLeft,
+
+        _ => WhitespaceBehavior.NoFormatting
+    };
+
     public override void VisitToken(SyntaxToken node)
     {
         if(node.IsKind(SyntaxKind.None)) return;
-
-        static WhitespaceBehavior GetFormattingTokenKind(SyntaxToken token) => token.Kind() switch
-        {
-            SyntaxKind.AndKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.ElseKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.ForKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.GotoKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.UsingDirective => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.InKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.InternalKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.ModuleKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.OrKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.ReturnKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.PublicKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.VarKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.IfKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.WhileKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.StaticKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-            SyntaxKind.SealedKeyword => WhitespaceBehavior.PadLeft | WhitespaceBehavior.ForceRightPad,
-
-            SyntaxKind.TrueKeyword => WhitespaceBehavior.PadAround,
-            SyntaxKind.FalseKeyword => WhitespaceBehavior.PadAround,
-
-            SyntaxKind.SemicolonToken => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
-            SyntaxKind.OpenBraceToken => WhitespaceBehavior.PadLeft | WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,
-            SyntaxKind.OpenParenToken => WhitespaceBehavior.Whitespace,
-            SyntaxKind.OpenBracketToken => WhitespaceBehavior.Whitespace,
-            SyntaxKind.CloseParenToken => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
-            SyntaxKind.InterpolatedStringStartToken => WhitespaceBehavior.Whitespace,
-            SyntaxKind.DotToken => WhitespaceBehavior.Whitespace,
-
-            SyntaxKind.EqualsToken => WhitespaceBehavior.PadAround,
-            SyntaxKind.InterpolatedSingleLineRawStringStartToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.InterpolatedMultiLineRawStringStartToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.PlusToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.MinusToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.AsteriskToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.SlashToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.PlusEqualsToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.MinusEqualsToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.AsteriskEqualsToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.SlashEqualsToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.GreaterThanEqualsToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.GreaterThanToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.LessThanEqualsToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.LessThanToken => WhitespaceBehavior.PadLeft,
-            SyntaxKind.NumericLiteralToken => WhitespaceBehavior.PadLeft,
-
-            SyntaxKind.IdentifierToken => WhitespaceBehavior.PadLeft,
-
-            _ => WhitespaceBehavior.NoFormatting
-        };
 
         base.VisitToken(node);
         this.formatter.SetCurrentTokenInfo(GetFormattingTokenKind(node), node.Text);

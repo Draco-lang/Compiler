@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using Draco.Debugger.IO;
 
 namespace Draco.Debugger.Platform;

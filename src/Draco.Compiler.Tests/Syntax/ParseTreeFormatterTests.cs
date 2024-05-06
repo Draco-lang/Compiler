@@ -1,5 +1,4 @@
 using Draco.Compiler.Api.Syntax;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Xunit.Abstractions;
 
 namespace Draco.Compiler.Tests.Syntax;

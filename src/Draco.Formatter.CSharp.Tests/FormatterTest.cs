@@ -23,7 +23,6 @@ public sealed class FormatterTest(ITestOutputHelper logger)
         logger.WriteLine(formatted);
         Assert.Equal(input, formatted, ignoreLineEndingDifferences: true);
     }
-
     [Fact]
     public void ThisFileShouldBeFormattedCorrectly()
     {

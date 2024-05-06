@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
@@ -119,6 +120,7 @@ public sealed class FormatterEngine
         var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
         var currentLineStart = 0;
         List<Scope> foldedScopes = [];
+
         for (var x = 0; x < metadatas.Count; x++)
         {
             var curr = metadatas[x];
@@ -127,12 +129,20 @@ public sealed class FormatterEngine
                 // we recreate a state machine for the new line.
                 stateMachine = new LineStateMachine(string.Concat(curr.ScopeInfo.CurrentTotalIndent));
                 currentLineStart = x;
-                foldedScopes.Clear();
+                // we do not clear this, because we can be in the middle of trying to make the line fit in the width.
             }
 
             stateMachine.AddToken(curr, settings, false);
 
-            if (stateMachine.LineWidth <= settings.LineWidth) continue;
+            if (stateMachine.LineWidth <= settings.LineWidth)
+            {
+                // we clear the folded scope, because the line is complete and we won't need it anymore.
+                if (x != metadatas.Count - 1 && (metadatas[x + 1].DoesReturnLine?.Value ?? false))
+                {
+                    foldedScopes.Clear();
+                }
+                continue;
+            }
 
             // the line is too long...
 
@@ -157,8 +167,8 @@ public sealed class FormatterEngine
                 var prevFolded = scope.Fold();
                 if (prevFolded != null)
                 {
-                    ResetBacktracking();
-                    continue;
+                    Backtrack();
+                    goto continue2;
                 }
             }
             // there was no high priority scope to fold, we try to get the low priority then.
@@ -169,14 +179,16 @@ public sealed class FormatterEngine
                 var prevFolded = scope.Fold();
                 if (prevFolded != null)
                 {
-                    ResetBacktracking();
-                    continue;
+                    Backtrack();
+                    goto continue2;
                 }
             }
 
+        continue2:
+
             // we couldn't fold any scope, we just give up.
 
-            void ResetBacktracking()
+            void Backtrack()
             {
                 foreach (var scope in foldedScopes)
                 {

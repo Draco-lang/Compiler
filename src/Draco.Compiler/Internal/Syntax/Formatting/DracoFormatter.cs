@@ -242,7 +242,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitBinaryExpression(Api.Syntax.BinaryExpressionSyntax node)
     {
-        IDisposable? closeScope = null;
+        var closeScope = null as IDisposable;
         var kind = node.Operator.Kind;
         this.formatter.OnDifferent(kind, _ =>
         {

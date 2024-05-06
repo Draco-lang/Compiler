@@ -1,4 +1,5 @@
 namespace Draco.Compiler.Internal.Syntax.Formatting;
+
 public class Box<T>(T value)
 {
     protected T value = value;

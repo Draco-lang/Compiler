@@ -1,4 +1,5 @@
 namespace Draco.Compiler.Api.Syntax;
+
 public partial class ElseClauseSyntax
 {
     public bool IsElseIf => this.Expression is StatementExpressionSyntax statementExpression

@@ -6,7 +6,7 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 public enum WhitespaceBehavior
 {
     NoFormatting = 0,
-    PadLeft = 1,
+    PadLeft = 1 << 0,
     PadRight = 1 << 1,
     ForceRightPad = 1 << 2,
     BehaveAsWhiteSpaceForNextToken = 1 << 3,

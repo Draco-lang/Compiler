@@ -1,3 +1,5 @@
+using System;
+
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 [Flags]

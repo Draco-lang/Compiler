@@ -47,13 +47,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.JsonRpc", "Draco.Json
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Debugger.Tests", "Draco.Debugger.Tests\Draco.Debugger.Tests.csproj", "{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.TracingDebugger", "Draco.TracingDebugger\Draco.TracingDebugger.csproj", "{0D07F057-29C0-4BB3-AE17-32B73CDFB077}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Formatter.Csharp", "Draco.Formatter.Csharp\Draco.Formatter.Csharp.csproj", "{379559B5-FE13-4685-9F40-E021326CCB53}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Formatter.CSharp.Tests", "Draco.Formatter.CSharp.Tests\Draco.Formatter.CSharp.Tests.csproj", "{FFCA2651-FA2D-4D0A-AA4A-B7DF1F19647C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.FormatterEngine", "Draco.FormatterEngine\Draco.FormatterEngine.csproj", "{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.FormatterEngine", "Draco.FormatterEngine\Draco.FormatterEngine.csproj", "{D5DC7780-B933-400C-9AA8-4AFF1FF45DF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -176,12 +174,6 @@ Global
 		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D07F057-29C0-4BB3-AE17-32B73CDFB077}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D07F057-29C0-4BB3-AE17-32B73CDFB077}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D07F057-29C0-4BB3-AE17-32B73CDFB077}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D07F057-29C0-4BB3-AE17-32B73CDFB077}.Nuget|Any CPU.Build.0 = Debug|Any CPU
-		{0D07F057-29C0-4BB3-AE17-32B73CDFB077}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D07F057-29C0-4BB3-AE17-32B73CDFB077}.Release|Any CPU.Build.0 = Release|Any CPU
 		{379559B5-FE13-4685-9F40-E021326CCB53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{379559B5-FE13-4685-9F40-E021326CCB53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{379559B5-FE13-4685-9F40-E021326CCB53}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU

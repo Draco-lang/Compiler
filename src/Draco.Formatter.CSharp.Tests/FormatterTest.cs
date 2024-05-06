@@ -1,6 +1,7 @@
 using Draco.Formatter.Csharp;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Xunit;
 using Xunit.Abstractions;
 namespace Draco.Formatter.CSharp.Test;
 public sealed class FormatterTest(ITestOutputHelper logger)

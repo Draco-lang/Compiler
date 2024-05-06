@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
@@ -9,11 +10,11 @@ public record struct TokenMetadata(
     Scope ScopeInfo,
     List<string> LeadingTrivia)
 {
-    public override readonly string ToString()
+    public readonly override string ToString()
     {
         var merged = string.Join(
             ',',
-            this.ScopeInfo.ThisAndParents.Select(x => x.ToString())
+            this.ScopeInfo.ThisAndParents
         );
         var returnLine = this.DoesReturnLine == null ? "?" : !this.DoesReturnLine.Value.HasValue ? "?" : this.DoesReturnLine.Value.Value ? "Y" : "N";
         return $"{merged} {returnLine}";

@@ -23,17 +23,4 @@ public sealed class FormatterSettings
     public string Indentation { get; init; } = "    ";
 
     public int LineWidth { get; init; } = 160;
-
-    public string IndentationString(int amount = 1)
-    {
-        var sb = new StringBuilder();
-        for (var i = 0; i < amount; ++i) sb.Append(this.Indentation);
-        return sb.ToString();
-    }
-    public string PaddingString(int width = 1)
-    {
-        var sb = new StringBuilder();
-        for (var i = 0; i < width; ++i) sb.Append(' ');
-        return sb.ToString();
-    }
 }

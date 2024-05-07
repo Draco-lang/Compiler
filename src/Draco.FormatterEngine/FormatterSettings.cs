@@ -22,5 +22,8 @@ public sealed class FormatterSettings
     /// </summary>
     public string Indentation { get; init; } = "    ";
 
+    /// <summary>
+    /// The max line width the formatter will try to respect.
+    /// </summary>
     public int LineWidth { get; init; } = 160;
 }

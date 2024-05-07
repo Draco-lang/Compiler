@@ -183,7 +183,7 @@ public sealed class SyntaxTreeFormatterTests(ITestOutputHelper logger)
             }
 
             """";
-        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
+        var actual = SyntaxTree.Parse(input).Format();
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -203,7 +203,7 @@ public sealed class SyntaxTreeFormatterTests(ITestOutputHelper logger)
             }
 
             """";
-        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
+        var actual = SyntaxTree.Parse(input).Format();
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -229,7 +229,7 @@ public sealed class SyntaxTreeFormatterTests(ITestOutputHelper logger)
             }
 
             """";
-        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings());
+        var actual = SyntaxTree.Parse(input).Format();
         Assert.Equal(expected, actual, ignoreLineEndingDifferences: true);
     }
 
@@ -328,9 +328,7 @@ public sealed class SyntaxTreeFormatterTests(ITestOutputHelper logger)
             // oops.
 
             """";
-        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
-        {
-        });
+        var actual = SyntaxTree.Parse(input).Format();
         logger.WriteLine(actual);
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }
@@ -349,9 +347,7 @@ public sealed class SyntaxTreeFormatterTests(ITestOutputHelper logger)
             }
 
             """";
-        var actual = SyntaxTree.Parse(input).Format(new Internal.Syntax.Formatting.FormatterSettings()
-        {
-        });
+        var actual = SyntaxTree.Parse(input).Format();
         logger.WriteLine(actual);
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }

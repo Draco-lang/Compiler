@@ -3,7 +3,9 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using Xunit.Abstractions;
+
 namespace Draco.Formatter.CSharp.Test;
+
 public sealed class FormatterTest(ITestOutputHelper logger)
 {
     [Fact]
@@ -24,6 +26,7 @@ public sealed class FormatterTest(ITestOutputHelper logger)
         logger.WriteLine(formatted);
         Assert.Equal(input, formatted, ignoreLineEndingDifferences: true);
     }
+
     [Fact]
     public void ThisFileShouldBeFormattedCorrectly()
     {

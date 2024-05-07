@@ -63,7 +63,6 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
         TokenKind.KeywordFunc => WhitespaceBehavior.PadAround,
 
-
         TokenKind.Semicolon => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
         TokenKind.CurlyOpen => WhitespaceBehavior.PadLeft | WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,
         TokenKind.ParenOpen => WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,

@@ -83,7 +83,7 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
 
     public override void VisitToken(SyntaxToken node)
     {
-        if(node.IsKind(SyntaxKind.None)) return;
+        if (node.IsKind(SyntaxKind.None)) return;
 
         base.VisitToken(node);
         this.formatter.SetCurrentTokenInfo(GetFormattingTokenKind(node), node.Text);
@@ -91,6 +91,14 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
 
     public override void VisitClassDeclaration(ClassDeclarationSyntax node)
     {
+        if (!node.Equals(this.formatter.Scope.Data))
+        {
+            if (this.formatter.Scope.Data != null)
+            {
+                this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
+            }
+            this.formatter.Scope.Data = node;
+        }
         this.formatter.CurrentToken.DoesReturnLine = true;
         foreach (var attribute in node.AttributeLists)
         {
@@ -151,11 +159,29 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
     public override void VisitUsingDirective(UsingDirectiveSyntax node)
     {
         this.formatter.CurrentToken.DoesReturnLine = true;
+        var newData = typeof(UsingStatementSyntax);
+        if (!newData.Equals(this.formatter.Scope.Data))
+        {
+            if (this.formatter.Scope.Data != null)
+            {
+                this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
+            }
+            this.formatter.Scope.Data = newData;
+        }
         base.VisitUsingDirective(node);
     }
 
     public override void VisitNamespaceDeclaration(NamespaceDeclarationSyntax node)
     {
+        var newData = typeof(NamespaceDeclarationSyntax);
+        if (!newData.Equals(this.formatter.Scope.Data))
+        {
+            if (this.formatter.Scope.Data != null)
+            {
+                this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
+            }
+            this.formatter.Scope.Data = newData;
+        }
         this.formatter.CurrentToken.DoesReturnLine = true;
         base.VisitNamespaceDeclaration(node);
     }
@@ -168,6 +194,14 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
 
     public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
     {
+        if (!node.Equals(this.formatter.Scope.Data))
+        {
+            if (this.formatter.Scope.Data != null)
+            {
+                this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
+            }
+            this.formatter.Scope.Data = node;
+        }
         this.formatter.CurrentToken.DoesReturnLine = true;
         foreach (var attribute in node.AttributeLists)
         {

@@ -8,7 +8,6 @@ internal sealed class LineStateMachine
     private readonly string indentation;
     private bool previousIsWhitespace = true;
     private bool prevTokenNeedRightPad = false;
-    private bool forceWhiteSpace = false;
     public LineStateMachine(string indentation)
     {
         this.sb.Append(indentation);
@@ -30,7 +29,7 @@ internal sealed class LineStateMachine
 
         var requestedLeftPad = this.prevTokenNeedRightPad || metadata.Kind.HasFlag(WhitespaceBehavior.PadLeft);
         var haveWhitespace = (metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken) || this.previousIsWhitespace);
-        var shouldLeftPad = (requestedLeftPad && !haveWhitespace) || this.forceWhiteSpace;
+        var shouldLeftPad = (requestedLeftPad && !haveWhitespace);
 
         if (shouldLeftPad)
         {
@@ -38,9 +37,8 @@ internal sealed class LineStateMachine
         }
         this.Append(metadata.Text);
 
-        this.forceWhiteSpace = metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
         this.prevTokenNeedRightPad = metadata.Kind.HasFlag(WhitespaceBehavior.PadRight);
-        this.previousIsWhitespace = metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken) || metadata.Kind.HasFlag(WhitespaceBehavior.ForceRightPad);
+        this.previousIsWhitespace = metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken);
     }
 
     private void HandleLeadingComments(TokenMetadata metadata, FormatterSettings settings, bool endOfInput)

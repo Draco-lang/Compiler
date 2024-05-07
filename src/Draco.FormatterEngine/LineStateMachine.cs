@@ -2,29 +2,29 @@ using System.Text;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
-internal sealed class LineStateMachine
+internal sealed class LineStateMachine(string indentation)
 {
     private readonly StringBuilder sb = new();
-    private readonly string indentation;
     private bool previousIsWhitespace = true;
     private bool prevTokenNeedRightPad = false;
-    public LineStateMachine(string indentation)
-    {
-        this.sb.Append(indentation);
-        this.LineWidth = indentation.Length;
-        this.indentation = indentation;
-    }
+    private bool shouldIndent = true;
 
-    public int LineWidth { get; set; }
+    public int LineWidth { get; set; } = indentation.Length;
 
     public void AddToken(TokenMetadata metadata, FormatterSettings settings, bool endOfInput)
     {
         this.HandleLeadingComments(metadata, settings, endOfInput);
-
-        if (metadata.Kind.HasFlag(WhitespaceBehavior.RemoveOneIndentation))
+        if (this.shouldIndent)
         {
-            this.sb.Remove(0, settings.Indentation.Length);
-            this.LineWidth -= settings.Indentation.Length;
+            this.shouldIndent = false;
+            if (metadata.Kind.HasFlag(WhitespaceBehavior.RemoveOneIndentation))
+            {
+                this.Append(indentation.Remove(settings.Indentation.Length));
+            }
+            else
+            {
+                this.Append(indentation);
+            }
         }
 
         var requestedLeftPad = this.prevTokenNeedRightPad || metadata.Kind.HasFlag(WhitespaceBehavior.PadLeft);
@@ -45,14 +45,13 @@ internal sealed class LineStateMachine
     {
         if (metadata.LeadingTrivia == null) return;
 
-        foreach (var comment in metadata.LeadingTrivia)
+        foreach (var trivia in metadata.LeadingTrivia)
         {
-            this.sb.Append(comment);
+            if (!string.IsNullOrWhiteSpace(trivia)) this.sb.Append(indentation);
+            this.sb.Append(trivia);
             if (!endOfInput)
             {
                 this.sb.Append(settings.Newline);
-                this.sb.Append(this.indentation);
-                this.LineWidth = this.indentation.Length;
             }
         }
     }
@@ -66,8 +65,8 @@ internal sealed class LineStateMachine
     public void Reset()
     {
         this.sb.Clear();
-        this.sb.Append(this.indentation);
-        this.LineWidth = this.indentation.Length;
+        this.sb.Append(indentation);
+        this.LineWidth = indentation.Length;
     }
 
 

@@ -186,8 +186,18 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
         base.VisitNamespaceDeclaration(node);
     }
 
+
     public override void VisitFileScopedNamespaceDeclaration(FileScopedNamespaceDeclarationSyntax node)
     {
+        var newData = typeof(FileScopedNamespaceDeclarationSyntax);
+        if (!newData.Equals(this.formatter.Scope.Data))
+        {
+            if (this.formatter.Scope.Data != null)
+            {
+                this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
+            }
+            this.formatter.Scope.Data = newData;
+        }
         this.formatter.CurrentToken.DoesReturnLine = true;
         base.VisitFileScopedNamespaceDeclaration(node);
     }

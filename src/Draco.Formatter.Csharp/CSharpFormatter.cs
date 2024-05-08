@@ -47,19 +47,20 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
         SyntaxKind.WhileKeyword => WhitespaceBehavior.PadAround,
         SyntaxKind.StaticKeyword => WhitespaceBehavior.PadAround,
         SyntaxKind.SealedKeyword => WhitespaceBehavior.PadAround,
+        SyntaxKind.ForEachKeyword => WhitespaceBehavior.PadAround,
 
         SyntaxKind.TrueKeyword => WhitespaceBehavior.PadAround,
         SyntaxKind.FalseKeyword => WhitespaceBehavior.PadAround,
+        SyntaxKind.CommaToken => WhitespaceBehavior.PadRight,
 
         SyntaxKind.SemicolonToken => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
         SyntaxKind.OpenBraceToken => WhitespaceBehavior.PadLeft | WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,
-        SyntaxKind.OpenParenToken => WhitespaceBehavior.Whitespace,
+        SyntaxKind.OpenParenToken => WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken,
         SyntaxKind.OpenBracketToken => WhitespaceBehavior.Whitespace,
         SyntaxKind.CloseParenToken => WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken,
         SyntaxKind.InterpolatedStringStartToken => WhitespaceBehavior.Whitespace,
         SyntaxKind.DotToken => WhitespaceBehavior.Whitespace,
 
-        SyntaxKind.ColonToken => WhitespaceBehavior.PadAround,
         SyntaxKind.EqualsToken => WhitespaceBehavior.PadAround,
         SyntaxKind.InterpolatedSingleLineRawStringStartToken => WhitespaceBehavior.PadLeft,
         SyntaxKind.InterpolatedMultiLineRawStringStartToken => WhitespaceBehavior.PadLeft,
@@ -131,6 +132,12 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
         this.formatter.CurrentToken.DoesReturnLine = true;
         this.VisitToken(node.CloseBraceToken);
         this.VisitToken(node.SemicolonToken);
+    }
+
+    public override void VisitBaseList(BaseListSyntax node)
+    {
+        this.formatter.CurrentToken.Kind = WhitespaceBehavior.PadAround;
+        base.VisitBaseList(node);
     }
 
     public override void VisitBlock(BlockSyntax node)
@@ -243,7 +250,25 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
             this.formatter.CurrentToken.LeadingTrivia = [""];
         }
         this.formatter.CurrentToken.DoesReturnLine = true;
-        base.VisitConstructorDeclaration(node);
+        foreach (var attribute in node.AttributeLists)
+        {
+            attribute.Accept(this);
+        }
+        this.formatter.CurrentToken.DoesReturnLine = true;
+        foreach (var modifier in node.Modifiers)
+        {
+            this.VisitToken(modifier);
+        }
+        this.VisitToken(node.Identifier);
+        node.ParameterList.Accept(this);
+        if (node.Initializer != null)
+        {
+            this.formatter.CurrentToken.Kind = WhitespaceBehavior.PadAround;
+            node.Initializer.Accept(this);
+        }
+        node.Body?.Accept(this);
+        node.ExpressionBody?.Accept(this);
+        this.VisitToken(node.SemicolonToken);
     }
 
     private static SyntaxNode? GetPreviousNode(SyntaxNode node)
@@ -253,6 +278,7 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
         var previous = null as SyntaxNode;
         foreach (var child in parent.ChildNodes())
         {
+            if (child is ParameterListSyntax) continue;
             if (child == node) return previous;
             previous = child;
         }

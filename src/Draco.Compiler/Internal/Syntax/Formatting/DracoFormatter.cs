@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 
@@ -155,22 +156,6 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     public override void VisitDeclaration(Api.Syntax.DeclarationSyntax node)
     {
         this.formatter.CurrentToken.DoesReturnLine = true;
-        var type = node.GetType();
-        var newData = node switch
-        {
-            Api.Syntax.FunctionDeclarationSyntax _ => node, // always different, that what we want.
-            _ => type as object,
-        };
-
-        if (!newData.Equals(this.formatter.Scope.Data))
-        {
-            if (this.formatter.Scope.Data != null)
-            {
-                this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
-            }
-            this.formatter.Scope.Data = newData;
-        }
-
         base.VisitDeclaration(node);
     }
 
@@ -249,10 +234,9 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         var closeScope = null as IDisposable;
         var kind = node.Operator.Kind;
-        if (!(this.formatter.Scope.Data?.Equals(kind) ?? false))
+        if (node.Parent is not Api.Syntax.BinaryExpressionSyntax { Operator.Kind: var previousKind } || previousKind != kind)
         {
             closeScope = this.formatter.CreateMaterializableScope("", FoldPriority.AsLateAsPossible);
-            this.formatter.Scope.Data = kind;
         }
 
         node.Left.Accept(this);
@@ -287,6 +271,11 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     public override void VisitFunctionDeclaration(Api.Syntax.FunctionDeclarationSyntax node)
     {
         this.VisitDeclaration(node);
+        if (GetPrevious(node) != null)
+        {
+            this.formatter.CurrentToken.LeadingTrivia = [""];
+        }
+
         var disposable = this.formatter.CreateScopeAfterNextToken(this.settings.Indentation);
         node.VisibilityModifier?.Accept(this);
         node.FunctionKeyword.Accept(this);
@@ -406,5 +395,28 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         node.Type?.Accept(this);
         node.Value?.Accept(this);
         node.Semicolon.Accept(this);
+    }
+
+    private static Api.Syntax.SyntaxNode? GetPrevious(Api.Syntax.SyntaxNode node)
+    {
+        var previous = null as Api.Syntax.SyntaxNode;
+        foreach (var child in node.Parent!.Children)
+        {
+            if (child == node) return previous;
+
+            // TODO: temp fix for AST problem.
+            if (child is IReadOnlyList<Api.Syntax.SyntaxNode> list)
+            {
+                var previous2 = null as Api.Syntax.SyntaxNode;
+                foreach (var item in list)
+                {
+                    if (item == node) return previous2;
+                    previous2 = item;
+                }
+            }
+            previous = child;
+        }
+
+        return null;
     }
 }

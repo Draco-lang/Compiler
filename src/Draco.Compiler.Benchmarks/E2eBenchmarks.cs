@@ -11,8 +11,7 @@ public class E2eBenchmarks : FolderBenchmarkBase
 {
     private MemoryStream peStream = null!;
 
-    public E2eBenchmarks()
-        : base("e2e")
+    public E2eBenchmarks() : base("e2e")
     {
     }
 

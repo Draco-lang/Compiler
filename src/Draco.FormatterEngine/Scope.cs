@@ -35,12 +35,6 @@ public sealed class Scope
     public Scope? Parent { get; }
 
     /// <summary>
-    /// Arbitrary data that can be attached to the scope.
-    /// Currently only used to group similar binary expressions together.
-    /// </summary>
-    public object? Data { get; set; }
-
-    /// <summary>
     /// Represent if the scope is materialized or not.
     /// An unmaterialized scope is a potential scope, which is not folded yet.
     /// <code>items.Select(x => x).ToList()</code> have an unmaterialized scope.

@@ -36,4 +36,18 @@ public sealed class FormatterTest(ITestOutputHelper logger)
         logger.WriteLine(formatted);
         Assert.Equal(input, formatted, ignoreLineEndingDifferences: true);
     }
+
+    [Fact]
+    public void AllFileShouldBeFormattedCorrectly()
+    {
+        var allFiles = Directory.GetFiles("../../../../", "*.cs", SearchOption.AllDirectories);
+        foreach (var file in allFiles)
+        {
+            var input = File.ReadAllText(file);
+            var tree = SyntaxFactory.ParseSyntaxTree(SourceText.From(input));
+            var formatted = CSharpFormatter.Format(tree);
+            logger.WriteLine(formatted);
+            Assert.Equal(input, formatted, ignoreLineEndingDifferences: true);
+        }
+    }
 }

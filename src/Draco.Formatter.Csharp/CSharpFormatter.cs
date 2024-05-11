@@ -6,14 +6,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Draco.Formatter.Csharp;
 
-public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWalker(SyntaxWalkerDepth.Token)
+public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSyntaxWalker(SyntaxWalkerDepth.Token)
 {
-    private readonly FormatterSettings settings = settings;
+    private readonly CSharpFormatterSettings settings = settings;
     private FormatterEngine formatter = null!;
 
-    public static string Format(SyntaxTree tree, FormatterSettings? settings = null)
+    public static string Format(SyntaxTree tree, CSharpFormatterSettings? settings = null)
     {
-        settings ??= FormatterSettings.Default;
+        settings ??= CSharpFormatterSettings.Default;
 
         var formatter = new CSharpFormatter(settings);
         formatter.Visit(tree.GetRoot());
@@ -263,6 +263,12 @@ public sealed class CSharpFormatter(FormatterSettings settings) : CSharpSyntaxWa
         node.ParameterList.Accept(this);
         if (node.Initializer != null)
         {
+            using var scope = this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsLateAsPossible);
+            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+            if (this.settings.NewLineBeforeConstructorInitializer)
+            {
+                this.formatter.Scope.IsMaterialized.Value = true;
+            }
             this.formatter.CurrentToken.Kind = WhitespaceBehavior.PadAround;
             node.Initializer.Accept(this);
         }

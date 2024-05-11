@@ -22,7 +22,7 @@ public sealed class FormatterTest(ITestOutputHelper logger)
 
             """";
         var tree = SyntaxFactory.ParseSyntaxTree(SourceText.From(input));
-        var formatted = CSharpFormatter.Format(tree);
+        var formatted = CSharpFormatter.Format(tree, CSharpFormatterSettings.DracoStyle);
         logger.WriteLine(formatted);
         Assert.Equal(input, formatted, ignoreLineEndingDifferences: true);
     }
@@ -32,7 +32,7 @@ public sealed class FormatterTest(ITestOutputHelper logger)
     {
         var input = File.ReadAllText("../../../../Draco.Formatter.Csharp.Tests/FormatterTest.cs");
         var tree = SyntaxFactory.ParseSyntaxTree(SourceText.From(input));
-        var formatted = CSharpFormatter.Format(tree);
+        var formatted = CSharpFormatter.Format(tree, CSharpFormatterSettings.DracoStyle);
         logger.WriteLine(formatted);
         Assert.Equal(input, formatted, ignoreLineEndingDifferences: true);
     }
@@ -45,7 +45,7 @@ public sealed class FormatterTest(ITestOutputHelper logger)
         {
             var input = File.ReadAllText(file);
             var tree = SyntaxFactory.ParseSyntaxTree(SourceText.From(input));
-            var formatted = CSharpFormatter.Format(tree);
+            var formatted = CSharpFormatter.Format(tree, CSharpFormatterSettings.DracoStyle);
             logger.WriteLine(formatted);
             Assert.Equal(input, formatted, ignoreLineEndingDifferences: true);
         }

@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// <summary>
 /// The settings of the formatter.
 /// </summary>
-public sealed class FormatterSettings
+public class FormatterSettings
 {
     /// <summary>
     /// The default formatting settings.

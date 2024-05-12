@@ -27,7 +27,7 @@ internal sealed class LineStateMachine(string indentation)
             }
         }
 
-        var requestedLeftPad = this.prevTokenNeedRightPad || metadata.Kind.HasFlag(WhitespaceBehavior.PadLeft);
+        var requestedLeftPad = this.prevTokenNeedRightPad || metadata.Kind.HasFlag(WhitespaceBehavior.SpaceBefore);
         var haveWhitespace = (metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForPreviousToken) || this.previousIsWhitespace);
         var shouldLeftPad = (requestedLeftPad && !haveWhitespace);
 
@@ -37,7 +37,7 @@ internal sealed class LineStateMachine(string indentation)
         }
         this.Append(metadata.Text);
 
-        this.prevTokenNeedRightPad = metadata.Kind.HasFlag(WhitespaceBehavior.PadRight);
+        this.prevTokenNeedRightPad = metadata.Kind.HasFlag(WhitespaceBehavior.SpaceAfter);
         this.previousIsWhitespace = metadata.Kind.HasFlag(WhitespaceBehavior.BehaveAsWhiteSpaceForNextToken);
     }
 

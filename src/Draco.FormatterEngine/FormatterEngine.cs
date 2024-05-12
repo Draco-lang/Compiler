@@ -6,20 +6,20 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 
 public sealed class FormatterEngine
 {
-    private readonly Disposable scopePopper;
+    private readonly ScopeGuard scopePopper;
     private readonly TokenMetadata[] tokensMetadata;
     private readonly FormatterSettings settings;
 
     public FormatterEngine(int tokenCount, FormatterSettings settings)
     {
-        this.scopePopper = new Disposable(this);
+        this.scopePopper = new ScopeGuard(this);
         this.tokensMetadata = new TokenMetadata[tokenCount];
         this.Scope = new(null, settings, FoldPriority.Never, "");
         this.Scope.IsMaterialized.Value = true;
         this.settings = settings;
     }
 
-    private class Disposable(FormatterEngine formatter) : IDisposable
+    private class ScopeGuard(FormatterEngine formatter) : IDisposable
     {
         public void Dispose() => formatter.PopScope();
     }

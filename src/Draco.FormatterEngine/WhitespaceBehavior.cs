@@ -15,11 +15,11 @@ public enum WhitespaceBehavior
     /// <summary>
     /// Add a left whitespace if necessary.
     /// </summary>
-    PadLeft = 1 << 0,
+    SpaceBefore = 1 << 0,
     /// <summary>
     /// Add a right whitespace if necessary
     /// </summary>
-    PadRight = 1 << 1,
+    SpaceAfter = 1 << 1,
     /// <summary>
     /// The next token will think of this token as a whitespace.
     /// </summary>
@@ -35,7 +35,7 @@ public enum WhitespaceBehavior
     /// <summary>
     /// Add a whitespace on the left and right, if necessary.
     /// </summary>
-    PadAround = PadLeft | PadRight,
+    PadAround = SpaceBefore | SpaceAfter,
     /// <summary>
     /// This token behave as a whitespace.
     /// </summary>

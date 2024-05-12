@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
 
+/// <summary>
+/// Represent an indentation level in the code.
+/// </summary>
 public sealed class Scope
 {
     private readonly string? indentation;
@@ -21,17 +24,34 @@ public sealed class Scope
         this.FoldPriority = foldPriority;
     }
 
+    /// <summary>
+    /// Create a scope that add a new indentation level.
+    /// </summary>
+    /// <param name="parent">The parent scope.</param>
+    /// <param name="settings">The settings of the formatter.</param>
+    /// <param name="foldPriority">The fold priority of the scope.</param>
+    /// <param name="indentation">The indentation this scope will add.</param>
     public Scope(Scope? parent, FormatterSettings settings, FoldPriority foldPriority, string indentation) : this(parent, settings, foldPriority)
     {
         this.indentation = indentation;
     }
 
+    /// <summary>
+    /// Create a scope that override the indentation level and follow the position of a token instead.
+    /// </summary>
+    /// <param name="parent">The parent scope.</param>
+    /// <param name="settings">The settings of the formatter.</param>
+    /// <param name="foldPriority">The fold priority of the scope.</param>
+    /// <param name="levelingToken">The list of the tokens of the formatter and the index of the token to follow the position.</param>
     public Scope(Scope? parent, FormatterSettings settings, FoldPriority foldPriority, (IReadOnlyList<TokenMetadata> tokens, int indexOfLevelingToken) levelingToken)
         : this(parent, settings, foldPriority)
     {
         this.levelingToken = levelingToken;
     }
 
+    /// <summary>
+    /// The parent scope of this scope.
+    /// </summary>
     public Scope? Parent { get; }
 
     /// <summary>
@@ -47,6 +67,9 @@ public sealed class Scope
     /// </summary>
     public MutableBox<bool?> IsMaterialized { get; } = new MutableBox<bool?>(null);
 
+    /// <summary>
+    /// All the indentation parts of the current scope and it's parents.
+    /// </summary>
     public IEnumerable<string> CurrentTotalIndent
     {
         get
@@ -91,10 +114,19 @@ public sealed class Scope
         }
     }
 
+    /// <summary>
+    /// The fold priority of the scope. It's used to determine which scope should be folded first when folding.
+    /// </summary>
     public FoldPriority FoldPriority { get; }
 
+    /// <summary>
+    /// All the parents of this scope, plus this scope.
+    /// </summary>
     public IEnumerable<Scope> ThisAndParents => this.Parents.Prepend(this);
 
+    /// <summary>
+    /// All the parents of this scope.
+    /// </summary>
     public IEnumerable<Scope> Parents
     {
         get
@@ -114,27 +146,38 @@ public sealed class Scope
     /// <returns> The scope that have been fold, else <see langword="null"/> if no scope can be fold. </returns>
     public Scope? Fold()
     {
-        foreach (var item in this.ThisAndParents.Reverse())
+        var asSoonAsPossible = this.ThisAndParents
+            .Reverse()
+            .Where(item => !item.IsMaterialized.Value.HasValue)
+            .Where(item => item.FoldPriority == FoldPriority.AsSoonAsPossible)
+            .FirstOrDefault();
+
+        if (asSoonAsPossible != null)
         {
-            if (item.IsMaterialized.Value.HasValue) continue;
-            if (item.FoldPriority == FoldPriority.AsSoonAsPossible)
-            {
-                item.IsMaterialized.Value = true;
-                return item;
-            }
+            asSoonAsPossible.IsMaterialized.Value = true;
+            return asSoonAsPossible;
         }
 
-        foreach (var item in this.ThisAndParents)
+        var asLateAsPossible = this.ThisAndParents
+            .Where(item => !item.IsMaterialized.Value.HasValue)
+            .Where(item => item.FoldPriority == FoldPriority.AsLateAsPossible)
+            .FirstOrDefault();
+
+        if (asLateAsPossible != null)
         {
-            if (item.IsMaterialized.Value.HasValue) continue;
-            if (item.FoldPriority == FoldPriority.AsLateAsPossible)
-            {
-                item.IsMaterialized.Value = true;
-                return item;
-            }
+            asLateAsPossible.IsMaterialized.Value = true;
+            return asLateAsPossible;
         }
+
         return null;
     }
 
-    public override string ToString() => $"{(this.IsMaterialized.Value.HasValue ? this.IsMaterialized.Value.Value ? "M" : "U" : "?")}{this.FoldPriority}{this.indentation?.Length.ToString() ?? "L"}";
+    /// <summary>
+    /// A debug string.
+    /// </summary>
+    public override string ToString()
+    {
+        var materialized = (this.IsMaterialized.Value.HasValue ? this.IsMaterialized.Value.Value ? "M" : "U" : "?");
+        return $"{materialized}{this.FoldPriority}{this.indentation?.Length.ToString() ?? "L"}";
+    }
 }

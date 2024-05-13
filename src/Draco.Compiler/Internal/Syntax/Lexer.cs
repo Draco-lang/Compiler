@@ -244,7 +244,7 @@ internal sealed class Lexer
         // NOTE: We check for numeric literals first, so we can be lazy with the identifier checking later
         // Since digits would be a valid identifier character, we can avoid separating the check for the
         // first character
-        if (char.IsDigit(ch))
+        if (IsDigit(ch))
         {
             // Check for what kind of integer do we have
             var radix = this.Peek(1);
@@ -261,14 +261,14 @@ internal sealed class Lexer
             }
             var offset = 1;
             var isFloat = false;
-            while (char.IsDigit(this.Peek(offset))) ++offset;
+            while (IsDigit(this.Peek(offset))) ++offset;
 
             // Floating point number
-            if (this.Peek(offset) == '.' && char.IsDigit(this.Peek(offset + 1)))
+            if (this.Peek(offset) == '.' && IsDigit(this.Peek(offset + 1)))
             {
                 isFloat = true;
                 offset += 2;
-                while (char.IsDigit(this.Peek(offset))) ++offset;
+                while (IsDigit(this.Peek(offset))) ++offset;
             }
 
             if (char.ToLower(this.Peek(offset)) == 'e')
@@ -276,7 +276,7 @@ internal sealed class Lexer
                 isFloat = true;
                 ++offset;
                 if (this.Peek(offset) == '+' || this.Peek(offset) == '-') ++offset;
-                if (!char.IsDigit(this.Peek(offset)))
+                if (!IsDigit(this.Peek(offset)))
                 {
                     this.AddError(
                         template: SyntaxErrors.UnexpectedFloatingPointLiteralEnd,
@@ -287,7 +287,7 @@ internal sealed class Lexer
                         .SetText(this.Advance(offset).Span.ToString());
                     return default;
                 }
-                while (char.IsDigit(this.Peek(offset))) ++offset;
+                while (IsDigit(this.Peek(offset))) ++offset;
             }
 
             if (isFloat)
@@ -396,7 +396,20 @@ internal sealed class Lexer
             {
                 // Regular character
                 ++offset;
-                resultChar = new(ch2);
+                if (Rune.IsValid(ch2))
+                {
+                    resultChar = new(ch2);
+                }
+                else
+                {
+                    // UnexpectedInput
+                    this.AddError(
+                        SyntaxErrors.IllegalCharacterLiteral,
+                        offset: offset,
+                        width: 1,
+                        args: (int)ch2);
+                    resultChar = DefaultCharacter;
+                }
             }
             else
             {
@@ -738,6 +751,15 @@ internal sealed class Lexer
                 ++offset;
                 if (length > 0)
                 {
+                    if (!Rune.IsValid(unicodeValue))
+                    {
+                        this.AddError(
+                            SyntaxErrors.IllegalUnicodeCodepoint,
+                            offset: escapeStart,
+                            width: offset - escapeStart,
+                            unicodeValue);
+                        return DefaultCharacter;
+                    }
                     return new(unicodeValue);
                 }
                 else
@@ -931,6 +953,7 @@ internal sealed class Lexer
     private static bool IsIdent(char ch) => char.IsLetterOrDigit(ch) || ch == '_';
     private static bool IsSpace(char ch) => char.IsWhiteSpace(ch) && !IsNewline(ch);
     private static bool IsNewline(char ch) => ch == '\r' || ch == '\n';
+    private static bool IsDigit(char ch) => ch >= '0' && ch <= '9';
     private static bool TryParseHexDigit(char ch, out int value)
     {
         if (ch >= '0' && ch <= '9')

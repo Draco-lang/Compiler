@@ -26,4 +26,9 @@ public class FormatterSettings
     /// The max line width the formatter will try to respect.
     /// </summary>
     public int LineWidth { get; init; } = 160;
+
+    /// <summary>
+    /// Insert a whitespace around binary operators.
+    /// </summary>
+    public bool SpaceAroundBinaryOperators { get; init; } = true;
 }

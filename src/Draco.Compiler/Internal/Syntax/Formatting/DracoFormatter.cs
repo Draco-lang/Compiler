@@ -9,7 +9,6 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 {
     private readonly FormatterSettings settings;
     private FormatterEngine formatter = null!;
-
     private DracoFormatter(FormatterSettings settings)
     {
         this.settings = settings;
@@ -99,7 +98,24 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     public override void VisitSyntaxToken(Api.Syntax.SyntaxToken node)
     {
         this.HandleTokenComments(node);
-        this.formatter.SetCurrentTokenInfo(GetFormattingTokenKind(node), node.Text);
+        var formattingKind = GetFormattingTokenKind(node);
+
+        var notFirstToken = this.formatter.CurrentIdx > 0;
+        var doesntInsertSpace = !formattingKind.HasFlag(WhitespaceBehavior.SpaceBefore);
+        var insertNewline = this.formatter.CurrentToken.DoesReturnLine?.Value == true;
+        var notWhitespaceNode = node.Kind != TokenKind.StringNewline && node.Kind != TokenKind.EndOfInput;
+        if (doesntInsertSpace && notFirstToken && !insertNewline && notWhitespaceNode)
+        {
+            var lexer = new Lexer(SourceReader.From(this.formatter.PreviousToken.Text + node.Text), default);
+            lexer.Lex();
+            var secondToken = lexer.Lex();
+            if (secondToken.Kind == TokenKind.EndOfInput) // this means the 2 tokens merged in a single one, we want to avoid that.
+            {
+                this.formatter.CurrentToken.Kind = WhitespaceBehavior.SpaceBefore;
+            }
+        }
+
+        this.formatter.SetCurrentTokenInfo(formattingKind, node.Text);
 
         base.VisitSyntaxToken(node);
     }

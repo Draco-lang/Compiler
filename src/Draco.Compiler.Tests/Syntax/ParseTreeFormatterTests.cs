@@ -1,4 +1,5 @@
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Syntax.Formatting;
 using Xunit.Abstractions;
 
 namespace Draco.Compiler.Tests.Syntax;
@@ -348,6 +349,26 @@ public sealed class SyntaxTreeFormatterTests(ITestOutputHelper logger)
 
             """";
         var actual = SyntaxTree.Parse(input).Format();
+        logger.WriteLine(actual);
+        Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void DontMergeTokens()
+    {
+        var input = """"
+            func foo() {
+                var x
+                + =
+                1;
+            }
+
+            """";
+
+        var actual = SyntaxTree.Parse(input).Format(new FormatterSettings()
+        {
+            SpaceAroundBinaryOperators = false
+        });
         logger.WriteLine(actual);
         Assert.Equal(input, actual, ignoreLineEndingDifferences: true);
     }

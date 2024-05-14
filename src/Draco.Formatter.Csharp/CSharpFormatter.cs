@@ -1,4 +1,6 @@
+using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Resources;
 using Draco.Compiler.Internal.Syntax.Formatting;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -88,7 +90,23 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         if (node.IsKind(SyntaxKind.None)) return;
 
         base.VisitToken(node);
-        this.formatter.SetCurrentTokenInfo(GetFormattingTokenKind(node), node.Text);
+        var formattingKind = GetFormattingTokenKind(node);
+
+        var notFirstToken = this.formatter.CurrentIdx > 0;
+        var doesntInsertSpace = !formattingKind.HasFlag(WhitespaceBehavior.SpaceBefore);
+        var insertNewline = this.formatter.CurrentToken.DoesReturnLine?.Value == true;
+        var notWhitespaceNode = !node.IsKind(SyntaxKind.EndOfFileToken);
+        if (doesntInsertSpace && notFirstToken && !insertNewline && notWhitespaceNode)
+        {
+            var tokens = SyntaxFactory.ParseTokens(this.formatter.PreviousToken.Text + node.Text);
+            var secondToken = tokens.Skip(1).First();
+            if (secondToken.IsKind(SyntaxKind.EndOfFileToken)) // this means the 2 tokens merged in a single one, we want to avoid that.
+            {
+                this.formatter.CurrentToken.Kind = WhitespaceBehavior.SpaceBefore;
+            }
+        }
+
+        this.formatter.SetCurrentTokenInfo(formattingKind, node.Text);
     }
 
     public override void VisitClassDeclaration(ClassDeclarationSyntax node)
@@ -275,6 +293,18 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         node.Body?.Accept(this);
         node.ExpressionBody?.Accept(this);
         this.VisitToken(node.SemicolonToken);
+    }
+
+    public override void VisitArgumentList(ArgumentListSyntax node) =>
+        this.formatter.CreateMaterializableScope(this.settings.Indentation,
+                FoldPriority.AsSoonAsPossible,
+                () => base.VisitArgumentList(node)
+        );
+
+    public override void VisitArgument(ArgumentSyntax node)
+    {
+        this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+        base.VisitArgument(node);
     }
 
     private static SyntaxNode? GetPreviousNode(SyntaxNode node)

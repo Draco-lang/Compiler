@@ -205,15 +205,7 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         {
             this.formatter.CurrentToken.LeadingTrivia = [""];
         }
-        //var newData = typeof(FileScopedNamespaceDeclarationSyntax);
-        //if (!newData.Equals(this.formatter.Scope.Data))
-        //{
-        //    if (this.formatter.Scope.Data != null)
-        //    {
-        //        this.formatter.CurrentToken.LeadingTrivia = [""]; // a newline is created between each leading trivia.
-        //    }
-        //    this.formatter.Scope.Data = newData;
-        //}
+
         this.formatter.CurrentToken.DoesReturnLine = true;
         base.VisitFileScopedNamespaceDeclaration(node);
     }
@@ -253,6 +245,22 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
             .Select(x => x.i)
             .FirstOrDefault();
         this.VisitToken(node.SemicolonToken);
+    }
+
+    public override void VisitInvocationExpression(InvocationExpressionSyntax node) => base.VisitInvocationExpression(node);
+
+    public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+    {
+        node.Expression.Accept(this);
+
+        if (node.Parent is InvocationExpressionSyntax invocation)
+        {
+            if(invocation.Parent is MemberAccessExpressionSyntax parent)
+            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+        }
+
+        this.VisitToken(node.OperatorToken);
+        node.Name.Accept(this);
     }
 
     public override void VisitFieldDeclaration(FieldDeclarationSyntax node)

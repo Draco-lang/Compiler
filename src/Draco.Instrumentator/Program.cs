@@ -53,15 +53,20 @@ internal class Program
         constructor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
         resultType.Methods.Add(constructor);
         module.Write(@"C:\dev\Compiler\src\artifacts\bin\Draco.Compiler.Tests\debug\Draco.Compiler.Instrumented.dll");
+        Console.WriteLine($"Instrumentated {instructionId} instructions");
     }
 
     private static void InstrumentMethod(MethodDefinition method, MethodDefinition setResult, ref long instructionId)
     {
         var processor = method.Body.GetILProcessor();
         var instructions = processor.Body.Instructions;
+
         for (var i = 0; i < instructions.Count; i++)
         {
             var instruction = instructions[i];
+            if (instruction.OpCode.FlowControl == FlowControl.Next) continue;
+            if (instruction.OpCode.FlowControl == FlowControl.Return) continue;
+            if (instruction.OpCode.FlowControl == FlowControl.Meta) continue;
             var bitOffset = 1 << (int)(instructionId % 32);
             var intIndex = (int)(instructionId / 32);
             instructionId += 1;

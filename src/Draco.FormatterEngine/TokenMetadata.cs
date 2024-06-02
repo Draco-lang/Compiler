@@ -24,14 +24,14 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 public record struct TokenMetadata(
     WhitespaceBehavior Kind,
     string Text,
-    [DisallowNull] Box<bool?>? DoesReturnLine,
+    [DisallowNull] Future<bool>? DoesReturnLine,
     Scope ScopeInfo,
     List<string> LeadingTrivia)
 {
     public readonly override string ToString()
     {
         var merged = string.Join(',', this.ScopeInfo.ThisAndParents);
-        var returnLine = this.DoesReturnLine?.Value.HasValue == true ? this.DoesReturnLine.Value.Value ? "Y" : "N" : "?";
+        var returnLine = this.DoesReturnLine?.IsCompleted == true ? this.DoesReturnLine.Value ? "Y" : "N" : "?";
         return $"{merged} {returnLine}";
     }
 }

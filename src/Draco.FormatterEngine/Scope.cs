@@ -66,7 +66,7 @@ public sealed class Scope
     ///     .ToList()
     /// </code>
     /// </summary>
-    public MutableBox<bool?> IsMaterialized { get; } = new MutableBox<bool?>(null);
+    public Future<bool> IsMaterialized { get; } = new Future<bool>();
 
     /// <summary>
     /// All the indentation parts of the current scope and it's parents.
@@ -75,7 +75,7 @@ public sealed class Scope
     {
         get
         {
-            if (!(this.IsMaterialized.Value ?? false))
+            if (!this.IsMaterialized.IsCompleted || !this.IsMaterialized.Value)
             {
                 if (this.Parent is null) return [];
                 return this.Parent.CurrentTotalIndent;
@@ -149,24 +149,24 @@ public sealed class Scope
     {
         var asSoonAsPossible = this.ThisAndParents
             .Reverse()
-            .Where(item => !item.IsMaterialized.Value.HasValue)
+            .Where(item => !item.IsMaterialized.IsCompleted)
             .Where(item => item.FoldPriority == FoldPriority.AsSoonAsPossible)
             .FirstOrDefault();
 
         if (asSoonAsPossible != null)
         {
-            asSoonAsPossible.IsMaterialized.Value = true;
+            asSoonAsPossible.IsMaterialized.SetValue(true);
             return asSoonAsPossible;
         }
 
         var asLateAsPossible = this.ThisAndParents
-            .Where(item => !item.IsMaterialized.Value.HasValue)
+            .Where(item => !item.IsMaterialized.IsCompleted)
             .Where(item => item.FoldPriority == FoldPriority.AsLateAsPossible)
             .FirstOrDefault();
 
         if (asLateAsPossible != null)
         {
-            asLateAsPossible.IsMaterialized.Value = true;
+            asLateAsPossible.IsMaterialized.SetValue(true);
             return asLateAsPossible;
         }
 
@@ -178,7 +178,7 @@ public sealed class Scope
     /// </summary>
     public override string ToString()
     {
-        var materialized = (this.IsMaterialized.Value.HasValue ? this.IsMaterialized.Value.Value ? "M" : "U" : "?");
+        var materialized = (this.IsMaterialized.IsCompleted ? this.IsMaterialized.Value ? "M" : "U" : "?");
         return $"{materialized}{this.FoldPriority}{this.indentation?.Length.ToString() ?? "L"}";
     }
 }

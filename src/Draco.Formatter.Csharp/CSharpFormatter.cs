@@ -115,7 +115,7 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         {
             this.formatter.CurrentToken.LeadingTrivia = [""];
         }
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         foreach (var attribute in node.AttributeLists)
         {
             attribute.Accept(this);
@@ -137,17 +137,17 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
             constraint.Accept(this);
         }
 
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         this.VisitToken(node.OpenBraceToken);
         this.formatter.CreateScope(this.settings.Indentation, () =>
         {
             foreach (var member in node.Members)
             {
-                this.formatter.CurrentToken.DoesReturnLine = true;
+                this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
                 member.Accept(this);
             }
         });
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         this.VisitToken(node.CloseBraceToken);
         this.VisitToken(node.SemicolonToken);
     }
@@ -164,23 +164,23 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         {
             attribute.Accept(this);
         }
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         this.VisitToken(node.OpenBraceToken);
         this.formatter.CreateScope(this.settings.Indentation, () =>
         {
             foreach (var statement in node.Statements)
             {
-                this.formatter.CurrentToken.DoesReturnLine = true;
+                this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
                 statement.Accept(this);
             }
         });
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         this.VisitToken(node.CloseBraceToken);
     }
 
     public override void VisitUsingDirective(UsingDirectiveSyntax node)
     {
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         if (GetPreviousNode(node) is not UsingDirectiveSyntax and not null)
         {
             this.formatter.CurrentToken.LeadingTrivia = [""];
@@ -194,7 +194,7 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         {
             this.formatter.CurrentToken.LeadingTrivia = [""];
         }
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         base.VisitNamespaceDeclaration(node);
     }
 
@@ -206,7 +206,7 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
             this.formatter.CurrentToken.LeadingTrivia = [""];
         }
 
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         base.VisitFileScopedNamespaceDeclaration(node);
     }
 
@@ -217,12 +217,12 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
             this.formatter.CurrentToken.LeadingTrivia = [""];
         }
 
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         foreach (var attribute in node.AttributeLists)
         {
             attribute.Accept(this);
         }
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         foreach (var modifier in node.Modifiers)
         {
             this.VisitToken(modifier);
@@ -255,8 +255,8 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
 
         if (node.Parent is InvocationExpressionSyntax invocation)
         {
-            if(invocation.Parent is MemberAccessExpressionSyntax parent)
-            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+            if (invocation.Parent is MemberAccessExpressionSyntax parent)
+                this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
         }
 
         this.VisitToken(node.OperatorToken);
@@ -265,7 +265,7 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
 
     public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
     {
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         base.VisitFieldDeclaration(node);
     }
 
@@ -275,12 +275,12 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         {
             this.formatter.CurrentToken.LeadingTrivia = [""];
         }
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         foreach (var attribute in node.AttributeLists)
         {
             attribute.Accept(this);
         }
-        this.formatter.CurrentToken.DoesReturnLine = true;
+        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
         foreach (var modifier in node.Modifiers)
         {
             this.VisitToken(modifier);
@@ -293,7 +293,7 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
             this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
             if (this.settings.NewLineBeforeConstructorInitializer)
             {
-                this.formatter.Scope.IsMaterialized.Value = true;
+                this.formatter.Scope.IsMaterialized.SetValue(true);
             }
             this.formatter.CurrentToken.Kind = WhitespaceBehavior.PadAround;
             node.Initializer.Accept(this);

@@ -15,7 +15,7 @@ public sealed class FormatterEngine
         this.scopePopper = new ScopeGuard(this);
         this.tokensMetadata = new TokenMetadata[tokenCount];
         this.Scope = new(null, settings, FoldPriority.Never, "");
-        this.Scope.IsMaterialized.Value = true;
+        this.Scope.IsMaterialized.SetValue(true);
         this.settings = settings;
     }
 
@@ -53,7 +53,7 @@ public sealed class FormatterEngine
     public IDisposable CreateScope(string indentation)
     {
         this.Scope = new Scope(this.Scope, this.settings, FoldPriority.Never, indentation);
-        this.Scope.IsMaterialized.Value = true;
+        this.Scope.IsMaterialized.SetValue(true);
         return this.scopePopper;
     }
 
@@ -65,7 +65,7 @@ public sealed class FormatterEngine
     public IDisposable CreateScopeAfterNextToken(string indentation)
     {
         this.scopeForNextToken = new Scope(this.Scope, this.settings, FoldPriority.Never, indentation);
-        this.scopeForNextToken.IsMaterialized.Value = true;
+        this.scopeForNextToken.IsMaterialized.SetValue(true);
         return this.scopePopper;
     }
 
@@ -100,7 +100,7 @@ public sealed class FormatterEngine
             var metadata = metadatas[x];
             // we ignore multiline string newline tokens because we handle them in the string expression visitor.
 
-            if (metadata.DoesReturnLine?.Value ?? false)
+            if (metadata.DoesReturnLine?.IsCompleted == true && metadata.DoesReturnLine.Value)
             {
                 builder.Append(stateMachine);
                 builder.Append(settings.Newline);
@@ -123,7 +123,7 @@ public sealed class FormatterEngine
         for (var x = 0; x < metadatas.Count; x++)
         {
             var curr = metadatas[x];
-            if (curr.DoesReturnLine?.Value ?? false) // if it's a new line
+            if (curr.DoesReturnLine?.IsCompleted == true && curr.DoesReturnLine.Value) // if it's a new line
             {
                 // we recreate a state machine for the new line.
                 stateMachine = new LineStateMachine(string.Concat(curr.ScopeInfo.CurrentTotalIndent));
@@ -136,9 +136,13 @@ public sealed class FormatterEngine
             if (stateMachine.LineWidth <= settings.LineWidth)
             {
                 // we clear the folded scope, because the line is complete and we won't need it anymore.
-                if (x != metadatas.Count - 1 && (metadatas[x + 1].DoesReturnLine?.Value ?? false))
+                if (x != metadatas.Count - 1)
                 {
-                    foldedScopes.Clear();
+                    var doesReturnLine = metadatas[x + 1].DoesReturnLine;
+                    if (doesReturnLine?.IsCompleted == true && doesReturnLine.Value)
+                    {
+                        foldedScopes.Clear();
+                    }
                 }
                 continue;
             }
@@ -161,7 +165,7 @@ public sealed class FormatterEngine
             for (var i = x - 1; i >= currentLineStart; i--)
             {
                 var scope = metadatas[i].ScopeInfo;
-                if (scope.IsMaterialized?.Value ?? false) continue;
+                if (scope.IsMaterialized?.IsCompleted == true && scope.IsMaterialized.Value) continue;
                 if (scope.FoldPriority != FoldPriority.AsSoonAsPossible) continue;
                 var prevFolded = scope.Fold();
                 if (prevFolded != null)
@@ -191,7 +195,7 @@ public sealed class FormatterEngine
             {
                 foreach (var scope in foldedScopes)
                 {
-                    scope.IsMaterialized.Value = null;
+                    scope.IsMaterialized.Reset();
                 }
                 foldedScopes.Clear();
                 x = currentLineStart - 1;

@@ -328,5 +328,4 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         }
         return null;
     }
-
 }

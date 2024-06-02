@@ -31,7 +31,8 @@ public sealed class Scope
     /// <param name="settings">The settings of the formatter.</param>
     /// <param name="foldPriority">The fold priority of the scope.</param>
     /// <param name="indentation">The indentation this scope will add.</param>
-    public Scope(Scope? parent, FormatterSettings settings, FoldPriority foldPriority, string indentation) : this(parent, settings, foldPriority)
+    public Scope(Scope? parent, FormatterSettings settings, FoldPriority foldPriority, string indentation) 
+        : this(parent, settings, foldPriority)
     {
         this.indentation = indentation;
     }

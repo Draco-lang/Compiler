@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Syntax.Formatting;
 using Draco.Compiler.Internal.Syntax.Rewriting;
@@ -157,7 +156,7 @@ public sealed class SyntaxTree
     /// Syntactically formats this <see cref="SyntaxTree"/>.
     /// </summary>
     /// <returns>The formatted tree.</returns>
-    public SyntaxTree Format() => Formatter.Format(this);
+    public string Format(FormatterSettings? settings = null) => DracoFormatter.Format(this, settings);
 
     /// <summary>
     /// The internal root of the tree.

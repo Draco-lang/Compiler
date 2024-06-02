@@ -21,10 +21,9 @@ internal sealed partial class DracoLanguageServer : ITextDocumentFormatting
         if (syntaxTree is null) return Task.FromResult(null as IList<TextEdit>);
 
         var originalRange = syntaxTree.Root.Range;
-        syntaxTree = syntaxTree.Format();
         var edit = new TextEdit()
         {
-            NewText = syntaxTree.ToString(),
+            NewText = syntaxTree.Format(),
             Range = Translator.ToLsp(originalRange),
         };
         return Task.FromResult<IList<TextEdit>?>(new[] { edit });

@@ -259,7 +259,7 @@ internal sealed class Parser
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     private DeclarationSyntax ParseDeclaration(DeclarationContext context)
     {
-        var visibility = this.ParseVisibilityModifier();
+        var modifier = this.ParseVisibilityModifier();
         switch (this.Peek())
         {
         case TokenKind.KeywordImport:
@@ -268,21 +268,21 @@ internal sealed class Parser
         case TokenKind.KeywordValue:
         {
             var valueKeyword = this.Expect(TokenKind.KeywordValue);
-            return this.ParseClassDeclaration(visibility: visibility, valueType: valueKeyword);
+            return this.ParseClassDeclaration(visibility: modifier, valueType: valueKeyword);
         }
 
         case TokenKind.KeywordClass:
-            return this.ParseClassDeclaration(visibility: visibility, valueType: null);
+            return this.ParseClassDeclaration(visibility: modifier, valueType: null);
 
         case TokenKind.KeywordFunc:
-            return this.ParseFunctionDeclaration(visibility);
+            return this.ParseFunctionDeclaration(modifier);
 
         case TokenKind.KeywordModule:
             return this.ParseModuleDeclaration(context);
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration(visibility);
+            return this.ParseVariableDeclaration(modifier);
 
         case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
             return this.ParseLabelDeclaration(context);
@@ -297,7 +297,7 @@ internal sealed class Parser
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
-            var node = new UnexpectedDeclarationSyntax(visibility, input);
+            var node = new UnexpectedDeclarationSyntax(modifier, input);
             this.AddDiagnostic(node, diag);
             return node;
         }

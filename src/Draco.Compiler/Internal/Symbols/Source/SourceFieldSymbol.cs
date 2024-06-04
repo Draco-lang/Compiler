@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -37,7 +38,7 @@ internal sealed class SourceFieldSymbol : FieldSymbol, ISourceSymbol
     }
 
     private TypeSymbol BindTypeIfNeeded(IBinderProvider binderProvider) =>
-        InterlockedUtils.InitializeNull(ref this.type, () => this.BindType(binderProvider));
+        LazyInitializer.EnsureInitialized(ref this.type, () => this.BindType(binderProvider));
 
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {

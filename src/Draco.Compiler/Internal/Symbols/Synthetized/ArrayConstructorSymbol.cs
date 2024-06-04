@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Internal.BoundTree;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 

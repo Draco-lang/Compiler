@@ -17,7 +17,7 @@ internal sealed class DefaultConstructorSymbol : FunctionSymbol
     public override TypeSymbol ContainingSymbol { get; }
 
     public override string Name => ".ctor";
-    public override TypeSymbol ReturnType => IntrinsicSymbols.Unit;
+    public override TypeSymbol ReturnType => WellKnownTypes.Unit;
     public override bool IsStatic => false;
     public override bool IsSpecialName => true;
     public override bool IsConstructor => true;

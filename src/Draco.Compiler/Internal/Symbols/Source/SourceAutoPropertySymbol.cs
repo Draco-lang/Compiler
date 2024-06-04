@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
@@ -20,7 +21,7 @@ internal sealed class SourceAutoPropertySymbol : PropertySymbol, ISourceSymbol
     public override TypeSymbol Type => this.BindTypeIfNeeded(this.DeclaringCompilation!);
     private TypeSymbol? type;
 
-    public override FunctionSymbol Getter => InterlockedUtils.InitializeNull(ref this.getter, this.BuildGetter);
+    public override FunctionSymbol Getter => LazyInitializer.EnsureInitialized(ref this.getter, this.BuildGetter);
     private FunctionSymbol? getter;
 
     public override FunctionSymbol? Setter => this.Modifiers.Keyword.Kind == TokenKind.KeywordVal
@@ -31,7 +32,7 @@ internal sealed class SourceAutoPropertySymbol : PropertySymbol, ISourceSymbol
     /// <summary>
     /// The backing field of this auto-prop.
     /// </summary>
-    public FieldSymbol BackingField => InterlockedUtils.InitializeNull(ref this.backingField, this.BuildBackingField);
+    public FieldSymbol BackingField => LazyInitializer.EnsureInitialized(ref this.backingField, this.BuildBackingField);
     private FieldSymbol? backingField;
 
     public override string Name => this.DeclaringSyntax.Parameter.Name.Text;
@@ -55,7 +56,7 @@ internal sealed class SourceAutoPropertySymbol : PropertySymbol, ISourceSymbol
     }
 
     private TypeSymbol BindTypeIfNeeded(IBinderProvider binderProvider) =>
-        InterlockedUtils.InitializeNull(ref this.type, () => this.BindType(binderProvider));
+        LazyInitializer.EnsureInitialized(ref this.type, () => this.BindType(binderProvider));
 
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {

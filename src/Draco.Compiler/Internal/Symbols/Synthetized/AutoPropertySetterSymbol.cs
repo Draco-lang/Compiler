@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Source;
@@ -24,9 +25,9 @@ internal sealed class AutoPropertySetterSymbol : FunctionSymbol, IPropertyAccess
     public override ImmutableArray<ParameterSymbol> Parameters => InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType => IntrinsicSymbols.Unit;
+    public override TypeSymbol ReturnType => WellKnownTypes.Unit;
 
-    public override BoundStatement Body => InterlockedUtils.InitializeNull(ref this.body, this.BuildBody);
+    public override BoundStatement Body => LazyInitializer.EnsureInitialized(ref this.body, this.BuildBody);
     private BoundStatement? body;
 
     PropertySymbol IPropertyAccessorSymbol.Property => this.Property;

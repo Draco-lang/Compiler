@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Documentation;
@@ -38,7 +39,7 @@ internal sealed class SourceClassSymbol : TypeSymbol
 
     public override ClassDeclarationSyntax DeclaringSyntax => this.declaration.Syntax;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
     private readonly ClassDeclaration declaration;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
@@ -15,7 +16,7 @@ internal sealed class SynthetizedThisParameterSymbol : ParameterSymbol
     public override string Name => "this";
     public override bool IsThis => true;
 
-    public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
+    public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public SynthetizedThisParameterSymbol(FunctionSymbol containingSymbol)

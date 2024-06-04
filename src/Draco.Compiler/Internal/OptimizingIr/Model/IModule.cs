@@ -34,6 +34,11 @@ internal interface IModule
     public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules { get; }
 
     /// <summary>
+    /// The compiled classes within this module.
+    /// </summary>
+    public IReadOnlyDictionary<TypeSymbol, IClass> Classes { get; }
+
+    /// <summary>
     /// The globals within this module.
     /// </summary>
     public IReadOnlySet<GlobalSymbol> Globals { get; }

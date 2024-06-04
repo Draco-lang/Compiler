@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using System.Xml.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
@@ -379,15 +380,27 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
-    private void EncodeModule(IModule module, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
+    private void EncodeModule(IModule module)
     {
-        var currentFieldIndex = fieldIndex;
-        var currentProcIndex = procIndex;
+        var fieldIndex = 1;
+        var procIndex = 1;
+        this.EncodeModule(module, parent: null, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
+    }
+
+    private void EncodeModule(
+        IModule module,
+        TypeDefinitionHandle? parent,
+        ref int fieldIndex,
+        ref int procIndex)
+    {
+        var startFieldIndex = fieldIndex;
+        var startProcIndex = procIndex;
+
         // Go through globals
         foreach (var global in module.Globals)
         {
             this.EncodeGlobal(global);
-            currentFieldIndex++;
+            ++fieldIndex;
         }
 
         // Go through procedures
@@ -401,22 +414,17 @@ internal sealed class MetadataCodegen : MetadataWriter
 
             // If this is the entry point, save it
             if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
-            currentProcIndex++;
+
+            ++procIndex;
         }
 
         // Compile global initializer too
-        this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
-        currentProcIndex++;
+        this.EncodeProcedure(module.GlobalInitializer);
+        ++procIndex;
 
-        TypeAttributes visibility;
-        if (module.Symbol.Visibility == Api.Semantics.Visibility.Public)
-        {
-            visibility = parentModule is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public;
-        }
-        else
-        {
-            visibility = parentModule is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic;
-        }
+        var visibility = module.Symbol.Visibility == Api.Semantics.Visibility.Public
+            ? (parent is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public)
+            : (parent is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic);
         var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed;
 
         var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
@@ -427,28 +435,107 @@ internal sealed class MetadataCodegen : MetadataWriter
             @namespace: default,
             name: name,
             baseType: this.systemObjectReference,
-            fieldList: MetadataTokens.FieldDefinitionHandle(fieldIndex),
-            methodList: MetadataTokens.MethodDefinitionHandle(procIndex));
+            fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
+            methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));
 
         // If this isn't top level module, we specify nested relationship
-        if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
+        if (parent is not null) this.MetadataBuilder.AddNestedType(createdModule, parent.Value);
+
+        // We encode every class
+        foreach (var @class in module.Classes.Values)
+        {
+            this.EncodeClass(@class, parent: createdModule, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
+        }
 
         // We encode every submodule
         foreach (var subModule in module.Submodules.Values)
         {
-            this.EncodeModule(subModule, createdModule, currentFieldIndex, currentProcIndex);
+            this.EncodeModule(subModule, parent: createdModule, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
         }
+    }
+
+    private TypeDefinitionHandle EncodeClass(
+        IClass @class,
+        TypeDefinitionHandle? parent,
+        ref int fieldIndex,
+        ref int procIndex)
+    {
+        var startFieldIndex = fieldIndex;
+        var startProcIndex = procIndex;
+
+        // TODO: Go through the rest of the members
+
+        // Build up attributes
+        var visibility = @class.Symbol.Visibility == Api.Semantics.Visibility.Public
+            ? (parent is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public)
+            : (parent is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic);
+        var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
+        if (@class.Symbol.IsValueType) attributes |= TypeAttributes.SequentialLayout;
+
+        // Create the type
+        var createdClass = this.AddTypeDefinition(
+            attributes: attributes,
+            @namespace: default,
+            name: @class.Name,
+            baseType: @class.Symbol.BaseType is null
+                ? this.systemObjectReference
+                : (TypeReferenceHandle)this.GetEntityHandle(@class.Symbol.BaseType),
+            fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
+            methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));
+
+        // Properties
+        PropertyDefinitionHandle? firstProperty = null;
+        var propertyHandleMap = new Dictionary<Symbol, PropertyDefinitionHandle>();
+        foreach (var prop in @class.Properties)
+        {
+            var propHandle = this.EncodeProperty(createdClass, prop);
+            firstProperty ??= propHandle;
+            propertyHandleMap.Add(prop, propHandle);
+        }
+        if (firstProperty is not null) this.MetadataBuilder.AddPropertyMap(createdClass, firstProperty.Value);
+
+        // Procedures
+        foreach (var proc in @class.Procedures.Values)
+        {
+            var handle = this.EncodeProcedure(proc);
+            ++procIndex;
+
+            if (proc.Symbol is IPropertyAccessorSymbol propAccessor)
+            {
+                // This is an accessor
+                var isGetter = propAccessor.Property.Getter == propAccessor;
+                this.MetadataBuilder.AddMethodSemantics(
+                    association: propertyHandleMap[propAccessor.Property],
+                    semantics: isGetter ? MethodSemanticsAttributes.Getter : MethodSemanticsAttributes.Setter,
+                    methodDefinition: handle);
+            }
+        }
+
+        // Fields
+        foreach (var field in @class.Fields)
+        {
+            this.EncodeField(field);
+            ++fieldIndex;
+        }
+
+        // If this is a valuetype without fields, we add .pack 0 and .size 1
+        if (@class.Symbol.IsValueType && @class.Fields.Count == 0)
+        {
+            this.MetadataBuilder.AddTypeLayout(
+                type: createdClass,
+                packingSize: 0,
+                size: 1);
+        }
+
+        // If this isn't top level module, we specify nested relationship
+        if (parent is not null) this.MetadataBuilder.AddNestedType(createdClass, parent.Value);
+
+        return createdClass;
     }
 
     private FieldDefinitionHandle EncodeGlobal(GlobalSymbol global)
     {
-        var visibility = global.Visibility switch
-        {
-            Api.Semantics.Visibility.Public => FieldAttributes.Public,
-            Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
-            Api.Semantics.Visibility.Private => FieldAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(global.Visibility)),
-        };
+        var visibility = GetFieldVisibility(global.Visibility);
 
         // Definition
         return this.AddFieldDefinition(
@@ -457,15 +544,21 @@ internal sealed class MetadataCodegen : MetadataWriter
             signature: this.EncodeGlobalSignature(global));
     }
 
-    private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
+    private FieldDefinitionHandle EncodeField(FieldSymbol field)
     {
-        var visibility = procedure.Symbol.Visibility switch
-        {
-            Api.Semantics.Visibility.Public => MethodAttributes.Public,
-            Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
-            Api.Semantics.Visibility.Private => MethodAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(procedure.Symbol.Visibility)),
-        };
+        var visibility = GetFieldVisibility(field.Visibility);
+        var mutability = field.IsMutable ? default : FieldAttributes.InitOnly;
+
+        // Definition
+        return this.AddFieldDefinition(
+            attributes: visibility | mutability,
+            name: field.Name,
+            signature: this.EncodeFieldSignature(field));
+    }
+
+    private MethodDefinitionHandle EncodeProcedure(IProcedure procedure)
+    {
+        var visibility = GetMethodVisibility(procedure.Symbol.Visibility);
 
         // Encode instructions
         var cilCodegen = new CilCodegen(this, procedure);
@@ -489,10 +582,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             hasDynamicStackAllocation: false);
 
         // Determine attributes
-        var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
-        attributes |= specialName is null
-            ? visibility
-            : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+        var attributes = MethodAttributes.HideBySig | visibility;
+        if (procedure.Symbol.IsStatic) attributes |= MethodAttributes.Static;
+        if (procedure.Symbol.IsSpecialName) attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
         // Parameters
         var parameterList = this.NextParameterHandle;
@@ -508,7 +600,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         var definitionHandle = this.MetadataBuilder.AddMethodDefinition(
             attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
-            name: this.GetOrAddString(specialName ?? procedure.Name),
+            name: this.GetOrAddString(procedure.Name),
             signature: this.EncodeProcedureSignature(procedure),
             bodyOffset: methodBodyOffset,
             parameterList: parameterList);
@@ -530,14 +622,36 @@ internal sealed class MetadataCodegen : MetadataWriter
         return definitionHandle;
     }
 
+    private PropertyDefinitionHandle EncodeProperty(TypeDefinitionHandle declaringType, PropertySymbol prop)
+    {
+        return this.MetadataBuilder.AddProperty(
+            attributes: PropertyAttributes.None,
+            name: this.GetOrAddString(prop.Name),
+            signature: this.EncodeBlob(e =>
+            {
+                e
+                    .PropertySignature(isInstanceProperty: !prop.IsStatic)
+                    .Parameters(0, out var returnType, out _);
+                this.EncodeReturnType(returnType, prop.Type);
+            }));
+    }
+
     private BlobHandle EncodeGlobalSignature(GlobalSymbol global) =>
         this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), global.Type));
+
+    private BlobHandle EncodeFieldSignature(FieldSymbol field) =>
+        this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), field.Type));
 
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {
         e
-            .MethodSignature(genericParameterCount: procedure.Generics.Count)
-            .Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
+            .MethodSignature(
+                genericParameterCount: procedure.Generics.Count,
+                isInstanceMethod: !procedure.Symbol.IsStatic)
+            .Parameters(
+                procedure.Parameters.Count,
+                out var retEncoder,
+                out var paramsEncoder);
         this.EncodeReturnType(retEncoder, procedure.ReturnType);
         foreach (var param in procedure.Parameters)
         {
@@ -670,6 +784,17 @@ internal sealed class MetadataCodegen : MetadataWriter
             return;
         }
 
+        if (type is SourceClassSymbol sourceClass)
+        {
+            encoder.Type(
+                type: this.GetOrAddTypeReference(
+                    parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
+                    @namespace: null,
+                    name: sourceClass.MetadataName),
+                isValueType: sourceClass.IsValueType);
+            return;
+        }
+
         // TODO
         throw new NotImplementedException();
     }
@@ -693,4 +818,20 @@ internal sealed class MetadataCodegen : MetadataWriter
         var contentId = peBuilder.Serialize(peBlob);
         peBlob.WriteContentTo(peStream);
     }
+
+    private static FieldAttributes GetFieldVisibility(Api.Semantics.Visibility visibility) => visibility switch
+    {
+        Api.Semantics.Visibility.Public => FieldAttributes.Public,
+        Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
+        Api.Semantics.Visibility.Private => FieldAttributes.Private,
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
+    };
+
+    private static MethodAttributes GetMethodVisibility(Api.Semantics.Visibility visibility) => visibility switch
+    {
+        Api.Semantics.Visibility.Public => MethodAttributes.Public,
+        Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
+        Api.Semantics.Visibility.Private => MethodAttributes.Private,
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
+    };
 }

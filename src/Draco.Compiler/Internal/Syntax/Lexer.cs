@@ -322,8 +322,10 @@ internal sealed class Lexer
             var tokenKind = ident switch
             {
                 var _ when ident.Span.SequenceEqual("and") => TokenKind.KeywordAnd,
+                var _ when ident.Span.SequenceEqual("class") => TokenKind.KeywordClass,
                 var _ when ident.Span.SequenceEqual("else") => TokenKind.KeywordElse,
                 var _ when ident.Span.SequenceEqual("false") => TokenKind.KeywordFalse,
+                var _ when ident.Span.SequenceEqual("field") => TokenKind.KeywordField,
                 var _ when ident.Span.SequenceEqual("for") => TokenKind.KeywordFor,
                 var _ when ident.Span.SequenceEqual("func") => TokenKind.KeywordFunc,
                 var _ when ident.Span.SequenceEqual("goto") => TokenKind.KeywordGoto,
@@ -340,6 +342,7 @@ internal sealed class Lexer
                 var _ when ident.Span.SequenceEqual("return") => TokenKind.KeywordReturn,
                 var _ when ident.Span.SequenceEqual("true") => TokenKind.KeywordTrue,
                 var _ when ident.Span.SequenceEqual("val") => TokenKind.KeywordVal,
+                var _ when ident.Span.SequenceEqual("value") => TokenKind.KeywordValue,
                 var _ when ident.Span.SequenceEqual("var") => TokenKind.KeywordVar,
                 var _ when ident.Span.SequenceEqual("while") => TokenKind.KeywordWhile,
                 _ => TokenKind.Identifier,

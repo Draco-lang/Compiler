@@ -17,6 +17,7 @@ internal sealed class Module : IModule
     public string Name => this.Symbol.Name;
 
     public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
+    public IReadOnlyDictionary<TypeSymbol, IClass> Classes => this.classes;
 
     public IReadOnlySet<GlobalSymbol> Globals => this.globals;
 
@@ -32,6 +33,7 @@ internal sealed class Module : IModule
     IModule? IModule.Parent => this.Parent;
 
     private readonly HashSet<GlobalSymbol> globals = new();
+    private readonly Dictionary<TypeSymbol, IClass> classes = new();
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
     private readonly Dictionary<ModuleSymbol, IModule> submodules = new();
 
@@ -39,7 +41,7 @@ internal sealed class Module : IModule
     {
         this.Symbol = symbol;
         this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
-            name: "<global initializer>",
+            name: ".cctor",
             paramTypes: Enumerable.Empty<TypeSymbol>(),
             returnType: WellKnownTypes.Unit));
         this.Assembly = assembly;
@@ -69,6 +71,16 @@ internal sealed class Module : IModule
         return (Procedure)result;
     }
 
+    public Class DefineClass(TypeSymbol typeSymbol)
+    {
+        if (!this.classes.TryGetValue(typeSymbol, out var result))
+        {
+            result = new Class(this, null, typeSymbol);
+            this.classes.Add(typeSymbol, result);
+        }
+        return (Class)result;
+    }
+
     public Module DefineModule(ModuleSymbol moduleSymbol)
     {
         if (!this.submodules.TryGetValue(moduleSymbol, out var result))
@@ -82,12 +94,24 @@ internal sealed class Module : IModule
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.AppendLine($"module {this.Symbol.Name}");
+        result.AppendLine($"module {this.Symbol.Name} {{");
         result.AppendJoin(Environment.NewLine, this.globals);
-        if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
-        result.AppendJoin(doubleNewline, this.procedures.Values);
-        if (this.procedures.Count > 0 && this.submodules.Count > 0) result.Append(doubleNewline);
-        result.AppendJoin(doubleNewline, this.submodules.Values);
+
+        var haveNewline = this.globals.Count == 0;
+        void PrintComponents(IEnumerable<object> components)
+        {
+            if (!components.Any()) return;
+            if (!haveNewline) result!.Append(doubleNewline);
+            result!.AppendJoin(doubleNewline, components);
+            haveNewline = false;
+        }
+
+        PrintComponents(this.procedures.Values);
+        PrintComponents(this.classes.Values);
+        PrintComponents(this.submodules.Values);
+
+        if (!haveNewline) result.AppendLine();
+        result.Append('}');
         return result.ToString();
     }
 }

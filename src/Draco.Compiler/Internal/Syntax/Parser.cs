@@ -153,6 +153,8 @@ internal sealed class Parser
     private static readonly TokenKind[] declarationStarters = new[]
     {
         TokenKind.KeywordImport,
+        TokenKind.KeywordValue,
+        TokenKind.KeywordClass,
         TokenKind.KeywordFunc,
         TokenKind.KeywordModule,
         TokenKind.KeywordVar,
@@ -262,6 +264,15 @@ internal sealed class Parser
         {
         case TokenKind.KeywordImport:
             return this.ParseImportDeclaration(modifier);
+
+        case TokenKind.KeywordValue:
+        {
+            var valueKeyword = this.Expect(TokenKind.KeywordValue);
+            return this.ParseClassDeclaration(visibility: modifier, valueType: valueKeyword);
+        }
+
+        case TokenKind.KeywordClass:
+            return this.ParseClassDeclaration(visibility: modifier, valueType: null);
 
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration(modifier);
@@ -395,8 +406,160 @@ internal sealed class Parser
     }
 
     /// <summary>
+    /// Parses a class declaration.
+    /// </summary>
+    /// <param name="visibility">Optional visibility modifier token.</param>
+    /// <param name="valueType">Optional valuetype modifier token.</param>
+    /// <returns>The parsed <see cref="ClassDeclarationSyntax"/>.</returns>
+    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxToken? visibility, SyntaxToken? valueType)
+    {
+        // Class keyword and name of the class
+        var classKeyword = this.Expect(TokenKind.KeywordClass);
+        var name = this.Expect(TokenKind.Identifier);
+
+        // Optional generics
+        var generics = null as GenericParameterListSyntax;
+        if (this.Peek() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
+
+        var primaryCtor = null as PrimaryConstructorSyntax;
+        switch (this.Peek())
+        {
+        case TokenKind.ParenOpen:
+        case TokenKind.KeywordPublic:
+        case TokenKind.KeywordInternal:
+            primaryCtor = this.ParsePrimaryConstructor();
+            break;
+        }
+
+        var body = this.ParseClassBody();
+
+        return new ClassDeclarationSyntax(
+            visibility,
+            valueType,
+            classKeyword,
+            name,
+            generics,
+            primaryCtor,
+            body);
+    }
+
+    /// <summary>
+    /// Parses a primary constructor, including the visibility modifier and parentheses.
+    /// </summary>
+    /// <returns>The parsed <see cref="PrimaryConstructorSyntax"/>.</returns>
+    private PrimaryConstructorSyntax ParsePrimaryConstructor()
+    {
+        var visibility = this.ParseVisibilityModifier();
+
+        var openParen = this.Expect(TokenKind.ParenOpen);
+        var ctorParameters = this.ParseSeparatedSyntaxList(
+            elementParser: this.ParsePrimaryConstructorParameter,
+            separatorKind: TokenKind.Comma,
+            stopKind: TokenKind.ParenClose);
+        var closeParen = this.Expect(TokenKind.ParenClose);
+
+        return new PrimaryConstructorSyntax(
+            visibility,
+            openParen,
+            ctorParameters,
+            closeParen);
+    }
+
+    /// <summary>
+    /// Parses a primary constructor parameter.
+    /// </summary>
+    /// <returns>The parsed <see cref="PrimaryConstructorParameterSyntax"/>.</returns>
+    private PrimaryConstructorParameterSyntax ParsePrimaryConstructorParameter()
+    {
+        var memberModifiers = this.ParsePrimaryConstructorParameterMemberModifiers();
+        var param = this.ParseParameter();
+        return new(memberModifiers, param);
+    }
+
+    /// <summary>
+    /// Parses the modifiers of a primary constructor parameter that could make it a member.
+    /// Can return null, if the parameter is not a member.
+    /// </summary>
+    /// <returns>The parsed <see cref="PrimaryConstructorParameterModifiersSyntax"/>, or null
+    /// if the parameter is not a member.</returns>
+    private PrimaryConstructorParameterMemberModifiersSyntax? ParsePrimaryConstructorParameterMemberModifiers()
+    {
+        var visibilityModifier = this.ParseVisibilityModifier();
+        this.Matches(TokenKind.KeywordField, out var fieldToken);
+
+        var peek = this.Peek();
+        if (peek is TokenKind.KeywordVar or TokenKind.KeywordVal)
+        {
+            var keyword = this.Advance();
+            return new PrimaryConstructorParameterMemberModifiersSyntax(
+                visibilityModifier,
+                fieldToken,
+                keyword);
+        }
+        else if (visibilityModifier is not null || fieldToken is not null)
+        {
+            // TODO: Error
+            throw new NotImplementedException();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Parses the body of a class.
+    /// </summary>
+    /// <returns>The parsed <see cref="ClassBodySyntax"/>.</returns>
+    private ClassBodySyntax ParseClassBody()
+    {
+        switch (this.Peek())
+        {
+        case TokenKind.Semicolon:
+            return this.ParseEmptyClassBody();
+        case TokenKind.CurlyOpen:
+            return this.ParseBlockClassBody();
+        default:
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Parses an empty class body, which is just a semicolon.
+    /// </summary>
+    /// <returns>The parsed <see cref="EmptyClassBodySyntax"/>.</returns>
+    private EmptyClassBodySyntax ParseEmptyClassBody()
+    {
+        var semicolon = this.Expect(TokenKind.Semicolon);
+        return new EmptyClassBodySyntax(semicolon);
+    }
+
+    /// <summary>
+    /// Parses a block class body declared with curly braces.
+    /// </summary>
+    /// <returns>The parsed <see cref="BlockClassBodySyntax"/>.</returns>
+    private BlockClassBodySyntax ParseBlockClassBody()
+    {
+        var openBrace = this.Expect(TokenKind.CurlyOpen);
+        var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
+        while (true)
+        {
+            // Break on the end of the block
+            if (this.Peek() is TokenKind.EndOfInput or TokenKind.CurlyClose) break;
+
+            // Parse a declaration
+            var decl = this.ParseDeclaration(DeclarationContext.Global);
+            decls.Add(decl);
+        }
+        var closeBrace = this.Expect(TokenKind.CurlyClose);
+        return new(openBrace, decls.ToSyntaxList(), closeBrace);
+    }
+
+    /// <summary>
     /// Parses a function declaration.
     /// </summary>
+    /// <param name="visibility">Optional visibility modifier token.</param>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
     private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxToken? visibility)
     {

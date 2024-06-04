@@ -53,6 +53,13 @@ internal sealed partial class ConstraintSolver
     /// Constructs an argument for a call constraint.
     /// </summary>
     /// <param name="syntax">The argument syntax.</param>
+    /// <param name="type">The argument type.</param>
+    public Argument Arg(SyntaxNode? syntax, TypeSymbol type) => new(syntax, type);
+
+    /// <summary>
+    /// Constructs an argument for a call constraint.
+    /// </summary>
+    /// <param name="syntax">The argument syntax.</param>
     /// <param name="expression">The argument expression.</param>
     /// <param name="diagnostics">The diagnostics to report to.</param>
     /// <returns>The constructed argument descriptor.</returns>
@@ -95,7 +102,7 @@ internal sealed partial class ConstraintSolver
             var unwrappedLocalType = local.Type.Substitution;
             if (unwrappedLocalType is TypeVariable typeVar)
             {
-                UnifyAsserted(typeVar, IntrinsicSymbols.UninferredType);
+                UnifyAsserted(typeVar, WellKnownTypes.UninferredType);
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.CouldNotInferType,
                     location: local.DeclaringSyntax?.Location,

@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Draco.Compiler.Tests.EndToEnd;
 
 [Collection(nameof(NoParallelizationCollectionDefinition))]
@@ -383,5 +385,88 @@ public sealed class BclUsageTests : EndToEndTestsBase
             stdout: stringWriter);
 
         Assert.Equal("11235813", stringWriter.ToString());
+    }
+
+    [Fact]
+    public void StringEqualsOperator()
+    {
+        var assembly = Compile("""
+            public func streq(s1: string, s2: string): bool = s1 == s2;
+            """);
+
+        var case1 = Invoke<bool>(assembly: assembly, methodName: "streq", "asd", "def");
+        var case2 = Invoke<bool>(assembly: assembly, methodName: "streq", "asd", "asd");
+
+        Assert.False(case1);
+        Assert.True(case2);
+    }
+
+    [Fact]
+    public void StringAddOperator()
+    {
+        var assembly = Compile("""
+            public func mangle(s1: string, s2: string): string {
+                var result = "";
+                result += s1 + s2;
+                result += s2 + s1;
+                return result;
+            }
+            """);
+
+        var result = Invoke<string>(assembly: assembly, methodName: "mangle", "asd", "def");
+
+        Assert.Equal("asddefdefasd", result);
+    }
+
+    [Fact]
+    public void NumericsVectorNegation()
+    {
+        var assembly = Compile("""
+            import System.Numerics;
+
+            public func neg(a: Vector2): Vector2 = -a;
+            """);
+
+        var result = Invoke<Vector2>(assembly: assembly, methodName: "neg", new Vector2(1, 2));
+
+        Assert.Equal(new Vector2(-1, -2), result);
+    }
+
+    [Fact]
+    public void NumericsVectorAddition()
+    {
+        var assembly = Compile("""
+            import System.Numerics;
+
+            public func addthem(a: Vector2, b: Vector2): Vector2 = a + b;
+            """);
+
+        var result = Invoke<Vector2>(assembly: assembly, methodName: "addthem", new Vector2(1, 2), new Vector2(6, 3));
+
+        Assert.Equal(new Vector2(7, 5), result);
+    }
+
+    [Fact]
+    public void NumericsVectorAdditionWithoutImportingNamespace()
+    {
+        var assembly = Compile("""
+            public func addthem(a: System.Numerics.Vector2, b: System.Numerics.Vector2): System.Numerics.Vector2 = a + b;
+            """);
+
+        var result = Invoke<Vector2>(assembly: assembly, methodName: "addthem", new Vector2(1, 2), new Vector2(6, 3));
+
+        Assert.Equal(new Vector2(7, 5), result);
+    }
+
+    [Fact]
+    public void NumericsVectorNegationWithoutImportingNamespace()
+    {
+        var assembly = Compile("""
+            public func neg(a: System.Numerics.Vector2): System.Numerics.Vector2 = -a;
+            """);
+
+        var result = Invoke<Vector2>(assembly: assembly, methodName: "neg", new Vector2(1, 2));
+
+        Assert.Equal(new Vector2(-1, -2), result);
     }
 }

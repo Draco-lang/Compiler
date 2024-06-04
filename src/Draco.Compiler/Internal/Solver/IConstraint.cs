@@ -11,6 +11,11 @@ internal interface IConstraint
     /// The locator for the constraint.
     /// </summary>
     public ConstraintLocator Locator { get; }
+
+    /// <summary>
+    /// True, if this constraint should not report an error in case of failure.
+    /// </summary>
+    public bool Silent { get; }
 }
 
 /// <summary>

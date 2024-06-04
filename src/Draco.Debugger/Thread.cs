@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using ClrDebug;
 
@@ -34,6 +35,8 @@ public sealed class Thread
     }
     private string? name;
 
+    private readonly List<Breakpoint> currentlyHitBreakpoints = new();
+
     /// <summary>
     /// The current state of the call-stack.
     /// </summary>
@@ -51,12 +54,23 @@ public sealed class Thread
         this.callStack = null;
     }
 
+    internal void ClearCurrentlyHitBreakpoints()
+    {
+        foreach (var breakpoint in this.currentlyHitBreakpoints)
+        {
+            if (!breakpoint.HitTcs.Task.IsCompleted) throw new InvalidOperationException("Unexpected not-hit breakpoint.");
+            breakpoint.HitTcs = new();
+        }
+        this.currentlyHitBreakpoints.Clear();
+    }
+
     /// <summary>
     /// Steps into the current call.
     /// </summary>
     public void StepInto()
     {
         this.DisableAllSteppers();
+        this.ClearCurrentlyHitBreakpoints();
         var stepper = this.BuildCorDebugStepper();
         if (this.TryGetStepRange(out var range))
         {
@@ -75,6 +89,8 @@ public sealed class Thread
     public void StepOver()
     {
         this.DisableAllSteppers();
+        this.ClearCurrentlyHitBreakpoints();
+
         var stepper = this.BuildCorDebugStepper();
         if (this.TryGetStepRange(out var range))
         {
@@ -93,6 +109,8 @@ public sealed class Thread
     public void StepOut()
     {
         this.DisableAllSteppers();
+        this.ClearCurrentlyHitBreakpoints();
+
         var stepper = this.BuildCorDebugStepper();
         stepper.StepOut();
         this.CorDebugThread.Process.Continue(false);
@@ -196,4 +214,6 @@ public sealed class Thread
             }
         }
     }
+
+    internal void AddStoppedBreakpoint(Breakpoint breakpoint) => this.currentlyHitBreakpoints.Add(breakpoint);
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Draco.Dap.Adapter;
@@ -36,30 +35,10 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         this.clientInfo = args;
         this.translator = new(args);
 
-        var dbgShim = FindDbgShim();
-        this.debuggerHost = DebuggerHost.Create(dbgShim);
+        this.debuggerHost = DebuggerHost.Create();
 
         // Starts the configuration sequence
         await this.client.Initialized();
-    }
-
-    // TODO: Temporary
-    private static string FindDbgShim()
-    {
-        var root = "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App";
-
-        if (!Directory.Exists(root))
-        {
-            throw new InvalidOperationException($"Cannot find dbgshim.dll: '{root}' does not exist");
-        }
-
-        foreach (var dir in Directory.EnumerateDirectories(root).Reverse())
-        {
-            var dbgshim = Directory.EnumerateFiles(dir, "dbgshim.dll").FirstOrDefault();
-            if (dbgshim is not null) return dbgshim;
-        }
-
-        throw new InvalidOperationException($"Failed to find a runtime containing dbgshim.dll under '{root}'");
     }
 
     // Launching ///////////////////////////////////////////////////////////////
@@ -72,9 +51,20 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         // TODO: Consider no-debug
         this.debugger = this.debuggerHost.StartProcess("dotnet", toRun);
 
+        this.debugger.OnEventLog += async (_, e) => await this.client.SendOutputAsync(new()
+        {
+            Category = OutputEvent.OutputCategory.Console,
+            Output = e + "\n",
+        });
+
         this.debugger.OnStandardOut += async (_, args) => await this.client.SendOutputAsync(new()
         {
             Category = OutputEvent.OutputCategory.Stdout,
+            Output = args,
+        });
+        this.debugger.OnStandardError += async (_, args) => await this.client.SendOutputAsync(new()
+        {
+            Category = OutputEvent.OutputCategory.Stderr,
             Output = args,
         });
         this.debugger.OnExited += async (_, e) => await this.OnDebuggerExited(e);
@@ -95,10 +85,23 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
             await this.BreakAt(thread, StoppedEvent.StoppedReason.Pause);
         };
 
+        this.debugger.OnModuleLoaded += async (_, m) => await this.client.UpdateModuleAsync(new ModuleEvent()
+        {
+            Reason = ModuleEvent.ModuleReason.New,
+            Module = this.translator.ToDap(m)
+        });
+
+        this.debugger.OnModuleUnloaded += async (_, m) => await this.client.UpdateModuleAsync(new ModuleEvent()
+        {
+            Reason = ModuleEvent.ModuleReason.Removed,
+            Module = this.translator.ToDap(m)
+        });
+
         await this.client.ProcessStartedAsync(new()
         {
             Name = toRun,
         });
+
 
         return new LaunchResponse();
     }

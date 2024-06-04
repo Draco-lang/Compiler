@@ -76,7 +76,11 @@ internal sealed class LocalBinder : Binder
     public override IEnumerable<Symbol> DeclaredSymbols => this.Declarations
         .Concat(this.LocalDeclarations.Select(d => d.Symbol));
 
-    public override Symbol ContainingSymbol => base.ContainingSymbol ?? throw new InvalidOperationException();
+    public override FunctionSymbol ContainingSymbol => base.ContainingSymbol switch
+    {
+        FunctionSymbol f => f,
+        _ => throw new InvalidOperationException(),
+    };
 
     // IMPORTANT: The choice of flag field is important because of write order
     private bool NeedsBuild => Volatile.Read(ref this.relativePositions) is null;

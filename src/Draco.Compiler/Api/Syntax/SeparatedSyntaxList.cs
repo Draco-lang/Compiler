@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Draco.Compiler.Internal;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -69,8 +70,8 @@ public sealed class SeparatedSyntaxList<TNode> : SyntaxNode, IEnumerable<SyntaxN
 
     private SyntaxNode GetNodeAt(int index)
     {
-        var mappedNodes = InterlockedUtils.InitializeNull(ref this.mappedNodes, () => new SyntaxNode?[this.GreenList.Count]);
-        var existing = InterlockedUtils.InitializeNull(ref mappedNodes[index], () =>
+        var mappedNodes = LazyInitializer.EnsureInitialized(ref this.mappedNodes, () => new SyntaxNode?[this.GreenList.Count]);
+        var existing = LazyInitializer.EnsureInitialized(ref mappedNodes[index], () =>
         {
             var prevWidth = this.GreenList
                 .Take(index)

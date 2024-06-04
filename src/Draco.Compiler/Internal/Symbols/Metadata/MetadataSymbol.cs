@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -19,28 +21,45 @@ internal static class MetadataSymbol
     public static readonly TypeAttributes StaticClassAttributes =
         TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class;
 
-    public static IEnumerable<Symbol> ToSymbol(
-        Symbol containingSymbol,
-        TypeDefinition type,
-        MetadataReader metadataReader)
+    public static Symbol ToSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
     {
-        if (type.Attributes.HasFlag(StaticClassAttributes))
+        if (typeDefinition.Attributes.HasFlag(StaticClassAttributes))
         {
             // Static classes are treated as modules, nothing extra to do
-            var result = new MetadataStaticClassSymbol(containingSymbol, type);
-            return new[] { result };
+            return new MetadataStaticClassSymbol(containingSymbol, typeDefinition);
         }
         else
         {
-            // Non-static classes get constructor methods injected, in case they are not abstract
-            var typeSymbol = new MetadataTypeSymbol(containingSymbol, type);
-            var results = new List<Symbol>() { typeSymbol };
-            if (!typeSymbol.IsAbstract)
+            // Non-static classes
+            return new MetadataTypeSymbol(containingSymbol, typeDefinition);
+        }
+    }
+
+    public static IEnumerable<Symbol> GetAdditionalSymbols(
+        Symbol typeSymbol,
+        TypeDefinition typeDefinition,
+        MetadataReader metadataReader)
+    {
+        // Constructors
+        if (!typeDefinition.Attributes.HasFlag(TypeAttributes.Abstract))
+        {
+            // Look for the constructors
+            foreach (var methodHandle in typeDefinition.GetMethods())
             {
-                // Synthetize function overloads for constructors
-                results.AddRange(typeSymbol.Constructors.Select(c => new ConstructorFunctionSymbol(c)));
+                var method = metadataReader.GetMethodDefinition(methodHandle);
+
+                // Skip private
+                if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
+
+                // Match name
+                var methodName = metadataReader.GetString(method.Name);
+                if (methodName != ".ctor") continue;
+
+                // This is a public constructor, synthetize a function overload
+                var ctor = new MetadataMethodSymbol(typeSymbol, method);
+                var ctorFunction = new ConstructorFunctionSymbol(ctor);
+                yield return ctorFunction;
             }
-            return results;
         }
     }
 
@@ -55,12 +74,18 @@ internal static class MetadataSymbol
             case HandleKind.MethodDefinition:
                 var method = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
                 var methodType = reader.GetTypeDefinition(method.GetDeclaringType());
-                if (reader.GetString(methodType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                if (reader.GetString(methodType.Name) == "DefaultMemberAttribute")
+                {
+                    return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                }
                 break;
             case HandleKind.MemberReference:
                 var member = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
                 var memberType = reader.GetTypeReference((TypeReferenceHandle)member.Parent);
-                if (reader.GetString(memberType.Name) == "DefaultMemberAttribute") return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                if (reader.GetString(memberType.Name) == "DefaultMemberAttribute")
+                {
+                    return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
+                }
                 break;
             default: throw new InvalidOperationException();
             };
@@ -131,7 +156,8 @@ internal static class MetadataSymbol
     /// </summary>
     /// <param name="symbol">The symbol to get prefixed documentation name of.</param>
     /// <returns>The prefixed documentation name, or empty string, if <paramref name="symbol"/> is null.</returns>
-    public static string GetPrefixedDocumentationName(Symbol? symbol) => $"{GetDocumentationPrefix(symbol)}{GetDocumentationName(symbol)}";
+    public static string GetPrefixedDocumentationName(Symbol? symbol) =>
+        $"{GetDocumentationPrefix(symbol)}{GetDocumentationName(symbol)}";
 
     private static string GetDocumentationPrefix(Symbol? symbol) => symbol switch
     {

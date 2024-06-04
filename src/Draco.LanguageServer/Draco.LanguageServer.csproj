@@ -2,14 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <LangVersion>11</LangVersion>
-
+    
     <!-- Dotnet tool -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>draco-langserver</ToolCommandName>
-    <PackageOutputPath>./nupkg</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +17,7 @@
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="NuGet.Protocol" Version="6.8.0" />
     <!-- NOTE: Temporary until we solve MSBuild communication -->
-    <PackageReference Include="Basic.Reference.Assemblies.Net70" Version="1.4.1" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net80" Version="1.4.5" />
   </ItemGroup>
 
 </Project>

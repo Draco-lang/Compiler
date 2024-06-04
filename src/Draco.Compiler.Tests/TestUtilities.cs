@@ -24,7 +24,7 @@ internal static class TestUtilities
         var sourceText = SourceText.From(code, Encoding.UTF8);
         var tree = SyntaxFactory.ParseSyntaxTree(sourceText);
 
-        var defaultReferences = Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+        var defaultReferences = Basic.Reference.Assemblies.Net80.ReferenceInfos.All
             .Select(r => RoslynMetadataReference.CreateFromStream(new MemoryStream(r.ImageBytes)))
             .Concat(aditionalReferences.Select(r => RoslynMetadataReference.CreateFromStream(r)));
 

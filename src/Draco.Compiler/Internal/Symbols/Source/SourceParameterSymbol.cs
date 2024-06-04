@@ -1,3 +1,4 @@
+using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -30,7 +31,7 @@ internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
         this.BindTypeIfNeeded(binderProvider);
 
     private TypeSymbol BindTypeIfNeeded(IBinderProvider binderProvider) =>
-        InterlockedUtils.InitializeNull(ref this.type, () => this.BindType(binderProvider));
+        LazyInitializer.EnsureInitialized(ref this.type, () => this.BindType(binderProvider));
 
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {

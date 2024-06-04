@@ -107,7 +107,9 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public int GetHashCode([DisallowNull] Symbol obj) => obj switch
     {
+        // TODO: Handle things like generic instances, metadata types, ...
         TypeSymbol t => this.GetHashCode(t),
+        FunctionSymbol f => RuntimeHelpers.GetHashCode(f),
         _ => throw new ArgumentOutOfRangeException(nameof(obj)),
     };
 

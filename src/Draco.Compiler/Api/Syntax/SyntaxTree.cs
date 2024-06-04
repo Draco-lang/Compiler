@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Syntax;
@@ -57,7 +58,7 @@ public sealed class SyntaxTree
     /// The root <see cref="SyntaxNode"/> of the tree.
     /// </summary>
     public SyntaxNode Root =>
-        InterlockedUtils.InitializeNull(ref this.root, () => this.GreenRoot.ToRedNode(this, null, 0));
+        LazyInitializer.EnsureInitialized(ref this.root, () => this.GreenRoot.ToRedNode(this, null, 0));
     private SyntaxNode? root;
 
     /// <summary>

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
@@ -15,7 +16,6 @@ using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using ModuleSymbol = Draco.Compiler.Internal.Symbols.ModuleSymbol;
 
 namespace Draco.Compiler.Api;
@@ -98,34 +98,34 @@ public sealed class Compilation : IBinderProvider
     /// The top-level merged module that contains the source along with references.
     /// </summary>
     internal ModuleSymbol RootModule =>
-        InterlockedUtils.InitializeNull(ref this.rootModule, this.BuildRootModule);
+        LazyInitializer.EnsureInitialized(ref this.rootModule, this.BuildRootModule);
     private ModuleSymbol? rootModule;
 
     /// <summary>
     /// The metadata assemblies this compilation references.
     /// </summary>
     internal ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> MetadataAssemblies =>
-        InterlockedUtils.InitializeNull(ref this.metadataAssemblies, this.BuildMetadataAssemblies);
+        LazyInitializer.EnsureInitialized(ref this.metadataAssemblies, this.BuildMetadataAssemblies);
     private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
     /// </summary>
     internal ModuleSymbol SourceModule =>
-        InterlockedUtils.InitializeNull(ref this.sourceModule, this.BuildSourceModule);
+        LazyInitializer.EnsureInitialized(ref this.sourceModule, this.BuildSourceModule);
     private ModuleSymbol? sourceModule;
 
     /// <summary>
     /// The declaration table managing the top-level declarations of the compilation.
     /// </summary>
     internal DeclarationTable DeclarationTable =>
-        InterlockedUtils.InitializeNull(ref this.declarationTable, this.BuildDeclarationTable);
+        LazyInitializer.EnsureInitialized(ref this.declarationTable, this.BuildDeclarationTable);
     private DeclarationTable? declarationTable;
 
     /// <summary>
     /// A global diagnostic bag to hold non-local diagnostic messages.
     /// </summary>
-    internal DiagnosticBag GlobalDiagnosticBag { get; } = new();
+    internal DiagnosticBag GlobalDiagnosticBag { get; } = new ConcurrentDiagnosticBag();
     DiagnosticBag IBinderProvider.DiagnosticBag => this.GlobalDiagnosticBag;
 
     /// <summary>
@@ -137,11 +137,6 @@ public sealed class Compilation : IBinderProvider
     /// The type provider used for metadata references.
     /// </summary>
     internal TypeProvider TypeProvider { get; }
-
-    /// <summary>
-    /// Intrinsicly defined symbols for the compilation.
-    /// </summary>
-    internal IntrinsicSymbols IntrinsicSymbols { get; }
 
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
@@ -159,7 +154,6 @@ public sealed class Compilation : IBinderProvider
         DeclarationTable? declarationTable = null,
         WellKnownTypes? wellKnownTypes = null,
         TypeProvider? typeProvider = null,
-        IntrinsicSymbols? intrinsicSymbols = null,
         BinderCache? binderCache = null)
     {
         this.SyntaxTrees = syntaxTrees;
@@ -173,7 +167,6 @@ public sealed class Compilation : IBinderProvider
         this.declarationTable = declarationTable;
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
         this.TypeProvider = typeProvider ?? new TypeProvider(this);
-        this.IntrinsicSymbols = intrinsicSymbols ?? new IntrinsicSymbols(this);
         this.binderCache = binderCache ?? new BinderCache(this);
     }
 
@@ -226,10 +219,6 @@ public sealed class Compilation : IBinderProvider
             // Or we keep it as long as metadata refs don't change?
             // Just a cache
             typeProvider: this.TypeProvider,
-            // TODO: We might want to change the compilation of intrinsic-symbols?
-            // Or we keep it as long as metadata refs don't change?
-            // Just a cache
-            intrinsicSymbols: this.IntrinsicSymbols,
             // TODO: We could definitely carry on info here, invalidating the correct things
             binderCache: null);
     }

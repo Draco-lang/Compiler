@@ -159,6 +159,15 @@ internal sealed class Translator
         Name = Path.GetFileName(sourceFile.Uri.AbsolutePath),
     };
 
+    public DapModels.Module ToDap(DebuggerApi.Module module) => new()
+    {
+        Id = module.Name,
+        Name = module.Name,
+        //Version = module.PdbReader.MetadataVersion, // not sure...
+        SymbolFilePath = module.PdbName,
+        Path = module.Name,
+    };
+
     public (int Line, int Column) ToDap(DebuggerApi.SourcePosition position) =>
         (Line: this.LineToDap(position.Line), Column: this.ColumnToDap(position.Column));
 

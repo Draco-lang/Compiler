@@ -12,7 +12,7 @@ public abstract class SemanticTestsBase
 {
     private protected static Compilation CreateCompilation(params SyntaxTree[] syntaxTrees) => Compilation.Create(
         syntaxTrees: syntaxTrees.ToImmutableArray(),
-        metadataReferences: Basic.Reference.Assemblies.Net70.ReferenceInfos.All
+        metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
             .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
             .ToImmutableArray());
 

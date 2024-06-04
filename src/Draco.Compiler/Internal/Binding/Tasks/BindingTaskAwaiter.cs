@@ -8,7 +8,6 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding.Tasks;
 
@@ -33,7 +32,7 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.IllegalExpression,
                     location: syntax?.Location));
-                type = IntrinsicSymbols.ErrorType;
+                type = WellKnownTypes.ErrorType;
             }
             return type;
         }
@@ -56,7 +55,7 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
                 this.diagnostics?.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.IllegalExpression,
                     location: this.syntax?.Location));
-                type = IntrinsicSymbols.ErrorType;
+                type = WellKnownTypes.ErrorType;
                 // NOTE: Might fail, we don't care
                 _ = ConstraintSolver.Unify(this.resultType, type);
             }

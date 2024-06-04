@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.Build.NoTargets/3.7.0">
     
   <PropertyGroup>
+    <PackageType>MSBuildSdk</PackageType>
     <TargetFramework>netstandard2.0</TargetFramework>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
   </PropertyGroup>

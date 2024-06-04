@@ -38,7 +38,7 @@ public static class LanguageServer
     /// <returns>The task that completes when the communication is over.</returns>
     public static async Task RunAsync(this ILanguageClient client, ILanguageServer server)
     {
-        var connection = client.Connection;
+        var connection = ((LanguageClientProxy)client).Connection;
 
         // Register server methods
         RegisterServerRpcMethods(server, connection);

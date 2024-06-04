@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Terminal.Gui;
 using Attribute = Terminal.Gui.Attribute;
@@ -25,6 +26,7 @@ internal sealed class DebuggerWindow : Window
     private readonly ListView callStackList;
     private readonly TableView localsTable;
     private readonly TextView logText;
+    private readonly TableView moduleList;
 
     private readonly MenuBar menu;
     private readonly StatusBar statusBar;
@@ -124,10 +126,16 @@ internal sealed class DebuggerWindow : Window
         this.localsTable = MakeTableView();
         this.callStackList = MakeListView();
         this.logText = MakeTextView(readOnly: true);
+        this.moduleList = MakeTableView();
+        this.moduleList.Table = new();
+        this.moduleList.Table.Columns.Add("name");
+        this.moduleList.Table.Columns.Add("path");
+
         var localsTab = MakeTabView(
             new("locals", this.localsTable),
             new("call-stack", this.callStackList),
-            new("logs", this.logText));
+            new("logs", this.logText),
+            new("modules", this.moduleList));
         localsTab.Height = Dim.Height(stdioTab);
         localsTab.Y = Pos.Top(stdioTab);
         localsTab.X = Pos.Right(stdioTab);
@@ -251,5 +259,24 @@ internal sealed class DebuggerWindow : Window
 
         this.sourceBrowserFrame!.Border.Background = scheme.Normal.Background;
         this.sourceBrowserFrame!.Border.BorderBrush = scheme.Normal.Foreground;
+    }
+
+    internal void AddModule(Module module)
+    {
+        this.moduleList.Table.Rows.Add(Path.GetFileName(module.Name), module.Name);
+        this.moduleList.SetNeedsDisplay();
+    }
+
+    internal void RemoveModule(Module module)
+    {
+        for (var i = 0; i < this.moduleList.Table.Rows.Count; i++)
+        {
+            if (this.moduleList.Table.Rows[i].ItemArray[1]!.ToString() == module.Name)
+            {
+                this.moduleList.Table.Rows.RemoveAt(i);
+                break;
+            }
+        }
+        this.moduleList.SetNeedsDisplay();
     }
 }

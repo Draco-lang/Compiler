@@ -9,7 +9,6 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -26,7 +25,7 @@ internal abstract partial class Binder
     /// <summary>
     /// Utility accessor for intrinsics.
     /// </summary>
-    protected IntrinsicSymbols IntrinsicSymbols => this.Compilation.IntrinsicSymbols;
+    protected WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
 
     /// <summary>
     /// The parent binder of this one.
@@ -124,7 +123,7 @@ internal abstract partial class Binder
                 location: global.DeclaringSyntax.Location,
                 formatArgs: global.Name));
             // We use an error type
-            declaredType = IntrinsicSymbols.ErrorType;
+            declaredType = WellKnownTypes.ErrorType;
         }
 
         // Done

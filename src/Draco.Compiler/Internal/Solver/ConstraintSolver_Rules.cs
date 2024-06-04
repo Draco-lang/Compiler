@@ -115,7 +115,7 @@ internal sealed partial class ConstraintSolver
         foreach (var typeVar in this.typeVariables)
         {
             var unwrapped = typeVar.Substitution;
-            if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, IntrinsicSymbols.UninferredType);
+            if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
         }
 
         while (this.constraints.Count > 0)
@@ -132,10 +132,9 @@ internal sealed partial class ConstraintSolver
             if (!Unify(constraint.Types[0], constraint.Types[i]))
             {
                 // Type-mismatch
-                diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+                constraint.ReportDiagnostic(diagnostics, diag => diag
                     .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                    .WithFormatArgs(constraint.Types[0].Substitution, constraint.Types[i].Substitution))
-                    .Build());
+                    .WithFormatArgs(constraint.Types[0].Substitution, constraint.Types[i].Substitution));
                 constraint.CompletionSource.SetResult(default);
                 return;
             }
@@ -150,10 +149,9 @@ internal sealed partial class ConstraintSolver
         if (!SymbolEqualityComparer.Default.IsBaseOf(constraint.TargetType, constraint.AssignedType))
         {
             // Type-mismatch
-            diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+            constraint.ReportDiagnostic(diagnostics, diag => diag
                 .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                .WithFormatArgs(constraint.TargetType.Substitution, constraint.AssignedType.Substitution))
-                .Build());
+                .WithFormatArgs(constraint.TargetType.Substitution, constraint.AssignedType.Substitution));
             constraint.CompletionSource.SetResult(default);
             return;
         }
@@ -176,11 +174,10 @@ internal sealed partial class ConstraintSolver
         }
 
         // No common type
-        diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+        constraint.ReportDiagnostic(diagnostics, diag => diag
             .WithTemplate(TypeCheckingErrors.NoCommonType)
-            .WithFormatArgs(string.Join(", ", constraint.AlternativeTypes)))
-            .Build());
-        UnifyAsserted(constraint.CommonType, IntrinsicSymbols.ErrorType);
+            .WithFormatArgs(string.Join(", ", constraint.AlternativeTypes)));
+        UnifyAsserted(constraint.CommonType, WellKnownTypes.ErrorType);
         constraint.CompletionSource.SetResult(default);
     }
 
@@ -196,25 +193,24 @@ internal sealed partial class ConstraintSolver
         // Don't propagate type errors
         if (accessed.IsError)
         {
-            Unify(constraint.MemberType, IntrinsicSymbols.ErrorType);
+            Unify(constraint.MemberType, WellKnownTypes.ErrorType);
             constraint.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);
             return;
         }
 
         // Not a type variable, we can look into members
-        var membersWithName = accessed.InstanceMembers
+        var membersWithName = accessed.Members
             .Where(m => m.Name == constraint.MemberName)
             .ToImmutableArray();
 
         if (membersWithName.Length == 0)
         {
             // No such member, error
-            diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+            constraint.ReportDiagnostic(diagnostics, diag => diag
                 .WithTemplate(SymbolResolutionErrors.MemberNotFound)
-                .WithFormatArgs(constraint.MemberName, accessed))
-                .Build());
+                .WithFormatArgs(constraint.MemberName, accessed));
             // We still provide a single error symbol
-            UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.MemberType, WellKnownTypes.ErrorType);
             constraint.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);
             return;
         }
@@ -233,7 +229,7 @@ internal sealed partial class ConstraintSolver
             // All must be functions, otherwise we have bigger problems
             // TODO: Can this assertion fail? Like in a faulty module decl?
             Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
-            UnifyAsserted(constraint.MemberType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.MemberType, WellKnownTypes.ErrorType);
             var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
             constraint.CompletionSource.SetResult(overload);
         }
@@ -264,13 +260,12 @@ internal sealed partial class ConstraintSolver
         // We have all candidates well-defined, find the absolute dominator
         if (candidates.Count == 0)
         {
-            UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
             // Best-effort shape approximation
             var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
-            diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+            constraint.ReportDiagnostic(diagnostics, diag => diag
                 .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
-                .WithFormatArgs(functionName))
-                .Build());
+                .WithFormatArgs(functionName));
             constraint.CompletionSource.SetResult(errorSymbol);
             return;
         }
@@ -316,12 +311,11 @@ internal sealed partial class ConstraintSolver
         else
         {
             // Best-effort shape approximation
-            UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
             var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
-            diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+            constraint.ReportDiagnostic(diagnostics, diag => diag
                 .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
-                .WithFormatArgs(functionName, string.Join(", ", dominatingCandidates)))
-                .Build());
+                .WithFormatArgs(functionName, string.Join(", ", dominatingCandidates)));
             constraint.CompletionSource.SetResult(errorSymbol);
         }
     }
@@ -346,11 +340,10 @@ internal sealed partial class ConstraintSolver
         if (called is not FunctionTypeSymbol functionType)
         {
             // Error
-            UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
-            diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
+            constraint.ReportDiagnostic(diagnostics, diag => diag
                 .WithTemplate(TypeCheckingErrors.CallNonFunction)
-                .WithFormatArgs(called))
-                .Build());
+                .WithFormatArgs(called));
             constraint.CompletionSource.SetResult(default);
             return;
         }
@@ -363,13 +356,12 @@ internal sealed partial class ConstraintSolver
         if (functionType.Parameters.Length != constraint.Arguments.Length)
         {
             // Error
-            UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
-            diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
+            constraint.ReportDiagnostic(diagnostics, diag => diag
                 .WithTemplate(TypeCheckingErrors.TypeMismatch)
                 .WithFormatArgs(
                     functionType,
-                    this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)))
-                .Build());
+                    this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)));
             constraint.CompletionSource.SetResult(default);
             return;
         }
@@ -382,13 +374,12 @@ internal sealed partial class ConstraintSolver
             if (score.HasZero)
             {
                 // Error
-                UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
-                diagnostics?.Add(constraint.BuildDiagnostic(diag => diag
+                UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
+                constraint.ReportDiagnostic(diagnostics, diag => diag
                     .WithTemplate(TypeCheckingErrors.TypeMismatch)
                     .WithFormatArgs(
                         functionType,
-                        this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)))
-                    .Build());
+                        this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)));
                 constraint.CompletionSource.SetResult(default);
                 return;
             }
@@ -405,7 +396,7 @@ internal sealed partial class ConstraintSolver
 
     private void FailRule(CallConstraint constraint)
     {
-        UnifyAsserted(constraint.ReturnType, IntrinsicSymbols.ErrorType);
+        UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
         constraint.CompletionSource.SetResult(default);
     }
 }

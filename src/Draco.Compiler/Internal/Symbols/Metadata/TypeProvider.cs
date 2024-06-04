@@ -19,7 +19,6 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
 
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
-    private IntrinsicSymbols IntrinsicSymbols => this.compilation.IntrinsicSymbols;
 
     private readonly Compilation compilation;
     private readonly ConcurrentDictionary<CacheKey, TypeSymbol> cache = new();
@@ -30,9 +29,9 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     }
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
-        new ArrayTypeSymbol(shape.Rank, this.IntrinsicSymbols.Int32).GenericInstantiate(elementType);
+        new ArrayTypeSymbol(shape.Rank, this.WellKnownTypes.SystemInt32).GenericInstantiate(elementType);
     public TypeSymbol GetSZArrayType(TypeSymbol elementType) =>
-        this.IntrinsicSymbols.Array.GenericInstantiate(elementType);
+        this.WellKnownTypes.ArrayType.GenericInstantiate(elementType);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetFunctionPointerType(MethodSignature<TypeSymbol> signature) => UnknownType;
     public TypeSymbol GetGenericInstantiation(TypeSymbol genericType, ImmutableArray<TypeSymbol> typeArguments)
@@ -68,26 +67,26 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
     public TypeSymbol GetPointerType(TypeSymbol elementType) => UnknownType;
     public TypeSymbol GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
     {
-        PrimitiveTypeCode.Void => IntrinsicSymbols.Unit,
+        PrimitiveTypeCode.Void => WellKnownTypes.Unit,
 
-        PrimitiveTypeCode.SByte => this.IntrinsicSymbols.Int8,
-        PrimitiveTypeCode.Int16 => this.IntrinsicSymbols.Int16,
-        PrimitiveTypeCode.Int32 => this.IntrinsicSymbols.Int32,
-        PrimitiveTypeCode.Int64 => this.IntrinsicSymbols.Int64,
+        PrimitiveTypeCode.SByte => this.WellKnownTypes.SystemSByte,
+        PrimitiveTypeCode.Int16 => this.WellKnownTypes.SystemInt16,
+        PrimitiveTypeCode.Int32 => this.WellKnownTypes.SystemInt32,
+        PrimitiveTypeCode.Int64 => this.WellKnownTypes.SystemInt64,
 
-        PrimitiveTypeCode.Byte => this.IntrinsicSymbols.Uint8,
-        PrimitiveTypeCode.UInt16 => this.IntrinsicSymbols.Uint16,
-        PrimitiveTypeCode.UInt32 => this.IntrinsicSymbols.Uint32,
-        PrimitiveTypeCode.UInt64 => this.IntrinsicSymbols.Uint64,
+        PrimitiveTypeCode.Byte => this.WellKnownTypes.SystemByte,
+        PrimitiveTypeCode.UInt16 => this.WellKnownTypes.SystemUInt16,
+        PrimitiveTypeCode.UInt32 => this.WellKnownTypes.SystemUInt32,
+        PrimitiveTypeCode.UInt64 => this.WellKnownTypes.SystemUInt64,
 
-        PrimitiveTypeCode.Single => this.IntrinsicSymbols.Float32,
-        PrimitiveTypeCode.Double => this.IntrinsicSymbols.Float64,
+        PrimitiveTypeCode.Single => this.WellKnownTypes.SystemSingle,
+        PrimitiveTypeCode.Double => this.WellKnownTypes.SystemDouble,
 
-        PrimitiveTypeCode.Boolean => this.IntrinsicSymbols.Bool,
-        PrimitiveTypeCode.Char => this.IntrinsicSymbols.Char,
+        PrimitiveTypeCode.Boolean => this.WellKnownTypes.SystemBoolean,
+        PrimitiveTypeCode.Char => this.WellKnownTypes.SystemChar,
 
-        PrimitiveTypeCode.String => this.IntrinsicSymbols.String,
-        PrimitiveTypeCode.Object => this.IntrinsicSymbols.Object,
+        PrimitiveTypeCode.String => this.WellKnownTypes.SystemString,
+        PrimitiveTypeCode.Object => this.WellKnownTypes.SystemObject,
 
         _ => UnknownType,
     };

@@ -6,7 +6,6 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -34,7 +33,7 @@ internal partial class Binder
                 template: SymbolResolutionErrors.IllegalModuleType,
                 location: syntax.Location,
                 formatArgs: syntax));
-            return IntrinsicSymbols.ErrorType;
+            return WellKnownTypes.ErrorType;
         }
         else
         {
@@ -99,7 +98,7 @@ internal partial class Binder
                 template: TypeCheckingErrors.GenericTypeParamCountMismatch,
                 location: syntax.Location,
                 formatArgs: new object[] { instantiated, args.Length }));
-            return IntrinsicSymbols.ErrorType;
+            return WellKnownTypes.ErrorType;
         }
         // Ok, instantiate
         return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);

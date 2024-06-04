@@ -3,7 +3,7 @@ namespace Draco.JsonRpc;
 /// <summary>
 /// The interface all JSON-RPC clients must implement.
 /// </summary>
-public interface IJsonRpcClient
+internal interface IJsonRpcClient
 {
     /// <summary>
     /// The connection.

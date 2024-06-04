@@ -13,7 +13,7 @@ namespace Draco.JsonRpc;
 /// </summary>
 /// <typeparam name="TMessage">The message type.</typeparam>
 /// <typeparam name="TError">The error descriptor.</typeparam>
-public abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
+internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 {
     protected sealed class JsonRpcResponseException : Exception
     {

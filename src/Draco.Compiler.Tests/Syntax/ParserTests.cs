@@ -62,6 +62,10 @@ public sealed class ParserTests
     private void MissingT(TokenKind type) => this.N<SyntaxToken>(t =>
            t.Kind == type
         && this.diagnostics.Get(t).Count > 0);
+    private void InvalidT(TokenKind type) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && this.diagnostics.Get(t).Any(d => d.Info.Severity == Api.Diagnostics.DiagnosticSeverity.Error)
+    );
 
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {
@@ -1800,6 +1804,23 @@ public sealed class ParserTests
                     }
                 }
             }
+        }
+    }
+
+    [Fact]
+    public void TestImportDeclarationWithVisibilityModifier()
+    {
+        this.ParseDeclaration("public import Foo;");
+
+        this.N<ImportDeclarationSyntax>();
+        {
+            this.InvalidT(TokenKind.KeywordPublic);
+            this.T(TokenKind.KeywordImport);
+            this.N<RootImportPathSyntax>();
+            {
+                this.T(TokenKind.Identifier, "Foo");
+            }
+            this.T(TokenKind.Semicolon);
         }
     }
 }

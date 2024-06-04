@@ -1,14 +1,13 @@
 using System.Threading.Tasks;
 using Draco.Dap.Attributes;
 using Draco.Dap.Model;
-using Draco.JsonRpc;
 
 namespace Draco.Dap.Adapter;
 
 /// <summary>
 /// An interface representing the debug client on the remote.
 /// </summary>
-public interface IDebugClient : IJsonRpcClient
+public interface IDebugClient
 {
     [Event("initialized")]
     public Task Initialized();
@@ -30,4 +29,7 @@ public interface IDebugClient : IJsonRpcClient
 
     [Event("terminated")]
     public Task DebuggerTerminatedAsync(TerminatedEvent args);
+
+    [Event("module")]
+    public Task UpdateModuleAsync(ModuleEvent args);
 }

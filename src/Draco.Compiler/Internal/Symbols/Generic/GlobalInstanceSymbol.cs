@@ -1,3 +1,5 @@
+using System.Threading;
+
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// </summary>
 internal sealed class GlobalInstanceSymbol : GlobalSymbol, IGenericInstanceSymbol
 {
-    public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
+    public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public override string Name => this.GenericDefinition.Name;

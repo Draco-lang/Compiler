@@ -1,7 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver;
+using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -105,4 +112,71 @@ internal partial class Binder
         SyntaxNode? currentReference)
     {
     }
+
+    /// <summary>
+    /// Looks up an operator with the given name and operand types.
+    /// </summary>
+    /// <param name="name">The name of the operator to look up.</param>
+    /// <param name="syntax">The referencing syntax.</param>
+    /// <param name="operands">The operand types.</param>
+    /// <param name="constraints">The constraint solver to use.</param>
+    /// <returns>The looked up operator task.</returns>
+    private async SolverTask<FunctionSymbol> LookupOperator(
+        string name,
+        SyntaxNode syntax,
+        ImmutableArray<TypeSymbol> operands,
+        ConstraintSolver constraints)
+    {
+        // First, we try to look up globally
+        // We can ignore lookup errors here, missing overloads will report it either way
+        var fromGlobal = this.LookupValueSymbol(name, syntax, DiagnosticBag.Empty);
+
+        // Then we try to look up in any of the operands
+        // Again, we make this silent as well, the lookup error will be reported by the overload resolution
+        var fromOperands = await SolverTask.WhenAll(operands.Select(operandType => constraints.Member(
+            operandType,
+            name,
+            out _,
+            syntax,
+            silent: true)));
+
+        // Merge all the found functions
+        var functions = GetFunctionsMerged(fromOperands.Append(fromGlobal));
+
+        // Actually start to resolve the overload
+        return await constraints.Overload(
+            name,
+            functions,
+            operands
+                .Select(op => constraints.Arg(null, op))
+                .ToImmutableArray(),
+            out _,
+            syntax);
+    }
+
+    /// <summary>
+    /// Retrieves the functions from the given symbol.
+    /// </summary>
+    /// <param name="symbol">The symbol to extract the functions from.</param>
+    /// <returns>The extracted array of functions.</returns>
+    private static ImmutableArray<FunctionSymbol> GetFunctions(Symbol symbol) =>
+        GetFunctionsImpl(symbol).ToImmutableArray();
+
+    /// <summary>
+    /// Retrieves the functions from the given symbols, merging them into one.
+    /// </summary>
+    /// <param name="symbols">The symbols to extract the functions from.</param>
+    /// <returns>The extracted array of distinct functions.</returns>
+    private static ImmutableArray<FunctionSymbol> GetFunctionsMerged(IEnumerable<Symbol> symbols) => symbols
+        .SelectMany(GetFunctionsImpl)
+        .Distinct(SymbolEqualityComparer.Default)
+        .ToImmutableArray();
+
+    // Helper for function symbol extraction
+    private static IEnumerable<FunctionSymbol> GetFunctionsImpl(Symbol symbol) => symbol switch
+    {
+        FunctionSymbol f => new[] { f },
+        OverloadSymbol o => o.Functions,
+        _ => Enumerable.Empty<FunctionSymbol>(),
+    };
 }

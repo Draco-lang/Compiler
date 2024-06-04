@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -35,7 +36,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     public override BoundStatement Body => this.BindBodyIfNeeded(this.DeclaringCompilation!);
     private BoundStatement? body;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
     internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
@@ -74,8 +75,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this);
-        var discardBag = new DiagnosticBag();
-        var overloads = binder.LookupValueSymbol(this.Name, this.DeclaringSyntax, discardBag);
+        var overloads = binder.LookupValueSymbol(this.Name, this.DeclaringSyntax, DiagnosticBag.Empty);
         // If not found, do nothing
         if (overloads.IsError) return;
         // If this is the same instance, do nothing
@@ -173,12 +173,12 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     }
 
     private TypeSymbol BindReturnTypeIfNeeded(IBinderProvider binderProvider) =>
-        InterlockedUtils.InitializeNull(ref this.returnType, () => this.BindReturnType(binderProvider));
+        LazyInitializer.EnsureInitialized(ref this.returnType, () => this.BindReturnType(binderProvider));
 
     private TypeSymbol BindReturnType(IBinderProvider binderProvider)
     {
         // If the return type is unspecified, it's assumed to be unit
-        if (this.DeclaringSyntax.ReturnType is null) return IntrinsicSymbols.Unit;
+        if (this.DeclaringSyntax.ReturnType is null) return WellKnownTypes.Unit;
 
         // Otherwise, we need to resolve
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
@@ -186,7 +186,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     }
 
     private BoundStatement BindBodyIfNeeded(IBinderProvider binderProvider) =>
-        InterlockedUtils.InitializeNull(ref this.body, () => this.BindBody(binderProvider));
+        LazyInitializer.EnsureInitialized(ref this.body, () => this.BindBody(binderProvider));
 
     private BoundStatement BindBody(IBinderProvider binderProvider)
     {

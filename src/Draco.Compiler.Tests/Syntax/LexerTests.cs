@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -1276,5 +1277,26 @@ public sealed class LexerTests
         this.AssertNextToken(TokenKind.ParenClose, ")");
         this.AssertNextToken(TokenKind.Semicolon, ";");
         this.AssertNextToken(TokenKind.EndOfInput);
+    }
+
+    [Theory]
+    [InlineData("timeout-0faaf5cf37107e7f0ff88777816a4b98f5fc3c63.draco")]
+    [InlineData("crash-16a56ef2ee1f6a2fcc8ddf2911e0f3fb1b36e3b9.draco")]
+    [InlineData("crash-81bbb6ad94b3f4802afcaab9ef895fc0ddef70d4.draco")]
+    public void TestFuzzerSampleTimeout(string path)
+    {
+        var text = File.ReadAllText(Path.Combine("Syntax", "FuzzerTestCases", path), Encoding.UTF8);
+        var source = SourceReader.From(text);
+        var lexer = new Lexer(source, this.diagnostics);
+        var stopwatch = Stopwatch.StartNew();
+        while (true)
+        {
+            var token = lexer.Lex();
+            if (token.Kind == TokenKind.EndOfInput) break;
+            if (stopwatch.ElapsedMilliseconds > 5000 && !Debugger.IsAttached)
+            {
+                Assert.Fail("Timeout.");
+            }
+        }
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using System.CommandLine;
 using System.IO;
 using System.Linq;
@@ -40,7 +39,7 @@ internal class Program
         var currentThread = null as Thread;
         Application.MainLoop.Invoke(async () =>
         {
-            var host = DebuggerHost.Create(FindDbgShim());
+            var host = DebuggerHost.Create();
             var debugger = host.StartProcess(program.FullName);
 
             void BreakAt(Thread thread, Method? method, SourceRange? range)
@@ -71,6 +70,8 @@ internal class Program
             debugger.OnEventLog += (_, text) => debuggerWindow.Log(text);
             debugger.OnStandardOut += (_, text) => debuggerWindow.AppendStdout(text);
             debugger.OnStandardError += (_, text) => debuggerWindow.AppendStderr(text);
+            debugger.OnModuleLoaded += (_, module) => debuggerWindow.AddModule(module);
+            debugger.OnModuleUnloaded += (_, module) => debuggerWindow.RemoveModule(module);
 
             debugger.OnBreakpoint += (_, a) => BreakAt(a.Thread, a.Breakpoint.Method, a.Breakpoint.Range);
             debugger.OnStep += (_, a) => BreakAt(a.Thread, a.Method, a.Range);
@@ -87,23 +88,5 @@ internal class Program
         Application.Shutdown();
 
         return Task.CompletedTask;
-    }
-
-    private static string FindDbgShim()
-    {
-        var root = "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App";
-
-        if (!Directory.Exists(root))
-        {
-            throw new InvalidOperationException($"Cannot find dbgshim.dll: '{root}' does not exist");
-        }
-
-        foreach (var dir in Directory.EnumerateDirectories(root).Reverse())
-        {
-            var dbgshim = Directory.EnumerateFiles(dir, "dbgshim.dll").FirstOrDefault();
-            if (dbgshim is not null) return dbgshim;
-        }
-
-        throw new InvalidOperationException($"Failed to find a runtime containing dbgshim.dll under '{root}'");
     }
 }

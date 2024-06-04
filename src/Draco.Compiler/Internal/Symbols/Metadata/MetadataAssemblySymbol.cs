@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Threading;
 using System.Xml;
 using Draco.Compiler.Api;
 
@@ -23,7 +24,7 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     /// The root namespace of this assembly.
     /// </summary>
     public MetadataNamespaceSymbol RootNamespace =>
-        InterlockedUtils.InitializeNull(ref this.rootNamespace, this.BuildRootNamespace);
+        LazyInitializer.EnsureInitialized(ref this.rootNamespace, this.BuildRootNamespace);
     private MetadataNamespaceSymbol? rootNamespace;
 
     public override string Name => this.MetadataName;
@@ -34,7 +35,7 @@ internal class MetadataAssemblySymbol : ModuleSymbol, IMetadataSymbol
     /// The <see cref="System.Reflection.AssemblyName"/> of this referenced assembly.
     /// </summary>
     public AssemblyName AssemblyName =>
-        InterlockedUtils.InitializeNull(ref this.assemblyName, this.assemblyDefinition.GetAssemblyName);
+        LazyInitializer.EnsureInitialized(ref this.assemblyName, this.assemblyDefinition.GetAssemblyName);
     private AssemblyName? assemblyName;
 
     public override string MetadataName => this.MetadataReader.GetString(this.assemblyDefinition.Name);

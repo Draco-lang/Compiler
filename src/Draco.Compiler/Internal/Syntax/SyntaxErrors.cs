@@ -47,13 +47,22 @@ internal static class SyntaxErrors
         code: Code(4));
 
     /// <summary>
+    /// A \u{...} construct that represent an invalid codepoint.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalUnicodeCodepoint = DiagnosticTemplate.Create(
+        title: "illegal unicode codepoint",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal unicode codepoint (code: {0})",
+        code: Code(5));
+
+    /// <summary>
     /// An illegal escape character after '\'.
     /// </summary>
     public static readonly DiagnosticTemplate IllegalEscapeCharacter = DiagnosticTemplate.Create(
         title: "illegal escape character",
         severity: DiagnosticSeverity.Error,
         format: "illegal escape character '{0}'",
-        code: Code(5));
+        code: Code(6));
 
     /// <summary>
     /// A certain kind of token was expected while parsing.
@@ -62,7 +71,7 @@ internal static class SyntaxErrors
         title: "expected token",
         severity: DiagnosticSeverity.Error,
         format: "expected token {0}",
-        code: Code(6));
+        code: Code(7));
 
     /// <summary>
     /// Some kind of unexpected input while parsing.
@@ -71,7 +80,7 @@ internal static class SyntaxErrors
         title: "unexpected input",
         severity: DiagnosticSeverity.Error,
         format: "unexpected input while parsing {0}",
-        code: Code(7));
+        code: Code(8));
 
     /// <summary>
     /// Insufficient indentation in a multiline string.
@@ -80,7 +89,7 @@ internal static class SyntaxErrors
         title: "insufficient indentation",
         severity: DiagnosticSeverity.Error,
         format: "insufficient indentation in multiline string",
-        code: Code(8));
+        code: Code(9));
 
     /// <summary>
     /// There are extra tokens inline with the opening quotes of a multiline string.
@@ -89,7 +98,7 @@ internal static class SyntaxErrors
         title: "illegal tokens",
         severity: DiagnosticSeverity.Error,
         format: "illegal tokens inline with opening quotes of multiline string",
-        code: Code(9));
+        code: Code(10));
 
     /// <summary>
     /// The closing quotes of a multiline string are not on a new line.
@@ -98,7 +107,7 @@ internal static class SyntaxErrors
         title: "closing quotes are not on a new line",
         severity: DiagnosticSeverity.Error,
         format: "closing quotes are not on a new line of multiline string",
-        code: Code(10));
+        code: Code(11));
 
     /// <summary>
     /// The literal ended unexpectedly.
@@ -107,7 +116,7 @@ internal static class SyntaxErrors
         title: "unexpected floating-point literal end",
         severity: DiagnosticSeverity.Error,
         format: "unexpected end of scientific notation floating-point literal, expected one or more digits after exponent",
-        code: Code(11));
+        code: Code(12));
 
     /// <summary>
     /// The character literal ended unexpectedly.
@@ -116,7 +125,7 @@ internal static class SyntaxErrors
         title: "unexpected character literal end",
         severity: DiagnosticSeverity.Error,
         format: "unexpected end of character literal",
-        code: Code(12));
+        code: Code(13));
 
     /// <summary>
     /// The escape sequence ended unexpectedly.
@@ -125,7 +134,7 @@ internal static class SyntaxErrors
         title: "unexpected escape sequence end",
         severity: DiagnosticSeverity.Error,
         format: "unexpected end of escape sequence",
-        code: Code(13));
+        code: Code(14));
 
     /// <summary>
     /// An illegal language element in the context.
@@ -134,5 +143,14 @@ internal static class SyntaxErrors
         title: "illegal element in context",
         severity: DiagnosticSeverity.Error,
         format: "illegal language element {0} in context",
-        code: Code(14));
+        code: Code(15));
+
+    /// <summary>
+    /// There is a visibility modifier before an import statement.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedVisibilityModifierBeforeImport = DiagnosticTemplate.Create(
+        title: "unexpected visibility modifier before import statement",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected {0} before import statement",
+        code: Code(16));
 }

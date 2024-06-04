@@ -19,7 +19,7 @@ internal sealed class ImportBinder : Binder
     /// <summary>
     /// The diagnostics produced during import resolution.
     /// </summary>
-    public DiagnosticBag ImportDiagnostics { get; } = new();
+    public DiagnosticBag ImportDiagnostics { get; } = new ConcurrentDiagnosticBag();
 
     /// <summary>
     /// The import items this binder brings in.

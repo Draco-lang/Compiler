@@ -23,7 +23,7 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
     private ImmutableArray<ParameterSymbol> parameters;
 
     public override TypeSymbol ReturnType =>
-        InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
+        LazyInitializer.EnsureInitialized(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
     /// <summary>
@@ -35,13 +35,15 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
     /// The array element type.
     /// </summary>
     public TypeParameterSymbol ElementType =>
-        InterlockedUtils.InitializeNull(ref this.elementType, this.BuildElementType);
+        LazyInitializer.EnsureInitialized(ref this.elementType, this.BuildElementType);
     private TypeParameterSymbol? elementType;
 
-    public override CodegenDelegate Codegen => (codegen, target, operands) =>
+    public override CodegenDelegate Codegen => (codegen, targetType, operands) =>
     {
-        var elementType = target.Type.Substitution.GenericArguments[0];
+        var target = codegen.DefineRegister(targetType);
+        var elementType = targetType.Substitution.GenericArguments[0];
         codegen.Write(NewArray(target, elementType, operands));
+        return target;
     };
 
     private readonly ArrayTypeSymbol genericArrayType;

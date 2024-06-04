@@ -5,7 +5,7 @@ namespace Draco.JsonRpc;
 /// <summary>
 /// Utilities for construction <see cref="IJsonRpcMethodHandler"/>s.
 /// </summary>
-public static class JsonRpcMethodHandler
+internal static class JsonRpcMethodHandler
 {
     /// <summary>
     /// Constructs a new <see cref="IJsonRpcMethodHandler"/> from a given <see cref="MethodInfo"/>.

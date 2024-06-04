@@ -22,16 +22,20 @@ internal sealed class MemberConstraint : Constraint<Symbol>
     /// </summary>
     public TypeSymbol MemberType { get; }
 
+    public override bool Silent { get; }
+
     public MemberConstraint(
         TypeSymbol accessed,
         string memberName,
         TypeSymbol memberType,
+        bool silent,
         ConstraintLocator locator)
         : base(locator)
     {
         this.Accessed = accessed;
         this.MemberName = memberName;
         this.MemberType = memberType;
+        this.Silent = silent;
     }
 
     public override string ToString() => $"Member({this.Accessed}, {this.MemberName})";

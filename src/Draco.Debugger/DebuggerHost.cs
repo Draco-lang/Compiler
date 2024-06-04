@@ -11,9 +11,9 @@ namespace Draco.Debugger;
 /// </summary>
 public sealed class DebuggerHost
 {
-    public static DebuggerHost Create(string dbgshimPath)
+    public static DebuggerHost Create()
     {
-        var dbgshim = new XplatDbgShim(NativeLibrary.Load(dbgshimPath));
+        var dbgshim = new DbgShim(NativeLibrary.Load("dbgshim", typeof(DebuggerHost).Assembly, null));
         return new(dbgshim);
     }
 
@@ -44,22 +44,19 @@ public sealed class DebuggerHost
         try
         {
             var wait = new AutoResetEvent(false);
-            unregisterToken = this.dbgShim.RegisterForRuntimeStartup(process.ProcessId, (raw, param, hresult) =>
+            unregisterToken = this.dbgShim.RegisterForRuntimeStartup(process.ProcessId, (pCordb, param, hresult) =>
             {
-                var corDbg = new CorDebug(raw);
-                corDbg.Initialize();
+                pCordb.Initialize();
 
                 var cb = new CorDebugManagedCallback();
-                corDbg.SetManagedHandler(cb);
-
-                var corDbgProcess = corDbg.DebugActiveProcess(process.ProcessId, win32Attach: false);
-                debugger = new(
-                    corDebugProcess: corDbgProcess,
-                    ioWorker: new(corDbgProcess, ioHandles),
-                    cb: cb)
+                pCordb.SetManagedHandler(cb);
+                debugger = new(cb: cb) // We must create the debugger which register event before starting the debugger, or there is are concurrency issues.
                 {
                     StopAtEntryPoint = true,
                 };
+                var corDbgProcess = pCordb.DebugActiveProcess(process.ProcessId, win32Attach: false);
+
+                debugger.Init(corDebugProcess: corDbgProcess, ioWorker: new(corDbgProcess, ioHandles));
 
                 wait.Set();
             });

@@ -68,7 +68,7 @@ internal sealed class RingBuffer<T> : IReadOnlyCollection<T>
         }
     }
 
-    private T[] storage = Array.Empty<T>();
+    private T[] storage = [];
 
     /// <summary>
     /// Initializes a new, empty <see cref="RingBuffer{T}"/>.

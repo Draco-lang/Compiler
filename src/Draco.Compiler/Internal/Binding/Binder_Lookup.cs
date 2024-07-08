@@ -177,6 +177,6 @@ internal partial class Binder
     {
         FunctionSymbol f => new[] { f },
         OverloadSymbol o => o.Functions,
-        _ => Enumerable.Empty<FunctionSymbol>(),
+        _ => [],
     };
 }

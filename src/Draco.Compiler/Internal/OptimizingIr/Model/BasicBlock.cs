@@ -29,7 +29,7 @@ internal sealed class BasicBlock : IBasicBlock
     }
     public int InstructionCount { get; private set; }
     public IEnumerable<BasicBlock> Successors => this.lastInstruction?.JumpTargets.Cast<BasicBlock>()
-                                              ?? Enumerable.Empty<BasicBlock>();
+                                              ?? [];
     IEnumerable<IBasicBlock> IBasicBlock.Successors => this.Successors;
 
     /// <summary>

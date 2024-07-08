@@ -30,7 +30,7 @@ internal sealed class ArrayLengthPropertySymbol : PropertySymbol
 /// </summary>
 internal sealed class ArrayLengthGetSymbol : FunctionSymbol, IPropertyAccessorSymbol
 {
-    public override ImmutableArray<ParameterSymbol> Parameters => ImmutableArray<ParameterSymbol>.Empty;
+    public override ImmutableArray<ParameterSymbol> Parameters => [];
     public override TypeSymbol ReturnType => this.ContainingSymbol.IndexType;
     public override bool IsStatic => false;
 

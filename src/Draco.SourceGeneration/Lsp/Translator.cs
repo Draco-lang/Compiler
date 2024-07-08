@@ -17,8 +17,8 @@ internal sealed class Translator
     private readonly Ts.MetaModel sourceModel;
     private readonly Cs.Model targetModel = new();
 
-    private readonly Dictionary<string, Cs.Type> translatedTypes = new();
-    private readonly Dictionary<Ts.Structure, Cs.Interface> structureInterfaces = new();
+    private readonly Dictionary<string, Cs.Type> translatedTypes = [];
+    private readonly Dictionary<Ts.Structure, Cs.Interface> structureInterfaces = [];
 
     public Translator(Ts.MetaModel sourceModel)
     {

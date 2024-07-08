@@ -151,7 +151,7 @@ public sealed class SyntaxTree
     /// <returns>Array of <see cref="TextEdit"/>s.</returns>
     public ImmutableArray<TextEdit> SyntaxTreeDiff(SyntaxTree other) =>
         // TODO: We can use a better diff algo
-        ImmutableArray.Create(new TextEdit(this.Root.Range, other.ToString()));
+        [new TextEdit(this.Root.Range, other.ToString())];
 
     /// <summary>
     /// Syntactically formats this <see cref="SyntaxTree"/>.

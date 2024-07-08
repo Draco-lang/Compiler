@@ -401,7 +401,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             this.Write(leftLoad);
             if (node.CompoundOperator.Codegen is { } codegen)
             {
-                toStore = codegen(this, node.TypeRequired, ImmutableArray.Create(leftValue, right));
+                toStore = codegen(this, node.TypeRequired, [leftValue, right]);
             }
             else
             {

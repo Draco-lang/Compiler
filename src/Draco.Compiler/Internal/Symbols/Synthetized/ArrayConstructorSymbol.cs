@@ -16,7 +16,7 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
         int n => $"Array{n}D",
     };
 
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => [this.ElementType];
 
     public override ImmutableArray<ParameterSymbol> Parameters =>
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
@@ -55,7 +55,7 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.Rank switch
     {
-        1 => ImmutableArray.Create(new SynthetizedParameterSymbol(this, "capacity", this.genericArrayType.IndexType) as ParameterSymbol),
+        1 => [new SynthetizedParameterSymbol(this, "capacity", this.genericArrayType.IndexType) as ParameterSymbol],
         int n => Enumerable
             .Range(1, n)
             .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", this.genericArrayType.IndexType) as ParameterSymbol)

@@ -26,7 +26,7 @@ internal sealed class Translator
 
     private readonly JsonDocument sourceModel;
     private readonly Model targetModel = new();
-    private readonly Dictionary<string, Type> translatedTypes = new();
+    private readonly Dictionary<string, Type> translatedTypes = [];
 
     public Translator(JsonDocument sourceModel)
     {
@@ -232,7 +232,7 @@ internal sealed class Translator
             // Check for required props
             var requiredProps = description.TryGetProperty("required", out var requiredArray)
                 ? requiredArray.EnumerateArray().Select(a => a.GetString()!).ToHashSet()
-                : new HashSet<string>();
+                : [];
             foreach (var prop in result.Properties)
             {
                 if (requiredProps.Contains(prop.SerializedName)) continue;

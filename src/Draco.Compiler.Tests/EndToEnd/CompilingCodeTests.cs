@@ -442,7 +442,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(
             root: null,
-            syntaxTrees: ImmutableArray.Create(foo),
+            syntaxTrees: [foo],
             additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");
@@ -470,7 +470,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(
             root: null,
-            syntaxTrees: ImmutableArray.Create(foo),
+            syntaxTrees: [foo],
             additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");
@@ -497,7 +497,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(
             root: null,
-            syntaxTrees: ImmutableArray.Create(foo),
+            syntaxTrees: [foo],
             additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");
@@ -523,7 +523,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(
             root: null,
-            syntaxTrees: ImmutableArray.Create(foo),
+            syntaxTrees: [foo],
             additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");

@@ -113,7 +113,7 @@ internal static class Generator
         this IGenerator<ImmutableArray<T>> generator,
         T last) => Delegate(
             nextEpoch: () => generator.NextEpoch().Append(last).ToImmutableArray(),
-            nextMutation: () => generator.NextMutation().Append(last).ToImmutableArray(),
+            nextMutation: () => [.. generator.NextMutation(), last],
             toString: generator.ToString);
 
     public static IGenerator<string> String(

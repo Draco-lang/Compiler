@@ -11,7 +11,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class CompletionService
 {
-    private readonly List<CompletionProvider> providers = new();
+    private readonly List<CompletionProvider> providers = [];
 
     /// <summary>
     /// Adds <see cref="CompletionProvider"/> this service can use.

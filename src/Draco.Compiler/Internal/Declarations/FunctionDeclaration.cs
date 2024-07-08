@@ -14,7 +14,7 @@ internal sealed class FunctionDeclaration : Declaration
     /// </summary>
     public FunctionDeclarationSyntax Syntax { get; }
 
-    public override ImmutableArray<Declaration> Children => ImmutableArray<Declaration>.Empty;
+    public override ImmutableArray<Declaration> Children => [];
 
     public override IEnumerable<SyntaxNode> DeclaringSyntaxes
     {

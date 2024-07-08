@@ -31,16 +31,16 @@ internal sealed class Module : IModule
     public Module? Parent { get; }
     IModule? IModule.Parent => this.Parent;
 
-    private readonly HashSet<GlobalSymbol> globals = new();
-    private readonly Dictionary<FunctionSymbol, IProcedure> procedures = new();
-    private readonly Dictionary<ModuleSymbol, IModule> submodules = new();
+    private readonly HashSet<GlobalSymbol> globals = [];
+    private readonly Dictionary<FunctionSymbol, IProcedure> procedures = [];
+    private readonly Dictionary<ModuleSymbol, IModule> submodules = [];
 
     public Module(ModuleSymbol symbol, Assembly assembly, Module? Parent)
     {
         this.Symbol = symbol;
         this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
             name: "<global initializer>",
-            paramTypes: Enumerable.Empty<TypeSymbol>(),
+            paramTypes: [],
             returnType: WellKnownTypes.Unit));
         this.Assembly = assembly;
         this.Parent = Parent;

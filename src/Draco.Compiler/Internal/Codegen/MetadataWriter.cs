@@ -19,9 +19,9 @@ internal abstract class MetadataWriter
     public MetadataBuilder MetadataBuilder { get; } = new();
 
     // Cache
-    private readonly Dictionary<(string Name, Version Version), AssemblyReferenceHandle> assemblyReferences = new();
-    private readonly Dictionary<(EntityHandle Parent, string? Namespace, string Name), TypeReferenceHandle> typeReferences = new();
-    private readonly Dictionary<Uri, DocumentHandle> documentHandles = new();
+    private readonly Dictionary<(string Name, Version Version), AssemblyReferenceHandle> assemblyReferences = [];
+    private readonly Dictionary<(EntityHandle Parent, string? Namespace, string Name), TypeReferenceHandle> typeReferences = [];
+    private readonly Dictionary<Uri, DocumentHandle> documentHandles = [];
 
     // Local state
     private int parameterIndex = 1;

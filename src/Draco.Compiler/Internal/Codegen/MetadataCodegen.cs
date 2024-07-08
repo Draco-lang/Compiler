@@ -64,8 +64,8 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
-    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = new();
-    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
+    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = [];
+    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = [];
     private readonly AssemblyReferenceHandle systemRuntimeReference;
     private readonly TypeReferenceHandle systemObjectReference;
 
@@ -318,7 +318,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             var encoder = e.TypeSpecificationSignature();
             encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
             this.EncodeSignatureType(elementTypeEncoder, elementType);
-            shapeEncoder.Shape(rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
+            shapeEncoder.Shape(rank, [], []);
         }));
     }
 
@@ -621,7 +621,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                     // Multi-dimensional
                     encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
                     this.EncodeSignatureType(elementTypeEncoder, elementType);
-                    shapeEncoder.Shape(arrayType.Rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
+                    shapeEncoder.Shape(arrayType.Rank, [], []);
                     return;
                 }
             }

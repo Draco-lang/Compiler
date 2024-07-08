@@ -35,7 +35,7 @@ public sealed class Thread
     }
     private string? name;
 
-    private readonly List<Breakpoint> currentlyHitBreakpoints = new();
+    private readonly List<Breakpoint> currentlyHitBreakpoints = [];
 
     /// <summary>
     /// The current state of the call-stack.

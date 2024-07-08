@@ -30,7 +30,7 @@ internal sealed class SyntaxTrivia : SyntaxNode
 
     public override int FullWidth => this.Text.Length;
 
-    public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
+    public override IEnumerable<SyntaxNode> Children => [];
 
     public SyntaxTrivia(TriviaKind kind, string text)
     {

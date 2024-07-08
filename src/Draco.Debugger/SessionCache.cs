@@ -10,10 +10,10 @@ namespace Draco.Debugger;
 /// </summary>
 internal sealed class SessionCache
 {
-    private readonly Dictionary<ICorDebugModule, Module> modules = new();
-    private readonly Dictionary<ICorDebugThread, Thread> threads = new();
-    private readonly Dictionary<ICorDebugFunction, Method> methods = new();
-    private readonly Dictionary<ICorDebugBreakpoint, Breakpoint> breakpoints = new();
+    private readonly Dictionary<ICorDebugModule, Module> modules = [];
+    private readonly Dictionary<ICorDebugThread, Thread> threads = [];
+    private readonly Dictionary<ICorDebugFunction, Method> methods = [];
+    private readonly Dictionary<ICorDebugBreakpoint, Breakpoint> breakpoints = [];
 
     public Module GetModule(CorDebugModule corDebugModule)
     {

@@ -20,7 +20,7 @@ internal static class TestUtilities
 
     public static Stream CompileCSharpToStream(string code, string assemblyName = DefaultAssemblyName, IEnumerable<Stream>? aditionalReferences = null, Stream? xmlStream = null)
     {
-        aditionalReferences ??= Enumerable.Empty<Stream>();
+        aditionalReferences ??= [];
         var sourceText = SourceText.From(code, Encoding.UTF8);
         var tree = SyntaxFactory.ParseSyntaxTree(sourceText);
 

@@ -51,7 +51,7 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, ILis
 
     public override int GetHashCode() => ((IStructuralEquatable)this.array).GetHashCode(EqualityComparer<T>.Default);
 
-    public T[] ToArray() => this.array.ToArray();
+    public T[] ToArray() => [.. this.array];
 
     public int IndexOf(T item) => this.array.IndexOf(item);
 

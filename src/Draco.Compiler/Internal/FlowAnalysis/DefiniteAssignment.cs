@@ -39,7 +39,7 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
 
     public readonly record struct LocalState(Dictionary<LocalSymbol, AssignmentStatus> Locals);
 
-    public override LocalState Top => new(Locals: new());
+    public override LocalState Top => new(Locals: []);
     public override LocalState Bottom => new(Locals: this.locals.ToDictionary(s => s, _ => AssignmentStatus.Initialized));
 
     public override LocalState Clone(in LocalState state) => new(Locals: new(state.Locals));
@@ -69,7 +69,7 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
     }
 
     private readonly ImmutableArray<LocalSymbol> locals;
-    private readonly Dictionary<BoundLocalExpression, AssignmentStatus> referenceStates = new();
+    private readonly Dictionary<BoundLocalExpression, AssignmentStatus> referenceStates = [];
 
     public DefiniteAssignment(ImmutableArray<LocalSymbol> locals)
     {

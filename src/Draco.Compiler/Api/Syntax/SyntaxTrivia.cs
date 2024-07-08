@@ -18,7 +18,7 @@ public sealed class SyntaxTrivia : SyntaxNode
     /// </summary>
     public string Text => this.Green.Text;
 
-    public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxNode>();
+    public override IEnumerable<SyntaxNode> Children => [];
 
     internal override Internal.Syntax.SyntaxTrivia Green { get; }
 

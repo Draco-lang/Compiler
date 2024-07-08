@@ -32,7 +32,7 @@ internal sealed record class TextDocumentationElement(string Text) : Documentati
 {
     public override string ToMarkdown() => this.Text;
 
-    public override XText ToXml() => new XText(this.Text);
+    public override XText ToXml() => new(this.Text);
 }
 
 /// <summary>
@@ -59,7 +59,7 @@ internal abstract record class SymbolDocumentationElement(Symbol? Symbol, Immuta
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this parameter.</param>
 internal sealed record class ParameterDocumentationElement(ParameterSymbol? Parameter, ImmutableArray<DocumentationElement> Elements) : SymbolDocumentationElement(Parameter, Elements)
 {
-    public override XElement ToXml() => new XElement("param",
+    public override XElement ToXml() => new("param",
         new XAttribute("name", this.Name),
         this.Elements.Select(x => x.ToXml()));
 }
@@ -71,7 +71,7 @@ internal sealed record class ParameterDocumentationElement(ParameterSymbol? Para
 /// <param name="Elements">The <see cref="DocumentationElement"/>s that are contained in the description of this type parameter.</param>
 internal sealed record class TypeParameterDocumentationElement(TypeParameterSymbol? TypeParameter, ImmutableArray<DocumentationElement> Elements) : SymbolDocumentationElement(TypeParameter, Elements)
 {
-    public override XElement ToXml() => new XElement("typeparam",
+    public override XElement ToXml() => new("typeparam",
         new XAttribute("name", this.Name),
         this.Elements.Select(x => x.ToXml()));
 }

@@ -19,10 +19,10 @@ internal abstract class InstructionBase : IInstruction
     IInstruction? IInstruction.Next => this.Next;
     public virtual bool IsBranch => false;
     public virtual bool IsValidInUnreachableContext => false;
-    public virtual IEnumerable<BasicBlock> JumpTargets => Enumerable.Empty<BasicBlock>();
+    public virtual IEnumerable<BasicBlock> JumpTargets => [];
     IEnumerable<IBasicBlock> IInstruction.JumpTargets => this.JumpTargets;
-    public virtual IEnumerable<Symbol> StaticOperands => Enumerable.Empty<Symbol>();
-    public virtual IEnumerable<IOperand> Operands => Enumerable.Empty<IOperand>();
+    public virtual IEnumerable<Symbol> StaticOperands => [];
+    public virtual IEnumerable<IOperand> Operands => [];
 
     public override abstract string ToString();
 

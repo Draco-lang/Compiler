@@ -102,8 +102,8 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // If the definition wasn't generic, we just carry over the context
         if (!this.GenericDefinition.IsGenericDefinition)
         {
-            this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
-            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            this.genericParameters = [];
+            this.genericArguments = [];
             // IMPORTANT: Write flag last
             this.genericsNeedsBuild = false;
             return;
@@ -116,14 +116,14 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         if (!hasParametersSpecified)
         {
             this.genericParameters = this.GenericDefinition.GenericParameters;
-            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            this.genericArguments = [];
             // IMPORTANT: Write flag last
             this.genericsNeedsBuild = false;
             return;
         }
 
         // Otherwise, this must have been substituted
-        this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
+        this.genericParameters = [];
         this.genericArguments = this.GenericDefinition.GenericParameters
             .Select(param => this.Context[param])
             .ToImmutableArray();

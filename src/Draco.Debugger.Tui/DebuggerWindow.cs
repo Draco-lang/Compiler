@@ -31,7 +31,7 @@ internal sealed class DebuggerWindow : Window
     private readonly MenuBar menu;
     private readonly StatusBar statusBar;
 
-    private readonly Dictionary<string, ColorScheme> themes = new();
+    private readonly Dictionary<string, ColorScheme> themes = [];
 
     public DebuggerWindow()
     {
@@ -210,7 +210,7 @@ internal sealed class DebuggerWindow : Window
         return tabView;
     }
 
-    private static ListView MakeListView() => new ListView()
+    private static ListView MakeListView() => new()
     {
         X = 0,
         Y = 0,
@@ -218,7 +218,7 @@ internal sealed class DebuggerWindow : Window
         Height = Dim.Fill(),
     };
 
-    private static TableView MakeTableView() => new TableView()
+    private static TableView MakeTableView() => new()
     {
         X = 0,
         Y = 0,
@@ -226,7 +226,7 @@ internal sealed class DebuggerWindow : Window
         Height = Dim.Fill(),
     };
 
-    private static TextView MakeTextView(bool readOnly) => new TextView()
+    private static TextView MakeTextView(bool readOnly) => new()
     {
         X = 0,
         Y = 0,

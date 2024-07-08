@@ -1095,7 +1095,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main, foo),
+            syntaxTrees: [main, foo],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1142,7 +1142,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main, foo),
+            syntaxTrees: [main, foo],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1189,7 +1189,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1235,7 +1235,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1278,7 +1278,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main, foo),
+            syntaxTrees: [main, foo],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1318,7 +1318,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -1356,7 +1356,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -1402,7 +1402,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main, foo),
+            syntaxTrees: [main, foo],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1454,7 +1454,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main, foo),
+            syntaxTrees: [main, foo],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1500,7 +1500,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1551,7 +1551,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1598,7 +1598,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main, foo),
+            syntaxTrees: [main, foo],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1635,7 +1635,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1691,7 +1691,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray(),
@@ -1797,7 +1797,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -1847,7 +1847,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -1897,7 +1897,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -1942,7 +1942,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -1987,7 +1987,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2033,7 +2033,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2078,7 +2078,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2124,7 +2124,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2166,7 +2166,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2209,7 +2209,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2258,7 +2258,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2308,7 +2308,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2358,7 +2358,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2405,7 +2405,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2449,7 +2449,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2495,7 +2495,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2542,7 +2542,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2590,7 +2590,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2633,7 +2633,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2685,7 +2685,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2732,7 +2732,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2777,7 +2777,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2835,7 +2835,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2887,7 +2887,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2935,7 +2935,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -2984,7 +2984,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3030,7 +3030,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3079,7 +3079,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3121,7 +3121,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3164,7 +3164,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3206,7 +3206,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3254,7 +3254,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3302,7 +3302,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3353,7 +3353,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3406,7 +3406,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3487,7 +3487,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3532,7 +3532,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3588,7 +3588,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(baseRef)
@@ -3635,7 +3635,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3686,7 +3686,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3735,7 +3735,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3781,7 +3781,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3839,7 +3839,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3891,7 +3891,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -3943,7 +3943,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -4001,7 +4001,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -4054,7 +4054,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -4106,7 +4106,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -4230,7 +4230,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)
@@ -4279,7 +4279,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(main),
+            syntaxTrees: [main],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(fooRef)

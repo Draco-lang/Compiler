@@ -95,7 +95,7 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
         }
         else
         {
-            this.completions ??= new();
+            this.completions ??= [];
             this.completions.Add(completion);
         }
     }

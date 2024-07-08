@@ -60,7 +60,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return CallExpression(
             receiver: null,
             method: node.Operator,
-            arguments: ImmutableArray.Create(arg));
+            arguments: [arg]);
     }
 
     public override BoundNode VisitBinaryExpression(BoundBinaryExpression node)
@@ -78,7 +78,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return CallExpression(
             receiver: null,
             method: node.Operator,
-            arguments: ImmutableArray.Create(left, right));
+            arguments: [left, right]);
     }
 
     public override BoundNode VisitCallExpression(BoundCallExpression node)
@@ -130,7 +130,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 compoundOperator: null,
                 left: ArrayAccessLvalue(
                     array: LocalExpression(varArgs),
-                    indices: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(i))),
+                    indices: [this.LiteralExpression(i)]),
                 right: n)) as BoundStatement);
 
         return BlockExpression(
@@ -146,7 +146,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                     left: LocalLvalue(varArgs),
                     right: ArrayCreationExpression(
                         elementType: elementType,
-                        sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(varArgCount)),
+                        sizes: [this.LiteralExpression(varArgCount)],
                         type: this.WellKnownTypes.InstantiateArray(elementType)))))
                 .Concat(varArgAssignments)
                 .ToImmutableArray(),
@@ -217,8 +217,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
         var finallyLabel = new SynthetizedLabelSymbol("finally");
 
         return BlockExpression(
-            locals: ImmutableArray.Create<LocalSymbol>(result),
-            statements: ImmutableArray.Create<BoundStatement>(
+            locals: [result],
+            statements:
+            [
                 LocalDeclaration(result, null),
                 ConditionalGotoStatement(condition, thenLabel),
                 ExpressionStatement(GotoExpression(elseLabel)),
@@ -231,7 +232,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 SequencePointStatement(
                     statement: null,
                     range: null,
-                    emitNop: true)),
+                    emitNop: true),
+            ],
             value: LocalExpression(result));
     }
 
@@ -254,8 +256,9 @@ internal partial class LocalRewriter : BoundTreeRewriter
         var body = (BoundExpression)node.Then.Accept(this);
 
         var result = BlockExpression(
-            locals: ImmutableArray<LocalSymbol>.Empty,
-            statements: ImmutableArray.Create<BoundStatement>(
+            locals: [],
+            statements:
+            [
                 LabelStatement(node.ContinueLabel),
                 ConditionalGotoStatement(
                     condition: UnaryExpression(
@@ -264,7 +267,8 @@ internal partial class LocalRewriter : BoundTreeRewriter
                     target: node.BreakLabel),
                 ExpressionStatement(body),
                 ExpressionStatement(GotoExpression(node.ContinueLabel)),
-                LabelStatement(node.BreakLabel)),
+                LabelStatement(node.BreakLabel),
+            ],
             value: BoundUnitExpression.Default);
         // Blocks can be desugared too, pass through
         return result.Accept(this);
@@ -303,33 +307,37 @@ internal partial class LocalRewriter : BoundTreeRewriter
         if (currentProp.Getter is null) throw new InvalidOperationException();
 
         var result = BlockExpression(
-            locals: ImmutableArray.Create<LocalSymbol>(enumerator),
-            statements: ImmutableArray.Create<BoundStatement>(
+            locals: [enumerator],
+            statements:
+            [
                 ExpressionStatement(AssignmentExpression(
-                    compoundOperator: null,
-                    left: LocalLvalue(enumerator),
-                    right: CallExpression(
-                        receiver: node.Sequence,
-                        method: node.GetEnumeratorMethod,
-                        arguments: ImmutableArray<BoundExpression>.Empty))),
+                            compoundOperator: null,
+                            left: LocalLvalue(enumerator),
+                            right: CallExpression(
+                                receiver: node.Sequence,
+                                method: node.GetEnumeratorMethod,
+                                arguments: []))),
                 ExpressionStatement(WhileExpression(
                     condition: CallExpression(
                         receiver: LocalExpression(enumerator),
                         method: node.MoveNextMethod,
-                        arguments: ImmutableArray<BoundExpression>.Empty),
+                        arguments: []),
                     then: BlockExpression(
-                        locals: ImmutableArray.Create(node.Iterator),
-                        statements: ImmutableArray.Create<BoundStatement>(
+                        locals: [node.Iterator                                              ],
+                        statements:
+                        [
                             ExpressionStatement(AssignmentExpression(
-                                compoundOperator: null,
-                                left: LocalLvalue(node.Iterator),
-                                right: PropertyGetExpression(
-                                    receiver: LocalExpression(enumerator),
-                                    getter: currentProp.Getter))),
-                            ExpressionStatement(node.Then)),
+                                                    compoundOperator: null,
+                                                    left: LocalLvalue(node.Iterator),
+                                                    right: PropertyGetExpression(
+                                                        receiver: LocalExpression(enumerator),
+                                                        getter: currentProp.Getter))),
+                            ExpressionStatement(node.Then),
+                        ],
                         value: BoundUnitExpression.Default),
                     continueLabel: node.ContinueLabel,
-                    breakLabel: node.BreakLabel))),
+                    breakLabel: node.BreakLabel)),
+            ],
             value: BoundUnitExpression.Default);
         // Desugaring the while-loop
         return result.Accept(this);
@@ -453,7 +461,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             return CallExpression(
                 receiver: arg,
                 method: this.WellKnownTypes.SystemObject_ToString,
-                arguments: ImmutableArray<BoundExpression>.Empty);
+                arguments: []);
         }
         // We need to desugar into string.Format("format string", array of args)
         // Build up interpolation string and lower interpolated expressions
@@ -487,7 +495,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
             local: arrayLocal,
             value: ArrayCreationExpression(
                 elementType: this.WellKnownTypes.SystemObject,
-                sizes: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(args.Count)),
+                sizes: [this.LiteralExpression(args.Count)],
                 type: this.WellKnownTypes.InstantiateArray(this.WellKnownTypes.SystemObject))));
 
         for (var i = 0; i < args.Count; i++)
@@ -497,7 +505,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
                 compoundOperator: null,
                 left: ArrayAccessLvalue(
                     array: LocalExpression(arrayLocal),
-                    indices: ImmutableArray.Create<BoundExpression>(this.LiteralExpression(i))),
+                    indices: [this.LiteralExpression(i)]),
                 right: args[i])));
         }
 
@@ -508,14 +516,12 @@ internal partial class LocalRewriter : BoundTreeRewriter
         //     string.Format("...", args);
         // }
         var result = BlockExpression(
-            locals: ImmutableArray.Create<LocalSymbol>(arrayLocal),
+            locals: [arrayLocal],
             statements: arrayAssignmentBuilder.ToImmutable(),
             value: CallExpression(
                 method: this.WellKnownTypes.SystemString_Format,
                 receiver: null,
-                arguments: ImmutableArray.Create<BoundExpression>(
-                    this.LiteralExpression(formatString.ToString()),
-                    LocalExpression(arrayLocal))));
+                arguments: [this.LiteralExpression(formatString.ToString()), LocalExpression(arrayLocal)]));
 
         return result.Accept(this);
     }
@@ -540,14 +546,16 @@ internal partial class LocalRewriter : BoundTreeRewriter
 
         var result = BlockExpression(
             locals: tmp.Symbol is null
-                ? ImmutableArray<LocalSymbol>.Empty
-                : ImmutableArray.Create(tmp.Symbol),
-            statements: ImmutableArray.Create(
+                ? []
+                : [tmp.Symbol],
+            statements:
+            [
                 tmp.Assignment,
                 ExpressionStatement(CallExpression(
                     receiver: receiver,
                     method: setter,
-                    arguments: ImmutableArray.Create(tmp.Reference)))),
+                    arguments: [tmp.Reference                                             ])),
+            ],
             value: tmp.Reference);
 
         return result.Accept(this);
@@ -567,7 +575,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         return CallExpression(
             receiver: receiver,
             method: getter,
-            arguments: ImmutableArray<BoundExpression>.Empty);
+            arguments: []);
     }
 
     public override BoundNode VisitIndexSetExpression(BoundIndexSetExpression node)

@@ -18,7 +18,7 @@ internal static class SyntaxList
     /// <typeparam name="TNode">The node type.</typeparam>
     /// <returns>The created builder.</returns>
     public static SyntaxList<TNode>.Builder CreateBuilder<TNode>()
-        where TNode : SyntaxNode => new();
+        where TNode : SyntaxNode => [];
 
     /// <summary>
     /// Creates a <see cref="SyntaxList{TNode}"/> from the given elements.
@@ -27,7 +27,7 @@ internal static class SyntaxList
     /// <param name="nodes">The elements to create the list from.</param>
     /// <returns>A new syntax list, containing <paramref name="nodes"/>.</returns>
     public static SyntaxList<TNode> Create<TNode>(params TNode[] nodes)
-        where TNode : SyntaxNode => new(nodes.ToImmutableArray());
+        where TNode : SyntaxNode => new([.. nodes]);
 }
 
 /// <summary>
@@ -37,7 +37,7 @@ internal static class SyntaxList
 internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
     where TNode : SyntaxNode
 {
-    public static SyntaxList<TNode> Empty { get; } = new(ImmutableArray<TNode>.Empty);
+    public static SyntaxList<TNode> Empty { get; } = new([]);
 
     private static Type RedElementType { get; } = Assembly
         .GetExecutingAssembly()

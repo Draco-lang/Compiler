@@ -129,7 +129,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
     {
         var genericParamsHandle = this.methodDefinition.GetGenericParameters();
-        if (genericParamsHandle.Count == 0) return ImmutableArray<TypeParameterSymbol>.Empty;
+        if (genericParamsHandle.Count == 0) return [];
 
         var result = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
         foreach (var genericParamHandle in genericParamsHandle)

@@ -40,9 +40,11 @@ internal abstract class JsonRpcClientProxy : DispatchProxy
         if (handler.IsRequest)
         {
             // Build up args
-            var args = new List<object?>();
-            // Method name
-            args.Add(handler.MethodName);
+            var args = new List<object?>
+            {
+                // Method name
+                handler.MethodName
+            };
             // Parameter
             if (handler.AcceptsParams)
             {
@@ -72,7 +74,7 @@ internal abstract class JsonRpcClientProxy : DispatchProxy
 
             return SendRequestMethod
                 .MakeGenericMethod(returnType)
-                .Invoke(this.Connection, args.ToArray());
+                .Invoke(this.Connection, [.. args]);
         }
         else
         {

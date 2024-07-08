@@ -14,7 +14,7 @@ internal sealed class GlobalDeclaration : Declaration
     /// </summary>
     public VariableDeclarationSyntax Syntax { get; }
 
-    public override ImmutableArray<Declaration> Children => ImmutableArray<Declaration>.Empty;
+    public override ImmutableArray<Declaration> Children => [];
 
     public override IEnumerable<SyntaxNode> DeclaringSyntaxes
     {

@@ -230,7 +230,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
                         Verified = false,
                         Id = this.translator.AllocateId(bp),
                     })
-                    .ToArray() ?? Array.Empty<Dap.Model.Breakpoint>(),
+                    .ToArray() ?? [],
             });
         }
 
@@ -292,7 +292,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         {
             Threads = this.debugger?.Threads
                 .Select(this.translator.ToDap)
-                .ToArray() ?? Array.Empty<Dap.Model.Thread>(),
+                .ToArray() ?? [],
         });
 
     public Task<StackTraceResponse> GetStackTraceAsync(StackTraceArguments args)
@@ -300,7 +300,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         this.translator.ClearCache();
         var thread = this.GetThreadById(args.ThreadId);
         var result = thread is null
-            ? Array.Empty<Dap.Model.StackFrame>()
+            ? []
             : thread.CallStack.Select(this.translator.ToDap).ToArray();
         return Task.FromResult(new StackTraceResponse()
         {

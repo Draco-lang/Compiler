@@ -203,7 +203,7 @@ public sealed class Issue139Tests
     {
         var syntaxTree = SyntaxTree.Parse(source);
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            syntaxTrees: [syntaxTree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());

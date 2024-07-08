@@ -101,7 +101,7 @@ internal sealed class Lexer
     // meaning that the behavior should be identical if we reallocated/cleared these before each token
     private readonly SyntaxToken.Builder tokenBuilder = new();
     private readonly StringBuilder valueBuilder = new();
-    private readonly List<SyntaxDiagnosticInfo> diagnosticBuilder = new();
+    private readonly List<SyntaxDiagnosticInfo> diagnosticBuilder = [];
 
     private readonly SyntaxDiagnosticTable diagnostics;
 

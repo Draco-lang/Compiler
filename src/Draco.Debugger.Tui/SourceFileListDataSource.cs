@@ -15,7 +15,7 @@ internal sealed class SourceFileListDataSource : IListDataSource
 
     public SourceFileListDataSource(IReadOnlyList<SourceFile> sourceFiles)
     {
-        this.sourceFiles = sourceFiles.ToList();
+        this.sourceFiles = [.. sourceFiles];
     }
 
     public bool IsMarked(int item) => throw new NotSupportedException();

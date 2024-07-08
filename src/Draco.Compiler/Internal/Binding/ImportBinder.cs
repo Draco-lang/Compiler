@@ -72,7 +72,7 @@ internal sealed class ImportBinder : Binder
         if (importedSymbol.IsError)
         {
             // No-op, don't cascade
-            return new(syntax, parts.ToImmutable(), Enumerable.Empty<Symbol>());
+            return new(syntax, parts.ToImmutable(), []);
         }
         else if (importedSymbol is not ModuleSymbol)
         {
@@ -81,7 +81,7 @@ internal sealed class ImportBinder : Binder
                 template: SymbolResolutionErrors.IllegalImport,
                 location: syntax.Path.Location,
                 formatArgs: syntax.Path));
-            return new(syntax, parts.ToImmutable(), Enumerable.Empty<Symbol>());
+            return new(syntax, parts.ToImmutable(), []);
         }
         else
         {

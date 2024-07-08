@@ -39,9 +39,9 @@ internal sealed partial class ConstraintSolver
     // The raw constraints
     private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
     // The allocated type variables
-    private readonly List<TypeVariable> typeVariables = new();
+    private readonly List<TypeVariable> typeVariables = [];
     // The registered local variables
-    private readonly List<LocalSymbol> localVariables = new();
+    private readonly List<LocalSymbol> localVariables = [];
 
     public ConstraintSolver(SyntaxNode context, string contextName)
     {

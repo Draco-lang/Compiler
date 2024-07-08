@@ -77,7 +77,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     });
 
     // Handlers
-    private readonly Dictionary<string, IJsonRpcMethodHandler> methodHandlers = new();
+    private readonly Dictionary<string, IJsonRpcMethodHandler> methodHandlers = [];
 
     // Pending requests
     private readonly ConcurrentDictionary<object, CancellationTokenSource> pendingIncomingRequests = new();
@@ -245,7 +245,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         var error = null as Exception;
         try
         {
-            result = await handler.InvokeRequest(args.ToArray());
+            result = await handler.InvokeRequest([.. args]);
         }
         catch (Exception ex)
         {
@@ -327,7 +327,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         // Actually invoke handler
         try
         {
-            await handler.InvokeNotification(args.ToArray());
+            await handler.InvokeNotification([.. args]);
         }
         catch
         {

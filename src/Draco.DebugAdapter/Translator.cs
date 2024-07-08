@@ -14,10 +14,10 @@ internal sealed class Translator
 {
     private readonly DapModels.InitializeRequestArguments clientInfo;
 
-    private readonly Dictionary<DebuggerApi.StackFrame, DapModels.StackFrame> stackFrameToDap = new();
-    private readonly Dictionary<int, DebuggerApi.StackFrame> stackFrameIdToDebugger = new();
-    private readonly Dictionary<int, object?> valueCache = new();
-    private readonly Dictionary<DapModels.SourceBreakpoint, int> breakpointIds = new();
+    private readonly Dictionary<DebuggerApi.StackFrame, DapModels.StackFrame> stackFrameToDap = [];
+    private readonly Dictionary<int, DebuggerApi.StackFrame> stackFrameIdToDebugger = [];
+    private readonly Dictionary<int, object?> valueCache = [];
+    private readonly Dictionary<DapModels.SourceBreakpoint, int> breakpointIds = [];
 
     public Translator(DapModels.InitializeRequestArguments clientInfo)
     {

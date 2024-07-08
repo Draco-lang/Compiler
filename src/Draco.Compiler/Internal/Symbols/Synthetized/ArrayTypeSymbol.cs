@@ -29,7 +29,7 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
         int n => $"Array{n}D",
     };
 
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => [this.ElementType];
 
     public override IEnumerable<Symbol> DefinedMembers => new[]
     {

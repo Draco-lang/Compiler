@@ -45,7 +45,7 @@ internal abstract partial class Binder
     /// <summary>
     /// The symbols declared in this binder scope.
     /// </summary>
-    public virtual IEnumerable<Symbol> DeclaredSymbols => Enumerable.Empty<Symbol>();
+    public virtual IEnumerable<Symbol> DeclaredSymbols => [];
 
     protected Binder(Compilation compilation, Binder? parent)
     {

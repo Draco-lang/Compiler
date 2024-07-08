@@ -47,7 +47,7 @@ internal sealed class ArrayIndexGetSymbol : FunctionSymbol, IPropertyAccessorSym
     }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.ContainingSymbol.Rank == 1
-        ? ImmutableArray.Create(new SynthetizedParameterSymbol(this, "index", this.ContainingSymbol.IndexType) as ParameterSymbol)
+        ? [new SynthetizedParameterSymbol(this, "index", this.ContainingSymbol.IndexType) as ParameterSymbol]
         : Enumerable
             .Range(1, this.ContainingSymbol.Rank)
             .Select(i => new SynthetizedParameterSymbol(this, $"index{i}", this.ContainingSymbol.IndexType) as ParameterSymbol)

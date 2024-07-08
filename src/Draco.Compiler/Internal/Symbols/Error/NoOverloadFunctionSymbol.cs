@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
 {
     // TODO: Is this enough? Do we want to take this as a parameter too?
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray<TypeParameterSymbol>.Empty;
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => [];
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
     public override TypeSymbol ReturnType => WellKnownTypes.ErrorType;
 

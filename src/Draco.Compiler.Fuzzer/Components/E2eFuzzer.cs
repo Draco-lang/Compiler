@@ -21,7 +21,7 @@ internal sealed class E2eFuzzer : ComponentFuzzerBase<string>
         var sourceText = SourceText.FromText(input);
         var parseTree = SyntaxTree.Parse(sourceText);
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(parseTree));
+            syntaxTrees: [parseTree]);
         _ = ScriptingEngine.Execute(compilation);
     }
 

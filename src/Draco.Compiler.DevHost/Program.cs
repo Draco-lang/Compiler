@@ -5,7 +5,6 @@ using System.CommandLine;
 using System.IO;
 using System.Linq;
 using Draco.Compiler.Api;
-using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 using static Basic.Reference.Assemblies.Net80;

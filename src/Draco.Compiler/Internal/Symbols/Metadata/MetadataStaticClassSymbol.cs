@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 

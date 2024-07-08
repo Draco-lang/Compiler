@@ -1,18 +1,18 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
-using System;
-using System.Threading;
 
 namespace Draco.Compiler.Internal.Symbols;
 

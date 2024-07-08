@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Syntax;

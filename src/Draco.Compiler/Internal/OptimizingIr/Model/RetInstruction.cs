@@ -16,7 +16,7 @@ internal sealed class RetInstruction : InstructionBase
     /// </summary>
     public IOperand Value { get; set; }
 
-    public override IEnumerable<IOperand> Operands => new[] { this.Value };
+    public override IEnumerable<IOperand> Operands => [this.Value];
 
     public RetInstruction(IOperand value)
     {

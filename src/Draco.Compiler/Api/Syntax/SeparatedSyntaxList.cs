@@ -25,7 +25,7 @@ public sealed class SeparatedSyntaxList<TNode> : SyntaxNode, IEnumerable<SyntaxN
     ])!;
 
     internal static IReadOnlyList<Internal.Syntax.SyntaxNode> MakeGreen(IEnumerable<Internal.Syntax.SyntaxNode> nodes) =>
-        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke(new[] { nodes })!;
+        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke([nodes])!;
 
     /// <summary>
     /// The separated values in this list.

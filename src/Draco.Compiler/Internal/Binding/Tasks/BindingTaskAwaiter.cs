@@ -64,7 +64,7 @@ internal sealed class BindingTaskAwaiter<T> : INotifyCompletion
                 this.diagnostics?.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.TypeMismatch,
                     location: this.syntax?.Location,
-                    formatArgs: new[] { this.resultType, type }));
+                    formatArgs: [this.resultType, type]));
             }
         }
         this.RunCompletions();

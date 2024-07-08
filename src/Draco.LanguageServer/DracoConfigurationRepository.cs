@@ -20,13 +20,13 @@ internal sealed class DracoConfigurationRepository
     {
         var cfg = await this.client.GetConfigurationAsync(new()
         {
-            Items = new[]
-            {
+            Items =
+            [
                 new ConfigurationItem()
                 {
                     Section = "draco.inlayHints",
                 }
-            },
+            ],
         });
 
         this.InlayHints.ParameterNames = cfg[0].GetProperty("parameterNames"u8).GetBoolean();

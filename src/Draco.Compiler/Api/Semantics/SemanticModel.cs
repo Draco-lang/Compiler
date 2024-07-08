@@ -327,16 +327,16 @@ public sealed partial class SemanticModel : IBinderProvider
         return [.. result];
     }
 
-    private Binder GetBinder(SyntaxNode syntax)
+    private IncrementalBinder GetBinder(SyntaxNode syntax)
     {
         var binder = this.compilation.GetBinder(syntax);
-        return new IncrementalBinder(binder, this);
+        return new(binder, this);
     }
 
-    private Binder GetBinder(Symbol symbol)
+    private IncrementalBinder GetBinder(Symbol symbol)
     {
         var binder = this.compilation.GetBinder(symbol);
-        return new IncrementalBinder(binder, this);
+        return new(binder, this);
     }
 
     Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);

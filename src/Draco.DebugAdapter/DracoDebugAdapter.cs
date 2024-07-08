@@ -339,7 +339,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         };
         return Task.FromResult(new ScopesResponse()
         {
-            Scopes = new[] { argumentsScope, localsScope },
+            Scopes = [argumentsScope, localsScope],
         });
     }
 

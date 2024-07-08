@@ -23,7 +23,7 @@ internal class LoopBinder : Binder
 
     public override SyntaxNode DeclaringSyntax { get; }
 
-    public override IEnumerable<Symbol> DeclaredSymbols => new[] { this.BreakLabel, this.ContinueLabel };
+    public override IEnumerable<Symbol> DeclaredSymbols => [this.BreakLabel, this.ContinueLabel];
 
     public LoopBinder(Binder parent, SyntaxNode declaringSyntax)
         : base(parent)

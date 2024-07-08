@@ -31,11 +31,11 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => [this.ElementType];
 
-    public override IEnumerable<Symbol> DefinedMembers => new[]
-    {
+    public override IEnumerable<Symbol> DefinedMembers =>
+    [
         new ArrayLengthPropertySymbol(this) as Symbol,
         new ArrayIndexPropertySymbol(this),
-    };
+    ];
 
     public ArrayTypeSymbol(int rank, TypeSymbol indexType)
     {

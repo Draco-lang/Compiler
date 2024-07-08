@@ -72,7 +72,7 @@ public static class ScriptingEngine
                 Diagnostics: [diag]);
         }
 
-        var result = (TResult?)mainMethod.Invoke(null, Array.Empty<string>());
+        var result = (TResult?)mainMethod.Invoke(null, []);
         return new(
             Success: true,
             Result: result,

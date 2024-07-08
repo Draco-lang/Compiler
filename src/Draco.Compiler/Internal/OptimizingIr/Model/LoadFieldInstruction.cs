@@ -22,8 +22,8 @@ internal sealed class LoadFieldInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public FieldSymbol Member { get; set; }
 
-    public override IEnumerable<Symbol> StaticOperands => new[] { this.Member };
-    public override IEnumerable<IOperand> Operands => new[] { this.Receiver };
+    public override IEnumerable<Symbol> StaticOperands => [this.Member];
+    public override IEnumerable<IOperand> Operands => [this.Receiver];
 
     public LoadFieldInstruction(Register target, IOperand receiver, FieldSymbol member)
     {

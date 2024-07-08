@@ -3582,7 +3582,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         var fooRef = CompileCSharpToMetadataRef("""
             public class FooType : ParentType.BaseType { }
-            """, aditionalReferences: new[] { baseStream });
+            """, aditionalReferences: [baseStream]);
 
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
@@ -3995,7 +3995,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             {
                 public override Derived Clone(int parameter) => this;
             }
-            """, aditionalReferences: new Stream[] { baseStream });
+            """, aditionalReferences: [baseStream]);
 
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 

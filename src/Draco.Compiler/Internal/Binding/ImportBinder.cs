@@ -130,7 +130,7 @@ internal sealed class ImportBinder : Binder
                     diagnostics.Add(Diagnostic.Create(
                         template: SymbolResolutionErrors.MemberNotFound,
                         location: mem.Member.Location,
-                        formatArgs: new[] { mem.Member.Text, parent.Name }));
+                        formatArgs: [mem.Member.Text, parent.Name]));
                     parts!.Add(new(mem, UndefinedMemberSymbol.Instance));
                     return UndefinedMemberSymbol.Instance;
                 }

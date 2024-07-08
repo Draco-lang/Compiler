@@ -16,7 +16,7 @@ internal sealed class ArrayLengthInstruction : InstructionBase, IValueInstructio
     /// </summary>
     public IOperand Array { get; set; }
 
-    public override IEnumerable<IOperand> Operands => new[] { this.Array };
+    public override IEnumerable<IOperand> Operands => [this.Array];
 
     public ArrayLengthInstruction(Register target, IOperand array)
     {

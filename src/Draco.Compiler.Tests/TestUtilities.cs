@@ -30,7 +30,7 @@ internal static class TestUtilities
 
         var compilation = CSharpCompilation.Create(
             assemblyName: assemblyName,
-            syntaxTrees: new[] { tree },
+            syntaxTrees: [tree],
             references: defaultReferences,
             options: new CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary));
 

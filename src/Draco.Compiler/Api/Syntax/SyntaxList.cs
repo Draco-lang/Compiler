@@ -25,7 +25,7 @@ public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
     ])!;
 
     internal static IReadOnlyList<Internal.Syntax.SyntaxNode> MakeGreen(IEnumerable<Internal.Syntax.SyntaxNode> nodes) =>
-        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke(new[] { nodes })!;
+        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke([nodes])!;
 
     public int Count => this.GreenList.Count;
     public override IEnumerable<SyntaxNode> Children => this;

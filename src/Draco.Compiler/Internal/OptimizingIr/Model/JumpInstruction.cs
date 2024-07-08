@@ -9,7 +9,7 @@ internal sealed class JumpInstruction : InstructionBase
 {
     public override string InstructionKeyword => "jump";
     public override bool IsBranch => true;
-    public override IEnumerable<BasicBlock> JumpTargets => new[] { this.Target };
+    public override IEnumerable<BasicBlock> JumpTargets => [this.Target];
 
     /// <summary>
     /// The jump target.

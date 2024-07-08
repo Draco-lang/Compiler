@@ -27,7 +27,7 @@ internal sealed class ArithmeticInstruction : InstructionBase, IValueInstruction
     /// </summary>
     public IOperand Right { get; set; }
 
-    public override IEnumerable<IOperand> Operands => new[] { this.Left, this.Right };
+    public override IEnumerable<IOperand> Operands => [this.Left, this.Right];
 
     public ArithmeticInstruction(Register target, ArithmeticOp op, IOperand left, IOperand right)
     {

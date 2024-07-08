@@ -18,9 +18,9 @@ public sealed class BoundTreeSourceGenerator : XmlSourceGenerator
 
         var boundTreeCode = CodeGenerator.GenerateBoundTree(domainModel, cancellationToken);
 
-        return new KeyValuePair<string, string>[]
-        {
+        return
+        [
             new("BoundTree.Generated.cs", boundTreeCode),
-        };
+        ];
     }
 }

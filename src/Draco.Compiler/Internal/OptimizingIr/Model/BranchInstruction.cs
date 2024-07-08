@@ -9,8 +9,8 @@ internal sealed class BranchInstruction : InstructionBase
 {
     public override string InstructionKeyword => "jump_if";
     public override bool IsBranch => true;
-    public override IEnumerable<IOperand> Operands => new[] { this.Condition };
-    public override IEnumerable<BasicBlock> JumpTargets => new[] { this.Then, this.Else };
+    public override IEnumerable<IOperand> Operands => [this.Condition];
+    public override IEnumerable<BasicBlock> JumpTargets => [this.Then, this.Else];
 
     /// <summary>
     /// The condition to base the jump on.

@@ -118,7 +118,7 @@ internal abstract partial class Symbol
     /// <summary>
     /// All the members within this symbol.
     /// </summary>
-    public virtual IEnumerable<Symbol> Members => Enumerable.Empty<Symbol>();
+    public virtual IEnumerable<Symbol> Members => [];
 
     /// <summary>
     /// The static members within this symbol.
@@ -166,12 +166,12 @@ internal abstract partial class Symbol
     /// <summary>
     /// The generic parameters of this symbol.
     /// </summary>
-    public virtual ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray<TypeParameterSymbol>.Empty;
+    public virtual ImmutableArray<TypeParameterSymbol> GenericParameters => [];
 
     /// <summary>
     /// The generic arguments that this symbol was instantiated with.
     /// </summary>
-    public virtual ImmutableArray<TypeSymbol> GenericArguments => ImmutableArray<TypeSymbol>.Empty;
+    public virtual ImmutableArray<TypeSymbol> GenericArguments => [];
 
     /// <summary>
     /// Checks if this symbol can be shadowed by <paramref name="other"/> symbol.

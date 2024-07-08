@@ -8,9 +8,8 @@ internal sealed partial class SeparatedSyntaxList<TNode>
     /// <summary>
     /// The builder type for a <see cref="SeparatedSyntaxList{TNode}"/>.
     /// </summary>
-    public sealed class Builder
+    public sealed class Builder(ImmutableArray<SyntaxNode>.Builder underlying)
     {
-        private readonly ImmutableArray<SyntaxNode>.Builder builder;
         private bool separatorsTurn;
 
         public Builder()
@@ -18,16 +17,11 @@ internal sealed partial class SeparatedSyntaxList<TNode>
         {
         }
 
-        public Builder(ImmutableArray<SyntaxNode>.Builder underlying)
-        {
-            this.builder = underlying;
-        }
-
         /// <summary>
         /// Constructs a <see cref="SeparatedSyntaxList{TNode}"/> from the builder.
         /// </summary>
         /// <returns>The constructed <see cref="SeparatedSyntaxList{TNode}"/>.</returns>
-        public SeparatedSyntaxList<TNode> ToSeparatedSyntaxList() => new(this.builder.ToImmutable());
+        public SeparatedSyntaxList<TNode> ToSeparatedSyntaxList() => new(underlying.ToImmutable());
 
         /// <summary>
         /// Adds a value node to the builder.
@@ -36,7 +30,7 @@ internal sealed partial class SeparatedSyntaxList<TNode>
         public void Add(TNode value)
         {
             if (this.separatorsTurn) throw new InvalidOperationException("a separator was expected next");
-            this.builder.Add(value);
+            underlying.Add(value);
             this.separatorsTurn = true;
         }
 
@@ -47,7 +41,7 @@ internal sealed partial class SeparatedSyntaxList<TNode>
         public void Add(SyntaxToken separator)
         {
             if (!this.separatorsTurn) throw new InvalidOperationException("a value was expected next");
-            this.builder.Add(separator);
+            underlying.Add(separator);
             this.separatorsTurn = false;
         }
     }

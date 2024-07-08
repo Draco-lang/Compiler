@@ -97,7 +97,7 @@ internal partial class Binder
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.GenericTypeParamCountMismatch,
                 location: syntax.Location,
-                formatArgs: new object[] { instantiated, args.Length }));
+                formatArgs: [instantiated, args.Length]));
             return WellKnownTypes.ErrorType;
         }
         // Ok, instantiate

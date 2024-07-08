@@ -1,18 +1,21 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using Draco.Compiler.Api;
-using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
+using static Basic.Reference.Assemblies.Net80;
 
-namespace Draco.Compiler.Cli;
+namespace Draco.Compiler.DevHost;
 
 internal class Program
 {
+    private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
+        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
+
     internal static int Main(string[] args) =>
         ConfigureCommands().Invoke(args);
 
@@ -21,11 +24,9 @@ internal class Program
         var fileArgument = new Argument<FileInfo>("source file", description: "The Draco source file");
         var outputOption = new Option<FileInfo>(["-o", "--output"], () => new FileInfo("output"), "Specifies the output file");
         var optionalOutputOption = new Option<FileInfo?>(["-o", "--output"], () => null, "Specifies the (optional) output file");
-        var referencesOption = new Option<FileInfo[]>(["-r", "--reference"], Array.Empty<FileInfo>, "Specifies assembly references to use when compiling");
+        var referencesOption = new Option<FileInfo[]>(["-r", "--reference"], Array.Empty<FileInfo>, "Specifies additional assembly references to use when compiling");
         var filesArgument = new Argument<FileInfo[]>("source files", Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
         var rootModuleOption = new Option<DirectoryInfo?>(["-m", "--root-module"], () => null, "Specifies the root module folder of the compiled files");
-        var pdbOption = new Option<bool>("--pdb", () => false, "Specifies that a PDB should be generated for debugging");
-        var msbuildDiagOption = new Option<bool>("--msbuild-diags", () => false, description: "Specifies if diagnostics should be returned in MSBuild diagnostic format");
 
         // Compile
 
@@ -35,10 +36,8 @@ internal class Program
             outputOption,
             rootModuleOption,
             referencesOption,
-            pdbOption,
-            msbuildDiagOption,
         };
-        compileCommand.SetHandler(CompileCommand, filesArgument, outputOption, rootModuleOption, referencesOption, pdbOption, msbuildDiagOption);
+        compileCommand.SetHandler(CompileCommand, filesArgument, outputOption, rootModuleOption, referencesOption);
 
         // Run
 
@@ -47,9 +46,8 @@ internal class Program
             filesArgument,
             rootModuleOption,
             referencesOption,
-            msbuildDiagOption,
         };
-        runCommand.SetHandler(RunCommand, filesArgument, rootModuleOption, referencesOption, msbuildDiagOption);
+        runCommand.SetHandler(RunCommand, filesArgument, rootModuleOption, referencesOption);
 
         // IR code
 
@@ -58,9 +56,8 @@ internal class Program
             filesArgument,
             rootModuleOption,
             optionalOutputOption,
-            msbuildDiagOption,
         };
-        irCommand.SetHandler(IrCommand, filesArgument, rootModuleOption, optionalOutputOption, msbuildDiagOption);
+        irCommand.SetHandler(IrCommand, filesArgument, rootModuleOption, optionalOutputOption);
 
         // Symbol tree
 
@@ -69,9 +66,8 @@ internal class Program
             filesArgument,
             rootModuleOption,
             optionalOutputOption,
-            msbuildDiagOption,
         };
-        symbolsCommand.SetHandler(SymbolsCommand, filesArgument, rootModuleOption, optionalOutputOption, msbuildDiagOption);
+        symbolsCommand.SetHandler(SymbolsCommand, filesArgument, rootModuleOption, optionalOutputOption);
 
         // Declaration tree
 
@@ -80,9 +76,8 @@ internal class Program
             filesArgument,
             rootModuleOption,
             optionalOutputOption,
-            msbuildDiagOption,
         };
-        declarationsCommand.SetHandler(DeclarationsCommand, filesArgument, rootModuleOption, optionalOutputOption, msbuildDiagOption);
+        declarationsCommand.SetHandler(DeclarationsCommand, filesArgument, rootModuleOption, optionalOutputOption);
 
         // Formatting
 
@@ -104,7 +99,7 @@ internal class Program
         };
     }
 
-    private static void CompileCommand(FileInfo[] input, FileInfo output, DirectoryInfo? rootModule, FileInfo[] references, bool emitPdb, bool msbuildDiags)
+    private static void CompileCommand(FileInfo[] input, FileInfo output, DirectoryInfo? rootModule, FileInfo[] references)
     {
         var syntaxTrees = GetSyntaxTrees(input);
         var (path, name) = ExtractOutputPathAndName(output);
@@ -112,48 +107,50 @@ internal class Program
             syntaxTrees: syntaxTrees,
             metadataReferences: references
                 .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Concat(BclReferences)
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName,
             outputPath: path,
             assemblyName: name);
         using var peStream = new FileStream(Path.ChangeExtension(output.FullName, ".dll"), FileMode.OpenOrCreate);
-        using var pdbStream = emitPdb
-            ? new FileStream(Path.ChangeExtension(output.FullName, ".pdb"), FileMode.OpenOrCreate)
-            : null;
+        using var pdbStream = new FileStream(Path.ChangeExtension(output.FullName, ".pdb"), FileMode.OpenOrCreate);
         var emitResult = compilation.Emit(
             peStream: peStream,
             pdbStream: pdbStream);
-        EmitDiagnostics(emitResult, msbuildDiags);
+        EmitDiagnostics(emitResult);
     }
 
-    private static void RunCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo[] references, bool msbuildDiags)
+    private static void RunCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo[] references)
     {
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
             metadataReferences: references
                 .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Concat(BclReferences)
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName);
         var execResult = ScriptingEngine.Execute(compilation);
-        if (!EmitDiagnostics(execResult, msbuildDiags))
+        if (!EmitDiagnostics(execResult))
         {
             Console.WriteLine($"Result: {execResult.Result}");
         }
     }
 
-    private static void IrCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output, bool msbuildDiags)
+    private static void IrCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output)
     {
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
+            // TODO: Add references from CLI?
+            metadataReferences: BclReferences.ToImmutableArray(),
             rootModulePath: rootModule?.FullName);
         using var irStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(irStream: irStream);
-        EmitDiagnostics(emitResult, msbuildDiags);
+        EmitDiagnostics(emitResult);
     }
 
-    private static void SymbolsCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output, bool msbuildDiags)
+    private static void SymbolsCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output)
     {
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
@@ -161,10 +158,10 @@ internal class Program
             rootModulePath: rootModule?.FullName);
         using var symbolsStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(symbolTreeStream: symbolsStream);
-        EmitDiagnostics(emitResult, msbuildDiags);
+        EmitDiagnostics(emitResult);
     }
 
-    private static void DeclarationsCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output, bool msbuildDiags)
+    private static void DeclarationsCommand(FileInfo[] input, DirectoryInfo? rootModule, FileInfo? output)
     {
         var syntaxTrees = GetSyntaxTrees(input);
         var compilation = Compilation.Create(
@@ -172,7 +169,7 @@ internal class Program
             rootModulePath: rootModule?.FullName);
         using var declarationStream = OpenOutputOrStdout(output);
         var emitResult = compilation.Emit(declarationTreeStream: declarationStream);
-        EmitDiagnostics(emitResult, msbuildDiags);
+        EmitDiagnostics(emitResult);
     }
 
     private static void FormatCommand(FileInfo input, FileInfo? output)
@@ -193,35 +190,24 @@ internal class Program
         return result.ToImmutable();
     }
 
-    private static bool EmitDiagnostics(EmitResult result, bool msbuildDiags)
+    private static bool EmitDiagnostics(EmitResult result)
     {
         if (result.Success) return false;
         foreach (var diag in result.Diagnostics)
         {
-            Console.Error.WriteLine(msbuildDiags ? MakeMsbuildDiag(diag) : diag.ToString());
+            Console.Error.WriteLine(diag.ToString());
         }
         return true;
     }
 
-    private static bool EmitDiagnostics<T>(ExecutionResult<T> result, bool msbuildDiags)
+    private static bool EmitDiagnostics<T>(ExecutionResult<T> result)
     {
         if (result.Success) return false;
         foreach (var diag in result.Diagnostics)
         {
-            Console.Error.WriteLine(msbuildDiags ? MakeMsbuildDiag(diag) : diag.ToString());
+            Console.Error.WriteLine(diag.ToString());
         }
         return true;
-    }
-
-    private static string MakeMsbuildDiag(Diagnostic original)
-    {
-        var file = string.Empty;
-        if (!original.Location.IsNone && original.Location.SourceText.Path is not null)
-        {
-            var range = original.Location.Range!.Value;
-            file = $"{original.Location.SourceText.Path.OriginalString}({range.Start.Line + 1},{range.Start.Column + 1},{range.End.Line + 1},{range.End.Column + 1})";
-        }
-        return $"{file} : {original.Severity.ToString().ToLower()} {original.Template.Code} : {original.Message}";
     }
 
     private static (string Path, string Name) ExtractOutputPathAndName(FileInfo outputInfo)

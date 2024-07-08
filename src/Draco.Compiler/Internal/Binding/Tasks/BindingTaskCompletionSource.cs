@@ -8,8 +8,10 @@ internal sealed class BindingTaskCompletionSource<T>
     {
         get
         {
-            var task = new BindingTask<T>();
-            task.Awaiter = this.Awaiter;
+            var task = new BindingTask<T>
+            {
+                Awaiter = this.Awaiter
+            };
             return task;
         }
     }

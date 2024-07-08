@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal readonly struct SyntaxDiagnosticTable
 {
-    private readonly ConditionalWeakTable<SyntaxNode, List<SyntaxDiagnosticInfo>> diagnostics = new();
+    private readonly ConditionalWeakTable<SyntaxNode, List<SyntaxDiagnosticInfo>> diagnostics = [];
 
     public SyntaxDiagnosticTable()
     {
@@ -55,7 +55,7 @@ internal readonly struct SyntaxDiagnosticTable
     {
         if (!this.diagnostics.TryGetValue(node, out var diagnosticList))
         {
-            diagnosticList = new();
+            diagnosticList = [];
             this.diagnostics.Add(node, diagnosticList);
         }
         return diagnosticList;

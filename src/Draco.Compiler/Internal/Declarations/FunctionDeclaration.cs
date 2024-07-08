@@ -7,14 +7,15 @@ namespace Draco.Compiler.Internal.Declarations;
 /// <summary>
 /// A free-function declaration.
 /// </summary>
-internal sealed class FunctionDeclaration : Declaration
+internal sealed class FunctionDeclaration(FunctionDeclarationSyntax syntax)
+    : Declaration(syntax.Name.Text)
 {
     /// <summary>
     /// The syntax of the declaration.
     /// </summary>
-    public FunctionDeclarationSyntax Syntax { get; }
+    public FunctionDeclarationSyntax Syntax { get; } = syntax;
 
-    public override ImmutableArray<Declaration> Children => ImmutableArray<Declaration>.Empty;
+    public override ImmutableArray<Declaration> Children => [];
 
     public override IEnumerable<SyntaxNode> DeclaringSyntaxes
     {
@@ -22,11 +23,5 @@ internal sealed class FunctionDeclaration : Declaration
         {
             yield return this.Syntax;
         }
-    }
-
-    public FunctionDeclaration(FunctionDeclarationSyntax syntax)
-        : base(syntax.Name.Text)
-    {
-        this.Syntax = syntax;
     }
 }

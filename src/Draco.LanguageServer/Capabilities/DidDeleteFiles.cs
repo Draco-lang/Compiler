@@ -8,8 +8,8 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
 {
     public FileOperationRegistrationOptions DidDeleteFileRegistrationOptions => new()
     {
-        Filters = new FileOperationFilter[]
-        {
+        Filters =
+        [
             new()
             {
                 Pattern = new()
@@ -17,7 +17,7 @@ internal partial class DracoLanguageServer : IDidDeleteFiles
                     Glob = this.DocumentSelector[0].Pattern!
                 }
             }
-        }
+        ]
     };
 
     public async Task DidDeleteFilesAsync(DeleteFilesParams param)

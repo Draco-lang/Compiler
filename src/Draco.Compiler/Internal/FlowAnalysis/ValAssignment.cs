@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// <summary>
 /// Checks, if all read-only variables are assigned exactly once.
 /// </summary>
-internal sealed class ValAssignment : BoundTreeVisitor
+internal sealed class ValAssignment(DiagnosticBag diagnostics) : BoundTreeVisitor
 {
     public static void Analyze(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
@@ -33,19 +33,12 @@ internal sealed class ValAssignment : BoundTreeVisitor
         function.Body.Accept(pass);
     }
 
-    private readonly DiagnosticBag diagnostics;
-
-    public ValAssignment(DiagnosticBag diagnostics)
-    {
-        this.diagnostics = diagnostics;
-    }
-
     public override void VisitLocalDeclaration(BoundLocalDeclaration node)
     {
         if (node.Value is not null || node.Local.IsMutable) return;
 
         // Immutable not assigned
-        this.diagnostics.Add(Diagnostic.Create(
+        diagnostics.Add(Diagnostic.Create(
             template: FlowAnalysisErrors.ImmutableVariableMustBeInitialized,
             location: node.Syntax?.Location,
             formatArgs: node.Local.Name));
@@ -66,7 +59,7 @@ internal sealed class ValAssignment : BoundTreeVisitor
         if (lvalue is null || lvalue.IsMutable) return;
 
         // Immutable modified
-        this.diagnostics.Add(Diagnostic.Create(
+        diagnostics.Add(Diagnostic.Create(
             template: FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo,
             location: node.Syntax?.Location,
             formatArgs: lvalue.Name));

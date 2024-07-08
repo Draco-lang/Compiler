@@ -34,9 +34,9 @@ public sealed class XmlDapModelSourceGenerator : XmlSourceGenerator
         // Finally generate by template
         var dapModelCode = CodeGenerator.GenerateDapModel(csModel, cancellationToken);
 
-        return new KeyValuePair<string, string>[]
-        {
+        return
+        [
             new("DapModel.Generated.cs", dapModelCode),
-        };
+        ];
     }
 }

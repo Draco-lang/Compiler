@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Binds on a function level, including its parameters.
 /// </summary>
-internal sealed class FunctionBinder : Binder
+internal sealed class FunctionBinder(Binder parent, FunctionSymbol symbol) : Binder(parent)
 {
     public override Symbol? ContainingSymbol => this.symbol;
 
@@ -19,13 +19,7 @@ internal sealed class FunctionBinder : Binder
         .Cast<Symbol>()
         .Concat(this.symbol.GenericParameters);
 
-    private readonly FunctionSymbol symbol;
-
-    public FunctionBinder(Binder parent, FunctionSymbol symbol)
-        : base(parent)
-    {
-        this.symbol = symbol;
-    }
+    private readonly FunctionSymbol symbol = symbol;
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {

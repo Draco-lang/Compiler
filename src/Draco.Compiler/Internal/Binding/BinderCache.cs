@@ -11,15 +11,10 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Responsible for caching the binders for syntax nodes and declarations.
 /// </summary>
-internal sealed class BinderCache
+internal sealed class BinderCache(Compilation compilation)
 {
-    private readonly Compilation compilation;
+    private readonly Compilation compilation = compilation;
     private readonly ConcurrentDictionary<SyntaxNode, Binder> binders = new();
-
-    public BinderCache(Compilation compilation)
-    {
-        this.compilation = compilation;
-    }
 
     /// <summary>
     /// Retrieves a <see cref="Binder"/> for the given syntax node.
@@ -55,7 +50,7 @@ internal sealed class BinderCache
         return binder;
     }
 
-    private Binder BuildModuleBinder(ModuleDeclarationSyntax syntax)
+    private ModuleBinder BuildModuleBinder(ModuleDeclarationSyntax syntax)
     {
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -70,7 +65,7 @@ internal sealed class BinderCache
         return new ModuleBinder(binder, moduleSymbol);
     }
 
-    private Binder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)
+    private FunctionBinder BuildFunctionDeclarationBinder(FunctionDeclarationSyntax syntax)
     {
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
@@ -103,7 +98,7 @@ internal sealed class BinderCache
         return binder;
     }
 
-    private Binder BuildLoopBinder(SyntaxNode syntax)
+    private LoopBinder BuildLoopBinder(SyntaxNode syntax)
     {
         Debug.Assert(syntax.Parent is not null);
         var parent = this.GetBinder(syntax.Parent);

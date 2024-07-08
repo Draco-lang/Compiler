@@ -43,7 +43,7 @@ internal sealed class LookupResult
     /// The symbols found during lookup.
     /// </summary>
     public IReadOnlySet<Symbol> Symbols => this.symbols;
-    private readonly HashSet<Symbol> symbols = new();
+    private readonly HashSet<Symbol> symbols = [];
 
     /// <summary>
     /// Attempts to add a symbol to the result set.

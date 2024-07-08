@@ -19,15 +19,11 @@ internal static class EquatableArray
 }
 
 [JsonConverter(typeof(EquatableArrayConverter))]
-internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IList<T>, IEnumerable<T>
+internal readonly struct EquatableArray<T>(ImmutableArray<T> array)
+    : IEquatable<EquatableArray<T>>, IList<T>, IEnumerable<T>
     where T : IEquatable<T>
 {
-    private readonly ImmutableArray<T> array;
-
-    public EquatableArray(ImmutableArray<T> array)
-    {
-        this.array = array;
-    }
+    private readonly ImmutableArray<T> array = array;
 
     public bool IsEmpty => this.array.IsEmpty;
 
@@ -51,7 +47,7 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, ILis
 
     public override int GetHashCode() => ((IStructuralEquatable)this.array).GetHashCode(EqualityComparer<T>.Default);
 
-    public T[] ToArray() => this.array.ToArray();
+    public T[] ToArray() => [.. this.array];
 
     public int IndexOf(T item) => this.array.IndexOf(item);
 

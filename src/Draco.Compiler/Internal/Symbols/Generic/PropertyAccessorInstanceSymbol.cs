@@ -5,13 +5,12 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// It does not necessarily mean that the property accessor itself was generic, it might have been within another generic
 /// context (like a generic type definition).
 /// </summary>
-internal sealed class PropertyAccessorInstanceSymbol : FunctionInstanceSymbol, IPropertyAccessorSymbol
+internal sealed class PropertyAccessorInstanceSymbol(
+    Symbol? containingSymbol,
+    FunctionSymbol genericDefinition,
+    GenericContext context,
+    PropertySymbol property)
+    : FunctionInstanceSymbol(containingSymbol, genericDefinition, context), IPropertyAccessorSymbol
 {
-    public PropertySymbol Property { get; }
-
-    public PropertyAccessorInstanceSymbol(Symbol? containingSymbol, FunctionSymbol genericDefinition, GenericContext context, PropertySymbol property)
-        : base(containingSymbol, genericDefinition, context)
-    {
-        this.Property = property;
-    }
+    public PropertySymbol Property { get; } = property;
 }

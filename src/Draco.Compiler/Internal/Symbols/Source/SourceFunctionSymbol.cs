@@ -43,7 +43,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
-        if (containingSymbol is null) throw new System.ArgumentNullException(nameof(containingSymbol));
+        System.ArgumentNullException.ThrowIfNull(containingSymbol);
 
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = syntax;
@@ -94,11 +94,11 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
                 location: this.DeclaringSyntax.Location,
                 formatArgs: this.Name,
                 relatedInformation: func.DeclaringSyntax is null
-                    ? ImmutableArray<DiagnosticRelatedInformation>.Empty
-                    : ImmutableArray.Create(DiagnosticRelatedInformation.Create(
+                    ? []
+                    : [DiagnosticRelatedInformation.Create(
                         location: func.DeclaringSyntax.Location,
                         format: "matching definition of {0}",
-                        formatArgs: func.Name))));
+                        formatArgs: func.Name)]));
         }
     }
 
@@ -108,7 +108,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
     private ImmutableArray<TypeParameterSymbol> BindGenericParameters(IBinderProvider binderProvider)
     {
         // Simplest case if the function is not generic
-        if (this.DeclaringSyntax.Generics is null) return ImmutableArray<TypeParameterSymbol>.Empty;
+        if (this.DeclaringSyntax.Generics is null) return [];
 
         var genericParamSyntaxes = this.DeclaringSyntax.Generics.Parameters.Values.ToList();
         var genericParams = ImmutableArray.CreateBuilder<TypeParameterSymbol>();

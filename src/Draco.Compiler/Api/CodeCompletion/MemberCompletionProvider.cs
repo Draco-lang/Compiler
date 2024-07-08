@@ -19,24 +19,24 @@ public sealed class MemberCompletionProvider : CompletionProvider
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
-        var token = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault() as SyntaxToken;
-        if (token is null) return ImmutableArray<CompletionItem>.Empty;
+        var nodesAtCursor = tree.Root.TraverseSubtreesAtCursorPosition(cursor);
+        if (nodesAtCursor.LastOrDefault() is not SyntaxToken token) return [];
         var expr = token.Parent;
         var range = token.Kind == TokenKind.Dot ? new SyntaxRange(token.Range.End, 0) : token.Range;
         // If we can't get the accessed propery, we just return empty array
-        if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return ImmutableArray<CompletionItem>.Empty;
+        if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return [];
         var completions = symbols
             // NOTE: Not very robust, just like in the other place
             // Also, duplication
             .GroupBy(x => (x.GetType(), x.Name))
-            .Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
+            .Select(x => GetCompletionItem([.. x], contexts, range));
         return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 
     private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<ISymbol> result)
     {
         var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
-        result = ImmutableArray<ISymbol>.Empty;
+        result = [];
         if (TryDeconstructMemberAccess(expr, out var accessed))
         {
             var referencedType = semanticModel.GetReferencedSymbol(accessed);
@@ -85,7 +85,7 @@ public sealed class MemberCompletionProvider : CompletionProvider
                        || currentContexts.HasFlag(CompletionContext.Import) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
 
-        IVariableSymbol var when currentContexts.HasFlag(CompletionContext.Expression) =>
+        IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
             CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Variable),
 
         PropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>

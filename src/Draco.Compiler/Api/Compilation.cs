@@ -157,7 +157,7 @@ public sealed class Compilation : IBinderProvider
         BinderCache? binderCache = null)
     {
         this.SyntaxTrees = syntaxTrees;
-        this.MetadataReferences = metadataReferences ?? ImmutableArray<MetadataReference>.Empty;
+        this.MetadataReferences = metadataReferences ?? [];
         this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
         this.OutputPath = outputPath ?? ".";
         this.AssemblyName = assemblyName ?? "output";
@@ -292,7 +292,7 @@ public sealed class Compilation : IBinderProvider
 
         return new(
             Success: true,
-            Diagnostics: ImmutableArray<Diagnostic>.Empty);
+            Diagnostics: []);
     }
 
     internal ModuleSymbol GetModuleForSyntaxTree(SyntaxTree tree)

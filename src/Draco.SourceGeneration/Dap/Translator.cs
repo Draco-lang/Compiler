@@ -14,24 +14,17 @@ namespace Draco.SourceGeneration.Dap;
 /// <summary>
 /// Translates the JSON schema to a C# model.
 /// </summary>
-internal sealed class Translator
+internal sealed class Translator(JsonDocument sourceModel)
 {
-    private static readonly string[] basicStructures = new[]
-    {
+    private static readonly string[] basicStructures =
+    [
         "ProtocolMessage",
         "Request",
         "Response",
         "Event",
-    };
-
-    private readonly JsonDocument sourceModel;
+    ];
     private readonly Model targetModel = new();
-    private readonly Dictionary<string, Type> translatedTypes = new();
-
-    public Translator(JsonDocument sourceModel)
-    {
-        this.sourceModel = sourceModel;
-    }
+    private readonly Dictionary<string, Type> translatedTypes = [];
 
     /// <summary>
     /// Adds a builtin type that does not need translation anymore.
@@ -56,7 +49,7 @@ internal sealed class Translator
     public Model Translate()
     {
         // Get all definitions in the schema
-        var types = this.sourceModel.RootElement
+        var types = sourceModel.RootElement
             .GetProperty("definitions")
             .EnumerateObject();
 
@@ -127,7 +120,7 @@ internal sealed class Translator
         if (this.translatedTypes.TryGetValue(name, out var existing)) return existing;
 
         // Get all definitions in the schema
-        var types = this.sourceModel.RootElement.GetProperty("definitions");
+        var types = sourceModel.RootElement.GetProperty("definitions");
 
         if (types.TryGetProperty(name, out var typeDesc))
         {
@@ -232,7 +225,7 @@ internal sealed class Translator
             // Check for required props
             var requiredProps = description.TryGetProperty("required", out var requiredArray)
                 ? requiredArray.EnumerateArray().Select(a => a.GetString()!).ToHashSet()
-                : new HashSet<string>();
+                : [];
             foreach (var prop in result.Properties)
             {
                 if (requiredProps.Contains(prop.SerializedName)) continue;
@@ -253,14 +246,14 @@ internal sealed class Translator
         if (TryGetProperty(description, "type", out var type) && type.ValueKind == JsonValueKind.Array)
         {
             // This is a DU description
-            return this.TranslateDuType(type.EnumerateArray().ToList(), nameHint: nameHint, parent: parent);
+            return this.TranslateDuType([.. type.EnumerateArray()], nameHint: nameHint, parent: parent);
         }
 
         // Check for oneOf, just another way to specify DUs
         if (TryGetProperty(description, "oneOf", out var oneOf))
         {
             // This is a DU description
-            return this.TranslateDuType(oneOf.EnumerateArray().ToList(), nameHint: nameHint, parent: parent);
+            return this.TranslateDuType([.. oneOf.EnumerateArray()], nameHint: nameHint, parent: parent);
         }
 
         // Check for allOf, which is essentially inheritance

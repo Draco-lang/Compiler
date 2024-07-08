@@ -9,14 +9,9 @@ namespace Draco.Compiler.Internal.BoundTree;
 /// <summary>
 /// The base for all bound nodes in the bound tree.
 /// </summary>
-internal abstract partial class BoundNode
+internal abstract partial class BoundNode(SyntaxNode? syntax)
 {
-    public SyntaxNode? Syntax { get; }
-
-    protected BoundNode(SyntaxNode? syntax)
-    {
-        this.Syntax = syntax;
-    }
+    public SyntaxNode? Syntax { get; } = syntax;
 
     public abstract void Accept(BoundTreeVisitor visitor);
     public abstract TResult Accept<TResult>(BoundTreeVisitor<TResult> visitor);

@@ -7,34 +7,26 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// Represents a callability constraint for indirect calls.
 /// </summary>
-internal sealed class CallConstraint : Constraint<Unit>
+internal sealed class CallConstraint(
+    TypeSymbol calledType,
+    ImmutableArray<ConstraintSolver.Argument> arguments,
+    TypeSymbol returnType,
+    ConstraintLocator locator) : Constraint<Unit>(locator)
 {
     /// <summary>
     /// The called expression type.
     /// </summary>
-    public TypeSymbol CalledType { get; }
+    public TypeSymbol CalledType { get; } = calledType;
 
     /// <summary>
     /// The arguments the function was called with.
     /// </summary>
-    public ImmutableArray<ConstraintSolver.Argument> Arguments { get; }
+    public ImmutableArray<ConstraintSolver.Argument> Arguments { get; } = arguments;
 
     /// <summary>
     /// The return type of the call.
     /// </summary>
-    public TypeSymbol ReturnType { get; }
-
-    public CallConstraint(
-        TypeSymbol calledType,
-        ImmutableArray<ConstraintSolver.Argument> arguments,
-        TypeSymbol returnType,
-        ConstraintLocator locator)
-        : base(locator)
-    {
-        this.CalledType = calledType;
-        this.Arguments = arguments;
-        this.ReturnType = returnType;
-    }
+    public TypeSymbol ReturnType { get; } = returnType;
 
     public override string ToString() =>
         $"Call(function: {this.CalledType}, args: [{string.Join(", ", this.Arguments)}]) => {this.ReturnType}";

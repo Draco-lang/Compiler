@@ -9,17 +9,18 @@ namespace Draco.Compiler.Internal.Declarations;
 /// <summary>
 /// Represents a portion of a module that was read up from a single file.
 /// </summary>
-internal sealed class SingleModuleDeclaration : Declaration
+internal sealed class SingleModuleDeclaration(string name, SplitPath path, ContainerSyntax syntax)
+    : Declaration(name)
 {
     /// <summary>
     /// The syntax node of this module portion.
     /// </summary>
-    public ContainerSyntax Syntax { get; }
+    public ContainerSyntax Syntax { get; } = syntax;
 
     /// <summary>
     /// The path of this module, including the root module.
     /// </summary>
-    public SplitPath Path { get; }
+    public SplitPath Path { get; } = path;
 
     public override ImmutableArray<Declaration> Children =>
         InterlockedUtils.InitializeDefault(ref this.children, this.BuildChildren);
@@ -31,13 +32,6 @@ internal sealed class SingleModuleDeclaration : Declaration
         {
             yield return this.Syntax;
         }
-    }
-
-    public SingleModuleDeclaration(string name, SplitPath path, ContainerSyntax syntax)
-        : base(name)
-    {
-        this.Syntax = syntax;
-        this.Path = path;
     }
 
     private ImmutableArray<Declaration> BuildChildren() =>

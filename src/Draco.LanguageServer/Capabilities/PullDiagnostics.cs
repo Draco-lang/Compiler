@@ -37,7 +37,7 @@ internal partial class DracoLanguageServer : IDiagnostics
         // Clear push diagnostics to avoid duplicates
         await this.client.PublishDiagnosticsAsync(new()
         {
-            Diagnostics = new List<Diagnostic>(),
+            Diagnostics = [],
             Uri = param.TextDocument.Uri
         });
 

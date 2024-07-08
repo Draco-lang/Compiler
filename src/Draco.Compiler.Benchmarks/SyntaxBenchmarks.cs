@@ -90,6 +90,6 @@ public class SyntaxBenchmarks : FolderBenchmarkBase
             if (token.Kind == TokenKind.EndOfInput) break;
         }
 
-        return result.ToArray();
+        return [.. result];
     }
 }

@@ -35,7 +35,7 @@ public sealed class Thread
     }
     private string? name;
 
-    private readonly List<Breakpoint> currentlyHitBreakpoints = new();
+    private readonly List<Breakpoint> currentlyHitBreakpoints = [];
 
     /// <summary>
     /// The current state of the call-stack.
@@ -74,7 +74,7 @@ public sealed class Thread
         var stepper = this.BuildCorDebugStepper();
         if (this.TryGetStepRange(out var range))
         {
-            stepper.StepRange(true, new[] { range }, 1);
+            stepper.StepRange(true, [range], 1);
         }
         else
         {
@@ -94,7 +94,7 @@ public sealed class Thread
         var stepper = this.BuildCorDebugStepper();
         if (this.TryGetStepRange(out var range))
         {
-            stepper.StepRange(false, new[] { range }, 1);
+            stepper.StepRange(false, [range], 1);
         }
         else
         {

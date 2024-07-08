@@ -12,7 +12,8 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// Checks, if all variable reads happen after initialization.
 /// https://en.wikipedia.org/wiki/Definite_assignment_analysis
 /// </summary>
-internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.LocalState>
+internal sealed class DefiniteAssignment(ImmutableArray<LocalSymbol> locals)
+    : FlowAnalysisPass<DefiniteAssignment.LocalState>
 {
     public static void Analyze(BoundNode node, DiagnosticBag diagnostics)
     {
@@ -39,8 +40,8 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
 
     public readonly record struct LocalState(Dictionary<LocalSymbol, AssignmentStatus> Locals);
 
-    public override LocalState Top => new(Locals: new());
-    public override LocalState Bottom => new(Locals: this.locals.ToDictionary(s => s, _ => AssignmentStatus.Initialized));
+    public override LocalState Top => new(Locals: []);
+    public override LocalState Bottom => new(Locals: locals.ToDictionary(s => s, _ => AssignmentStatus.Initialized));
 
     public override LocalState Clone(in LocalState state) => new(Locals: new(state.Locals));
 
@@ -68,13 +69,7 @@ internal sealed class DefiniteAssignment : FlowAnalysisPass<DefiniteAssignment.L
         return changed;
     }
 
-    private readonly ImmutableArray<LocalSymbol> locals;
-    private readonly Dictionary<BoundLocalExpression, AssignmentStatus> referenceStates = new();
-
-    public DefiniteAssignment(ImmutableArray<LocalSymbol> locals)
-    {
-        this.locals = locals;
-    }
+    private readonly Dictionary<BoundLocalExpression, AssignmentStatus> referenceStates = [];
 
     public override void VisitLocalDeclaration(BoundLocalDeclaration node)
     {

@@ -19,13 +19,13 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
     public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
     {
         var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
-        if (syntax is null) return ImmutableArray<CompletionItem>.Empty;
+        if (syntax is null) return [];
         var symbols = semanticModel.GetAllDefinedSymbols(syntax);
         var range = (syntax as SyntaxToken)?.Range ?? new(cursor, 0);
         var completions = symbols
             // NOTE: Grouping by GetType is very error-prone, maybe we need a symbol "kind"
             .GroupBy(x => (x.GetType(), x.Name))
-            .Select(x => GetCompletionItem(x.ToImmutableArray(), contexts, range));
+            .Select(x => GetCompletionItem([.. x], contexts, range));
         return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 

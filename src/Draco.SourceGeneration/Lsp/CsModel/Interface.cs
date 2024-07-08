@@ -10,10 +10,10 @@ public sealed class Interface : Declaration
     /// <summary>
     /// The interfaces this interface implements.
     /// </summary>
-    public IList<Interface> Interfaces { get; set; } = new List<Interface>();
+    public IList<Interface> Interfaces { get; set; } = [];
 
     /// <summary>
     /// The properties within this interface.
     /// </summary>
-    public IList<Property> Properties { get; set; } = new List<Property>();
+    public IList<Property> Properties { get; set; } = [];
 }

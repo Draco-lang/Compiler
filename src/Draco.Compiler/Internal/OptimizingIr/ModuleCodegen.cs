@@ -14,17 +14,25 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal sealed class ModuleCodegen : SymbolVisitor
 {
+    /// <summary>
+    /// The compilation the codegen generates for.
+    /// </summary>
+    public Compilation Compilation { get; }
+
+    /// <summary>
+    /// True, if sequence points should be emitted.
+    /// </summary>
+    public bool EmitSequencePoints { get; }
+
     private readonly FunctionBodyCodegen globalInitializer;
-    private readonly Compilation compilation;
     private readonly Module module;
-    private readonly bool emitSequencePoints;
 
     public ModuleCodegen(Compilation compilation, Module module, bool emitSequencePoints)
     {
-        this.compilation = compilation;
+        this.Compilation = compilation;
+        this.EmitSequencePoints = emitSequencePoints;
         this.module = module;
-        this.globalInitializer = new(this.compilation, module.GlobalInitializer);
-        this.emitSequencePoints = emitSequencePoints;
+        this.globalInitializer = new(this.Compilation, module.GlobalInitializer);
     }
 
     private void Complete()
@@ -59,17 +67,17 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     public override void VisitFunction(FunctionSymbol functionSymbol)
     {
-        if (functionSymbol is not SourceFunctionSymbol sourceFunction) return;
+        if (functionSymbol.Body is null) return;
 
         // Add procedure
         var procedure = this.module.DefineProcedure(functionSymbol);
 
         // Create the body
-        var body = this.RewriteBody(sourceFunction.Body);
+        var body = this.RewriteBody(functionSymbol.Body);
         // Yank out potential local functions and closures
         var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
         // Compile it
-        var bodyCodegen = new FunctionBodyCodegen(this.compilation, procedure);
+        var bodyCodegen = new FunctionBodyCodegen(this.Compilation, procedure);
         bodyWithoutLocalFunctions.Accept(bodyCodegen);
 
         // Compile the local functions
@@ -81,7 +89,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         foreach (var subModuleSymbol in moduleSymbol.Members.OfType<ModuleSymbol>())
         {
             var module = this.module.DefineModule(subModuleSymbol);
-            var moduleCodegen = new ModuleCodegen(this.compilation, module, this.emitSequencePoints);
+            var moduleCodegen = new ModuleCodegen(this.Compilation, module, this.EmitSequencePoints);
             subModuleSymbol.Accept(moduleCodegen);
         }
 
@@ -95,8 +103,8 @@ internal sealed class ModuleCodegen : SymbolVisitor
     private BoundNode RewriteBody(BoundNode body)
     {
         // If needed, inject sequence points
-        if (this.emitSequencePoints) body = SequencePointInjector.Inject(body);
+        if (this.EmitSequencePoints) body = SequencePointInjector.Inject(body);
         // Desugar it
-        return body.Accept(new LocalRewriter(this.compilation));
+        return body.Accept(new LocalRewriter(this.Compilation));
     }
 }

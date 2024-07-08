@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
@@ -177,6 +176,6 @@ internal partial class Binder
     {
         FunctionSymbol f => new[] { f },
         OverloadSymbol o => o.Functions,
-        _ => Enumerable.Empty<FunctionSymbol>(),
+        _ => [],
     };
 }

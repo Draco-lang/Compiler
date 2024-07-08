@@ -26,7 +26,7 @@ internal sealed class DeclarationTable
     /// <summary>
     /// An empty declaration table.
     /// </summary>
-    public static DeclarationTable Empty { get; } = new(ImmutableArray<SyntaxTree>.Empty, Compilation.Create(ImmutableArray<SyntaxTree>.Empty));
+    public static DeclarationTable Empty { get; } = new([], Compilation.Create([]));
 
     /// <summary>
     /// The merged root module.

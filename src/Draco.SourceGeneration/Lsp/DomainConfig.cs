@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Draco.SourceGeneration.Lsp;
 
-public sealed class Config
+public sealed class Config(IList<BuiltinType> builtinTypes)
 {
     public static Config FromXml(XmlConfig config)
     {
@@ -14,12 +14,7 @@ public sealed class Config
         return new(builtins);
     }
 
-    public IList<BuiltinType> BuiltinTypes { get; }
-
-    public Config(IList<BuiltinType> builtinTypes)
-    {
-        this.BuiltinTypes = builtinTypes;
-    }
+    public IList<BuiltinType> BuiltinTypes { get; } = builtinTypes;
 }
 
 public readonly record struct BuiltinType(string Name, string FullName);

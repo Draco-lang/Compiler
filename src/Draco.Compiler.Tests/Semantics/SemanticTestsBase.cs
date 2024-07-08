@@ -11,7 +11,7 @@ namespace Draco.Compiler.Tests.Semantics;
 public abstract class SemanticTestsBase
 {
     private protected static Compilation CreateCompilation(params SyntaxTree[] syntaxTrees) => Compilation.Create(
-        syntaxTrees: syntaxTrees.ToImmutableArray(),
+        syntaxTrees: [.. syntaxTrees],
         metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
             .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
             .ToImmutableArray());
@@ -31,7 +31,7 @@ public abstract class SemanticTestsBase
     {
         assemblyName ??= TestUtilities.DefaultAssemblyName;
         var asm = compilation.MetadataAssemblies.Values.Single(a => a.AssemblyName.Name == assemblyName);
-        return asm.RootNamespace.Lookup(path.ToImmutableArray()).First();
+        return asm.RootNamespace.Lookup([.. path]).First();
     }
 
     private protected static Binder GetDefiningScope(Compilation compilation, Symbol? symbol)

@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 
 namespace Draco.Compiler.Internal.Diagnostics;
@@ -13,7 +11,7 @@ internal sealed class ConcurrentDiagnosticBag : DiagnosticBag
 {
     public override int Count => this.diagnostics.Count;
 
-    private readonly ConcurrentBag<Diagnostic> diagnostics = new();
+    private readonly ConcurrentBag<Diagnostic> diagnostics = [];
 
     public override void Add(Diagnostic diagnostic) => this.diagnostics.Add(diagnostic);
     public override void Clear() => this.diagnostics.Clear();

@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.Codegen;
 /// <summary>
 /// Generates PDB from IR.
 /// </summary>
-internal sealed class PdbCodegen : MetadataWriter
+internal sealed class PdbCodegen(MetadataCodegen metadataCodegen) : MetadataWriter
 {
     private readonly record struct LocalScopeStart(
         LocalVariableHandle VariableList,
@@ -35,15 +35,10 @@ internal sealed class PdbCodegen : MetadataWriter
     public Guid PdbId { get; } = Guid.NewGuid();
     public uint PdbStamp => 123456;
 
-    private readonly MetadataCodegen metadataCodegen;
+    private readonly MetadataCodegen metadataCodegen = metadataCodegen;
     private readonly ImmutableArray<SequencePoint>.Builder sequencePoints = ImmutableArray.CreateBuilder<SequencePoint>();
     private readonly Stack<LocalScopeStart> scopeStartStack = new();
     private readonly ImmutableArray<LocalScope>.Builder localScopes = ImmutableArray.CreateBuilder<LocalScope>();
-
-    public PdbCodegen(MetadataCodegen metadataCodegen)
-    {
-        this.metadataCodegen = metadataCodegen;
-    }
 
     public DebugDirectoryBuilder EncodeDebugDirectory()
     {

@@ -23,8 +23,8 @@ internal sealed class EnumValueConverter : JsonConverterFactory
 
 internal sealed class EnumValueConverter<TEnum> : JsonConverter<TEnum> where TEnum : struct, Enum
 {
-    private readonly Dictionary<TEnum, string> enumToString = new();
-    private readonly Dictionary<string, TEnum> stringToEnum = new();
+    private readonly Dictionary<TEnum, string> enumToString = [];
+    private readonly Dictionary<string, TEnum> stringToEnum = [];
 
     public EnumValueConverter()
     {

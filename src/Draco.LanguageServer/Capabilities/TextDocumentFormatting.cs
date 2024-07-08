@@ -27,6 +27,6 @@ internal sealed partial class DracoLanguageServer : ITextDocumentFormatting
             NewText = syntaxTree.ToString(),
             Range = Translator.ToLsp(originalRange),
         };
-        return Task.FromResult<IList<TextEdit>?>(new[] { edit });
+        return Task.FromResult<IList<TextEdit>?>([edit]);
     }
 }

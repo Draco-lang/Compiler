@@ -82,7 +82,7 @@ internal partial class DracoLanguageServer : IRename
         }
     }
 
-    private static ITextEdit RenameNode(SyntaxNode original, string name) => original switch
+    private static TextEdit RenameNode(SyntaxNode original, string name) => original switch
     {
         ParameterSyntax p => RenameToken(p.Name, name),
         GenericParameterSyntax g => RenameToken(g.Name, name),
@@ -102,7 +102,7 @@ internal partial class DracoLanguageServer : IRename
         _ => throw new ArgumentOutOfRangeException(nameof(original)),
     };
 
-    private static ITextEdit RenameToken(SyntaxToken token, string name) => new TextEdit()
+    private static TextEdit RenameToken(SyntaxToken token, string name) => new()
     {
         Range = Translator.ToLsp(token.Range),
         NewText = name,

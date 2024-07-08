@@ -8,24 +8,18 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// A function parameter defined in-source.
 /// </summary>
-internal sealed class SourceParameterSymbol : ParameterSymbol, ISourceSymbol
+internal sealed class SourceParameterSymbol(
+    FunctionSymbol containingSymbol,
+    ParameterSyntax syntax) : ParameterSymbol, ISourceSymbol
 {
     public override TypeSymbol Type => this.BindTypeIfNeeded(this.DeclaringCompilation!);
     private TypeSymbol? type;
 
-    public override FunctionSymbol ContainingSymbol { get; }
+    public override FunctionSymbol ContainingSymbol { get; } = containingSymbol;
     public override bool IsVariadic => this.DeclaringSyntax.Variadic is not null;
     public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override ParameterSyntax DeclaringSyntax { get; }
-
-    // TODO: Extracting parameter docs involves looking into the function docs and searching in the MD
-
-    public SourceParameterSymbol(FunctionSymbol containingSymbol, ParameterSyntax syntax)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.DeclaringSyntax = syntax;
-    }
+    public override ParameterSyntax DeclaringSyntax { get; } = syntax;
 
     public void Bind(IBinderProvider binderProvider) =>
         this.BindTypeIfNeeded(binderProvider);

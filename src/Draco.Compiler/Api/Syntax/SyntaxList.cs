@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using Draco.Compiler.Internal;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -19,13 +18,13 @@ public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
         .GetExecutingAssembly()
         .GetType($"Draco.Compiler.Internal.Syntax.{typeof(TNode).Name}")!;
     private static Type GreenNodeType { get; } = typeof(Internal.Syntax.SyntaxList<>).MakeGenericType(GreenElementType);
-    private static ConstructorInfo GreenNodeConstructor { get; } = GreenNodeType.GetConstructor(new[]
-    {
+    private static ConstructorInfo GreenNodeConstructor { get; } = GreenNodeType.GetConstructor(
+    [
         typeof(IEnumerable<>).MakeGenericType(GreenElementType),
-    })!;
+    ])!;
 
     internal static IReadOnlyList<Internal.Syntax.SyntaxNode> MakeGreen(IEnumerable<Internal.Syntax.SyntaxNode> nodes) =>
-        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke(new[] { nodes })!;
+        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke([nodes])!;
 
     public int Count => this.GreenList.Count;
     public override IEnumerable<SyntaxNode> Children => this;

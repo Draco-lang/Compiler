@@ -61,7 +61,7 @@ public sealed partial class Debugger
     private Module? mainModule;
     private Thread? mainThread;
 
-    internal Debugger( CorDebugManagedCallback cb)
+    internal Debugger(CorDebugManagedCallback cb)
     {
         this.InitializeEventHandler(cb);
     }

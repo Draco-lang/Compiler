@@ -27,7 +27,9 @@ internal sealed class ArrayIndexPropertySymbol : PropertySymbol
 /// <summary>
 /// The index getter of arrays.
 /// </summary>
-internal sealed class ArrayIndexGetSymbol : FunctionSymbol, IPropertyAccessorSymbol
+internal sealed class ArrayIndexGetSymbol(
+    ArrayTypeSymbol containingSymbol,
+    PropertySymbol propertySymbol) : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters =>
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
@@ -37,17 +39,11 @@ internal sealed class ArrayIndexGetSymbol : FunctionSymbol, IPropertyAccessorSym
     public override bool IsStatic => false;
     public override string Name => "Array_get";
 
-    public override ArrayTypeSymbol ContainingSymbol { get; }
-    public PropertySymbol Property { get; }
-
-    public ArrayIndexGetSymbol(ArrayTypeSymbol containingSymbol, PropertySymbol propertySymbol)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.Property = propertySymbol;
-    }
+    public override ArrayTypeSymbol ContainingSymbol { get; } = containingSymbol;
+    public PropertySymbol Property { get; } = propertySymbol;
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.ContainingSymbol.Rank == 1
-        ? ImmutableArray.Create(new SynthetizedParameterSymbol(this, "index", this.ContainingSymbol.IndexType) as ParameterSymbol)
+        ? [new SynthetizedParameterSymbol(this, "index", this.ContainingSymbol.IndexType) as ParameterSymbol]
         : Enumerable
             .Range(1, this.ContainingSymbol.Rank)
             .Select(i => new SynthetizedParameterSymbol(this, $"index{i}", this.ContainingSymbol.IndexType) as ParameterSymbol)
@@ -57,7 +53,9 @@ internal sealed class ArrayIndexGetSymbol : FunctionSymbol, IPropertyAccessorSym
 /// <summary>
 /// The index setter of arrays.
 /// </summary>
-internal sealed class ArrayIndexSetSymbol : FunctionSymbol, IPropertyAccessorSymbol
+internal sealed class ArrayIndexSetSymbol(
+    ArrayTypeSymbol containingSymbol,
+    PropertySymbol propertySymbol) : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters =>
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
@@ -67,14 +65,8 @@ internal sealed class ArrayIndexSetSymbol : FunctionSymbol, IPropertyAccessorSym
     public override bool IsStatic => false;
     public override string Name => "Array_set";
 
-    public override ArrayTypeSymbol ContainingSymbol { get; }
-    public PropertySymbol Property { get; }
-
-    public ArrayIndexSetSymbol(ArrayTypeSymbol containingSymbol, PropertySymbol propertySymbol)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.Property = propertySymbol;
-    }
+    public override ArrayTypeSymbol ContainingSymbol { get; } = containingSymbol;
+    public PropertySymbol Property { get; } = propertySymbol;
 
     private ImmutableArray<ParameterSymbol> BuildParameters()
     {

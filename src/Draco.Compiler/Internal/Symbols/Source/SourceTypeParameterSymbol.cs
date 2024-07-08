@@ -6,18 +6,14 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// <summary>
 /// A generic type parameter defined in-source.
 /// </summary>
-internal sealed class SourceTypeParameterSymbol : TypeParameterSymbol, ISourceSymbol
+internal sealed class SourceTypeParameterSymbol(
+    Symbol containingSymbol,
+    GenericParameterSyntax syntax) : TypeParameterSymbol, ISourceSymbol
 {
-    public override Symbol ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
     public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override GenericParameterSyntax DeclaringSyntax { get; }
-
-    public SourceTypeParameterSymbol(Symbol containingSymbol, GenericParameterSyntax syntax)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.DeclaringSyntax = syntax;
-    }
+    public override GenericParameterSyntax DeclaringSyntax { get; } = syntax;
 
     public void Bind(IBinderProvider binderProvider) { }
 }

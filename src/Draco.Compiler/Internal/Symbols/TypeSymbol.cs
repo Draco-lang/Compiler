@@ -54,7 +54,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// <summary>
     /// The immediate base types of this type.
     /// </summary>
-    public virtual ImmutableArray<TypeSymbol> ImmediateBaseTypes => ImmutableArray<TypeSymbol>.Empty;
+    public virtual ImmutableArray<TypeSymbol> ImmediateBaseTypes => [];
 
     /// <summary>
     /// All types that can be considered the base type of this one, including this type itself.
@@ -72,7 +72,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// <summary>
     /// The members defined directly in this type doesn't include members from <see cref="ImmediateBaseTypes"/>.
     /// </summary>
-    public virtual IEnumerable<Symbol> DefinedMembers => Enumerable.Empty<Symbol>();
+    public virtual IEnumerable<Symbol> DefinedMembers => [];
 
     /// <summary>
     /// The constructors defined directly in this type.

@@ -8,7 +8,9 @@ namespace Draco.Compiler.Internal.Utilities;
 /// </summary>
 /// <typeparam name="TKey">The key type.</typeparam>
 /// <typeparam name="TValue">The value type.</typeparam>
-internal sealed class DictionaryEqualityComparer<TKey, TValue> :
+internal sealed class DictionaryEqualityComparer<TKey, TValue>(
+    IEqualityComparer<TKey> keyComparer,
+    IEqualityComparer<TValue> valueComparer) :
     IEqualityComparer<IReadOnlyDictionary<TKey, TValue>>,
     IEqualityComparer<IDictionary<TKey, TValue>>
 {
@@ -21,18 +23,12 @@ internal sealed class DictionaryEqualityComparer<TKey, TValue> :
     /// <summary>
     /// The comparer for keys.
     /// </summary>
-    public IEqualityComparer<TKey> KeyComparer { get; }
+    public IEqualityComparer<TKey> KeyComparer { get; } = keyComparer;
 
     /// <summary>
     /// The comparer for values.
     /// </summary>
-    public IEqualityComparer<TValue> ValueComparer { get; }
-
-    public DictionaryEqualityComparer(IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer)
-    {
-        this.KeyComparer = keyComparer;
-        this.ValueComparer = valueComparer;
-    }
+    public IEqualityComparer<TValue> ValueComparer { get; } = valueComparer;
 
     public bool Equals(IReadOnlyDictionary<TKey, TValue>? x, IReadOnlyDictionary<TKey, TValue>? y)
     {

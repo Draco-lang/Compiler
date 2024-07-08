@@ -12,18 +12,12 @@ namespace Draco.SourceGeneration.Lsp;
 /// <summary>
 /// Translates the TS-based metamodel into a C# model.
 /// </summary>
-internal sealed class Translator
+internal sealed class Translator(Ts.MetaModel sourceModel)
 {
-    private readonly Ts.MetaModel sourceModel;
     private readonly Cs.Model targetModel = new();
 
     private readonly Dictionary<string, Cs.Type> translatedTypes = [];
     private readonly Dictionary<Ts.Structure, Cs.Interface> structureInterfaces = [];
-
-    public Translator(Ts.MetaModel sourceModel)
-    {
-        this.sourceModel = sourceModel;
-    }
 
     /// <summary>
     /// Adds a builtin type that does not need translation anymore.
@@ -48,7 +42,7 @@ internal sealed class Translator
     /// <returns>The translated C# type reference.</returns>
     public Cs.Type TranslateTypeByName(string name)
     {
-        var structure = this.sourceModel.Structures.FirstOrDefault(s => s.Name == name);
+        var structure = sourceModel.Structures.FirstOrDefault(s => s.Name == name);
         if (structure is not null)
         {
             // If the structure is used as a base type for other types, we return the interface to be referenced instead
@@ -57,13 +51,13 @@ internal sealed class Translator
                 : this.TranslateStructure(structure);
         }
 
-        var enumeration = this.sourceModel.Enumerations.FirstOrDefault(s => s.Name == name);
+        var enumeration = sourceModel.Enumerations.FirstOrDefault(s => s.Name == name);
         if (enumeration is not null)
         {
             return this.TranslateEnumeration(enumeration);
         }
 
-        var alias = this.sourceModel.TypeAliases.FirstOrDefault(s => s.Name == name);
+        var alias = sourceModel.TypeAliases.FirstOrDefault(s => s.Name == name);
         if (alias is not null)
         {
             this.TranslateTypeAlias(alias);
@@ -83,19 +77,19 @@ internal sealed class Translator
     public Cs.Model Translate()
     {
         // Translate
-        foreach (var structure in this.sourceModel.Structures)
+        foreach (var structure in sourceModel.Structures)
         {
             // Check if a builtin has overriden it already
             if (this.translatedTypes.ContainsKey(structure.Name)) continue;
             this.TranslateStructure(structure);
         }
-        foreach (var enumeration in this.sourceModel.Enumerations)
+        foreach (var enumeration in sourceModel.Enumerations)
         {
             // Check if a builtin has overriden it already
             if (this.translatedTypes.ContainsKey(enumeration.Name)) continue;
             this.TranslateEnumeration(enumeration);
         }
-        foreach (var typeAlias in this.sourceModel.TypeAliases)
+        foreach (var typeAlias in sourceModel.TypeAliases)
         {
             // Check if a builtin has overriden it already
             if (this.translatedTypes.ContainsKey(typeAlias.Name)) continue;
@@ -248,7 +242,7 @@ internal sealed class Translator
             throw new ArgumentException($"can not reference type of kind {type.GetType().Name}", nameof(type));
         }
 
-        var structure = this.sourceModel.Structures.FirstOrDefault(s => s.Name == namedType.Name)
+        var structure = sourceModel.Structures.FirstOrDefault(s => s.Name == namedType.Name)
                      ?? throw new ArgumentException($"can not find type {namedType.Name} among the structures", nameof(type));
 
         return structure;
@@ -312,7 +306,7 @@ internal sealed class Translator
             {
                 if (t.Kind != "base" && t.Kind != "reference") return t;
                 var namedType = (Ts.NamedType)t;
-                return this.sourceModel.TypeAliases.FirstOrDefault(t => t.Name == namedType.Name)?.Type ?? t;
+                return sourceModel.TypeAliases.FirstOrDefault(t => t.Name == namedType.Name)?.Type ?? t;
             }
             static bool IsNull(Ts.Type t) => t is Ts.NamedType { Kind: "base", Name: "null" };
             static bool IsOr(Ts.Type t) => t is Ts.AggregateType { Kind: "or" };
@@ -462,8 +456,8 @@ internal sealed class Translator
     }
 
     private bool IsUsedAsInterface(string typeName) =>
-           this.sourceModel.Structures.Any(s => s.Extends.OfType<Ts.NamedType>().Any(t => t.Name == typeName))
-        || this.sourceModel.Structures.Any(s => s.Mixins.OfType<Ts.NamedType>().Any(t => t.Name == typeName));
+           sourceModel.Structures.Any(s => s.Extends.OfType<Ts.NamedType>().Any(t => t.Name == typeName))
+        || sourceModel.Structures.Any(s => s.Mixins.OfType<Ts.NamedType>().Any(t => t.Name == typeName));
 
     private static TDeclaration TranslateDeclaration<TDeclaration>(Ts.IDocumented source)
         where TDeclaration : Cs.Declaration, new()

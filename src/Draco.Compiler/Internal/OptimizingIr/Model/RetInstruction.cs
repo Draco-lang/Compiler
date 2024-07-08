@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Returns from the current procedure.
 /// </summary>
-internal sealed class RetInstruction : InstructionBase
+internal sealed class RetInstruction(IOperand value) : InstructionBase
 {
     public override string InstructionKeyword => "ret";
 
@@ -14,14 +14,9 @@ internal sealed class RetInstruction : InstructionBase
     /// <summary>
     /// The returned value.
     /// </summary>
-    public IOperand Value { get; set; }
+    public IOperand Value { get; set; } = value;
 
     public override IEnumerable<IOperand> Operands => [this.Value];
-
-    public RetInstruction(IOperand value)
-    {
-        this.Value = value;
-    }
 
     public override string ToString() => $"{this.InstructionKeyword} {this.Value.ToOperandString()}";
 

@@ -38,8 +38,7 @@ internal enum CallScoreComparison
 /// <summary>
 /// Represents the score-vector for a single call.
 /// </summary>
-/// <param name="Scores">The array of scores for the arguments.</param>
-internal readonly struct CallScore
+internal readonly struct CallScore(int length)
 {
     /// <summary>
     /// True, if the score vector has a zero element.
@@ -69,12 +68,7 @@ internal readonly struct CallScore
         }
     }
 
-    private readonly int?[] scores;
-
-    public CallScore(int length)
-    {
-        this.scores = new int?[length];
-    }
+    private readonly int?[] scores = new int?[length];
 
     /// <summary>
     /// Compares two call-scores.

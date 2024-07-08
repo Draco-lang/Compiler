@@ -6,15 +6,10 @@ namespace Draco.Lsp.Attributes;
 /// Annotates registration options within the capability interfaces.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class RegistrationOptionsAttribute : Attribute
+public sealed class RegistrationOptionsAttribute(string method) : Attribute
 {
     /// <summary>
     /// The method to register onto.
     /// </summary>
-    public string Method { get; set; }
-
-    public RegistrationOptionsAttribute(string method)
-    {
-        this.Method = method;
-    }
+    public string Method { get; set; } = method;
 }

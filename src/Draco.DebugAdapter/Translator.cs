@@ -10,19 +10,12 @@ namespace Draco.DebugAdapter;
 /// <summary>
 /// Translation between DAP and the Draco Debugger API.
 /// </summary>
-internal sealed class Translator
+internal sealed class Translator(DapModels.InitializeRequestArguments clientInfo)
 {
-    private readonly DapModels.InitializeRequestArguments clientInfo;
-
     private readonly Dictionary<DebuggerApi.StackFrame, DapModels.StackFrame> stackFrameToDap = [];
     private readonly Dictionary<int, DebuggerApi.StackFrame> stackFrameIdToDebugger = [];
     private readonly Dictionary<int, object?> valueCache = [];
     private readonly Dictionary<DapModels.SourceBreakpoint, int> breakpointIds = [];
-
-    public Translator(DapModels.InitializeRequestArguments clientInfo)
-    {
-        this.clientInfo = clientInfo;
-    }
 
     public void ClearCache()
     {
@@ -178,9 +171,9 @@ internal sealed class Translator
         return (StartLine: sl, StartColumn: sc, EndLine: el, EndColumn: ec);
     }
 
-    public int LineToDap(int line) => line + ((this.clientInfo.LinesStartAt1 ?? false) ? 1 : 0);
-    public int ColumnToDap(int col) => col + ((this.clientInfo.ColumnsStartAt1 ?? false) ? 1 : 0);
+    public int LineToDap(int line) => line + ((clientInfo.LinesStartAt1 ?? false) ? 1 : 0);
+    public int ColumnToDap(int col) => col + ((clientInfo.ColumnsStartAt1 ?? false) ? 1 : 0);
 
-    public int LineToDebugger(int line) => line - ((this.clientInfo.LinesStartAt1 ?? false) ? 1 : 0);
-    public int ColumnToDebugger(int col) => col - ((this.clientInfo.ColumnsStartAt1 ?? false) ? 1 : 0);
+    public int LineToDebugger(int line) => line - ((clientInfo.LinesStartAt1 ?? false) ? 1 : 0);
+    public int ColumnToDebugger(int col) => col - ((clientInfo.ColumnsStartAt1 ?? false) ? 1 : 0);
 }

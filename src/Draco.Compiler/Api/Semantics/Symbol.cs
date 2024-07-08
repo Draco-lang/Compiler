@@ -180,9 +180,9 @@ public interface ILabelSymbol : ISymbol
 
 // Base classes ////////////////////////////////////////////////////////////////
 
-internal abstract class SymbolBase : ISymbol
+internal abstract class SymbolBase(Symbol symbol) : ISymbol
 {
-    public Symbol Symbol { get; }
+    public Symbol Symbol { get; } = symbol;
 
     public string Name => this.Symbol.Name;
     public bool IsError => this.Symbol.IsError;
@@ -191,26 +191,16 @@ internal abstract class SymbolBase : ISymbol
     public string Documentation => this.Symbol.Documentation.ToMarkdown();
     public IEnumerable<ISymbol> Members => this.Symbol.Members.Select(x => x.ToApiSymbol());
 
-    public SymbolBase(Symbol symbol)
-    {
-        this.Symbol = symbol;
-    }
-
     public bool Equals(ISymbol? other) => other is SymbolBase o
                                        && ReferenceEquals(this.Symbol, o.Symbol);
 
     public override int GetHashCode() => this.Symbol.GetHashCode();
 }
 
-internal abstract class SymbolBase<TInternalSymbol> : SymbolBase
+internal abstract class SymbolBase<TInternalSymbol>(TInternalSymbol symbol) : SymbolBase(symbol)
     where TInternalSymbol : Symbol
 {
     public new TInternalSymbol Symbol => (TInternalSymbol)base.Symbol;
-
-    protected SymbolBase(TInternalSymbol symbol)
-        : base(symbol)
-    {
-    }
 
     public override string ToString() => this.Symbol.ToString();
 }

@@ -5,7 +5,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// An unconditional jump.
 /// </summary>
-internal sealed class JumpInstruction : InstructionBase
+internal sealed class JumpInstruction(BasicBlock target) : InstructionBase
 {
     public override string InstructionKeyword => "jump";
     public override bool IsBranch => true;
@@ -14,12 +14,7 @@ internal sealed class JumpInstruction : InstructionBase
     /// <summary>
     /// The jump target.
     /// </summary>
-    public BasicBlock Target { get; set; }
-
-    public JumpInstruction(BasicBlock target)
-    {
-        this.Target = target;
-    }
+    public BasicBlock Target { get; set; } = target;
 
     public override string ToString() => $"{this.InstructionKeyword} lbl{this.Target.Index}";
 

@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Binds imported symbols in a scope.
 /// </summary>
-internal sealed class ImportBinder : Binder
+internal sealed class ImportBinder(Binder parent, SyntaxNode declaringSyntax) : Binder(parent)
 {
     /// <summary>
     /// The diagnostics produced during import resolution.
@@ -30,13 +30,7 @@ internal sealed class ImportBinder : Binder
 
     public override IEnumerable<Symbol> DeclaredSymbols => this.ImportItems.SelectMany(i => i.ImportedSymbols);
 
-    public override SyntaxNode DeclaringSyntax { get; }
-
-    public ImportBinder(Binder parent, SyntaxNode declaringSyntax)
-        : base(parent)
-    {
-        this.DeclaringSyntax = declaringSyntax;
-    }
+    public override SyntaxNode DeclaringSyntax { get; } = declaringSyntax;
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {

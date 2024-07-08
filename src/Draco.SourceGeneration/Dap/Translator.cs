@@ -14,7 +14,7 @@ namespace Draco.SourceGeneration.Dap;
 /// <summary>
 /// Translates the JSON schema to a C# model.
 /// </summary>
-internal sealed class Translator
+internal sealed class Translator(JsonDocument sourceModel)
 {
     private static readonly string[] basicStructures =
     [
@@ -23,15 +23,8 @@ internal sealed class Translator
         "Response",
         "Event",
     ];
-
-    private readonly JsonDocument sourceModel;
     private readonly Model targetModel = new();
     private readonly Dictionary<string, Type> translatedTypes = [];
-
-    public Translator(JsonDocument sourceModel)
-    {
-        this.sourceModel = sourceModel;
-    }
 
     /// <summary>
     /// Adds a builtin type that does not need translation anymore.
@@ -56,7 +49,7 @@ internal sealed class Translator
     public Model Translate()
     {
         // Get all definitions in the schema
-        var types = this.sourceModel.RootElement
+        var types = sourceModel.RootElement
             .GetProperty("definitions")
             .EnumerateObject();
 
@@ -127,7 +120,7 @@ internal sealed class Translator
         if (this.translatedTypes.TryGetValue(name, out var existing)) return existing;
 
         // Get all definitions in the schema
-        var types = this.sourceModel.RootElement.GetProperty("definitions");
+        var types = sourceModel.RootElement.GetProperty("definitions");
 
         if (types.TryGetProperty(name, out var typeDesc))
         {

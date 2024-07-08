@@ -7,31 +7,27 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// A procedure call.
 /// </summary>
-internal sealed class CallInstruction : InstructionBase, IValueInstruction
+internal sealed class CallInstruction(
+    Register target,
+    FunctionSymbol procedure,
+    IEnumerable<IOperand> arguments) : InstructionBase, IValueInstruction
 {
     public override string InstructionKeyword => "call";
 
-    public Register Target { get; set; }
+    public Register Target { get; set; } = target;
 
     /// <summary>
     /// The called procedure.
     /// </summary>
-    public FunctionSymbol Procedure { get; set; }
+    public FunctionSymbol Procedure { get; set; } = procedure;
 
     /// <summary>
     /// The arguments that are passed to the procedure.
     /// </summary>
-    public IList<IOperand> Arguments { get; set; } = [];
+    public IList<IOperand> Arguments { get; set; } = arguments.ToList();
 
     public override IEnumerable<Symbol> StaticOperands => [this.Procedure];
     public override IEnumerable<IOperand> Operands => this.Arguments;
-
-    public CallInstruction(Register target, FunctionSymbol procedure, IEnumerable<IOperand> arguments)
-    {
-        this.Target = target;
-        this.Procedure = procedure;
-        this.Arguments = arguments.ToList();
-    }
 
     public override string ToString() =>
         $"{this.Target.ToOperandString()} := {this.InstructionKeyword} [{this.Procedure.FullName}]({string.Join(", ", this.Arguments.Select(a => a.ToOperandString()))})";

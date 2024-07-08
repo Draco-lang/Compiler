@@ -6,19 +6,14 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// A pseudo-instruction for representing sequence points.
 /// </summary>
-internal sealed class SequencePoint : InstructionBase
+internal sealed class SequencePoint(SyntaxRange? range) : InstructionBase
 {
     public override string InstructionKeyword => "@sequence point";
 
     /// <summary>
     /// The range this sequence point corresponds to, if any.
     /// </summary>
-    public SyntaxRange? Range { get; }
-
-    public SequencePoint(SyntaxRange? range)
-    {
-        this.Range = range;
-    }
+    public SyntaxRange? Range { get; } = range;
 
     public override SequencePoint Clone() => new(this.Range);
 

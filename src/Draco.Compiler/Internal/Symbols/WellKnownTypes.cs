@@ -19,7 +19,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// A collection of well-known types that the compiler needs.
 /// </summary>
-internal sealed partial class WellKnownTypes
+internal sealed partial class WellKnownTypes(Compilation compilation)
 {
     #region AllSymbols Helper
     /// <summary>
@@ -115,7 +115,7 @@ internal sealed partial class WellKnownTypes
     }
 
     private static SynthetizedTypeAliasSymbol Alias(string name, TypeSymbol type) =>
-        new SynthetizedTypeAliasSymbol(name, type);
+        new(name, type);
     #endregion
 
     #region Singletons
@@ -169,14 +169,8 @@ internal sealed partial class WellKnownTypes
         1 => this.ArrayType.GenericInstantiate(elementType),
         int n => new ArrayTypeSymbol(n, this.SystemInt32).GenericInstantiate(elementType),
     };
+
     #endregion
-
-    private readonly Compilation compilation;
-
-    public WellKnownTypes(Compilation compilation)
-    {
-        this.compilation = compilation;
-    }
 
     public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(1, this.SystemInt32));
     private ArrayTypeSymbol? array;
@@ -196,13 +190,13 @@ internal sealed partial class WellKnownTypes
         assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
 
     private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>
-        this.compilation.MetadataAssemblies.Values.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
+        compilation.MetadataAssemblies.Values.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
 
     private MetadataAssemblySymbol GetAssemblyWithNameAndToken(string name, byte[] token)
     {
         var assemblyName = new AssemblyName() { Name = name };
         assemblyName.SetPublicKeyToken(token);
-        return this.compilation.MetadataAssemblies.Values
+        return compilation.MetadataAssemblies.Values
             .SingleOrDefault(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName))
             ?? throw new InvalidOperationException($"Failed to locate assembly with name '{name}' and public key token '{BitConverter.ToString(token)}'.");
     }

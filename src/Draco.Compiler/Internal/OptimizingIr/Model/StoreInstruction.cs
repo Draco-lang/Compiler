@@ -6,28 +6,22 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Stores a value in a local/global/argument.
 /// </summary>
-internal sealed class StoreInstruction : InstructionBase
+internal sealed class StoreInstruction(Symbol target, IOperand source) : InstructionBase
 {
     public override string InstructionKeyword => "store";
 
     /// <summary>
     /// The symbol to store to.
     /// </summary>
-    public Symbol Target { get; set; }
+    public Symbol Target { get; set; } = target;
 
     /// <summary>
     /// The operand to store the value of.
     /// </summary>
-    public IOperand Source { get; set; }
+    public IOperand Source { get; set; } = source;
 
     public override IEnumerable<Symbol> StaticOperands => [this.Target];
     public override IEnumerable<IOperand> Operands => [this.Source];
-
-    public StoreInstruction(Symbol target, IOperand source)
-    {
-        this.Target = target;
-        this.Source = source;
-    }
 
     public override string ToString() => $"{this.InstructionKeyword} {this.Target.FullName} := {this.Source.ToOperandString()}";
 

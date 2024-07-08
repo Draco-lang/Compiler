@@ -34,7 +34,8 @@ internal static class SyntaxList
 /// A generic list of <see cref="SyntaxNode"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds.</typeparam>
-internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
+internal sealed partial class SyntaxList<TNode>(ImmutableArray<TNode> nodes)
+    : SyntaxNode, IReadOnlyList<TNode>
     where TNode : SyntaxNode
 {
     public static SyntaxList<TNode> Empty { get; } = new([]);
@@ -55,17 +56,12 @@ internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNod
     /// <summary>
     /// The raw nodes of this syntax list.
     /// </summary>
-    public ImmutableArray<TNode> Nodes { get; }
+    public ImmutableArray<TNode> Nodes { get; } = nodes;
 
     public int Count => this.Nodes.Length;
     public override IEnumerable<SyntaxNode> Children => this.Nodes;
 
     public TNode this[int index] => this.Nodes[index];
-
-    public SyntaxList(ImmutableArray<TNode> nodes)
-    {
-        this.Nodes = nodes;
-    }
 
     public SyntaxList(IEnumerable<SyntaxNode> nodes)
         : this(nodes.Cast<TNode>().ToImmutableArray())

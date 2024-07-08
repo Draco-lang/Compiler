@@ -9,11 +9,11 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// A constructor function for types.
 /// </summary>
-internal sealed class ConstructorFunctionSymbol : FunctionSymbol
+internal sealed class ConstructorFunctionSymbol(FunctionSymbol ctorDefinition) : FunctionSymbol
 {
     public override string Name => this.InstantiatedType.Name;
     public override bool IsSpecialName => true;
-    public override Api.Semantics.Visibility Visibility => this.ctorDefinition.Visibility;
+    public override Api.Semantics.Visibility Visibility => ctorDefinition.Visibility;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
@@ -63,14 +63,7 @@ internal sealed class ConstructorFunctionSymbol : FunctionSymbol
     private volatile bool contextNeedsBuild = true;
     private readonly object contextBuildLock = new();
 
-    private TypeSymbol InstantiatedType => (TypeSymbol)this.ctorDefinition.ContainingSymbol!;
-
-    private readonly FunctionSymbol ctorDefinition;
-
-    public ConstructorFunctionSymbol(FunctionSymbol ctorDefinition)
-    {
-        this.ctorDefinition = ctorDefinition;
-    }
+    private TypeSymbol InstantiatedType => (TypeSymbol)ctorDefinition.ContainingSymbol!;
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters() => this.InstantiatedType.GenericParameters
         .Select(p => new SynthetizedTypeParameterSymbol(this, p.Name))
@@ -87,8 +80,8 @@ internal sealed class ConstructorFunctionSymbol : FunctionSymbol
         : this.InstantiatedType.GenericInstantiate(this.InstantiatedType.ContainingSymbol, this.Context.Value);
 
     private FunctionSymbol BuildConstructorSymbol() => this.Context is null
-        ? this.ctorDefinition
-        : this.ctorDefinition.GenericInstantiate(this.ReturnType, this.Context.Value);
+        ? ctorDefinition
+        : ctorDefinition.GenericInstantiate(this.ReturnType, this.Context.Value);
 
     private GenericContext? BuildContext()
     {

@@ -28,18 +28,14 @@ internal sealed class ArrayLengthPropertySymbol : PropertySymbol
 /// <summary>
 /// The getter of array Length.
 /// </summary>
-internal sealed class ArrayLengthGetSymbol : FunctionSymbol, IPropertyAccessorSymbol
+internal sealed class ArrayLengthGetSymbol(
+    ArrayTypeSymbol containingSymbol,
+    PropertySymbol propertySymbol) : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override ImmutableArray<ParameterSymbol> Parameters => [];
     public override TypeSymbol ReturnType => this.ContainingSymbol.IndexType;
     public override bool IsStatic => false;
 
-    public override ArrayTypeSymbol ContainingSymbol { get; }
-    public PropertySymbol Property { get; }
-
-    public ArrayLengthGetSymbol(ArrayTypeSymbol containingSymbol, PropertySymbol propertySymbol)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.Property = propertySymbol;
-    }
+    public override ArrayTypeSymbol ContainingSymbol { get; } = containingSymbol;
+    public PropertySymbol Property { get; } = propertySymbol;
 }

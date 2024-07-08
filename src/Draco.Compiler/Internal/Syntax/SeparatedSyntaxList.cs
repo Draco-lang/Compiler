@@ -25,7 +25,8 @@ internal static class SeparatedSyntaxList
 /// A generic list of <see cref="SyntaxNode"/>s separated by <see cref="SyntaxToken"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds between the separators.</typeparam>
-internal sealed partial class SeparatedSyntaxList<TNode> : SyntaxNode, IReadOnlyList<SyntaxNode>
+internal sealed partial class SeparatedSyntaxList<TNode>(
+    ImmutableArray<SyntaxNode> nodes) : SyntaxNode, IReadOnlyList<SyntaxNode>
     where TNode : SyntaxNode
 {
     private static Type RedElementType { get; } = Assembly
@@ -66,17 +67,12 @@ internal sealed partial class SeparatedSyntaxList<TNode> : SyntaxNode, IReadOnly
     /// <summary>
     /// The raw nodes of this syntax list.
     /// </summary>
-    public ImmutableArray<SyntaxNode> Nodes { get; }
+    public ImmutableArray<SyntaxNode> Nodes { get; } = nodes;
 
     int IReadOnlyCollection<SyntaxNode>.Count => this.Nodes.Length;
     SyntaxNode IReadOnlyList<SyntaxNode>.this[int index] => this.Nodes[index];
 
     public override IEnumerable<SyntaxNode> Children => this.Nodes;
-
-    public SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodes)
-    {
-        this.Nodes = nodes;
-    }
 
     public SeparatedSyntaxList(IEnumerable<SyntaxNode> nodes)
         : this(nodes.ToImmutableArray())

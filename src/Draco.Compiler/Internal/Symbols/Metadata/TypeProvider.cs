@@ -11,22 +11,17 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// Helper for decoding metadata blob-encoded types.
 /// </summary>
-internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>, ICustomAttributeTypeProvider<TypeSymbol>
+internal sealed class TypeProvider(Compilation compilation)
+    : ISignatureTypeProvider<TypeSymbol, Symbol>, ICustomAttributeTypeProvider<TypeSymbol>
 {
     private readonly record struct CacheKey(MetadataReader Reader, EntityHandle Handle);
 
     // TODO: We return a special error type for now to swallow errors
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
 
-    private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
+    private WellKnownTypes WellKnownTypes => compilation.WellKnownTypes;
 
-    private readonly Compilation compilation;
     private readonly ConcurrentDictionary<CacheKey, TypeSymbol> cache = new();
-
-    public TypeProvider(Compilation compilation)
-    {
-        this.compilation = compilation;
-    }
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
         new ArrayTypeSymbol(shape.Rank, this.WellKnownTypes.SystemInt32).GenericInstantiate(elementType);
@@ -152,7 +147,7 @@ internal sealed class TypeProvider : ISignatureTypeProvider<TypeSymbol, Symbol>,
 
         // TODO: If we don't have the assembly report error
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
-        var assembly = this.compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
+        var assembly = compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         return assembly.RootNamespace.Lookup([.. parts]).OfType<TypeSymbol>().Single();
     }
 

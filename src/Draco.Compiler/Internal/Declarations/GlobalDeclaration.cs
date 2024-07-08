@@ -7,12 +7,13 @@ namespace Draco.Compiler.Internal.Declarations;
 /// <summary>
 /// A global variable declaration.
 /// </summary>
-internal sealed class GlobalDeclaration : Declaration
+internal sealed class GlobalDeclaration(VariableDeclarationSyntax syntax)
+    : Declaration(syntax.Name.Text)
 {
     /// <summary>
     /// The syntax of the declaration.
     /// </summary>
-    public VariableDeclarationSyntax Syntax { get; }
+    public VariableDeclarationSyntax Syntax { get; } = syntax;
 
     public override ImmutableArray<Declaration> Children => [];
 
@@ -22,11 +23,5 @@ internal sealed class GlobalDeclaration : Declaration
         {
             yield return this.Syntax;
         }
-    }
-
-    public GlobalDeclaration(VariableDeclarationSyntax syntax)
-        : base(syntax.Name.Text)
-    {
-        this.Syntax = syntax;
     }
 }

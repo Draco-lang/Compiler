@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Draco.SourceGeneration.SyntaxTree;
 
-public sealed class Tree
+public sealed class Tree(Node root, IList<Node> nodes)
 {
     public static Tree FromXml(XmlTree tree)
     {
@@ -78,14 +78,8 @@ public sealed class Tree
         foreach (var node in tree.Nodes) AddNodeName(node.Name);
     }
 
-    public Node Root { get; }
-    public IList<Node> Nodes { get; }
-
-    public Tree(Node root, IList<Node> nodes)
-    {
-        this.Root = root;
-        this.Nodes = nodes;
-    }
+    public Node Root { get; } = root;
+    public IList<Node> Nodes { get; } = nodes;
 }
 
 public sealed class Node
@@ -108,25 +102,21 @@ public sealed class Node
     }
 }
 
-public sealed class Field
+public sealed class Field(
+    string name,
+    string type,
+    bool @override,
+    bool @abstract,
+    string? documentation,
+    IList<string> tokenKinds)
 {
-    public string Name { get; }
-    public string Type { get; }
-    public bool Override { get; }
-    public bool Abstract { get; }
-    public string? Documentation { get; }
-    public IList<string> TokenKinds { get; }
+    public string Name { get; } = name;
+    public string Type { get; } = type;
+    public bool Override { get; } = @override;
+    public bool Abstract { get; } = @abstract;
+    public string? Documentation { get; } = documentation;
+    public IList<string> TokenKinds { get; } = tokenKinds;
     public bool IsNullable => this.Type.EndsWith("?");
     public string NonNullableType => this.IsNullable ? this.Type[..^1] : this.Type;
     public bool IsToken => this.NonNullableType == "SyntaxToken";
-
-    public Field(string name, string type, bool @override, bool @abstract, string? documentation, IList<string> tokenKinds)
-    {
-        this.Name = name;
-        this.Type = type;
-        this.Override = @override;
-        this.Abstract = @abstract;
-        this.Documentation = documentation;
-        this.TokenKinds = tokenKinds;
-    }
 }

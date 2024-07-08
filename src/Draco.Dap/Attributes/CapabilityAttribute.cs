@@ -15,15 +15,10 @@ namespace Draco.Dap.Attributes;
 /// Annotates a capability property.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class CapabilityAttribute : Attribute
+public sealed class CapabilityAttribute(string property) : Attribute
 {
     /// <summary>
     /// The capability's property name.
     /// </summary>
-    public string Property { get; set; }
-
-    public CapabilityAttribute(string property)
-    {
-        this.Property = property;
-    }
+    public string Property { get; set; } = property;
 }

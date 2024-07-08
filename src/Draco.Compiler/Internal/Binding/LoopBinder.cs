@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Binds the break and continue labels in the loop body.
 /// </summary>
-internal class LoopBinder : Binder
+internal class LoopBinder(Binder parent, SyntaxNode declaringSyntax) : Binder(parent)
 {
     /// <summary>
     /// The break label.
@@ -21,15 +21,9 @@ internal class LoopBinder : Binder
     /// </summary>
     public LabelSymbol ContinueLabel { get; } = new SynthetizedLabelSymbol("continue");
 
-    public override SyntaxNode DeclaringSyntax { get; }
+    public override SyntaxNode DeclaringSyntax { get; } = declaringSyntax;
 
     public override IEnumerable<Symbol> DeclaredSymbols => [this.BreakLabel, this.ContinueLabel];
-
-    public LoopBinder(Binder parent, SyntaxNode declaringSyntax)
-        : base(parent)
-    {
-        this.DeclaringSyntax = declaringSyntax;
-    }
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {

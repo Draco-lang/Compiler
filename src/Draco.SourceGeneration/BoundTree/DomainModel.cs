@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Draco.SourceGeneration.BoundTree;
 
-public sealed class Tree
+public sealed class Tree(Node root, IList<Node> nodes)
 {
     public static Tree FromXml(XmlTree tree)
     {
@@ -79,14 +79,8 @@ public sealed class Tree
         foreach (var node in tree.Nodes) AddNodeName(node.Name);
     }
 
-    public Node Root { get; }
-    public IList<Node> Nodes { get; }
-
-    public Tree(Node root, IList<Node> nodes)
-    {
-        this.Root = root;
-        this.Nodes = nodes;
-    }
+    public Node Root { get; } = root;
+    public IList<Node> Nodes { get; } = nodes;
 }
 
 public sealed class Node
@@ -107,14 +101,14 @@ public sealed class Node
     }
 }
 
-public sealed class Field
+public sealed class Field(string name, string type, bool @override)
 {
-    public string Name { get; }
-    public string Type { get; }
-    public bool Override { get; }
+    public string Name { get; } = name;
+    public string Type { get; } = type;
+    public bool Override { get; } = @override;
     public bool IsNullable => this.Type.EndsWith("?");
     public string NonNullableType => this.IsNullable
-        ? this.Type.Substring(0, this.Type.Length - 1)
+        ? this.Type[..^1]
         : this.Type;
     public bool IsArray => this.Type.StartsWith("ImmutableArray");
     public string ElementType
@@ -124,14 +118,7 @@ public sealed class Field
             Debug.Assert(this.IsArray);
             var start = this.Type.IndexOf('<') + 1;
             var end = this.Type.IndexOf('>');
-            return this.Type.Substring(start, end - start);
+            return this.Type[start..end];
         }
-    }
-
-    public Field(string name, string type, bool @override)
-    {
-        this.Name = name;
-        this.Type = type;
-        this.Override = @override;
     }
 }

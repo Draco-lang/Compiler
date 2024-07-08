@@ -8,10 +8,8 @@ using Draco.Debugger;
 
 namespace Draco.DebugAdapter;
 
-internal sealed partial class DracoDebugAdapter : IDebugAdapter
+internal sealed partial class DracoDebugAdapter(IDebugClient client) : IDebugAdapter
 {
-    private readonly IDebugClient client;
-
     private InitializeRequestArguments clientInfo = null!;
     private Translator translator = null!;
     private DebuggerHost debuggerHost = null!;
@@ -23,11 +21,6 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     private readonly Queue<SetBreakpointsArguments> breakpointRequestQueue = new();
 
-    public DracoDebugAdapter(IDebugClient client)
-    {
-        this.client = client;
-    }
-
     public void Dispose() { }
 
     public async Task InitializeAsync(InitializeRequestArguments args)
@@ -38,7 +31,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         this.debuggerHost = DebuggerHost.Create();
 
         // Starts the configuration sequence
-        await this.client.Initialized();
+        await client.Initialized();
     }
 
     // Launching ///////////////////////////////////////////////////////////////
@@ -51,18 +44,18 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
         // TODO: Consider no-debug
         this.debugger = this.debuggerHost.StartProcess("dotnet", toRun);
 
-        this.debugger.OnEventLog += async (_, e) => await this.client.SendOutputAsync(new()
+        this.debugger.OnEventLog += async (_, e) => await client.SendOutputAsync(new()
         {
             Category = OutputEvent.OutputCategory.Console,
             Output = e + "\n",
         });
 
-        this.debugger.OnStandardOut += async (_, args) => await this.client.SendOutputAsync(new()
+        this.debugger.OnStandardOut += async (_, args) => await client.SendOutputAsync(new()
         {
             Category = OutputEvent.OutputCategory.Stdout,
             Output = args,
         });
-        this.debugger.OnStandardError += async (_, args) => await this.client.SendOutputAsync(new()
+        this.debugger.OnStandardError += async (_, args) => await client.SendOutputAsync(new()
         {
             Category = OutputEvent.OutputCategory.Stderr,
             Output = args,
@@ -85,19 +78,19 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
             await this.BreakAt(thread, StoppedEvent.StoppedReason.Pause);
         };
 
-        this.debugger.OnModuleLoaded += async (_, m) => await this.client.UpdateModuleAsync(new ModuleEvent()
+        this.debugger.OnModuleLoaded += async (_, m) => await client.UpdateModuleAsync(new ModuleEvent()
         {
             Reason = ModuleEvent.ModuleReason.New,
             Module = this.translator.ToDap(m)
         });
 
-        this.debugger.OnModuleUnloaded += async (_, m) => await this.client.UpdateModuleAsync(new ModuleEvent()
+        this.debugger.OnModuleUnloaded += async (_, m) => await client.UpdateModuleAsync(new ModuleEvent()
         {
             Reason = ModuleEvent.ModuleReason.Removed,
             Module = this.translator.ToDap(m)
         });
 
-        await this.client.ProcessStartedAsync(new()
+        await client.ProcessStartedAsync(new()
         {
             Name = toRun,
         });
@@ -120,7 +113,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
                 // Send updates about the breakpoints
                 foreach (var (reqBp, bp) in req.Breakpoints.Zip(result))
                 {
-                    await this.client.UpdateBreakpointAsync(new()
+                    await client.UpdateBreakpointAsync(new()
                     {
                         Reason = BreakpointEvent.BreakpointReason.Changed,
                         Breakpoint = bp,
@@ -153,8 +146,8 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
 
     private async Task OnDebuggerExited(int exitCode)
     {
-        await this.client.DebuggerTerminatedAsync(new());
-        await this.client.ProcessExitedAsync(new()
+        await client.DebuggerTerminatedAsync(new());
+        await client.ProcessExitedAsync(new()
         {
             ExitCode = exitCode,
         });
@@ -278,7 +271,7 @@ internal sealed partial class DracoDebugAdapter : IDebugAdapter
     }
 
     private Task BreakAt(Debugger.Thread? thread, StoppedEvent.StoppedReason reason) =>
-        this.client.StoppedAsync(new()
+        client.StoppedAsync(new()
         {
             Reason = reason,
             AllThreadsStopped = true,

@@ -8,19 +8,12 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// An in-memory <see cref="Api.Syntax.SourceText"/> implementation.
 /// </summary>
-internal sealed class MemorySourceText : Api.Syntax.SourceText
+internal sealed class MemorySourceText(Uri? path, ReadOnlyMemory<char> content) : Api.Syntax.SourceText
 {
-    public override Uri? Path { get; }
-    internal override ISourceReader SourceReader => Syntax.SourceReader.From(this.content);
+    public override Uri? Path { get; } = path;
+    internal override ISourceReader SourceReader => Syntax.SourceReader.From(content);
 
-    private readonly ReadOnlyMemory<char> content;
     private List<int>? lineStarts;
-
-    public MemorySourceText(Uri? path, ReadOnlyMemory<char> content)
-    {
-        this.Path = path;
-        this.content = content;
-    }
 
     internal override Api.Syntax.SyntaxPosition IndexToSyntaxPosition(int index)
     {
@@ -38,11 +31,11 @@ internal sealed class MemorySourceText : Api.Syntax.SourceText
         var lineStarts = LazyInitializer.EnsureInitialized(ref this.lineStarts, this.BuildLineStarts);
 
         // Avoid over-indexing
-        if (position.Line >= lineStarts.Count) return this.content.Length;
+        if (position.Line >= lineStarts.Count) return content.Length;
 
         var lineOffset = lineStarts[position.Line];
         var nextLineOffset = position.Line + 1 >= lineStarts.Count
-            ? this.content.Length
+            ? content.Length
             : lineStarts[position.Line + 1];
         var lineLength = nextLineOffset - lineOffset;
         var columnOffset = Math.Min(lineLength, position.Column);
@@ -58,9 +51,9 @@ internal sealed class MemorySourceText : Api.Syntax.SourceText
             0
         };
 
-        for (var i = 0; i < this.content.Length;)
+        for (var i = 0; i < content.Length;)
         {
-            var newlineLength = StringUtils.NewlineLength(this.content.Span, i);
+            var newlineLength = StringUtils.NewlineLength(content.Span, i);
             if (newlineLength > 0)
             {
                 // This is a newline, add the next line start

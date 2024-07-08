@@ -10,7 +10,10 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// It does not necessarily mean that the type itself was generic, it might have been within another generic
 /// context.
 /// </summary>
-internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
+internal sealed class TypeInstanceSymbol(
+    Symbol? containingSymbol,
+    TypeSymbol genericDefinition,
+    GenericContext context) : TypeSymbol, IGenericInstanceSymbol
 {
     // TODO: One-to-one copy from FunctionInstanceSymbol...
     public override ImmutableArray<TypeParameterSymbol> GenericParameters
@@ -53,22 +56,15 @@ internal sealed class TypeInstanceSymbol : TypeSymbol, IGenericInstanceSymbol
     public override bool IsInterface => this.GenericDefinition.IsInterface;
     public override string Name => this.GenericDefinition.Name;
 
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol? ContainingSymbol { get; } = containingSymbol;
 
-    public override TypeSymbol GenericDefinition { get; }
+    public override TypeSymbol GenericDefinition { get; } = genericDefinition;
 
     // IMPORTANT: Flag is a bool and not computed because we can't atomically write structs
     private volatile bool genericsNeedsBuild = true;
     private readonly object genericsBuildLock = new();
 
-    public GenericContext Context { get; }
-
-    public TypeInstanceSymbol(Symbol? containingSymbol, TypeSymbol genericDefinition, GenericContext context)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.GenericDefinition = genericDefinition;
-        this.Context = context;
-    }
+    public GenericContext Context { get; } = context;
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         base.GenericInstantiate(containingSymbol, arguments);

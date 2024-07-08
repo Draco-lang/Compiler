@@ -6,17 +6,12 @@ using Terminal.Gui;
 
 namespace Draco.Debugger.Tui;
 
-internal sealed class SourceFileListDataSource : IListDataSource
+internal sealed class SourceFileListDataSource(IReadOnlyList<SourceFile> sourceFiles) : IListDataSource
 {
     public int Count => this.sourceFiles.Count;
     public int Length => this.sourceFiles.Count;
 
-    private readonly List<SourceFile> sourceFiles;
-
-    public SourceFileListDataSource(IReadOnlyList<SourceFile> sourceFiles)
-    {
-        this.sourceFiles = [.. sourceFiles];
-    }
+    private readonly List<SourceFile> sourceFiles = [.. sourceFiles];
 
     public bool IsMarked(int item) => throw new NotSupportedException();
     public void SetMark(int item, bool value) => throw new NotSupportedException();

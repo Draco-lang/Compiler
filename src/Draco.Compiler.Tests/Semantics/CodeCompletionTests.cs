@@ -230,7 +230,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("S"))).ToImmutableArray();
+        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith('S'))).ToImmutableArray();
         AssertCompletions(completions, "System");
     }
 
@@ -315,7 +315,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = GetCompletions(tree, semanticModel, cursor).Where(x => x.DisplayText.Contains("W")).ToImmutableArray();
+        var completions = GetCompletions(tree, semanticModel, cursor).Where(x => x.DisplayText.Contains('W')).ToImmutableArray();
         var expected = new Dictionary<string, int>
         {
             { "Write", 17},

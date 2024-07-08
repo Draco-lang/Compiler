@@ -312,7 +312,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     // TODO: This can be cached
     private EntityHandle GetMultidimensionalArrayTypeHandle(TypeSymbol elementType, int rank)
     {
-        if (rank <= 1) throw new ArgumentOutOfRangeException(nameof(rank));
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(rank, 1);
         return this.MetadataBuilder.AddTypeSpecification(this.EncodeBlob(e =>
         {
             var encoder = e.TypeSpecificationSignature();
@@ -464,7 +464,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             Api.Semantics.Visibility.Public => MethodAttributes.Public,
             Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
             Api.Semantics.Visibility.Private => MethodAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(procedure.Symbol.Visibility)),
+            _ => throw new ArgumentOutOfRangeException(nameof(procedure)),
         };
 
         // Encode instructions

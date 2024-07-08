@@ -14,7 +14,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// Utility base-class for methods read up from metadata.
 /// </summary>
-internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
+internal class MetadataMethodSymbol(
+    Symbol containingSymbol,
+    MethodDefinition methodDefinition) : FunctionSymbol, IMetadataSymbol
 {
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
@@ -46,21 +48,21 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     }
 
     public override bool IsConstructor =>
-           this.methodDefinition.Attributes.HasFlag(MethodAttributes.SpecialName)
+           methodDefinition.Attributes.HasFlag(MethodAttributes.SpecialName)
         && this.Name == ".ctor";
 
-    public override bool IsSpecialName => this.methodDefinition.Attributes.HasFlag(MethodAttributes.SpecialName);
+    public override bool IsSpecialName => methodDefinition.Attributes.HasFlag(MethodAttributes.SpecialName);
 
     public override bool IsVirtual
     {
         get
         {
             if (this.ContainingSymbol is TypeSymbol { IsValueType: true }) return false;
-            return this.methodDefinition.Attributes.HasFlag(MethodAttributes.Virtual)
+            return methodDefinition.Attributes.HasFlag(MethodAttributes.Virtual)
                 || this.Override is not null;
         }
     }
-    public override bool IsStatic => this.methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
+    public override bool IsStatic => methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
     public override Api.Semantics.Visibility Visibility
     {
         get
@@ -72,7 +74,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
             }
 
             // Otherwise read flag from metadata
-            return this.methodDefinition.Attributes.HasFlag(MethodAttributes.Public)
+            return methodDefinition.Attributes.HasFlag(MethodAttributes.Public)
                 ? Api.Semantics.Visibility.Public
                 : Api.Semantics.Visibility.Internal;
         }
@@ -100,7 +102,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     internal override string RawDocumentation => LazyInitializer.EnsureInitialized(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
-    public override Symbol ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
 
     // IMPORTANT: Choice of flag field because of write order
     private bool SignatureNeedsBuild => Volatile.Read(ref this.returnType) is null;
@@ -109,7 +111,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     private TypeSymbol? returnType;
 
     public override string Name => this.MetadataName;
-    public override string MetadataName => this.MetadataReader.GetString(this.methodDefinition.Name);
+    public override string MetadataName => this.MetadataReader.GetString(methodDefinition.Name);
 
     // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
@@ -117,18 +119,11 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
-    private readonly MethodDefinition methodDefinition;
     private readonly object signatureBuildLock = new();
-
-    public MetadataMethodSymbol(Symbol containingSymbol, MethodDefinition methodDefinition)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.methodDefinition = methodDefinition;
-    }
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
     {
-        var genericParamsHandle = this.methodDefinition.GetGenericParameters();
+        var genericParamsHandle = methodDefinition.GetGenericParameters();
         if (genericParamsHandle.Count == 0) return [];
 
         var result = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
@@ -144,11 +139,11 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
     private void BuildSignature()
     {
         // Decode signature
-        var signature = this.methodDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
+        var signature = methodDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
 
         // Build parameters
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
-        foreach (var (paramHandle, paramType) in this.methodDefinition.GetParameters().Zip(signature.ParameterTypes))
+        foreach (var (paramHandle, paramType) in methodDefinition.GetParameters().Zip(signature.ParameterTypes))
         {
             var paramDef = this.MetadataReader.GetParameter(paramHandle);
             var paramSym = new MetadataParameterSymbol(
@@ -174,7 +169,7 @@ internal class MetadataMethodSymbol : FunctionSymbol, IMetadataSymbol
 
     private FunctionSymbol? GetExplicitOverride()
     {
-        var type = this.MetadataReader.GetTypeDefinition(this.methodDefinition.GetDeclaringType());
+        var type = this.MetadataReader.GetTypeDefinition(methodDefinition.GetDeclaringType());
         foreach (var impl in type.GetMethodImplementations())
         {
             var implementation = this.MetadataReader.GetMethodImplementation(impl);

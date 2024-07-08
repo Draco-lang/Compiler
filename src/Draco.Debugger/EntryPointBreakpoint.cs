@@ -2,12 +2,9 @@ using ClrDebug;
 
 namespace Draco.Debugger;
 
-internal sealed class EntryPointBreakpoint : MethodBreakpoint
+internal sealed class EntryPointBreakpoint(
+    SessionCache sessionCache,
+    CorDebugFunctionBreakpoint corDebugBreakpoint) : MethodBreakpoint(sessionCache, corDebugBreakpoint)
 {
     public override bool IsEntryPoint => true;
-
-    public EntryPointBreakpoint(SessionCache sessionCache, CorDebugFunctionBreakpoint corDebugBreakpoint)
-        : base(sessionCache, corDebugBreakpoint)
-    {
-    }
 }

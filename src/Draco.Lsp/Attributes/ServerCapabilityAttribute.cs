@@ -6,15 +6,10 @@ namespace Draco.Lsp.Attributes;
 /// Annotates a server capability property.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class ServerCapabilityAttribute : Attribute
+public sealed class ServerCapabilityAttribute(string property) : Attribute
 {
     /// <summary>
     /// The capability's property name.
     /// </summary>
-    public string Property { get; set; }
-
-    public ServerCapabilityAttribute(string property)
-    {
-        this.Property = property;
-    }
+    public string Property { get; set; } = property;
 }

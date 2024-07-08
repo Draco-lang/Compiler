@@ -12,18 +12,12 @@ namespace Draco.Debugger;
 /// </summary>
 public sealed class ObjectValue : IReadOnlyDictionary<string, object?>
 {
-    private struct Slot
+    private struct Slot(mdFieldDef fieldDef, GetFieldPropsResult fieldProps)
     {
-        public mdFieldDef FieldDef;
-        public GetFieldPropsResult FieldProps;
+        public mdFieldDef FieldDef = fieldDef;
+        public GetFieldPropsResult FieldProps = fieldProps;
         public bool ValueInitialized;
         public object? Value;
-
-        public Slot(mdFieldDef fieldDef, GetFieldPropsResult fieldProps)
-        {
-            this.FieldDef = fieldDef;
-            this.FieldProps = fieldProps;
-        }
     }
 
     public int Count => this.Slots.Length;

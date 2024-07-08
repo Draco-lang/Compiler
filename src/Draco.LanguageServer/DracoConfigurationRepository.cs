@@ -5,20 +5,13 @@ using Draco.Lsp.Server;
 
 namespace Draco.LanguageServer;
 
-internal sealed class DracoConfigurationRepository
+internal sealed class DracoConfigurationRepository(ILanguageClient client)
 {
     public InlayHintsConfiguration InlayHints { get; set; } = new();
 
-    private readonly ILanguageClient client;
-
-    public DracoConfigurationRepository(ILanguageClient client)
-    {
-        this.client = client;
-    }
-
     public async Task UpdateConfigurationAsync()
     {
-        var cfg = await this.client.GetConfigurationAsync(new()
+        var cfg = await client.GetConfigurationAsync(new()
         {
             Items =
             [

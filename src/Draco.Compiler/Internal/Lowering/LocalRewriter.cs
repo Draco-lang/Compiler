@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.Lowering;
 /// <summary>
 /// Performs local rewrites of the source code.
 /// </summary>
-internal partial class LocalRewriter : BoundTreeRewriter
+internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewriter
 {
     /// <summary>
     /// Represents a value that was temporarily stored.
@@ -28,14 +28,7 @@ internal partial class LocalRewriter : BoundTreeRewriter
         BoundExpression Reference,
         BoundStatement Assignment);
 
-    private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
-
-    private readonly Compilation compilation;
-
-    public LocalRewriter(Compilation compilation)
-    {
-        this.compilation = compilation;
-    }
+    private WellKnownTypes WellKnownTypes => compilation.WellKnownTypes;
 
     private BoundLiteralExpression LiteralExpression(object? value)
     {

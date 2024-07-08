@@ -15,15 +15,9 @@ namespace Draco.JsonRpc;
 /// <typeparam name="TError">The error descriptor.</typeparam>
 internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 {
-    protected sealed class JsonRpcResponseException : Exception
+    protected sealed class JsonRpcResponseException(TError error, string message) : Exception(message)
     {
-        public TError ResponseError { get; }
-
-        public JsonRpcResponseException(TError error, string message)
-            : base(message)
-        {
-            this.ResponseError = error;
-        }
+        public TError ResponseError { get; } = error;
     }
 
     protected interface IOutgoingRequest

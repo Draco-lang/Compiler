@@ -7,12 +7,12 @@ namespace Draco.Compiler.Internal.Declarations;
 /// <summary>
 /// Represents any kind of top-level declaration in the source code.
 /// </summary>
-internal abstract class Declaration
+internal abstract class Declaration(string name)
 {
     /// <summary>
     /// The name of the declared element.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; } = name;
 
     /// <summary>
     /// The declarations within this one.
@@ -23,9 +23,4 @@ internal abstract class Declaration
     /// The syntaxes that contribute to this declaration.
     /// </summary>
     public abstract IEnumerable<SyntaxNode> DeclaringSyntaxes { get; }
-
-    protected Declaration(string name)
-    {
-        this.Name = name;
-    }
 }

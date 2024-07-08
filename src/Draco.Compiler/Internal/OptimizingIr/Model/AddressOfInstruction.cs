@@ -6,24 +6,19 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Loads the address of some local/global/argument.
 /// </summary>
-internal sealed class AddressOfInstruction : InstructionBase, IValueInstruction
+internal sealed class AddressOfInstruction(Register target, Symbol source)
+    : InstructionBase, IValueInstruction
 {
     public override string InstructionKeyword => "addressof";
 
-    public Register Target { get; set; }
+    public Register Target { get; set; } = target;
 
     /// <summary>
     /// The operand to load from.
     /// </summary>
-    public Symbol Source { get; set; }
+    public Symbol Source { get; set; } = source;
 
     public override IEnumerable<Symbol> StaticOperands => [this.Source];
-
-    public AddressOfInstruction(Register target, Symbol source)
-    {
-        this.Target = target;
-        this.Source = source;
-    }
 
     public override string ToString() =>
         $"{this.Target.ToOperandString()} := {this.InstructionKeyword} {this.Source.FullName}";

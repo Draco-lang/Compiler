@@ -246,14 +246,14 @@ internal sealed class Translator(JsonDocument sourceModel)
         if (TryGetProperty(description, "type", out var type) && type.ValueKind == JsonValueKind.Array)
         {
             // This is a DU description
-            return this.TranslateDuType(type.EnumerateArray().ToList(), nameHint: nameHint, parent: parent);
+            return this.TranslateDuType([.. type.EnumerateArray()], nameHint: nameHint, parent: parent);
         }
 
         // Check for oneOf, just another way to specify DUs
         if (TryGetProperty(description, "oneOf", out var oneOf))
         {
             // This is a DU description
-            return this.TranslateDuType(oneOf.EnumerateArray().ToList(), nameHint: nameHint, parent: parent);
+            return this.TranslateDuType([.. oneOf.EnumerateArray()], nameHint: nameHint, parent: parent);
         }
 
         // Check for allOf, which is essentially inheritance

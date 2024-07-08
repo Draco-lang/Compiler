@@ -43,7 +43,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
 
     public SourceFunctionSymbol(Symbol? containingSymbol, FunctionDeclarationSyntax syntax)
     {
-        if (containingSymbol is null) throw new System.ArgumentNullException(nameof(containingSymbol));
+        System.ArgumentNullException.ThrowIfNull(containingSymbol);
 
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = syntax;

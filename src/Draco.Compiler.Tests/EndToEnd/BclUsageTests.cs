@@ -360,7 +360,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
         var result = Invoke<int>(
             assembly: assembly,
             methodName: "sum",
-            args: [1, 1, 2, 3, 5, 8, 13]);
+            args: [new[] { 1, 1, 2, 3, 5, 8, 13 }]);
 
         Assert.Equal(33, result);
     }
@@ -380,7 +380,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
         _ = Invoke<object?>(
             assembly: assembly,
             methodName: "log",
-            args: [1, 1, 2, 3, 5, 8, 13],
+            args: [new[] { 1, 1, 2, 3, 5, 8, 13 }],
             stdin: null,
             stdout: stringWriter);
 

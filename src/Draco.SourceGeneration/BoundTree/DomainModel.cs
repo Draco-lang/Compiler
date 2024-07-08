@@ -94,8 +94,8 @@ public sealed class Node
     public string Name { get; }
     public Node? Base { get; }
     public bool IsAbstract { get; }
-    public IList<Node> Derived { get; } = new List<Node>();
-    public IList<Field> Fields { get; } = new List<Field>();
+    public IList<Node> Derived { get; } = [];
+    public IList<Field> Fields { get; } = [];
 
     public Node(string name, Node? @base, bool isAbstract)
     {

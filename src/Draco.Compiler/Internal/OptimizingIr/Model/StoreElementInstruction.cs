@@ -18,7 +18,7 @@ internal sealed class StoreElementInstruction : InstructionBase
     /// <summary>
     /// The element indices.
     /// </summary>
-    public IList<IOperand> Indices { get; set; } = new List<IOperand>();
+    public IList<IOperand> Indices { get; set; } = [];
 
     /// <summary>
     /// The operand to store the value of.

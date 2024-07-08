@@ -17,32 +17,33 @@ internal sealed class InsertRewriter : SyntaxRewriter
 
     public override SyntaxNode VisitCompilationUnit(CompilationUnitSyntax node)
     {
-        if (this.insertInto == node && this.toInsert is DeclarationSyntax)
+        if (this.insertInto == node && this.toInsert is DeclarationSyntax decl)
         {
-            return new CompilationUnitSyntax(this.InsertIntoSyntaxList(node.Declarations, (DeclarationSyntax)this.toInsert), node.End);
+            return new CompilationUnitSyntax(this.InsertIntoSyntaxList(node.Declarations, decl), node.End);
         }
         return base.VisitCompilationUnit(node);
     }
 
     public override SyntaxNode VisitBlockFunctionBody(BlockFunctionBodySyntax node)
     {
-        if (this.insertInto == node && this.toInsert is StatementSyntax)
+        if (this.insertInto == node && this.toInsert is StatementSyntax stmt)
         {
-            return new BlockFunctionBodySyntax(node.OpenBrace, this.InsertIntoSyntaxList(node.Statements, (StatementSyntax)this.toInsert), node.CloseBrace);
+            return new BlockFunctionBodySyntax(node.OpenBrace, this.InsertIntoSyntaxList(node.Statements, stmt), node.CloseBrace);
         }
         return base.VisitBlockFunctionBody(node);
     }
 
     public override SyntaxNode VisitBlockExpression(BlockExpressionSyntax node)
     {
-        if (this.insertInto == node && this.toInsert is StatementSyntax)
+        if (this.insertInto == node && this.toInsert is StatementSyntax stmt)
         {
-            return new BlockExpressionSyntax(node.OpenBrace, this.InsertIntoSyntaxList(node.Statements, (StatementSyntax)this.toInsert), node.Value, node.CloseBrace);
+            return new BlockExpressionSyntax(node.OpenBrace, this.InsertIntoSyntaxList(node.Statements, stmt), node.Value, node.CloseBrace);
         }
         return base.VisitBlockExpression(node);
     }
 
-    private SyntaxList<T> InsertIntoSyntaxList<T>(SyntaxList<T> original, T insertion) where T : SyntaxNode
+    private SyntaxList<T> InsertIntoSyntaxList<T>(SyntaxList<T> original, T insertion)
+        where T : SyntaxNode
     {
         var list = original.ToList();
         list.Insert(this.position, insertion);

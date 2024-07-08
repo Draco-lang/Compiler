@@ -105,7 +105,7 @@ internal partial class Binder
                 break;
             }
             default:
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(syntax));
             }
         }
         return new BoundStringExpression(syntax, await BindingTask.WhenAll(partsTask), this.WellKnownTypes.SystemString);

@@ -20,7 +20,7 @@ internal sealed class LoadElementInstruction : InstructionBase, IValueInstructio
     /// <summary>
     /// The element indices.
     /// </summary>
-    public IList<IOperand> Indices { get; set; } = new List<IOperand>();
+    public IList<IOperand> Indices { get; set; } = [];
 
     public override IEnumerable<IOperand> Operands => this.Indices.Prepend(this.Array);
 

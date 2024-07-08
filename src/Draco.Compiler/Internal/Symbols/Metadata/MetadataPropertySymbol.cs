@@ -102,9 +102,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private PropertySymbol? GetExplicitOverride()
     {
-        var accessor = this.Getter ?? this.Setter;
-        if (accessor is null) throw new InvalidOperationException();
-
+        var accessor = this.Getter ?? this.Setter ?? throw new InvalidOperationException();
         if (accessor.Override is not null) return (accessor.Override as IPropertyAccessorSymbol)?.Property;
         return null;
     }

@@ -21,7 +21,7 @@ internal sealed class NewArrayInstruction : InstructionBase, IValueInstruction
     /// <summary>
     /// The dimension sizes.
     /// </summary>
-    public IList<IOperand> Dimensions { get; set; } = new List<IOperand>();
+    public IList<IOperand> Dimensions { get; set; } = [];
 
     public override IEnumerable<Symbol> StaticOperands => [this.ElementType];
     public override IEnumerable<IOperand> Operands => this.Dimensions;

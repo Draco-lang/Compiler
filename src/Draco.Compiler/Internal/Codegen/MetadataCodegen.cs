@@ -447,7 +447,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             Api.Semantics.Visibility.Public => FieldAttributes.Public,
             Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
             Api.Semantics.Visibility.Private => FieldAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(global.Visibility)),
+            _ => throw new ArgumentOutOfRangeException(nameof(global)),
         };
 
         // Definition

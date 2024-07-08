@@ -26,7 +26,7 @@ internal sealed class MemberCallInstruction : InstructionBase, IValueInstruction
     /// <summary>
     /// The arguments that are passed to the procedure.
     /// </summary>
-    public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
+    public IList<IOperand> Arguments { get; set; } = [];
 
     public override IEnumerable<Symbol> StaticOperands => [this.Procedure];
     public override IEnumerable<IOperand> Operands => this.Arguments.Prepend(this.Receiver);

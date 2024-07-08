@@ -24,7 +24,7 @@ internal sealed class RingBuffer<T> : IReadOnlyCollection<T>
         set
         {
             // If we try to reduce it below the current count, throw
-            if (value < this.Count) throw new ArgumentOutOfRangeException(nameof(value));
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, this.Count);
 
             // If capacity is already enough, early-return
             if (value <= this.Capacity) return;
@@ -202,7 +202,7 @@ internal sealed class RingBuffer<T> : IReadOnlyCollection<T>
     /// <returns>The new capacity of this ring buffer.</returns>
     public int EnsureCapacity(int capacity)
     {
-        if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+        ArgumentOutOfRangeException.ThrowIfNegative(capacity);
         if (this.Capacity < capacity)
         {
             var newCapacity = this.Capacity == 0 ? DefaultCapacity : this.Capacity * 2;

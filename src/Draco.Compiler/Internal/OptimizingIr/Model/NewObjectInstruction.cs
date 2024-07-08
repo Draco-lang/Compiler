@@ -21,7 +21,7 @@ internal sealed class NewObjectInstruction : InstructionBase, IValueInstruction
     /// <summary>
     /// The arguments that are passed to the constructor.
     /// </summary>
-    public IList<IOperand> Arguments { get; set; } = new List<IOperand>();
+    public IList<IOperand> Arguments { get; set; } = [];
 
     public override IEnumerable<Symbol> StaticOperands => [this.Constructor];
     public override IEnumerable<IOperand> Operands => this.Arguments;

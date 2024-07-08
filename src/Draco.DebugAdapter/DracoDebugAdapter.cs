@@ -234,7 +234,7 @@ internal sealed partial class DracoDebugAdapter(IDebugClient client) : IDebugAda
         });
     }
 
-    private IList<Dap.Model.Breakpoint> SetBreakpointsImpl(SetBreakpointsArguments args)
+    private List<Dap.Model.Breakpoint> SetBreakpointsImpl(SetBreakpointsArguments args)
     {
         if (this.debugger is null) throw new InvalidOperationException("cannot set up breakpoints without a running debugger");
 

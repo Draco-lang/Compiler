@@ -82,7 +82,7 @@ internal partial class DracoLanguageServer : IRename
         }
     }
 
-    private static ITextEdit RenameNode(SyntaxNode original, string name) => original switch
+    private static TextEdit RenameNode(SyntaxNode original, string name) => original switch
     {
         ParameterSyntax p => RenameToken(p.Name, name),
         GenericParameterSyntax g => RenameToken(g.Name, name),

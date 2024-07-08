@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 

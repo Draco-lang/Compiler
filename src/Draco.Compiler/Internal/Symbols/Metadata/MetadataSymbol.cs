@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

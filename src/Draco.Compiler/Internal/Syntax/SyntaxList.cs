@@ -45,13 +45,12 @@ internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNod
     private static Type RedNodeType { get; } = typeof(Api.Syntax.SyntaxList<>).MakeGenericType(RedElementType);
     private static ConstructorInfo RedNodeConstructor { get; } = RedNodeType.GetConstructor(
         BindingFlags.NonPublic | BindingFlags.Instance,
-        new[]
-        {
+        [
             typeof(Api.Syntax.SyntaxTree),
             typeof(Api.Syntax.SyntaxNode),
             typeof(int),
             typeof(IReadOnlyList<SyntaxNode>),
-        })!;
+        ])!;
 
     /// <summary>
     /// The raw nodes of this syntax list.
@@ -78,7 +77,7 @@ internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNod
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxList(this);
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxList(this);
     public override Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent, int fullPosition) =>
-        (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke(new object?[] { tree, parent, fullPosition, this })!;
+        (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke([tree, parent, fullPosition, this])!;
 
     public IEnumerator<TNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();

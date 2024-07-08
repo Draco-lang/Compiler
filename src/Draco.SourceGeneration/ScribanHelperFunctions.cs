@@ -8,12 +8,12 @@ namespace Draco.SourceGeneration;
 
 public sealed class ScribanHelperFunctions : ScriptObject
 {
-    private static readonly string[] keywords = new[]
-    {
+    private static readonly string[] keywords =
+    [
         "if", "else", "while", "for", "foreach",
         "params", "ref", "out", "operator",
         "object", "bool", "string"
-    };
+    ];
 
     public static string EscapeKeyword(string name) => keywords.Contains(name)
         ? $"@{name}"

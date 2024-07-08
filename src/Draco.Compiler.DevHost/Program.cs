@@ -23,11 +23,11 @@ internal class Program
     private static RootCommand ConfigureCommands()
     {
         var fileArgument = new Argument<FileInfo>("source file", description: "The Draco source file");
-        var outputOption = new Option<FileInfo>(new string[] { "-o", "--output" }, () => new FileInfo("output"), "Specifies the output file");
-        var optionalOutputOption = new Option<FileInfo?>(new string[] { "-o", "--output" }, () => null, "Specifies the (optional) output file");
-        var referencesOption = new Option<FileInfo[]>(new string[] { "-r", "--reference" }, Array.Empty<FileInfo>, "Specifies additional assembly references to use when compiling");
+        var outputOption = new Option<FileInfo>(["-o", "--output"], () => new FileInfo("output"), "Specifies the output file");
+        var optionalOutputOption = new Option<FileInfo?>(["-o", "--output"], () => null, "Specifies the (optional) output file");
+        var referencesOption = new Option<FileInfo[]>(["-r", "--reference"], Array.Empty<FileInfo>, "Specifies additional assembly references to use when compiling");
         var filesArgument = new Argument<FileInfo[]>("source files", Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
-        var rootModuleOption = new Option<DirectoryInfo?>(new string[] { "-m", "--root-module" }, () => null, "Specifies the root module folder of the compiled files");
+        var rootModuleOption = new Option<DirectoryInfo?>(["-m", "--root-module"], () => null, "Specifies the root module folder of the compiled files");
 
         // Compile
 

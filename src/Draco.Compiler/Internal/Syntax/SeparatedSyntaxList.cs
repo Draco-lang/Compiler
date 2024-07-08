@@ -34,13 +34,12 @@ internal sealed partial class SeparatedSyntaxList<TNode> : SyntaxNode, IReadOnly
     private static Type RedNodeType { get; } = typeof(Api.Syntax.SeparatedSyntaxList<>).MakeGenericType(RedElementType);
     private static ConstructorInfo RedNodeConstructor { get; } = RedNodeType.GetConstructor(
         BindingFlags.NonPublic | BindingFlags.Instance,
-        new[]
-        {
+        [
             typeof(Api.Syntax.SyntaxTree),
             typeof(Api.Syntax.SyntaxNode),
             typeof(int),
             typeof(IReadOnlyList<SyntaxNode>),
-        })!;
+        ])!;
 
     /// <summary>
     /// The separated values in this list.
@@ -89,7 +88,7 @@ internal sealed partial class SeparatedSyntaxList<TNode> : SyntaxNode, IReadOnly
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitSeparatedSyntaxList(this);
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSeparatedSyntaxList(this);
     public override Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent, int fullPosition) =>
-        (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke(new object?[] { tree, parent, fullPosition, this })!;
+        (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke([tree, parent, fullPosition, this])!;
 
     public IEnumerator<SyntaxNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();

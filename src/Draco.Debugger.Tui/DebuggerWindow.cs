@@ -83,15 +83,15 @@ internal sealed class DebuggerWindow : Window
         this.Border.BorderStyle = BorderStyle.None;
         this.Border.DrawMarginFrame = false;
 
-        this.menu = new MenuBar(new[]
-        {
+        this.menu = new MenuBar(
+        [
             new MenuBarItem("File", new[]
             {
                 new MenuItem("TODO", "", () => { }),
             }),
 
             new MenuBarItem("Theme", this.themes.Select(x => new MenuItem(x.Key, "", () => this.ChangeTheme(x.Value))).ToArray())
-        });
+        ]);
 
         this.sourceText = new SourceTextView()
         {
@@ -140,13 +140,13 @@ internal sealed class DebuggerWindow : Window
         localsTab.Y = Pos.Top(stdioTab);
         localsTab.X = Pos.Right(stdioTab);
 
-        this.statusBar = new StatusBar(new[]
-        {
+        this.statusBar = new StatusBar(
+        [
             new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Application.RequestStop()),
             new StatusItem(Key.F5, "~F5~ Step Over", () => this.OnStepOver?.Invoke(this, null!)),
             new StatusItem(Key.F6, "~F6~ Step Into", () => this.OnStepInto?.Invoke(this, null!)),
             new StatusItem(Key.F7, "~F7~ Step Out", () => this.OnStepOut?.Invoke(this, null !)),
-        });
+        ]);
 
         // NOTE: We need this for the menu and the status bar
         this.ChangeTheme(this.themes["Light"]);

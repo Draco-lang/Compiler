@@ -118,7 +118,7 @@ public abstract class XmlSourceGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(Diagnostic.Create(
                     descriptor: GenerationError,
                     location: null,
-                    messageArgs: new object[] { this.XmlFileName, ex }));
+                    messageArgs: [this.XmlFileName, ex]));
             }
         });
     }

@@ -150,29 +150,29 @@ internal sealed class Parser
     /// <summary>
     /// The list of all tokens that can start a declaration.
     /// </summary>
-    private static readonly TokenKind[] declarationStarters = new[]
-    {
+    private static readonly TokenKind[] declarationStarters =
+    [
         TokenKind.KeywordImport,
         TokenKind.KeywordFunc,
         TokenKind.KeywordModule,
         TokenKind.KeywordVar,
         TokenKind.KeywordVal,
-    };
+    ];
 
     /// <summary>
     /// The list of all tokens that can be a visibility modifier.
     /// </summary>
-    private static readonly TokenKind[] visibilityModifiers = new[]
-    {
+    private static readonly TokenKind[] visibilityModifiers =
+    [
         TokenKind.KeywordInternal,
         TokenKind.KeywordPublic,
-    };
+    ];
 
     /// <summary>
     /// The list of all tokens that can start an expression.
     /// </summary>
-    private static readonly TokenKind[] expressionStarters = new[]
-    {
+    private static readonly TokenKind[] expressionStarters =
+    [
         TokenKind.Identifier,
         TokenKind.LiteralInteger,
         TokenKind.LiteralFloat,
@@ -195,7 +195,7 @@ internal sealed class Parser
         TokenKind.Plus,
         TokenKind.Minus,
         TokenKind.Star,
-    };
+    ];
 
     private readonly ITokenSource tokenSource;
     private readonly SyntaxDiagnosticTable diagnostics;

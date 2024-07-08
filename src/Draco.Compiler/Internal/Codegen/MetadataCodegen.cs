@@ -33,7 +33,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (pdbStream is not null) codegen.PdbCodegen!.WritePdb(pdbStream);
     }
 
-    public static byte[] MicrosoftPublicKeyToken { get; } = new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a };
+    public static byte[] MicrosoftPublicKeyToken { get; } = [0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a];
 
     /// <summary>
     /// The compilation that started codegen.
@@ -375,7 +375,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             this.AddAttribute(
                 target: this.AssemblyDefinitionHandle,
                 ctor: debuggableAttributeCtor,
-                value: this.GetOrAddBlob(new byte[] { 01, 00, 07, 01, 00, 00, 00, 00 }));
+                value: this.GetOrAddBlob([01, 00, 07, 01, 00, 00, 00, 00]));
         }
     }
 

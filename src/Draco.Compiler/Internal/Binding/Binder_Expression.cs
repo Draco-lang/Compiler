@@ -731,7 +731,7 @@ internal partial class Binder
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
                     location: syntax.Location,
-                    formatArgs: new object[] { group.Functions[0].Name, args.Length }));
+                    formatArgs: [group.Functions[0].Name, args.Length]));
 
                 // Return a sentinel
                 // NOTE: Is this the right one to return?
@@ -756,7 +756,7 @@ internal partial class Binder
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.GenericTypeParamCountMismatch,
                     location: syntax.Location,
-                    formatArgs: new object[] { type.Type.Name, args.Length }));
+                    formatArgs: [type.Type.Name, args.Length]));
 
                 // Return a sentinel
                 // NOTE: Is this the right one to return?

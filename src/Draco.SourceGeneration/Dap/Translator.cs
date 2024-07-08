@@ -16,13 +16,13 @@ namespace Draco.SourceGeneration.Dap;
 /// </summary>
 internal sealed class Translator
 {
-    private static readonly string[] basicStructures = new[]
-    {
+    private static readonly string[] basicStructures =
+    [
         "ProtocolMessage",
         "Request",
         "Response",
         "Event",
-    };
+    ];
 
     private readonly JsonDocument sourceModel;
     private readonly Model targetModel = new();

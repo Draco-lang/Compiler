@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Threading;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -9,7 +10,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// Represents properties that are read up from metadata.
 /// </summary>
-internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
+internal sealed class MetadataPropertySymbol(
+    Symbol containingSymbol,
+    PropertyDefinition propertyDefinition) : PropertySymbol, IMetadataSymbol
 {
     public override TypeSymbol Type => this.Getter?.ReturnType ?? this.Setter?.Parameters[0].Type ?? throw new InvalidOperationException();
 
@@ -27,7 +30,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     public override bool IsIndexer => this.Name == ((IMetadataClass)this.ContainingSymbol).DefaultMemberAttributeName;
 
-    public override string Name => this.MetadataReader.GetString(this.propertyDefinition.Name);
+    public override string Name => this.MetadataReader.GetString(propertyDefinition.Name);
 
     public override PropertySymbol? Override
     {
@@ -45,13 +48,13 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     private volatile bool overrideNeedsBuild = true;
     private readonly object overrideBuildLock = new();
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
-    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
+    internal override string RawDocumentation => LazyInitializer.EnsureInitialized(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
-    public override Symbol ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
 
     /// <summary>
     /// The metadata assembly of this metadata symbol.
@@ -65,17 +68,9 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
     /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
-    private readonly PropertyDefinition propertyDefinition;
-
-    public MetadataPropertySymbol(Symbol containingSymbol, PropertyDefinition propertyDefinition)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.propertyDefinition = propertyDefinition;
-    }
-
     private MetadataPropertyAccessorSymbol? BuildGetter()
     {
-        var accessors = this.propertyDefinition.GetAccessors();
+        var accessors = propertyDefinition.GetAccessors();
         if (accessors.Getter.IsNil) return null;
         var getter = this.MetadataReader.GetMethodDefinition(accessors.Getter);
         return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, getter, this);
@@ -83,7 +78,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private MetadataPropertyAccessorSymbol? BuildSetter()
     {
-        var accessors = this.propertyDefinition.GetAccessors();
+        var accessors = propertyDefinition.GetAccessors();
         if (accessors.Setter.IsNil) return null;
         var setter = this.MetadataReader.GetMethodDefinition(accessors.Setter);
         return new MetadataPropertyAccessorSymbol(this.ContainingSymbol, setter, this);
@@ -101,9 +96,7 @@ internal sealed class MetadataPropertySymbol : PropertySymbol, IMetadataSymbol
 
     private PropertySymbol? GetExplicitOverride()
     {
-        var accessor = this.Getter ?? this.Setter;
-        if (accessor is null) throw new InvalidOperationException();
-
+        var accessor = this.Getter ?? this.Setter ?? throw new InvalidOperationException();
         if (accessor.Override is not null) return (accessor.Override as IPropertyAccessorSymbol)?.Property;
         return null;
     }

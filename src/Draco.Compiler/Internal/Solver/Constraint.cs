@@ -9,17 +9,11 @@ namespace Draco.Compiler.Internal.Solver;
 /// Utility base-class for constraints.
 /// </summary>
 /// <typeparam name="TResult">The result type.</typeparam>
-internal abstract class Constraint<TResult> : IConstraint<TResult>
+internal abstract class Constraint<TResult>(ConstraintLocator locator) : IConstraint<TResult>
 {
-    public SolverTaskCompletionSource<TResult> CompletionSource { get; }
-    public ConstraintLocator Locator { get; }
+    public SolverTaskCompletionSource<TResult> CompletionSource { get; } = new();
+    public ConstraintLocator Locator { get; } = locator;
     public virtual bool Silent => false;
-
-    protected Constraint(ConstraintLocator locator)
-    {
-        this.CompletionSource = new();
-        this.Locator = locator;
-    }
 
     private Diagnostic.Builder ConfigureDiagnostic(Action<Diagnostic.Builder> config)
     {

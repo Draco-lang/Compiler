@@ -6,33 +6,29 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Stores a value in an array element.
 /// </summary>
-internal sealed class StoreElementInstruction : InstructionBase
+internal sealed class StoreElementInstruction(
+    IOperand targetArray,
+    IEnumerable<IOperand> indices,
+    IOperand source) : InstructionBase
 {
     public override string InstructionKeyword => "storeelement";
 
     /// <summary>
     /// The array to store to.
     /// </summary>
-    public IOperand TargetArray { get; set; }
+    public IOperand TargetArray { get; set; } = targetArray;
 
     /// <summary>
     /// The element indices.
     /// </summary>
-    public IList<IOperand> Indices { get; set; } = new List<IOperand>();
+    public IList<IOperand> Indices { get; set; } = indices.ToList();
 
     /// <summary>
     /// The operand to store the value of.
     /// </summary>
-    public IOperand Source { get; set; }
+    public IOperand Source { get; set; } = source;
 
     public override IEnumerable<IOperand> Operands => this.Indices.Prepend(this.TargetArray).Append(this.Source);
-
-    public StoreElementInstruction(IOperand targetArray, IEnumerable<IOperand> indices, IOperand source)
-    {
-        this.TargetArray = targetArray;
-        this.Indices = indices.ToList();
-        this.Source = source;
-    }
 
     public override string ToString() =>
         $"{this.InstructionKeyword} {this.TargetArray.ToOperandString()}[{string.Join(", ", this.Indices.Select(i => i.ToOperandString()))}] := {this.Source.ToOperandString()}";

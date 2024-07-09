@@ -7,20 +7,14 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// A constraint asserting that two types have to be exactly the same.
 /// </summary>
-internal sealed class SameTypeConstraint : Constraint<Unit>
+internal sealed class SameTypeConstraint(
+    ImmutableArray<TypeSymbol> types,
+    ConstraintLocator locator) : Constraint<Unit>(locator)
 {
     /// <summary>
     /// The types that all should be the same.
     /// </summary>
-    public ImmutableArray<TypeSymbol> Types { get; }
-
-    public SameTypeConstraint(
-        ImmutableArray<TypeSymbol> types,
-        ConstraintLocator locator)
-        : base(locator)
-    {
-        this.Types = types;
-    }
+    public ImmutableArray<TypeSymbol> Types { get; } = types;
 
     public override string ToString() => $"SameType({string.Join(", ", this.Types)})";
 }

@@ -74,7 +74,7 @@ internal sealed partial class ConstraintSolver
     /// <returns>The promise for the constraint added.</returns>
     public SolverTask<Unit> SameType(TypeSymbol first, TypeSymbol second, SyntaxNode syntax)
     {
-        var constraint = new SameTypeConstraint(ImmutableArray.Create(first, second), ConstraintLocator.Syntax(syntax));
+        var constraint = new SameTypeConstraint([first, second], ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
         return constraint.CompletionSource.Task;
     }

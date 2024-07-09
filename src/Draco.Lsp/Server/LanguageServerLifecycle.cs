@@ -14,26 +14,19 @@ namespace Draco.Lsp.Server;
 /// <summary>
 /// Handles fundamental LSP lifecycle messages so the user does not have to.
 /// </summary>
-internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
+internal sealed class LanguageServerLifecycle(
+    ILanguageServer server,
+    IJsonRpcConnection connection) : ILanguageServerLifecycle
 {
-    private readonly ILanguageServer server;
-    private readonly IJsonRpcConnection connection;
-
     private ClientCapabilities clientCapabilities = null!;
-
-    public LanguageServerLifecycle(ILanguageServer server, IJsonRpcConnection connection)
-    {
-        this.server = server;
-        this.connection = connection;
-    }
 
     public async Task<InitializeResult> InitializeAsync(InitializeParams param)
     {
         this.clientCapabilities = param.Capabilities;
-        await this.server.InitializeAsync(param);
+        await server.InitializeAsync(param);
         return new InitializeResult()
         {
-            ServerInfo = this.server.Info,
+            ServerInfo = server.Info,
             Capabilities = this.BuildServerCapabilities(),
         };
     }
@@ -44,18 +37,18 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         var registrations = this.BuildDynamicRegistrations();
 
         // Then we register the collected capabilities
-        await this.connection.SendRequestAsync<object?>("client/registerCapability", new RegistrationParams()
+        await connection.SendRequestAsync<object?>("client/registerCapability", new RegistrationParams()
         {
             Registrations = registrations,
         });
 
         // Finally, we let the user implementation know
-        await this.server.InitializedAsync(param);
+        await server.InitializedAsync(param);
     }
 
     public Task ExitAsync()
     {
-        this.connection.Shutdown();
+        connection.Shutdown();
         return Task.CompletedTask;
     }
 
@@ -73,7 +66,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
             foreach (var (regAttr, prop) in GetOptionsPropety<ServerCapabilityAttribute>(capabilityInterface))
             {
                 // Get the property value
-                var propValue = prop.GetValue(this.server);
+                var propValue = prop.GetValue(server);
 
                 // If the property value is null, we don't register
                 if (propValue is null) continue;
@@ -84,7 +77,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
                                         ?? throw new InvalidOperationException($"no capability {regAttr.Property} found in server capabilities");
 
                 // Retrieve the capability value defined by the interface
-                var capability = prop.GetValue(this.server);
+                var capability = prop.GetValue(server);
                 // We can fill out the appropriate field in the server capabilities
                 SetCapability(capabilities, serverCapabilityProp, capability);
             }
@@ -107,7 +100,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
             foreach (var (regAttr, prop) in GetOptionsPropety<RegistrationOptionsAttribute>(capabilityInterface))
             {
                 // Get the property value
-                var propValue = prop.GetValue(this.server);
+                var propValue = prop.GetValue(server);
 
                 // If the property value is null, we don't register
                 if (propValue is null) continue;
@@ -126,7 +119,7 @@ internal sealed class LanguageServerLifecycle : ILanguageServerLifecycle
         return registrations;
     }
 
-    private IEnumerable<(ClientCapabilityAttribute Attribute, Type Interface)> GetCapabilityInterfaces() => this.server
+    private IEnumerable<(ClientCapabilityAttribute Attribute, Type Interface)> GetCapabilityInterfaces() => server
         .GetType()
         .GetInterfaces()
         .Select(i => (Attribute: i.GetCustomAttribute<ClientCapabilityAttribute>(), Interface: i))

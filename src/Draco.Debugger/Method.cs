@@ -60,8 +60,8 @@ public sealed class Method
     /// <summary>
     /// The breakpoints within this method.
     /// </summary>
-    public ImmutableArray<Breakpoint> Breakpoints => this.MutableBreakpoints.ToImmutableArray();
-    internal HashSet<Breakpoint> MutableBreakpoints = new();
+    public ImmutableArray<Breakpoint> Breakpoints => [.. this.MutableBreakpoints];
+    internal HashSet<Breakpoint> MutableBreakpoints = [];
 
     internal Method(SessionCache sessionCache, CorDebugFunction corDebugFunction)
     {
@@ -184,7 +184,5 @@ public sealed class Method
         return module.SourceFiles.FirstOrDefault(s => s.DocumentHandle == docHandle);
     }
 
-    private ImmutableArray<SequencePoint> BuildSequencePoints() => this.DebugInfo
-        .GetSequencePoints()
-        .ToImmutableArray();
+    private ImmutableArray<SequencePoint> BuildSequencePoints() => [.. this.DebugInfo.GetSequencePoints()];
 }

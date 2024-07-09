@@ -61,49 +61,26 @@ internal abstract class ConstraintLocator
         public override void Locate(Diagnostic.Builder diagnostic) { }
     }
 
-    private sealed class SyntaxConstraintLocator : ConstraintLocator
+    private sealed class SyntaxConstraintLocator(SyntaxNode syntax) : ConstraintLocator
     {
-        private readonly SyntaxNode syntax;
-
-        public SyntaxConstraintLocator(SyntaxNode syntax)
-        {
-            this.syntax = syntax;
-        }
-
         public override void Locate(Diagnostic.Builder diagnostic) =>
-            diagnostic.WithLocation(this.syntax.Location);
+            diagnostic.WithLocation(syntax.Location);
     }
 
-    private sealed class ReferenceConstraintLocator : ConstraintLocator
+    private sealed class ReferenceConstraintLocator(IConstraint constraint) : ConstraintLocator
     {
-        private readonly IConstraint constraint;
-
-        public ReferenceConstraintLocator(IConstraint constraint)
-        {
-            this.constraint = constraint;
-        }
-
         public override void Locate(Diagnostic.Builder diagnostic) =>
-            this.constraint.Locator.Locate(diagnostic);
+            constraint.Locator.Locate(diagnostic);
     }
 
-    private sealed class WithRelatedInfoConstraintLocator : ConstraintLocator
+    private sealed class WithRelatedInfoConstraintLocator(
+        ConstraintLocator underlying,
+        DiagnosticRelatedInformation relatedInfo) : ConstraintLocator
     {
-        private readonly ConstraintLocator underlying;
-        private readonly DiagnosticRelatedInformation relatedInfo;
-
-        public WithRelatedInfoConstraintLocator(
-            ConstraintLocator underlying,
-            DiagnosticRelatedInformation relatedInfo)
-        {
-            this.underlying = underlying;
-            this.relatedInfo = relatedInfo;
-        }
-
         public override void Locate(Diagnostic.Builder diagnostic)
         {
-            this.underlying.Locate(diagnostic);
-            diagnostic.WithRelatedInformation(this.relatedInfo);
+            underlying.Locate(diagnostic);
+            diagnostic.WithRelatedInformation(relatedInfo);
         }
     }
 }

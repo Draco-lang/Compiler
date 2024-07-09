@@ -3,14 +3,9 @@ using Xunit.Abstractions;
 
 namespace Draco.Debugger.Tests;
 
-public sealed class DebuggerTests
+public sealed class DebuggerTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper output;
-
-    public DebuggerTests(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
+    private readonly ITestOutputHelper output = output;
 
     private static async Task Timeout(Func<Task> action, int timeoutSecs = 10)
     {

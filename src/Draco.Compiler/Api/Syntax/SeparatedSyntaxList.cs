@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Draco.Compiler.Internal;
+using System.Threading;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -18,13 +18,13 @@ public sealed class SeparatedSyntaxList<TNode> : SyntaxNode, IEnumerable<SyntaxN
         .GetExecutingAssembly()
         .GetType($"Draco.Compiler.Internal.Syntax.{typeof(TNode).Name}")!;
     private static Type GreenNodeType { get; } = typeof(Internal.Syntax.SeparatedSyntaxList<>).MakeGenericType(GreenElementType);
-    private static ConstructorInfo GreenNodeConstructor { get; } = GreenNodeType.GetConstructor(new[]
-    {
+    private static ConstructorInfo GreenNodeConstructor { get; } = GreenNodeType.GetConstructor(
+    [
         typeof(IEnumerable<>).MakeGenericType(GreenElementType),
-    })!;
+    ])!;
 
     internal static IReadOnlyList<Internal.Syntax.SyntaxNode> MakeGreen(IEnumerable<Internal.Syntax.SyntaxNode> nodes) =>
-        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke(new[] { nodes })!;
+        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke([nodes])!;
 
     /// <summary>
     /// The separated values in this list.
@@ -69,8 +69,8 @@ public sealed class SeparatedSyntaxList<TNode> : SyntaxNode, IEnumerable<SyntaxN
 
     private SyntaxNode GetNodeAt(int index)
     {
-        var mappedNodes = InterlockedUtils.InitializeNull(ref this.mappedNodes, () => new SyntaxNode?[this.GreenList.Count]);
-        var existing = InterlockedUtils.InitializeNull(ref mappedNodes[index], () =>
+        var mappedNodes = LazyInitializer.EnsureInitialized(ref this.mappedNodes, () => new SyntaxNode?[this.GreenList.Count]);
+        var existing = LazyInitializer.EnsureInitialized(ref mappedNodes[index], () =>
         {
             var prevWidth = this.GreenList
                 .Take(index)

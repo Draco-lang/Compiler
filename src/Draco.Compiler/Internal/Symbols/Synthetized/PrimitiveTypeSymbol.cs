@@ -6,16 +6,10 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// A built-in primitive.
 /// </summary>
-internal sealed class PrimitiveTypeSymbol : TypeSymbol
+internal sealed class PrimitiveTypeSymbol(string name, bool isValueType) : TypeSymbol
 {
-    public override string Name { get; }
-    public override bool IsValueType { get; }
-
-    public PrimitiveTypeSymbol(string name, bool isValueType)
-    {
-        this.Name = name;
-        this.IsValueType = isValueType;
-    }
+    public override string Name { get; } = name;
+    public override bool IsValueType { get; } = isValueType;
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         base.GenericInstantiate(containingSymbol, arguments);

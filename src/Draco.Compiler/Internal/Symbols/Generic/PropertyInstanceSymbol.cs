@@ -1,12 +1,17 @@
+using System.Threading;
+
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
 /// <summary>
 /// Represents a generic instantiated property.
 /// The property definition itself is not generic, but the property was within a generic context.
 /// </summary>
-internal sealed class PropertyInstanceSymbol : PropertySymbol, IGenericInstanceSymbol
+internal sealed class PropertyInstanceSymbol(
+    Symbol? containingSymbol,
+    PropertySymbol genericDefinition,
+    GenericContext context) : PropertySymbol, IGenericInstanceSymbol
 {
-    public override TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
+    public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public override FunctionSymbol? Getter => InterlockedUtils.InitializeMaybeNull(ref this.getter, this.BuildGetter);
@@ -21,17 +26,10 @@ internal sealed class PropertyInstanceSymbol : PropertySymbol, IGenericInstanceS
 
     public override bool IsStatic => this.GenericDefinition.IsStatic;
 
-    public override Symbol? ContainingSymbol { get; }
-    public override PropertySymbol GenericDefinition { get; }
+    public override Symbol? ContainingSymbol { get; } = containingSymbol;
+    public override PropertySymbol GenericDefinition { get; } = genericDefinition;
 
-    public GenericContext Context { get; }
-
-    public PropertyInstanceSymbol(Symbol? containingSymbol, PropertySymbol genericDefinition, GenericContext context)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.GenericDefinition = genericDefinition;
-        this.Context = context;
-    }
+    public GenericContext Context { get; } = context;
 
     private TypeSymbol BuildType() =>
         this.GenericDefinition.Type.GenericInstantiate(this.GenericDefinition.Type.ContainingSymbol, this.Context);

@@ -10,10 +10,10 @@ namespace Draco.Debugger;
 /// </summary>
 internal sealed class SessionCache
 {
-    private readonly Dictionary<ICorDebugModule, Module> modules = new();
-    private readonly Dictionary<ICorDebugThread, Thread> threads = new();
-    private readonly Dictionary<ICorDebugFunction, Method> methods = new();
-    private readonly Dictionary<ICorDebugBreakpoint, Breakpoint> breakpoints = new();
+    private readonly Dictionary<ICorDebugModule, Module> modules = [];
+    private readonly Dictionary<ICorDebugThread, Thread> threads = [];
+    private readonly Dictionary<ICorDebugFunction, Method> methods = [];
+    private readonly Dictionary<ICorDebugBreakpoint, Breakpoint> breakpoints = [];
 
     public Module GetModule(CorDebugModule corDebugModule)
     {
@@ -59,10 +59,10 @@ internal sealed class SessionCache
 
     public bool RemoveBreakpoint(CorDebugBreakpoint breakpoint) => this.breakpoints.Remove(breakpoint.Raw);
 
-    private Breakpoint BuildBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint) => breakpoint switch
+    private MethodBreakpoint BuildBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint) => breakpoint switch
     {
         CorDebugFunctionBreakpoint f when isEntryPoint => new EntryPointBreakpoint(this, f),
-        CorDebugFunctionBreakpoint f => new MethodBreakpoint(this, f),
+        CorDebugFunctionBreakpoint f => new(this, f),
         _ => throw new ArgumentOutOfRangeException(nameof(breakpoint)),
     };
 }

@@ -42,12 +42,12 @@ internal sealed partial class SyntaxToken
         /// <summary>
         /// The <see cref="SyntaxTrivia"/> before the token.
         /// </summary>
-        public SyntaxList<SyntaxTrivia>.Builder LeadingTrivia { get; set; } = new();
+        public SyntaxList<SyntaxTrivia>.Builder LeadingTrivia { get; set; } = [];
 
         /// <summary>
         /// The <see cref="SyntaxTrivia"/> after the token.
         /// </summary>
-        public SyntaxList<SyntaxTrivia>.Builder TrailingTrivia { get; set; } = new();
+        public SyntaxList<SyntaxTrivia>.Builder TrailingTrivia { get; set; } = [];
 
         /// <summary>
         /// Builds a <see cref="SyntaxToken"/> from the data written into the builder.

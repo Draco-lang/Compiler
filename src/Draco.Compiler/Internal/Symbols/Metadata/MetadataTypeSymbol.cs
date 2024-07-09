@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Threading;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -12,40 +13,42 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A type definition read up from metadata.
 /// </summary>
-internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadataClass
+internal sealed class MetadataTypeSymbol(
+    Symbol containingSymbol,
+    TypeDefinition typeDefinition) : TypeSymbol, IMetadataSymbol, IMetadataClass
 {
     public override IEnumerable<Symbol> DefinedMembers =>
         InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
     private ImmutableArray<Symbol> definedMembers;
 
-    public override string Name => InterlockedUtils.InitializeNull(ref this.name, this.BuildName);
+    public override string Name => LazyInitializer.EnsureInitialized(ref this.name, this.BuildName);
     private string? name;
 
-    public override string MetadataName => this.MetadataReader.GetString(this.typeDefinition.Name);
+    public override string MetadataName => this.MetadataReader.GetString(typeDefinition.Name);
 
-    public override Api.Semantics.Visibility Visibility => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Api.Semantics.Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
-    public override SymbolDocumentation Documentation => InterlockedUtils.InitializeNull(ref this.documentation, this.BuildDocumentation);
+    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
-    internal override string RawDocumentation => InterlockedUtils.InitializeNull(ref this.rawDocumentation, this.BuildRawDocumentation);
+    internal override string RawDocumentation => LazyInitializer.EnsureInitialized(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
-    public override Symbol ContainingSymbol { get; }
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
 
     public override bool IsValueType => this.BaseTypes.Contains(
         this.Assembly.Compilation.WellKnownTypes.SystemValueType,
         SymbolEqualityComparer.Default);
 
-    public override bool IsInterface => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
+    public override bool IsInterface => typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
 
-    public override bool IsAbstract => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Abstract);
+    public override bool IsAbstract => typeDefinition.Attributes.HasFlag(TypeAttributes.Abstract);
 
-    public override bool IsSealed => this.typeDefinition.Attributes.HasFlag(TypeAttributes.Sealed);
+    public override bool IsSealed => typeDefinition.Attributes.HasFlag(TypeAttributes.Sealed);
 
     public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
     private ImmutableArray<TypeSymbol> baseTypes;
@@ -57,20 +60,12 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public string? DefaultMemberAttributeName =>
-        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(this.typeDefinition, this.Assembly.Compilation, this.MetadataReader));
+        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
     public IEnumerable<Symbol> AdditionalSymbols =>
         InterlockedUtils.InitializeDefault(ref this.additionalSymbols, this.BuildAdditionalSymbols);
     private ImmutableArray<Symbol> additionalSymbols;
-
-    private readonly TypeDefinition typeDefinition;
-
-    public MetadataTypeSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.typeDefinition = typeDefinition;
-    }
 
     public override string ToString() => this.GenericParameters.Length == 0
         ? this.Name
@@ -87,8 +82,8 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
     {
-        var genericParamsHandle = this.typeDefinition.GetGenericParameters();
-        if (genericParamsHandle.Count == 0) return ImmutableArray<TypeParameterSymbol>.Empty;
+        var genericParamsHandle = typeDefinition.GetGenericParameters();
+        if (genericParamsHandle.Count == 0) return [];
 
         var result = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
         foreach (var genericParamHandle in genericParamsHandle)
@@ -104,11 +99,11 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
     {
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
         var typeProvider = this.Assembly.Compilation.TypeProvider;
-        if (!this.typeDefinition.BaseType.IsNil)
+        if (!typeDefinition.BaseType.IsNil)
         {
-            builder.Add(GetTypeFromMetadata(this.typeDefinition.BaseType));
+            builder.Add(GetTypeFromMetadata(typeDefinition.BaseType));
         }
-        foreach (var @interface in this.typeDefinition.GetInterfaceImplementations())
+        foreach (var @interface in typeDefinition.GetInterfaceImplementations())
         {
             var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
             if (interfaceDef.Interface.IsNil) continue;
@@ -131,7 +126,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // Nested types
-        foreach (var typeHandle in this.typeDefinition.GetNestedTypes())
+        foreach (var typeHandle in typeDefinition.GetNestedTypes())
         {
             var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
             // Skip special name
@@ -146,7 +141,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         }
 
         // Methods
-        foreach (var methodHandle in this.typeDefinition.GetMethods())
+        foreach (var methodHandle in typeDefinition.GetMethods())
         {
             var method = this.MetadataReader.GetMethodDefinition(methodHandle);
             // Skip special name, if not a constructor or operator
@@ -165,7 +160,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         }
 
         // Fields
-        foreach (var fieldHandle in this.typeDefinition.GetFields())
+        foreach (var fieldHandle in typeDefinition.GetFields())
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
             // Skip special name
@@ -180,7 +175,7 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         }
 
         // Properties
-        foreach (var propHandle in this.typeDefinition.GetProperties())
+        foreach (var propHandle in typeDefinition.GetProperties())
         {
             var propDef = this.MetadataReader.GetPropertyDefinition(propHandle);
             var propSym = new MetadataPropertySymbol(
@@ -200,5 +195,5 @@ internal sealed class MetadataTypeSymbol : TypeSymbol, IMetadataSymbol, IMetadat
         MetadataSymbol.GetDocumentation(this);
 
     private ImmutableArray<Symbol> BuildAdditionalSymbols() =>
-        MetadataSymbol.GetAdditionalSymbols(this, this.typeDefinition, this.MetadataReader).ToImmutableArray();
+        MetadataSymbol.GetAdditionalSymbols(this, typeDefinition, this.MetadataReader).ToImmutableArray();
 }

@@ -220,7 +220,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -264,7 +264,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -310,7 +310,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -354,7 +354,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -401,7 +401,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -446,7 +446,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -491,7 +491,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -540,7 +540,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -600,7 +600,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .Append(testRef)
@@ -678,7 +678,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         // Act
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());

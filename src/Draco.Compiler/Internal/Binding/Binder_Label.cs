@@ -21,6 +21,6 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private Symbol BindNameLabel(NameLabelSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+    private LabelSymbol BindNameLabel(NameLabelSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
         this.LookupLabelSymbol(syntax.Name.Text, syntax, diagnostics);
 }

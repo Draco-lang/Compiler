@@ -16,7 +16,7 @@ public abstract class EndToEndTestsBase
     }
 
     protected static Assembly Compile(string? root, params SyntaxTree[] syntaxTrees) =>
-        Compile(root, syntaxTrees.ToImmutableArray(), ImmutableArray<(string Name, Stream Stream)>.Empty);
+        Compile(root, [.. syntaxTrees], []);
 
     protected static Assembly Compile(
         string? root,
@@ -30,7 +30,7 @@ public abstract class EndToEndTestsBase
     protected static MemoryStream CompileRaw(string sourceCode)
     {
         var syntaxTree = SyntaxTree.Parse(sourceCode);
-        return CompileRaw(null, ImmutableArray.Create(syntaxTree), ImmutableArray<(string, Stream)>.Empty);
+        return CompileRaw(null, [syntaxTree], ImmutableArray<(string, Stream)>.Empty);
     }
 
     private static MemoryStream CompileRaw(string? root, ImmutableArray<SyntaxTree> syntaxTrees, ImmutableArray<(string Name, Stream Stream)> additionalPeReferences)

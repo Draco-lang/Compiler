@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -25,13 +26,13 @@ internal sealed class DeclarationTable
     /// <summary>
     /// An empty declaration table.
     /// </summary>
-    public static DeclarationTable Empty { get; } = new(ImmutableArray<SyntaxTree>.Empty, Compilation.Create(ImmutableArray<SyntaxTree>.Empty));
+    public static DeclarationTable Empty { get; } = new([], Compilation.Create([]));
 
     /// <summary>
     /// The merged root module.
     /// </summary>
     public MergedModuleDeclaration MergedRoot =>
-        InterlockedUtils.InitializeNull(ref this.mergedRoot, this.BuildMergedRoot);
+        LazyInitializer.EnsureInitialized(ref this.mergedRoot, this.BuildMergedRoot);
     private MergedModuleDeclaration? mergedRoot;
 
     /// <summary>

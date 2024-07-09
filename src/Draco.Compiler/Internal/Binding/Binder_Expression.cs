@@ -58,8 +58,8 @@ internal partial class Binder
         var stmtTask = this.BindStatement(syntax.Statement, constraints, diagnostics);
         return new BoundBlockExpression(
             syntax: syntax,
-            locals: ImmutableArray<LocalSymbol>.Empty,
-            statements: ImmutableArray.Create(await stmtTask),
+            locals: [],
+            statements: [await stmtTask],
             value: BoundUnitExpression.Default);
     }
 
@@ -105,7 +105,7 @@ internal partial class Binder
                 break;
             }
             default:
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(syntax));
             }
         }
         return new BoundStringExpression(syntax, await BindingTask.WhenAll(partsTask), this.WellKnownTypes.SystemString);
@@ -176,7 +176,7 @@ internal partial class Binder
         var elseType = elseTask.GetResultType(ExtractValueSyntax(syntax.Else?.Expression), constraints, diagnostics);
         _ = constraints.CommonType(
             resultType,
-            ImmutableArray.Create(thenType, elseType),
+            [thenType, elseType],
             // The location will point at the else value, assuming that the latter expression is
             // the offending one
             // If there is no else clause, we just point at the then clause
@@ -281,7 +281,7 @@ internal partial class Binder
         var getEnumeratorTask = constraints.Overload(
             "GetEnumerator",
             getEnumeratorFunctions,
-            ImmutableArray<ConstraintSolver.Argument>.Empty,
+            [],
             out var enumeratorType,
             syntax.Sequence);
 
@@ -305,7 +305,7 @@ internal partial class Binder
             moveNextTask = constraints.Overload(
                 "MoveNext",
                 moveNextFunctions,
-                ImmutableArray<ConstraintSolver.Argument>.Empty,
+                [],
                 out var moveNextReturnType,
                 syntax.Sequence);
             // MoveNext should return bool
@@ -401,7 +401,7 @@ internal partial class Binder
         var operatorTask = this.LookupOperator(
             operatorName,
             syntax,
-            ImmutableArray.Create(operandTask.GetResultType(syntax.Operand, constraints, diagnostics)),
+            [operandTask.GetResultType(syntax.Operand, constraints, diagnostics)],
             constraints);
 
         return new BoundUnaryExpression(syntax, await operatorTask, await operandTask);
@@ -474,9 +474,10 @@ internal partial class Binder
             var operatorTask = this.LookupOperator(
                 operatorName,
                 syntax,
-                ImmutableArray.Create(
+                [
                     leftTask.GetResultType(syntax.Left, constraints, diagnostics),
-                    rightTask.GetResultType(syntax.Right, constraints, diagnostics)),
+                    rightTask.GetResultType(syntax.Right, constraints, diagnostics),
+                ],
                 constraints);
 
             var left = await leftTask;
@@ -535,9 +536,10 @@ internal partial class Binder
             var operatorTask = this.LookupOperator(
                 operatorName,
                 syntax,
-                ImmutableArray.Create(
+                [
                     leftTask.GetResultType(syntax.Left, constraints, diagnostics),
-                    rightTask.GetResultType(syntax.Right, constraints, diagnostics)),
+                    rightTask.GetResultType(syntax.Right, constraints, diagnostics),
+                ],
                 constraints);
 
             return new BoundBinaryExpression(syntax, await operatorTask, await leftTask, await rightTask);
@@ -577,9 +579,7 @@ internal partial class Binder
         var operatorTask = this.LookupOperator(
             operatorName,
             syntax,
-            ImmutableArray.Create(
-                left.GetResultType(syntax, constraints, diagnostics),
-                right.GetResultType(syntax, constraints, diagnostics)),
+            [left.GetResultType(syntax, constraints, diagnostics), right.GetResultType(syntax, constraints, diagnostics)],
             constraints);
 
         // NOTE: We used to assume it has to be boolean for safety
@@ -628,7 +628,7 @@ internal partial class Binder
             case Symbol when member.IsError:
                 return new BoundReferenceErrorExpression(syntax, member);
             case FunctionSymbol func:
-                return new BoundFunctionGroupExpression(syntax, receiver, ImmutableArray.Create(func));
+                return new BoundFunctionGroupExpression(syntax, receiver, [func]);
             case OverloadSymbol overload:
                 return new BoundFunctionGroupExpression(syntax, receiver, overload.Functions);
             case FieldSymbol field:
@@ -731,7 +731,7 @@ internal partial class Binder
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.NoGenericFunctionWithParamCount,
                     location: syntax.Location,
-                    formatArgs: new object[] { group.Functions[0].Name, args.Length }));
+                    formatArgs: [group.Functions[0].Name, args.Length]));
 
                 // Return a sentinel
                 // NOTE: Is this the right one to return?
@@ -756,7 +756,7 @@ internal partial class Binder
                 diagnostics.Add(Diagnostic.Create(
                     template: TypeCheckingErrors.GenericTypeParamCountMismatch,
                     location: syntax.Location,
-                    formatArgs: new object[] { type.Type.Name, args.Length }));
+                    formatArgs: [type.Type.Name, args.Length]));
 
                 // Return a sentinel
                 // NOTE: Is this the right one to return?
@@ -802,7 +802,7 @@ internal partial class Binder
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
-            return new BoundFunctionGroupExpression(syntax, null, ImmutableArray.Create(func));
+            return new BoundFunctionGroupExpression(syntax, null, [func]);
         case OverloadSymbol overload:
             return new BoundFunctionGroupExpression(syntax, null, overload.Functions);
         default:

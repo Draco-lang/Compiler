@@ -27,7 +27,7 @@ namespace Draco.Compiler.Api.Syntax;
                 {{if $field.IsNullable}}
                 Internal.InterlockedUtils.InitializeMaybeNull(
                 {{else}}
-                    Internal.InterlockedUtils.InitializeNull(
+                    System.Threading.LazyInitializer.EnsureInitialized(
                 {{end}}
                     ref this.{{$backingField}},
                     () => ({{$field.Type}})this.Green.{{$field.Name}}{{nullable($field)}}.ToRedNode(this.Tree, this, {{$fieldFullPosition}}));

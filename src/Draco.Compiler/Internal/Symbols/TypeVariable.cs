@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// <summary>
 /// Represents an uninferred type that can be substituted.
 /// </summary>
-internal sealed class TypeVariable : TypeSymbol
+internal sealed class TypeVariable(int index) : TypeSymbol
 {
     public override bool IsTypeVariable => true;
     public override bool IsGroundType
@@ -43,12 +43,7 @@ internal sealed class TypeVariable : TypeSymbol
 
     private readonly SolverTaskCompletionSource<TypeSymbol> substitutedCompletionSource = new();
     private TypeSymbol? substitution;
-    private readonly int index;
-
-    public TypeVariable(int index)
-    {
-        this.index = index;
-    }
+    private readonly int index = index;
 
     public override string ToString() => this.Substitution switch
     {

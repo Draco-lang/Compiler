@@ -186,7 +186,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
         var t = Invoke<Tuple<int, int>>(
             assembly: assembly,
             methodName: "make",
-            args: new object[] { 2, 3 },
+            args: [2, 3],
             stdin: null,
             stdout: null);
         Assert.Equal(2, t.Item1);
@@ -360,7 +360,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
         var result = Invoke<int>(
             assembly: assembly,
             methodName: "sum",
-            args: new[] { 1, 1, 2, 3, 5, 8, 13 });
+            args: [new[] { 1, 1, 2, 3, 5, 8, 13 }]);
 
         Assert.Equal(33, result);
     }
@@ -380,7 +380,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
         _ = Invoke<object?>(
             assembly: assembly,
             methodName: "log",
-            args: new[] { 1, 1, 2, 3, 5, 8, 13 },
+            args: [new[] { 1, 1, 2, 3, 5, 8, 13 }],
             stdin: null,
             stdout: stringWriter);
 

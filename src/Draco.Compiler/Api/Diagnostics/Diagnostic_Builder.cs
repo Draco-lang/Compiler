@@ -41,9 +41,9 @@ public sealed partial class Diagnostic
             result = Create(
                 template: this.Template,
                 location: this.Location,
-                formatArgs: this.FormatArgs ?? Array.Empty<object?>(),
+                formatArgs: this.FormatArgs ?? [],
                 relatedInformation: this.RelatedInformation?.ToImmutable()
-                                 ?? ImmutableArray<DiagnosticRelatedInformation>.Empty);
+                                 ?? []);
             return true;
         }
 

@@ -30,7 +30,7 @@ internal sealed class OneOfConverter<TOneOf> : JsonConverter<TOneOf>
     /// <param name="Properties">The properties that exclude the use of <paramref name="Type"/>.</param>
     private readonly record struct Discrimination(Type Type, ImmutableHashSet<string> Properties);
 
-    private static readonly Dictionary<(Type, JsonSerializerOptions), ImmutableArray<Discrimination>> discriminatorCache = new();
+    private static readonly Dictionary<(Type, JsonSerializerOptions), ImmutableArray<Discrimination>> discriminatorCache = [];
 
     private static ImmutableArray<Discrimination> GetDiscriminators(Type oneOfType, JsonSerializerOptions options)
     {

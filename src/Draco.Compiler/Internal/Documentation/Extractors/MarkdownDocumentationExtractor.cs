@@ -27,5 +27,5 @@ internal sealed class MarkdownDocumentationExtractor
     /// Extracts the <see cref="markdown"/>.
     /// </summary>
     /// <returns>The extracted markdown as <see cref="SymbolDocumentation"/>.</returns>
-    private SymbolDocumentation Extract() => new MarkdownSymbolDocumentation(this.markdown);
+    private MarkdownSymbolDocumentation Extract() => new(this.markdown);
 }

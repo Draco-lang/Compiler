@@ -8,28 +8,22 @@ namespace Draco.Compiler.Internal.Declarations;
 /// <summary>
 /// A module merged across all source files.
 /// </summary>
-internal sealed class MergedModuleDeclaration : Declaration
+internal sealed class MergedModuleDeclaration(
+    string name,
+    SplitPath path,
+    ImmutableArray<SingleModuleDeclaration> declarations) : Declaration(name)
 {
     public override ImmutableArray<Declaration> Children =>
         InterlockedUtils.InitializeDefault(ref this.children, this.BuildChildren);
     private ImmutableArray<Declaration> children;
 
-    public override IEnumerable<SyntaxNode> DeclaringSyntaxes => this.declarations
+    public override IEnumerable<SyntaxNode> DeclaringSyntaxes => declarations
         .SelectMany(d => d.DeclaringSyntaxes);
 
     /// <summary>
     /// The path of this module, including the root module.
     /// </summary>
-    public SplitPath Path { get; }
-
-    private readonly ImmutableArray<SingleModuleDeclaration> declarations;
-
-    public MergedModuleDeclaration(string name, SplitPath path, ImmutableArray<SingleModuleDeclaration> declarations)
-        : base(name)
-    {
-        this.declarations = declarations;
-        this.Path = path;
-    }
+    public SplitPath Path { get; } = path;
 
     private ImmutableArray<Declaration> BuildChildren()
     {
@@ -40,7 +34,7 @@ internal sealed class MergedModuleDeclaration : Declaration
         // Collect submodules under this module
         var submodules = new List<SingleModuleDeclaration>();
 
-        foreach (var singleModule in this.declarations)
+        foreach (var singleModule in declarations)
         {
             submodules.Add(singleModule);
 

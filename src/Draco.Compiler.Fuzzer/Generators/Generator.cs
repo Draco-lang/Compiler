@@ -8,25 +8,14 @@ namespace Draco.Compiler.Fuzzer.Generators;
 /// </summary>
 internal static class Generator
 {
-    private sealed class DelegateGenerator<T> : IGenerator<T>
+    private sealed class DelegateGenerator<T>(
+        Func<T> nextEpoch,
+        Func<T> nextMutation,
+        Func<T, string> toString) : IGenerator<T>
     {
-        private readonly Func<T> nextEpoch;
-        private readonly Func<T> nextMutation;
-        private readonly Func<T, string> toString;
-
-        public DelegateGenerator(
-            Func<T> nextEpoch,
-            Func<T> nextMutation,
-            Func<T, string> toString)
-        {
-            this.nextEpoch = nextEpoch;
-            this.nextMutation = nextMutation;
-            this.toString = toString;
-        }
-
-        public T NextEpoch() => this.nextEpoch();
-        public T NextMutation() => this.nextMutation();
-        public string ToString(T value) => this.toString(value);
+        public T NextEpoch() => nextEpoch();
+        public T NextMutation() => nextMutation();
+        public string ToString(T value) => toString(value);
     }
 
     public static IGenerator<T> Delegate<T>(
@@ -113,7 +102,7 @@ internal static class Generator
         this IGenerator<ImmutableArray<T>> generator,
         T last) => Delegate(
             nextEpoch: () => generator.NextEpoch().Append(last).ToImmutableArray(),
-            nextMutation: () => generator.NextMutation().Append(last).ToImmutableArray(),
+            nextMutation: () => [.. generator.NextMutation(), last],
             toString: generator.ToString);
 
     public static IGenerator<string> String(

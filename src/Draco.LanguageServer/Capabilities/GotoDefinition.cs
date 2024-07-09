@@ -33,7 +33,7 @@ internal sealed partial class DracoLanguageServer : IGotoDefinition
         if (referencedSymbol is not null && referencedSymbol.Definition is not null)
         {
             var location = Translator.ToLsp(referencedSymbol.Definition);
-            return Task.FromResult<IList<Location>>(new[] { location ?? default! });
+            return Task.FromResult<IList<Location>>([location ?? default!]);
         }
         else
         {

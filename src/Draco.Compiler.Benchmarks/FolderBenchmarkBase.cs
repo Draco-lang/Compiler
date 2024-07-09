@@ -5,17 +5,12 @@ using BenchmarkDotNet.Attributes;
 
 namespace Draco.Compiler.Benchmarks;
 
-public abstract class FolderBenchmarkBase
+public abstract class FolderBenchmarkBase(string path)
 {
     [ParamsSource(nameof(GetSourcesFromFolder))]
     public SourceCodeParameter Input { get; set; } = null!;
 
-    private readonly string path;
-
-    protected FolderBenchmarkBase(string path)
-    {
-        this.path = Path.Join("benchmarks", path);
-    }
+    private readonly string path = Path.Join("benchmarks", path);
 
     public IEnumerable<SourceCodeParameter> GetSourcesFromFolder() => Directory
         .GetFiles(this.path)

@@ -24,23 +24,20 @@ internal sealed class UnixPlatformMethods : IPlatformMethods
     [DllImport(LibC, SetLastError = true)]
     private static extern int dup2(int oldfd, int newfd);
 
-    private static nint ReplaceStdioHandle(FileDescriptor old, nint @new)
+    public IoHandles GetStdioHandles()
     {
-        var oldCopy = dup((int)old);
-        if (oldCopy == -1) throw new InvalidOperationException($"could not get {old} handle");
-
-        var newCopy = dup2((int)@new, (int)old);
-        if (newCopy == -1) throw new InvalidOperationException($"could not set {old} handle");
-
-        return oldCopy;
+        // Duplicate the existing file descriptors to get their handles
+        var stdin = (IntPtr)dup((int)FileDescriptor.STDIN_FILENO);
+        var stdout = (IntPtr)dup((int)FileDescriptor.STDOUT_FILENO);
+        var stderr = (IntPtr)dup((int)FileDescriptor.STDERR_FILENO);
+        return new IoHandles(stdin, stdout, stderr);
     }
 
-    public IoHandles ReplaceStdioHandles(IoHandles newHandles)
+    public void SetStdioHandles(IoHandles handles)
     {
-        var oldStdin = ReplaceStdioHandle(FileDescriptor.STDIN_FILENO, newHandles.StandardInput);
-        var oldStdout = ReplaceStdioHandle(FileDescriptor.STDOUT_FILENO, newHandles.StandardOutput);
-        var oldStderr = ReplaceStdioHandle(FileDescriptor.STDERR_FILENO, newHandles.StandardError);
-
-        return new IoHandles(oldStdin, oldStdout, oldStderr);
+        // Replace the standard file descriptors with the provided handles
+        if (dup2(handles.StandardInput.ToInt32(), (int)FileDescriptor.STDIN_FILENO) == -1) throw new InvalidOperationException($"could not set {handles.StandardInput} handle");
+        if (dup2(handles.StandardOutput.ToInt32(), (int)FileDescriptor.STDOUT_FILENO) == -1) throw new InvalidOperationException($"could not set {handles.StandardOutput} handle");
+        if (dup2(handles.StandardError.ToInt32(), (int)FileDescriptor.STDERR_FILENO) == -1) throw new InvalidOperationException($"could not set {handles.StandardError} handle");
     }
 }

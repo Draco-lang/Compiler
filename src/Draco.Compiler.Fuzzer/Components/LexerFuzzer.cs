@@ -7,13 +7,9 @@ namespace Draco.Compiler.Fuzzer.Components;
 /// <summary>
 /// Fuzzes the lexer.
 /// </summary>
-internal sealed class LexerFuzzer : ComponentFuzzerBase<string>
+internal sealed class LexerFuzzer(IGenerator<string> inputGenerator)
+    : ComponentFuzzerBase<string>(inputGenerator)
 {
-    public LexerFuzzer(IGenerator<string> inputGenerator)
-        : base(inputGenerator)
-    {
-    }
-
     protected override void NextEpochInternal(string input)
     {
         var lexer = new Lexer(SourceReader.From(input), new SyntaxDiagnosticTable());

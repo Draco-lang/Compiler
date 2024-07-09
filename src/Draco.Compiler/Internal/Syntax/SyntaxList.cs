@@ -18,7 +18,7 @@ internal static class SyntaxList
     /// <typeparam name="TNode">The node type.</typeparam>
     /// <returns>The created builder.</returns>
     public static SyntaxList<TNode>.Builder CreateBuilder<TNode>()
-        where TNode : SyntaxNode => new();
+        where TNode : SyntaxNode => [];
 
     /// <summary>
     /// Creates a <see cref="SyntaxList{TNode}"/> from the given elements.
@@ -27,17 +27,18 @@ internal static class SyntaxList
     /// <param name="nodes">The elements to create the list from.</param>
     /// <returns>A new syntax list, containing <paramref name="nodes"/>.</returns>
     public static SyntaxList<TNode> Create<TNode>(params TNode[] nodes)
-        where TNode : SyntaxNode => new(nodes.ToImmutableArray());
+        where TNode : SyntaxNode => new([.. nodes]);
 }
 
 /// <summary>
 /// A generic list of <see cref="SyntaxNode"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds.</typeparam>
-internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
+internal sealed partial class SyntaxList<TNode>(ImmutableArray<TNode> nodes)
+    : SyntaxNode, IReadOnlyList<TNode>
     where TNode : SyntaxNode
 {
-    public static SyntaxList<TNode> Empty { get; } = new(ImmutableArray<TNode>.Empty);
+    public static SyntaxList<TNode> Empty { get; } = new([]);
 
     private static Type RedElementType { get; } = Assembly
         .GetExecutingAssembly()
@@ -45,28 +46,22 @@ internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNod
     private static Type RedNodeType { get; } = typeof(Api.Syntax.SyntaxList<>).MakeGenericType(RedElementType);
     private static ConstructorInfo RedNodeConstructor { get; } = RedNodeType.GetConstructor(
         BindingFlags.NonPublic | BindingFlags.Instance,
-        new[]
-        {
+        [
             typeof(Api.Syntax.SyntaxTree),
             typeof(Api.Syntax.SyntaxNode),
             typeof(int),
             typeof(IReadOnlyList<SyntaxNode>),
-        })!;
+        ])!;
 
     /// <summary>
     /// The raw nodes of this syntax list.
     /// </summary>
-    public ImmutableArray<TNode> Nodes { get; }
+    public ImmutableArray<TNode> Nodes { get; } = nodes;
 
     public int Count => this.Nodes.Length;
     public override IEnumerable<SyntaxNode> Children => this.Nodes;
 
     public TNode this[int index] => this.Nodes[index];
-
-    public SyntaxList(ImmutableArray<TNode> nodes)
-    {
-        this.Nodes = nodes;
-    }
 
     public SyntaxList(IEnumerable<SyntaxNode> nodes)
         : this(nodes.Cast<TNode>().ToImmutableArray())
@@ -78,7 +73,7 @@ internal sealed partial class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNod
     public override void Accept(SyntaxVisitor visitor) => visitor.VisitSyntaxList(this);
     public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) => visitor.VisitSyntaxList(this);
     public override Api.Syntax.SyntaxNode ToRedNode(Api.Syntax.SyntaxTree tree, Api.Syntax.SyntaxNode? parent, int fullPosition) =>
-        (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke(new object?[] { tree, parent, fullPosition, this })!;
+        (Api.Syntax.SyntaxNode)RedNodeConstructor.Invoke([tree, parent, fullPosition, this])!;
 
     public IEnumerator<TNode> GetEnumerator() => this.Nodes.AsEnumerable().GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();

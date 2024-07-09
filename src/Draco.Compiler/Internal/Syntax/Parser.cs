@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// Parses a sequence of <see cref="SyntaxToken"/>s into a <see cref="SyntaxNode"/>.
 /// </summary>
-internal sealed class Parser
+internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable diagnostics)
 {
     /// <summary>
     /// The different declaration contexts.
@@ -150,29 +150,29 @@ internal sealed class Parser
     /// <summary>
     /// The list of all tokens that can start a declaration.
     /// </summary>
-    private static readonly TokenKind[] declarationStarters = new[]
-    {
+    private static readonly TokenKind[] declarationStarters =
+    [
         TokenKind.KeywordImport,
         TokenKind.KeywordFunc,
         TokenKind.KeywordModule,
         TokenKind.KeywordVar,
         TokenKind.KeywordVal,
-    };
+    ];
 
     /// <summary>
     /// The list of all tokens that can be a visibility modifier.
     /// </summary>
-    private static readonly TokenKind[] visibilityModifiers = new[]
-    {
+    private static readonly TokenKind[] visibilityModifiers =
+    [
         TokenKind.KeywordInternal,
         TokenKind.KeywordPublic,
-    };
+    ];
 
     /// <summary>
     /// The list of all tokens that can start an expression.
     /// </summary>
-    private static readonly TokenKind[] expressionStarters = new[]
-    {
+    private static readonly TokenKind[] expressionStarters =
+    [
         TokenKind.Identifier,
         TokenKind.LiteralInteger,
         TokenKind.LiteralFloat,
@@ -195,16 +195,7 @@ internal sealed class Parser
         TokenKind.Plus,
         TokenKind.Minus,
         TokenKind.Star,
-    };
-
-    private readonly ITokenSource tokenSource;
-    private readonly SyntaxDiagnosticTable diagnostics;
-
-    public Parser(ITokenSource tokenSource, SyntaxDiagnosticTable diagnostics)
-    {
-        this.tokenSource = tokenSource;
-        this.diagnostics = diagnostics;
-    }
+    ];
 
     /// <summary>
     /// Checks, if the current token kind and the potentially following tokens form a declaration.
@@ -1381,7 +1372,7 @@ internal sealed class Parser
     /// <returns>The <see cref="TokenKind"/> of the <see cref="SyntaxToken"/> that is <paramref name="offset"/>
     /// ahead.</returns>
     private TokenKind Peek(int offset = 0) =>
-        this.tokenSource.Peek(offset).Kind;
+        tokenSource.Peek(offset).Kind;
 
     /// <summary>
     /// Advances the parser in the token source with one token.
@@ -1389,11 +1380,11 @@ internal sealed class Parser
     /// <returns>The consumed <see cref="SyntaxToken"/>.</returns>
     private SyntaxToken Advance()
     {
-        var token = this.tokenSource.Peek();
-        this.tokenSource.Advance();
+        var token = tokenSource.Peek();
+        tokenSource.Advance();
         return token;
     }
 
     private void AddDiagnostic(SyntaxNode node, SyntaxDiagnosticInfo diagnostic) =>
-        this.diagnostics.Add(node, diagnostic);
+        diagnostics.Add(node, diagnostic);
 }

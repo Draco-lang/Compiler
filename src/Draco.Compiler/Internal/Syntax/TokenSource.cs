@@ -31,30 +31,19 @@ internal interface ITokenSource
 /// </summary>
 internal static class TokenSource
 {
-    private sealed class MemoryTokenSource : ITokenSource
+    private sealed class MemoryTokenSource(ReadOnlyMemory<SyntaxToken> tokens) : ITokenSource
     {
-        private readonly ReadOnlyMemory<SyntaxToken> tokens;
         private int index;
 
-        public MemoryTokenSource(ReadOnlyMemory<SyntaxToken> tokens)
-        {
-            this.tokens = tokens;
-        }
-
-        public SyntaxToken Peek(int offset = 0) => this.tokens.Span[this.index + offset];
+        public SyntaxToken Peek(int offset = 0) => tokens.Span[this.index + offset];
 
         public void Advance(int amount = 1) => this.index += amount;
     }
 
-    private sealed class EnumerableTokenSource : ITokenSource
+    private sealed class EnumerableTokenSource(IEnumerable<SyntaxToken> tokens) : ITokenSource
     {
-        private readonly IEnumerator<SyntaxToken> tokens;
+        private readonly IEnumerator<SyntaxToken> tokens = tokens.GetEnumerator();
         private readonly RingBuffer<SyntaxToken> lookahead = new();
-
-        public EnumerableTokenSource(IEnumerable<SyntaxToken> tokens)
-        {
-            this.tokens = tokens.GetEnumerator();
-        }
 
         public SyntaxToken Peek(int offset = 0)
         {
@@ -73,19 +62,13 @@ internal static class TokenSource
         }
     }
 
-    private sealed class LexerTokenSource : ITokenSource
+    private sealed class LexerTokenSource(Lexer lexer) : ITokenSource
     {
-        private readonly Lexer lexer;
         private readonly RingBuffer<SyntaxToken> lookahead = new();
-
-        public LexerTokenSource(Lexer lexer)
-        {
-            this.lexer = lexer;
-        }
 
         public SyntaxToken Peek(int offset = 0)
         {
-            while (offset >= this.lookahead.Count) this.lookahead.AddBack(this.lexer.Lex());
+            while (offset >= this.lookahead.Count) this.lookahead.AddBack(lexer.Lex());
             return this.lookahead[offset];
         }
 

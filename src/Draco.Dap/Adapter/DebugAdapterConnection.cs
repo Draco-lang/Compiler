@@ -11,9 +11,10 @@ using DapMessage = Draco.Dap.Model.OneOf<Draco.Dap.Model.RequestMessage, Draco.D
 
 namespace Draco.Dap.Adapter;
 
-internal sealed class DebugAdapterConnection : JsonRpcConnection<DapMessage, ErrorResponse>
+internal sealed class DebugAdapterConnection(IDuplexPipe transport)
+    : JsonRpcConnection<DapMessage, ErrorResponse>
 {
-    public override IDuplexPipe Transport { get; }
+    public override IDuplexPipe Transport { get; } = transport;
 
     public override JsonSerializerOptions JsonSerializerOptions { get; } = new()
     {
@@ -30,11 +31,6 @@ internal sealed class DebugAdapterConnection : JsonRpcConnection<DapMessage, Err
             new OneOfConverter(),
         }
     };
-
-    public DebugAdapterConnection(IDuplexPipe transport)
-    {
-        this.Transport = transport;
-    }
 
     protected override Task<(DapMessage Message, bool Handled)> TryProcessCustomRequest(DapMessage message) =>
         Task.FromResult((message, false));

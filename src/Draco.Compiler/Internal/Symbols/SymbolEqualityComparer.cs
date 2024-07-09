@@ -117,11 +117,10 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     {
         obj = this.Unwrap(obj);
 
-        switch (obj)
+        return obj switch
         {
-        default:
-            return RuntimeHelpers.GetHashCode(obj);
-        }
+            _ => RuntimeHelpers.GetHashCode(obj),
+        };
     }
 
     [return: NotNullIfNotNull(nameof(type))]

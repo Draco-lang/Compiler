@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
+using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr;
@@ -18,11 +19,12 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// A delegate to generate IR code.
     /// </summary>
     /// <param name="codegen">The code generator.</param>
-    /// <param name="target">The register to store the result at.</param>
+    /// <param name="targetType">The target type of the resulting value.</param>
     /// <param name="operands">The compiled operand references.</param>
-    public delegate void CodegenDelegate(
+    /// <returns>The operand that holds the result of the operation.</returns>
+    public delegate IOperand CodegenDelegate(
         FunctionBodyCodegen codegen,
-        Register target,
+        TypeSymbol targetType,
         ImmutableArray<IOperand> operands);
 
     /// <summary>
@@ -112,7 +114,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     public override IEnumerable<Symbol> Members => this.Parameters;
 
-    public TypeSymbol Type => InterlockedUtils.InitializeNull(ref this.type, this.BuildType);
+    public TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public virtual Symbol? Override => null;

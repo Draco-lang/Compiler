@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
@@ -50,13 +49,15 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         //     nop
         // }
         return ExpressionStatement(BlockExpression(
-            locals: ImmutableArray<LocalSymbol>.Empty,
-            statements: ImmutableArray.Create<BoundStatement>(
+            locals: [],
+            statements:
+            [
                 node,
                 SequencePointStatement(
                     statement: null,
                     range: node.Syntax?.Range,
-                    emitNop: true)),
+                    emitNop: true),
+            ],
             value: BoundUnitExpression.Default));
     }
 
@@ -119,12 +120,13 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         var blockValue = new SynthetizedLocalSymbol(node.Type, false);
 
         return BlockExpression(
-            locals: ImmutableArray.Create<LocalSymbol>(blockValue),
-            statements: ImmutableArray.Create<BoundStatement>(
+            locals: [blockValue],
+            statements:
+            [
                 SequencePointStatement(
-                    statement: null,
-                    range: openBrace.Range,
-                    emitNop: true),
+                            statement: null,
+                            range: openBrace.Range,
+                            emitNop: true),
                 LocalDeclaration(blockValue, BlockExpression(
                     locals: node.Locals,
                     statements: statements,
@@ -133,7 +135,8 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
                     statement: null,
                     range: closeBrace.Range,
                     emitNop: true)
-                ),
+,
+            ],
             value: LocalExpression(blockValue));
     }
 
@@ -224,14 +227,16 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         var value = (BoundExpression)node.Value.Accept(this);
 
         return BlockExpression(
-            locals: ImmutableArray.Create<LocalSymbol>(storage),
-            statements: ImmutableArray.Create<BoundStatement>(
+            locals: [storage],
+            statements:
+            [
                 LocalDeclaration(storage, value),
                 SequencePointStatement(
                     statement: ExpressionStatement(ReturnExpression(LocalExpression(storage))),
                     range: ancestorBlock.CloseBrace.Range,
                     // We'll have a ret instruction
-                    emitNop: false)),
+                    emitNop: false),
+            ],
             value: BoundUnitExpression.Default);
     }
 

@@ -13,7 +13,7 @@ internal sealed partial class DracoLanguageServer : ICodeCompletion
     public CompletionRegistrationOptions CompletionRegistrationOptions => new()
     {
         DocumentSelector = this.DocumentSelector,
-        TriggerCharacters = new[] { "." },
+        TriggerCharacters = ["."],
     };
 
     public Task<IList<CompletionItem>> CompleteAsync(CompletionParams param, CancellationToken cancellationToken)

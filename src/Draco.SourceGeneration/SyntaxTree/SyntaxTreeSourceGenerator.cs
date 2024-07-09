@@ -18,10 +18,10 @@ public sealed class SyntaxTreeSourceGenerator : XmlSourceGenerator
         var greenTreeCode = CodeGenerator.GenerateGreenSyntaxTree(domainModel, cancellationToken);
         var redTreeCode = CodeGenerator.GenerateRedSyntaxTree(domainModel, cancellationToken);
 
-        return new KeyValuePair<string, string>[]
-        {
+        return
+        [
             new("GreenSyntaxTree.Generated.cs", greenTreeCode),
             new("RedSyntaxTree.Generated.cs", redTreeCode),
-        };
+        ];
     }
 }

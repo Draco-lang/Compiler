@@ -9,13 +9,6 @@ namespace Draco.Compiler.Internal;
 /// </summary>
 internal static class InterlockedUtils
 {
-    public static T InitializeNull<T>(ref T? field, Func<T> factory)
-        where T : class
-    {
-        if (field is null) Interlocked.CompareExchange(ref field, factory(), null);
-        return field;
-    }
-
     public static T? InitializeMaybeNull<T>(ref T? field, Func<T?> factory)
         where T : class
     {

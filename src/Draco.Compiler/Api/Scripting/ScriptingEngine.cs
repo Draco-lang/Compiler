@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Reflection;
@@ -69,13 +68,13 @@ public static class ScriptingEngine
             return new(
                 Success: false,
                 Result: default,
-                Diagnostics: ImmutableArray.Create(diag));
+                Diagnostics: [diag]);
         }
 
-        var result = (TResult?)mainMethod.Invoke(null, Array.Empty<string>());
+        var result = (TResult?)mainMethod.Invoke(null, []);
         return new(
             Success: true,
             Result: result,
-            Diagnostics: ImmutableArray<Diagnostic>.Empty);
+            Diagnostics: []);
     }
 }

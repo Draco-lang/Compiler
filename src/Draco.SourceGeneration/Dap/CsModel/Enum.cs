@@ -16,5 +16,5 @@ public sealed class Enum : Declaration
     /// <summary>
     /// The members within this enum.
     /// </summary>
-    public IList<EnumMember> Members { get; set; } = new List<EnumMember>();
+    public IList<EnumMember> Members { get; set; } = [];
 }

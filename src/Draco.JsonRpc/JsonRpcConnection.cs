@@ -15,15 +15,9 @@ namespace Draco.JsonRpc;
 /// <typeparam name="TError">The error descriptor.</typeparam>
 internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 {
-    protected sealed class JsonRpcResponseException : Exception
+    protected sealed class JsonRpcResponseException(TError error, string message) : Exception(message)
     {
-        public TError ResponseError { get; }
-
-        public JsonRpcResponseException(TError error, string message)
-            : base(message)
-        {
-            this.ResponseError = error;
-        }
+        public TError ResponseError { get; } = error;
     }
 
     protected interface IOutgoingRequest
@@ -77,7 +71,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     });
 
     // Handlers
-    private readonly Dictionary<string, IJsonRpcMethodHandler> methodHandlers = new();
+    private readonly Dictionary<string, IJsonRpcMethodHandler> methodHandlers = [];
 
     // Pending requests
     private readonly ConcurrentDictionary<object, CancellationTokenSource> pendingIncomingRequests = new();
@@ -245,7 +239,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         var error = null as Exception;
         try
         {
-            result = await handler.InvokeRequest(args.ToArray());
+            result = await handler.InvokeRequest([.. args]);
         }
         catch (Exception ex)
         {
@@ -327,7 +321,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         // Actually invoke handler
         try
         {
-            await handler.InvokeNotification(args.ToArray());
+            await handler.InvokeNotification([.. args]);
         }
         catch
         {

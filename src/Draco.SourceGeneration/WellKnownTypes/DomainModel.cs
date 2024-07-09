@@ -4,7 +4,9 @@ using System.Linq;
 
 namespace Draco.SourceGeneration.WellKnownTypes;
 
-public sealed class WellKnownTypes
+public sealed class WellKnownTypes(
+    IList<WellKnownAssembly> assemblies,
+    IList<WellKnownType> types)
 {
     public static WellKnownTypes FromXml(XmlModel model)
     {
@@ -49,38 +51,18 @@ public sealed class WellKnownTypes
         _ => throw new ArgumentOutOfRangeException(nameof(ch)),
     };
 
-    public IList<WellKnownAssembly> Assemblies { get; }
-    public IList<WellKnownType> Types { get; }
-
-    public WellKnownTypes(
-        IList<WellKnownAssembly> assemblies,
-        IList<WellKnownType> types)
-    {
-        this.Assemblies = assemblies;
-        this.Types = types;
-    }
+    public IList<WellKnownAssembly> Assemblies { get; } = assemblies;
+    public IList<WellKnownType> Types { get; } = types;
 }
 
-public sealed class WellKnownAssembly
+public sealed class WellKnownAssembly(string name, byte[] publicKeyToken)
 {
-    public string Name { get; }
-    public byte[] PublicKeyToken { get; }
-
-    public WellKnownAssembly(string name, byte[] publicKeyToken)
-    {
-        this.Name = name;
-        this.PublicKeyToken = publicKeyToken;
-    }
+    public string Name { get; } = name;
+    public byte[] PublicKeyToken { get; } = publicKeyToken;
 }
 
-public sealed class WellKnownType
+public sealed class WellKnownType(string name, WellKnownAssembly assembly)
 {
-    public string Name { get; }
-    public WellKnownAssembly Assembly { get; }
-
-    public WellKnownType(string name, WellKnownAssembly assembly)
-    {
-        this.Name = name;
-        this.Assembly = assembly;
-    }
+    public string Name { get; } = name;
+    public WellKnownAssembly Assembly { get; } = assembly;
 }

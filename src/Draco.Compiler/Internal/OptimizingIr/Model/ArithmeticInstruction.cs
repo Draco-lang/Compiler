@@ -6,36 +6,32 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// Represents some kind of binary arithmetic instruction.
 /// </summary>
-internal sealed class ArithmeticInstruction : InstructionBase, IValueInstruction
+internal sealed class ArithmeticInstruction(
+    Register target,
+    ArithmeticOp op,
+    IOperand left,
+    IOperand right) : InstructionBase, IValueInstruction
 {
     public override string InstructionKeyword => this.OpToString();
 
-    public Register Target { get; set; }
+    public Register Target { get; set; } = target;
 
     /// <summary>
     /// The arithmetic operation performed.
     /// </summary>
-    public ArithmeticOp Op { get; set; }
+    public ArithmeticOp Op { get; set; } = op;
 
     /// <summary>
     /// The left operand of the operation.
     /// </summary>
-    public IOperand Left { get; set; }
+    public IOperand Left { get; set; } = left;
 
     /// <summary>
     /// The right operand of the operation.
     /// </summary>
-    public IOperand Right { get; set; }
+    public IOperand Right { get; set; } = right;
 
-    public override IEnumerable<IOperand> Operands => new[] { this.Left, this.Right };
-
-    public ArithmeticInstruction(Register target, ArithmeticOp op, IOperand left, IOperand right)
-    {
-        this.Target = target;
-        this.Op = op;
-        this.Left = left;
-        this.Right = right;
-    }
+    public override IEnumerable<IOperand> Operands => [this.Left, this.Right];
 
     public override string ToString() =>
         $"{this.Target.ToOperandString()} := {this.Left.ToOperandString()} {this.OpToString()} {this.Right.ToOperandString()}";

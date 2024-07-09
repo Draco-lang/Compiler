@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Draco.Compiler.Internal.BoundTree;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
@@ -10,7 +11,10 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// It does not necessarily mean that the function itself was generic, it might have been within another generic
 /// context (like a generic type definition).
 /// </summary>
-internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
+internal class FunctionInstanceSymbol(
+    Symbol? containingSymbol,
+    FunctionSymbol genericDefinition,
+    GenericContext context) : FunctionSymbol, IGenericInstanceSymbol
 {
     public override ImmutableArray<TypeParameterSymbol> GenericParameters
     {
@@ -44,7 +48,7 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;
 
-    public override TypeSymbol ReturnType => InterlockedUtils.InitializeNull(ref this.returnType, this.BuildReturnType);
+    public override TypeSymbol ReturnType => LazyInitializer.EnsureInitialized(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
     public override string Name => this.GenericDefinition.Name;
@@ -54,21 +58,14 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
     public override BoundStatement? Body => this.GenericDefinition.Body;
     public override CodegenDelegate? Codegen => this.GenericDefinition.Codegen;
 
-    public override Symbol? ContainingSymbol { get; }
-    public override FunctionSymbol GenericDefinition { get; }
+    public override Symbol? ContainingSymbol { get; } = containingSymbol;
+    public override FunctionSymbol GenericDefinition { get; } = genericDefinition;
 
     // IMPORTANT: Flag is a bool and not computed because we can't atomically copy structs
     private volatile bool genericsNeedsBuild = true;
     private readonly object genericsBuildLock = new();
 
-    public GenericContext Context { get; }
-
-    public FunctionInstanceSymbol(Symbol? containingSymbol, FunctionSymbol genericDefinition, GenericContext context)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.GenericDefinition = genericDefinition;
-        this.Context = context;
-    }
+    public GenericContext Context { get; } = context;
 
     public override FunctionSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context)
     {
@@ -101,8 +98,8 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         // If the definition wasn't generic, we just carry over the context
         if (!this.GenericDefinition.IsGenericDefinition)
         {
-            this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
-            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            this.genericParameters = [];
+            this.genericArguments = [];
             // IMPORTANT: Write flag last
             this.genericsNeedsBuild = false;
             return;
@@ -115,14 +112,14 @@ internal class FunctionInstanceSymbol : FunctionSymbol, IGenericInstanceSymbol
         if (!hasParametersSpecified)
         {
             this.genericParameters = this.GenericDefinition.GenericParameters;
-            this.genericArguments = ImmutableArray<TypeSymbol>.Empty;
+            this.genericArguments = [];
             // IMPORTANT: Write flag last
             this.genericsNeedsBuild = false;
             return;
         }
 
         // Otherwise, this must have been substituted
-        this.genericParameters = ImmutableArray<TypeParameterSymbol>.Empty;
+        this.genericParameters = [];
         this.genericArguments = this.GenericDefinition.GenericParameters
             .Select(param => this.Context[param])
             .ToImmutableArray();

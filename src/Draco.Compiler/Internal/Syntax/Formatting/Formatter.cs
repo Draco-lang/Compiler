@@ -51,10 +51,10 @@ internal sealed class Formatter : SyntaxVisitor
     /// </summary>
     public FormatterSettings Settings { get; }
 
-    private readonly List<SyntaxToken.Builder> tokens = new();
-    private readonly SyntaxList<SyntaxTrivia>.Builder currentTrivia = new();
+    private readonly List<SyntaxToken.Builder> tokens = [];
+    private readonly SyntaxList<SyntaxTrivia>.Builder currentTrivia = [];
     // A list of groups of indices of tokens that should be aligned together
-    private readonly List<ImmutableArray<int>> alignmentGroupIndices = new();
+    private readonly List<ImmutableArray<int>> alignmentGroupIndices = [];
     private int indentation;
 
     private Formatter(FormatterSettings settings)

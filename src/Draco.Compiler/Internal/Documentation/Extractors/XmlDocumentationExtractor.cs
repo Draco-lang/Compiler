@@ -61,17 +61,17 @@ internal sealed class XmlDocumentationExtractor
 
         foreach (var grouped in elements.GroupBy(x => x.GetType()))
         {
-            if (grouped.Key == typeof(ParameterDocumentationElement)) sections.Add(new DocumentationSection(SectionKind.Parameters, grouped.ToImmutableArray()));
-            else if (grouped.Key == typeof(TypeParameterDocumentationElement)) sections.Add(new DocumentationSection(SectionKind.TypeParameters, grouped.ToImmutableArray()));
+            if (grouped.Key == typeof(ParameterDocumentationElement)) sections.Add(new DocumentationSection(SectionKind.Parameters, [.. grouped]));
+            else if (grouped.Key == typeof(TypeParameterDocumentationElement)) sections.Add(new DocumentationSection(SectionKind.TypeParameters, [.. grouped]));
         }
-        return new SymbolDocumentation(sections.ToImmutableArray());
+        return new SymbolDocumentation([.. sections]);
     }
 
     private object ExtractSectionOrElement(XmlNode node) => node.Name switch
     {
         "param" => new ParameterDocumentationElement(this.GetParameter(node.Attributes?["name"]?.Value ?? string.Empty), this.ExtractElementsFromNode(node)),
         "typeparam" => new TypeParameterDocumentationElement(this.GetTypeParameter(node.Attributes?["name"]?.Value ?? string.Empty), this.ExtractElementsFromNode(node)),
-        "code" => new DocumentationSection(SectionKind.Code, ImmutableArray.Create(this.ExtractElement(node))),
+        "code" => new DocumentationSection(SectionKind.Code, [this.ExtractElement(node)]),
         "summary" => new DocumentationSection(SectionKind.Summary, this.ExtractElementsFromNode(node)),
         _ => new DocumentationSection(node.Name, this.ExtractElementsFromNode(node)),
     };

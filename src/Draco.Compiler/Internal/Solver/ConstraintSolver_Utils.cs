@@ -24,7 +24,7 @@ internal sealed partial class ConstraintSolver
     private static ImmutableArray<FunctionSymbol> GetDominatingCandidates(IReadOnlyList<OverloadCandidate> candidates)
     {
         // For a single candidate, don't bother
-        if (candidates.Count == 1) return ImmutableArray.Create(candidates[0].Symbol);
+        if (candidates.Count == 1) return [candidates[0].Symbol];
 
         // We have more than one, find the max dominator
         // NOTE: This might not be the actual dominator in case of mutual non-dominance

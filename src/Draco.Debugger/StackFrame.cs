@@ -100,7 +100,7 @@ public sealed class StackFrame
                 var localValueObject = localValue.ToBrowsableObject();
                 if (!result.TryAdd(localName, localValueObject))
                 {
-                    duplicatesCounter ??= new Dictionary<string, int>();
+                    duplicatesCounter ??= [];
                     if (!duplicatesCounter.TryGetValue(localName, out var count))
                     {
                         count = 0;

@@ -22,14 +22,14 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         Version = "0.1.0",
     };
 
-    public IList<DocumentFilter> DocumentSelector => new[]
-    {
+    public IList<DocumentFilter> DocumentSelector =>
+    [
         new DocumentFilter()
         {
             Language = "draco",
             Pattern = "**/*.draco",
         }
-    };
+    ];
     public TextDocumentSyncKind SyncKind => TextDocumentSyncKind.Full;
 
     private readonly ILanguageClient client;
@@ -50,7 +50,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
         // Some empty defaults
         this.compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray<SyntaxTree>.Empty,
+            syntaxTrees: [],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());

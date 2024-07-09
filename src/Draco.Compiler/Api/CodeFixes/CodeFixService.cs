@@ -11,7 +11,7 @@ namespace Draco.Compiler.Api.CodeFixes;
 /// </summary>
 public sealed class CodeFixService
 {
-    private readonly List<CodeFixProvider> providers = new();
+    private readonly List<CodeFixProvider> providers = [];
 
     /// <summary>
     /// Adds <see cref="CodeFixProvider"/> this service can use.

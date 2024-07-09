@@ -9,14 +9,9 @@ namespace Draco.Chr.Tracing;
 /// <summary>
 /// A tracer that broadcasts events to a collection of tracers.
 /// </summary>
-public sealed class BroadcastTracer : ITracer
+public sealed class BroadcastTracer(IEnumerable<ITracer> tracers) : ITracer
 {
-    private readonly List<ITracer> tracers;
-
-    public BroadcastTracer(IEnumerable<ITracer> tracers)
-    {
-        this.tracers = tracers.ToList();
-    }
+    private readonly List<ITracer> tracers = tracers.ToList();
 
     public void Start(ConstraintStore store)
     {

@@ -10,7 +10,7 @@ namespace Draco.Chr.Tracing;
 /// <summary>
 /// A tracer that logs to a stream reader/writer.
 /// </summary>
-public sealed class StreamTracer : ITracer
+public sealed class StreamTracer(StreamReader reader, StreamWriter writer) : ITracer
 {
     /// <summary>
     /// A tracer instance that uses the standard input/output streams.
@@ -24,27 +24,18 @@ public sealed class StreamTracer : ITracer
     /// </summary>
     public bool WaitForKeypress { get; set; }
 
-    private readonly StreamReader reader;
-    private readonly StreamWriter writer;
-
-    public StreamTracer(StreamReader reader, StreamWriter writer)
-    {
-        this.reader = reader;
-        this.writer = writer;
-    }
-
     public void Step(
         Rule appliedRule,
         IEnumerable<IConstraint> matchedConstraints,
         IEnumerable<IConstraint> newConstraints)
     {
-        this.writer.WriteLine($"applied '{appliedRule.Name}'");
-        this.writer.WriteLine($"  matched: {string.Join(", ", matchedConstraints)}");
-        this.writer.WriteLine($"    added: {string.Join(", ", newConstraints)}");
+        writer.WriteLine($"applied '{appliedRule.Name}'");
+        writer.WriteLine($"  matched: {string.Join(", ", matchedConstraints)}");
+        writer.WriteLine($"    added: {string.Join(", ", newConstraints)}");
 
-        if (this.WaitForKeypress) this.reader.ReadLine();
+        if (this.WaitForKeypress) reader.ReadLine();
     }
 
-    public void Start(ConstraintStore store) => this.writer.WriteLine($"initial store: {string.Join(", ", store)}");
-    public void End(ConstraintStore store) => this.writer.WriteLine($"final store: {string.Join(", ", store)}");
+    public void Start(ConstraintStore store) => writer.WriteLine($"initial store: {string.Join(", ", store)}");
+    public void End(ConstraintStore store) => writer.WriteLine($"final store: {string.Join(", ", store)}");
 }

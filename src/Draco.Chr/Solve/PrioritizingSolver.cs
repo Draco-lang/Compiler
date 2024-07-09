@@ -12,7 +12,7 @@ namespace Draco.Chr.Solve;
 /// <summary>
 /// A base class for solvers that only need to implement rule prioritization.
 /// </summary>
-public abstract class PrioritizingSolver : ISolver
+public abstract class PrioritizingSolver(IEqualityComparer? comparer = null, ITracer? tracer = null) : ISolver
 {
     private readonly record struct RuleAndMatch(Rule Rule, ImmutableArray<IConstraint> Match);
 
@@ -24,20 +24,14 @@ public abstract class PrioritizingSolver : ISolver
     /// <summary>
     /// The tracer of this solver.
     /// </summary>
-    public ITracer Tracer { get; set; }
+    public ITracer Tracer { get; set; } = tracer ?? NullTracer.Instance;
 
     /// <summary>
     /// The comparer used for values.
     /// </summary>
-    public IEqualityComparer ValueComparer { get; }
+    public IEqualityComparer ValueComparer { get; } = comparer ?? EqualityComparer<object>.Default;
 
-    public PrioritizingSolver(IEqualityComparer? comparer = null, ITracer? tracer = null)
-    {
-        this.ValueComparer = comparer ?? EqualityComparer<object>.Default;
-        this.Tracer = tracer ?? NullTracer.Instance;
-    }
-
-    public PrioritizingSolver(ITracer? tracer = null)
+    public PrioritizingSolver(ITracer? tracer)
         : this(null, tracer)
     {
     }

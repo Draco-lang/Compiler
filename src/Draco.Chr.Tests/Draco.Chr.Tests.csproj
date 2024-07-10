@@ -22,6 +22,4 @@
   <ItemGroup>
     <ProjectReference Include="..\Draco.Chr\Draco.Chr.csproj" />
   </ItemGroup>
-
-
 </Project>

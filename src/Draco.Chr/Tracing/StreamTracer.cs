@@ -38,4 +38,5 @@ public sealed class StreamTracer(StreamReader reader, StreamWriter writer) : ITr
 
     public void Start(ConstraintStore store) => writer.WriteLine($"initial store: {string.Join(", ", store)}");
     public void End(ConstraintStore store) => writer.WriteLine($"final store: {string.Join(", ", store)}");
+    public void Flush() => writer.Flush();
 }

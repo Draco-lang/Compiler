@@ -28,4 +28,5 @@ public sealed class NullTracer : ITracer
 
     public void Start(ConstraintStore store) { }
     public void End(ConstraintStore store) { }
+    public void Flush() { }
 }

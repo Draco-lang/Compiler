@@ -33,4 +33,9 @@ public interface ITracer
     /// </summary>
     /// <param name="store">The final constraint store.</param>
     public void End(ConstraintStore store);
+
+    /// <summary>
+    /// Flushes any buffered output.
+    /// </summary>
+    public void Flush();
 }

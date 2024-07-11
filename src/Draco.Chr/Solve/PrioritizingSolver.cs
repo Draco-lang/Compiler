@@ -68,6 +68,7 @@ public abstract class PrioritizingSolver(
         }
 
         this.Tracer.End(store);
+        this.Tracer.Flush();
         return store;
     }
 

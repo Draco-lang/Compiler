@@ -27,4 +27,9 @@ public sealed class BroadcastTracer(IEnumerable<ITracer> tracers) : ITracer
     {
         foreach (var tracer in this.tracers) tracer.Step(appliedRule, matchedConstraints, newConstraints);
     }
+
+    public void Flush()
+    {
+        foreach (var tracer in this.tracers) tracer.Flush();
+    }
 }

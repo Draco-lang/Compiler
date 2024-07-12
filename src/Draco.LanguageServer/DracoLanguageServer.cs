@@ -69,7 +69,33 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private void CreateCompilation()
     {
         var rootPath = this.rootUri.LocalPath;
-        var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
+
+        var projectFiles = Directory
+            .GetFiles(rootPath, "*.dracoproj", SearchOption.TopDirectoryOnly)
+            .ToList();
+        if (projectFiles.Count == 0)
+        {
+            this.client.ShowMessageAsync(new ShowMessageParams()
+            {
+                Type = MessageType.Error,
+                Message = "No project file found in the workspace.",
+            });
+            return;
+        }
+        else if (projectFiles.Count > 1)
+        {
+            this.client.ShowMessageAsync(new ShowMessageParams()
+            {
+                Type = MessageType.Error,
+                Message = "Multiple project files found in the workspace.",
+            });
+            return;
+        }
+
+        var projectFile = projectFiles[0];
+
+        var syntaxTrees = Directory
+            .GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
             .Select(x => SyntaxTree.Parse(SourceText.FromFile(x)))
             .ToImmutableArray();
 

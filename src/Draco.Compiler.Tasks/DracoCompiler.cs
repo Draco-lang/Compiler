@@ -43,9 +43,22 @@ public sealed class DracoCompiler : ToolTask
     /// </summary>
     public string DracoCompilerPath { get; set; }
 
+    /// <summary>
+    /// Skip the compiler execution.
+    /// Used for design time builds.
+    /// </summary>
+    public bool SkipCompilerExecution { get; set; }
+
     protected override string ToolName => Path.GetFileName(this.GetDotNetPath());
 
     private int errorCount = 0;
+
+    protected override int ExecuteTool(string pathToTool, string responseFileCommands, string commandLineCommands)
+    {
+        if (this.SkipCompilerExecution) return 0;
+
+        return base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands);
+    }
 
     protected override string GenerateCommandLineCommands() => $"exec \"{this.DracoCompilerPath}\"";
 

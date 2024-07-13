@@ -60,6 +60,9 @@ public static partial class RuleFactory
         var sepIndex = Array.IndexOf(args, Sep);
         if (sepIndex == -1) throw new ArgumentException("simpagation rule must have a separator");
 
+        // It must have only one separator
+        if (args.Skip(sepIndex + 1).Contains(Sep)) throw new ArgumentException("simpagation rule must have only one separator");
+
         // Extract the elements before and after the separator
         var keep = args.Take(sepIndex).ToArray();
         var remove = args.Skip(sepIndex + 1).Select(ToHead).ToArray();

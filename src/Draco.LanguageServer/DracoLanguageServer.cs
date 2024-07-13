@@ -11,6 +11,7 @@ using Draco.Compiler.Api.CodeFixes;
 using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server;
+using Draco.ProjectSystem;
 
 namespace Draco.LanguageServer;
 
@@ -51,9 +52,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         // Some empty defaults
         this.compilation = Compilation.Create(
             syntaxTrees: [],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: []);
 
         this.completionService = new CompletionService();
         this.completionService.AddProvider(new KeywordCompletionProvider());
@@ -69,11 +68,10 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private void CreateCompilation()
     {
         var rootPath = this.rootUri.LocalPath;
+        var workspace = Workspace.Initialize(rootPath);
 
-        var projectFiles = Directory
-            .GetFiles(rootPath, "*.dracoproj", SearchOption.TopDirectoryOnly)
-            .ToList();
-        if (projectFiles.Count == 0)
+        var projects = workspace.Projects.ToList();
+        if (projects.Count == 0)
         {
             this.client.ShowMessageAsync(new ShowMessageParams()
             {
@@ -82,7 +80,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
             });
             return;
         }
-        else if (projectFiles.Count > 1)
+        else if (projects.Count > 1)
         {
             this.client.ShowMessageAsync(new ShowMessageParams()
             {
@@ -92,7 +90,22 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
             return;
         }
 
-        var projectFile = projectFiles[0];
+        var project = projects[0];
+        var designTimeBuild = project.BuildDesignTime();
+
+        if (!designTimeBuild.Succeeded)
+        {
+            this.client.LogMessageAsync(new LogMessageParams()
+            {
+                Type = MessageType.Error,
+                Message = designTimeBuild.BuildLog,
+            });
+            this.client.ShowMessageAsync(new ShowMessageParams()
+            {
+                Type = MessageType.Error,
+                Message = "Design-time build failed! See logs for details.",
+            });
+        }
 
         var syntaxTrees = Directory
             .GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
@@ -101,9 +114,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
         this.compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            // NOTE: Temporary until we solve MSBuild communication
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+
+            metadataReferences: designTimeBuild.References
+                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
                 .ToImmutableArray(),
             rootModulePath: rootPath);
     }

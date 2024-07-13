@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using MSBuildProject = Microsoft.Build.Evaluation.Project;
 using MSBuildProjectInstance = Microsoft.Build.Execution.ProjectInstance;
@@ -28,9 +29,9 @@ public readonly struct DesignTimeBuild
     /// <summary>
     /// The reference paths of the project.
     /// </summary>
-    public ImmutableArray<string> References => this.ProjectInstance
+    public ImmutableArray<FileInfo> References => this.ProjectInstance
         .GetItems("Reference")
-        .Select(i => i.EvaluatedInclude)
+        .Select(i => new FileInfo(i.EvaluatedInclude))
         .ToImmutableArray();
 
     /// <summary>

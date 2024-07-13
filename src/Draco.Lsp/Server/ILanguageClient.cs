@@ -23,6 +23,9 @@ public interface ILanguageClient
 
     // Window features
 
+    [Notification("window/showMessage")]
+    public Task ShowMessageAsync(ShowMessageParams param);
+
     [Notification("window/logMessage")]
     public Task LogMessageAsync(LogMessageParams param);
 }

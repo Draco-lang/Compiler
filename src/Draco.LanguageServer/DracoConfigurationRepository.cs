@@ -11,16 +11,11 @@ internal sealed class DracoConfigurationRepository(ILanguageClient client)
 
     public async Task UpdateConfigurationAsync()
     {
-        var cfg = await client.GetConfigurationAsync(new()
-        {
-            Items =
-            [
-                new ConfigurationItem()
-                {
-                    Section = "draco.inlayHints",
-                }
-            ],
-        });
+        var cfg = await client.GetConfigurationAsync(
+            new ConfigurationItem()
+            {
+                Section = "draco.inlayHints",
+            });
 
         this.InlayHints.ParameterNames = cfg[0].GetProperty("parameterNames"u8).GetBoolean();
         this.InlayHints.VariableTypes = cfg[0].GetProperty("variableTypes"u8).GetBoolean();

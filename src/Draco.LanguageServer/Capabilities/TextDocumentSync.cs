@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Draco.Lsp.Model;
+using Draco.Lsp.Server;
 using Draco.Lsp.Server.TextDocument;
 
 namespace Draco.LanguageServer;
@@ -32,11 +33,7 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
 
         if (syntaxTree is null)
         {
-            await this.client.PublishDiagnosticsAsync(new()
-            {
-                Uri = uri,
-                Diagnostics = Array.Empty<Diagnostic>(),
-            });
+            await this.client.PublishDiagnosticsAsync(uri, []);
             return;
         }
 
@@ -44,10 +41,6 @@ internal sealed partial class DracoLanguageServer : ITextDocumentSync
         var diags = semanticModel.Diagnostics;
         var lspDiags = diags.Select(Translator.ToLsp).ToList();
 
-        await this.client.PublishDiagnosticsAsync(new()
-        {
-            Uri = uri,
-            Diagnostics = lspDiags,
-        });
+        await this.client.PublishDiagnosticsAsync(uri, lspDiags);
     }
 }

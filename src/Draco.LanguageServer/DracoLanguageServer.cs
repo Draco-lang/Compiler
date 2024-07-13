@@ -65,7 +65,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.codeFixService.AddProvider(new ImportCodeFixProvider());
     }
 
-    private void CreateCompilation()
+    private async Task CreateCompilation()
     {
         var rootPath = this.rootUri.LocalPath;
         var workspace = Workspace.Initialize(rootPath);
@@ -73,20 +73,12 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         var projects = workspace.Projects.ToList();
         if (projects.Count == 0)
         {
-            this.client.ShowMessageAsync(new ShowMessageParams()
-            {
-                Type = MessageType.Error,
-                Message = "No project file found in the workspace.",
-            });
+            await this.client.ShowMessageAsync(MessageType.Error, "No project file found in the workspace.");
             return;
         }
         else if (projects.Count > 1)
         {
-            this.client.ShowMessageAsync(new ShowMessageParams()
-            {
-                Type = MessageType.Error,
-                Message = "Multiple project files found in the workspace.",
-            });
+            await this.client.ShowMessageAsync(MessageType.Error, "Multiple project files found in the workspace.");
             return;
         }
 
@@ -95,16 +87,8 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
         if (!designTimeBuild.Succeeded)
         {
-            this.client.LogMessageAsync(new LogMessageParams()
-            {
-                Type = MessageType.Error,
-                Message = designTimeBuild.BuildLog,
-            });
-            this.client.ShowMessageAsync(new ShowMessageParams()
-            {
-                Type = MessageType.Error,
-                Message = "Design-time build failed! See logs for details.",
-            });
+            await this.client.LogMessageAsync(MessageType.Error, designTimeBuild.BuildLog);
+            await this.client.ShowMessageAsync(MessageType.Error, "Design-time build failed! See logs for details.");
         }
 
         var syntaxTrees = Directory
@@ -151,13 +135,13 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     public void Dispose() { }
 
-    public Task InitializeAsync(InitializeParams param)
+    public async Task InitializeAsync(InitializeParams param)
     {
         var workspaceUri = ExtractRootUri(param);
-        if (workspaceUri is null) return Task.CompletedTask;
+        if (workspaceUri is null) return;
+
         Volatile.Write(ref this.rootUri, workspaceUri);
-        this.CreateCompilation();
-        return Task.CompletedTask;
+        await this.CreateCompilation();
     }
 
     public async Task InitializedAsync(InitializedParams param)

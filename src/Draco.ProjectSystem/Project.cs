@@ -21,7 +21,7 @@ public sealed class Project
     public FileInfo ProjectFile { get; }
 
     /// <summary>
-    /// THe workspace the project belongs to.
+    /// The workspace the project belongs to.
     /// </summary>
     public Workspace Workspace { get; }
 

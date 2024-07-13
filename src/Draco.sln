@@ -45,7 +45,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.JsonRpc", "Draco.Json
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Debugger.Tests", "Draco.Debugger.Tests\Draco.Debugger.Tests.csproj", "{9E5A4FEB-109B-4BA7-AEDE-0802CF3E765E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Compiler.DevHost", "Draco.Compiler.DevHost\Draco.Compiler.DevHost.csproj", "{B209F6B3-9B49-4269-824A-1EEC35B39C92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.DevHost", "Draco.Compiler.DevHost\Draco.Compiler.DevHost.csproj", "{B209F6B3-9B49-4269-824A-1EEC35B39C92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.ProjectSystem", "Draco.ProjectSystem\Draco.ProjectSystem.csproj", "{5A813218-38B9-4B7D-A352-47978EBB0554}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -168,6 +170,12 @@ Global
 		{B209F6B3-9B49-4269-824A-1EEC35B39C92}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{B209F6B3-9B49-4269-824A-1EEC35B39C92}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B209F6B3-9B49-4269-824A-1EEC35B39C92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A813218-38B9-4B7D-A352-47978EBB0554}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A813218-38B9-4B7D-A352-47978EBB0554}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A813218-38B9-4B7D-A352-47978EBB0554}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A813218-38B9-4B7D-A352-47978EBB0554}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{5A813218-38B9-4B7D-A352-47978EBB0554}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A813218-38B9-4B7D-A352-47978EBB0554}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

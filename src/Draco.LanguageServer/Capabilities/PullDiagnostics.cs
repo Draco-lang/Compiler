@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Lsp.Model;
+using Draco.Lsp.Server;
 using Draco.Lsp.Server.Language;
 using DocumentDiagnosticReport = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RelatedFullDocumentDiagnosticReport, Draco.Lsp.Model.RelatedUnchangedDocumentDiagnosticReport>;
 
@@ -35,11 +36,7 @@ internal partial class DracoLanguageServer : IDiagnostics
         }
 
         // Clear push diagnostics to avoid duplicates
-        await this.client.PublishDiagnosticsAsync(new()
-        {
-            Diagnostics = [],
-            Uri = param.TextDocument.Uri
-        });
+        await this.client.PublishDiagnosticsAsync(param.TextDocument.Uri, []);
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var diags = semanticModel.Diagnostics;

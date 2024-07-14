@@ -11,10 +11,7 @@ namespace Draco.Compiler.Internal.Solver.OverloadResolution;
 /// </summary>
 internal readonly struct CallScore(int length)
 {
-    /// <summary>
-    /// The score representing an undefined score.
-    /// </summary>
-    public const int Undefined = -1;
+    private const int Undefined = ArgumentScore.Undefined;
 
     /// <summary>
     /// Compares two call-scores of the same length.

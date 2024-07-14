@@ -14,7 +14,16 @@ namespace Draco.Compiler.Internal.Solver.OverloadResolution;
 /// </summary>
 internal static class ArgumentScore
 {
-    private const int FullScore = 16;
+    /// <summary>
+    /// An undefined score.
+    /// </summary>
+    public const int Undefined = -1;
+
+    /// <summary>
+    /// Maximum score for a full match.
+    /// </summary>
+    public const int FullScore = 16;
+
     private const int HalfScore = 8;
     private const int ZeroScore = 0;
 
@@ -24,7 +33,7 @@ internal static class ArgumentScore
     /// <param name="param">The variadic function parameter.</param>
     /// <param name="argTypes">The passed in argument types.</param>
     /// <returns>The score of the match.</returns>
-    public static int? ScoreVariadicArguments(ParameterSymbol param, IEnumerable<TypeSymbol> argTypes)
+    public static int ScoreVariadicArguments(ParameterSymbol param, IEnumerable<TypeSymbol> argTypes)
     {
         if (!param.IsVariadic) throw new ArgumentException("the provided parameter is not variadic", nameof(param));
         if (!BinderFacts.TryGetVariadicElementType(param.Type, out var elementType)) return 0;
@@ -46,19 +55,19 @@ internal static class ArgumentScore
     /// <param name="param">The function parameter.</param>
     /// <param name="argType">The passed in argument type.</param>
     /// <returns>The score of the match.</returns>
-    public static int? ScoreArgument(ParameterSymbol param, TypeSymbol argType)
+    public static int ScoreArgument(ParameterSymbol param, TypeSymbol argType)
     {
         if (param.IsVariadic) throw new ArgumentException("the provided parameter variadic", nameof(param));
         return ScoreArgument(param.Type, argType);
     }
 
-    private static int? ScoreArgument(TypeSymbol paramType, TypeSymbol argType)
+    private static int ScoreArgument(TypeSymbol paramType, TypeSymbol argType)
     {
         paramType = paramType.Substitution;
         argType = argType.Substitution;
 
         // If either are still not ground types, we can't decide
-        if (!paramType.IsGroundType || !argType.IsGroundType) return null;
+        if (!paramType.IsGroundType || !argType.IsGroundType) return Undefined;
 
         // Exact equality is max score
         if (SymbolEqualityComparer.Default.Equals(paramType, argType)) return FullScore;

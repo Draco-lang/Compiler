@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -239,7 +240,7 @@ internal sealed partial class ConstraintSolver
     {
         var functionName = constraint.Name;
         var functionsWithMatchingArgc = constraint.Candidates
-            .Where(f => MatchesParameterCount(f, constraint.Arguments.Length))
+            .Where(f => CallUtilities.MatchesParameterCount(f, constraint.Arguments.Length))
             .ToList();
         var maxArgc = functionsWithMatchingArgc
             .Select(f => f.Parameters.Length)
@@ -271,11 +272,13 @@ internal sealed partial class ConstraintSolver
         }
 
         // We have one or more, find the max dominator
-        var dominatingCandidates = GetDominatingCandidates(candidates);
+        var dominatingCandidates = CallScore
+            .FindDominatorsBy(candidates, c => c.Score)
+            .ToImmutableArray();
         if (dominatingCandidates.Length == 1)
         {
             // Resolved fine, choose the symbol, which might generic-instantiate it
-            var chosen = this.ChooseSymbol(dominatingCandidates[0]);
+            var chosen = this.ChooseSymbol(dominatingCandidates[0].Symbol);
 
             // Inference
             if (chosen.IsVariadic)

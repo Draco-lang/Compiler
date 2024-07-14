@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -89,10 +90,10 @@ internal sealed partial class ConstraintSolver
             var score = scoreVector[i];
 
             // If the argument is not null, it means we have already scored it
-            if (score is not null) continue;
+            if (score != ArgumentScore.Undefined) continue;
 
-            score = ScoreArgument(param, arg.Type);
-            changed = changed || score is not null;
+            score = ArgumentScore.ScoreArgument(param, arg.Type);
+            changed = changed || score != ArgumentScore.Undefined;
             scoreVector[i] = score;
 
             // If the score hit 0, terminate early, this overload got eliminated
@@ -115,9 +116,9 @@ internal sealed partial class ConstraintSolver
             if (arguments.Length == i)
             {
                 // Special case, this call was extended because of variadics
-                if (scoreVector[i] is null)
+                if (scoreVector[i] == ArgumentScore.Undefined)
                 {
-                    scoreVector[i] = FullScore;
+                    scoreVector[i] = ArgumentScore.FullScore;
                     changed = true;
                 }
                 continue;
@@ -127,24 +128,24 @@ internal sealed partial class ConstraintSolver
             var score = scoreVector[i];
 
             // If the argument is not null, it means we have already scored it
-            if (score is not null) continue;
+            if (score != ArgumentScore.Undefined) continue;
 
-            score = ScoreArgument(param, argType);
-            changed = changed || score is not null;
+            score = ArgumentScore.ScoreArgument(param, argType);
+            changed = changed || score != ArgumentScore.Undefined;
             scoreVector[i] = score;
 
             // If the score hit 0, terminate early, this overload got eliminated
             if (score == 0) return changed;
         }
         // Handle variadic arguments
-        if (func.IsVariadic && scoreVector[^1] is null)
+        if (func.IsVariadic && scoreVector[^1] == ArgumentScore.Undefined)
         {
             var variadicParam = func.Parameters[^1];
             var variadicArgTypes = arguments
                 .Skip(func.Parameters.Length - 1)
                 .Select(a => a.Type);
-            var score = ScoreVariadicArguments(variadicParam, variadicArgTypes);
-            changed = changed || score is not null;
+            var score = ArgumentScore.ScoreVariadicArguments(variadicParam, variadicArgTypes);
+            changed = changed || score != ArgumentScore.Undefined;
             scoreVector[^1] = score;
         }
         return changed;

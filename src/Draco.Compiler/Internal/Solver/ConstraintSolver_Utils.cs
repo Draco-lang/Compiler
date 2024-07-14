@@ -62,7 +62,7 @@ internal sealed partial class ConstraintSolver
     private void UnifyParameterWithArgument(TypeSymbol paramType, Argument argument) => _ = this.Assignable(
         paramType,
         argument.Type,
-        argument.Syntax is null ? ConstraintLocator.Null : ConstraintLocator.Syntax(argument.Syntax));
+        ConstraintLocator.Syntax(argument.Syntax));
 
     private static bool MatchesParameterCount(FunctionSymbol function, int argc)
     {

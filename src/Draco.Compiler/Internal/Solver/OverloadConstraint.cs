@@ -28,7 +28,7 @@ internal sealed class OverloadConstraint(
     /// <summary>
     /// The candidate functions to search among.
     /// </summary>
-    public IEnumerable<FunctionSymbol> Candidates => this.CandidateSet.Select(c => c.Symbol);
+    public IEnumerable<FunctionSymbol> Candidates => this.CandidateSet.Select(c => c.Data);
 
     /// <summary>
     /// The arguments the function was called with.

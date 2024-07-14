@@ -1,23 +1,39 @@
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver.OverloadResolution;
 
 /// <summary>
+/// Factory methods for <see cref="CallCandidate{TData}"/>.
+/// </summary>
+internal static class CallCandidate
+{
+    public static CallCandidate<FunctionSymbol> Create(FunctionSymbol function) =>
+        CallCandidate<FunctionSymbol>.Create(function);
+
+    public static CallCandidate<Unit> Create(FunctionTypeSymbol functionType) =>
+        CallCandidate<Unit>.Create(functionType);
+}
+
+/// <summary>
 /// Represents a single candidate for overload resolution.
 /// </summary>
-internal readonly struct CallCandidate(FunctionSymbol symbol)
+/// <typeparam name="TData">Additional data type.</typeparam>
+internal readonly struct CallCandidate<TData>
 {
-    /// <summary>
-    /// THe function being called.
-    /// </summary>
-    public FunctionSymbol Symbol { get; } = symbol;
+    public static CallCandidate<FunctionSymbol> Create(FunctionSymbol function) =>
+        new(function.Parameters, function.IsVariadic, function);
+
+    // TODO: Can a function type be variadic? This is probably something we should specify...
+    public static CallCandidate<Unit> Create(FunctionTypeSymbol functionType) =>
+        new(functionType.Parameters, false, default);
 
     /// <summary>
     /// The score of the candidate.
     /// </summary>
-    public CallScore Score { get; } = new(symbol.Parameters.Length);
+    public CallScore Score { get; }
 
     /// <summary>
     /// True, if the candidate is eliminated.
@@ -28,6 +44,25 @@ internal readonly struct CallCandidate(FunctionSymbol symbol)
     /// True, if the candidate is well defined.
     /// </summary>
     public bool IsWellDefined => this.Score.IsWellDefined;
+
+    /// <summary>
+    /// Additional data associated with the candidate.
+    /// </summary>
+    public TData Data { get; }
+
+    private readonly IReadOnlyList<ParameterSymbol> parameters;
+    private readonly bool isVariadic;
+
+    private CallCandidate(
+        IReadOnlyList<ParameterSymbol> parameters,
+        bool isVariadic,
+        TData data)
+    {
+        this.parameters = parameters;
+        this.isVariadic = isVariadic;
+        this.Score = new(parameters.Count);
+        this.Data = data;
+    }
 
     /// <summary>
     /// Refines the candidate by scoring the arguments.
@@ -41,7 +76,7 @@ internal readonly struct CallCandidate(FunctionSymbol symbol)
 
         for (var i = 0; i < scoreVector.Length; ++i)
         {
-            var param = this.Symbol.Parameters[i];
+            var param = this.parameters[i];
             // Handle that separately
             if (param.IsVariadic) continue;
 
@@ -70,10 +105,10 @@ internal readonly struct CallCandidate(FunctionSymbol symbol)
             if (score == 0) return changed;
         }
         // Handle variadic arguments
-        if (this.Symbol.IsVariadic && scoreVector[^1] == ArgumentScore.Undefined)
+        if (this.isVariadic && scoreVector[^1] == ArgumentScore.Undefined)
         {
-            var variadicParam = this.Symbol.Parameters[^1];
-            var variadicArgs = arguments.Skip(this.Symbol.Parameters.Length - 1);
+            var variadicParam = this.parameters[^1];
+            var variadicArgs = arguments.Skip(this.parameters.Count - 1);
             var score = ArgumentScore.ScoreVariadicArguments(variadicParam, variadicArgs);
             changed = changed || score != ArgumentScore.Undefined;
             scoreVector[^1] = score;

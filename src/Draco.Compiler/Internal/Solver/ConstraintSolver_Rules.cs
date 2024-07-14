@@ -265,7 +265,7 @@ internal sealed partial class ConstraintSolver
         if (dominatingCandidates.Length == 1)
         {
             // Resolved fine, choose the symbol, which might generic-instantiate it
-            var chosen = this.ChooseSymbol(dominatingCandidates[0].Symbol);
+            var chosen = this.ChooseSymbol(dominatingCandidates[0].Data);
 
             // Inference
             if (chosen.IsVariadic)
@@ -357,24 +357,20 @@ internal sealed partial class ConstraintSolver
         }
 
         // Start scoring args
-        var score = new CallScore(functionType.Parameters.Length);
-        while (true)
+        var candidate = CallCandidate.Create(functionType);
+        candidate.Refine(constraint.Arguments);
+
+        if (candidate.IsEliminated)
         {
-            var changed = this.AdjustScore(functionType, constraint.Arguments, score);
-            if (score.HasZero)
-            {
-                // Error
-                UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
-                constraint.ReportDiagnostic(diagnostics, diag => diag
-                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                    .WithFormatArgs(
-                        functionType,
-                        this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)));
-                constraint.CompletionSource.SetResult(default);
-                return;
-            }
-            if (score.IsWellDefined) break;
-            if (!changed) return;
+            // Error
+            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
+            constraint.ReportDiagnostic(diagnostics, diag => diag
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(
+                    functionType,
+                    this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)));
+            constraint.CompletionSource.SetResult(default);
+            return;
         }
 
         // We are done

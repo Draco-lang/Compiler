@@ -10,7 +10,7 @@ namespace Draco.Compiler.Internal.Solver.OverloadResolution;
 /// <summary>
 /// A set of overload candidates.
 /// </summary>
-internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidate>
+internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidate<FunctionSymbol>>
 {
     /// <summary>
     /// Constructs a new set of overload candidates.
@@ -25,7 +25,7 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
         var argList = arguments.ToImmutableArray();
         var remainingCandidates = candidates
             .Where(c => CallUtilities.MatchesParameterCount(c, argList.Length))
-            .Select(c => new CallCandidate(c))
+            .Select(CallCandidate.Create)
             .ToList();
         return new(remainingCandidates, argList);
     }
@@ -38,7 +38,7 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
     /// <summary>
     /// The remaining candidates.
     /// </summary>
-    public IEnumerable<CallCandidate> Candidates => this.candidates;
+    public IEnumerable<CallCandidate<FunctionSymbol>> Candidates => this.candidates;
 
     /// <summary>
     /// True, if the set is well defined, meaning that there is no need to further refine the candidates.
@@ -55,10 +55,10 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
 
     public int Count => this.candidates.Count;
 
-    private readonly List<CallCandidate> candidates;
+    private readonly List<CallCandidate<FunctionSymbol>> candidates;
 
     private OverloadCandidateSet(
-        List<CallCandidate> candidates,
+        List<CallCandidate<FunctionSymbol>> candidates,
         ImmutableArray<Argument> arguments)
     {
         this.Arguments = arguments;
@@ -102,6 +102,6 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
         return changed;
     }
 
-    public IEnumerator<CallCandidate> GetEnumerator() => this.candidates.GetEnumerator();
+    public IEnumerator<CallCandidate<FunctionSymbol>> GetEnumerator() => this.candidates.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

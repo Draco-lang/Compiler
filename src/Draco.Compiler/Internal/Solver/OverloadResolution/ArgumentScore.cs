@@ -31,6 +31,15 @@ internal static class ArgumentScore
     /// Scores a sequence of variadic function call argument.
     /// </summary>
     /// <param name="param">The variadic function parameter.</param>
+    /// <param name="args">The passed in arguments.</param>
+    /// <returns>The score of the match.</returns>
+    public static int ScoreVariadicArguments(ParameterSymbol param, IEnumerable<Argument> args) =>
+        ScoreVariadicArguments(param, args.Select(arg => arg.Type));
+
+    /// <summary>
+    /// Scores a sequence of variadic function call argument.
+    /// </summary>
+    /// <param name="param">The variadic function parameter.</param>
     /// <param name="argTypes">The passed in argument types.</param>
     /// <returns>The score of the match.</returns>
     public static int ScoreVariadicArguments(ParameterSymbol param, IEnumerable<TypeSymbol> argTypes)
@@ -48,6 +57,15 @@ internal static class ArgumentScore
             // Take the lowest score
             .Min();
     }
+
+    /// <summary>
+    /// Scores a function call argument.
+    /// </summary>
+    /// <param name="param">The function parameter.</param>
+    /// <param name="arg">The passed in argument.</param>
+    /// <returns>The score of the match.</returns>
+    public static int ScoreArgument(ParameterSymbol param, Argument arg) =>
+        ScoreArgument(param, arg.Type);
 
     /// <summary>
     /// Scores a function call argument.

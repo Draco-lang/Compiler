@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
@@ -192,7 +193,8 @@ internal sealed partial class ConstraintSolver
         SyntaxNode syntax)
     {
         returnType = this.AllocateTypeVariable();
-        var constraint = new OverloadConstraint(name, functions, args, returnType, ConstraintLocator.Syntax(syntax));
+        var candidateSet = OverloadCandidateSet.Create(functions, args);
+        var constraint = new OverloadConstraint(name, candidateSet, returnType, ConstraintLocator.Syntax(syntax));
         this.Add(constraint);
         return constraint.CompletionSource.Task;
     }

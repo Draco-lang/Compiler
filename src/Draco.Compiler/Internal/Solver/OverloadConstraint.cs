@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 
@@ -9,27 +11,29 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal sealed class OverloadConstraint(
     string name,
-    ImmutableArray<FunctionSymbol> candidates,
-    ImmutableArray<ConstraintSolver.Argument> arguments,
+    OverloadCandidateSet candidateSet,
     TypeSymbol returnType,
     ConstraintLocator locator) : Constraint<FunctionSymbol>(locator)
 {
-    private readonly record struct Candidate(FunctionSymbol Symbol, CallScore Score);
-
     /// <summary>
     /// The function name.
     /// </summary>
     public string Name { get; } = name;
 
     /// <summary>
+    /// The set of candidates.
+    /// </summary>
+    public OverloadCandidateSet CandidateSet { get; } = candidateSet;
+
+    /// <summary>
     /// The candidate functions to search among.
     /// </summary>
-    public ImmutableArray<FunctionSymbol> Candidates { get; } = candidates;
+    public IEnumerable<FunctionSymbol> Candidates => this.CandidateSet.Select(c => c.Symbol);
 
     /// <summary>
     /// The arguments the function was called with.
     /// </summary>
-    public ImmutableArray<ConstraintSolver.Argument> Arguments { get; } = arguments;
+    public ImmutableArray<Argument> Arguments => this.CandidateSet.Arguments;
 
     /// <summary>
     /// The return type of the call.

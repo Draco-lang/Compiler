@@ -239,31 +239,18 @@ internal sealed partial class ConstraintSolver
     private void HandleRule(OverloadConstraint constraint, DiagnosticBag? diagnostics)
     {
         var functionName = constraint.Name;
-        var functionsWithMatchingArgc = constraint.Candidates
-            .Where(f => CallUtilities.MatchesParameterCount(f, constraint.Arguments.Length))
-            .ToList();
-        var maxArgc = functionsWithMatchingArgc
-            .Select(f => f.Parameters.Length)
-            .Append(0)
-            .Max();
-        var candidates = functionsWithMatchingArgc
-            .Select(f => new OverloadCandidate(f, new(maxArgc)))
-            .ToList();
 
-        while (true)
-        {
-            var changed = this.RefineOverloadScores(candidates, constraint.Arguments, out var wellDefined);
-            if (wellDefined) break;
-            if (candidates.Count <= 1) break;
-            if (!changed) return;
-        }
+        var candidateSet = constraint.CandidateSet;
+        candidateSet.Refine();
+        // If it's not well-defined, we can't advance
+        if (!candidateSet.IsWellDefined) return;
 
         // We have all candidates well-defined, find the absolute dominator
-        if (candidates.Count == 0)
+        if (candidateSet.Count == 0)
         {
             UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
             // Best-effort shape approximation
-            var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
+            var errorSymbol = new NoOverloadFunctionSymbol(candidateSet.Arguments.Length);
             constraint.ReportDiagnostic(diagnostics, diag => diag
                 .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
                 .WithFormatArgs(functionName));
@@ -273,7 +260,7 @@ internal sealed partial class ConstraintSolver
 
         // We have one or more, find the max dominator
         var dominatingCandidates = CallScore
-            .FindDominatorsBy(candidates, c => c.Score)
+            .FindDominatorsBy(candidateSet, c => c.Score)
             .ToImmutableArray();
         if (dominatingCandidates.Length == 1)
         {

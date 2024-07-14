@@ -1,8 +1,6 @@
-using Draco.Chr.Constraints;
-using System.Collections.Immutable;
-using Draco.Chr.Rules;
-using System.Collections;
 using System.Collections.Generic;
+using Draco.Chr.Constraints;
+using Draco.Chr.Rules;
 
 namespace Draco.Chr.Tracing;
 

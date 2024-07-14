@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Evaluation;
-using Microsoft.Build.Execution;
 using MSBuildProject = Microsoft.Build.Evaluation.Project;
 using MSBuildProjectInstance = Microsoft.Build.Execution.ProjectInstance;
 

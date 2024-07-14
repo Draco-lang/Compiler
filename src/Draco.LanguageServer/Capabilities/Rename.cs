@@ -57,7 +57,7 @@ internal partial class DracoLanguageServer : IRename
         {
             Changes = textEdits.ToDictionary(
                 e => new DocumentUri(e.Path!.LocalPath),
-                e => e.Edits.ToList() as IList<ITextEdit>),
+                e => e.Edits.Cast<ITextEdit>().ToList() as IList<ITextEdit>),
         });
     }
 

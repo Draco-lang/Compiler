@@ -6,6 +6,6 @@
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.10.4" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.10.4" ExcludeAssets="runtime" />
     <PackageReference Include="NuGet.Frameworks" Version="6.10.0.97" ExcludeAssets="runtime" />
-    <PackageReference Include="NuGet.Packaging" Version="6.10.0.97" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Packaging" Version="6.10.1" ExcludeAssets="runtime" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
@@ -9,7 +10,7 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal sealed class CallConstraint(
     TypeSymbol calledType,
-    ImmutableArray<ConstraintSolver.Argument> arguments,
+    ImmutableArray<Argument> arguments,
     TypeSymbol returnType,
     ConstraintLocator locator) : Constraint<Unit>(locator)
 {
@@ -21,7 +22,7 @@ internal sealed class CallConstraint(
     /// <summary>
     /// The arguments the function was called with.
     /// </summary>
-    public ImmutableArray<ConstraintSolver.Argument> Arguments { get; } = arguments;
+    public ImmutableArray<Argument> Arguments { get; } = arguments;
 
     /// <summary>
     /// The return type of the call.

@@ -18,7 +18,9 @@ internal abstract class ConstraintLocator
     /// </summary>
     /// <param name="syntax">The syntax node to connect the location to.</param>
     /// <returns>The locator that will point at the syntax.</returns>
-    public static ConstraintLocator Syntax(SyntaxNode syntax) => new SyntaxConstraintLocator(syntax);
+    public static ConstraintLocator Syntax(SyntaxNode? syntax) => syntax is null
+        ? Null
+        : new SyntaxConstraintLocator(syntax);
 
     /// <summary>
     /// Creates a constraint locator based on anonter constraint.

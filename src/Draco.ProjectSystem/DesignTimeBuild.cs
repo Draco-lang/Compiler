@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using MSBuildProject = Microsoft.Build.Evaluation.Project;
 using MSBuildProjectInstance = Microsoft.Build.Execution.ProjectInstance;
 
 namespace Draco.ProjectSystem;

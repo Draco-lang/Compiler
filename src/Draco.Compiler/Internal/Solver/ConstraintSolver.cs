@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
@@ -19,13 +20,6 @@ namespace Draco.Compiler.Internal.Solver;
 /// </summary>
 internal sealed partial class ConstraintSolver(SyntaxNode context, string contextName)
 {
-    /// <summary>
-    /// Represents an argument for a call.
-    /// </summary>
-    /// <param name="Syntax">The syntax of the argument, if any.</param>
-    /// <param name="Type">The type of the argument.</param>
-    public readonly record struct Argument(SyntaxNode? Syntax, TypeSymbol Type);
-
     /// <summary>
     /// The context being inferred.
     /// </summary>

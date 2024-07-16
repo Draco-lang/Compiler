@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
 

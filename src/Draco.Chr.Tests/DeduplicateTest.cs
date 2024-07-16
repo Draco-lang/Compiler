@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
 using Draco.Chr.Solve;

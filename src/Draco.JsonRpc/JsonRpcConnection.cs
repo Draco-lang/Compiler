@@ -114,7 +114,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
                 }
                 else
                 {
-                    await this.incomingMessages.Writer.WriteAsync(message!);
+                    await this.incomingMessages.Writer.WriteAsync(message!, this.shutdownTokenSource.Token);
                 }
             }
             catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
@@ -359,7 +359,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     }
 
     protected async Task SendMessageAsync(TMessage message) =>
-        await this.outgoingMessages.Writer.WriteAsync(message);
+        await this.outgoingMessages.Writer.WriteAsync(message, this.shutdownTokenSource.Token);
 
     protected void SendMessage(TMessage message) =>
         this.outgoingMessages.Writer.TryWrite(message);
@@ -538,7 +538,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         }
 
         WriteData();
-        return writer.FlushAsync();
+        return writer.FlushAsync(this.shutdownTokenSource.Token);
     }
     #endregion
 

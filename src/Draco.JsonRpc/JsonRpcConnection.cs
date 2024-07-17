@@ -114,7 +114,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
                 }
                 else
                 {
-                    await this.incomingMessages.Writer.WriteAsync(message!);
+                    await this.incomingMessages.Writer.WriteAsync(message!, this.shutdownTokenSource.Token);
                 }
             }
             catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
@@ -132,9 +132,15 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 
     private async Task WriterLoopAsync()
     {
-        await foreach (var message in this.outgoingMessages.Reader.ReadAllAsync(this.shutdownTokenSource.Token))
+        try
         {
-            await this.WriteMessageAsync(message);
+            await foreach (var message in this.outgoingMessages.Reader.ReadAllAsync(this.shutdownTokenSource.Token))
+            {
+                await this.WriteMessageAsync(message);
+            }
+        }
+        catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
+        {
         }
     }
 
@@ -147,24 +153,30 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
                 && handler.Mutating;
         }
 
-        var currentTasks = new List<Task>();
-        await foreach (var message in this.incomingMessages.Reader.ReadAllAsync(this.shutdownTokenSource.Token))
+        try
         {
-            if (IsMutating(message))
+            var currentTasks = new List<Task>();
+            await foreach (var message in this.incomingMessages.Reader.ReadAllAsync(this.shutdownTokenSource.Token))
             {
-                await Task.WhenAll(currentTasks);
-                currentTasks.Clear();
+                if (IsMutating(message))
+                {
+                    await Task.WhenAll(currentTasks);
+                    currentTasks.Clear();
 
-                await this.ProcessMessageAsync(message);
+                    await this.ProcessMessageAsync(message);
+                }
+                else
+                {
+                    currentTasks.RemoveAll(t => t.IsCompleted);
+                    currentTasks.Add(this.ProcessMessageAsync(message));
+                }
             }
-            else
-            {
-                currentTasks.RemoveAll(t => t.IsCompleted);
-                currentTasks.Add(this.ProcessMessageAsync(message));
-            }
+
+            await Task.WhenAll(currentTasks);
         }
-
-        await Task.WhenAll(currentTasks);
+        catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
+        {
+        }
     }
     #endregion
 
@@ -359,7 +371,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     }
 
     protected async Task SendMessageAsync(TMessage message) =>
-        await this.outgoingMessages.Writer.WriteAsync(message);
+        await this.outgoingMessages.Writer.WriteAsync(message, this.shutdownTokenSource.Token);
 
     protected void SendMessage(TMessage message) =>
         this.outgoingMessages.Writer.TryWrite(message);
@@ -538,7 +550,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         }
 
         WriteData();
-        return writer.FlushAsync();
+        return writer.FlushAsync(this.shutdownTokenSource.Token);
     }
     #endregion
 

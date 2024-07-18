@@ -90,7 +90,8 @@ internal sealed partial class ConstraintSolver
                 if (membersWithName.Length == 0)
                 {
                     // No such member, error
-                    member.ReportDiagnostic(diagnostics, builder => builder
+                    member
+                        .ReportDiagnostic(diagnostics, builder => builder
                         .WithFormatArgs(member.MemberName, accessed));
                     // We still provide a single error symbol
                     UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
@@ -130,14 +131,28 @@ internal sealed partial class ConstraintSolver
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
                     // Best-effort shape approximation
                     var errorSymbol = new NoOverloadFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.ReportDiagnostic(diagnostics, diag => diag
+                    overload
+                        .ReportDiagnostic(diagnostics, diag => diag
                         .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
                         .WithFormatArgs(overload.FunctionName));
                     overload.CompletionSource.SetResult(errorSymbol);
                     return;
                 }
 
-                Debug.Assert(candidates.Count == 1);
+                if (candidates.Count > 1)
+                {
+                    // Ambiguity, error
+                    // Best-effort shape approximation
+                    UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
+                    var errorSymbol = new NoOverloadFunctionSymbol(overload.Candidates.Arguments.Length);
+                    overload
+                        .ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
+                        .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));
+                    overload.CompletionSource.SetResult(errorSymbol);
+                    return;
+                }
+
                 // Resolved fine, choose the symbol, which might generic-instantiate it
                 var chosen = this.GenericInstantiateIfNeeded(overload.Candidates.Single().Data);
                 // Inference
@@ -167,5 +182,11 @@ internal sealed partial class ConstraintSolver
                     }
                 }
             }),
+
+        // If an overload constraint can be advanced, do that
+        Propagation(typeof(Overload))
+            .Guard((Overload overload) => overload.Candidates.Refine()),
+
+        // TODO: Case when we have multiple overloaded candidates but it's all well-defined
     ];
 }

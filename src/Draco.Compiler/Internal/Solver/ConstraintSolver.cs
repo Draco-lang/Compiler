@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Chr.Constraints;
+using Draco.Chr.Solve;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -30,8 +32,8 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
     /// </summary>
     public string ContextName { get; } = contextName;
 
-    // The raw constraints
-    private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
+    // The constraint store
+    private readonly ConstraintStore constraintStore = new();
     // The allocated type variables
     private readonly List<TypeVariable> typeVariables = [];
     // The registered local variables
@@ -70,11 +72,8 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
-        while (this.constraints.Count > 0)
-        {
-            // Apply rules once
-            if (!this.ApplyRules(diagnostics)) break;
-        }
+        var solver = new DefinitionOrderSolver(ConstructRules(diagnostics));
+        solver.Solve(this.constraintStore);
 
         // Check for uninferred locals
         this.CheckForUninferredLocals(diagnostics);
@@ -101,7 +100,7 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
 
     private void CheckForIncompleteInference(DiagnosticBag diagnostics)
     {
-        var inferenceFailed = this.constraints.Count > 0
+        var inferenceFailed = this.constraintStore.Count > 0
                            || this.typeVariables.Select(t => t.Substitution).Any(t => t.IsTypeVariable);
         if (!inferenceFailed) return;
 
@@ -112,7 +111,8 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
             formatArgs: this.ContextName));
 
         // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-        this.FailRemainingRules();
+        // TODO: See if we still have to do this
+        // this.FailRemainingRules();
     }
 
     /// <summary>

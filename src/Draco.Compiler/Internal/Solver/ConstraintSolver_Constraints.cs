@@ -18,7 +18,7 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     /// <param name="constraint">The constraint to add.</param>
     private void Add(Constraints.Constraint constraint) =>
-        this.constraints.Add(constraint);
+        this.constraintStore.Add(constraint);
 
     /// <summary>
     /// Adds a same-type constraint to the solver.

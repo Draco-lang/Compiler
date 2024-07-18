@@ -181,6 +181,11 @@ internal sealed partial class ConstraintSolver
                         this.AssignParameterToArgument(param.Type, arg);
                     }
                 }
+                // NOTE: This used to be an assignment, but again, I don't think that's in the scope of this constraint
+                // In all cases, return type is simple
+                UnifyAsserted(overload.ReturnType, chosen.ReturnType);
+                // Resolve promise
+                overload.CompletionSource.SetResult(chosen);
             }),
 
         // If an overload constraint can be advanced, do that

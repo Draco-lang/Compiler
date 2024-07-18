@@ -11,13 +11,11 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 /// <param name="locator">The locator of the constraint.</param>
 /// <param name="functionName">The function name.</param>
 /// <param name="candidates">The candidate functions to search among.</param>
-/// <param name="arguments">The arguments the function was called with.</param>
 /// <param name="returnType">The return type of the call.</param>
 internal sealed class Overload(
     ConstraintLocator? locator,
     string functionName,
     OverloadCandidateSet candidates,
-    ImmutableArray<Argument> arguments,
     TypeSymbol returnType) : Constraint(locator)
 {
     /// <summary>
@@ -34,11 +32,6 @@ internal sealed class Overload(
     /// The candidate functions to search among.
     /// </summary>
     public OverloadCandidateSet Candidates { get; } = candidates;
-
-    /// <summary>
-    /// The arguments the function was called with.
-    /// </summary>
-    public ImmutableArray<Argument> Arguments { get; } = arguments;
 
     /// <summary>
     /// The return type of the call.

@@ -34,7 +34,7 @@ internal sealed partial class ConstraintSolver
         return instantiated;
     }
 
-    private void UnifyParameterWithArgument(TypeSymbol paramType, Argument argument) => _ = this.Assignable(
+    private void UnifyParameterWithArgument(TypeSymbol paramType, Argument argument) => this.Assignable(
         paramType,
         argument.Type,
         ConstraintLocator.Syntax(argument.Syntax));

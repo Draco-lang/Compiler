@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Solver.OverloadResolution;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Solver.Constraints;
 

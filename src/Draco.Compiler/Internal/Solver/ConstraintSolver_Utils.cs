@@ -16,7 +16,7 @@ internal sealed partial class ConstraintSolver
             .ToImmutableArray(),
         returnType);
 
-    private FunctionSymbol ChooseSymbol(FunctionSymbol chosen)
+    private FunctionSymbol GenericInstantiateIfNeeded(FunctionSymbol chosen)
     {
         // Nongeneric, just return
         if (!chosen.IsGenericDefinition) return chosen;
@@ -34,7 +34,7 @@ internal sealed partial class ConstraintSolver
         return instantiated;
     }
 
-    private void UnifyParameterWithArgument(TypeSymbol paramType, Argument argument) => this.Assignable(
+    private void AssignParameterToArgument(TypeSymbol paramType, Argument argument) => this.Assignable(
         paramType,
         argument.Type,
         ConstraintLocator.Syntax(argument.Syntax));

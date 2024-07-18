@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver.Constraints;
 using Draco.Compiler.Internal.Symbols;
@@ -15,7 +17,7 @@ namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
-    private static IEnumerable<Rule> ConstructRules(DiagnosticBag diagnostics) => [
+    private IEnumerable<Rule> ConstructRules(DiagnosticBag diagnostics) => [
         // Trivial same-type constraint, unify all
         Simplification(typeof(Same))
             .Body((ConstraintStore store, Same same) =>
@@ -113,6 +115,56 @@ internal sealed partial class ConstraintSolver
                     UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
                     var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
                     member.CompletionSource.SetResult(overload);
+                }
+            }),
+
+        // If overload constraints are unambiguous, we can resolve them directly
+        Simplification(typeof(Overload))
+            .Guard((Overload overload) => overload.Candidates.IsWellDefined)
+            .Body((ConstraintStore store, Overload overload) =>
+            {
+                var candidates = overload.Candidates;
+                if (candidates.Count == 0)
+                {
+                    // Could not resolve, error
+                    UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
+                    // Best-effort shape approximation
+                    var errorSymbol = new NoOverloadFunctionSymbol(overload.Candidates.Arguments.Length);
+                    overload.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
+                        .WithFormatArgs(overload.FunctionName));
+                    overload.CompletionSource.SetResult(errorSymbol);
+                    return;
+                }
+
+                Debug.Assert(candidates.Count == 1);
+                // Resolved fine, choose the symbol, which might generic-instantiate it
+                var chosen = this.GenericInstantiateIfNeeded(overload.Candidates.Single().Data);
+                // Inference
+                if (chosen.IsVariadic)
+                {
+                    if (!BinderFacts.TryGetVariadicElementType(chosen.Parameters[^1].Type, out var elementType))
+                    {
+                        // Should not happen
+                        throw new InvalidOperationException();
+                    }
+                    var nonVariadicPairs = chosen.Parameters
+                        .SkipLast(1)
+                        .Zip(overload.Candidates.Arguments);
+                    var variadicPairs = overload.Candidates.Arguments
+                        .Skip(chosen.Parameters.Length - 1)
+                        .Select(a => (ParameterType: elementType, ArgumentType: a));
+                    // Non-variadic part
+                    foreach (var (param, arg) in nonVariadicPairs) this.AssignParameterToArgument(param.Type, arg);
+                    // Variadic part
+                    foreach (var (paramType, arg) in variadicPairs) this.AssignParameterToArgument(paramType, arg);
+                }
+                else
+                {
+                    foreach (var (param, arg) in chosen.Parameters.Zip(overload.Candidates.Arguments))
+                    {
+                        this.AssignParameterToArgument(param.Type, arg);
+                    }
                 }
             }),
     ];

@@ -72,7 +72,7 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
-        var solver = new DefinitionOrderSolver(ConstructRules(diagnostics));
+        var solver = new DefinitionOrderSolver(this.ConstructRules(diagnostics));
         solver.Solve(this.constraintStore);
 
         // Check for uninferred locals

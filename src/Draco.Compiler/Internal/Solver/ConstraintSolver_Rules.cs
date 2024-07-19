@@ -124,6 +124,9 @@ internal sealed partial class ConstraintSolver
             .Guard((Overload overload) => overload.Candidates.IsWellDefined)
             .Body((ConstraintStore store, Overload overload) =>
             {
+                // Call for safety
+                overload.Candidates.Refine();
+
                 var candidates = overload.Candidates;
                 if (candidates.Count == 0)
                 {

@@ -217,6 +217,7 @@ internal sealed partial class ConstraintSolver
             .Body((ConstraintStore store, Assignable assignable) =>
             {
                 // TODO: Is asserted correct here?
+                // Maybe just for type-variables?
                 UnifyAsserted(assignable.TargetType, assignable.AssignedType);
             }),
     ];

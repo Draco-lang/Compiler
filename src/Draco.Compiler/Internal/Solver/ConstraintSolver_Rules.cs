@@ -193,5 +193,31 @@ internal sealed partial class ConstraintSolver
             .Guard((Overload overload) => overload.Candidates.Refine()),
 
         // TODO: Case when we have multiple overloaded candidates but it's all well-defined
+
+        // As a last resort, we try to drive forward the solver by trying to merge assignable constraints with the same target
+        // This is a common situation for things like this:
+        //
+        // var x = Derived();
+        // x = Base();
+        //
+        // In this case we try to search for the common type of Derived and Base, then assign that
+        Simplification(typeof(Assignable), typeof(Assignable))
+            .Guard((Assignable a1, Assignable a2) =>
+                SymbolEqualityComparer.AllowTypeVariables.Equals(a1.TargetType, a2.TargetType))
+            .Body((ConstraintStore store, Assignable a1, Assignable a2) =>
+            {
+                var targetType = a1.TargetType;
+                var commonType = this.AllocateTypeVariable();
+                this.CommonType(commonType, [a1.AssignedType, a2.AssignedType], ConstraintLocator.Constraint(a2));
+                this.Assignable(targetType, commonType, ConstraintLocator.Constraint(a2));
+            }),
+
+        // As a last-last effort, we assume that a singular assignment means exact matching types
+        Simplification(typeof(Assignable))
+            .Body((ConstraintStore store, Assignable assignable) =>
+            {
+                // TODO: Is asserted correct here?
+                UnifyAsserted(assignable.TargetType, assignable.AssignedType);
+            }),
     ];
 }

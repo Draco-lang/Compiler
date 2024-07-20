@@ -114,7 +114,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
                 }
                 else
                 {
-                    await this.incomingMessages.Writer.WriteAsync(message!, this.shutdownTokenSource.Token);
+                    _ = this.incomingMessages.Writer.TryWrite(message!);
                 }
             }
             catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
@@ -124,7 +124,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
             catch (JsonException ex)
             {
                 var error = this.CreateJsonExceptionError(ex);
-                await this.SendMessageAsync(this.CreateErrorResponseMessage(default!, error));
+                this.SendMessage(this.CreateErrorResponseMessage(default!, error));
                 continue;
             }
         }
@@ -188,7 +188,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         if (this.IsRequestMessage(message))
         {
             var response = await this.ProcessIncomingRequestAsync(message);
-            await this.SendMessageAsync(response);
+            this.SendMessage(response);
         }
         else if (this.IsNotificationMessage(message))
         {
@@ -363,15 +363,15 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         return (Task<TResponse?>)pendingReq.Task;
     }
 
-    public async Task SendNotificationAsync(string method, object? @params)
+    public Task SendNotificationAsync(string method, object? @params)
     {
         var serializedParams = JsonSerializer.SerializeToElement(@params, this.JsonSerializerOptions);
         var notification = this.CreateNotificationMessage(method, serializedParams);
-        await this.SendMessageAsync(notification);
-    }
 
-    protected async Task SendMessageAsync(TMessage message) =>
-        await this.outgoingMessages.Writer.WriteAsync(message);
+        this.SendMessage(notification);
+
+        return Task.CompletedTask;
+    }
 
     protected void SendMessage(TMessage message) =>
         this.outgoingMessages.Writer.TryWrite(message);

@@ -2,6 +2,7 @@ using System;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.Dap.Attributes;
 using Draco.JsonRpc;
@@ -35,8 +36,9 @@ public static class DebugAdapter
     /// </summary>
     /// <param name="client">The debug client.</param>
     /// <param name="adapter">The debug adapter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The task that completes when the communication is over.</returns>
-    public static async Task RunAsync(this IDebugClient client, IDebugAdapter adapter)
+    public static async Task RunAsync(this IDebugClient client, IDebugAdapter adapter, CancellationToken cancellationToken = default)
     {
         var connection = ((DebugClientProxy)client).Connection;
 
@@ -48,7 +50,7 @@ public static class DebugAdapter
         RegisterAdapterRpcMethods(lifecycle, connection);
 
         // Done, now we can actually start
-        await connection.ListenAsync();
+        await connection.ListenAsync(cancellationToken);
     }
 
     private static void RegisterAdapterRpcMethods(object target, IJsonRpcConnection connection)

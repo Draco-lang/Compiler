@@ -14,13 +14,9 @@ internal interface IJsonRpcConnection
     /// <summary>
     /// Starts listening on the connection.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The task that completes when the connection closes.</returns>
-    public Task ListenAsync();
-
-    /// <summary>
-    /// Shuts down this connection.
-    /// </summary>
-    public void Shutdown();
+    public Task ListenAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sends a request to the client.

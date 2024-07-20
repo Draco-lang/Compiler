@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.JsonRpc;
 using Draco.Lsp.Attributes;
@@ -16,7 +17,8 @@ namespace Draco.Lsp.Server;
 /// </summary>
 internal sealed class LanguageServerLifecycle(
     ILanguageServer server,
-    IJsonRpcConnection connection) : ILanguageServerLifecycle
+    IJsonRpcConnection connection,
+    CancellationTokenSource cancellation) : ILanguageServerLifecycle
 {
     private ClientCapabilities clientCapabilities = null!;
 
@@ -48,7 +50,8 @@ internal sealed class LanguageServerLifecycle(
 
     public Task ExitAsync()
     {
-        connection.Shutdown();
+        cancellation.Cancel();
+
         return Task.CompletedTask;
     }
 

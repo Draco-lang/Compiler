@@ -256,7 +256,7 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         if (node.Parent is InvocationExpressionSyntax invocation)
         {
             if (invocation.Parent is MemberAccessExpressionSyntax parent)
-                this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+                this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.Folded;
         }
 
         this.VisitToken(node.OperatorToken);
@@ -289,11 +289,11 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         node.ParameterList.Accept(this);
         if (node.Initializer != null)
         {
-            using var scope = this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsLateAsPossible);
-            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+            using var scope = this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsLateAsPossible);
+            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.Folded;
             if (this.settings.NewLineBeforeConstructorInitializer)
             {
-                this.formatter.Scope.IsMaterialized.SetValue(true);
+                this.formatter.Scope.Folded.SetValue(true);
             }
             this.formatter.CurrentToken.Kind = WhitespaceBehavior.PadAround;
             node.Initializer.Accept(this);
@@ -304,14 +304,14 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
     }
 
     public override void VisitArgumentList(ArgumentListSyntax node) =>
-        this.formatter.CreateMaterializableScope(this.settings.Indentation,
+        this.formatter.CreateFoldableScope(this.settings.Indentation,
                 FoldPriority.AsSoonAsPossible,
                 () => base.VisitArgumentList(node)
         );
 
     public override void VisitArgument(ArgumentSyntax node)
     {
-        this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+        this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.Folded;
         base.VisitArgument(node);
     }
 

@@ -56,17 +56,17 @@ public sealed class Scope
     public Scope? Parent { get; }
 
     /// <summary>
-    /// Represent if the scope is materialized or not.
-    /// An unmaterialized scope is a potential scope, which is not folded yet.
-    /// <code>items.Select(x => x).ToList()</code> have an unmaterialized scope.
-    /// It can be materialized like:
+    /// Represent if the scope is folded or not.
+    /// An unfolded scope is a potential scope, which is not folded yet.
+    /// <code>items.Select(x => x).ToList()</code> have an unfolded scope.
+    /// It can be folded like:
     /// <code>
     /// items
     ///     .Select(x => x)
     ///     .ToList()
     /// </code>
     /// </summary>
-    public Future<bool> IsMaterialized { get; } = new Future<bool>();
+    public Future<bool> Folded { get; } = new Future<bool>();
 
     /// <summary>
     /// All the indentation parts of the current scope and it's parents.
@@ -75,7 +75,7 @@ public sealed class Scope
     {
         get
         {
-            if (!this.IsMaterialized.IsCompleted || !this.IsMaterialized.Value)
+            if (!this.Folded.IsCompleted || !this.Folded.Value)
             {
                 if (this.Parent is null) return [];
                 return this.Parent.CurrentTotalIndent;
@@ -149,24 +149,24 @@ public sealed class Scope
     {
         var asSoonAsPossible = this.ThisAndParents
             .Reverse()
-            .Where(item => !item.IsMaterialized.IsCompleted)
+            .Where(item => !item.Folded.IsCompleted)
             .Where(item => item.FoldPriority == FoldPriority.AsSoonAsPossible)
             .FirstOrDefault();
 
         if (asSoonAsPossible != null)
         {
-            asSoonAsPossible.IsMaterialized.SetValue(true);
+            asSoonAsPossible.Folded.SetValue(true);
             return asSoonAsPossible;
         }
 
         var asLateAsPossible = this.ThisAndParents
-            .Where(item => !item.IsMaterialized.IsCompleted)
+            .Where(item => !item.Folded.IsCompleted)
             .Where(item => item.FoldPriority == FoldPriority.AsLateAsPossible)
             .FirstOrDefault();
 
         if (asLateAsPossible != null)
         {
-            asLateAsPossible.IsMaterialized.SetValue(true);
+            asLateAsPossible.Folded.SetValue(true);
             return asLateAsPossible;
         }
 
@@ -178,7 +178,7 @@ public sealed class Scope
     /// </summary>
     public override string ToString()
     {
-        var materialized = (this.IsMaterialized.IsCompleted ? this.IsMaterialized.Value ? "M" : "U" : "?");
-        return $"{materialized}{this.FoldPriority}{this.indentation?.Length.ToString() ?? "L"}";
+        var folded = (this.Folded.IsCompleted ? this.Folded.Value ? "M" : "U" : "?");
+        return $"{folded}{this.FoldPriority}{this.indentation?.Length.ToString() ?? "L"}";
     }
 }

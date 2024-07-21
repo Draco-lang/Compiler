@@ -15,7 +15,7 @@ public sealed class FormatterEngine
         this.scopePopper = new ScopeGuard(this);
         this.tokensMetadata = new TokenMetadata[tokenCount];
         this.Scope = new(null, settings, FoldPriority.Never, "");
-        this.Scope.IsMaterialized.SetValue(true);
+        this.Scope.Folded.SetValue(true);
         this.settings = settings;
     }
 
@@ -53,7 +53,7 @@ public sealed class FormatterEngine
     public IDisposable CreateScope(string indentation)
     {
         this.Scope = new Scope(this.Scope, this.settings, FoldPriority.Never, indentation);
-        this.Scope.IsMaterialized.SetValue(true);
+        this.Scope.Folded.SetValue(true);
         return this.scopePopper;
     }
 
@@ -65,52 +65,52 @@ public sealed class FormatterEngine
     public IDisposable CreateScopeAfterNextToken(string indentation)
     {
         this.scopeForNextToken = new Scope(this.Scope, this.settings, FoldPriority.Never, indentation);
-        this.scopeForNextToken.IsMaterialized.SetValue(true);
+        this.scopeForNextToken.Folded.SetValue(true);
         return this.scopePopper;
     }
 
 
-    public IDisposable CreateMaterializableScope(string indentation, FoldPriority foldBehavior)
+    public IDisposable CreateFoldableScope(string indentation, FoldPriority foldBehavior)
     {
         this.Scope = new Scope(this.Scope, this.settings, foldBehavior, indentation);
         return this.scopePopper;
     }
 
-    public IDisposable CreateMaterializableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
+    public IDisposable CreateFoldableScope(int indexOfLevelingToken, FoldPriority foldBehavior)
     {
         this.Scope = new Scope(this.Scope, this.settings, foldBehavior, (this.tokensMetadata, indexOfLevelingToken));
         return this.scopePopper;
     }
 
-    public void CreateMaterializableScope(string indentation, FoldPriority foldBehavior, Action action)
+    public void CreateFoldableScope(string indentation, FoldPriority foldBehavior, Action action)
     {
-        using (this.CreateMaterializableScope(indentation, foldBehavior)) action();
+        using (this.CreateFoldableScope(indentation, foldBehavior)) action();
     }
 
-    public static string Format(FormatterSettings settings, IReadOnlyList<TokenMetadata> metadatas)
+    public string Format()
     {
-        FoldTooLongLine(metadatas, settings);
+        FoldTooLongLine(this.tokensMetadata, this.settings);
         var builder = new StringBuilder();
-        var stateMachine = new LineStateMachine(string.Concat(metadatas[0].ScopeInfo.CurrentTotalIndent));
+        var stateMachine = new LineStateMachine(string.Concat(this.tokensMetadata[0].ScopeInfo.CurrentTotalIndent));
 
-        stateMachine.AddToken(metadatas[0], settings, false);
+        stateMachine.AddToken(this.tokensMetadata[0], this.settings, false);
 
-        for (var x = 1; x < metadatas.Count; x++)
+        for (var x = 1; x < this.tokensMetadata.Length; x++)
         {
-            var metadata = metadatas[x];
+            var metadata = this.tokensMetadata[x];
             // we ignore multiline string newline tokens because we handle them in the string expression visitor.
 
             if (metadata.DoesReturnLine?.IsCompleted == true && metadata.DoesReturnLine.Value)
             {
                 builder.Append(stateMachine);
-                builder.Append(settings.Newline);
+                builder.Append(this.settings.Newline);
                 stateMachine = new LineStateMachine(string.Concat(metadata.ScopeInfo.CurrentTotalIndent));
             }
 
-            stateMachine.AddToken(metadata, settings, x == metadatas.Count - 1);
+            stateMachine.AddToken(metadata, this.settings, x == this.tokensMetadata.Length - 1);
         }
         builder.Append(stateMachine);
-        builder.Append(settings.Newline);
+        builder.Append(this.settings.Newline);
         return builder.ToString();
     }
 
@@ -165,7 +165,7 @@ public sealed class FormatterEngine
             for (var i = x - 1; i >= currentLineStart; i--)
             {
                 var scope = metadatas[i].ScopeInfo;
-                if (scope.IsMaterialized?.IsCompleted == true && scope.IsMaterialized.Value) continue;
+                if (scope.Folded?.IsCompleted == true && scope.Folded.Value) continue;
                 if (scope.FoldPriority != FoldPriority.AsSoonAsPossible) continue;
                 var prevFolded = scope.Fold();
                 if (prevFolded != null)
@@ -178,7 +178,7 @@ public sealed class FormatterEngine
             for (var i = x - 1; i >= currentLineStart; i--)
             {
                 var scope = metadatas[i].ScopeInfo;
-                if (scope.IsMaterialized?.Value ?? false) continue;
+                if (scope.Folded?.Value ?? false) continue;
                 var prevFolded = scope.Fold();
                 if (prevFolded != null)
                 {
@@ -195,7 +195,7 @@ public sealed class FormatterEngine
             {
                 foreach (var scope in foldedScopes)
                 {
-                    scope.IsMaterialized.Reset();
+                    scope.Folded.Reset();
                 }
                 foldedScopes.Clear();
                 x = currentLineStart - 1;

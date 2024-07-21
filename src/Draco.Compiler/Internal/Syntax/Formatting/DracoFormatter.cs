@@ -26,10 +26,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
         var formatter = new DracoFormatter(settings);
         tree.Root.Accept(formatter);
-
-        var metadatas = formatter.formatter.TokensMetadata;
-
-        return FormatterEngine.Format(settings, metadatas);
+        return formatter.formatter.Format();
     }
 
     public override void VisitCompilationUnit(Api.Syntax.CompilationUnitSyntax node)
@@ -100,20 +97,18 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         this.HandleTokenComments(node);
         var formattingKind = GetFormattingTokenKind(node);
 
-        var notFirstToken = this.formatter.CurrentIdx > 0;
-        var doesntInsertSpace = !formattingKind.HasFlag(WhitespaceBehavior.SpaceBefore);
+        var firstToken = this.formatter.CurrentIdx == 0;
+        var insertSpace = formattingKind.HasFlag(WhitespaceBehavior.SpaceBefore);
         var doesReturnLine = this.formatter.CurrentToken.DoesReturnLine;
         var insertNewline = doesReturnLine is not null && doesReturnLine.IsCompleted && doesReturnLine.Value;
-        var notWhitespaceNode = node.Kind != TokenKind.StringNewline && node.Kind != TokenKind.EndOfInput;
-        if (doesntInsertSpace && notFirstToken && !insertNewline && notWhitespaceNode)
+        var whitespaceNode = node.Kind == TokenKind.StringNewline || node.Kind == TokenKind.EndOfInput;
+        if (!insertSpace
+            && !firstToken
+            && !insertNewline
+            && !whitespaceNode
+            && SyntaxFacts.WillTokenMerges(this.formatter.PreviousToken.Text, node.Text))
         {
-            var lexer = new Lexer(SourceReader.From(this.formatter.PreviousToken.Text + node.Text), default);
-            lexer.Lex();
-            var secondToken = lexer.Lex();
-            if (secondToken.Kind == TokenKind.EndOfInput) // this means the 2 tokens merged in a single one, we want to avoid that.
-            {
-                this.formatter.CurrentToken.Kind = WhitespaceBehavior.SpaceBefore;
-            }
+            this.formatter.CurrentToken.Kind = WhitespaceBehavior.SpaceBefore;
         }
 
         this.formatter.SetCurrentTokenInfo(formattingKind, node.Text);
@@ -153,7 +148,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         if (node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ParameterSyntax>
             || node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ExpressionSyntax>)
         {
-            this.formatter.CreateMaterializableScope(this.settings.Indentation,
+            this.formatter.CreateFoldableScope(this.settings.Indentation,
                 FoldPriority.AsSoonAsPossible,
                 () => base.VisitSeparatedSyntaxList(node)
             );
@@ -166,7 +161,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitParameter(Api.Syntax.ParameterSyntax node)
     {
-        this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+        this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.Folded;
         base.VisitParameter(node);
     }
 
@@ -253,14 +248,14 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         var kind = node.Operator.Kind;
         if (node.Parent is not Api.Syntax.BinaryExpressionSyntax { Operator.Kind: var previousKind } || previousKind != kind)
         {
-            closeScope = this.formatter.CreateMaterializableScope("", FoldPriority.AsLateAsPossible);
+            closeScope = this.formatter.CreateFoldableScope("", FoldPriority.AsLateAsPossible);
         }
 
         node.Left.Accept(this);
 
         if (this.formatter.CurrentToken.DoesReturnLine is null)
         {
-            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.Folded;
         }
         node.Operator.Accept(this);
         node.Right.Accept(this);
@@ -280,7 +275,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         var curr = this.formatter.CurrentIdx;
         node.Assign.Accept(this);
 
-        using var _ = this.formatter.CreateMaterializableScope(curr, FoldPriority.AsSoonAsPossible);
+        using var _ = this.formatter.CreateFoldableScope(curr, FoldPriority.AsSoonAsPossible);
         node.Value.Accept(this);
         node.Semicolon.Accept(this);
     }
@@ -299,7 +294,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         node.Name.Accept(this);
         if (node.Generics is not null)
         {
-            this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
+            this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
         }
         node.OpenParen.Accept(this);
         disposable.Dispose();
@@ -328,13 +323,13 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         node.WhileKeyword.Accept(this);
         node.OpenParen.Accept(this);
-        this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
+        this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Condition.Accept(this));
         node.CloseParen.Accept(this);
-        this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
+        this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
     }
 
     public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node) =>
-        this.formatter.CreateMaterializableScope("", FoldPriority.AsSoonAsPossible, () =>
+        this.formatter.CreateFoldableScope("", FoldPriority.AsSoonAsPossible, () =>
         {
             node.IfKeyword.Accept(this);
             IDisposable? disposable = null;
@@ -345,20 +340,20 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
                 disposable = this.formatter.CreateScope(this.settings.Indentation);
                 this.formatter.PreviousToken.ScopeInfo = this.formatter.Scope; // it's easier to change our mind that compute ahead of time.
             }
-            this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () =>
+            this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () =>
             {
                 var firstTokenIdx = this.formatter.CurrentIdx;
                 node.Condition.Accept(this);
                 var firstToken = this.formatter.TokensMetadata[firstTokenIdx];
                 if (firstToken.DoesReturnLine?.Value ?? false)
                 {
-                    firstToken.ScopeInfo.IsMaterialized.SetValue(true);
+                    firstToken.ScopeInfo.Folded.SetValue(true);
                 }
             });
             node.CloseParen.Accept(this);
             disposable?.Dispose();
 
-            this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
+            this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
 
             node.Else?.Accept(this);
         });
@@ -371,10 +366,10 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         }
         else
         {
-            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.IsMaterialized;
+            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.Folded;
         }
         node.ElseKeyword.Accept(this);
-        this.formatter.CreateMaterializableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Expression.Accept(this));
+        this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Expression.Accept(this));
     }
 
     public override void VisitBlockExpression(Api.Syntax.BlockExpressionSyntax node)
@@ -385,8 +380,8 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         // if (blabla)
         //     an expression;
         // but since we are in a block we create our own scope and the if/while/else will never create it's own scope.
-        var isMaterialized = this.formatter.Scope.IsMaterialized;
-        if (!isMaterialized.IsCompleted) isMaterialized.SetValue(false);
+        var folded = this.formatter.Scope.Folded;
+        if (!folded.IsCompleted) folded.SetValue(false);
 
         node.OpenBrace.Accept(this);
 

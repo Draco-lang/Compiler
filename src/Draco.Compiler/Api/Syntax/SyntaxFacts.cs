@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using Draco.Compiler.Internal.Syntax.Formatting;
+using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -160,5 +162,13 @@ public static class SyntaxFacts
         // The first trivia was newline, the second must be spaces
         Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Kind == TriviaKind.Whitespace);
         return str.CloseQuotes.LeadingTrivia[1].Text;
+    }
+
+    public static bool WillTokenMerges(string leftToken, string rightToken)
+    {
+        var lexer = new Lexer(SourceReader.From(leftToken + rightToken), default);
+        lexer.Lex();
+        var secondToken = lexer.Lex();
+        return secondToken.Kind == TokenKind.EndOfInput;
     }
 }

@@ -20,9 +20,7 @@ public sealed class CSharpFormatter(CSharpFormatterSettings settings) : CSharpSy
         var formatter = new CSharpFormatter(settings);
         formatter.Visit(tree.GetRoot());
 
-        var metadatas = formatter.formatter.TokensMetadata;
-
-        return FormatterEngine.Format(settings, metadatas);
+        return formatter.formatter.Format();
     }
 
     public override void VisitCompilationUnit(CompilationUnitSyntax node)

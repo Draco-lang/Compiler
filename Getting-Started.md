@@ -21,6 +21,6 @@ Installing everything from source should also be relatively easy, as we made Pow
  0. First, you need to have the [.NET SDK](https://dotnet.microsoft.com/en-us/download) installed.
  1. Run `install_toolchain.ps1` and specify a folder where you want to install the SDK. This will build and install the SDK into that location. For example, you can install it into the `examples` folder to run them on your source-built SDK.
  2. If you want editor support, you can install the components with their respective scripts:
-   * Language Server: `install_langserver.ps1`
-   * Debug Adapter: `install_debugadapter.ps1`
-   * VS Code extension: `install_vscext.ps1`
+    * Language Server: `install_langserver.ps1`
+    * Debug Adapter: `install_debugadapter.ps1`
+    * VS Code extension: `install_vscext.ps1`

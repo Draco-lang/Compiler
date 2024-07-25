@@ -21,7 +21,8 @@ public sealed class NullTracer : ITracer
     public void Step(
         Rule appliedRule,
         IEnumerable<IConstraint> matchedConstraints,
-        IEnumerable<IConstraint> newConstraints)
+        IEnumerable<IConstraint> newConstraints,
+        ConstraintStore store)
     {
     }
 

@@ -15,10 +15,12 @@ public interface ITracer
     /// <param name="appliedRule">The rule that was applied.</param>
     /// <param name="matchedConstraints">The constraints that were matched.</param>
     /// <param name="newConstraints">The constraints that were created.</param>
+    /// <param name="store">The store after the rule applied.</param>
     public void Step(
         Rule appliedRule,
         IEnumerable<IConstraint> matchedConstraints,
-        IEnumerable<IConstraint> newConstraints);
+        IEnumerable<IConstraint> newConstraints,
+        ConstraintStore store);
 
     /// <summary>
     /// Called when the solver is started.

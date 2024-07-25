@@ -22,9 +22,13 @@ public sealed class BroadcastTracer(IEnumerable<ITracer> tracers) : ITracer
         foreach (var tracer in this.tracers) tracer.End(store);
     }
 
-    public void Step(Rule appliedRule, IEnumerable<IConstraint> matchedConstraints, IEnumerable<IConstraint> newConstraints)
+    public void Step(
+        Rule appliedRule,
+        IEnumerable<IConstraint> matchedConstraints,
+        IEnumerable<IConstraint> newConstraints,
+        ConstraintStore store)
     {
-        foreach (var tracer in this.tracers) tracer.Step(appliedRule, matchedConstraints, newConstraints);
+        foreach (var tracer in this.tracers) tracer.Step(appliedRule, matchedConstraints, newConstraints, store);
     }
 
     public void Flush()

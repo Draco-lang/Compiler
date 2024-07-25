@@ -64,7 +64,7 @@ public abstract class PrioritizingSolver(
             store.AddRange(newConstraints);
 
             // Just for tracing
-            this.Tracer.Step(ruleAndMatch.Rule, ruleAndMatch.Match, newConstraints.Except(ruleAndMatch.Match));
+            this.Tracer.Step(ruleAndMatch.Rule, ruleAndMatch.Match, newConstraints.Except(ruleAndMatch.Match), store);
         }
 
         this.Tracer.End(store);

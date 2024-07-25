@@ -51,6 +51,10 @@ public abstract class PrioritizingSolver(
             if (maybeRuleAndMatch is null) break;
 
             var ruleAndMatch = maybeRuleAndMatch.Value;
+
+            // Just for tracing
+            this.Tracer.BeforeMatch(ruleAndMatch.Rule, ruleAndMatch.Match, store);
+
             // Remove head
             store.RemoveRange(ruleAndMatch.Match);
 
@@ -64,7 +68,7 @@ public abstract class PrioritizingSolver(
             store.AddRange(newConstraints);
 
             // Just for tracing
-            this.Tracer.Step(ruleAndMatch.Rule, ruleAndMatch.Match, newConstraints.Except(ruleAndMatch.Match), store);
+            this.Tracer.AfterMatch(ruleAndMatch.Rule, ruleAndMatch.Match, newConstraints.Except(ruleAndMatch.Match), store);
         }
 
         this.Tracer.End(store);

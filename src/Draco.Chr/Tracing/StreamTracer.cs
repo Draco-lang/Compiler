@@ -29,17 +29,20 @@ public sealed class StreamTracer(StreamReader reader, StreamWriter writer) : ITr
     /// </summary>
     public bool OnlyPrintStoreAtEnd { get; set; }
 
-    public void Step(
-        Rule appliedRule,
+    public void BeforeMatch(Rule rule, IEnumerable<IConstraint> constraints, ConstraintStore store)
+    {
+        writer.WriteLine($"Applied {rule.Name}:");
+
+        if (constraints.Any()) writer.WriteLine($" - Matched:");
+        foreach (var m in constraints) writer.WriteLine($"   * {m}");
+    }
+
+    public void AfterMatch(
+        Rule rule,
         IEnumerable<IConstraint> matchedConstraints,
         IEnumerable<IConstraint> newConstraints,
         ConstraintStore store)
     {
-        writer.WriteLine($"Applied {appliedRule.Name}:");
-
-        if (matchedConstraints.Any()) writer.WriteLine($" - Matched:");
-        foreach (var m in matchedConstraints) writer.WriteLine($"   * {m}");
-
         if (newConstraints.Any()) writer.WriteLine($" - Added:");
         foreach (var a in newConstraints) writer.WriteLine($"   * {a}");
 

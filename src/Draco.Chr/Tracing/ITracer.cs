@@ -10,14 +10,22 @@ namespace Draco.Chr.Tracing;
 public interface ITracer
 {
     /// <summary>
-    /// Called when a rule is applied.
+    /// Called before a rule is matched.
     /// </summary>
-    /// <param name="appliedRule">The rule that was applied.</param>
+    /// <param name="rule">The matched rule.</param>
+    /// <param name="constraints">The matched constraints.</param>
+    /// <param name="store">The constraint store.</param>
+    public void BeforeMatch(Rule rule, IEnumerable<IConstraint> constraints, ConstraintStore store);
+
+    /// <summary>
+    /// Called after a rule is matched.
+    /// </summary>
+    /// <param name="rule">The rule that was applied.</param>
     /// <param name="matchedConstraints">The constraints that were matched.</param>
     /// <param name="newConstraints">The constraints that were created.</param>
     /// <param name="store">The store after the rule applied.</param>
-    public void Step(
-        Rule appliedRule,
+    public void AfterMatch(
+        Rule rule,
         IEnumerable<IConstraint> matchedConstraints,
         IEnumerable<IConstraint> newConstraints,
         ConstraintStore store);

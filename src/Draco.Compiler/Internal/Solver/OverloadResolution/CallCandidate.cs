@@ -115,4 +115,6 @@ internal readonly struct CallCandidate<TData>
         }
         return changed;
     }
+
+    public override string ToString() => this.Data?.ToString() ?? "<unknown>";
 }

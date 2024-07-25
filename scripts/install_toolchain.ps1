@@ -1,3 +1,6 @@
+# Installs the Draco toolchain into a specified directory from source
+# If the directory does not contain a Draco project, a new one is created from the console template
+
 $ErrorActionPreference = "Stop"
 # Check if a path argument was passed in
 if ($args.Length -eq 0) {

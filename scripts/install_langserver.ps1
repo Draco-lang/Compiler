@@ -1,3 +1,5 @@
+# Install the Draco Language Server tool globally from source
+
 $ErrorActionPreference = "Stop"
 Push-Location $PSScriptRoot
 dotnet pack ../src/Draco.LanguageServer --output .

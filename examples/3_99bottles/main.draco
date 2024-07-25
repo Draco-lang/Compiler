@@ -1,14 +1,6 @@
 import System.Console;
 import System.Linq.Enumerable;
 
-func bottles(n: int32): string =
-    if (n == 0) "no more bottles"
-    else if (n == 1) "1 bottle"
-    else "\{n} bottles";
-
-func capitalize(s: string): string =
-    "\{char.ToUpper(s[0])}\{s.Substring(1)}";
-
 func main() {
     for (i in Reverse(Range(0, 100))) {
         WriteLine("""
@@ -20,8 +12,8 @@ func main() {
             WriteLine("""
                 Take one down, pass it around,
                 \{bottles(i - 1)} of beer on the wall.
+
                 """);
-            WriteLine();
         } else {
             WriteLine("""
                 Go to the store, buy some more,
@@ -30,3 +22,11 @@ func main() {
         }
     }
 }
+
+func bottles(n: int32): string =
+    if (n == 0) "no more bottles"
+    else if (n == 1) "1 bottle"
+    else "\{n} bottles";
+
+func capitalize(s: string): string =
+    "\{char.ToUpper(s[0])}\{s.Substring(1)}";

@@ -1,3 +1,4 @@
+# Counts the number of TODOs in the repository for each commit
 git stash
 $commits = git rev-list --reverse HEAD
 foreach ($commit in $commits) {

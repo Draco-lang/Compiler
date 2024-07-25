@@ -1,3 +1,5 @@
+# Installs the Draco Visual Studio Code extension from source
+
 $ErrorActionPreference = "Stop"
 # get scripts directory and push location
 Push-Location $PSScriptRoot

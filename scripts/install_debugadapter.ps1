@@ -1,4 +1,8 @@
-# Installs the Draco Debug Adapter tool globally from source
+<#
+    .Description
+    Installs the Draco Debug Adapter tool globally from source.
+    This helps testing debugger or debug adapter changes while development.
+#>
 
 $ErrorActionPreference = "Stop"
 Push-Location $PSScriptRoot

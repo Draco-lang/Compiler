@@ -1,4 +1,7 @@
-# Checks, which source files don't have their namespaces aligned with their file paths
+<#
+    .Description
+    Checks, which source files don't have their namespaces aligned with their file paths.
+#>
 
 # We collect all our projects
 # NOTE: We exclude bin folders, as BDN generates projects there we don't care about

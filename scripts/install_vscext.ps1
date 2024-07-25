@@ -1,4 +1,8 @@
-# Installs the Draco Visual Studio Code extension from source
+<#
+    .Description
+    Installs the Draco Visual Studio Code extension from source.
+    This helps testing extension changes while development.
+#>
 
 $ErrorActionPreference = "Stop"
 # get scripts directory and push location

@@ -1,4 +1,7 @@
-# Runs all examples in the examples directory
+<#
+    .Description
+    Runs all examples in the examples directory.
+#>
 
 # Save location and go to the examples directory
 Push-Location

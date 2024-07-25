@@ -127,8 +127,8 @@ internal sealed partial class ConstraintSolver
                 // Call for safety
                 overload.Candidates.Refine();
 
-                var candidates = overload.Candidates;
-                if (candidates.Count == 0)
+                var candidates = overload.Candidates.Dominators;
+                if (candidates.Length == 0)
                 {
                     // Could not resolve, error
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
@@ -142,7 +142,7 @@ internal sealed partial class ConstraintSolver
                     return;
                 }
 
-                if (candidates.Count > 1)
+                if (candidates.Length > 1)
                 {
                     // Ambiguity, error
                     // Best-effort shape approximation
@@ -157,7 +157,7 @@ internal sealed partial class ConstraintSolver
                 }
 
                 // Resolved fine, choose the symbol, which might generic-instantiate it
-                var chosen = this.GenericInstantiateIfNeeded(overload.Candidates.Single().Data);
+                var chosen = this.GenericInstantiateIfNeeded(candidates.Single().Data);
                 // Inference
                 if (chosen.IsVariadic)
                 {

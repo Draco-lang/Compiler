@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -56,14 +57,14 @@ internal readonly struct CallScore(int length)
     /// <param name="items">The items to find the dominators among.</param>
     /// <param name="scoreSelector">The score selector function.</param>
     /// <returns>The dominating elements among <paramref name="items"/>.</returns>
-    public static IEnumerable<T> FindDominatorsBy<T>(
+    public static ImmutableArray<T> FindDominatorsBy<T>(
         IEnumerable<T> items,
         Func<T, CallScore> scoreSelector)
     {
-        var candidates = items.ToList();
+        var candidates = items.ToImmutableArray();
 
         // Optimization, for a single or no candidate, don't bother
-        if (candidates.Count <= 1) return candidates;
+        if (candidates.Length <= 1) return candidates;
 
         // We have more than one, find the max dominator
         // NOTE: This might not be the actual dominator in case of mutual non-dominance
@@ -74,9 +75,9 @@ internal readonly struct CallScore(int length)
                              || Compare(dominatingScore.Value, scoreSelector(candidate))
                                     is CallScoreComparison.Equal
                                     or CallScoreComparison.NoDominance)
-            .ToList();
+            .ToImmutableArray();
 
-        Debug.Assert(dominatingCandidates.Count > 0);
+        Debug.Assert(dominatingCandidates.Length > 0);
         return dominatingCandidates;
     }
 

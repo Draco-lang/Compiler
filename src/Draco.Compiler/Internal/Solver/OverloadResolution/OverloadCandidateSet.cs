@@ -48,9 +48,10 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
                               || this.candidates.All(c => c.IsWellDefined);
 
     /// <summary>
-    /// True, if the set is ambiguous, meaning there are multiple remaining candidates.
+    /// Returns the dominating - best matching - candidates.
     /// </summary>
-    public bool IsAmbiguous => this.Count > 1;
+    public ImmutableArray<CallCandidate<FunctionSymbol>> Dominators =>
+        CallScore.FindDominatorsBy(this.candidates, c => c.Score);
 
     public int Count => this.candidates.Count;
 

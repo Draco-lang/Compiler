@@ -11,11 +11,13 @@ namespace Draco.Compiler.Internal.Solver.Constraints;
 /// <param name="receiver">The accessed type.</param>
 /// <param name="memberName">The name of the member.</param>
 /// <param name="memberType">The type of the member.</param>
+/// <param name="allowFailure">Can allow the constraint to fail, which is used for operator lookup.</param>
 internal sealed class Member(
     ConstraintLocator? locator,
     TypeSymbol receiver,
     string memberName,
-    TypeSymbol memberType) : Constraint(locator, SymbolResolutionErrors.MemberNotFound)
+    TypeSymbol memberType,
+    bool allowFailure) : Constraint(locator, SymbolResolutionErrors.MemberNotFound)
 {
     /// <summary>
     /// The completion source for the resolved member symbol.
@@ -36,4 +38,9 @@ internal sealed class Member(
     /// The type of the member.
     /// </summary>
     public TypeSymbol MemberType { get; } = memberType;
+
+    /// <summary>
+    /// Can allow the constraint to fail, which is used for operator lookup.
+    /// </summary>
+    public bool AllowFailure { get; } = allowFailure;
 }

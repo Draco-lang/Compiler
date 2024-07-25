@@ -74,7 +74,7 @@ internal sealed partial class ConstraintSolver
 
         // Member constraints are trivial, if the receiver is a ground-type
         Simplification(typeof(Member))
-            .Guard((Member member) => !member.Receiver.IsTypeVariable)
+            .Guard((Member member) => !member.Receiver.Substitution.IsTypeVariable)
             .Body((ConstraintStore store, Member member) =>
             {
                 var accessed = member.Receiver.Substitution;
@@ -92,10 +92,16 @@ internal sealed partial class ConstraintSolver
                     .ToImmutableArray();
                 if (membersWithName.Length == 0)
                 {
-                    // No such member, error
-                    member
-                        .ReportDiagnostic(diagnostics, builder => builder
-                        .WithFormatArgs(member.MemberName, accessed));
+                    // We have special member constraints that are created for operator lookup
+                    // They can fail when we try to lookup operators for things like int32, which is defined globally
+                    // NOTE: We might want to inject these operators into the target types in the future instead
+                    if (!member.AllowFailure)
+                    {
+                        // No such member, error
+                        member
+                            .ReportDiagnostic(diagnostics, builder => builder
+                            .WithFormatArgs(member.MemberName, accessed));
+                    }
                     // We still provide a single error symbol
                     UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
                     member.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);

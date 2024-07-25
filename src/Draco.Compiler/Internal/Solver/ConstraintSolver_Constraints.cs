@@ -86,16 +86,17 @@ internal sealed partial class ConstraintSolver
     /// <param name="memberName">The accessed member name.</param>
     /// <param name="memberType">The type of the member.</param>
     /// <param name="syntax">The syntax that the constraint originates from.</param>
-    /// <param name="silent">Whether to suppress diagnostics for this constraint.</param>
+    /// <param name="allowFailure">Whether to allow this constraint to fail.</param>
     /// <returns>The promise of the accessed member symbol.</returns>
     public SolverTask<Symbol> Member(
         TypeSymbol accessedType,
         string memberName,
         out TypeSymbol memberType,
-        SyntaxNode syntax)
+        SyntaxNode syntax,
+        bool allowFailure = false)
     {
         memberType = this.AllocateTypeVariable();
-        var constraint = new Constraints.Member(ConstraintLocator.Syntax(syntax), accessedType, memberName, memberType);
+        var constraint = new Constraints.Member(ConstraintLocator.Syntax(syntax), accessedType, memberName, memberType, allowFailure);
         this.Add(constraint);
         return constraint.CompletionSource.Task;
     }

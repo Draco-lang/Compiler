@@ -31,7 +31,8 @@ internal sealed partial class ConstraintSolver
                         .WithFormatArgs(same.Types[0].Substitution, same.Types[i].Substitution));
                     break;
                 }
-            }),
+            })
+            .Named("same"),
 
         // Assignable can be resolved directly, if both types are ground-types
         Simplification(typeof(Assignable))
@@ -48,7 +49,8 @@ internal sealed partial class ConstraintSolver
                 assignable
                     .ReportDiagnostic(diagnostics, diag => diag
                     .WithFormatArgs(assignable.TargetType.Substitution, assignable.AssignedType.Substitution));
-            }),
+            })
+            .Named("assignable"),
 
         // If all types are ground-types, common-type constraints are trivial
         Simplification(typeof(CommonAncestor))
@@ -67,7 +69,8 @@ internal sealed partial class ConstraintSolver
                     .WithFormatArgs(string.Join(", ", common.AlternativeTypes)));
                 // Stop cascading uninferred type
                 UnifyAsserted(common.CommonType, WellKnownTypes.ErrorType);
-            }),
+            })
+            .Named("common_ancestor"),
 
         // Member constraints are trivial, if the receiver is a ground-type
         Simplification(typeof(Member))
@@ -117,7 +120,8 @@ internal sealed partial class ConstraintSolver
                     var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
                     member.CompletionSource.SetResult(overload);
                 }
-            }),
+            })
+            .Named("member"),
 
         // If overload constraints are unambiguous, we can resolve them directly
         Simplification(typeof(Overload))
@@ -189,11 +193,13 @@ internal sealed partial class ConstraintSolver
                 UnifyAsserted(overload.ReturnType, chosen.ReturnType);
                 // Resolve promise
                 overload.CompletionSource.SetResult(chosen);
-            }),
+            })
+            .Named("overload"),
 
         // If an overload constraint can be advanced, do that
         Propagation(typeof(Overload))
-            .Guard((Overload overload) => overload.Candidates.Refine()),
+            .Guard((Overload overload) => overload.Candidates.Refine())
+            .Named("overload_step"),
 
         // As a last resort, we try to drive forward the solver by trying to merge assignable constraints with the same target
         // This is a common situation for things like this:
@@ -211,7 +217,8 @@ internal sealed partial class ConstraintSolver
                 var commonType = this.AllocateTypeVariable();
                 this.CommonType(commonType, [a1.AssignedType, a2.AssignedType], ConstraintLocator.Constraint(a2));
                 this.Assignable(targetType, commonType, ConstraintLocator.Constraint(a2));
-            }),
+            })
+            .Named("merge_assignables"),
 
         // As a last-last effort, we assume that a singular assignment means exact matching types
         Simplification(typeof(Assignable))
@@ -220,7 +227,8 @@ internal sealed partial class ConstraintSolver
                 // TODO: Is asserted correct here?
                 // Maybe just for type-variables?
                 UnifyAsserted(assignable.TargetType, assignable.AssignedType);
-            }),
+            })
+            .Named("sole_assignable"),
 
         // TODO: Callable constraint?
     ];

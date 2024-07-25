@@ -71,7 +71,7 @@ internal sealed partial class ConstraintSolver
 
         // Member constraints are trivial, if the receiver is a ground-type
         Simplification(typeof(Member))
-            .Guard((Member member) => member.Receiver.IsGroundType)
+            .Guard((Member member) => !member.Receiver.IsTypeVariable)
             .Body((ConstraintStore store, Member member) =>
             {
                 var accessed = member.Receiver.Substitution;
@@ -195,8 +195,6 @@ internal sealed partial class ConstraintSolver
         Propagation(typeof(Overload))
             .Guard((Overload overload) => overload.Candidates.Refine()),
 
-        // TODO: Case when we have multiple overloaded candidates but it's all well-defined
-
         // As a last resort, we try to drive forward the solver by trying to merge assignable constraints with the same target
         // This is a common situation for things like this:
         //
@@ -223,5 +221,7 @@ internal sealed partial class ConstraintSolver
                 // Maybe just for type-variables?
                 UnifyAsserted(assignable.TargetType, assignable.AssignedType);
             }),
+
+        // TODO: Callable constraint?
     ];
 }

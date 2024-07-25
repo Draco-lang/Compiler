@@ -159,15 +159,18 @@ internal partial class Binder
             .OfType<FunctionSymbol>()
             .ToImmutableArray();
 
+        var returnType = constraints.AllocateTypeVariable();
         SolverTask<FunctionSymbol> indexerTask;
+
         if (indexers.Length == 0)
         {
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.NoSettableIndexerInType,
                 location: syntax.Location,
                 formatArgs: receiverType));
+            ConstraintSolver.UnifyAsserted(returnType, WellKnownTypes.ErrorType);
             var errorProp = new ErrorPropertySymbol("operator[]");
-            indexerTask = SolverTask.FromResult(errorProp.Setter);
+            indexerTask = SolverTask.FromResult<FunctionSymbol>(errorProp.Setter);
         }
         else
         {
@@ -177,8 +180,7 @@ internal partial class Binder
                 argsTask
                     .Zip(syntax.IndexList.Values)
                     .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
-                    // We add a universally compatible argument to the end, to make sure we get the setter
-                    .Append(new Argument(null, WellKnownTypes.Never))
+                    .Append(new Argument(null, returnType))
                     .ToImmutableArray(),
                 // NOTE: We don't care about the return type, this is an lvalue
                 out _,
@@ -186,6 +188,8 @@ internal partial class Binder
         }
 
         var indexer = await indexerTask;
+        // TODO: Can we do this?
+        ConstraintSolver.UnifyAsserted(returnType, indexer.Parameters[^1].Type);
         var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
         if (arrayIndexProperty is not null)
         {

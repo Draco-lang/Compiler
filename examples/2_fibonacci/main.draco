@@ -1,0 +1,12 @@
+import System.Console;
+import System.Linq.Enumerable;
+
+func main() {
+    for (i in Range(0, 20)) {
+        WriteLine("fib(\{i}) = \{fib(i)}");
+    }
+}
+
+func fib(n: int32): int32 =
+    if (n < 2) 1
+    else fib(n - 1) + fib(n - 2);

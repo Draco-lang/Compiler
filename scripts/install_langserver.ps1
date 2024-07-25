@@ -1,3 +1,9 @@
+<#
+    .Description
+    Install the Draco Language Server tool globally from source.
+    This helps testing language server changes while development.
+#>
+
 $ErrorActionPreference = "Stop"
 Push-Location $PSScriptRoot
 dotnet pack ../src/Draco.LanguageServer --output .

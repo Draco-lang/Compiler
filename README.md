@@ -15,25 +15,4 @@
 This is the repository for the work-in-progress compiler for the Draco programming language, a new .NET programming language under development. If you want further details on the language itself or want to contribute ideas, head over to the [language suggestions repository](https://github.com/Draco-lang/Language-suggestions).
 
 ### Try it out
-You can either use the online [playground](https://playground.draco-lang.org/), or you can play with it locally, for that look at the [Getting started guide](Getting-Started.md).
-
-### Roadmap
-
- * Syntax analysis
-   * [x] Lexing
-   * [x] Parsing
-   * [x] Red-green trees
- * Semantic analysis
-   * [x] Symbol resolution
-   * [x] Type checking
-   * [x] Type inference
-   * [x] Dataflow analysis
- * Codegen
-   * [x] AST
-   * [x] Lowering
-   * [x] Custom IR
-   * [x] Writing IL
-   * [x] Writing PE
- * Optimization
-   * [x] TCO
-   * [ ] Vectorization
+You can either use the online [playground](https://playground.draco-lang.org/), or you can play with it locally, for that look at the [Getting started guide](Getting-Started.md). We also have examples in the `examples` folder to check out!

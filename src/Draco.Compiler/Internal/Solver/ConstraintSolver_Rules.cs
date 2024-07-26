@@ -113,6 +113,7 @@ internal sealed partial class ConstraintSolver
                     // But I believe the constraint should strictly stick to its semantics
                     // And just provide the member type as is
                     UnifyAsserted(member.MemberType, memberType);
+                    member.CompletionSource.SetResult(membersWithName[0]);
                     return;
                 }
                 // More than one, the member constraint is fine with multiple members but we don't know the member type

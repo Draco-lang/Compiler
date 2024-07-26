@@ -8,6 +8,7 @@ using Draco.Chr.Rules;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver.Constraints;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -26,8 +27,7 @@ internal sealed partial class ConstraintSolver
                 {
                     if (Unify(same.Types[0], same.Types[i])) continue;
                     // Type-mismatch
-                    same
-                        .ReportDiagnostic(diagnostics, builder => builder
+                    same.ReportDiagnostic(diagnostics, builder => builder
                         .WithFormatArgs(same.Types[0].Substitution, same.Types[i].Substitution));
                     break;
                 }
@@ -46,8 +46,7 @@ internal sealed partial class ConstraintSolver
                     return;
                 }
                 // Error
-                assignable
-                    .ReportDiagnostic(diagnostics, diag => diag
+                assignable.ReportDiagnostic(diagnostics, diag => diag
                     .WithFormatArgs(assignable.TargetType.Substitution, assignable.AssignedType.Substitution));
             })
             .Named("assignable"),
@@ -98,8 +97,7 @@ internal sealed partial class ConstraintSolver
                     if (!member.AllowFailure)
                     {
                         // No such member, error
-                        member
-                            .ReportDiagnostic(diagnostics, builder => builder
+                        member.ReportDiagnostic(diagnostics, builder => builder
                             .WithFormatArgs(member.MemberName, accessed));
                     }
                     // We still provide a single error symbol
@@ -129,6 +127,69 @@ internal sealed partial class ConstraintSolver
             })
             .Named("member"),
 
+        // A callable can be resolved directly, if the called type is not a type-variable
+        Simplification(typeof(Callable))
+            .Guard((Callable callable) => !callable.CalledType.Substitution.IsTypeVariable)
+            .Body((ConstraintStore store, Callable callable) =>
+            {
+                var called = callable.CalledType.Substitution;
+                if (called.IsError)
+                {
+                    // Don't propagate errors
+                    UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);
+                    return;
+                }
+
+                // We can now check if it's a function
+                if (called is not FunctionTypeSymbol functionType)
+                {
+                    // Error
+                    UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);
+                    callable.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.CallNonFunction)
+                        .WithFormatArgs(called));
+                    return;
+                }
+
+                // It's a function
+                // We can merge the return type
+                UnifyAsserted(callable.ReturnType, functionType.ReturnType);
+
+                // Check if it has the same number of args
+                if (functionType.Parameters.Length != callable.Arguments.Length)
+                {
+                    // Error
+                    callable.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                        .WithFormatArgs(
+                            functionType,
+                            this.MakeMismatchedFunctionType(callable.Arguments, functionType.ReturnType)));
+                    return;
+                }
+
+                // Start scoring args
+                var candidate = CallCandidate.Create(functionType);
+                candidate.Refine(callable.Arguments);
+
+                if (candidate.IsEliminated)
+                {
+                    // Error
+                    callable.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                        .WithFormatArgs(
+                            functionType,
+                            this.MakeMismatchedFunctionType(callable.Arguments, functionType.ReturnType)));
+                    return;
+                }
+
+                // We are done
+                foreach (var (param, arg) in functionType.Parameters.Zip(callable.Arguments))
+                {
+                    this.AssignParameterToArgument(param.Type, arg);
+                }
+            })
+            .Named("callable"),
+
         // If overload constraints are unambiguous, we can resolve them directly
         Simplification(typeof(Overload))
             .Guard((Overload overload) => overload.Candidates.IsWellDefined)
@@ -144,8 +205,7 @@ internal sealed partial class ConstraintSolver
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
                     // Best-effort shape approximation
                     var errorSymbol = new NoOverloadFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload
-                        .ReportDiagnostic(diagnostics, diag => diag
+                    overload.ReportDiagnostic(diagnostics, diag => diag
                         .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
                         .WithFormatArgs(overload.FunctionName));
                     overload.CompletionSource.SetResult(errorSymbol);
@@ -158,8 +218,7 @@ internal sealed partial class ConstraintSolver
                     // Best-effort shape approximation
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
                     var errorSymbol = new NoOverloadFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload
-                        .ReportDiagnostic(diagnostics, diag => diag
+                    overload.ReportDiagnostic(diagnostics, diag => diag
                         .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
                         .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));
                     overload.CompletionSource.SetResult(errorSymbol);
@@ -235,7 +294,5 @@ internal sealed partial class ConstraintSolver
                 UnifyAsserted(assignable.TargetType, assignable.AssignedType);
             })
             .Named("sole_assignable"),
-
-        // TODO: Callable constraint?
     ];
 }

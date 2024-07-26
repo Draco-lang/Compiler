@@ -642,7 +642,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         Assert.Equal(15, x);
     }
 
-    [Fact(Skip = "regression in typesystem")]
+    [Fact]
     public void MultidimensionalArrays()
     {
         var assembly = Compile(""""

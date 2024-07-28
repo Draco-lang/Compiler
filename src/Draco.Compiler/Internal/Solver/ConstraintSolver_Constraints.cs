@@ -142,4 +142,27 @@ internal sealed partial class ConstraintSolver
         this.Add(constraint);
         return constraint.CompletionSource.Task;
     }
+
+    /// <summary>
+    /// Adds an indexer constraint to the solver.
+    /// </summary>
+    /// <param name="receiverType">The type of the indexed object.</param>
+    /// <param name="indices">The indices passed in.</param>
+    /// <param name="isSetter">True, if a setter should be looked up. If fasle, a getter will be looked up.</param>
+    /// <param name="elementType">The element type of the indexer.</param>
+    /// <param name="syntax">The syntax that the constraint originates from.</param>
+    /// <returns>The promise for the resolved indexer.</returns>
+    public SolverTask<FunctionSymbol> Indexer(
+        TypeSymbol receiverType,
+        ImmutableArray<Argument> indices,
+        bool isSetter,
+        out TypeSymbol elementType,
+        SyntaxNode syntax)
+    {
+        elementType = this.AllocateTypeVariable();
+        var constraint = new Constraints.Indexer(
+            ConstraintLocator.Syntax(syntax), receiverType, indices, elementType, isSetter);
+        this.Add(constraint);
+        return constraint.CompletionSource.Task;
+    }
 }

@@ -128,6 +128,70 @@ internal sealed partial class ConstraintSolver
             })
             .Named("member"),
 
+        // Indexer constraints are trivial, if the receiver is a ground-type
+        Simplification(typeof(Indexer))
+            .Guard((Indexer indexer) => !indexer.Receiver.Substitution.IsTypeVariable)
+            .Body((ConstraintStore store, Indexer indexer) =>
+            {
+                var accessed = indexer.Receiver.Substitution;
+                // Don't propagate type errors
+                if (accessed.IsError)
+                {
+                    Unify(indexer.ElementType, WellKnownTypes.ErrorType);
+                    // TODO: Shape approximation
+                    throw new NotImplementedException();
+                    return;
+                }
+
+                // Not a type variable, we can look into members
+                var indexers = accessed.Members
+                    .OfType<PropertySymbol>()
+                    .Where(p => p.IsIndexer)
+                    .Select(p => indexer.IsGetter ? p.Getter : p.Setter)
+                    .OfType<FunctionSymbol>()
+                    .ToImmutableArray();
+                if (indexers.Length == 0)
+                {
+                    // TODO
+                    throw new NotImplementedException();
+                }
+
+                var elementType = this.AllocateTypeVariable();
+
+                if (indexer.IsGetter)
+                {
+                    // Getter, elementType is return type
+                    store.Add(new Overload(
+                        locator: ConstraintLocator.Constraint(indexer),
+                        functionName: "operator[]",
+                        candidates: OverloadCandidateSet.Create(indexers, indexer.Indices),
+                        returnType: elementType)
+                    {
+                        // Important, we propagate the completion source
+                        CompletionSource = indexer.CompletionSource,
+                    });
+                }
+                else
+                {
+                    // Setter
+                    // We allocate a type var for the return type, but we don't care about it
+                    var returnType = this.AllocateTypeVariable();
+                    store.Add(new Overload(
+                        locator: ConstraintLocator.Constraint(indexer),
+                        functionName: "operator[]",
+                        candidates: OverloadCandidateSet.Create(
+                            indexers,
+                            // TODO: We pass in null for the value syntax...
+                            indexer.Indices.Append(this.Arg(null, indexer.ElementType))),
+                        returnType: returnType)
+                    {
+                        // Important, we propagate the completion source
+                        CompletionSource = indexer.CompletionSource,
+                    });
+                }
+            })
+            .Named("indexer"),
+
         // A callable can be resolved directly, if the called type is not a type-variable
         Simplification(typeof(Callable))
             .Guard((Callable callable) => !callable.CalledType.Substitution.IsTypeVariable)

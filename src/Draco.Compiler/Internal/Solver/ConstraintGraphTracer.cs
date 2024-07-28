@@ -129,7 +129,7 @@ internal sealed class ConstraintGraphTracer : ITracer
                 htmlCode.AppendLine($"""
                     <tr>
                         <td align="right">{i + 1}</td>
-                        <td align="left" port="{i}">{lines[i]}</td>
+                        <td align="left" port="{i}">{EscapeForHtml(lines[i])}</td>
                     </tr>
                     """);
             }
@@ -158,4 +158,7 @@ internal sealed class ConstraintGraphTracer : ITracer
         }
         return lines;
     }
+
+    private static string EscapeForHtml(string text) =>
+        text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
 }

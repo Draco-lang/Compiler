@@ -142,62 +142,20 @@ internal partial class Binder
             .Select(x => this.BindExpression(x, constraints, diagnostics))
             .ToImmutableArray();
 
-        var receiver = await receiverTask;
-        if (receiver is BoundReferenceErrorExpression err)
-        {
-            return new BoundIllegalLvalue(syntax);
-        }
-
-        var receiverType = await ConstraintSolver.Substituted(receiver.TypeRequired);
-
-        // General indexer
-        var indexers = receiverType
-            .Members
-            .OfType<PropertySymbol>()
-            .Where(x => x.IsIndexer)
-            .Select(x => x.Setter)
-            .OfType<FunctionSymbol>()
+        var args = argsTask
+            .Zip(syntax.IndexList.Values)
+            .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
             .ToImmutableArray();
+        var indexerTask = constraints.Indexer(
+            receiverTask.GetResultType(syntax, constraints, diagnostics),
+            args,
+            true,
+            out var elementType,
+            syntax);
 
-        var returnType = constraints.AllocateTypeVariable();
-        SolverTask<FunctionSymbol> indexerTask;
-
-        if (indexers.Length == 0)
-        {
-            diagnostics.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.NoSettableIndexerInType,
-                location: syntax.Location,
-                formatArgs: receiverType));
-            ConstraintSolver.UnifyAsserted(returnType, WellKnownTypes.ErrorType);
-            var errorProp = new ErrorPropertySymbol("operator[]");
-            indexerTask = SolverTask.FromResult<FunctionSymbol>(errorProp.Setter);
-        }
-        else
-        {
-            indexerTask = constraints.Overload(
-                "operator[]",
-                indexers,
-                argsTask
-                    .Zip(syntax.IndexList.Values)
-                    .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
-                    .Append(new Argument(null, returnType))
-                    .ToImmutableArray(),
-                // NOTE: We don't care about the return type, this is an lvalue
-                out _,
-                syntax);
-        }
-
+        var receiver = await receiverTask;
         var indexer = await indexerTask;
-        if (indexer.Parameters.Length > 0)
-        {
-            // TODO: Can we do this?
-            ConstraintSolver.UnifyAsserted(returnType, indexer.Parameters[^1].Type);
-        }
-        else
-        {
-            // TODO: Can we do this?
-            ConstraintSolver.UnifyAsserted(returnType, WellKnownTypes.ErrorType);
-        }
+
         var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
         if (arrayIndexProperty is not null)
         {

@@ -658,48 +658,21 @@ internal partial class Binder
             .Select(x => this.BindExpression(x, constraints, diagnostics))
             .ToImmutableArray();
 
-        var receiver = await receiverTask;
-        if (receiver is BoundReferenceErrorExpression err)
-        {
-            return new BoundReferenceErrorExpression(syntax, err.Symbol);
-        }
-
-        var receiverType = receiverTask.GetResultType(syntax.Indexed, constraints, diagnostics);
-        receiverType = await ConstraintSolver.Substituted(receiverType);
-
-        SolverTask<FunctionSymbol> accessorTask;
-
-        // General indexer
-        var indexers = receiverType
-            .Members
-            .OfType<PropertySymbol>()
-            .Where(x => x.IsIndexer)
-            .Select(x => x.Getter)
-            .OfType<FunctionSymbol>()
+        var args = argsTask
+            .Zip(syntax.IndexList.Values)
+            .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
             .ToImmutableArray();
-        if (indexers.Length == 0)
-        {
-            diagnostics.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.NoGettableIndexerInType,
-                location: syntax.Location,
-                formatArgs: receiver.Type));
-            accessorTask = SolverTask.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(argsTask.Length));
-        }
-        else
-        {
-            accessorTask = constraints.Overload(
-                "operator[]",
-                indexers,
-                argsTask
-                    .Zip(syntax.IndexList.Values)
-                    .Select(pair => constraints.Arg(pair.Second, pair.First, diagnostics))
-                    .ToImmutableArray(),
-                out _,
-                syntax);
-        }
+        var indexerTask = constraints.Indexer(
+            receiverTask.GetResultType(syntax, constraints, diagnostics),
+            args,
+            false,
+            out var elementType,
+            syntax);
 
-        var accessor = await accessorTask;
-        var arrayIndexProperty = (accessor.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
+        var receiver = await receiverTask;
+        var indexer = await indexerTask;
+
+        var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
         if (arrayIndexProperty is not null)
         {
             // Array getter
@@ -707,7 +680,7 @@ internal partial class Binder
         }
         else
         {
-            return new BoundIndexGetExpression(syntax, receiver, await accessorTask, await BindingTask.WhenAll(argsTask));
+            return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask));
         }
     }
 

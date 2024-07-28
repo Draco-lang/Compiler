@@ -21,7 +21,7 @@ internal sealed class Overload(
     /// <summary>
     /// The completion source for the resolved overload symbol.
     /// </summary>
-    public SolverTaskCompletionSource<FunctionSymbol> CompletionSource { get; } = new();
+    public SolverTaskCompletionSource<FunctionSymbol> CompletionSource { get; init; } = new();
 
     /// <summary>
     /// The function name.

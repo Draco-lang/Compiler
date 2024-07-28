@@ -188,8 +188,16 @@ internal partial class Binder
         }
 
         var indexer = await indexerTask;
-        // TODO: Can we do this?
-        ConstraintSolver.UnifyAsserted(returnType, indexer.Parameters[^1].Type);
+        if (indexer.Parameters.Length > 0)
+        {
+            // TODO: Can we do this?
+            ConstraintSolver.UnifyAsserted(returnType, indexer.Parameters[^1].Type);
+        }
+        else
+        {
+            // TODO: Can we do this?
+            ConstraintSolver.UnifyAsserted(returnType, WellKnownTypes.ErrorType);
+        }
         var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
         if (arrayIndexProperty is not null)
         {

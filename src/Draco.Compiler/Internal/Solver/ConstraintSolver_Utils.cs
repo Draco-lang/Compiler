@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Chr.Constraints;
 using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -34,8 +35,9 @@ internal sealed partial class ConstraintSolver
         return instantiated;
     }
 
-    private void AssignParameterToArgument(TypeSymbol paramType, Argument argument) => this.Assignable(
-        paramType,
-        argument.Type,
-        ConstraintLocator.Syntax(argument.Syntax));
+    private static void AssignParameterToArgument(
+        ConstraintStore store, TypeSymbol paramType, Argument argument) => store.Add(new Constraints.Assignable(
+            locator: ConstraintLocator.Syntax(argument.Syntax),
+            targetType: paramType,
+            assignedType: argument.Type));
 }

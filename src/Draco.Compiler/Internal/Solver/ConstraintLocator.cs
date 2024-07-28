@@ -37,6 +37,12 @@ internal abstract class ConstraintLocator
     public abstract void Locate(Diagnostic.Builder diagnostic);
 
     /// <summary>
+    /// Attempts to retrieve the syntax node that the locator points to.
+    /// </summary>
+    /// <returns>The referenced syntax node.</returns>
+    public abstract SyntaxNode? GetReferencedSyntax();
+
+    /// <summary>
     /// Wraps the constraint locator to provide additional information.
     /// </summary>
     /// <param name="relatedInformation">The related information to append.</param>
@@ -62,18 +68,21 @@ internal abstract class ConstraintLocator
     private sealed class NullConstraintLocator : ConstraintLocator
     {
         public override void Locate(Diagnostic.Builder diagnostic) { }
+        public override SyntaxNode? GetReferencedSyntax() => null;
     }
 
     private sealed class SyntaxConstraintLocator(SyntaxNode syntax) : ConstraintLocator
     {
         public override void Locate(Diagnostic.Builder diagnostic) =>
             diagnostic.WithLocation(syntax.Location);
+        public override SyntaxNode? GetReferencedSyntax() => syntax;
     }
 
     private sealed class ReferenceConstraintLocator(Constraint constraint) : ConstraintLocator
     {
         public override void Locate(Diagnostic.Builder diagnostic) =>
             constraint.Locator?.Locate(diagnostic);
+        public override SyntaxNode? GetReferencedSyntax() => constraint.Locator?.GetReferencedSyntax();
     }
 
     private sealed class WithRelatedInfoConstraintLocator(
@@ -85,5 +94,7 @@ internal abstract class ConstraintLocator
             underlying.Locate(diagnostic);
             diagnostic.WithRelatedInformation(relatedInfo);
         }
+
+        public override SyntaxNode? GetReferencedSyntax() => underlying.GetReferencedSyntax();
     }
 }

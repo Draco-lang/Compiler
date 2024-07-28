@@ -186,7 +186,7 @@ internal sealed partial class ConstraintSolver
                 // We are done
                 foreach (var (param, arg) in functionType.Parameters.Zip(callable.Arguments))
                 {
-                    this.AssignParameterToArgument(param.Type, arg);
+                    AssignParameterToArgument(store, param.Type, arg);
                 }
             })
             .Named("callable"),
@@ -243,15 +243,15 @@ internal sealed partial class ConstraintSolver
                         .Skip(chosen.Parameters.Length - 1)
                         .Select(a => (ParameterType: elementType, ArgumentType: a));
                     // Non-variadic part
-                    foreach (var (param, arg) in nonVariadicPairs) this.AssignParameterToArgument(param.Type, arg);
+                    foreach (var (param, arg) in nonVariadicPairs) AssignParameterToArgument(store, param.Type, arg);
                     // Variadic part
-                    foreach (var (paramType, arg) in variadicPairs) this.AssignParameterToArgument(paramType, arg);
+                    foreach (var (paramType, arg) in variadicPairs) AssignParameterToArgument(store, paramType, arg);
                 }
                 else
                 {
                     foreach (var (param, arg) in chosen.Parameters.Zip(overload.Candidates.Arguments))
                     {
-                        this.AssignParameterToArgument(param.Type, arg);
+                        AssignParameterToArgument(store, param.Type, arg);
                     }
                 }
                 // NOTE: This used to be an assignment, but again, I don't think that's in the scope of this constraint
@@ -281,8 +281,14 @@ internal sealed partial class ConstraintSolver
             {
                 var targetType = a1.TargetType;
                 var commonType = this.AllocateTypeVariable();
-                this.CommonType(commonType, [a1.AssignedType, a2.AssignedType], ConstraintLocator.Constraint(a2));
-                this.Assignable(targetType, commonType, ConstraintLocator.Constraint(a2));
+                store.Add(new CommonAncestor(
+                    locator: ConstraintLocator.Constraint(a2),
+                    commonType: commonType,
+                    alternativeTypes: [a1.AssignedType, a2.AssignedType]));
+                store.Add(new Assignable(
+                    locator: ConstraintLocator.Constraint(a2),
+                    targetType: targetType,
+                    assignedType: commonType));
             })
             .Named("merge_assignables"),
 

@@ -266,6 +266,12 @@ internal sealed partial class ConstraintSolver
             })
             .Named("callable"),
 
+        // If an overload constraint can be advanced, do that
+        // NOTE: We don't save history to allow applying multiple times
+        Propagation(saveHistory: false, typeof(Overload))
+            .Guard((Overload overload) => !overload.Candidates.IsWellDefined && overload.Candidates.Refine())
+            .Named("overload_step"),
+
         // If overload constraints are unambiguous, we can resolve them directly
         Simplification(typeof(Overload))
             .Guard((Overload overload) => overload.Candidates.IsWellDefined)
@@ -336,11 +342,6 @@ internal sealed partial class ConstraintSolver
                 overload.CompletionSource.SetResult(chosen);
             })
             .Named("overload"),
-
-        // If an overload constraint can be advanced, do that
-        Propagation(typeof(Overload))
-            .Guard((Overload overload) => overload.Candidates.Refine())
-            .Named("overload_step"),
 
         // As a last resort, we try to drive forward the solver by trying to merge assignable constraints with the same target
         // This is a common situation for things like this:

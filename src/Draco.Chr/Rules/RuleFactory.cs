@@ -17,19 +17,20 @@ public static partial class RuleFactory
     public static readonly object Sep = new();
 
     // Construct propagation
-    public static Rule Propagation(int headCount) => new Propagation(headCount);
-    public static Rule Propagation(params object[] args)
+    public static Rule Propagation(int headCount, bool saveHistory = true) => new Propagation(headCount, saveHistory);
+    public static Rule Propagation(params object[] args) => Propagation(true, args);
+    public static Rule Propagation(bool saveHistory, params object[] args)
     {
         var typeList = ExtractTypeList(args);
         if (typeList is not null)
         {
             // All types
-            return new Propagation(typeList.ToImmutableArray());
+            return new Propagation(typeList.ToImmutableArray(), saveHistory);
         }
         else
         {
             // Complex definition
-            return new Propagation(args.Select(ToHead).ToImmutableArray());
+            return new Propagation(args.Select(ToHead).ToImmutableArray(), saveHistory);
         }
     }
 

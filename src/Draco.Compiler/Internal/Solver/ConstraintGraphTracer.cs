@@ -128,8 +128,8 @@ internal sealed class ConstraintGraphTracer : ITracer
             {
                 htmlCode.AppendLine($"""
                     <tr>
-                        <td>{i + 1}</td>
-                        <td port="{i}">{lines[i]}</td>
+                        <td align="right">{i + 1}</td>
+                        <td align="left" port="{i}">{lines[i]}</td>
                     </tr>
                     """);
             }

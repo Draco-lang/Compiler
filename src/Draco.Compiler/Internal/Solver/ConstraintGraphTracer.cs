@@ -24,6 +24,7 @@ internal sealed class ConstraintGraphTracer : ITracer
     {
         this.graphBuilder
             .WithName("constraints")
+            .WithAttribute("splines", "polyline")
             .WithRankDir(DotAttribs.RankDir.LeftToRight);
     }
 
@@ -129,7 +130,7 @@ internal sealed class ConstraintGraphTracer : ITracer
                 htmlCode.AppendLine($"""
                     <tr>
                         <td align="right">{i + 1}</td>
-                        <td align="left" port="{i}">{EscapeForHtml(lines[i])}</td>
+                        <td align="left" fontname="Courier" port="{i}">{EscapeForHtml(lines[i])}</td>
                     </tr>
                     """);
             }

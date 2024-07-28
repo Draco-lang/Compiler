@@ -76,7 +76,7 @@ internal sealed class DotGraphBuilder<TVertex>
 
     internal sealed record class VertexInfo(int Id, Dictionary<string, object> Attributes);
     internal sealed record class EdgeInfo(Dictionary<string, object> Attributes);
-    private sealed record class HtmlText(string Html);
+    private sealed record class HtmlCode(string Html);
 
     private readonly Dictionary<string, object> attributes = [];
     private readonly VertexInfo allVertices = new(-1, []);
@@ -119,8 +119,6 @@ internal sealed class DotGraphBuilder<TVertex>
         }
         return infos;
     }
-
-    public object Html(string html) => new HtmlText(html);
 
     public DotGraphBuilder<TVertex> WithName(string name)
     {
@@ -250,7 +248,7 @@ internal sealed class DotGraphBuilder<TVertex>
     {
         bool b => b ? "true" : "false",
         string s => $"\"{StringUtils.Unescape(s)}\"",
-        HtmlText t => $"<{t.Html}>",
+        HtmlCode t => $"<{t.Html}>",
         DotAttribs.Shape s => s.ToString().ToLower(),
         DotAttribs.RankDir d => d switch
         {

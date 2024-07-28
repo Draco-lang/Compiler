@@ -78,15 +78,19 @@ internal abstract class Constraint(ConstraintLocator? locator, DiagnosticTemplat
                     result.Append('[');
                     AppendNewline();
                     ++indent;
+                    var first = true;
                     foreach (var item in e)
                     {
+                        if (!first)
+                        {
+                            result.Append(", ");
+                            AppendNewline();
+                        }
                         AppendIndentation();
                         AppendValue(item);
-                        result.Append(',');
-                        AppendNewline();
+                        first = false;
                     }
                     --indent;
-                    AppendIndentation();
                     result.Append(']');
                 }
                 break;
@@ -103,16 +107,22 @@ internal abstract class Constraint(ConstraintLocator? locator, DiagnosticTemplat
         AppendNewline();
         ++indent;
 
+        var first = true;
         foreach (var p in relevantProps)
         {
+            if (!first)
+            {
+                result.Append(", ");
+                AppendNewline();
+            }
+
             AppendIndentation();
             result.Append(p.Name).Append(": ");
 
             var pValue = p.GetValue(this);
             AppendValue(pValue);
 
-            result.Append(", ");
-            AppendNewline();
+            first = false;
         }
 
         --indent;

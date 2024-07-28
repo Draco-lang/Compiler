@@ -12,6 +12,11 @@ public sealed class BroadcastTracer(IEnumerable<ITracer> tracers) : ITracer
 {
     private readonly List<ITracer> tracers = tracers.ToList();
 
+    public BroadcastTracer(params ITracer[] tracers)
+        : this(tracers.AsEnumerable())
+    {
+    }
+
     public void Start(ConstraintStore store)
     {
         foreach (var tracer in this.tracers) tracer.Start(store);

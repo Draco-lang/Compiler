@@ -104,7 +104,7 @@ internal sealed class ConstraintGraphTracer : ITracer
         this.graphBuilder
             .AddVertex(constraint)
             .WithShape(DotAttribs.Shape.Rectangle)
-            .WithLabel(constraint.ToString());
+            .WithHtmlAttribute("label", ConstraintToHtml(constraint));
         return constraint;
     }
 
@@ -155,6 +155,10 @@ internal sealed class ConstraintGraphTracer : ITracer
 
         return (syntaxTree, location.Range.Value.Start.Line);
     }
+
+    private static string ConstraintToHtml(Constraint constraint) =>
+          StringUtils.ReplaceNewline(EscapeForHtml(constraint.ToString(format: true)), "<br align=\"left\"/>")
+        + "<br align=\"left\"/>";
 
     private static List<string> TextToLines(string text)
     {

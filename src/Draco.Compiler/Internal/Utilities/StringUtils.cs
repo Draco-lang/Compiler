@@ -129,4 +129,15 @@ internal static class StringUtils
         // Possible trailing line
         if (prevStart != str.Length) yield return (str[prevStart..], null);
     }
+
+    /// <summary>
+    /// Replace all newline sequences in a text with a given replacement.
+    /// </summary>
+    /// <param name="text">The text to replace newlines in.</param>
+    /// <param name="replacement">The replacement for newlines.</param>
+    /// <returns>The text with all newlines replaced.</returns>
+    public static string ReplaceNewline(string text, string replacement) => text
+        .Replace("\r\n", replacement)
+        .Replace("\r", replacement)
+        .Replace("\n", replacement);
 }

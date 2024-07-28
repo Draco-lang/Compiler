@@ -73,24 +73,21 @@ internal sealed class DotGraphBuilder<TVertex>
 
         public EdgeBuilder WithShape(DotAttribs.Shape shape) => this.WithAttribute("shape", shape);
         public EdgeBuilder WithLabel(string? value) => this.WithAttribute("label", value);
+        public EdgeBuilder WithHeadPort(string value) => this.WithAttribute("headport", value);
+        public EdgeBuilder WithTailPort(string value) => this.WithAttribute("tailport", value);
     }
 
     private const string indentation = "  ";
 
-    internal sealed record class VertexInfo(
-        int Id,
-        Dictionary<string, object> Attributes);
-    internal sealed record class EdgeInfo(
-        Dictionary<string, object> Attributes,
-        string? PortFrom,
-        string? PortTo);
+    internal sealed record class VertexInfo(int Id, Dictionary<string, object> Attributes);
+    internal sealed record class EdgeInfo(Dictionary<string, object> Attributes);
 
     private sealed record class HtmlCode(
         string Html);
 
     private readonly Dictionary<string, object> attributes = [];
     private readonly VertexInfo allVertices = new(-1, []);
-    private readonly EdgeInfo allEdges = new([], null, null);
+    private readonly EdgeInfo allEdges = new([]);
     private readonly Dictionary<TVertex, VertexInfo> vertices;
     private readonly Dictionary<(int From, int To), List<EdgeInfo>> edges = [];
     private readonly bool isDirected;
@@ -148,10 +145,10 @@ internal sealed class DotGraphBuilder<TVertex>
     public EdgeBuilder AllEdges() => new(this.allEdges);
 
     public VertexBuilder AddVertex(TVertex vertex) => new(this.GetVertexInfo(vertex));
-    public EdgeBuilder AddEdge(TVertex from, TVertex to, string? fromPort = null, string? toPort = null)
+    public EdgeBuilder AddEdge(TVertex from, TVertex to)
     {
         var infos = this.GetEdgeInfos(from, to);
-        var info = new EdgeInfo([], fromPort, toPort);
+        var info = new EdgeInfo([]);
         infos.Add(info);
         return new(info);
     }
@@ -205,18 +202,8 @@ internal sealed class DotGraphBuilder<TVertex>
             {
                 writer.Write(indentation);
                 writer.Write(fromId);
-                if (edgeInfo.PortFrom is not null)
-                {
-                    writer.Write(':');
-                    writer.Write(edgeInfo.PortFrom);
-                }
                 writer.Write(this.isDirected ? " -> " : " -- ");
                 writer.Write(toId);
-                if (edgeInfo.PortTo is not null)
-                {
-                    writer.Write(':');
-                    writer.Write(edgeInfo.PortTo);
-                }
                 WriteInlineAttributeList(writer, edgeInfo.Attributes);
                 writer.WriteLine(';');
             }

@@ -37,4 +37,9 @@ internal sealed class Overload(
     /// The return type of the call.
     /// </summary>
     public TypeSymbol ReturnType { get; } = returnType;
+
+    /// <summary>
+    /// The arguments the overload is called with.
+    /// </summary>
+    public ImmutableArray<Argument> Arguments => this.Candidates.Arguments;
 }

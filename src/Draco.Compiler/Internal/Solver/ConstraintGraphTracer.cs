@@ -24,7 +24,7 @@ internal sealed class ConstraintGraphTracer : ITracer
     {
         this.graphBuilder
             .WithName("constraints")
-            .WithAttribute("splines", "polyline")
+            //.WithAttribute("splines", "polyline")
             .WithRankDir(DotAttribs.RankDir.LeftToRight);
     }
 
@@ -44,7 +44,10 @@ internal sealed class ConstraintGraphTracer : ITracer
             if (location is null) continue;
 
             var (vertexKey, lineNumber) = location.Value;
-            this.graphBuilder.AddEdge(vertexKey, constraintValue, fromPort: $"{lineNumber}:e");
+            this.graphBuilder
+                .AddEdge(vertexKey, constraintValue)
+                .WithTailPort($"{lineNumber}:e")
+                .WithHeadPort("w");
         }
     }
 
@@ -67,7 +70,10 @@ internal sealed class ConstraintGraphTracer : ITracer
         foreach (var constraint in constraints)
         {
             var constraintValue = this.GetConstraint(constraint);
-            this.graphBuilder.AddEdge(constraintValue, indexedRule);
+            this.graphBuilder
+                .AddEdge(constraintValue, indexedRule)
+                .WithTailPort("e")
+                .WithHeadPort("w");
         }
     }
 
@@ -83,7 +89,10 @@ internal sealed class ConstraintGraphTracer : ITracer
         foreach (var constraint in newConstraints)
         {
             var constraintValue = this.GetConstraint(constraint);
-            this.graphBuilder.AddEdge(indexedRule, constraintValue);
+            this.graphBuilder
+                .AddEdge(indexedRule, constraintValue)
+                .WithTailPort("e")
+                .WithHeadPort("w");
         }
     }
 

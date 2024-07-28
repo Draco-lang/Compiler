@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Solver.Tasks;
 
 namespace Draco.Compiler.Internal.Solver.Constraints;
@@ -25,6 +26,7 @@ internal abstract class Constraint(ConstraintLocator? locator, DiagnosticTemplat
         static string ArgumentToString(object? arg) => arg switch
         {
             string s => s,
+            Argument a => a.Type.ToString(),
             IEnumerable e => $"[{string.Join(", ", e.Cast<object>().Select(ArgumentToString))}]",
             null => "null",
             _ => arg.ToString() ?? "null",

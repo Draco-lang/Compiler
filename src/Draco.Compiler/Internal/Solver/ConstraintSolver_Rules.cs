@@ -363,5 +363,32 @@ internal sealed partial class ConstraintSolver
                 UnifyAsserted(assignable.TargetType, assignable.AssignedType);
             })
             .Named("sole_assignable"),
+
+        // As a last-effort, if we see a common ancestor constraint with a single non-type-var, we
+        // assume that the common type is the non-type-var
+        // We also substitute all the type-vars with the common type
+        Simplification(typeof(CommonAncestor))
+            .Guard((CommonAncestor common) =>
+                common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) == 1
+             && common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) == common.AlternativeTypes.Length - 1)
+            .Body((ConstraintStore store, CommonAncestor common) =>
+            {
+                var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
+                var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
+                foreach (var typeVar in typeVars) UnifyAsserted(typeVar, nonTypeVar);
+                UnifyAsserted(common.CommonType, nonTypeVar);
+            })
+            .Named("most_specific_common_ancestor"),
+
+        // If the target type of common ancestor is a concrete type, we can try to unify all non-concrete types
+        Simplification(typeof(CommonAncestor))
+            .Guard((CommonAncestor common) => common.CommonType.Substitution.IsGroundType)
+            .Body((ConstraintStore store, CommonAncestor common) =>
+            {
+                var concreteType = common.CommonType.Substitution;
+                // TODO: Can we do this asserted?
+                foreach (var type in common.AlternativeTypes) UnifyAsserted(type, concreteType);
+            })
+            .Named("concrete_common_ancestor"),
     ];
 }

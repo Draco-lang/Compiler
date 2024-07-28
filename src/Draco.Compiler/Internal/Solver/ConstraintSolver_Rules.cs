@@ -137,9 +137,12 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
+                    // Best-effort shape approximation
                     Unify(indexer.ElementType, WellKnownTypes.ErrorType);
-                    // TODO: Shape approximation
-                    throw new NotImplementedException();
+                    var errorSymbol = new NoOverloadFunctionSymbol(indexer.IsGetter
+                        ? indexer.Indices.Length
+                        : indexer.Indices.Length + 1);
+                    indexer.CompletionSource.SetResult(errorSymbol);
                     return;
                 }
 
@@ -152,8 +155,18 @@ internal sealed partial class ConstraintSolver
                     .ToImmutableArray();
                 if (indexers.Length == 0)
                 {
-                    // TODO
-                    throw new NotImplementedException();
+                    indexer.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(indexer.IsGetter
+                            ? SymbolResolutionErrors.NoGettableIndexerInType
+                            : SymbolResolutionErrors.NoSettableIndexerInType)
+                        .WithFormatArgs(accessed));
+
+                    // Best-effort shape approximation
+                    var errorSymbol = new NoOverloadFunctionSymbol(indexer.IsGetter
+                        ? indexer.Indices.Length
+                        : indexer.Indices.Length + 1);
+                    indexer.CompletionSource.SetResult(errorSymbol);
+                    return;
                 }
 
                 if (indexer.IsGetter)

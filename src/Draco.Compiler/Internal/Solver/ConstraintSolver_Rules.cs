@@ -156,8 +156,6 @@ internal sealed partial class ConstraintSolver
                     throw new NotImplementedException();
                 }
 
-                var elementType = this.AllocateTypeVariable();
-
                 if (indexer.IsGetter)
                 {
                     // Getter, elementType is return type
@@ -165,7 +163,7 @@ internal sealed partial class ConstraintSolver
                         locator: ConstraintLocator.Constraint(indexer),
                         functionName: "operator[]",
                         candidates: OverloadCandidateSet.Create(indexers, indexer.Indices),
-                        returnType: elementType)
+                        returnType: indexer.ElementType)
                     {
                         // Important, we propagate the completion source
                         CompletionSource = indexer.CompletionSource,

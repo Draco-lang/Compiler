@@ -316,7 +316,7 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
                         method: node.MoveNextMethod,
                         arguments: []),
                     then: BlockExpression(
-                        locals: [node.Iterator                                              ],
+                        locals: [node.Iterator],
                         statements:
                         [
                             ExpressionStatement(AssignmentExpression(
@@ -547,7 +547,7 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
                 ExpressionStatement(CallExpression(
                     receiver: receiver,
                     method: setter,
-                    arguments: [tmp.Reference                                             ])),
+                    arguments: [tmp.Reference])),
             ],
             value: tmp.Reference);
 

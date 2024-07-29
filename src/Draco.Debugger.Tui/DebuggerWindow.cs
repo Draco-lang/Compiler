@@ -145,7 +145,7 @@ internal sealed class DebuggerWindow : Window
             new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Application.RequestStop()),
             new StatusItem(Key.F5, "~F5~ Step Over", () => this.OnStepOver?.Invoke(this, null!)),
             new StatusItem(Key.F6, "~F6~ Step Into", () => this.OnStepInto?.Invoke(this, null!)),
-            new StatusItem(Key.F7, "~F7~ Step Out", () => this.OnStepOut?.Invoke(this, null !)),
+            new StatusItem(Key.F7, "~F7~ Step Out", () => this.OnStepOut?.Invoke(this, null!)),
         ]);
 
         // NOTE: We need this for the menu and the status bar

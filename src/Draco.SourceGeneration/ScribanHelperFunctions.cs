@@ -10,9 +10,18 @@ public sealed class ScribanHelperFunctions : ScriptObject
 {
     private static readonly string[] keywords =
     [
-        "if", "else", "while", "for", "foreach",
-        "params", "ref", "out", "operator",
-        "object", "bool", "string"
+        "if",
+        "else",
+        "while",
+        "for",
+        "foreach",
+        "params",
+        "ref",
+        "out",
+        "operator",
+        "object",
+        "bool",
+        "string"
     ];
 
     public static string EscapeKeyword(string name) => keywords.Contains(name)

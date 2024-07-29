@@ -1,13 +1,13 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
 using Draco.Chr.Tracing;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
-using IChrConstraint = Draco.Chr.Constraints.IConstraint;
 using Constraint = Draco.Compiler.Internal.Solver.Constraints.Constraint;
-using System.Text;
-using System.IO;
+using IChrConstraint = Draco.Chr.Constraints.IConstraint;
 
 namespace Draco.Compiler.Internal.Solver;
 

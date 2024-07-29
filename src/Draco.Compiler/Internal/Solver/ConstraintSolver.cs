@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Draco.Chr.Constraints;
 using Draco.Chr.Solve;
+using Draco.Chr.Tracing;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -14,6 +16,7 @@ using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using IChrSolver = Draco.Chr.Solve.ISolver;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -79,7 +82,7 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
         this.CheckForUninferredLocals(diagnostics);
 
         // And for failed inference
-        this.CheckForIncompleteInference(diagnostics);
+        this.CheckForIncompleteInference(diagnostics, solver);
     }
 
     private void CheckForUninferredLocals(DiagnosticBag diagnostics)
@@ -98,7 +101,7 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
         }
     }
 
-    private void CheckForIncompleteInference(DiagnosticBag diagnostics)
+    private void CheckForIncompleteInference(DiagnosticBag diagnostics, IChrSolver solver)
     {
         var inferenceFailed = this.constraintStore.Count > 0
                            || this.typeVariables.Select(t => t.Substitution).Any(t => t.IsTypeVariable);
@@ -110,9 +113,25 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
             location: this.Context.Location,
             formatArgs: this.ContextName));
 
-        // To avoid major trip-ups later, we resolve all constraints to some sentinel value
-        // TODO: See if we still have to do this
-        // this.FailRemainingRules();
+        this.FailRemainingRules(solver);
+    }
+
+    private void FailRemainingRules(IChrSolver solver)
+    {
+        // We unify type variables with the error type
+        foreach (var typeVar in this.typeVariables)
+        {
+            var unwrapped = typeVar.Substitution;
+            if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
+        }
+
+        // Assume this solves everything
+        solver.Solve(this.constraintStore);
+
+        if (this.constraintStore.Count > 0)
+        {
+            throw new System.InvalidOperationException("fallback operation could not solve all constraints");
+        }
     }
 
     /// <summary>

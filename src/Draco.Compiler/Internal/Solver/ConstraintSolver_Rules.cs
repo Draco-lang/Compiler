@@ -80,7 +80,7 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
-                    Unify(member.MemberType, WellKnownTypes.ErrorType);
+                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
                     member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
@@ -137,8 +137,8 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
+                    UnifyAsserted(indexer.ElementType, WellKnownTypes.ErrorType);
                     // Best-effort shape approximation
-                    Unify(indexer.ElementType, WellKnownTypes.ErrorType);
                     var errorSymbol = indexer.IsGetter
                         ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
                         : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
@@ -161,6 +161,7 @@ internal sealed partial class ConstraintSolver
                             : SymbolResolutionErrors.NoSettableIndexerInType)
                         .WithFormatArgs(accessed));
 
+                    UnifyAsserted(indexer.ElementType, WellKnownTypes.ErrorType);
                     // Best-effort shape approximation
                     var errorSymbol = indexer.IsGetter
                         ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)

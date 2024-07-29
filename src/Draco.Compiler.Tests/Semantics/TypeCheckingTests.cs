@@ -2248,4 +2248,43 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Empty(diags);
     }
+
+    [Fact]
+    public void InferredArrayElementTypeFromUsage()
+    {
+        // func main() {
+        //     val a = Array(5);
+        //     a[0] = 1;
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(
+                        NameExpression("Array"),
+                        LiteralExpression(5)))),
+                ExpressionStatement(BinaryExpression(
+                    IndexExpression(NameExpression("a"), LiteralExpression(0)),
+                    Assign,
+                    LiteralExpression(1)))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+
+        var semanticModel = compilation.GetSemanticModel(main);
+        var aDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDecl));
+
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diags);
+        var intArray = compilation.WellKnownTypes.InstantiateArray(compilation.WellKnownTypes.SystemInt32);
+        Assert.True(SymbolEqualityComparer.Default.Equals(intArray, aSym.Type));
+    }
 }

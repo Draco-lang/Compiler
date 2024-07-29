@@ -359,7 +359,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var appendLineSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
+        var appendLineSymbol = GetInternalSymbol<ErrorMemberSymbol>(semanticModel.GetReferencedSymbol(memberExprSyntax));
         var builderSymbol = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(builderNameSyntax));
 
         var diags = semanticModel.Diagnostics;
@@ -463,8 +463,8 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         var systemSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(systemSyntax));
         var collectionsSymbol = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(collectionsSyntax));
-        var nonexistingSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(nonexistingSyntax));
-        var fooSymbol = GetInternalSymbol<UndefinedMemberSymbol>(semanticModel.GetReferencedSymbol(fooSyntax));
+        var nonexistingSymbol = GetInternalSymbol<ErrorMemberSymbol>(semanticModel.GetReferencedSymbol(nonexistingSyntax));
+        var fooSymbol = GetInternalSymbol<ErrorMemberSymbol>(semanticModel.GetReferencedSymbol(fooSyntax));
 
         var diags = semanticModel.Diagnostics;
 

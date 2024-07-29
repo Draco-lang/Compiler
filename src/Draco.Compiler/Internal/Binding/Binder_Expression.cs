@@ -271,9 +271,9 @@ internal partial class Binder
                 await thenTask,
                 continueLabel,
                 breakLabel,
-                new NoOverloadFunctionSymbol(0),
-                new NoOverloadFunctionSymbol(0),
-                UndefinedMemberSymbol.Instance);
+                new ErrorFunctionSymbol(0),
+                new ErrorFunctionSymbol(0),
+                ErrorMemberSymbol.Instance);
         }
 
         // Look up the overload
@@ -297,7 +297,7 @@ internal partial class Binder
         // Don't propagate errors
         if (moveNextMembers.IsError)
         {
-            moveNextTask = SolverTask.FromResult<FunctionSymbol>(new NoOverloadFunctionSymbol(0));
+            moveNextTask = SolverTask.FromResult<FunctionSymbol>(new ErrorFunctionSymbol(0));
         }
         else
         {

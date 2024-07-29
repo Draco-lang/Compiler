@@ -1,24 +1,28 @@
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// Represents an error property for some failure in the binding process.
+/// An error property symbol.
 /// </summary>
-internal sealed class ErrorPropertySymbol : PropertySymbol
+internal class ErrorPropertySymbol : PropertySymbol
 {
-    public override FunctionSymbol Getter { get; }
-    public override FunctionSymbol Setter { get; }
-    public override string Name { get; }
+    public static FunctionSymbol CreateIndexerGet(int indicesCount) =>
+        new ErrorIndexerPropertySymbol(indicesCount).Getter;
 
-    public override TypeSymbol Type => WellKnownTypes.ErrorType;
+    public static FunctionSymbol CreateIndexerSet(int indicesCount) =>
+        new ErrorIndexerPropertySymbol(indicesCount).Setter;
 
     public override bool IsError => true;
+    public override bool IsStatic => true;
     public override bool IsIndexer => false;
-    public override bool IsStatic => false;
+    public override TypeSymbol Type => WellKnownTypes.ErrorType;
 
-    public ErrorPropertySymbol(string name)
-    {
-        this.Name = name;
-        this.Getter = new UndefinedPropertyAccessorSymbol(this);
-        this.Setter = new UndefinedPropertyAccessorSymbol(this);
-    }
+    protected virtual int ParameterCount => 0;
+
+    public override FunctionSymbol Getter =>
+        this.getter ??= new ErrorPropertyAccessorSymbol(this, parameterCount: this.ParameterCount);
+    private FunctionSymbol? getter;
+
+    public override FunctionSymbol Setter =>
+        this.setter ??= new ErrorPropertyAccessorSymbol(this, parameterCount: this.ParameterCount + 1);
+    private FunctionSymbol? setter;
 }

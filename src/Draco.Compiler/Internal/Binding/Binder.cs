@@ -140,7 +140,7 @@ internal abstract partial class Binder(Compilation compilation, Binder? parent)
                 template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
                 location: syntax?.Location,
                 prop.FullName));
-            result = new UndefinedPropertyAccessorSymbol(prop);
+            result = new ErrorPropertyAccessorSymbol(prop);
         }
         return result;
     }
@@ -154,7 +154,7 @@ internal abstract partial class Binder(Compilation compilation, Binder? parent)
                 template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
                 location: syntax?.Location,
                 prop.FullName));
-            result = new UndefinedPropertyAccessorSymbol(prop);
+            result = new ErrorPropertyAccessorSymbol(prop);
         }
         return result;
     }

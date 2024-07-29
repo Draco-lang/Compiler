@@ -103,7 +103,7 @@ internal sealed class ImportBinder(Binder parent, SyntaxNode declaringSyntax) : 
                 // Don't cascade errors
                 if (parent.IsError)
                 {
-                    parts!.Add(new(mem, UndefinedMemberSymbol.Instance));
+                    parts!.Add(new(mem, ErrorMemberSymbol.Instance));
                     return parent;
                 }
                 // Look up in parent
@@ -125,8 +125,8 @@ internal sealed class ImportBinder(Binder parent, SyntaxNode declaringSyntax) : 
                         template: SymbolResolutionErrors.MemberNotFound,
                         location: mem.Member.Location,
                         formatArgs: [mem.Member.Text, parent.Name]));
-                    parts!.Add(new(mem, UndefinedMemberSymbol.Instance));
-                    return UndefinedMemberSymbol.Instance;
+                    parts!.Add(new(mem, ErrorMemberSymbol.Instance));
+                    return ErrorMemberSymbol.Instance;
                 }
                 else
                 {
@@ -136,8 +136,8 @@ internal sealed class ImportBinder(Binder parent, SyntaxNode declaringSyntax) : 
                         location: mem.Location,
                         formatArgs: mem.Member.Text));
                     // NOTE: For now this result is fine
-                    parts!.Add(new(mem, UndefinedMemberSymbol.Instance));
-                    return UndefinedMemberSymbol.Instance;
+                    parts!.Add(new(mem, ErrorMemberSymbol.Instance));
+                    return ErrorMemberSymbol.Instance;
                 }
             }
             default:

@@ -81,7 +81,7 @@ internal sealed partial class ConstraintSolver
                 if (accessed.IsError)
                 {
                     Unify(member.MemberType, WellKnownTypes.ErrorType);
-                    member.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);
+                    member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
 
@@ -102,7 +102,7 @@ internal sealed partial class ConstraintSolver
                     }
                     // We still provide a single error symbol
                     UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
-                    member.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);
+                    member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
                 if (membersWithName.Length == 1)
@@ -139,9 +139,9 @@ internal sealed partial class ConstraintSolver
                 {
                     // Best-effort shape approximation
                     Unify(indexer.ElementType, WellKnownTypes.ErrorType);
-                    var errorSymbol = new NoOverloadFunctionSymbol(indexer.IsGetter
-                        ? indexer.Indices.Length
-                        : indexer.Indices.Length + 1);
+                    var errorSymbol = indexer.IsGetter
+                        ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
+                        : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
                     indexer.CompletionSource.SetResult(errorSymbol);
                     return;
                 }
@@ -162,9 +162,9 @@ internal sealed partial class ConstraintSolver
                         .WithFormatArgs(accessed));
 
                     // Best-effort shape approximation
-                    var errorSymbol = new NoOverloadFunctionSymbol(indexer.IsGetter
-                        ? indexer.Indices.Length
-                        : indexer.Indices.Length + 1);
+                    var errorSymbol = indexer.IsGetter
+                        ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
+                        : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
                     indexer.CompletionSource.SetResult(errorSymbol);
                     return;
                 }
@@ -286,7 +286,7 @@ internal sealed partial class ConstraintSolver
                     // Could not resolve, error
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
                     // Best-effort shape approximation
-                    var errorSymbol = new NoOverloadFunctionSymbol(overload.Candidates.Arguments.Length);
+                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
                     overload.ReportDiagnostic(diagnostics, diag => diag
                         .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
                         .WithFormatArgs(overload.FunctionName));
@@ -299,7 +299,7 @@ internal sealed partial class ConstraintSolver
                     // Ambiguity, error
                     // Best-effort shape approximation
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
-                    var errorSymbol = new NoOverloadFunctionSymbol(overload.Candidates.Arguments.Length);
+                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
                     overload.ReportDiagnostic(diagnostics, diag => diag
                         .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
                         .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));

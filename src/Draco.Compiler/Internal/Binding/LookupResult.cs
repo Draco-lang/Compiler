@@ -92,7 +92,7 @@ internal sealed class LookupResult
     {
         this.FilterByGenericArgumentCount(syntax);
         // Return a sentinel value error
-        if (this.ReportUndefinedReferenceError(name, syntax, diagnostics)) return new UndefinedValueSymbol(name);
+        if (this.ReportUndefinedReferenceError(name, syntax, diagnostics)) return new ErrorValueSymbol(name);
         if (this.Symbols.Count > 1)
         {
             // Multiple symbols, potential overloading
@@ -107,7 +107,7 @@ internal sealed class LookupResult
             {
                 this.ReportAmbiguousReferenceError(name, syntax, diagnostics);
                 // Return sentinel for safety
-                return new UndefinedValueSymbol(name);
+                return new ErrorValueSymbol(name);
             }
         }
         return this.Symbols.First();
@@ -124,9 +124,9 @@ internal sealed class LookupResult
     {
         this.FilterByGenericArgumentCount(syntax);
         // Return a sentinel type error
-        if (this.ReportUndefinedReferenceError(name, syntax, diagnostics)) return new UndefinedTypeSymbol(name);
+        if (this.ReportUndefinedReferenceError(name, syntax, diagnostics)) return new ErrorTypeSymbol(name);
         // Return sentinel for safety
-        if (this.ReportAmbiguousReferenceError(name, syntax, diagnostics)) return new UndefinedTypeSymbol(name);
+        if (this.ReportAmbiguousReferenceError(name, syntax, diagnostics)) return new ErrorTypeSymbol(name);
         // Just return the single remaining
         return this.Symbols.First();
     }
@@ -141,13 +141,13 @@ internal sealed class LookupResult
     public LabelSymbol GetLabel(string name, SyntaxNode? syntax, DiagnosticBag diagnostics)
     {
         // Return a sentinel label error
-        if (this.ReportUndefinedReferenceError(name, syntax, diagnostics)) return new UndefinedLabelSymbol(name);
+        if (this.ReportUndefinedReferenceError(name, syntax, diagnostics)) return new ErrorLabelSymbol(name);
 
         if (this.Symbols.Count > 1)
         {
             this.ReportAmbiguousReferenceError(name, syntax, diagnostics);
             // For safety we construct a new label as a sentinel
-            return new UndefinedLabelSymbol(name);
+            return new ErrorLabelSymbol(name);
         }
 
         return (LabelSymbol)this.Symbols.First();

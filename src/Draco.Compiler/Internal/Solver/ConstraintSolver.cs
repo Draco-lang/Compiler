@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using Draco.Chr.Constraints;
 using Draco.Chr.Solve;
-using Draco.Chr.Tracing;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;

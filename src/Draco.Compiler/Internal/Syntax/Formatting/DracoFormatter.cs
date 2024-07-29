@@ -102,11 +102,12 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         var doesReturnLine = this.formatter.CurrentToken.DoesReturnLine;
         var insertNewline = doesReturnLine is not null && doesReturnLine.IsCompleted && doesReturnLine.Value;
         var whitespaceNode = node.Kind == TokenKind.StringNewline || node.Kind == TokenKind.EndOfInput;
+        var willTokenMerges = SyntaxFacts.WillTokenMerges(this.formatter.PreviousToken.Text, node.Text);
         if (!insertSpace
             && !firstToken
             && !insertNewline
             && !whitespaceNode
-            && SyntaxFacts.WillTokenMerges(this.formatter.PreviousToken.Text, node.Text))
+            && willTokenMerges)
         {
             this.formatter.CurrentToken.Kind = WhitespaceBehavior.SpaceBefore;
         }
@@ -128,7 +129,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
             if (comment != null)
             {
                 this.formatter.CurrentToken.Text = node.Text + " " + comment;
-                this.formatter.NextToken.DoesReturnLine = new Future<bool>(true);
+                this.formatter.NextToken.DoesReturnLine = true;
             }
         }
         var leadingComments = node.LeadingTrivia
@@ -139,19 +140,17 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         this.formatter.CurrentToken.LeadingTrivia.AddRange(leadingComments);
         if (this.formatter.CurrentToken.LeadingTrivia.Count > 0)
         {
-            this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
+            this.formatter.CurrentToken.DoesReturnLine = true;
         }
     }
 
     public override void VisitSeparatedSyntaxList<TNode>(Api.Syntax.SeparatedSyntaxList<TNode> node)
     {
         if (node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ParameterSyntax>
-            || node is Api.Syntax.SeparatedSyntaxList<Api.Syntax.ExpressionSyntax>)
+            or Api.Syntax.SeparatedSyntaxList<Api.Syntax.ExpressionSyntax>)
         {
-            this.formatter.CreateFoldableScope(this.settings.Indentation,
-                FoldPriority.AsSoonAsPossible,
-                () => base.VisitSeparatedSyntaxList(node)
-            );
+            using var _ = this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible);
+            base.VisitSeparatedSyntaxList(node);
         }
         else
         {
@@ -167,7 +166,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
     public override void VisitDeclaration(Api.Syntax.DeclarationSyntax node)
     {
-        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
+        this.formatter.CurrentToken.DoesReturnLine = true;
         base.VisitDeclaration(node);
     }
 
@@ -175,45 +174,29 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         if (node.OpenQuotes.Kind != TokenKind.MultiLineStringStart)
         {
-            node.OpenQuotes.Accept(this);
-            foreach (var item in node.Parts.Tokens)
-            {
-                this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(false);
-                item.Accept(this);
-            }
-            this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(false);
-            node.CloseQuotes.Accept(this);
+            this.HandleSingleLineString(node);
             return;
         }
+
+        this.HandleMultiLineString(node);
+    }
+
+    private void HandleMultiLineString(Api.Syntax.StringExpressionSyntax node)
+    {
         node.OpenQuotes.Accept(this);
         using var _ = this.formatter.CreateScope(this.settings.Indentation);
         var blockCurrentIndentCount = SyntaxFacts.ComputeCutoff(node).Length;
 
-        var shouldIndent = true;
         for (var i = 0; i < node.Parts.Count; i++)
         {
             var curr = node.Parts[i];
 
             if (curr.IsNewLine)
             {
-                shouldIndent = true;
                 curr.Accept(this);
+                if (i == node.Parts.Count - 1) break;
+                HandleNewLine(node, blockCurrentIndentCount, i, curr);
                 continue;
-            }
-
-            if (shouldIndent)
-            {
-                shouldIndent = false;
-
-                var tokenText = curr.Tokens.First().ValueText!;
-                if (!tokenText.Take(blockCurrentIndentCount).All(char.IsWhiteSpace)) throw new InvalidOperationException();
-                this.formatter.CurrentToken.Text = tokenText[blockCurrentIndentCount..];
-                this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
-
-                if (i > 0 && node.Parts[i - 1].IsNewLine)
-                {
-                    this.formatter.PreviousToken.Text = ""; // PreviousToken is a newline, CurrentToken.DoesReturnLine will produce the newline.
-                }
             }
 
             var startIdx = this.formatter.CurrentIdx; // capture position before visiting the tokens of this parts (this will move forward the position)
@@ -221,24 +204,52 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
             // for parts that contains expressions and have return lines.
             foreach (var token in curr.Tokens)
             {
-                var newLines = token.TrailingTrivia.Where(t => t.Kind == TriviaKind.Newline).ToArray();
-                if (newLines.Length > 0)
+                var newLineCount = token.TrailingTrivia.Where(t => t.Kind == TriviaKind.Newline).Count();
+                if (newLineCount > 0)
                 {
-                    this.formatter.NextToken.DoesReturnLine = new Future<bool>(true);
-                    this.formatter.CurrentToken.Text = string.Concat(Enumerable.Repeat(this.settings.Newline, newLines.Length - 1).Prepend(token.Text));
+                    this.formatter.NextToken.DoesReturnLine = true;
+                    this.formatter.CurrentToken.Text = token.Text + string.Concat(Enumerable.Repeat(this.settings.Newline, newLineCount - 1));
                 }
                 token.Accept(this);
             }
 
-            // default all tokens to never return.
-            var tokenCount = curr.Tokens.Count();
-
-            for (var j = 0; j < tokenCount; j++)
+            // sets all unset tokens to not return a line.
+            var j = 0;
+            foreach (var token in curr.Tokens)
             {
-                this.formatter.TokensMetadata[startIdx + j].DoesReturnLine ??= new Future<bool>(false);
+                this.formatter.TokensMetadata[startIdx + j].DoesReturnLine ??= false;
+                j++;
             }
         }
-        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
+        this.formatter.CurrentToken.DoesReturnLine = true;
+        node.CloseQuotes.Accept(this);
+
+        void HandleNewLine(Api.Syntax.StringExpressionSyntax node, int blockCurrentIndentCount, int i, Api.Syntax.StringPartSyntax curr)
+        {
+            var next = node.Parts[i + 1];
+            var tokenText = next.Tokens.First().ValueText!;
+            this.formatter.CurrentToken.Text = tokenText[blockCurrentIndentCount..];
+            this.formatter.CurrentToken.DoesReturnLine = true;
+
+            if (i > 0 && node.Parts[i - 1].IsNewLine)
+            {
+                this.formatter.PreviousToken.Text = ""; // PreviousToken is a newline, CurrentToken.DoesReturnLine will produce the newline.
+            }
+        }
+    }
+
+    private void HandleSingleLineString(Api.Syntax.StringExpressionSyntax node)
+    {
+        // this is a single line string
+        node.OpenQuotes.Accept(this);
+        // we just sets all tokens in this string to not return a line.
+        foreach (var item in node.Parts.Tokens)
+        {
+            this.formatter.CurrentToken.DoesReturnLine = false;
+            item.Accept(this);
+        }
+        // including the close quote.
+        this.formatter.CurrentToken.DoesReturnLine = false;
         node.CloseQuotes.Accept(this);
     }
 
@@ -253,10 +264,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
 
         node.Left.Accept(this);
 
-        if (this.formatter.CurrentToken.DoesReturnLine is null)
-        {
-            this.formatter.CurrentToken.DoesReturnLine = this.formatter.Scope.Folded;
-        }
+        this.formatter.CurrentToken.DoesReturnLine ??= this.formatter.Scope.Folded;
         node.Operator.Accept(this);
         node.Right.Accept(this);
         closeScope?.Dispose();
@@ -266,7 +274,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         node.OpenBrace.Accept(this);
         this.formatter.CreateScope(this.settings.Indentation, () => node.Statements.Accept(this));
-        this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
+        this.formatter.CurrentToken.DoesReturnLine = true;
         node.CloseBrace.Accept(this);
     }
 
@@ -294,7 +302,8 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         node.Name.Accept(this);
         if (node.Generics is not null)
         {
-            this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsLateAsPossible, () => node.Generics?.Accept(this));
+            using var _ = this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsLateAsPossible);
+            node.Generics?.Accept(this);
         }
         node.OpenParen.Accept(this);
         disposable.Dispose();
@@ -308,7 +317,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
     {
         if (node is Api.Syntax.DeclarationStatementSyntax { Declaration: Api.Syntax.LabelDeclarationSyntax })
         {
-            this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
+            this.formatter.CurrentToken.DoesReturnLine = true;
             this.formatter.CurrentToken.Kind = WhitespaceBehavior.RemoveOneIndentation;
         }
         else
@@ -328,41 +337,41 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
     }
 
-    public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node) =>
-        this.formatter.CreateFoldableScope("", FoldPriority.AsSoonAsPossible, () =>
+    public override void VisitIfExpression(Api.Syntax.IfExpressionSyntax node)
+    {
+        using var _ = this.formatter.CreateFoldableScope("", FoldPriority.AsSoonAsPossible);
+
+        node.IfKeyword.Accept(this);
+        IDisposable? disposable = null;
+        node.OpenParen.Accept(this);
+        if (this.formatter.PreviousToken.DoesReturnLine?.Value ?? false)
         {
-            node.IfKeyword.Accept(this);
-            IDisposable? disposable = null;
-            node.OpenParen.Accept(this);
-            if (this.formatter.PreviousToken.DoesReturnLine?.Value ?? false)
+            // there is no reason for an OpenParen to return line except if there is a comment.
+            disposable = this.formatter.CreateScope(this.settings.Indentation);
+            this.formatter.PreviousToken.ScopeInfo = this.formatter.Scope; // it's easier to change our mind that compute ahead of time.
+        }
+        this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () =>
+        {
+            var firstTokenIdx = this.formatter.CurrentIdx;
+            node.Condition.Accept(this);
+            var firstToken = this.formatter.TokensMetadata[firstTokenIdx];
+            if (firstToken.DoesReturnLine?.Value ?? false)
             {
-                // there is no reason for an OpenParen to return line except if there is a comment.
-                disposable = this.formatter.CreateScope(this.settings.Indentation);
-                this.formatter.PreviousToken.ScopeInfo = this.formatter.Scope; // it's easier to change our mind that compute ahead of time.
+                firstToken.ScopeInfo.Folded.SetValue(true);
             }
-            this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () =>
-            {
-                var firstTokenIdx = this.formatter.CurrentIdx;
-                node.Condition.Accept(this);
-                var firstToken = this.formatter.TokensMetadata[firstTokenIdx];
-                if (firstToken.DoesReturnLine?.Value ?? false)
-                {
-                    firstToken.ScopeInfo.Folded.SetValue(true);
-                }
-            });
-            node.CloseParen.Accept(this);
-            disposable?.Dispose();
-
-            this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
-
-            node.Else?.Accept(this);
         });
+        node.CloseParen.Accept(this);
+        disposable?.Dispose();
 
+        this.formatter.CreateFoldableScope(this.settings.Indentation, FoldPriority.AsSoonAsPossible, () => node.Then.Accept(this));
+
+        node.Else?.Accept(this);
+    }
     public override void VisitElseClause(Api.Syntax.ElseClauseSyntax node)
     {
         if (node.IsElseIf || node.Parent!.Parent is Api.Syntax.ExpressionStatementSyntax)
         {
-            this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
+            this.formatter.CurrentToken.DoesReturnLine = true;
         }
         else
         {
@@ -390,12 +399,12 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
             node.Statements.Accept(this);
             if (node.Value != null)
             {
-                this.formatter.CurrentToken.DoesReturnLine = new Future<bool>(true);
+                this.formatter.CurrentToken.DoesReturnLine = true;
                 node.Value.Accept(this);
             }
         });
         node.CloseBrace.Accept(this);
-        this.formatter.PreviousToken.DoesReturnLine = new Future<bool>(true);
+        this.formatter.PreviousToken.DoesReturnLine = true;
     }
 
     public override void VisitVariableDeclaration(Api.Syntax.VariableDeclarationSyntax node)

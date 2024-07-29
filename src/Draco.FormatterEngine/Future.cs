@@ -66,4 +66,6 @@ public class Future<T>
         this.IsCompleted = false;
         this.value = default;
     }
+
+    public static implicit operator Future<T>(T value) => new(value);
 }

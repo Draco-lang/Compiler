@@ -6,9 +6,9 @@ using Draco.Chr.Rules;
 namespace Draco.Chr.Tracing;
 
 /// <summary>
-/// A tracer logging into memory.
+/// A tracer logging into memory as text.
 /// </summary>
-public sealed class MemoryTracer : ITracer
+public sealed class TextTracer : ITracer
 {
     /// <summary>
     /// The output stream.
@@ -17,7 +17,7 @@ public sealed class MemoryTracer : ITracer
 
     private readonly StreamTracer underlyingTracer;
 
-    public MemoryTracer()
+    public TextTracer()
     {
         this.underlyingTracer = new(StreamReader.Null, new StreamWriter(this.Output));
     }

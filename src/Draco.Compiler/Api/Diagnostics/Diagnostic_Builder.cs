@@ -43,8 +43,7 @@ public sealed partial class Diagnostic
                 template: this.Template,
                 location: this.Location,
                 formatArgs: this.FormatArgs ?? [],
-                relatedInformation: this.RelatedInformation?.ToImmutable()
-                                 ?? []);
+                relatedInformation: this.RelatedInformation?.ToImmutable() ?? []);
             return true;
         }
 

@@ -82,8 +82,7 @@ internal sealed class DotGraphBuilder<TVertex>
     internal sealed record class VertexInfo(int Id, Dictionary<string, object> Attributes);
     internal sealed record class EdgeInfo(Dictionary<string, object> Attributes);
 
-    private sealed record class HtmlCode(
-        string Html);
+    private sealed record class HtmlCode(string Html);
 
     private readonly Dictionary<string, object> attributes = [];
     private readonly VertexInfo allVertices = new(-1, []);

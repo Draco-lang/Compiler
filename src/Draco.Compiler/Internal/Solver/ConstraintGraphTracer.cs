@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Text;
 using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
 using Draco.Chr.Tracing;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
+using static System.Net.Mime.MediaTypeNames;
 using Constraint = Draco.Compiler.Internal.Solver.Constraints.Constraint;
 using IChrConstraint = Draco.Chr.Constraints.IConstraint;
 
@@ -139,7 +141,7 @@ internal sealed class ConstraintGraphTracer : ITracer
                 htmlCode.AppendLine($"""
                     <tr>
                         <td align="right">{i + 1}</td>
-                        <td align="left" fontname="Courier" port="{i}">{EscapeForHtml(lines[i])}</td>
+                        <td align="left" fontname="Courier" port="{i}">{WebUtility.HtmlEncode(lines[i])}</td>
                     </tr>
                     """);
             }
@@ -157,7 +159,7 @@ internal sealed class ConstraintGraphTracer : ITracer
     }
 
     private static string ConstraintToHtml(Constraint constraint) =>
-          StringUtils.ReplaceNewline(EscapeForHtml(constraint.ToString(format: true)), "<br align=\"left\"/>")
+          StringUtils.ReplaceNewline(WebUtility.HtmlEncode(constraint.ToString(format: true)), "<br align=\"left\"/>")
         + "<br align=\"left\"/>";
 
     private static List<string> TextToLines(string text)
@@ -172,7 +174,4 @@ internal sealed class ConstraintGraphTracer : ITracer
         }
         return lines;
     }
-
-    private static string EscapeForHtml(string text) =>
-        text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
 }

@@ -102,14 +102,15 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         var doesReturnLine = this.formatter.CurrentToken.DoesReturnLine;
         var insertNewline = doesReturnLine is not null && doesReturnLine.IsCompleted && doesReturnLine.Value;
         var whitespaceNode = node.Kind == TokenKind.StringNewline || node.Kind == TokenKind.EndOfInput;
-        var willTokenMerges = SyntaxFacts.WillTokenMerges(this.formatter.PreviousToken.Text, node.Text);
         if (!insertSpace
             && !firstToken
             && !insertNewline
-            && !whitespaceNode
-            && willTokenMerges)
+            && !whitespaceNode)
         {
-            this.formatter.CurrentToken.Kind = WhitespaceBehavior.SpaceBefore;
+            if (SyntaxFacts.WillTokenMerges(this.formatter.PreviousToken.Text, node.Text))
+            {
+                this.formatter.CurrentToken.Kind = WhitespaceBehavior.SpaceBefore;
+            }
         }
 
         this.formatter.SetCurrentTokenInfo(formattingKind, node.Text);
@@ -191,7 +192,7 @@ internal sealed class DracoFormatter : Api.Syntax.SyntaxVisitor
         {
             var curr = node.Parts[i];
 
-            if (curr.IsNewLine)
+            if (curr.IsNewLine || i == 0)
             {
                 curr.Accept(this);
                 if (i == node.Parts.Count - 1) break;

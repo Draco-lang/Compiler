@@ -156,7 +156,7 @@ public sealed class SyntaxTree
     /// Syntactically formats this <see cref="SyntaxTree"/>.
     /// </summary>
     /// <returns>The formatted tree.</returns>
-    public SyntaxTree Format() => Formatter.Format(this);
+    public string Format(FormatterSettings? settings = null) => DracoFormatter.Format(this, settings);
 
     /// <summary>
     /// The internal root of the tree.

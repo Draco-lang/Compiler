@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
@@ -17,37 +18,24 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// Solves sets of <see cref="IConstraint"/>s for the type-system.
 /// </summary>
-internal sealed partial class ConstraintSolver
+internal sealed partial class ConstraintSolver(SyntaxNode context, string contextName)
 {
-    /// <summary>
-    /// Represents an argument for a call.
-    /// </summary>
-    /// <param name="Syntax">The syntax of the argument, if any.</param>
-    /// <param name="Type">The type of the argument.</param>
-    public readonly record struct Argument(SyntaxNode? Syntax, TypeSymbol Type);
-
     /// <summary>
     /// The context being inferred.
     /// </summary>
-    public SyntaxNode Context { get; }
+    public SyntaxNode Context { get; } = context;
 
     /// <summary>
     /// The user-friendly name of the context the solver is in.
     /// </summary>
-    public string ContextName { get; }
+    public string ContextName { get; } = contextName;
 
     // The raw constraints
     private readonly HashSet<IConstraint> constraints = new(ReferenceEqualityComparer.Instance);
     // The allocated type variables
-    private readonly List<TypeVariable> typeVariables = new();
+    private readonly List<TypeVariable> typeVariables = [];
     // The registered local variables
-    private readonly List<LocalSymbol> localVariables = new();
-
-    public ConstraintSolver(SyntaxNode context, string contextName)
-    {
-        this.Context = context;
-        this.ContextName = contextName;
-    }
+    private readonly List<LocalSymbol> localVariables = [];
 
     /// <summary>
     /// Constructs an argument for a call constraint.

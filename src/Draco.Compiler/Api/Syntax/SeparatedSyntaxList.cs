@@ -18,13 +18,13 @@ public sealed class SeparatedSyntaxList<TNode> : SyntaxNode, IEnumerable<SyntaxN
         .GetExecutingAssembly()
         .GetType($"Draco.Compiler.Internal.Syntax.{typeof(TNode).Name}")!;
     private static Type GreenNodeType { get; } = typeof(Internal.Syntax.SeparatedSyntaxList<>).MakeGenericType(GreenElementType);
-    private static ConstructorInfo GreenNodeConstructor { get; } = GreenNodeType.GetConstructor(new[]
-    {
+    private static ConstructorInfo GreenNodeConstructor { get; } = GreenNodeType.GetConstructor(
+    [
         typeof(IEnumerable<>).MakeGenericType(GreenElementType),
-    })!;
+    ])!;
 
     internal static IReadOnlyList<Internal.Syntax.SyntaxNode> MakeGreen(IEnumerable<Internal.Syntax.SyntaxNode> nodes) =>
-        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke(new[] { nodes })!;
+        (IReadOnlyList<Internal.Syntax.SyntaxNode>)GreenNodeConstructor.Invoke([nodes])!;
 
     /// <summary>
     /// The separated values in this list.

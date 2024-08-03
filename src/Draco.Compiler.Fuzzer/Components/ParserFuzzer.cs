@@ -7,13 +7,10 @@ namespace Draco.Compiler.Fuzzer.Components;
 /// <summary>
 /// Fuzzes the parser.
 /// </summary>
-internal sealed class ParserFuzzer : ComponentFuzzerBase<ImmutableArray<SyntaxToken>>
+internal sealed class ParserFuzzer(
+    IGenerator<ImmutableArray<SyntaxToken>> inputGenerator)
+    : ComponentFuzzerBase<ImmutableArray<SyntaxToken>>(inputGenerator)
 {
-    public ParserFuzzer(IGenerator<ImmutableArray<SyntaxToken>> inputGenerator)
-        : base(inputGenerator)
-    {
-    }
-
     protected override void NextEpochInternal(ImmutableArray<SyntaxToken> input)
     {
         // NOTE: To not have to implement every single parsing constraint for the token generator,

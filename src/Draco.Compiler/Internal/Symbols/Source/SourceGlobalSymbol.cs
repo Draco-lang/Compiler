@@ -9,15 +9,17 @@ using Draco.Compiler.Internal.FlowAnalysis;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
-internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
+internal sealed class SourceGlobalSymbol(
+    Symbol containingSymbol,
+    GlobalDeclaration declaration) : GlobalSymbol, ISourceSymbol
 {
     public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
 
-    public override bool IsMutable => this.declaration.Syntax.Keyword.Kind == TokenKind.KeywordVar;
-    public override Symbol ContainingSymbol { get; }
-    public override string Name => this.declaration.Name;
+    public override bool IsMutable => declaration.Syntax.Keyword.Kind == TokenKind.KeywordVar;
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
+    public override string Name => declaration.Name;
 
-    public override VariableDeclarationSyntax DeclaringSyntax => this.declaration.Syntax;
+    public override VariableDeclarationSyntax DeclaringSyntax => declaration.Syntax;
 
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
 
@@ -30,17 +32,10 @@ internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
     // NOTE: We check the TYPE here, as value is nullable
     private bool NeedsBuild => Volatile.Read(ref this.type) is null;
 
-    private readonly GlobalDeclaration declaration;
     private TypeSymbol? type;
     private BoundExpression? value;
 
     private readonly object buildLock = new();
-
-    public SourceGlobalSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.declaration = declaration;
-    }
 
     public void Bind(IBinderProvider binderProvider)
     {

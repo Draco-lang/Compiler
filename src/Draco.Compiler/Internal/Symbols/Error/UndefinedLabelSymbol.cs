@@ -3,14 +3,9 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 /// <summary>
 /// Represents an undefined, in-source label reference.
 /// </summary>
-internal sealed class UndefinedLabelSymbol : LabelSymbol
+internal sealed class UndefinedLabelSymbol(string name) : LabelSymbol
 {
     public override bool IsError => true;
 
-    public override string Name { get; }
-
-    public UndefinedLabelSymbol(string name)
-    {
-        this.Name = name;
-    }
+    public override string Name { get; } = name;
 }

@@ -25,7 +25,7 @@ internal abstract partial class ModuleSymbol : Symbol, IMemberSymbol
     // NOTE: Some very janky lookup capability
     public IEnumerable<Symbol> Lookup(ImmutableArray<string> parts)
     {
-        if (parts.Length == 0) return new[] { this };
+        if (parts.Length == 0) return [this];
 
         var current = this as Symbol;
         for (var i = 0; i < parts.Length - 1; ++i)

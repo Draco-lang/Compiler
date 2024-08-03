@@ -11,8 +11,8 @@ internal static class Program
 
     private static RootCommand ConfigureCommands()
     {
-        var numEpochsOption = new Option<int>(new string[] { "-e", "--epochs" }, () => -1, description: "Specifies the number of epochs the fuzzer should run for, if not specified or -1, the fuzzer will run indefinitely");
-        var numMutationsOption = new Option<int>(new string[] { "-m", "--mutations" }, () => 0, description: "Specifies the number of mutations the fuzzer should make for each epoch, if not specified or 0, there will be no mutations");
+        var numEpochsOption = new Option<int>(["-e", "--epochs"], () => -1, description: "Specifies the number of epochs the fuzzer should run for, if not specified or -1, the fuzzer will run indefinitely");
+        var numMutationsOption = new Option<int>(["-m", "--mutations"], () => 0, description: "Specifies the number of mutations the fuzzer should make for each epoch, if not specified or 0, there will be no mutations");
 
         var lexerCommand = new Command("lexer", "Fuzzes the lexer")
         {

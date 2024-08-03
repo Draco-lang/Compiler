@@ -9,11 +9,11 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 /// <summary>
 /// A mutable implementation of <see cref="IBasicBlock"/>.
 /// </summary>
-internal sealed class BasicBlock : IBasicBlock
+internal sealed class BasicBlock(Procedure procedure, LabelSymbol symbol) : IBasicBlock
 {
-    public LabelSymbol Symbol { get; }
+    public LabelSymbol Symbol { get; } = symbol;
     public TypeSymbol? Type => null;
-    public Procedure Procedure { get; }
+    public Procedure Procedure { get; } = procedure;
     IProcedure IBasicBlock.Procedure => this.Procedure;
 
     public IInstruction FirstInstruction => this.firstInstruction
@@ -29,7 +29,7 @@ internal sealed class BasicBlock : IBasicBlock
     }
     public int InstructionCount { get; private set; }
     public IEnumerable<BasicBlock> Successors => this.lastInstruction?.JumpTargets.Cast<BasicBlock>()
-                                              ?? Enumerable.Empty<BasicBlock>();
+                                              ?? [];
     IEnumerable<IBasicBlock> IBasicBlock.Successors => this.Successors;
 
     /// <summary>
@@ -48,12 +48,6 @@ internal sealed class BasicBlock : IBasicBlock
     private IInstruction? firstInstruction;
     private IInstruction? lastInstruction;
     private int? index;
-
-    public BasicBlock(Procedure procedure, LabelSymbol symbol)
-    {
-        this.Procedure = procedure;
-        this.Symbol = symbol;
-    }
 
     public override string ToString()
     {

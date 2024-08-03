@@ -11,16 +11,9 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal static class PassFactory
 {
-    private sealed class DelegatePass : IPass
+    private sealed class DelegatePass(PassFactory.AssemblyPassDelegate passDelegate) : IPass
     {
-        private readonly AssemblyPassDelegate passDelegate;
-
-        public DelegatePass(AssemblyPassDelegate passDelegate)
-        {
-            this.passDelegate = passDelegate;
-        }
-
-        public bool Apply(Assembly assembly) => this.passDelegate(assembly);
+        public bool Apply(Assembly assembly) => passDelegate(assembly);
     }
 
     /// <summary>

@@ -11,9 +11,10 @@ using LspMessage = Draco.Lsp.Model.OneOf<Draco.Lsp.Model.RequestMessage, Draco.L
 
 namespace Draco.Lsp.Server;
 
-internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, ResponseError>
+internal sealed class LanguageServerConnection(IDuplexPipe transport)
+    : JsonRpcConnection<LspMessage, ResponseError>
 {
-    public override IDuplexPipe Transport { get; }
+    public override IDuplexPipe Transport { get; } = transport;
 
     public override JsonSerializerOptions JsonSerializerOptions { get; } = new()
     {
@@ -35,11 +36,6 @@ internal sealed class LanguageServerConnection : JsonRpcConnection<LspMessage, R
             new ModelInterfaceConverter(),
         }
     };
-
-    public LanguageServerConnection(IDuplexPipe transport)
-    {
-        this.Transport = transport;
-    }
 
     protected override Task<(LspMessage Message, bool Handled)> TryProcessCustomRequest(LspMessage message) =>
         Task.FromResult((message, false));

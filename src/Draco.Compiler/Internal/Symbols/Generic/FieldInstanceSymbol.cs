@@ -6,7 +6,10 @@ namespace Draco.Compiler.Internal.Symbols.Generic;
 /// Represents a generic instantiated field.
 /// The field definition itself is not generic, but the field was within a generic context.
 /// </summary>
-internal sealed class FieldInstanceSymbol : FieldSymbol, IGenericInstanceSymbol
+internal sealed class FieldInstanceSymbol(
+    Symbol? containingSymbol,
+    FieldSymbol genericDefinition,
+    GenericContext context) : FieldSymbol, IGenericInstanceSymbol
 {
     public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
@@ -15,17 +18,10 @@ internal sealed class FieldInstanceSymbol : FieldSymbol, IGenericInstanceSymbol
 
     public override bool IsMutable => this.GenericDefinition.IsMutable;
 
-    public override Symbol? ContainingSymbol { get; }
-    public override FieldSymbol GenericDefinition { get; }
+    public override Symbol? ContainingSymbol { get; } = containingSymbol;
+    public override FieldSymbol GenericDefinition { get; } = genericDefinition;
 
-    public GenericContext Context { get; }
-
-    public FieldInstanceSymbol(Symbol? containingSymbol, FieldSymbol genericDefinition, GenericContext context)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.GenericDefinition = genericDefinition;
-        this.Context = context;
-    }
+    public GenericContext Context { get; } = context;
 
     private TypeSymbol BuildType() =>
         this.GenericDefinition.Type.GenericInstantiate(this.GenericDefinition.Type.ContainingSymbol, this.Context);

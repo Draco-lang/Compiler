@@ -78,9 +78,9 @@ internal abstract class FlowAnalysisPass<TState> : BoundTreeVisitor
     protected bool HasChanged;
 
     // State for each label
-    private readonly Dictionary<LabelSymbol, TState> labeledStates = new();
+    private readonly Dictionary<LabelSymbol, TState> labeledStates = [];
     // Joins into labels that we have jumped to
-    private readonly List<PendingJoin> pendingJoins = new();
+    private readonly List<PendingJoin> pendingJoins = [];
 
     protected FlowAnalysisPass()
     {

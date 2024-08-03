@@ -41,7 +41,7 @@ public sealed partial class Diagnostic
             template: template,
             location: location,
             formatArgs: formatArgs,
-            relatedInformation: ImmutableArray<DiagnosticRelatedInformation>.Empty);
+            relatedInformation: []);
 
     /// <summary>
     /// The template for this message.

@@ -9,15 +9,17 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// A namespace imported from metadata.
 /// </summary>
-internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
+internal sealed class MetadataNamespaceSymbol(
+    Symbol containingSymbol,
+    NamespaceDefinition namespaceDefinition) : ModuleSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     public override string Name => this.MetadataName;
-    public override string MetadataName => this.MetadataReader.GetString(this.namespaceDefinition.Name);
-    public override Symbol ContainingSymbol { get; }
+    public override string MetadataName => this.MetadataReader.GetString(namespaceDefinition.Name);
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
 
     // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
@@ -25,20 +27,12 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
-    private readonly NamespaceDefinition namespaceDefinition;
-
-    public MetadataNamespaceSymbol(Symbol containingSymbol, NamespaceDefinition namespaceDefinition)
-    {
-        this.ContainingSymbol = containingSymbol;
-        this.namespaceDefinition = namespaceDefinition;
-    }
-
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // Sub-namespaces
-        foreach (var subNamespaceHandle in this.namespaceDefinition.NamespaceDefinitions)
+        foreach (var subNamespaceHandle in namespaceDefinition.NamespaceDefinitions)
         {
             var subNamespaceDef = this.MetadataReader.GetNamespaceDefinition(subNamespaceHandle);
             var subNamespaceSym = new MetadataNamespaceSymbol(
@@ -48,7 +42,7 @@ internal sealed class MetadataNamespaceSymbol : ModuleSymbol, IMetadataSymbol
         }
 
         // Types
-        foreach (var typeHandle in this.namespaceDefinition.TypeDefinitions)
+        foreach (var typeHandle in namespaceDefinition.TypeDefinitions)
         {
             var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
             // Skip nested types, that will be handled by the type itself

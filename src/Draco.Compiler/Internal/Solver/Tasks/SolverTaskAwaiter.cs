@@ -51,7 +51,7 @@ internal sealed class SolverTaskAwaiter<T> : INotifyCompletion
         }
         else
         {
-            this.completions ??= new();
+            this.completions ??= [];
             this.completions.Add(completion);
         }
     }

@@ -107,11 +107,11 @@ internal static class JsonRpcMethodHandler
         }
 
         public Task InvokeNotification(object?[] args) =>
-            (Task)this.handlerMethod.Invoke(this.target, args.ToArray())!;
+            (Task)this.handlerMethod.Invoke(this.target, [.. args])!;
 
         public async Task<object?> InvokeRequest(object?[] args)
         {
-            var task = (Task)this.handlerMethod.Invoke(this.target, args.ToArray())!;
+            var task = (Task)this.handlerMethod.Invoke(this.target, [.. args])!;
             await task;
 
             if (this.DeclaredReturnType == typeof(Task))

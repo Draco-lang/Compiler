@@ -16,7 +16,7 @@ internal record class SymbolDocumentation
     /// <summary>
     /// Empty documentation;
     /// </summary>
-    public static SymbolDocumentation Empty = new SymbolDocumentation(ImmutableArray<DocumentationSection>.Empty);
+    public static SymbolDocumentation Empty = new([]);
 
     /// <summary>
     /// The summary documentation section.
@@ -102,14 +102,14 @@ internal record class SymbolDocumentation
     }
 
     private ImmutableArray<DocumentationSection> BuildOrderedSections() =>
-        this.unorderedSections.OrderBy(x => (int)x.Kind).ToImmutableArray();
+        [.. this.unorderedSections.OrderBy(x => (int)x.Kind)];
 }
 
 /// <summary>
 /// Temporary structure for storing markdown documentation.
 /// </summary>
 /// <param name="Markdown">The markdown documentation.</param>
-internal sealed record class MarkdownSymbolDocumentation(string Markdown) : SymbolDocumentation(ImmutableArray<DocumentationSection>.Empty)
+internal sealed record class MarkdownSymbolDocumentation(string Markdown) : SymbolDocumentation([])
 {
     public override string ToMarkdown() => this.Markdown;
 

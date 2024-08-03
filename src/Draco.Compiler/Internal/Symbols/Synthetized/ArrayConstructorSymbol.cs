@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// <summary>
 /// A global constructor for arrays.
 /// </summary>
-internal sealed class ArrayConstructorSymbol : FunctionSymbol
+internal sealed class ArrayConstructorSymbol(ArrayTypeSymbol genericArrayType) : FunctionSymbol
 {
     public override string Name => this.Rank switch
     {
@@ -16,7 +16,7 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
         int n => $"Array{n}D",
     };
 
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => ImmutableArray.Create(this.ElementType);
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters => [this.ElementType];
 
     public override ImmutableArray<ParameterSymbol> Parameters =>
         InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
@@ -29,7 +29,7 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
     /// <summary>
     /// The rank of the array to construct.
     /// </summary>
-    public int Rank => this.genericArrayType.Rank;
+    public int Rank => genericArrayType.Rank;
 
     /// <summary>
     /// The array element type.
@@ -38,29 +38,24 @@ internal sealed class ArrayConstructorSymbol : FunctionSymbol
         LazyInitializer.EnsureInitialized(ref this.elementType, this.BuildElementType);
     private TypeParameterSymbol? elementType;
 
-    public override CodegenDelegate Codegen => (codegen, target, operands) =>
+    public override CodegenDelegate Codegen => (codegen, targetType, operands) =>
     {
-        var elementType = target.Type.Substitution.GenericArguments[0];
+        var target = codegen.DefineRegister(targetType);
+        var elementType = targetType.Substitution.GenericArguments[0];
         codegen.Write(NewArray(target, elementType, operands));
+        return target;
     };
-
-    private readonly ArrayTypeSymbol genericArrayType;
-
-    public ArrayConstructorSymbol(ArrayTypeSymbol genericArrayType)
-    {
-        this.genericArrayType = genericArrayType;
-    }
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.Rank switch
     {
-        1 => ImmutableArray.Create(new SynthetizedParameterSymbol(this, "capacity", this.genericArrayType.IndexType) as ParameterSymbol),
+        1 => [new SynthetizedParameterSymbol(this, "capacity", genericArrayType.IndexType) as ParameterSymbol],
         int n => Enumerable
             .Range(1, n)
-            .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", this.genericArrayType.IndexType) as ParameterSymbol)
+            .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", genericArrayType.IndexType) as ParameterSymbol)
             .ToImmutableArray(),
     };
 
-    private TypeSymbol BuildReturnType() => this.genericArrayType.GenericInstantiate(this.ElementType);
+    private TypeSymbol BuildReturnType() => genericArrayType.GenericInstantiate(this.ElementType);
 
     private TypeParameterSymbol BuildElementType() => new SynthetizedTypeParameterSymbol(this, "T");
 }

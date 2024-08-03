@@ -33,7 +33,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (pdbStream is not null) codegen.PdbCodegen!.WritePdb(pdbStream);
     }
 
-    public static byte[] MicrosoftPublicKeyToken { get; } = new byte[] { 0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a };
+    public static byte[] MicrosoftPublicKeyToken { get; } = [0xb0, 0x3f, 0x5f, 0x7f, 0x11, 0xd5, 0x0a, 0x3a];
 
     /// <summary>
     /// The compilation that started codegen.
@@ -64,8 +64,8 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
-    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = new();
-    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = new();
+    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = [];
+    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = [];
     private readonly AssemblyReferenceHandle systemRuntimeReference;
     private readonly TypeReferenceHandle systemObjectReference;
 
@@ -312,13 +312,13 @@ internal sealed class MetadataCodegen : MetadataWriter
     // TODO: This can be cached
     private EntityHandle GetMultidimensionalArrayTypeHandle(TypeSymbol elementType, int rank)
     {
-        if (rank <= 1) throw new ArgumentOutOfRangeException(nameof(rank));
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(rank, 1);
         return this.MetadataBuilder.AddTypeSpecification(this.EncodeBlob(e =>
         {
             var encoder = e.TypeSpecificationSignature();
             encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
             this.EncodeSignatureType(elementTypeEncoder, elementType);
-            shapeEncoder.Shape(rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
+            shapeEncoder.Shape(rank, [], []);
         }));
     }
 
@@ -375,7 +375,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             this.AddAttribute(
                 target: this.AssemblyDefinitionHandle,
                 ctor: debuggableAttributeCtor,
-                value: this.GetOrAddBlob(new byte[] { 01, 00, 07, 01, 00, 00, 00, 00 }));
+                value: this.GetOrAddBlob([01, 00, 07, 01, 00, 00, 00, 00]));
         }
     }
 
@@ -447,7 +447,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             Api.Semantics.Visibility.Public => FieldAttributes.Public,
             Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
             Api.Semantics.Visibility.Private => FieldAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(global.Visibility)),
+            _ => throw new ArgumentOutOfRangeException(nameof(global)),
         };
 
         // Definition
@@ -464,7 +464,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             Api.Semantics.Visibility.Public => MethodAttributes.Public,
             Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
             Api.Semantics.Visibility.Private => MethodAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(procedure.Symbol.Visibility)),
+            _ => throw new ArgumentOutOfRangeException(nameof(procedure)),
         };
 
         // Encode instructions
@@ -621,7 +621,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                     // Multi-dimensional
                     encoder.Array(out var elementTypeEncoder, out var shapeEncoder);
                     this.EncodeSignatureType(elementTypeEncoder, elementType);
-                    shapeEncoder.Shape(arrayType.Rank, ImmutableArray<int>.Empty, ImmutableArray<int>.Empty);
+                    shapeEncoder.Shape(arrayType.Rank, [], []);
                     return;
                 }
             }

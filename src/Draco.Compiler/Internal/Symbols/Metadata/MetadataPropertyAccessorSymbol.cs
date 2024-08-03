@@ -5,13 +5,10 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// <summary>
 /// Represents an property accessor symbol loaded from metadata.
 /// </summary>
-internal sealed class MetadataPropertyAccessorSymbol : MetadataMethodSymbol, IPropertyAccessorSymbol
+internal sealed class MetadataPropertyAccessorSymbol(
+    Symbol containingSymbol,
+    MethodDefinition definition,
+    PropertySymbol property) : MetadataMethodSymbol(containingSymbol, definition), IPropertyAccessorSymbol
 {
-    public PropertySymbol Property { get; }
-
-    public MetadataPropertyAccessorSymbol(Symbol containingSymbol, MethodDefinition definition, PropertySymbol property)
-        : base(containingSymbol, definition)
-    {
-        this.Property = property;
-    }
+    public PropertySymbol Property { get; } = property;
 }

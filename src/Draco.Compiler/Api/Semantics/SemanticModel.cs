@@ -110,7 +110,7 @@ public sealed partial class SemanticModel : IBinderProvider
             }
         }
 
-        return this.DiagnosticBag.ToImmutableArray();
+        return [.. this.DiagnosticBag];
     }
 
     /// <summary>
@@ -128,7 +128,7 @@ public sealed partial class SemanticModel : IBinderProvider
             foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;
         }
-        return result.ToImmutableArray();
+        return [.. result];
     }
 
     /// <summary>
@@ -310,7 +310,7 @@ public sealed partial class SemanticModel : IBinderProvider
         if (syntax is MemberExpressionSyntax member)
         {
             var symbol = this.TypeOf(member.Accessed) ?? this.GetReferencedSymbol(member.Accessed);
-            if (symbol is null) return ImmutableArray<ISymbol>.Empty;
+            if (symbol is null) return [];
             else return symbol.Members.Where(x => x is FunctionSymbol && x.Name == member.Member.Text).ToImmutableArray();
         }
         // We look up syntax based on the symbol in context
@@ -324,19 +324,19 @@ public sealed partial class SemanticModel : IBinderProvider
             foreach (var s in symbols) result.Add(s);
             binder = binder.Parent;
         }
-        return result.ToImmutableArray();
+        return [.. result];
     }
 
-    private Binder GetBinder(SyntaxNode syntax)
+    private IncrementalBinder GetBinder(SyntaxNode syntax)
     {
         var binder = this.compilation.GetBinder(syntax);
-        return new IncrementalBinder(binder, this);
+        return new(binder, this);
     }
 
-    private Binder GetBinder(Symbol symbol)
+    private IncrementalBinder GetBinder(Symbol symbol)
     {
         var binder = this.compilation.GetBinder(symbol);
-        return new IncrementalBinder(binder, this);
+        return new(binder, this);
     }
 
     Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);

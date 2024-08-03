@@ -8,30 +8,23 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Represents a single, resolved import.
 /// </summary>
-internal sealed class ImportItem
+internal sealed class ImportItem(
+    ImportDeclarationSyntax syntax,
+    ImmutableArray<KeyValuePair<ImportPathSyntax, Symbol>> path,
+    IEnumerable<Symbol> importedSymbols)
 {
     /// <summary>
     /// The syntax that created this import.
     /// </summary>
-    public ImportDeclarationSyntax Syntax { get; }
+    public ImportDeclarationSyntax Syntax { get; } = syntax;
 
     /// <summary>
     /// The full, resolved path paired with each path syntax element.
     /// </summary>
-    public ImmutableArray<KeyValuePair<ImportPathSyntax, Symbol>> Path { get; }
+    public ImmutableArray<KeyValuePair<ImportPathSyntax, Symbol>> Path { get; } = path;
 
     /// <summary>
     /// The imported symbols.
     /// </summary>
-    public IEnumerable<Symbol> ImportedSymbols { get; }
-
-    public ImportItem(
-        ImportDeclarationSyntax syntax,
-        ImmutableArray<KeyValuePair<ImportPathSyntax, Symbol>> path,
-        IEnumerable<Symbol> importedSymbols)
-    {
-        this.Syntax = syntax;
-        this.Path = path;
-        this.ImportedSymbols = importedSymbols;
-    }
+    public IEnumerable<Symbol> ImportedSymbols { get; } = importedSymbols;
 }

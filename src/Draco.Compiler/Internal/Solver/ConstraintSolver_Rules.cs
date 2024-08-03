@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -238,31 +239,18 @@ internal sealed partial class ConstraintSolver
     private void HandleRule(OverloadConstraint constraint, DiagnosticBag? diagnostics)
     {
         var functionName = constraint.Name;
-        var functionsWithMatchingArgc = constraint.Candidates
-            .Where(f => MatchesParameterCount(f, constraint.Arguments.Length))
-            .ToList();
-        var maxArgc = functionsWithMatchingArgc
-            .Select(f => f.Parameters.Length)
-            .Append(0)
-            .Max();
-        var candidates = functionsWithMatchingArgc
-            .Select(f => new OverloadCandidate(f, new(maxArgc)))
-            .ToList();
 
-        while (true)
-        {
-            var changed = this.RefineOverloadScores(candidates, constraint.Arguments, out var wellDefined);
-            if (wellDefined) break;
-            if (candidates.Count <= 1) break;
-            if (!changed) return;
-        }
+        var candidateSet = constraint.CandidateSet;
+        candidateSet.Refine();
+        // If it's not well-defined, we can't advance
+        if (!candidateSet.IsWellDefined) return;
 
         // We have all candidates well-defined, find the absolute dominator
-        if (candidates.Count == 0)
+        if (candidateSet.Count == 0)
         {
             UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
             // Best-effort shape approximation
-            var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
+            var errorSymbol = new NoOverloadFunctionSymbol(candidateSet.Arguments.Length);
             constraint.ReportDiagnostic(diagnostics, diag => diag
                 .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
                 .WithFormatArgs(functionName));
@@ -271,11 +259,13 @@ internal sealed partial class ConstraintSolver
         }
 
         // We have one or more, find the max dominator
-        var dominatingCandidates = GetDominatingCandidates(candidates);
+        var dominatingCandidates = CallScore
+            .FindDominatorsBy(candidateSet, c => c.Score)
+            .ToImmutableArray();
         if (dominatingCandidates.Length == 1)
         {
             // Resolved fine, choose the symbol, which might generic-instantiate it
-            var chosen = this.ChooseSymbol(dominatingCandidates[0]);
+            var chosen = this.ChooseSymbol(dominatingCandidates[0].Data);
 
             // Inference
             if (chosen.IsVariadic)
@@ -367,24 +357,20 @@ internal sealed partial class ConstraintSolver
         }
 
         // Start scoring args
-        var score = new CallScore(functionType.Parameters.Length);
-        while (true)
+        var candidate = CallCandidate.Create(functionType);
+        candidate.Refine(constraint.Arguments);
+
+        if (candidate.IsEliminated)
         {
-            var changed = this.AdjustScore(functionType, constraint.Arguments, score);
-            if (score.HasZero)
-            {
-                // Error
-                UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
-                constraint.ReportDiagnostic(diagnostics, diag => diag
-                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                    .WithFormatArgs(
-                        functionType,
-                        this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)));
-                constraint.CompletionSource.SetResult(default);
-                return;
-            }
-            if (score.IsWellDefined) break;
-            if (!changed) return;
+            // Error
+            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
+            constraint.ReportDiagnostic(diagnostics, diag => diag
+                .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                .WithFormatArgs(
+                    functionType,
+                    this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)));
+            constraint.CompletionSource.SetResult(default);
+            return;
         }
 
         // We are done

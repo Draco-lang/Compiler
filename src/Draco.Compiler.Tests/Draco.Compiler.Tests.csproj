@@ -26,4 +26,10 @@
   <ItemGroup>
     <PackageReference Include="Basic.Reference.Assemblies.Net80" Version="1.4.5" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Syntax\FuzzerTestCases\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

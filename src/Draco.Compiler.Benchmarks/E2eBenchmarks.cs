@@ -27,7 +27,7 @@ public class E2eBenchmarks : FolderBenchmarkBase
     {
         var syntaxTree = SyntaxTree.Parse(this.Input.Code, Path.GetFullPath(this.Input.Path));
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(syntaxTree),
+            syntaxTrees: [syntaxTree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());

@@ -12,20 +12,13 @@ namespace Draco.Dap.Adapter;
 /// <summary>
 /// Handles fundamental DAP lifecycle messages so the user does not have to.
 /// </summary>
-internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
+internal sealed class DebugAdapterLifecycle(
+    IDebugAdapter adapter,
+    IJsonRpcConnection connection) : IDebugAdapterLifecycle
 {
-    private readonly IDebugAdapter adapter;
-    private readonly IJsonRpcConnection connection;
-
-    public DebugAdapterLifecycle(IDebugAdapter adapter, IJsonRpcConnection connection)
-    {
-        this.adapter = adapter;
-        this.connection = connection;
-    }
-
     public async Task<Model.Capabilities> InitializeAsync(InitializeRequestArguments args)
     {
-        await this.adapter.InitializeAsync(args);
+        await adapter.InitializeAsync(args);
         return this.BuildAdapterCapabilities();
     }
 
@@ -34,7 +27,7 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
         var capabilities = new Model.Capabilities();
 
         // We collect all properties on the adapter that have the capability annotation
-        var capabilityProperties = this.adapter
+        var capabilityProperties = adapter
             .GetType()
             .GetInterfaces()
             .SelectMany(i => i.GetProperties())
@@ -51,7 +44,7 @@ internal sealed class DebugAdapterLifecycle : IDebugAdapterLifecycle
                                      ?? throw new InvalidOperationException($"no capability {attr.Property} found in adapter capabilities");
 
             // Retrieve the capability value defined by the interface
-            var capability = interfaceCapabilityProp.GetValue(this.adapter);
+            var capability = interfaceCapabilityProp.GetValue(adapter);
             // We can fill out the appropriate field in the adapter capabilities
             SetCapability(capabilities, adapterCapabilityProp, capability);
         }

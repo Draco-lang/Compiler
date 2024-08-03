@@ -46,8 +46,8 @@ internal sealed class CilCodegen
     private readonly MetadataCodegen metadataCodegen;
     private readonly IProcedure procedure;
     private readonly ImmutableDictionary<LocalSymbol, AllocatedLocal> allocatedLocals;
-    private readonly Dictionary<Register, int> allocatedRegisters = new();
-    private readonly Dictionary<IBasicBlock, LabelHandle> labels = new();
+    private readonly Dictionary<Register, int> allocatedRegisters = [];
+    private readonly Dictionary<IBasicBlock, LabelHandle> labels = [];
     private readonly Stackifier stackifier;
     private int treeDepth;
 

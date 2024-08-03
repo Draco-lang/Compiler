@@ -11,6 +11,7 @@ using Draco.Compiler.Api.CodeFixes;
 using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server;
+using Draco.ProjectSystem;
 
 namespace Draco.LanguageServer;
 
@@ -22,14 +23,14 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         Version = "0.1.0",
     };
 
-    public IList<DocumentFilter> DocumentSelector => new[]
-    {
+    public IList<DocumentFilter> DocumentSelector =>
+    [
         new DocumentFilter()
         {
             Language = "draco",
             Pattern = "**/*.draco",
         }
-    };
+    ];
     public TextDocumentSyncKind SyncKind => TextDocumentSyncKind.Full;
 
     private readonly ILanguageClient client;
@@ -50,10 +51,8 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
         // Some empty defaults
         this.compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray<SyntaxTree>.Empty,
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            syntaxTrees: [],
+            metadataReferences: []);
 
         this.completionService = new CompletionService();
         this.completionService.AddProvider(new KeywordCompletionProvider());
@@ -66,18 +65,42 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.codeFixService.AddProvider(new ImportCodeFixProvider());
     }
 
-    private void CreateCompilation()
+    private async Task CreateCompilation()
     {
         var rootPath = this.rootUri.LocalPath;
-        var syntaxTrees = Directory.GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
+        var workspace = Workspace.Initialize(rootPath);
+
+        var projects = workspace.Projects.ToList();
+        if (projects.Count == 0)
+        {
+            await this.client.ShowMessageAsync(MessageType.Error, "No project file found in the workspace.");
+            return;
+        }
+        else if (projects.Count > 1)
+        {
+            await this.client.ShowMessageAsync(MessageType.Error, "Multiple project files found in the workspace.");
+            return;
+        }
+
+        var project = projects[0];
+        var designTimeBuild = project.BuildDesignTime();
+
+        if (!designTimeBuild.Succeeded)
+        {
+            await this.client.LogMessageAsync(MessageType.Error, designTimeBuild.BuildLog);
+            await this.client.ShowMessageAsync(MessageType.Error, "Design-time build failed! See logs for details.");
+        }
+
+        var syntaxTrees = Directory
+            .GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
             .Select(x => SyntaxTree.Parse(SourceText.FromFile(x)))
             .ToImmutableArray();
 
         this.compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            // NOTE: Temporary until we solve MSBuild communication
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+
+            metadataReferences: designTimeBuild.References
+                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
                 .ToImmutableArray(),
             rootModulePath: rootPath);
     }
@@ -112,13 +135,13 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
 
     public void Dispose() { }
 
-    public Task InitializeAsync(InitializeParams param)
+    public async Task InitializeAsync(InitializeParams param)
     {
         var workspaceUri = ExtractRootUri(param);
-        if (workspaceUri is null) return Task.CompletedTask;
+        if (workspaceUri is null) return;
+
         Volatile.Write(ref this.rootUri, workspaceUri);
-        this.CreateCompilation();
-        return Task.CompletedTask;
+        await this.CreateCompilation();
     }
 
     public async Task InitializedAsync(InitializedParams param)

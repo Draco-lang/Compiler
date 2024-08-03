@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -15,12 +14,12 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Represents a single scope that binds the syntax-tree to the untyped-tree and then the bound-tree.
 /// </summary>
-internal abstract partial class Binder
+internal abstract partial class Binder(Compilation compilation, Binder? parent)
 {
     /// <summary>
     /// The compilation this binder was created for.
     /// </summary>
-    internal Compilation Compilation { get; }
+    internal Compilation Compilation { get; } = compilation;
 
     /// <summary>
     /// Utility accessor for intrinsics.
@@ -30,7 +29,7 @@ internal abstract partial class Binder
     /// <summary>
     /// The parent binder of this one.
     /// </summary>
-    internal Binder? Parent { get; }
+    internal Binder? Parent { get; } = parent;
 
     /// <summary>
     /// The syntax that constructed this binder.
@@ -45,13 +44,7 @@ internal abstract partial class Binder
     /// <summary>
     /// The symbols declared in this binder scope.
     /// </summary>
-    public virtual IEnumerable<Symbol> DeclaredSymbols => Enumerable.Empty<Symbol>();
-
-    protected Binder(Compilation compilation, Binder? parent)
-    {
-        this.Compilation = compilation;
-        this.Parent = parent;
-    }
+    public virtual IEnumerable<Symbol> DeclaredSymbols => [];
 
     protected Binder(Compilation compilation)
         : this(compilation, null)

@@ -23,7 +23,7 @@ internal sealed class DelegateIrFunctionSymbol : FunctionSymbol
         TypeSymbol operandType,
         TypeSymbol returnType,
         CodegenDelegate codegen) =>
-        new DelegateIrFunctionSymbol(GetUnaryOperatorName(token), new[] { operandType }, returnType, codegen);
+        new DelegateIrFunctionSymbol(GetUnaryOperatorName(token), [operandType], returnType, codegen);
 
     /// <summary>
     /// Constructs a function symbol for a binary operator.
@@ -40,7 +40,7 @@ internal sealed class DelegateIrFunctionSymbol : FunctionSymbol
         TypeSymbol rightType,
         TypeSymbol returnType,
         CodegenDelegate codegen) =>
-        new DelegateIrFunctionSymbol(GetBinaryOperatorName(token), new[] { leftType, rightType }, returnType, codegen);
+        new DelegateIrFunctionSymbol(GetBinaryOperatorName(token), [leftType, rightType], returnType, codegen);
 
     /// <summary>
     /// Constructs a function symbol for a comparison operator.
@@ -57,7 +57,7 @@ internal sealed class DelegateIrFunctionSymbol : FunctionSymbol
         TypeSymbol rightType,
         TypeSymbol returnType,
         CodegenDelegate codegen) =>
-        new DelegateIrFunctionSymbol(GetComparisonOperatorName(token), new[] { leftType, rightType }, returnType, codegen);
+        new DelegateIrFunctionSymbol(GetComparisonOperatorName(token), [leftType, rightType], returnType, codegen);
 
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
 

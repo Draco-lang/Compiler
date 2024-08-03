@@ -12,7 +12,12 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// A single token in the source code, possibly surrounded by trivia.
 /// </summary>
-internal sealed partial class SyntaxToken : SyntaxNode
+internal sealed partial class SyntaxToken(
+    TokenKind kind,
+    string text,
+    object? value,
+    SyntaxList<SyntaxTrivia> leadingTrivia,
+    SyntaxList<SyntaxTrivia> trailingTrivia) : SyntaxNode
 {
     /// <summary>
     /// Constructs a <see cref="SyntaxToken"/> from the given data.
@@ -32,17 +37,17 @@ internal sealed partial class SyntaxToken : SyntaxNode
     /// <summary>
     /// The <see cref="TokenKind"/> of this token.
     /// </summary>
-    public TokenKind Kind { get; }
+    public TokenKind Kind { get; } = kind;
 
     /// <summary>
     /// The text the token was produced from.
     /// </summary>
-    public string Text { get; }
+    public string Text { get; } = text;
 
     /// <summary>
     /// An optional associated value to this token.
     /// </summary>
-    public object? Value { get; }
+    public object? Value { get; } = value;
 
     /// <summary>
     /// The <see cref="Value"/> in string representation.
@@ -52,31 +57,16 @@ internal sealed partial class SyntaxToken : SyntaxNode
     /// <summary>
     /// The <see cref="SyntaxTrivia"/> before this token.
     /// </summary>
-    public SyntaxList<SyntaxTrivia> LeadingTrivia { get; }
+    public SyntaxList<SyntaxTrivia> LeadingTrivia { get; } = leadingTrivia;
 
     /// <summary>
     /// The <see cref="SyntaxTrivia"/> after this token.
     /// </summary>
-    public SyntaxList<SyntaxTrivia> TrailingTrivia { get; }
+    public SyntaxList<SyntaxTrivia> TrailingTrivia { get; } = trailingTrivia;
 
-    public override int FullWidth { get; }
+    public override int FullWidth { get; } = leadingTrivia.FullWidth + text.Length + trailingTrivia.FullWidth;
 
     public override IEnumerable<SyntaxNode> Children => Enumerable.Empty<SyntaxToken>();
-
-    public SyntaxToken(
-        TokenKind kind,
-        string text,
-        object? value,
-        SyntaxList<SyntaxTrivia> leadingTrivia,
-        SyntaxList<SyntaxTrivia> trailingTrivia)
-    {
-        this.Kind = kind;
-        this.Text = text;
-        this.Value = value;
-        this.LeadingTrivia = leadingTrivia;
-        this.TrailingTrivia = trailingTrivia;
-        this.FullWidth = leadingTrivia.FullWidth + text.Length + trailingTrivia.FullWidth;
-    }
 
     /// <summary>
     /// Creates a builder from this token.

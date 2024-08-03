@@ -122,7 +122,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -159,7 +159,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -194,7 +194,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -224,13 +224,13 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("S"))).ToImmutableArray();
+        var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith('S'))).ToImmutableArray();
         AssertCompletions(completions, "System");
     }
 
@@ -248,7 +248,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -278,7 +278,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -309,13 +309,13 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
 
         var semanticModel = compilation.GetSemanticModel(tree);
-        var completions = GetCompletions(tree, semanticModel, cursor).Where(x => x.DisplayText.Contains("W")).ToImmutableArray();
+        var completions = GetCompletions(tree, semanticModel, cursor).Where(x => x.DisplayText.Contains('W')).ToImmutableArray();
         var expected = new Dictionary<string, int>
         {
             { "Write", 17},
@@ -352,7 +352,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -378,7 +378,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -404,7 +404,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -434,7 +434,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -464,7 +464,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -491,7 +491,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());
@@ -517,7 +517,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         var cursor = source.IndexToSyntaxPosition(code.IndexOf('|'));
 
         var compilation = Compilation.Create(
-            syntaxTrees: ImmutableArray.Create(tree),
+            syntaxTrees: [tree],
             metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
                 .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
                 .ToImmutableArray());

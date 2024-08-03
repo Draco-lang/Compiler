@@ -78,11 +78,11 @@ internal sealed class DotGraphBuilder<TVertex>
     internal sealed record class EdgeInfo(Dictionary<string, object> Attributes);
     private sealed record class HtmlText(string Html);
 
-    private readonly Dictionary<string, object> attributes = new();
-    private readonly VertexInfo allVertices = new(-1, new());
-    private readonly EdgeInfo allEdges = new(new());
+    private readonly Dictionary<string, object> attributes = [];
+    private readonly VertexInfo allVertices = new(-1, []);
+    private readonly EdgeInfo allEdges = new([]);
     private readonly Dictionary<TVertex, VertexInfo> vertices;
-    private readonly Dictionary<(int From, int To), List<EdgeInfo>> edges = new();
+    private readonly Dictionary<(int From, int To), List<EdgeInfo>> edges = [];
     private readonly bool isDirected;
     private string name = "G";
 
@@ -97,7 +97,7 @@ internal sealed class DotGraphBuilder<TVertex>
     {
         if (!this.vertices.TryGetValue(vertex, out var info))
         {
-            info = new(this.vertices.Count, new());
+            info = new(this.vertices.Count, []);
             this.vertices.Add(vertex, info);
         }
         return info;
@@ -114,7 +114,7 @@ internal sealed class DotGraphBuilder<TVertex>
         }
         if (!this.edges.TryGetValue((fromId, toId), out var infos))
         {
-            infos = new();
+            infos = [];
             this.edges.Add((fromId, toId), infos);
         }
         return infos;
@@ -143,7 +143,7 @@ internal sealed class DotGraphBuilder<TVertex>
     public EdgeBuilder AddEdge(TVertex from, TVertex to)
     {
         var infos = this.GetEdgeInfos(from, to);
-        var info = new EdgeInfo(new());
+        var info = new EdgeInfo([]);
         infos.Add(info);
         return new(info);
     }

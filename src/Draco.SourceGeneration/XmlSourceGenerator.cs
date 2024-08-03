@@ -38,29 +38,22 @@ public abstract class XmlSourceGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 #pragma warning restore RS2008 // Enable analyzer release tracking
 
-    private sealed class SourceTextReader : TextReader
+    private sealed class SourceTextReader(SourceText sourceText) : TextReader
     {
-        private readonly SourceText sourceText;
-        private int position;
+        private int position = 0;
 
-        public SourceTextReader(SourceText sourceText)
-        {
-            this.sourceText = sourceText;
-            this.position = 0;
-        }
-
-        public override int Peek() => this.position < this.sourceText.Length
-            ? this.sourceText[this.position]
+        public override int Peek() => this.position < sourceText.Length
+            ? sourceText[this.position]
             : -1;
 
-        public override int Read() => this.position < this.sourceText.Length
-            ? this.sourceText[this.position++]
+        public override int Read() => this.position < sourceText.Length
+            ? sourceText[this.position++]
             : -1;
 
         public override int Read(char[] buffer, int index, int count)
         {
-            var length = Math.Min(count, this.sourceText.Length - this.position);
-            this.sourceText.CopyTo(this.position, buffer, index, length);
+            var length = Math.Min(count, sourceText.Length - this.position);
+            sourceText.CopyTo(this.position, buffer, index, length);
             this.position += length;
             return length;
         }
@@ -118,7 +111,7 @@ public abstract class XmlSourceGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(Diagnostic.Create(
                     descriptor: GenerationError,
                     location: null,
-                    messageArgs: new object[] { this.XmlFileName, ex }));
+                    messageArgs: [this.XmlFileName, ex]));
             }
         });
     }

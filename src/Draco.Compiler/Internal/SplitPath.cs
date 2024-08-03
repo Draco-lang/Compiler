@@ -95,7 +95,7 @@ internal readonly record struct SplitPath(ReadOnlyMemory<string> Parts)
     /// <param name="path">The path that will be appended.</param>
     /// <returns>A new <see cref="SplitPath"/> with <paramref name="path"/> appended.</returns>
     public SplitPath Append(params string[] path) =>
-        new SplitPath(MemoryMarshal.ToEnumerable(this.Parts).Concat(path).ToArray().AsMemory());
+        new(MemoryMarshal.ToEnumerable(this.Parts).Concat(path).ToArray().AsMemory());
 
     public bool Equals(SplitPath other) =>
         this.Span.SequenceEqual(other.Span);

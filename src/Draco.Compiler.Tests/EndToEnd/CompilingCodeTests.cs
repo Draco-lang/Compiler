@@ -442,7 +442,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(
             root: null,
-            syntaxTrees: ImmutableArray.Create(foo),
+            syntaxTrees: [foo],
             additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");
@@ -470,7 +470,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(
             root: null,
-            syntaxTrees: ImmutableArray.Create(foo),
+            syntaxTrees: [foo],
             additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");
@@ -497,7 +497,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(
             root: null,
-            syntaxTrees: ImmutableArray.Create(foo),
+            syntaxTrees: [foo],
             additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");
@@ -523,7 +523,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var assembly = Compile(
             root: null,
-            syntaxTrees: ImmutableArray.Create(foo),
+            syntaxTrees: [foo],
             additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
 
         var x = Invoke<int>(assembly, "foo");
@@ -682,5 +682,16 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var x = Invoke<string>(assembly, "stringify", 123);
         Assert.Equal("123", x);
+    }
+
+    [Fact]
+    public void PlusIntegerCompiles()
+    {
+        var assembly = Compile("""
+            public func zero(): int32 = +0;
+            """);
+
+        var x = Invoke<int>(assembly, "zero");
+        Assert.Equal(0, x);
     }
 }

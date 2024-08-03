@@ -48,32 +48,25 @@ internal interface ISourceReader
 /// </summary>
 internal static class SourceReader
 {
-    private sealed class MemorySourceReader : ISourceReader
+    private sealed class MemorySourceReader(ReadOnlyMemory<char> source) : ISourceReader
     {
-        public bool IsEnd => this.Position >= this.source.Length;
+        public bool IsEnd => this.Position >= source.Length;
         public int Position { get; set; }
-
-        private readonly ReadOnlyMemory<char> source;
-
-        public MemorySourceReader(ReadOnlyMemory<char> source)
-        {
-            this.source = source;
-        }
 
         public ReadOnlyMemory<char> Advance(int amount = 1)
         {
-            var result = this.source.Slice(this.Position, amount);
+            var result = source.Slice(this.Position, amount);
             this.Position += amount;
             return result;
         }
 
-        public char Peek(int offset = 0, char @default = '\0') => this.Position + offset >= this.source.Length
+        public char Peek(int offset = 0, char @default = '\0') => this.Position + offset >= source.Length
             ? @default
-            : this.source.Span[this.Position + offset];
+            : source.Span[this.Position + offset];
 
         public bool TryPeek(int offset, out char result)
         {
-            if (this.Position + offset < this.source.Length)
+            if (this.Position + offset < source.Length)
             {
                 result = this.Peek(offset);
                 return true;

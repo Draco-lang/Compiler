@@ -8,8 +8,10 @@ internal sealed class SolverTaskCompletionSource<T>
     {
         get
         {
-            var task = new SolverTask<T>();
-            task.Awaiter = this.Awaiter;
+            var task = new SolverTask<T>
+            {
+                Awaiter = this.Awaiter
+            };
             return task;
         }
     }

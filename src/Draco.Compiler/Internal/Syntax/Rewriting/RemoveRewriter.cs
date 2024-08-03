@@ -2,20 +2,13 @@ using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
-internal sealed class RemoveRewriter : SyntaxRewriter
+internal sealed class RemoveRewriter(SyntaxNode toRemove) : SyntaxRewriter
 {
-    private readonly SyntaxNode toRemove;
-
-    public RemoveRewriter(SyntaxNode toRemove)
-    {
-        this.toRemove = toRemove;
-    }
-
     public override SyntaxList<TNode> VisitSyntaxList<TNode>(SyntaxList<TNode> node)
     {
         for (var i = 0; i < node.Count; i++)
         {
-            if (node[i] == this.toRemove)
+            if (node[i] == toRemove)
             {
                 var list = node.ToList();
                 list.RemoveAt(i);

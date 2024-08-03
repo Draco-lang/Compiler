@@ -11,7 +11,7 @@ namespace Draco.Compiler.Api.CodeFixes;
 /// </summary>
 public sealed class ImportCodeFixProvider : CodeFixProvider
 {
-    public override ImmutableArray<string> DiagnosticCodes { get; } = ImmutableArray.Create(SymbolResolutionErrors.ImportNotAtTop.Code);
+    public override ImmutableArray<string> DiagnosticCodes { get; } = [SymbolResolutionErrors.ImportNotAtTop.Code];
 
     public override ImmutableArray<CodeFix> GetCodeFixes(Diagnostic diagnostic, SyntaxTree tree, SyntaxRange range)
     {
@@ -19,17 +19,19 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
         if (tree.TraverseSubtreesIntersectingRange(range).LastOrDefault(x => x is ImportDeclarationSyntax) is ImportDeclarationSyntax import
             && diagnostic.Location.Range!.Value.Intersects(range))
         {
-            return ImmutableArray.Create(
+            return
+            [
                 new CodeFix("Move import statement to be at the top of the scope", this.TopOfScope(tree, range)),
-                new CodeFix("Move import statement to be at the top of the file", this.TopOfFile(tree, range)));
+                new CodeFix("Move import statement to be at the top of the file", this.TopOfFile(tree, range)),
+            ];
         }
-        return ImmutableArray<CodeFix>.Empty;
+        return [];
     }
 
     private ImmutableArray<TextEdit> TopOfScope(SyntaxTree tree, SyntaxRange range)
     {
         var import = tree.TraverseSubtreesIntersectingRange(range).LastOrDefault(x => x is ImportDeclarationSyntax);
-        if (import is null) return ImmutableArray<TextEdit>.Empty;
+        if (import is null) return [];
         var newTree = import.Parent is DeclarationStatementSyntax
             ? tree.Reorder(import.Parent, 0)
             : tree.Reorder(import, 0);
@@ -39,7 +41,7 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
     private ImmutableArray<TextEdit> TopOfFile(SyntaxTree tree, SyntaxRange range)
     {
         var import = tree.TraverseSubtreesIntersectingRange(range).LastOrDefault(x => x is ImportDeclarationSyntax);
-        if (import is null) return ImmutableArray<TextEdit>.Empty;
+        if (import is null) return [];
         var newTree = import.Parent is DeclarationStatementSyntax
             ? tree.Remove(import.Parent)
             : tree.Remove(import);

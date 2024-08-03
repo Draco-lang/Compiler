@@ -39,9 +39,9 @@ public sealed class XmlLspModelSourceGenerator : XmlSourceGenerator
         // Finally generate by template
         var lspModelCode = CodeGenerator.GenerateLspModel(csModel, cancellationToken);
 
-        return new KeyValuePair<string, string>[]
-        {
+        return
+        [
             new("LspModel.Generated.cs", lspModelCode),
-        };
+        ];
     }
 }

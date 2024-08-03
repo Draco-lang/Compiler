@@ -65,15 +65,11 @@ public abstract class MetadataReference
         return new MetadataReaderReference(this.MetadataReader, doc);
     }
 
-    private sealed class MetadataReaderReference : MetadataReference
+    private sealed class MetadataReaderReference(
+        MetadataReader metadataReader,
+        XmlDocument? documentation = null) : MetadataReference
     {
-        public override MetadataReader MetadataReader { get; }
-        public override XmlDocument? Documentation { get; }
-
-        public MetadataReaderReference(MetadataReader metadataReader, XmlDocument? documentation = null)
-        {
-            this.MetadataReader = metadataReader;
-            this.Documentation = documentation;
-        }
+        public override MetadataReader MetadataReader { get; } = metadataReader;
+        public override XmlDocument? Documentation { get; } = documentation;
     }
 }

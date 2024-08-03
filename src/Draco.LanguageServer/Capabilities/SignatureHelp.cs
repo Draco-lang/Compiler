@@ -10,8 +10,8 @@ internal sealed partial class DracoLanguageServer : ISignatureHelp
     public SignatureHelpRegistrationOptions SignatureHelpRegistrationOptions => new()
     {
         DocumentSelector = this.DocumentSelector,
-        TriggerCharacters = new[] { "(" },
-        RetriggerCharacters = new[] { "," },
+        TriggerCharacters = ["("],
+        RetriggerCharacters = [","],
     };
 
     public Task<SignatureHelp?> SignatureHelpAsync(SignatureHelpParams param, CancellationToken cancellationToken)

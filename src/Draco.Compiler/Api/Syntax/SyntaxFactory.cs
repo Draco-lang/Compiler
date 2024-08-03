@@ -14,22 +14,17 @@ public static partial class SyntaxFactory
 {
     // REWRITERS ///////////////////////////////////////////////////////////////
 
-    private sealed class AddLeadingTriviaRewriter : SyntaxRewriter
+    private sealed class AddLeadingTriviaRewriter(
+        IEnumerable<Internal.Syntax.SyntaxTrivia> triviaToAdd) : SyntaxRewriter
     {
         private bool firstToken = true;
-        private readonly IEnumerable<Internal.Syntax.SyntaxTrivia> triviaToAdd;
-
-        public AddLeadingTriviaRewriter(IEnumerable<Internal.Syntax.SyntaxTrivia> triviaToAdd)
-        {
-            this.triviaToAdd = triviaToAdd;
-        }
 
         public override Internal.Syntax.SyntaxToken VisitSyntaxToken(Internal.Syntax.SyntaxToken node)
         {
             if (!this.firstToken) return node;
             this.firstToken = false;
             var builder = node.ToBuilder();
-            builder.LeadingTrivia.AddRange(this.triviaToAdd);
+            builder.LeadingTrivia.AddRange(triviaToAdd);
             return builder.Build();
         }
     }

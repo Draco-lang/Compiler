@@ -15,15 +15,9 @@ namespace Draco.JsonRpc;
 /// <typeparam name="TError">The error descriptor.</typeparam>
 internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
 {
-    protected sealed class JsonRpcResponseException : Exception
+    protected sealed class JsonRpcResponseException(TError error, string message) : Exception(message)
     {
-        public TError ResponseError { get; }
-
-        public JsonRpcResponseException(TError error, string message)
-            : base(message)
-        {
-            this.ResponseError = error;
-        }
+        public TError ResponseError { get; } = error;
     }
 
     protected interface IOutgoingRequest
@@ -77,26 +71,21 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     });
 
     // Handlers
-    private readonly Dictionary<string, IJsonRpcMethodHandler> methodHandlers = new();
+    private readonly Dictionary<string, IJsonRpcMethodHandler> methodHandlers = [];
 
     // Pending requests
     private readonly ConcurrentDictionary<object, CancellationTokenSource> pendingIncomingRequests = new();
     private readonly ConcurrentDictionary<int, IOutgoingRequest> pendingOutgoingRequests = new();
-
-    // Shutdown
-    private readonly CancellationTokenSource shutdownTokenSource = new();
 
     // Communication state
     private int lastMessageId = 0;
 
     public void AddHandler(IJsonRpcMethodHandler handler) => this.methodHandlers.Add(handler.MethodName, handler);
 
-    public Task ListenAsync() => Task.WhenAll(
-        this.ReaderLoopAsync(),
-        this.WriterLoopAsync(),
-        this.ProcessorLoopAsync());
-
-    public void Shutdown() => this.shutdownTokenSource.Cancel();
+    public Task ListenAsync(CancellationToken cancellationToken = default) => Task.WhenAll(
+        this.ReaderLoopAsync(cancellationToken),
+        this.WriterLoopAsync(cancellationToken),
+        this.ProcessorLoopAsync(cancellationToken));
 
     /// <summary>
     /// Generates a new message ID.
@@ -105,13 +94,13 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     protected int NextMessageId() => Interlocked.Increment(ref this.lastMessageId);
 
     #region Message Loops
-    private async Task ReaderLoopAsync()
+    private async Task ReaderLoopAsync(CancellationToken cancellationToken)
     {
         while (true)
         {
             try
             {
-                var (message, foundMessage) = await this.ReadMessageAsync();
+                var (message, foundMessage) = await this.ReadMessageAsync(cancellationToken);
                 if (!foundMessage) break;
 
                 if (this.IsResponseMessage(message!))
@@ -120,31 +109,37 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
                 }
                 else
                 {
-                    await this.incomingMessages.Writer.WriteAsync(message!);
+                    _ = this.incomingMessages.Writer.TryWrite(message!);
                 }
             }
-            catch (OperationCanceledException oce) when (oce.CancellationToken == this.shutdownTokenSource.Token)
+            catch (OperationCanceledException oce) when (oce.CancellationToken == cancellationToken)
             {
                 break;
             }
             catch (JsonException ex)
             {
                 var error = this.CreateJsonExceptionError(ex);
-                await this.SendMessageAsync(this.CreateErrorResponseMessage(default!, error));
+                this.SendMessage(this.CreateErrorResponseMessage(default!, error));
                 continue;
             }
         }
     }
 
-    private async Task WriterLoopAsync()
+    private async Task WriterLoopAsync(CancellationToken cancellationToken)
     {
-        await foreach (var message in this.outgoingMessages.Reader.ReadAllAsync(this.shutdownTokenSource.Token))
+        try
         {
-            await this.WriteMessageAsync(message);
+            await foreach (var message in this.outgoingMessages.Reader.ReadAllAsync(cancellationToken))
+            {
+                await this.WriteMessageAsync(message, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException oce) when (oce.CancellationToken == cancellationToken)
+        {
         }
     }
 
-    private async Task ProcessorLoopAsync()
+    private async Task ProcessorLoopAsync(CancellationToken cancellationToken)
     {
         bool IsMutating(TMessage message)
         {
@@ -153,24 +148,30 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
                 && handler.Mutating;
         }
 
-        var currentTasks = new List<Task>();
-        await foreach (var message in this.incomingMessages.Reader.ReadAllAsync(this.shutdownTokenSource.Token))
+        try
         {
-            if (IsMutating(message))
+            var currentTasks = new List<Task>();
+            await foreach (var message in this.incomingMessages.Reader.ReadAllAsync(cancellationToken))
             {
-                await Task.WhenAll(currentTasks);
-                currentTasks.Clear();
+                if (IsMutating(message))
+                {
+                    await Task.WhenAll(currentTasks);
+                    currentTasks.Clear();
 
-                await this.ProcessMessageAsync(message);
+                    await this.ProcessMessageAsync(message);
+                }
+                else
+                {
+                    currentTasks.RemoveAll(t => t.IsCompleted);
+                    currentTasks.Add(this.ProcessMessageAsync(message));
+                }
             }
-            else
-            {
-                currentTasks.RemoveAll(t => t.IsCompleted);
-                currentTasks.Add(this.ProcessMessageAsync(message));
-            }
+
+            await Task.WhenAll(currentTasks);
         }
-
-        await Task.WhenAll(currentTasks);
+        catch (OperationCanceledException oce) when (oce.CancellationToken == cancellationToken)
+        {
+        }
     }
     #endregion
 
@@ -182,7 +183,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         if (this.IsRequestMessage(message))
         {
             var response = await this.ProcessIncomingRequestAsync(message);
-            await this.SendMessageAsync(response);
+            this.SendMessage(response);
         }
         else if (this.IsNotificationMessage(message))
         {
@@ -245,7 +246,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         var error = null as Exception;
         try
         {
-            result = await handler.InvokeRequest(args.ToArray());
+            result = await handler.InvokeRequest([.. args]);
         }
         catch (Exception ex)
         {
@@ -327,7 +328,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         // Actually invoke handler
         try
         {
-            await handler.InvokeNotification(args.ToArray());
+            await handler.InvokeNotification([.. args]);
         }
         catch
         {
@@ -357,15 +358,15 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         return (Task<TResponse?>)pendingReq.Task;
     }
 
-    public async Task SendNotificationAsync(string method, object? @params)
+    public Task SendNotificationAsync(string method, object? @params)
     {
         var serializedParams = JsonSerializer.SerializeToElement(@params, this.JsonSerializerOptions);
         var notification = this.CreateNotificationMessage(method, serializedParams);
-        await this.SendMessageAsync(notification);
-    }
 
-    protected async Task SendMessageAsync(TMessage message) =>
-        await this.outgoingMessages.Writer.WriteAsync(message);
+        this.SendMessage(notification);
+
+        return Task.CompletedTask;
+    }
 
     protected void SendMessage(TMessage message) =>
         this.outgoingMessages.Writer.TryWrite(message);
@@ -431,14 +432,14 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
     #endregion
 
     #region Serialization
-    private async Task<(TMessage? Message, bool Found)> ReadMessageAsync()
+    private async Task<(TMessage? Message, bool Found)> ReadMessageAsync(CancellationToken cancellationToken)
     {
         var contentLength = -1;
         var reader = this.Transport.Input;
 
         while (true)
         {
-            var result = await reader.ReadAsync(this.shutdownTokenSource.Token);
+            var result = await reader.ReadAsync(cancellationToken);
             var buffer = result.Buffer;
 
             var foundJson = this.TryParseMessage(ref buffer, ref contentLength, out var message);
@@ -513,7 +514,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         return false;
     }
 
-    private ValueTask<FlushResult> WriteMessageAsync(TMessage message)
+    private ValueTask<FlushResult> WriteMessageAsync(TMessage message, CancellationToken cancellationToken)
     {
         var writer = this.Transport.Output;
 
@@ -544,7 +545,7 @@ internal abstract class JsonRpcConnection<TMessage, TError> : IJsonRpcConnection
         }
 
         WriteData();
-        return writer.FlushAsync();
+        return writer.FlushAsync(cancellationToken);
     }
     #endregion
 

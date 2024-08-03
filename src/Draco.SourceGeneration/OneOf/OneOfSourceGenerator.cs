@@ -17,9 +17,9 @@ public sealed class OneOfSourceGenerator : XmlSourceGenerator
 
         var oneOfCode = CodeGenerator.GenerateOneOf(domainModel, cancellationToken);
 
-        return new KeyValuePair<string, string>[]
-        {
+        return
+        [
             new("OneOf.Generated.cs", oneOfCode),
-        };
+        ];
     }
 }

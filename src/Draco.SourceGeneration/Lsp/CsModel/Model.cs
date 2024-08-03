@@ -10,5 +10,5 @@ public sealed class Model
     /// <summary>
     /// The declarations of the model.
     /// </summary>
-    public IList<Declaration> Declarations { get; set; } = new List<Declaration>();
+    public IList<Declaration> Declarations { get; set; } = [];
 }

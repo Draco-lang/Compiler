@@ -9,42 +9,35 @@ internal sealed partial class SyntaxList<TNode>
     /// <summary>
     /// The builder type for a <see cref="SyntaxList{TNode}"/>.
     /// </summary>
-    public sealed class Builder : IList<TNode>
+    public sealed class Builder(ImmutableArray<TNode>.Builder underlying) : IList<TNode>
     {
         public bool IsReadOnly => false;
-        public int Count => this.builder.Count;
+        public int Count => underlying.Count;
 
         public TNode this[int index]
         {
-            get => this.builder[index];
-            set => this.builder[index] = value;
+            get => underlying[index];
+            set => underlying[index] = value;
         }
-
-        private readonly ImmutableArray<TNode>.Builder builder;
 
         public Builder()
             : this(ImmutableArray.CreateBuilder<TNode>())
         {
         }
 
-        public Builder(ImmutableArray<TNode>.Builder underlying)
-        {
-            this.builder = underlying;
-        }
-
-        public SyntaxList<TNode> ToSyntaxList() => new(this.builder.ToImmutable());
-        public void Clear() => this.builder.Clear();
-        public void Add(TNode item) => this.builder.Add(item);
-        public void AddRange(IEnumerable<TNode> items) => this.builder.AddRange(items);
-        public void Insert(int index, TNode item) => this.builder.Insert(index, item);
-        public void InsertRange(int index, IEnumerable<TNode> items) => this.builder.InsertRange(index, items);
-        public bool Remove(TNode item) => this.builder.Remove(item);
-        public void RemoveAt(int index) => this.builder.RemoveAt(index);
-        public void RemoveRange(int index, int length) => this.builder.RemoveRange(index, length);
-        public bool Contains(TNode item) => this.builder.Contains(item);
-        public int IndexOf(TNode item) => this.builder.IndexOf(item);
-        public void CopyTo(TNode[] array, int arrayIndex) => this.builder.CopyTo(array, arrayIndex);
-        public IEnumerator<TNode> GetEnumerator() => this.builder.GetEnumerator();
+        public SyntaxList<TNode> ToSyntaxList() => new(underlying.ToImmutable());
+        public void Clear() => underlying.Clear();
+        public void Add(TNode item) => underlying.Add(item);
+        public void AddRange(IEnumerable<TNode> items) => underlying.AddRange(items);
+        public void Insert(int index, TNode item) => underlying.Insert(index, item);
+        public void InsertRange(int index, IEnumerable<TNode> items) => underlying.InsertRange(index, items);
+        public bool Remove(TNode item) => underlying.Remove(item);
+        public void RemoveAt(int index) => underlying.RemoveAt(index);
+        public void RemoveRange(int index, int length) => underlying.RemoveRange(index, length);
+        public bool Contains(TNode item) => underlying.Contains(item);
+        public int IndexOf(TNode item) => underlying.IndexOf(item);
+        public void CopyTo(TNode[] array, int arrayIndex) => underlying.CopyTo(array, arrayIndex);
+        public IEnumerator<TNode> GetEnumerator() => underlying.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }
 }

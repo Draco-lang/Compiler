@@ -18,7 +18,9 @@ public sealed partial class SemanticModel
     /// <summary>
     /// Wraps another binder, filling out information about bound constructs.
     /// </summary>
-    private sealed class IncrementalBinder : Binder
+    private sealed class IncrementalBinder(
+        Binder underlyingBinder,
+        SemanticModel semanticModel) : Binder(underlyingBinder.Compilation, underlyingBinder.Parent)
     {
         // NOTE: We only use the underlying binder for the lookup logic
         // For actual binding logic, we rely on the base class implementation
@@ -26,7 +28,7 @@ public sealed partial class SemanticModel
         /// <summary>
         /// The binder being wrapped by this one.
         /// </summary>
-        public Binder UnderlyingBinder { get; }
+        public Binder UnderlyingBinder { get; } = underlyingBinder;
 
         public override Symbol? ContainingSymbol => this.UnderlyingBinder.ContainingSymbol;
 
@@ -34,21 +36,12 @@ public sealed partial class SemanticModel
 
         public override IEnumerable<Symbol> DeclaredSymbols => this.UnderlyingBinder.DeclaredSymbols;
 
-        private readonly SemanticModel semanticModel;
-
-        public IncrementalBinder(Binder underlyingBinder, SemanticModel semanticModel)
-            : base(underlyingBinder.Compilation, underlyingBinder.Parent)
-        {
-            this.UnderlyingBinder = underlyingBinder;
-            this.semanticModel = semanticModel;
-        }
-
         protected override Binder GetBinder(SyntaxNode node)
         {
             var binder = base.GetBinder(node);
             return binder is IncrementalBinder
                 ? binder
-                : new IncrementalBinder(binder, this.semanticModel);
+                : new IncrementalBinder(binder, semanticModel);
         }
 
         internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference) =>
@@ -57,12 +50,12 @@ public sealed partial class SemanticModel
         // API /////////////////////////////////////////////////////////////////
 
         public override BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics) =>
-            this.semanticModel.boundFunctions.GetOrAdd(
+            semanticModel.boundFunctions.GetOrAdd(
                 key: function,
                 valueFactory: _ => base.BindFunction(function, diagnostics));
 
         public override (Internal.Symbols.TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics) =>
-            this.semanticModel.boundGlobals.GetOrAdd(
+            semanticModel.boundGlobals.GetOrAdd(
                 key: global,
                 valueFactory: _ => base.BindGlobal(global, diagnostics));
 
@@ -85,12 +78,12 @@ public sealed partial class SemanticModel
 
         // TODO: Hack
         internal override void BindSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.Symbol symbol) =>
-            this.semanticModel.symbolMap[syntax] = symbol;
+            semanticModel.symbolMap[syntax] = symbol;
 
         internal override void BindTypeSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.TypeSymbol type)
         {
-            this.semanticModel.symbolMap[syntax] = type;
-            if (syntax.Parent is GenericExpressionSyntax) this.semanticModel.symbolMap[syntax.Parent] = type;
+            semanticModel.symbolMap[syntax] = type;
+            if (syntax.Parent is GenericExpressionSyntax) semanticModel.symbolMap[syntax.Parent] = type;
         }
 
         // Memo logic
@@ -98,24 +91,24 @@ public sealed partial class SemanticModel
         private async BindingTask<TBoundNode> MemoizeBinding<TBoundNode>(SyntaxNode syntax, ConstraintSolver constraints, Func<BindingTask<TBoundNode>> binder)
             where TBoundNode : BoundNode
         {
-            if (!this.semanticModel.boundNodeMap.TryGetValue(syntax, out var node))
+            if (!semanticModel.boundNodeMap.TryGetValue(syntax, out var node))
             {
                 node = await binder();
-                this.semanticModel.boundNodeMap.TryAdd(syntax, node);
+                semanticModel.boundNodeMap.TryAdd(syntax, node);
 
                 var symbol = ExtractSymbol(node);
                 if (symbol is not null)
                 {
                     foreach (var childSyntax in EnumerateSyntaxesWithSameSymbol(syntax))
                     {
-                        this.semanticModel.symbolMap[childSyntax] = symbol;
+                        semanticModel.symbolMap[childSyntax] = symbol;
                     }
                 }
             }
             return (TBoundNode)node;
         }
 
-        private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder) => this.semanticModel.symbolMap.GetOrAdd(
+        private Symbol BindSymbol(SyntaxNode node, Func<Symbol> binder) => semanticModel.symbolMap.GetOrAdd(
             key: node,
             valueFactory: _ => binder());
 

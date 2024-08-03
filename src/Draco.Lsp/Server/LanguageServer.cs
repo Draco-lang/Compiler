@@ -2,6 +2,7 @@ using System;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Draco.JsonRpc;
 using Draco.Lsp.Attributes;
@@ -35,20 +36,24 @@ public static class LanguageServer
     /// </summary>
     /// <param name="client">The language client.</param>
     /// <param name="server">The language server.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The task that completes when the communication is over.</returns>
-    public static async Task RunAsync(this ILanguageClient client, ILanguageServer server)
+    public static async Task RunAsync(this ILanguageClient client, ILanguageServer server, CancellationToken cancellationToken = default)
     {
         var connection = ((LanguageClientProxy)client).Connection;
 
         // Register server methods
         RegisterServerRpcMethods(server, connection);
 
+        // The lifecycle needs to be able to cancel the server too, so build a linked CTS on top of the given CT.
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
         // Register builtin server methods. In the future, we should consider making this extensible in some way.
-        var lifecycle = new LanguageServerLifecycle(server, connection);
+        var lifecycle = new LanguageServerLifecycle(server, connection, cts);
         RegisterServerRpcMethods(lifecycle, connection);
 
         // Done, now we can actually start
-        await connection.ListenAsync();
+        await connection.ListenAsync(cts.Token);
     }
 
     private static void RegisterServerRpcMethods(object target, IJsonRpcConnection connection)

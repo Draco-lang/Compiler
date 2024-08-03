@@ -103,9 +103,9 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
         _ => throw new ArgumentOutOfRangeException(nameof(declaration)),
     };
 
-    private FunctionSymbol BuildFunction(FunctionDeclaration declaration) => new SourceFunctionSymbol(this, declaration);
-    private GlobalSymbol BuildGlobal(GlobalDeclaration declaration) => new SourceGlobalSymbol(this, declaration);
-    private ModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new SourceModuleSymbol(this.DeclaringCompilation, this, declaration);
+    private SourceFunctionSymbol BuildFunction(FunctionDeclaration declaration) => new(this, declaration);
+    private SourceGlobalSymbol BuildGlobal(GlobalDeclaration declaration) => new(this, declaration);
+    private SourceModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new(this.DeclaringCompilation, this, declaration);
 
     private SymbolDocumentation BuildDocumentation() =>
         MarkdownDocumentationExtractor.Extract(this);

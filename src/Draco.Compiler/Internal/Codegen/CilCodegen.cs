@@ -50,6 +50,7 @@ internal sealed class CilCodegen
     private readonly Dictionary<IBasicBlock, LabelHandle> labels = [];
     private readonly Stackifier stackifier;
     private int treeDepth;
+    private int inlineAllocatedRegisterCount = 0;
 
     public CilCodegen(MetadataCodegen metadataCodegen, IProcedure procedure)
     {
@@ -85,7 +86,7 @@ internal sealed class CilCodegen
     private int? GetRegisterIndex(Register register)
     {
         if (SymbolEqualityComparer.Default.Equals(register.Type, WellKnownTypes.Unit)) return null;
-        if (this.stackifier.RegisterUses[register] == 0) return null;
+        if (register.Index >= 0 && this.stackifier.RegisterUses[register] == 0) return null;
         if (!this.allocatedRegisters.TryGetValue(register, out var allocatedRegister))
         {
             // NOTE: We need to offset by the number of locals
@@ -93,6 +94,13 @@ internal sealed class CilCodegen
             this.allocatedRegisters.Add(register, allocatedRegister);
         }
         return allocatedRegister;
+    }
+
+    private int? AllocateRegister(TypeSymbol type)
+    {
+        --this.inlineAllocatedRegisterCount;
+        var register = new Register(type, this.inlineAllocatedRegisterCount);
+        return this.GetRegisterIndex(register);
     }
 
     private LabelHandle GetLabel(IBasicBlock block)
@@ -472,6 +480,16 @@ internal sealed class CilCodegen
                 throw new NotImplementedException();
             }
             break;
+        case DefaultValue d:
+        {
+            var local = this.AllocateRegister(d.Type);
+            if (local is null) return;
+            this.InstructionEncoder.LoadLocalAddress(local.Value);
+            this.InstructionEncoder.OpCode(ILOpCode.Initobj);
+            this.EncodeToken(d.Type);
+            this.InstructionEncoder.LoadLocal(local.Value);
+            break;
+        }
         default:
             throw new ArgumentOutOfRangeException(nameof(operand));
         }

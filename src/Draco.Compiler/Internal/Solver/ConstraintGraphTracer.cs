@@ -7,7 +7,6 @@ using Draco.Chr.Rules;
 using Draco.Chr.Tracing;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
-using static System.Net.Mime.MediaTypeNames;
 using Constraint = Draco.Compiler.Internal.Solver.Constraints.Constraint;
 using IChrConstraint = Draco.Chr.Constraints.IConstraint;
 

@@ -93,7 +93,7 @@ internal abstract partial class Binder(Compilation compilation, Binder? parent)
         // Add assignability constraint, if needed
         if (valueTask is not null)
         {
-            _ = constraints.Assignable(
+            constraints.Assignable(
                 declaredType,
                 valueTask.GetResultType(valueSyntax, constraints, diagnostics),
                 global.DeclaringSyntax.Value!.Value);
@@ -140,7 +140,7 @@ internal abstract partial class Binder(Compilation compilation, Binder? parent)
                 template: SymbolResolutionErrors.CannotGetSetOnlyProperty,
                 location: syntax?.Location,
                 prop.FullName));
-            result = new UndefinedPropertyAccessorSymbol(prop);
+            result = new ErrorPropertyAccessorSymbol(prop);
         }
         return result;
     }
@@ -154,7 +154,7 @@ internal abstract partial class Binder(Compilation compilation, Binder? parent)
                 template: SymbolResolutionErrors.CannotSetGetOnlyProperty,
                 location: syntax?.Location,
                 prop.FullName));
-            result = new UndefinedPropertyAccessorSymbol(prop);
+            result = new ErrorPropertyAccessorSymbol(prop);
         }
         return result;
     }

@@ -18,10 +18,12 @@ public sealed class NullTracer : ITracer
     {
     }
 
-    public void Step(
-        Rule appliedRule,
+    public void BeforeMatch(Rule rule, IEnumerable<IConstraint> constraints, ConstraintStore store) { }
+    public void AfterMatch(
+        Rule rule,
         IEnumerable<IConstraint> matchedConstraints,
-        IEnumerable<IConstraint> newConstraints)
+        IEnumerable<IConstraint> newConstraints,
+        ConstraintStore store)
     {
     }
 

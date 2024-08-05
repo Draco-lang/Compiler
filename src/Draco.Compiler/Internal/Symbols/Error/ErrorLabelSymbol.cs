@@ -1,9 +1,9 @@
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// Represents an undefined, in-source label reference.
+/// Represents label reference that has an error - for example, it does not exist.
 /// </summary>
-internal sealed class UndefinedLabelSymbol(string name) : LabelSymbol
+internal sealed class ErrorLabelSymbol(string name) : LabelSymbol
 {
     public override bool IsError => true;
 

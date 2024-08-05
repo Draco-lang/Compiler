@@ -137,7 +137,7 @@ internal partial class Binder
             name,
             out _,
             syntax,
-            silent: true)));
+            allowFailure: true)));
 
         // Merge all the found functions
         var functions = GetFunctionsMerged(fromOperands.Append(fromGlobal));

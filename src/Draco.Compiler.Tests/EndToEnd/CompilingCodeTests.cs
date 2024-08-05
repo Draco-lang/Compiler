@@ -642,7 +642,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         Assert.Equal(15, x);
     }
 
-    [Fact(Skip = "regression in typesystem")]
+    [Fact]
     public void MultidimensionalArrays()
     {
         var assembly = Compile(""""
@@ -694,4 +694,13 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var x = Invoke<int>(assembly, "zero");
         Assert.Equal(0, x);
     }
+
+    [Fact]
+    public void ArrayCreationWithGenericArgument() => Compile("""
+        func main() {
+            var memory = Array<int32>(1);
+            memory[0] = 1;
+            memory[0] = 1;
+        }
+        """);
 }

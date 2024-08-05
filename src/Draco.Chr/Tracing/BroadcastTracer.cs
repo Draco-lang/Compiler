@@ -12,6 +12,11 @@ public sealed class BroadcastTracer(IEnumerable<ITracer> tracers) : ITracer
 {
     private readonly List<ITracer> tracers = tracers.ToList();
 
+    public BroadcastTracer(params ITracer[] tracers)
+        : this(tracers.AsEnumerable())
+    {
+    }
+
     public void Start(ConstraintStore store)
     {
         foreach (var tracer in this.tracers) tracer.Start(store);
@@ -22,9 +27,18 @@ public sealed class BroadcastTracer(IEnumerable<ITracer> tracers) : ITracer
         foreach (var tracer in this.tracers) tracer.End(store);
     }
 
-    public void Step(Rule appliedRule, IEnumerable<IConstraint> matchedConstraints, IEnumerable<IConstraint> newConstraints)
+    public void BeforeMatch(Rule rule, IEnumerable<IConstraint> constraints, ConstraintStore store)
     {
-        foreach (var tracer in this.tracers) tracer.Step(appliedRule, matchedConstraints, newConstraints);
+        foreach (var tracer in this.tracers) tracer.BeforeMatch(rule, constraints, store);
+    }
+
+    public void AfterMatch(
+        Rule rule,
+        IEnumerable<IConstraint> matchedConstraints,
+        IEnumerable<IConstraint> newConstraints,
+        ConstraintStore store)
+    {
+        foreach (var tracer in this.tracers) tracer.AfterMatch(rule, matchedConstraints, newConstraints, store);
     }
 
     public void Flush()

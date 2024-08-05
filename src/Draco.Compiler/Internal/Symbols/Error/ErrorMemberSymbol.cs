@@ -1,14 +1,14 @@
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// Represents an undefined member reference.
+/// Represents a member reference with errors.
 /// </summary>
-internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol, IMemberSymbol
+internal sealed class ErrorMemberSymbol : Symbol, ITypedSymbol, IMemberSymbol
 {
     /// <summary>
     /// A singleton instance to use.
     /// </summary>
-    public static UndefinedMemberSymbol Instance { get; } = new();
+    public static ErrorMemberSymbol Instance { get; } = new();
 
     public override bool IsError => true;
 
@@ -16,7 +16,7 @@ internal sealed class UndefinedMemberSymbol : Symbol, ITypedSymbol, IMemberSymbo
 
     public bool IsStatic => true;
 
-    private UndefinedMemberSymbol()
+    private ErrorMemberSymbol()
     {
     }
 

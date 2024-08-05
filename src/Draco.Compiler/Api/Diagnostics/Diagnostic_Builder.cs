@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using Draco.Compiler.Internal.Solver;
 
 namespace Draco.Compiler.Api.Diagnostics;
 
@@ -42,8 +43,7 @@ public sealed partial class Diagnostic
                 template: this.Template,
                 location: this.Location,
                 formatArgs: this.FormatArgs ?? [],
-                relatedInformation: this.RelatedInformation?.ToImmutable()
-                                 ?? []);
+                relatedInformation: this.RelatedInformation?.ToImmutable() ?? []);
             return true;
         }
 
@@ -57,7 +57,7 @@ public sealed partial class Diagnostic
             return result;
         }
 
-        public Builder WithTemplate(DiagnosticTemplate template)
+        public Builder WithTemplate(DiagnosticTemplate? template)
         {
             this.Template = template;
             return this;
@@ -72,6 +72,12 @@ public sealed partial class Diagnostic
         public Builder WithLocation(Location location)
         {
             this.Location = location;
+            return this;
+        }
+
+        internal Builder WithLocation(ConstraintLocator? constraintLocator)
+        {
+            constraintLocator?.Locate(this);
             return this;
         }
 

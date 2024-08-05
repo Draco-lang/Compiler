@@ -1,21 +1,24 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Utilities;
 
-namespace Draco.Compiler.Internal.Solver;
+namespace Draco.Compiler.Internal.Solver.Constraints;
 
 /// <summary>
 /// Represents a callability constraint for indirect calls.
 /// </summary>
-internal sealed class CallConstraint(
+/// <param name="locator">The locator of the constraint.</param>
+/// <param name="calledType">The called expression type.</param>
+/// <param name="arguments">The arguments the function was called with.</param>
+/// <param name="returnType">The return type of the call.</param>
+internal sealed class Callable(
+    ConstraintLocator? locator,
     TypeSymbol calledType,
     ImmutableArray<Argument> arguments,
-    TypeSymbol returnType,
-    ConstraintLocator locator) : Constraint<Unit>(locator)
+    TypeSymbol returnType) : Constraint(locator)
 {
     /// <summary>
-    /// The called expression type.
+    /// The type of the called expression.
     /// </summary>
     public TypeSymbol CalledType { get; } = calledType;
 
@@ -28,7 +31,4 @@ internal sealed class CallConstraint(
     /// The return type of the call.
     /// </summary>
     public TypeSymbol ReturnType { get; } = returnType;
-
-    public override string ToString() =>
-        $"Call(function: {this.CalledType}, args: [{string.Join(", ", this.Arguments)}]) => {this.ReturnType}";
 }

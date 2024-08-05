@@ -1,12 +1,12 @@
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// Represents an undefined, in-source value reference.
+/// Represents a faulty in-source value reference - like a local variable.
 /// </summary>
-internal sealed class UndefinedValueSymbol(string name) : Symbol, ITypedSymbol
+internal sealed class ErrorValueSymbol(string name) : Symbol, ITypedSymbol
 {
     public override bool IsError => true;
-    public override Symbol? ContainingSymbol => throw new System.NotImplementedException();
+    public override Symbol? ContainingSymbol => null;
 
     public override string Name { get; } = name;
 

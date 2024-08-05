@@ -48,6 +48,9 @@ internal sealed class DotGraphBuilder<TVertex>
             return this;
         }
 
+        public VertexBuilder WithHtmlAttribute(string name, string htmlCode) =>
+            this.WithAttribute(name, new HtmlCode(htmlCode));
+
         public VertexBuilder WithShape(DotAttribs.Shape shape) => this.WithAttribute("shape", shape);
         public VertexBuilder WithLabel(string? value) => this.WithAttribute("label", value);
         public VertexBuilder WithXLabel(string? value) => this.WithAttribute("xlabel", value);
@@ -70,13 +73,16 @@ internal sealed class DotGraphBuilder<TVertex>
 
         public EdgeBuilder WithShape(DotAttribs.Shape shape) => this.WithAttribute("shape", shape);
         public EdgeBuilder WithLabel(string? value) => this.WithAttribute("label", value);
+        public EdgeBuilder WithHeadPort(string value) => this.WithAttribute("headport", value);
+        public EdgeBuilder WithTailPort(string value) => this.WithAttribute("tailport", value);
     }
 
     private const string indentation = "  ";
 
     internal sealed record class VertexInfo(int Id, Dictionary<string, object> Attributes);
     internal sealed record class EdgeInfo(Dictionary<string, object> Attributes);
-    private sealed record class HtmlText(string Html);
+
+    private sealed record class HtmlCode(string Html);
 
     private readonly Dictionary<string, object> attributes = [];
     private readonly VertexInfo allVertices = new(-1, []);
@@ -119,8 +125,6 @@ internal sealed class DotGraphBuilder<TVertex>
         }
         return infos;
     }
-
-    public object Html(string html) => new HtmlText(html);
 
     public DotGraphBuilder<TVertex> WithName(string name)
     {
@@ -250,7 +254,7 @@ internal sealed class DotGraphBuilder<TVertex>
     {
         bool b => b ? "true" : "false",
         string s => $"\"{StringUtils.Unescape(s)}\"",
-        HtmlText t => $"<{t.Html}>",
+        HtmlCode t => $"<{t.Html}>",
         DotAttribs.Shape s => s.ToString().ToLower(),
         DotAttribs.RankDir d => d switch
         {

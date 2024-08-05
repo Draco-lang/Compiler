@@ -1,5 +1,6 @@
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Solver.Constraints;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -27,13 +28,19 @@ internal abstract class ConstraintLocator
     /// </summary>
     /// <param name="constraint">The constraint to base the locator on.</param>
     /// <returns>The locator that will point point wherever the locator of the constraint would point to.</returns>
-    public static ConstraintLocator Constraint(IConstraint constraint) => new ReferenceConstraintLocator(constraint);
+    public static ConstraintLocator Constraint(Constraint constraint) => new ReferenceConstraintLocator(constraint);
 
     /// <summary>
     /// Locates information for the constraint.
     /// </summary>
     /// <param name="diagnostic">The diagnostic builder to help the location for.</param>
     public abstract void Locate(Diagnostic.Builder diagnostic);
+
+    /// <summary>
+    /// Attempts to retrieve the syntax node that the locator points to.
+    /// </summary>
+    /// <returns>The referenced syntax node.</returns>
+    public abstract SyntaxNode? GetReferencedSyntax();
 
     /// <summary>
     /// Wraps the constraint locator to provide additional information.
@@ -61,18 +68,21 @@ internal abstract class ConstraintLocator
     private sealed class NullConstraintLocator : ConstraintLocator
     {
         public override void Locate(Diagnostic.Builder diagnostic) { }
+        public override SyntaxNode? GetReferencedSyntax() => null;
     }
 
     private sealed class SyntaxConstraintLocator(SyntaxNode syntax) : ConstraintLocator
     {
         public override void Locate(Diagnostic.Builder diagnostic) =>
             diagnostic.WithLocation(syntax.Location);
+        public override SyntaxNode? GetReferencedSyntax() => syntax;
     }
 
-    private sealed class ReferenceConstraintLocator(IConstraint constraint) : ConstraintLocator
+    private sealed class ReferenceConstraintLocator(Constraint constraint) : ConstraintLocator
     {
         public override void Locate(Diagnostic.Builder diagnostic) =>
-            constraint.Locator.Locate(diagnostic);
+            constraint.Locator?.Locate(diagnostic);
+        public override SyntaxNode? GetReferencedSyntax() => constraint.Locator?.GetReferencedSyntax();
     }
 
     private sealed class WithRelatedInfoConstraintLocator(
@@ -84,5 +94,7 @@ internal abstract class ConstraintLocator
             underlying.Locate(diagnostic);
             diagnostic.WithRelatedInformation(relatedInfo);
         }
+
+        public override SyntaxNode? GetReferencedSyntax() => underlying.GetReferencedSyntax();
     }
 }

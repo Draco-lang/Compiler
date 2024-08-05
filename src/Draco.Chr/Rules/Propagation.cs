@@ -10,24 +10,27 @@ namespace Draco.Chr.Rules;
 /// </summary>
 public sealed class Propagation : Rule
 {
-    public override bool SaveHistory => true;
+    public override bool SaveHistory { get; }
 
     private GuardDelegate guard = _ => true;
     private BodyDelegate body = (_, _) => { };
 
-    public Propagation(int headCount)
+    public Propagation(int headCount, bool saveHistory)
         : base(headCount)
     {
+        this.SaveHistory = saveHistory;
     }
 
-    public Propagation(ImmutableArray<Type> headTypes)
+    public Propagation(ImmutableArray<Type> headTypes, bool saveHistory)
         : base(headTypes)
     {
+        this.SaveHistory = saveHistory;
     }
 
-    public Propagation(ImmutableArray<Head> headDefinitions)
+    public Propagation(ImmutableArray<Head> headDefinitions, bool saveHistory)
         : base(headDefinitions)
     {
+        this.SaveHistory = saveHistory;
     }
 
     public override bool Accepts(IReadOnlyList<IConstraint> constraints) =>

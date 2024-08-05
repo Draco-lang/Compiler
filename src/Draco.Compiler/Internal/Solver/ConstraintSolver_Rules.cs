@@ -1,388 +1,409 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using Draco.Chr.Constraints;
+using Draco.Chr.Rules;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver.Constraints;
 using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using static Draco.Chr.Rules.RuleFactory;
 
 namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
-    private bool ApplyRules(DiagnosticBag? diagnostics)
-    {
-        if (this.TryDequeue<SameTypeConstraint>(out var sameType))
-        {
-            this.HandleRule(sameType, diagnostics);
-            return true;
-        }
-
-        if (this.TryDequeue<AssignableConstraint>(out var assignable, a => a.TargetType.IsGroundType && a.AssignedType.IsGroundType))
-        {
-            this.HandleRule(assignable, diagnostics);
-            return true;
-        }
-
-        if (this.TryDequeue<CommonTypeConstraint>(out var common, c => c.AlternativeTypes.All(t => t.IsGroundType)))
-        {
-            this.HandleRule(common, diagnostics);
-            return true;
-        }
-
-        if (this.TryDequeue<MemberConstraint>(out var member, m => !m.Accessed.Substitution.IsTypeVariable))
-        {
-            this.HandleRule(member, diagnostics);
-            return true;
-        }
-
-        // NOTE: Await constraints used to be here, maybe yield here?
-
-        foreach (var overload in this.Enumerate<OverloadConstraint>())
-        {
-            this.HandleRule(overload, diagnostics);
-            if (!overload.CompletionSource.IsCompleted) continue;
-
-            this.Remove(overload);
-            return true;
-        }
-
-        foreach (var call in this.Enumerate<CallConstraint>(c => !c.CalledType.Substitution.IsTypeVariable))
-        {
-            this.HandleRule(call, diagnostics);
-            if (!call.CompletionSource.IsCompleted) continue;
-
-            this.Remove(call);
-            return true;
-        }
-
-        if (this.TryDequeue<AssignableConstraint>(out assignable))
-        {
-            // See if there are other assignments
-            var assignmentsWithSameTarget = this
-                .Enumerate<AssignableConstraint>(a => SymbolEqualityComparer.AllowTypeVariables.Equals(assignable.TargetType, a.TargetType))
-                .ToList();
-            if (assignmentsWithSameTarget.Count == 0)
+    private IEnumerable<Rule> ConstructRules(DiagnosticBag diagnostics) => [
+        // Trivial same-type constraint, unify all
+        Simplification(typeof(Same))
+            .Body((ConstraintStore store, Same same) =>
             {
-                // No, assume same type
+                for (var i = 1; i < same.Types.Length; ++i)
+                {
+                    if (Unify(same.Types[0], same.Types[i])) continue;
+                    // Type-mismatch
+                    same.ReportDiagnostic(diagnostics, builder => builder
+                        .WithFormatArgs(same.Types[0].Substitution, same.Types[i].Substitution));
+                    break;
+                }
+            })
+            .Named("same"),
+
+        // Assignable can be resolved directly, if both types are ground-types
+        Simplification(typeof(Assignable))
+            .Guard((Assignable assignable) => assignable.TargetType.IsGroundType
+                                           && assignable.AssignedType.IsGroundType)
+            .Body((ConstraintStore store, Assignable assignable) =>
+            {
+                if (SymbolEqualityComparer.Default.IsBaseOf(assignable.TargetType, assignable.AssignedType))
+                {
+                    // Ok
+                    return;
+                }
+                // Error
+                assignable.ReportDiagnostic(diagnostics, diag => diag
+                    .WithFormatArgs(assignable.TargetType.Substitution, assignable.AssignedType.Substitution));
+            })
+            .Named("assignable"),
+
+        // If all types are ground-types, common-type constraints are trivial
+        Simplification(typeof(CommonAncestor))
+            .Guard((CommonAncestor common) => common.AlternativeTypes.All(t => t.IsGroundType))
+            .Body((ConstraintStore store, CommonAncestor common) =>
+            {
+                foreach (var type in common.AlternativeTypes)
+                {
+                    if (!common.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t))) continue;
+                    // Found a good common type
+                    UnifyAsserted(common.CommonType, type);
+                    return;
+                }
+                // No common type found
+                common.ReportDiagnostic(diagnostics, builder => builder
+                    .WithFormatArgs(string.Join(", ", common.AlternativeTypes)));
+                // Stop cascading uninferred type
+                UnifyAsserted(common.CommonType, WellKnownTypes.ErrorType);
+            })
+            .Named("common_ancestor"),
+
+        // Member constraints are trivial, if the receiver is a ground-type
+        Simplification(typeof(Member))
+            .Guard((Member member) => !member.Receiver.Substitution.IsTypeVariable)
+            .Body((ConstraintStore store, Member member) =>
+            {
+                var accessed = member.Receiver.Substitution;
+                // Don't propagate type errors
+                if (accessed.IsError)
+                {
+                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
+                    return;
+                }
+
+                // Not a type variable, we can look into members
+                var membersWithName = accessed.Members
+                    .Where(m => m.Name == member.MemberName)
+                    .ToImmutableArray();
+                if (membersWithName.Length == 0)
+                {
+                    // We have special member constraints that are created for operator lookup
+                    // They can fail when we try to lookup operators for things like int32, which is defined globally
+                    // NOTE: We might want to inject these operators into the target types in the future instead
+                    if (!member.AllowFailure)
+                    {
+                        // No such member, error
+                        member.ReportDiagnostic(diagnostics, builder => builder
+                            .WithFormatArgs(member.MemberName, accessed));
+                    }
+                    // We still provide a single error symbol
+                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
+                    return;
+                }
+                if (membersWithName.Length == 1)
+                {
+                    // One member, we know what type the member type is
+                    var memberType = ((ITypedSymbol)membersWithName[0]).Type;
+                    // NOTE: There used to be an assignable constraint here
+                    // But I believe the constraint should strictly stick to its semantics
+                    // And just provide the member type as is
+                    UnifyAsserted(member.MemberType, memberType);
+                    member.CompletionSource.SetResult(membersWithName[0]);
+                    return;
+                }
+                // More than one, the member constraint is fine with multiple members but we don't know the member type
+                {
+                    // All must be functions, otherwise we have bigger problems
+                    // TODO: Can this assertion fail? Like in a faulty module decl?
+                    Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
+                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
+                    member.CompletionSource.SetResult(overload);
+                }
+            })
+            .Named("member"),
+
+        // Indexer constraints are trivial, if the receiver is a ground-type
+        Simplification(typeof(Indexer))
+            .Guard((Indexer indexer) => !indexer.Receiver.Substitution.IsTypeVariable)
+            .Body((ConstraintStore store, Indexer indexer) =>
+            {
+                var accessed = indexer.Receiver.Substitution;
+                // Don't propagate type errors
+                if (accessed.IsError)
+                {
+                    UnifyAsserted(indexer.ElementType, WellKnownTypes.ErrorType);
+                    // Best-effort shape approximation
+                    var errorSymbol = indexer.IsGetter
+                        ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
+                        : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
+                    indexer.CompletionSource.SetResult(errorSymbol);
+                    return;
+                }
+
+                // Not a type variable, we can look into members
+                var indexers = accessed.Members
+                    .OfType<PropertySymbol>()
+                    .Where(p => p.IsIndexer)
+                    .Select(p => indexer.IsGetter ? p.Getter : p.Setter)
+                    .OfType<FunctionSymbol>()
+                    .ToImmutableArray();
+                if (indexers.Length == 0)
+                {
+                    indexer.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(indexer.IsGetter
+                            ? SymbolResolutionErrors.NoGettableIndexerInType
+                            : SymbolResolutionErrors.NoSettableIndexerInType)
+                        .WithFormatArgs(accessed));
+
+                    UnifyAsserted(indexer.ElementType, WellKnownTypes.ErrorType);
+                    // Best-effort shape approximation
+                    var errorSymbol = indexer.IsGetter
+                        ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
+                        : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
+                    indexer.CompletionSource.SetResult(errorSymbol);
+                    return;
+                }
+
+                if (indexer.IsGetter)
+                {
+                    // Getter, elementType is return type
+                    store.Add(new Overload(
+                        locator: ConstraintLocator.Constraint(indexer),
+                        functionName: "operator[]",
+                        candidates: OverloadCandidateSet.Create(indexers, indexer.Indices),
+                        returnType: indexer.ElementType)
+                    {
+                        // Important, we propagate the completion source
+                        CompletionSource = indexer.CompletionSource,
+                    });
+                }
+                else
+                {
+                    // Setter
+                    // We allocate a type var for the return type, but we don't care about it
+                    var returnType = this.AllocateTypeVariable();
+                    store.Add(new Overload(
+                        locator: ConstraintLocator.Constraint(indexer),
+                        functionName: "operator[]",
+                        candidates: OverloadCandidateSet.Create(
+                            indexers,
+                            // TODO: We pass in null for the value syntax...
+                            indexer.Indices.Append(this.Arg(null, indexer.ElementType))),
+                        returnType: returnType)
+                    {
+                        // Important, we propagate the completion source
+                        CompletionSource = indexer.CompletionSource,
+                    });
+                }
+            })
+            .Named("indexer"),
+
+        // A callable can be resolved directly, if the called type is not a type-variable
+        Simplification(typeof(Callable))
+            .Guard((Callable callable) => !callable.CalledType.Substitution.IsTypeVariable)
+            .Body((ConstraintStore store, Callable callable) =>
+            {
+                var called = callable.CalledType.Substitution;
+                if (called.IsError)
+                {
+                    // Don't propagate errors
+                    UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);
+                    return;
+                }
+
+                // We can now check if it's a function
+                if (called is not FunctionTypeSymbol functionType)
+                {
+                    // Error
+                    UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);
+                    callable.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.CallNonFunction)
+                        .WithFormatArgs(called));
+                    return;
+                }
+
+                // It's a function
+                // We can merge the return type
+                UnifyAsserted(callable.ReturnType, functionType.ReturnType);
+
+                // Check if it has the same number of args
+                if (functionType.Parameters.Length != callable.Arguments.Length)
+                {
+                    // Error
+                    callable.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                        .WithFormatArgs(
+                            functionType,
+                            this.MakeMismatchedFunctionType(callable.Arguments, functionType.ReturnType)));
+                    return;
+                }
+
+                // Start scoring args
+                var candidate = CallCandidate.Create(functionType);
+                candidate.Refine(callable.Arguments);
+
+                if (candidate.IsEliminated)
+                {
+                    // Error
+                    callable.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.TypeMismatch)
+                        .WithFormatArgs(
+                            functionType,
+                            this.MakeMismatchedFunctionType(callable.Arguments, functionType.ReturnType)));
+                    return;
+                }
+
+                // We are done
+                foreach (var (param, arg) in functionType.Parameters.Zip(callable.Arguments))
+                {
+                    AssignParameterToArgument(store, param.Type, arg);
+                }
+            })
+            .Named("callable"),
+
+        // If an overload constraint can be advanced, do that
+        // NOTE: We don't save history to allow applying multiple times
+        Propagation(saveHistory: false, typeof(Overload))
+            .Guard((Overload overload) => !overload.Candidates.IsWellDefined && overload.Candidates.Refine())
+            .Named("overload_step"),
+
+        // If overload constraints are unambiguous, we can resolve them directly
+        Simplification(typeof(Overload))
+            .Guard((Overload overload) => overload.Candidates.IsWellDefined)
+            .Body((ConstraintStore store, Overload overload) =>
+            {
+                // Call for safety
+                overload.Candidates.Refine();
+
+                var candidates = overload.Candidates.Dominators;
+                if (candidates.Length == 0)
+                {
+                    // Could not resolve, error
+                    UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
+                    // Best-effort shape approximation
+                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
+                    overload.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
+                        .WithFormatArgs(overload.FunctionName));
+                    overload.CompletionSource.SetResult(errorSymbol);
+                    return;
+                }
+
+                if (candidates.Length > 1)
+                {
+                    // Ambiguity, error
+                    // Best-effort shape approximation
+                    UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
+                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
+                    overload.ReportDiagnostic(diagnostics, diag => diag
+                        .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
+                        .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));
+                    overload.CompletionSource.SetResult(errorSymbol);
+                    return;
+                }
+
+                // Resolved fine, choose the symbol, which might generic-instantiate it
+                var chosen = this.GenericInstantiateIfNeeded(candidates.Single().Data);
+                // Inference
+                if (chosen.IsVariadic)
+                {
+                    if (!BinderFacts.TryGetVariadicElementType(chosen.Parameters[^1].Type, out var elementType))
+                    {
+                        // Should not happen
+                        throw new InvalidOperationException();
+                    }
+                    var nonVariadicPairs = chosen.Parameters
+                        .SkipLast(1)
+                        .Zip(overload.Candidates.Arguments);
+                    var variadicPairs = overload.Candidates.Arguments
+                        .Skip(chosen.Parameters.Length - 1)
+                        .Select(a => (ParameterType: elementType, ArgumentType: a));
+                    // Non-variadic part
+                    foreach (var (param, arg) in nonVariadicPairs) AssignParameterToArgument(store, param.Type, arg);
+                    // Variadic part
+                    foreach (var (paramType, arg) in variadicPairs) AssignParameterToArgument(store, paramType, arg);
+                }
+                else
+                {
+                    foreach (var (param, arg) in chosen.Parameters.Zip(overload.Candidates.Arguments))
+                    {
+                        AssignParameterToArgument(store, param.Type, arg);
+                    }
+                }
+                // NOTE: This used to be an assignment, but again, I don't think that's in the scope of this constraint
+                // In all cases, return type is simple
+                UnifyAsserted(overload.ReturnType, chosen.ReturnType);
+                // Resolve promise
+                overload.CompletionSource.SetResult(chosen);
+            })
+            .Named("overload"),
+
+        // As a last resort, we try to drive forward the solver by trying to merge assignable constraints with the same target
+        // This is a common situation for things like this:
+        //
+        // var x = Derived();
+        // x = Base();
+        //
+        // In this case we try to search for the common type of Derived and Base, then assign that
+        Simplification(typeof(Assignable), typeof(Assignable))
+            .Guard((Assignable a1, Assignable a2) =>
+                SymbolEqualityComparer.AllowTypeVariables.Equals(a1.TargetType, a2.TargetType))
+            .Body((ConstraintStore store, Assignable a1, Assignable a2) =>
+            {
+                var targetType = a1.TargetType;
+                var commonType = this.AllocateTypeVariable();
+                store.Add(new CommonAncestor(
+                    locator: ConstraintLocator.Constraint(a2),
+                    commonType: commonType,
+                    alternativeTypes: [a1.AssignedType, a2.AssignedType]));
+                store.Add(new Assignable(
+                    locator: ConstraintLocator.Constraint(a2),
+                    targetType: targetType,
+                    assignedType: commonType));
+            })
+            .Named("merge_assignables"),
+
+        // As a last-last effort, we assume that a singular assignment means exact matching types
+        Simplification(typeof(Assignable))
+            .Body((ConstraintStore store, Assignable assignable) =>
+            {
+                // TODO: Is asserted correct here?
+                // Maybe just for type-variables?
                 UnifyAsserted(assignable.TargetType, assignable.AssignedType);
-                return true;
-            }
+            })
+            .Named("sole_assignable"),
 
-            // There are multiple constraints targeting the same type
-            // Remove them
-            foreach (var a in assignmentsWithSameTarget) this.Remove(a);
-
-            // Create a common-type constraint for them
-            var commonType = this.AllocateTypeVariable();
-            var alternatives = assignmentsWithSameTarget
-                .Select(a => a.AssignedType)
-                .Append(assignable.AssignedType)
-                .ToImmutableArray();
-
-            // New assignable
-            this.CommonType(commonType, alternatives, ConstraintLocator.Constraint(assignable));
-            this.Assignable(assignable.TargetType, commonType, ConstraintLocator.Constraint(assignable));
-            return true;
-        }
-
-        foreach (var common2 in this.Enumerate<CommonTypeConstraint>())
-        {
-            var commonTypeVars = common2.AlternativeTypes
-                .Where(t => t.Substitution.IsTypeVariable)
-                .ToImmutableArray();
-            if (commonTypeVars.Length == 0) continue;
-            var commonNonTypeVars = common2.AlternativeTypes
-                .Where(t => !t.Substitution.IsTypeVariable)
-                .ToImmutableHashSet(SymbolEqualityComparer.AllowTypeVariables);
-            if (commonNonTypeVars.Count != 1) continue;
-
-            // NOTE: We do NOT remove the constraint, will be resolved in a future iteration
-            // Only one non-type-var, the rest are type variables
-            var nonTypeVar = commonNonTypeVars.Single();
-            foreach (var tv in commonTypeVars) UnifyAsserted(tv, nonTypeVar);
-            return true;
-        }
-
-        return false;
-    }
-
-    private void FailRemainingRules()
-    {
-        // We unify type variables with the error type
-        foreach (var typeVar in this.typeVariables)
-        {
-            var unwrapped = typeVar.Substitution;
-            if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
-        }
-
-        while (this.constraints.Count > 0)
-        {
-            // Apply rules once
-            if (!this.ApplyRules(null)) break;
-        }
-    }
-
-    private void HandleRule(SameTypeConstraint constraint, DiagnosticBag? diagnostics)
-    {
-        for (var i = 1; i < constraint.Types.Length; ++i)
-        {
-            if (!Unify(constraint.Types[0], constraint.Types[i]))
+        // As a last-effort, if we see a common ancestor constraint with a single non-type-var, we
+        // assume that the common type is the non-type-var
+        // We also substitute all the type-vars with the common type
+        Simplification(typeof(CommonAncestor))
+            .Guard((CommonAncestor common) =>
+                common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) == 1
+             && common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) == common.AlternativeTypes.Length - 1)
+            .Body((ConstraintStore store, CommonAncestor common) =>
             {
-                // Type-mismatch
-                constraint.ReportDiagnostic(diagnostics, diag => diag
-                    .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                    .WithFormatArgs(constraint.Types[0].Substitution, constraint.Types[i].Substitution));
-                constraint.CompletionSource.SetResult(default);
-                return;
-            }
-        }
+                var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
+                var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
+                foreach (var typeVar in typeVars) UnifyAsserted(typeVar, nonTypeVar);
+                UnifyAsserted(common.CommonType, nonTypeVar);
+            })
+            .Named("most_specific_common_ancestor"),
 
-        // Successful unification
-        constraint.CompletionSource.SetResult(default);
-    }
-
-    private void HandleRule(AssignableConstraint constraint, DiagnosticBag? diagnostics)
-    {
-        if (!SymbolEqualityComparer.Default.IsBaseOf(constraint.TargetType, constraint.AssignedType))
-        {
-            // Type-mismatch
-            constraint.ReportDiagnostic(diagnostics, diag => diag
-                .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                .WithFormatArgs(constraint.TargetType.Substitution, constraint.AssignedType.Substitution));
-            constraint.CompletionSource.SetResult(default);
-            return;
-        }
-
-        // Ok
-        constraint.CompletionSource.SetResult(default);
-    }
-
-    private void HandleRule(CommonTypeConstraint constraint, DiagnosticBag? diagnostics)
-    {
-        foreach (var type in constraint.AlternativeTypes)
-        {
-            if (constraint.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t)))
+        // If the target type of common ancestor is a concrete type, we can try to unify all non-concrete types
+        Simplification(typeof(CommonAncestor))
+            .Guard((CommonAncestor common) => common.CommonType.Substitution.IsGroundType)
+            .Body((ConstraintStore store, CommonAncestor common) =>
             {
-                // Found a good common type
-                UnifyAsserted(constraint.CommonType, type);
-                constraint.CompletionSource.SetResult(default);
-                return;
-            }
-        }
-
-        // No common type
-        constraint.ReportDiagnostic(diagnostics, diag => diag
-            .WithTemplate(TypeCheckingErrors.NoCommonType)
-            .WithFormatArgs(string.Join(", ", constraint.AlternativeTypes)));
-        UnifyAsserted(constraint.CommonType, WellKnownTypes.ErrorType);
-        constraint.CompletionSource.SetResult(default);
-    }
-
-    private void HandleRule(MemberConstraint constraint, DiagnosticBag? diagnostics)
-    {
-        var accessed = constraint.Accessed.Substitution;
-        // We can't advance on type variables
-        if (accessed.IsTypeVariable)
-        {
-            throw new InvalidOperationException("rule handling for member constraint called prematurely");
-        }
-
-        // Don't propagate type errors
-        if (accessed.IsError)
-        {
-            Unify(constraint.MemberType, WellKnownTypes.ErrorType);
-            constraint.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);
-            return;
-        }
-
-        // Not a type variable, we can look into members
-        var membersWithName = accessed.Members
-            .Where(m => m.Name == constraint.MemberName)
-            .ToImmutableArray();
-
-        if (membersWithName.Length == 0)
-        {
-            // No such member, error
-            constraint.ReportDiagnostic(diagnostics, diag => diag
-                .WithTemplate(SymbolResolutionErrors.MemberNotFound)
-                .WithFormatArgs(constraint.MemberName, accessed));
-            // We still provide a single error symbol
-            UnifyAsserted(constraint.MemberType, WellKnownTypes.ErrorType);
-            constraint.CompletionSource.SetResult(UndefinedMemberSymbol.Instance);
-            return;
-        }
-
-        if (membersWithName.Length == 1)
-        {
-            // One member, we know what type the member type is
-            var memberType = ((ITypedSymbol)membersWithName[0]).Type;
-            var assignablePromise = this.Assignable(constraint.MemberType, memberType, ConstraintLocator.Constraint(constraint));
-            constraint.CompletionSource.SetResult(membersWithName[0]);
-            return;
-        }
-
-        // More than one, the member constraint is fine with multiple members but we don't know the member type
-        {
-            // All must be functions, otherwise we have bigger problems
-            // TODO: Can this assertion fail? Like in a faulty module decl?
-            Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
-            UnifyAsserted(constraint.MemberType, WellKnownTypes.ErrorType);
-            var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
-            constraint.CompletionSource.SetResult(overload);
-        }
-    }
-
-    private void HandleRule(OverloadConstraint constraint, DiagnosticBag? diagnostics)
-    {
-        var functionName = constraint.Name;
-
-        var candidateSet = constraint.CandidateSet;
-        candidateSet.Refine();
-        // If it's not well-defined, we can't advance
-        if (!candidateSet.IsWellDefined) return;
-
-        // We have all candidates well-defined, find the absolute dominator
-        if (candidateSet.Count == 0)
-        {
-            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
-            // Best-effort shape approximation
-            var errorSymbol = new NoOverloadFunctionSymbol(candidateSet.Arguments.Length);
-            constraint.ReportDiagnostic(diagnostics, diag => diag
-                .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
-                .WithFormatArgs(functionName));
-            constraint.CompletionSource.SetResult(errorSymbol);
-            return;
-        }
-
-        // We have one or more, find the max dominator
-        var dominatingCandidates = CallScore
-            .FindDominatorsBy(candidateSet, c => c.Score)
-            .ToImmutableArray();
-        if (dominatingCandidates.Length == 1)
-        {
-            // Resolved fine, choose the symbol, which might generic-instantiate it
-            var chosen = this.ChooseSymbol(dominatingCandidates[0].Data);
-
-            // Inference
-            if (chosen.IsVariadic)
-            {
-                if (!BinderFacts.TryGetVariadicElementType(chosen.Parameters[^1].Type, out var elementType))
-                {
-                    // Should not happen
-                    throw new InvalidOperationException();
-                }
-                var nonVariadicPairs = chosen.Parameters
-                    .SkipLast(1)
-                    .Zip(constraint.Arguments);
-                var variadicPairs = constraint.Arguments
-                    .Skip(chosen.Parameters.Length - 1)
-                    .Select(a => (ParameterType: elementType, ArgumentType: a));
-                // Non-variadic part
-                foreach (var (param, arg) in nonVariadicPairs) this.UnifyParameterWithArgument(param.Type, arg);
-                // Variadic part
-                foreach (var (paramType, arg) in variadicPairs) this.UnifyParameterWithArgument(paramType, arg);
-            }
-            else
-            {
-                foreach (var (param, arg) in chosen.Parameters.Zip(constraint.Arguments))
-                {
-                    this.UnifyParameterWithArgument(param.Type, arg);
-                }
-            }
-            // In all cases, return type is simple, it's an assignment
-            var returnTypePromise = this.Assignable(constraint.ReturnType, chosen.ReturnType, ConstraintLocator.Constraint(constraint));
-            // Resolve promise
-            constraint.CompletionSource.SetResult(chosen);
-        }
-        else
-        {
-            // Best-effort shape approximation
-            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
-            var errorSymbol = new NoOverloadFunctionSymbol(constraint.Arguments.Length);
-            constraint.ReportDiagnostic(diagnostics, diag => diag
-                .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
-                .WithFormatArgs(functionName, string.Join(", ", dominatingCandidates)));
-            constraint.CompletionSource.SetResult(errorSymbol);
-        }
-    }
-
-    private void HandleRule(CallConstraint constraint, DiagnosticBag? diagnostics)
-    {
-        var called = constraint.CalledType.Substitution;
-        // We can't advance on type variables
-        if (called.IsTypeVariable)
-        {
-            throw new InvalidOperationException("rule handling for call constraint called prematurely");
-        }
-
-        if (called.IsError)
-        {
-            // Don't propagate errors
-            this.FailRule(constraint);
-            return;
-        }
-
-        // We can now check if it's a function
-        if (called is not FunctionTypeSymbol functionType)
-        {
-            // Error
-            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
-            constraint.ReportDiagnostic(diagnostics, diag => diag
-                .WithTemplate(TypeCheckingErrors.CallNonFunction)
-                .WithFormatArgs(called));
-            constraint.CompletionSource.SetResult(default);
-            return;
-        }
-
-        // It's a function
-        // We can merge the return type
-        UnifyAsserted(constraint.ReturnType, functionType.ReturnType);
-
-        // Check if it has the same number of args
-        if (functionType.Parameters.Length != constraint.Arguments.Length)
-        {
-            // Error
-            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
-            constraint.ReportDiagnostic(diagnostics, diag => diag
-                .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                .WithFormatArgs(
-                    functionType,
-                    this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)));
-            constraint.CompletionSource.SetResult(default);
-            return;
-        }
-
-        // Start scoring args
-        var candidate = CallCandidate.Create(functionType);
-        candidate.Refine(constraint.Arguments);
-
-        if (candidate.IsEliminated)
-        {
-            // Error
-            UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
-            constraint.ReportDiagnostic(diagnostics, diag => diag
-                .WithTemplate(TypeCheckingErrors.TypeMismatch)
-                .WithFormatArgs(
-                    functionType,
-                    this.MakeMismatchedFunctionType(constraint.Arguments, functionType.ReturnType)));
-            constraint.CompletionSource.SetResult(default);
-            return;
-        }
-
-        // We are done
-        foreach (var (param, arg) in functionType.Parameters.Zip(constraint.Arguments))
-        {
-            this.UnifyParameterWithArgument(param.Type, arg);
-        }
-    }
-
-    private void FailRule(CallConstraint constraint)
-    {
-        UnifyAsserted(constraint.ReturnType, WellKnownTypes.ErrorType);
-        constraint.CompletionSource.SetResult(default);
-    }
+                var concreteType = common.CommonType.Substitution;
+                // TODO: Can we do this asserted?
+                foreach (var type in common.AlternativeTypes) UnifyAsserted(type, concreteType);
+            })
+            .Named("concrete_common_ancestor"),
+    ];
 }

@@ -117,7 +117,7 @@ internal partial class Binder
         if (valueTask is not null)
         {
             // It has to be assignable
-            _ = constraints.Assignable(
+            constraints.Assignable(
                 localSymbol.Type,
                 valueTask.GetResultType(syntax.Value, constraints, diagnostics),
                 syntax.Value!.Value);

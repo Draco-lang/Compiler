@@ -20,8 +20,14 @@ public sealed class SyntaxTree
     /// </summary>
     /// <param name="root">The root of the tree.</param>
     /// <returns>A new <see cref="SyntaxTree"/> with <see cref="Root"/> <paramref name="root"/> and <see cref="SourceText.Path"/> <paramref name="path"/>.</returns>
-    public static SyntaxTree Create(SyntaxNode root, string? path = null) =>
-        new(sourceText: path is null ? SourceText.None : SourceText.FromText(new Uri(path), ReadOnlyMemory<char>.Empty), greenRoot: root.Green, syntaxDiagnostics: new());
+    public static SyntaxTree Create(SyntaxNode root, string? path = null) => Create(root.Green, path);
+
+    internal static SyntaxTree Create(Internal.Syntax.SyntaxNode root, string? path = null) => new(
+        sourceText: SourceText.FromText(
+            path: path is null ? null : new Uri(path),
+            text: root.ToCode().AsMemory()),
+        greenRoot: root,
+        syntaxDiagnostics: new());
 
     /// <summary>
     /// Parses the given text into a <see cref="SyntaxTree"/> with <see cref="SourceText.Path"/> <paramref name="path"/>.
@@ -30,7 +36,7 @@ public sealed class SyntaxTree
     /// <param name="path">The path this tree comes from.</param>
     /// <returns>The parsed tree.</returns>
     public static SyntaxTree Parse(string source, string? path = null) =>
-        Parse(path is null ? SourceText.FromText(source.AsMemory()) : SourceText.FromText(new Uri(path), source.AsMemory()));
+        Parse(SourceText.FromText(path is null ? null : new Uri(path), source.AsMemory()));
 
     /// <summary>
     /// Parses the given <see cref="Syntax.SourceText"/> into a <see cref="SyntaxTree"/>.

@@ -38,12 +38,8 @@ internal sealed class Formatter : SyntaxVisitor
         // TODO: Is it correct to assume compilation unit?
         var formattedRoot = parser.ParseCompilationUnit();
 
-        return new SyntaxTree(
-            // TODO: Is this correct to pass it in?
-            sourceText: tree.SourceText,
-            greenRoot: formattedRoot,
-            // TODO: Anything smarter to pass in?
-            syntaxDiagnostics: new());
+        // NOTE: We drop the original trees diags and source text
+        return SyntaxTree.Create(formattedRoot);
     }
 
     /// <summary>

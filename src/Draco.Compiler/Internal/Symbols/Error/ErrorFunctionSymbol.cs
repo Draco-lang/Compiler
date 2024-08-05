@@ -4,10 +4,11 @@ using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Error;
 
+// NOTE: Not sealed on purpose, others will derive from this.
 /// <summary>
-/// Represents a non-existing function for an overload resolution that failed.
+/// Represents a function that has an error, like a non-existing overload.
 /// </summary>
-internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
+internal class ErrorFunctionSymbol : FunctionSymbol
 {
     // TODO: Is this enough? Do we want to take this as a parameter too?
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => [];
@@ -16,7 +17,7 @@ internal sealed class NoOverloadFunctionSymbol : FunctionSymbol
 
     public override bool IsError => true;
 
-    public NoOverloadFunctionSymbol(int parameterCount)
+    public ErrorFunctionSymbol(int parameterCount)
     {
         this.Parameters = Enumerable.Repeat(WellKnownTypes.ErrorType, parameterCount)
             .Select(t => new SynthetizedParameterSymbol(this, t))

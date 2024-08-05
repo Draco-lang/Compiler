@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Draco.Chr.Constraints;
 using Draco.Chr.Rules;
 
@@ -23,19 +24,48 @@ public sealed class StreamTracer(StreamReader reader, StreamWriter writer) : ITr
     /// </summary>
     public bool WaitForKeypress { get; set; }
 
-    public void Step(
-        Rule appliedRule,
-        IEnumerable<IConstraint> matchedConstraints,
-        IEnumerable<IConstraint> newConstraints)
+    /// <summary>
+    /// True, if the store should only be printed at the end.
+    /// </summary>
+    public bool OnlyPrintStoreAtEnd { get; set; }
+
+    public void BeforeMatch(Rule rule, IEnumerable<IConstraint> constraints, ConstraintStore store)
     {
-        writer.WriteLine($"applied '{appliedRule.Name}'");
-        writer.WriteLine($"  matched: {string.Join(", ", matchedConstraints)}");
-        writer.WriteLine($"    added: {string.Join(", ", newConstraints)}");
+        writer.WriteLine($"Applied {rule.Name}:");
+
+        if (constraints.Any()) writer.WriteLine($" - Matched:");
+        foreach (var m in constraints) writer.WriteLine($"   * {m}");
+    }
+
+    public void AfterMatch(
+        Rule rule,
+        IEnumerable<IConstraint> matchedConstraints,
+        IEnumerable<IConstraint> newConstraints,
+        ConstraintStore store)
+    {
+        if (newConstraints.Any()) writer.WriteLine($" - Added:");
+        foreach (var a in newConstraints) writer.WriteLine($"   * {a}");
+
+        if (!this.OnlyPrintStoreAtEnd) this.ListStore(store);
 
         if (this.WaitForKeypress) reader.ReadLine();
     }
 
-    public void Start(ConstraintStore store) => writer.WriteLine($"initial store: {string.Join(", ", store)}");
-    public void End(ConstraintStore store) => writer.WriteLine($"final store: {string.Join(", ", store)}");
+    public void Start(ConstraintStore store) => this.ListStore(store);
+    public void End(ConstraintStore store)
+    {
+        if (this.OnlyPrintStoreAtEnd) this.ListStore(store);
+    }
     public void Flush() => writer.Flush();
+
+    private void ListStore(ConstraintStore store)
+    {
+        if (store.Count == 0)
+        {
+            writer.WriteLine("Store: empty");
+            return;
+        }
+        writer.WriteLine("Store:");
+        foreach (var item in store) writer.WriteLine($" - {item}");
+    }
 }

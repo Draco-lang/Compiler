@@ -703,4 +703,19 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             memory[0] = 1;
         }
         """);
+
+    [Fact]
+    public void DefaultValueIntrinsic()
+    {
+        var assembly = Compile("""
+            public func nullObj(): object = default<object>();
+            public func zeroInt(): int32 = default<int32>();
+            """);
+
+        var nullObj = Invoke<object>(assembly, "nullObj");
+        var zeroInt = Invoke<int>(assembly, "zeroInt");
+
+        Assert.Null(nullObj);
+        Assert.Equal(0, zeroInt);
+    }
 }

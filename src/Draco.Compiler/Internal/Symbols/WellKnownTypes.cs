@@ -53,6 +53,9 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         yield return Alias("string", this.SystemString);
         yield return Alias("object", this.SystemObject);
 
+        // Default value
+        yield return DefaultValueFunctionSymbol.Instance;
+
         // 1D array
         yield return this.ArrayType;
         yield return this.ArrayCtor;

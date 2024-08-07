@@ -181,8 +181,8 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
     /// <returns>True, if unification was successful, false otherwise.</returns>
     public static bool Unify(TypeSymbol first, TypeSymbol second)
     {
-        first = first.Substitution;
-        second = second.Substitution;
+        first = StripType(first);
+        second = StripType(second);
 
         // NOTE: Referential equality is OK here, we don't need to use SymbolEqualityComparer, this is unification
         if (ReferenceEquals(first, second)) return true;
@@ -251,5 +251,20 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
         default:
             return false;
         }
+    }
+
+    /// <summary>
+    /// Strips the types for equality matching.
+    ///
+    /// Currently this means unwrapping type variables and converting delegate types to their signature types.
+    /// </summary>
+    /// <param name="type">The type to strip.</param>
+    /// <returns>The stripped type.</returns>
+    public static TypeSymbol StripType(TypeSymbol type)
+    {
+        type = type.Substitution;
+        if (type.IsTypeVariable) return type;
+
+        return type.InvokeSignatureType ?? type;
     }
 }

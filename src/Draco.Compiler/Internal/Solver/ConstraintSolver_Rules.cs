@@ -218,7 +218,10 @@ internal sealed partial class ConstraintSolver
                 }
 
                 // We can now check if it's a function
-                if (called is not FunctionTypeSymbol functionType)
+                // The called thing is either a function, or is a delegate with the appropriate signature
+                var functionType = called as FunctionTypeSymbol
+                                ?? called.InvokeSignatureType;
+                if (functionType is null)
                 {
                     // Error
                     UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);

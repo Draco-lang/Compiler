@@ -111,12 +111,12 @@ internal partial class Binder
         return new BoundStringExpression(syntax, await BindingTask.WhenAll(partsTask), this.WellKnownTypes.SystemString);
     }
 
-    private BindingTask<BoundExpression> BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        return FromResult(this.SymbolToExpression(syntax, symbol, constraints, diagnostics));
+        return await this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
     private async BindingTask<BoundExpression> BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -615,7 +615,7 @@ internal partial class Binder
 
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetValue(memberName, syntax, diagnostics);
-            return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
+            return await this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
         }
         else
         {
@@ -750,7 +750,8 @@ internal partial class Binder
         }
     }
 
-    private BoundExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> SymbolToExpression(
+        SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         if (symbol.IsError) return new BoundReferenceErrorExpression(syntax, symbol);
         switch (symbol)
@@ -775,11 +776,25 @@ internal partial class Binder
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
-            return new BoundFunctionGroupExpression(syntax, null, [func]);
+            return await this.WrapFunctions(syntax, [func]);
         case OverloadSymbol overload:
-            return new BoundFunctionGroupExpression(syntax, null, overload.Functions);
+            return await this.WrapFunctions(syntax, overload.Functions);
         default:
             throw new InvalidOperationException();
+        }
+    }
+
+    private async BindingTask<BoundExpression> WrapFunctions(SyntaxNode syntax, ImmutableArray<FunctionSymbol> functions)
+    {
+        if (syntax.Parent is CallExpressionSyntax call && call.Function.Equals(syntax))
+        {
+            // Direct call
+            return new BoundFunctionGroupExpression(syntax, null, functions);
+        }
+        else
+        {
+            // TODO
+            throw new NotImplementedException();
         }
     }
 

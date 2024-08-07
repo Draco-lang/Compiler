@@ -786,7 +786,7 @@ internal partial class Binder
 
     private async BindingTask<BoundExpression> WrapFunctions(SyntaxNode syntax, ImmutableArray<FunctionSymbol> functions)
     {
-        if (syntax.Parent is CallExpressionSyntax call && call.Function.Equals(syntax))
+        if (IsMethodOfCallExpression(syntax))
         {
             // Direct call
             return new BoundFunctionGroupExpression(syntax, null, functions);
@@ -814,5 +814,12 @@ internal partial class Binder
         ForExpressionSyntax @for => ExtractValueSyntax(@for.Then),
         BlockExpressionSyntax block => block.Value is null ? block : ExtractValueSyntax(block.Value),
         _ => syntax,
+    };
+
+    private static bool IsMethodOfCallExpression(SyntaxNode syntax) => syntax.Parent switch
+    {
+        CallExpressionSyntax call => call.Function.Equals(syntax),
+        GenericExpressionSyntax gen => IsMethodOfCallExpression(gen),
+        _ => false,
     };
 }

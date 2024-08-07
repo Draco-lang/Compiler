@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Api;
@@ -150,6 +151,33 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
                     .Select(a => a.Reference)
                     .Append(LocalExpression(varArgs))
                     .ToImmutableArray()));
+    }
+
+    public override BoundNode VisitIndirectCallExpression(BoundIndirectCallExpression node)
+    {
+        // We desugar delegate calls into calling the invoke method
+        var methodType = node.Method.TypeRequired;
+        if (!methodType.IsDelegateType) return base.VisitIndirectCallExpression(node);
+
+        // func(a, b, c)
+        //
+        // =>
+        //
+        // func.Invoke(a, b, c)
+
+        var method = (BoundExpression)node.Method.Accept(this);
+        var args = node.Arguments
+            .Select(n => n.Accept(this))
+            .Cast<BoundExpression>()
+            .ToImmutableArray();
+
+        var invokeMethod = method.TypeRequired.InvokeMethod;
+        Debug.Assert(invokeMethod is not null);
+
+        return CallExpression(
+            receiver: method,
+            method: invokeMethod,
+            arguments: args);
     }
 
     public override BoundNode VisitBlockExpression(BoundBlockExpression node)

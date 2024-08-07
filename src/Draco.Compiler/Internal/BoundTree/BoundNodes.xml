@@ -216,6 +216,7 @@
   </Node>
 
   <Node Name="BoundDelegateExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?" />
     <Field Name="Method" Type="FunctionSymbol" />
   </Node>
 

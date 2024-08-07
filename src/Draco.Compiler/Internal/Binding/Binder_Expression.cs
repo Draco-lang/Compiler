@@ -116,7 +116,7 @@ internal partial class Binder
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        return await this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
+        return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
     private async BindingTask<BoundExpression> BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -615,7 +615,7 @@ internal partial class Binder
 
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetValue(memberName, syntax, diagnostics);
-            return await this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
+            return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
         }
         else
         {
@@ -628,9 +628,9 @@ internal partial class Binder
             case Symbol when member.IsError:
                 return new BoundReferenceErrorExpression(syntax, member);
             case FunctionSymbol func:
-                return new BoundFunctionGroupExpression(syntax, receiver, [func]);
+                return await this.WrapFunctions(syntax, receiver, [func]);
             case OverloadSymbol overload:
-                return new BoundFunctionGroupExpression(syntax, receiver, overload.Functions);
+                return await this.WrapFunctions(syntax, receiver, overload.Functions);
             case FieldSymbol field:
                 return new BoundFieldExpression(syntax, receiver, field);
             case PropertySymbol prop:
@@ -750,7 +750,7 @@ internal partial class Binder
         }
     }
 
-    private async BindingTask<BoundExpression> SymbolToExpression(
+    private async BindingTask<BoundExpression> StaticSymbolToExpression(
         SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         if (symbol.IsError) return new BoundReferenceErrorExpression(syntax, symbol);
@@ -776,25 +776,37 @@ internal partial class Binder
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
-            return await this.WrapFunctions(syntax, [func]);
+            return await this.WrapFunctions(syntax, null, [func]);
         case OverloadSymbol overload:
-            return await this.WrapFunctions(syntax, overload.Functions);
+            return await this.WrapFunctions(syntax, null, overload.Functions);
         default:
             throw new InvalidOperationException();
         }
     }
 
-    private async BindingTask<BoundExpression> WrapFunctions(SyntaxNode syntax, ImmutableArray<FunctionSymbol> functions)
+    private async BindingTask<BoundExpression> WrapFunctions(
+        SyntaxNode syntax,
+        BoundExpression? receiver,
+        ImmutableArray<FunctionSymbol> functions)
     {
         if (IsMethodOfCallExpression(syntax))
         {
             // Direct call
-            return new BoundFunctionGroupExpression(syntax, null, functions);
+            return new BoundFunctionGroupExpression(syntax, receiver, functions);
         }
         else
         {
-            // TODO
-            throw new NotImplementedException();
+            // It's a delegate construction
+            if (functions.Length == 1)
+            {
+                // No need to create a constraint to resolve which one
+                return new BoundDelegateExpression(syntax, receiver, functions[0]);
+            }
+            else
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
         }
     }
 

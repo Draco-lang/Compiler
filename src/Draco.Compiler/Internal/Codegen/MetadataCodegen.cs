@@ -598,6 +598,8 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemUInt32)) { encoder.UInt32(); return; }
         if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemUInt64)) { encoder.UInt64(); return; }
 
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemIntPtr)) { encoder.IntPtr(); return; }
+
         if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemSingle)) { encoder.Single(); return; }
         if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemDouble)) { encoder.Double(); return; }
 

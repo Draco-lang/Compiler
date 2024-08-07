@@ -800,7 +800,15 @@ internal partial class Binder
             if (functions.Length == 1)
             {
                 // No need to create a constraint to resolve which one
-                return new BoundDelegateExpression(syntax, receiver, functions[0]);
+                // Look up delegate type to target
+                var delegateType = this.LookupDelegateForType(functions[0].Type);
+                // Look up delegate constructor
+                var delegateCtor = delegateType
+                    .Constructors
+                    .First(ctor => ctor.Parameters.Length == 2
+                                && SymbolEqualityComparer.Default.Equals(ctor.Parameters[0].Type, this.WellKnownTypes.SystemObject)
+                                && SymbolEqualityComparer.Default.Equals(ctor.Parameters[1].Type, this.WellKnownTypes.SystemIntPtr));
+                return new BoundDelegateCreationExpression(syntax, receiver, functions[0], delegateCtor);
             }
             else
             {

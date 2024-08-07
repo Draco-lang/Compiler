@@ -34,6 +34,8 @@ internal static class InstructionFactory
         new(target, proc, receiver, args);
     public static NewObjectInstruction NewObject(Register target, FunctionSymbol ctor, IEnumerable<IOperand> args) =>
         new(target, ctor, args);
+    public static NewDelegateInstruction NewDelegate(Register target, IOperand? receiver, FunctionSymbol function, FunctionSymbol delegateCtor) =>
+        new(target, receiver, function, delegateCtor);
     public static NewArrayInstruction NewArray(Register target, TypeSymbol elementType, IEnumerable<IOperand> dimensions) =>
         new(target, elementType, dimensions);
     public static ArrayLengthInstruction ArrayLength(Register target, IOperand array) =>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -151,6 +152,34 @@ internal partial class Binder
                 .ToImmutableArray(),
             out _,
             syntax);
+    }
+
+    // TODO: Doc
+    private TypeSymbol LookupDelegateForType(TypeSymbol type)
+    {
+        if (type.IsDelegateType) return type;
+        if (type is not FunctionTypeSymbol funcType)
+        {
+            throw new InvalidOperationException("the type is not a function type, can not determine delegate type");
+        }
+
+        var isUnit = SymbolEqualityComparer.Default.Equals(funcType.ReturnType, WellKnownTypes.Unit);
+        var typeName = $"{(isUnit ? "Action" : "Func")}`{funcType.Parameters.Length + (isUnit ? 0 : 1)}";
+        var genericDefinition = this
+            .WellKnownTypes
+            .GetTypeFromAssembly(this.WellKnownTypes.SystemRuntime, ["System", typeName]);
+        // TODO: This can fail for many parameters...
+        if (genericDefinition is null)
+        {
+            throw new NotImplementedException();
+        }
+
+        // Instantiate the generic type
+        var typeArgs = funcType.Parameters
+            .Select(p => p.Type)
+            .Concat(isUnit ? [] : [funcType.ReturnType])
+            .ToImmutableArray();
+        return genericDefinition.GenericInstantiate(null, typeArgs);
     }
 
     /// <summary>

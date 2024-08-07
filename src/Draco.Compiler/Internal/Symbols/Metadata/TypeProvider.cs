@@ -83,6 +83,8 @@ internal sealed class TypeProvider(Compilation compilation)
         PrimitiveTypeCode.String => this.WellKnownTypes.SystemString,
         PrimitiveTypeCode.Object => this.WellKnownTypes.SystemObject,
 
+        PrimitiveTypeCode.IntPtr => this.WellKnownTypes.SystemIntPtr,
+
         _ => UnknownType,
     };
 

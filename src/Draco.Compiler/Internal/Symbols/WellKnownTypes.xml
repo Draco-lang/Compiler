@@ -28,5 +28,6 @@
   <Type Name="System.Type" Assembly="System.Runtime" />
   <Type Name="System.Array" Assembly="System.Runtime" />
   <Type Name="System.ValueType" Assembly="System.Runtime" />
+  <Type Name="System.Delegate" Assembly="System.Runtime" />
 
 </WellKnownTypes>

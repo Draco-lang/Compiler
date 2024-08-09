@@ -152,7 +152,8 @@ public sealed class OverloadingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(compilation.Diagnostics);
-        Assert.Same(expectedSymbol, calledSymbol);
+        Assert.True(calledSymbol.IsGenericInstance);
+        Assert.Same(expectedSymbol, calledSymbol.GenericDefinition);
     }
 
     [Fact]
@@ -218,6 +219,7 @@ public sealed class OverloadingTests : SemanticTestsBase
 
         // Assert
         Assert.Empty(compilation.Diagnostics);
-        Assert.Same(expectedSymbol, calledSymbol);
+        Assert.True(calledSymbol.IsGenericInstance);
+        Assert.Same(expectedSymbol, calledSymbol.GenericDefinition);
     }
 }

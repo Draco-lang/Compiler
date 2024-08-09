@@ -92,6 +92,32 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
             return x.GenericArguments.SequenceEqual(y.GenericArguments, this);
         }
 
+        // TODO: Copypasta
+        if (x.IsGenericInstance)
+        {
+            // Check, if x is a generic bound instance, meaning its arguments are also generic types
+            // TODO: This might be a nice place to check constraints in the future too?
+            if (x.GenericArguments.All(a => a.Substitution is TypeParameterSymbol))
+            {
+                // TODO: Is this correct?
+                // Assume we can compare the generic definition
+                return this.Equals(x.GenericDefinition, y);
+            }
+        }
+
+        // TODO: Copypasta
+        if (y.IsGenericInstance)
+        {
+            // Check, if y is a generic bound instance, meaning its arguments are also generic types
+            // TODO: This might be a nice place to check constraints in the future too?
+            if (y.GenericArguments.All(a => a.Substitution is TypeParameterSymbol))
+            {
+                // TODO: Is this correct?
+                // Assume we can compare the generic definition
+                return this.Equals(x, y.GenericDefinition);
+            }
+        }
+
         return (x, y) switch
         {
             (ArrayTypeSymbol a1, ArrayTypeSymbol a2)

@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols.Generic;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
 
@@ -60,14 +62,8 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// All types that can be considered the base type of this one, including this type itself.
     /// The types are returned in a pre-order manner, starting from this type.
     /// </summary>
-    public IEnumerable<TypeSymbol> BaseTypes
-    {
-        get
-        {
-            yield return this;
-            foreach (var t in this.ImmediateBaseTypes.SelectMany(b => b.BaseTypes)) yield return t;
-        }
-    }
+    public IEnumerable<TypeSymbol> BaseTypes => InterlockedUtils.InitializeDefault(ref this.baseTypes, this.BuildBaseTypes);
+    private ImmutableArray<TypeSymbol> baseTypes;
 
     /// <summary>
     /// The members defined directly in this type doesn't include members from <see cref="ImmediateBaseTypes"/>.
@@ -138,6 +134,11 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         }
         return builder.ToImmutable();
     }
+
+    private ImmutableArray<TypeSymbol> BuildBaseTypes() => GraphTraversal.DepthFirst(
+        start: this,
+        getNeighbors: s => s.ImmediateBaseTypes,
+        comparer: SymbolEqualityComparer.Default).ToImmutableArray();
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);

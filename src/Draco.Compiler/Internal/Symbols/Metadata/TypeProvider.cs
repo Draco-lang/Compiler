@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -14,13 +15,26 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class TypeProvider(Compilation compilation)
     : ISignatureTypeProvider<TypeSymbol, Symbol>, ICustomAttributeTypeProvider<TypeSymbol>
 {
-    private readonly record struct CacheKey(MetadataReader Reader, EntityHandle Handle);
+    // We have 2 levels of caching to avoid re-creating types
+    // The first level is the "outer" level, which caches types by their metadata handle
+    // The second level is the "inner" level, which caches types by their fully qualified name
+    // Generally the first level is faster, but the second level is necessary for cross-assembly types and
+    // different type reference encodings
+
+    private readonly record struct LightCacheKey(
+        MetadataReader Reader,
+        EntityHandle Handle);
+
+    private readonly record struct CacheKey(
+        string AssemblyFullName,
+        string TypeFullyQualifiedName);
 
     // TODO: We return a special error type for now to swallow errors
     private static TypeSymbol UnknownType { get; } = new PrimitiveTypeSymbol("<unknown>", false);
 
     private WellKnownTypes WellKnownTypes => compilation.WellKnownTypes;
 
+    private readonly ConcurrentDictionary<LightCacheKey, TypeSymbol> lightCache = new();
     private readonly ConcurrentDictionary<CacheKey, TypeSymbol> cache = new();
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
@@ -88,9 +102,55 @@ internal sealed class TypeProvider(Compilation compilation)
 
     public TypeSymbol GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
-        var key = new CacheKey(reader, handle);
-        return this.cache.GetOrAdd(key, _ => this.BuildTypeFromDefinition(reader, handle, rawTypeKind));
+        var lightKey = new LightCacheKey(reader, handle);
+        return this.lightCache.GetOrAdd(lightKey, _ =>
+        {
+            // Check, if the type is already cached in the primary cache
+            // For that we need to resolve the assembly name and the fully qualified name
+            var assemblyName = reader.GetAssemblyDefinition().GetAssemblyName();
+
+            var definition = reader.GetTypeDefinition(handle);
+            var @namespace = reader.GetString(definition.Namespace);
+            var name = reader.GetString(definition.Name);
+            var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
+
+            var key = new CacheKey(assemblyName.FullName, fullName);
+            return this.cache.GetOrAdd(key, _ => this.BuildTypeFromDefinition(reader, handle, rawTypeKind));
+        });
     }
+
+    public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
+    {
+        var lightKey = new LightCacheKey(reader, handle);
+        return this.lightCache.GetOrAdd(lightKey, _ =>
+        {
+            // Check, if the type is already cached in the primary cache
+            // For that we need to resolve the assembly name and the fully qualified name
+            var typeReference = reader.GetTypeReference(handle);
+            // TODO: This might not be correct for nested types
+            // We might need to walk up the resolution scope chain
+            var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)typeReference.ResolutionScope).GetAssemblyName();
+
+            var @namespace = reader.GetString(typeReference.Namespace);
+            var name = reader.GetString(typeReference.Name);
+            var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
+
+            var key = new CacheKey(assemblyName.FullName, fullName);
+            return this.cache.GetOrAdd(key, _ => this.BuildTypeFromReference(reader, handle, rawTypeKind));
+        });
+    }
+
+    // TODO: Should we cache this as well? doesn't seem to have any effect
+    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
+    {
+        var specification = reader.GetTypeSpecification(handle);
+        return specification.DecodeSignature(this, genericContext);
+    }
+
+    public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
+    public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
+    public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;
+    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type) => throw new System.ArgumentOutOfRangeException(nameof(type));
 
     private TypeSymbol BuildTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {
@@ -124,17 +184,12 @@ internal sealed class TypeProvider(Compilation compilation)
         return this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
     }
 
-    public TypeSymbol GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
-    {
-        var key = new CacheKey(reader, handle);
-        return this.cache.GetOrAdd(key, _ => this.BuildTypeFromReference(reader, handle, rawTypeKind));
-    }
-
     private TypeSymbol BuildTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
     {
         var parts = new List<string>();
         var reference = reader.GetTypeReference(handle);
-        parts.Add(reader.GetString(reference.Name));
+        var referenceName = reader.GetString(reference.Name);
+        parts.Add(referenceName);
         EntityHandle resolutionScope;
         for (resolutionScope = reference.ResolutionScope; resolutionScope.Kind == HandleKind.TypeReference; resolutionScope = reference.ResolutionScope)
         {
@@ -150,16 +205,4 @@ internal sealed class TypeProvider(Compilation compilation)
         var assembly = compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         return assembly.RootNamespace.Lookup([.. parts]).OfType<TypeSymbol>().Single();
     }
-
-    // TODO: Should we cache this as well? doesn't seem to have any effect
-    public TypeSymbol GetTypeFromSpecification(MetadataReader reader, Symbol genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
-    {
-        var specification = reader.GetTypeSpecification(handle);
-        return specification.DecodeSignature(this, genericContext);
-    }
-
-    public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
-    public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
-    public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;
-    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type) => throw new System.ArgumentOutOfRangeException(nameof(type));
 }

@@ -92,30 +92,20 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
             return x.GenericArguments.SequenceEqual(y.GenericArguments, this);
         }
 
-        // TODO: Copypasta
-        if (x.IsGenericInstance)
+        // TODO: Does this check belong here?
+        if (x.IsGenericDefinition && IsUnboundedGenericInstance(y))
         {
             // Check, if x is a generic bound instance, meaning its arguments are also generic types
             // TODO: This might be a nice place to check constraints in the future too?
-            if (x.GenericArguments.All(a => a.Substitution is TypeParameterSymbol))
-            {
-                // TODO: Is this correct?
-                // Assume we can compare the generic definition
-                return this.Equals(x.GenericDefinition, y);
-            }
+            return this.Equals(x, y.GenericDefinition);
         }
 
-        // TODO: Copypasta
-        if (y.IsGenericInstance)
+        // TODO: Does this check belong here?
+        if (y.IsGenericDefinition && IsUnboundedGenericInstance(x))
         {
-            // Check, if y is a generic bound instance, meaning its arguments are also generic types
+            // Check, if x is a generic bound instance, meaning its arguments are also generic types
             // TODO: This might be a nice place to check constraints in the future too?
-            if (y.GenericArguments.All(a => a.Substitution is TypeParameterSymbol))
-            {
-                // TODO: Is this correct?
-                // Assume we can compare the generic definition
-                return this.Equals(x, y.GenericDefinition);
-            }
+            return this.Equals(x.GenericDefinition, y);
         }
 
         return (x, y) switch
@@ -161,4 +151,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
         }
         return unwrappedType;
     }
+
+    private static bool IsUnboundedGenericInstance(TypeSymbol t) =>
+        t.IsGenericInstance && t.GenericArguments.All(a => a.Substitution is TypeParameterSymbol);
 }

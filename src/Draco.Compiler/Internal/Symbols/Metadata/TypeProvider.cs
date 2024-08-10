@@ -112,7 +112,7 @@ internal sealed class TypeProvider(Compilation compilation)
             var definition = reader.GetTypeDefinition(handle);
             var @namespace = reader.GetString(definition.Namespace);
             var name = reader.GetString(definition.Name);
-            var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
+            var fullName = ConcatenateNamespaceAndName(@namespace, name);
 
             var key = new CacheKey(assemblyName.FullName, fullName);
             return this.cache.GetOrAdd(key, _ => this.BuildTypeFromDefinition(reader, handle, rawTypeKind));
@@ -124,18 +124,7 @@ internal sealed class TypeProvider(Compilation compilation)
         var lightKey = new LightCacheKey(reader, handle);
         return this.lightCache.GetOrAdd(lightKey, _ =>
         {
-            // Check, if the type is already cached in the primary cache
-            // For that we need to resolve the assembly name and the fully qualified name
-            var typeReference = reader.GetTypeReference(handle);
-            // TODO: This might not be correct for nested types
-            // We might need to walk up the resolution scope chain
-            var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)typeReference.ResolutionScope).GetAssemblyName();
-
-            var @namespace = reader.GetString(typeReference.Namespace);
-            var name = reader.GetString(typeReference.Name);
-            var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
-
-            var key = new CacheKey(assemblyName.FullName, fullName);
+            var key = BuildCacheKey(reader, handle);
             return this.cache.GetOrAdd(key, _ => this.BuildTypeFromReference(reader, handle, rawTypeKind));
         });
     }
@@ -178,7 +167,7 @@ internal sealed class TypeProvider(Compilation compilation)
         // Type path
         var @namespace = reader.GetString(definition.Namespace);
         var name = reader.GetString(definition.Name);
-        var fullName = string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
+        var fullName = ConcatenateNamespaceAndName(@namespace, name);
         var path = fullName.Split('.').ToImmutableArray();
 
         return this.WellKnownTypes.GetTypeFromAssembly(assemblyName, path);
@@ -205,4 +194,29 @@ internal sealed class TypeProvider(Compilation compilation)
         var assembly = compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         return assembly.RootNamespace.Lookup([.. parts]).OfType<TypeSymbol>().Single();
     }
+
+    private static CacheKey BuildCacheKey(MetadataReader reader, TypeReferenceHandle handle)
+    {
+        // Directly the type itself
+        var typeReference = reader.GetTypeReference(handle);
+        var typeName = reader.GetString(typeReference.Name);
+        // The reference might be nested, so we need to walk up the resolution scope chain
+        var scope = typeReference.ResolutionScope;
+        while (scope.Kind == HandleKind.TypeReference)
+        {
+            var parentReference = reader.GetTypeReference((TypeReferenceHandle)scope);
+            typeName = $"{reader.GetString(parentReference.Name)}.{typeName}";
+            scope = parentReference.ResolutionScope;
+        }
+        // Build full name
+        var @namespace = reader.GetString(typeReference.Namespace);
+        var fullName = ConcatenateNamespaceAndName(@namespace, typeName);
+        // Resolve assembly name
+        var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)scope).GetAssemblyName();
+        // Construct key
+        return new CacheKey(assemblyName.FullName, fullName);
+    }
+
+    private static string ConcatenateNamespaceAndName(string? @namespace, string name) =>
+        string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
 }

@@ -372,35 +372,7 @@ internal sealed partial class ConstraintSolver
         // As a last-last effort, we assume that a singular assignment means exact matching types
         Simplification(typeof(Assignable))
             .Body((ConstraintStore store, Assignable assignable) =>
-            {
-                var targetType = assignable.TargetType.Substitution;
-                var assignedType = assignable.AssignedType.Substitution;
-
-                // TODO: There's a lot of type logic being duplicated,
-                // we might need to start thinking about centralizing things like this
-                // Argument scoring has a very similar check for example
-                if (targetType.IsGenericInstance && assignedType.IsGenericInstance)
-                {
-                    // We need to look for the base type
-                    var targetGenericDefinition = targetType.GenericDefinition!;
-
-                    var assignedToUnify = assignedType.BaseTypes
-                        .FirstOrDefault(t => SymbolEqualityComparer.Default.Equals(t.GenericDefinition, targetGenericDefinition));
-                    if (assignedToUnify is null)
-                    {
-                        // TODO
-                        throw new NotImplementedException();
-                    }
-
-                    // Unify
-                    UnifyAsserted(targetType, assignedToUnify);
-                }
-                else
-                {
-                    // TODO: Might not be correct
-                    UnifyAsserted(assignable.TargetType, assignable.AssignedType);
-                }
-            })
+                AssignAsserted(assignable.TargetType, assignable.AssignedType))
             .Named("sole_assignable"),
 
         // As a last-effort, if we see a common ancestor constraint with a single non-type-var, we

@@ -138,7 +138,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     private ImmutableArray<TypeSymbol> BuildBaseTypes() => GraphTraversal.DepthFirst(
         start: this,
         getNeighbors: s => s.ImmediateBaseTypes,
-        comparer: SymbolEqualityComparer.Default).ToImmutableArray();
+        comparer: SymbolEqualityComparer.AllowTypeVariables).ToImmutableArray();
 
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (TypeSymbol)base.GenericInstantiate(containingSymbol, arguments);

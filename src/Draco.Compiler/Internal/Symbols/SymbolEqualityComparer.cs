@@ -133,10 +133,16 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     {
         obj = this.Unwrap(obj);
 
-        return obj switch
+        if (obj.IsGenericInstance)
         {
-            _ => RuntimeHelpers.GetHashCode(obj),
-        };
+            // Combine the hash code of the generic definition with the hash codes of the arguments
+            var hash = default(HashCode);
+            hash.Add(obj.GenericDefinition);
+            foreach (var arg in obj.GenericArguments) hash.Add(arg);
+            return hash.ToHashCode();
+        }
+
+        return RuntimeHelpers.GetHashCode(obj);
     }
 
     [return: NotNullIfNotNull(nameof(type))]

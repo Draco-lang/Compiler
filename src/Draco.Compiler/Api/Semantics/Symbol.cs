@@ -58,6 +58,11 @@ public interface ISymbol : IEquatable<ISymbol>
     public IEnumerable<ISymbol> InstanceMembers => this.Members.Where(x => x is IMemberSymbol mem && !mem.IsStatic);
 
     /// <summary>
+    /// True, if this symbol is a generic definition.
+    /// </summary>
+    public bool IsGenericDefinition { get; }
+
+    /// <summary>
     /// True, if this symbol is a generic instance.
     /// </summary>
     [MemberNotNullWhen(true, nameof(GenericDefinition))]
@@ -202,6 +207,7 @@ internal abstract class SymbolBase(Symbol symbol) : ISymbol
     public Location? Definition => this.Symbol.DeclaringSyntax?.Location;
     public string Documentation => this.Symbol.Documentation.ToMarkdown();
     public IEnumerable<ISymbol> Members => this.Symbol.Members.Select(x => x.ToApiSymbol());
+    public bool IsGenericDefinition => this.Symbol.IsGenericDefinition;
     public bool IsGenericInstance => this.Symbol.IsGenericInstance;
     public ISymbol? GenericDefinition => this.Symbol.GenericDefinition?.ToApiSymbol();
 

@@ -372,11 +372,7 @@ internal sealed partial class ConstraintSolver
         // As a last-last effort, we assume that a singular assignment means exact matching types
         Simplification(typeof(Assignable))
             .Body((ConstraintStore store, Assignable assignable) =>
-            {
-                // TODO: Is asserted correct here?
-                // Maybe just for type-variables?
-                UnifyAsserted(assignable.TargetType, assignable.AssignedType);
-            })
+                AssignAsserted(assignable.TargetType, assignable.AssignedType))
             .Named("sole_assignable"),
 
         // As a last-effort, if we see a common ancestor constraint with a single non-type-var, we

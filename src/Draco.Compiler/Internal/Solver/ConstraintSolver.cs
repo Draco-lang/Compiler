@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Draco.Chr.Constraints;
 using Draco.Chr.Solve;
@@ -10,10 +9,7 @@ using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver.OverloadResolution;
-using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Error;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 using IChrSolver = Draco.Chr.Solve.ISolver;
 
 namespace Draco.Compiler.Internal.Solver;

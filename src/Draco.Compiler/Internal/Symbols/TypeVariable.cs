@@ -45,6 +45,12 @@ internal sealed class TypeVariable(int index) : TypeSymbol
     private TypeSymbol? substitution;
     private readonly int index = index;
 
+    public override Api.Semantics.ITypeSymbol ToApiSymbol()
+    {
+        if (this.substitution is null) throw new InvalidOperationException("type variable not substituted");
+        return this.Substitution.ToApiSymbol();
+    }
+
     public override string ToString() => this.Substitution switch
     {
         TypeVariable typeVar => $"{StringUtils.IndexToExcelColumnName(typeVar.index)}'",

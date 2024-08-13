@@ -1,10 +1,9 @@
+using System;
+using System.Diagnostics;
+using System.Linq;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Symbols;
-using System.Diagnostics;
-using Draco.Compiler.Internal.Solver.Constraints;
-using System;
-using System.Linq;
 
 namespace Draco.Compiler.Internal.Solver;
 

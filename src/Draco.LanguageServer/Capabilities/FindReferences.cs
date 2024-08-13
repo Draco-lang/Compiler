@@ -40,7 +40,7 @@ internal sealed partial class DracoLanguageServer : IFindReferences
             var referencingNodes = FindAllReferences(
                 trees: compilation.SyntaxTrees,
                 semanticModel: semanticModel,
-                symbol: referencedSymbol,
+                searchedSymbol: referencedSymbol,
                 includeDeclaration: param.Context.IncludeDeclaration,
                 cancellationToken: cancellationToken);
             foreach (var node in referencingNodes)
@@ -56,7 +56,7 @@ internal sealed partial class DracoLanguageServer : IFindReferences
     private static IEnumerable<SyntaxNode> FindAllReferences(
         ImmutableArray<SyntaxTree> trees,
         SemanticModel semanticModel,
-        ISymbol symbol,
+        ISymbol searchedSymbol,
         bool includeDeclaration,
         CancellationToken cancellationToken)
     {
@@ -66,15 +66,23 @@ internal sealed partial class DracoLanguageServer : IFindReferences
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
 
-                if (symbol.Equals(semanticModel.GetReferencedSymbol(node)))
+                if (IsSearchedSymbol(searchedSymbol, semanticModel.GetReferencedSymbol(node)))
                 {
                     yield return node;
                 }
-                if (includeDeclaration && symbol.Equals(semanticModel.GetDeclaredSymbol(node)))
+                if (includeDeclaration && IsSearchedSymbol(searchedSymbol, semanticModel.GetDeclaredSymbol(node)))
                 {
                     yield return node;
                 }
             }
         }
+    }
+
+    private static bool IsSearchedSymbol(ISymbol searched, ISymbol? found)
+    {
+        if (found is null) return false;
+        if (searched.Equals(found)) return true;
+        if (searched.IsGenericDefinition && found.IsGenericInstance) return searched.Equals(found.GenericDefinition);
+        return false;
     }
 }

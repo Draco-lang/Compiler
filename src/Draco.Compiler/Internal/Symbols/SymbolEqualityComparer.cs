@@ -92,6 +92,22 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
             return x.GenericArguments.SequenceEqual(y.GenericArguments, this);
         }
 
+        // TODO: Does this check belong here?
+        if (x.IsGenericDefinition && IsUnboundedGenericInstance(y))
+        {
+            // Check, if x is a generic bound instance, meaning its arguments are also generic types
+            // TODO: This might be a nice place to check constraints in the future too?
+            return this.Equals(x, y.GenericDefinition);
+        }
+
+        // TODO: Does this check belong here?
+        if (y.IsGenericDefinition && IsUnboundedGenericInstance(x))
+        {
+            // Check, if x is a generic bound instance, meaning its arguments are also generic types
+            // TODO: This might be a nice place to check constraints in the future too?
+            return this.Equals(x.GenericDefinition, y);
+        }
+
         return (x, y) switch
         {
             (ArrayTypeSymbol a1, ArrayTypeSymbol a2)
@@ -117,10 +133,16 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
     {
         obj = this.Unwrap(obj);
 
-        return obj switch
+        if (obj.IsGenericInstance)
         {
-            _ => RuntimeHelpers.GetHashCode(obj),
-        };
+            // Combine the hash code of the generic definition with the hash codes of the arguments
+            var hash = default(HashCode);
+            hash.Add(obj.GenericDefinition);
+            foreach (var arg in obj.GenericArguments) hash.Add(arg);
+            return hash.ToHashCode();
+        }
+
+        return RuntimeHelpers.GetHashCode(obj);
     }
 
     [return: NotNullIfNotNull(nameof(type))]
@@ -135,4 +157,7 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
         }
         return unwrappedType;
     }
+
+    private static bool IsUnboundedGenericInstance(TypeSymbol t) =>
+        t.IsGenericInstance && t.GenericArguments.All(a => a.Substitution is TypeParameterSymbol);
 }

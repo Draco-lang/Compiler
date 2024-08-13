@@ -20,9 +20,9 @@ internal static class ArgumentScore
     /// <summary>
     /// Maximum score for a full match.
     /// </summary>
-    public const int FullScore = 16;
+    public const int FullScore = 32;
 
-    private const int HalfScore = 8;
+    private const int HalfScore = FullScore / 2;
     private const int ZeroScore = 0;
 
     /// <summary>
@@ -91,20 +91,24 @@ internal static class ArgumentScore
         // Base type match is half score
         if (SymbolEqualityComparer.Default.IsBaseOf(paramType, argType)) return HalfScore;
 
-        // TODO: Unspecified what happens for generics
-        // For now we require an exact match and score is the lowest score among generic args
+        // For generics we take the lowest scoring argument and half it, if the generic type is a base
         if (paramType.IsGenericInstance && argType.IsGenericInstance)
         {
             var paramGenericDefinition = paramType.GenericDefinition!;
             var argGenericDefinition = argType.GenericDefinition!;
 
-            if (!SymbolEqualityComparer.Default.Equals(paramGenericDefinition, argGenericDefinition)) return ZeroScore;
+            var genericDefinitionIsExact = SymbolEqualityComparer.Default.Equals(paramGenericDefinition, argGenericDefinition);
+            var genericDefinitionIsBase = SymbolEqualityComparer.Default.IsBaseOf(paramGenericDefinition, argGenericDefinition);
+
+            if (!genericDefinitionIsExact && !genericDefinitionIsBase) return ZeroScore;
 
             Debug.Assert(paramType.GenericArguments.Length == argType.GenericArguments.Length);
-            return paramType.GenericArguments
+            var minGenericScore = paramType.GenericArguments
                 .Zip(argType.GenericArguments)
                 .Select(pair => ScoreArgument(pair.First, pair.Second))
                 .Min();
+
+            return genericDefinitionIsExact ? minGenericScore : minGenericScore / 2;
         }
 
         // Type parameter match is half score

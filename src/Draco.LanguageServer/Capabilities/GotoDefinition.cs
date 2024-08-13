@@ -30,14 +30,17 @@ internal sealed partial class DracoLanguageServer : IGotoDefinition
             .Select(semanticModel.GetReferencedSymbol)
             .LastOrDefault(symbol => symbol is not null);
 
-        if (referencedSymbol is not null && referencedSymbol.Definition is not null)
+        if (referencedSymbol is null) return Task.FromResult<IList<Location>>([]);
+
+        if (referencedSymbol.IsGenericInstance)
         {
-            var location = Translator.ToLsp(referencedSymbol.Definition);
-            return Task.FromResult<IList<Location>>([location ?? default!]);
+            // Unwrap to resolve to the generic definition
+            referencedSymbol = referencedSymbol.GenericDefinition;
         }
-        else
-        {
-            return Task.FromResult<IList<Location>>(Array.Empty<Location>());
-        }
+
+        if (referencedSymbol.Definition is null) return Task.FromResult<IList<Location>>([]);
+
+        var location = Translator.ToLsp(referencedSymbol.Definition);
+        return Task.FromResult<IList<Location>>([location ?? default!]);
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -55,6 +56,22 @@ public interface ISymbol : IEquatable<ISymbol>
     /// The instance members within this symbol.
     /// </summary>
     public IEnumerable<ISymbol> InstanceMembers => this.Members.Where(x => x is IMemberSymbol mem && !mem.IsStatic);
+
+    /// <summary>
+    /// True, if this symbol is a generic definition.
+    /// </summary>
+    public bool IsGenericDefinition { get; }
+
+    /// <summary>
+    /// True, if this symbol is a generic instance.
+    /// </summary>
+    [MemberNotNullWhen(true, nameof(GenericDefinition))]
+    public bool IsGenericInstance { get; }
+
+    /// <summary>
+    /// The generic definition of this symbol, in case this is a generic instance.
+    /// </summary>
+    public ISymbol? GenericDefinition { get; }
 }
 
 /// <summary>
@@ -190,6 +207,9 @@ internal abstract class SymbolBase(Symbol symbol) : ISymbol
     public Location? Definition => this.Symbol.DeclaringSyntax?.Location;
     public string Documentation => this.Symbol.Documentation.ToMarkdown();
     public IEnumerable<ISymbol> Members => this.Symbol.Members.Select(x => x.ToApiSymbol());
+    public bool IsGenericDefinition => this.Symbol.IsGenericDefinition;
+    public bool IsGenericInstance => this.Symbol.IsGenericInstance;
+    public ISymbol? GenericDefinition => this.Symbol.GenericDefinition?.ToApiSymbol();
 
     public bool Equals(ISymbol? other) => other is SymbolBase o
                                        && ReferenceEquals(this.Symbol, o.Symbol);

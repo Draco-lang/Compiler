@@ -19,5 +19,6 @@ internal sealed class DracoConfigurationRepository(ILanguageClient client)
 
         this.InlayHints.ParameterNames = cfg[0].GetProperty("parameterNames"u8).GetBoolean();
         this.InlayHints.VariableTypes = cfg[0].GetProperty("variableTypes"u8).GetBoolean();
+        this.InlayHints.GenericArguments = cfg[0].GetProperty("genericArguments"u8).GetBoolean();
     }
 }

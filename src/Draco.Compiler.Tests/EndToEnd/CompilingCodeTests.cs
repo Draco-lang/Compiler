@@ -756,4 +756,26 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         Assert.Equal("Hello, World", stringWriter.ToString());
     }
+
+    [Fact]
+    public void ParameterlessActionDelegates()
+    {
+        var assembly = Compile("""
+            import System;
+            import System.Console;
+
+            public func call() = invokeImpl(printHello);
+            func printHello() = Write("Hello, World!");
+            func invokeImpl(f: Action) = f();
+            """);
+
+        var stringWriter = new StringWriter();
+        _ = Invoke<object?>(
+            assembly,
+            "call",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("Hello, World!", stringWriter.ToString());
+    }
 }

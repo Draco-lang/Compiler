@@ -4,4 +4,5 @@ internal sealed class InlayHintsConfiguration
 {
     public bool ParameterNames { get; set; }
     public bool VariableTypes { get; set; }
+    public bool GenericArguments { get; set; }
 }

@@ -72,6 +72,11 @@ public interface ISymbol : IEquatable<ISymbol>
     /// The generic definition of this symbol, in case this is a generic instance.
     /// </summary>
     public ISymbol? GenericDefinition { get; }
+
+    /// <summary>
+    /// The generic arguments of this symbol, in case this is a generic instance.
+    /// </summary>
+    public IEnumerable<ITypeSymbol> GenericArguments { get; }
 }
 
 /// <summary>
@@ -210,6 +215,7 @@ internal abstract class SymbolBase(Symbol symbol) : ISymbol
     public bool IsGenericDefinition => this.Symbol.IsGenericDefinition;
     public bool IsGenericInstance => this.Symbol.IsGenericInstance;
     public ISymbol? GenericDefinition => this.Symbol.GenericDefinition?.ToApiSymbol();
+    public IEnumerable<ITypeSymbol> GenericArguments => this.Symbol.GenericArguments.Select(a => a.ToApiSymbol());
 
     public bool Equals(ISymbol? other) => other is SymbolBase o
                                        && ReferenceEquals(this.Symbol, o.Symbol);

@@ -14,7 +14,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
 {
     public InlayHintRegistrationOptions InlayHintRegistrationOptions => new()
     {
-        DocumentSelector = DocumentSelector,
+        DocumentSelector = this.DocumentSelector,
     };
 
     public Task<IList<InlayHint>> InlayHintAsync(InlayHintParams param, CancellationToken cancellationToken)
@@ -33,7 +33,9 @@ internal sealed partial class DracoLanguageServer : IInlayHint
         var inlayHints = new List<InlayHint>();
         foreach (var node in syntaxTree.TraverseSubtreesIntersectingRange(range))
         {
-            if (config.VariableTypes && node is VariableDeclarationSyntax varDecl)
+            switch (node)
+            {
+            case VariableDeclarationSyntax varDecl when config.VariableTypes:
             {
                 // Type is already specified by user
                 if (varDecl.Type is not null) continue;
@@ -50,8 +52,9 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                     Kind = InlayHintKind.Type,
                     Label = $": {varType}",
                 });
+                break;
             }
-            else if (config.VariableTypes && node is ForExpressionSyntax @for)
+            case ForExpressionSyntax @for when config.ParameterNames:
             {
                 if (@for.ElementType is not null) continue;
 
@@ -67,25 +70,50 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                     Kind = InlayHintKind.Type,
                     Label = $": {varType}",
                 });
+                break;
             }
-            else if (config.ParameterNames && node is CallExpressionSyntax call)
+            case CallExpressionSyntax call:
             {
-                var symbol = semanticModel.GetReferencedSymbol(call.Function);
-                if (symbol is not IFunctionSymbol funcSymbol) continue;
-
-                foreach (var (argSyntax, paramSymbol) in call.ArgumentList.Values.Zip(funcSymbol.Parameters))
+                if (config.ParameterNames)
                 {
-                    var position = argSyntax.Range.Start;
-                    var name = paramSymbol.Name;
-                    if (string.IsNullOrWhiteSpace(name)) continue;
+                    var symbol = semanticModel.GetReferencedSymbol(call.Function);
+                    if (symbol is not IFunctionSymbol funcSymbol) continue;
+
+                    foreach (var (argSyntax, paramSymbol) in call.ArgumentList.Values.Zip(funcSymbol.Parameters))
+                    {
+                        var position = argSyntax.Range.Start;
+                        var name = paramSymbol.Name;
+                        if (string.IsNullOrWhiteSpace(name)) continue;
+
+                        inlayHints.Add(new InlayHint()
+                        {
+                            Position = Translator.ToLsp(position),
+                            Kind = InlayHintKind.Parameter,
+                            Label = $"{name} = ",
+                        });
+                    }
+                }
+                if (config.GenericArguments)
+                {
+                    var symbol = semanticModel.GetReferencedSymbol(call.Function);
+                    if (symbol is not IFunctionSymbol funcSymbol) continue;
+                    // Not even a generic function
+                    if (!symbol.IsGenericInstance) continue;
+                    // See, if the syntax provided generic arguments
+                    if (call.Function is GenericExpressionSyntax) continue;
+                    // It did not, we can provide hints
+                    var position = call.Function.Range.End;
+                    var genericArgs = string.Join(", ", funcSymbol.GenericArguments.Select(arg => arg.Name));
 
                     inlayHints.Add(new InlayHint()
                     {
                         Position = Translator.ToLsp(position),
-                        Kind = InlayHintKind.Parameter,
-                        Label = $"{name} = ",
+                        Kind = InlayHintKind.Type,
+                        Label = $"<{genericArgs}>",
                     });
                 }
+                break;
+            }
             }
         }
 

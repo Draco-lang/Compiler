@@ -129,6 +129,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show variable type hints."
+        },
+        "draco.inlayHints.genericArguments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show generic argument type hints."
         }
       }
     },

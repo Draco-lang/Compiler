@@ -718,4 +718,42 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         Assert.Null(nullObj);
         Assert.Equal(0, zeroInt);
     }
+
+    [Fact]
+    public void FuncDelegates()
+    {
+        var assembly = Compile("""
+            import System;
+
+            public func getValue(): int32 = getValueImpl(add);
+            func add(a: int32, b: int32): int32 = a + b;
+            func getValueImpl(f: Func<int32, int32, int32>): int32 = f(2, 3);
+            """);
+
+        var result = Invoke<int>(assembly, "getValue");
+
+        Assert.Equal(5, result);
+    }
+
+    [Fact]
+    public void ActionDelegates()
+    {
+        var assembly = Compile("""
+            import System;
+            import System.Console;
+
+            public func call() = invokeImpl(printThem);
+            func printThem(a: string, b: string) = Write(a + ", " + b);
+            func invokeImpl(f: Action<string, string>) = f("Hello", "World");
+            """);
+
+        var stringWriter = new StringWriter();
+        _ = Invoke<object?>(
+            assembly,
+            "call",
+            stdin: null,
+            stdout: stringWriter);
+
+        Assert.Equal("Hello, World", stringWriter.ToString());
+    }
 }

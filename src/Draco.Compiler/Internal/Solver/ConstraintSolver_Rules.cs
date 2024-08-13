@@ -40,8 +40,8 @@ internal sealed partial class ConstraintSolver
                                            && assignable.AssignedType.IsGroundType)
             .Body((ConstraintStore store, Assignable assignable) =>
             {
-                var targetType = StripType(assignable.TargetType);
-                var assignedType = StripType(assignable.AssignedType);
+                var targetType = assignable.TargetType;
+                var assignedType = assignable.AssignedType;
                 if (SymbolEqualityComparer.Default.IsBaseOf(targetType, assignedType))
                 {
                     // Ok
@@ -60,12 +60,9 @@ internal sealed partial class ConstraintSolver
             {
                 foreach (var type in common.AlternativeTypes)
                 {
-                    var strippedType = StripType(type);
-                    if (!common.AlternativeTypes
-                        .Select(StripType)
-                        .All(t => SymbolEqualityComparer.Default.IsBaseOf(strippedType, t))) continue;
+                    if (!common.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t))) continue;
                     // Found a good common type
-                    UnifyAsserted(common.CommonType, strippedType);
+                    UnifyAsserted(common.CommonType, type);
                     return;
                 }
                 // No common type found

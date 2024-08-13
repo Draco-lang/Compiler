@@ -79,8 +79,8 @@ internal static class ArgumentScore
 
     private static int ScoreArgument(TypeSymbol paramType, TypeSymbol argType)
     {
-        paramType = ConstraintSolver.StripType(paramType);
-        argType = ConstraintSolver.StripType(argType);
+        paramType = paramType.Substitution;
+        argType = argType.Substitution;
 
         // If either are still not ground types, we can't decide
         if (!paramType.IsGroundType || !argType.IsGroundType) return Undefined;

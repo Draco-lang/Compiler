@@ -164,7 +164,9 @@ internal partial class Binder
         }
 
         var isUnit = SymbolEqualityComparer.Default.Equals(funcType.ReturnType, WellKnownTypes.Unit);
-        var typeName = $"{(isUnit ? "Action" : "Func")}`{funcType.Parameters.Length + (isUnit ? 0 : 1)}";
+        var typeName = isUnit ? "Action" : "Func";
+        var genericArgc = funcType.Parameters.Length + (isUnit ? 0 : 1);
+        if (genericArgc > 0) typeName = $"{typeName}`{genericArgc}";
         var genericDefinition = this
             .WellKnownTypes
             .GetTypeFromAssembly(this.WellKnownTypes.SystemRuntime, ["System", typeName]);

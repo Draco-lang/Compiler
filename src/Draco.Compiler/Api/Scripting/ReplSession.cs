@@ -22,11 +22,13 @@ public sealed class ReplSession
 {
     private readonly record struct Context(Compilation Compilation, Assembly Assembly);
 
+    private const string EvalFunctionName = ".eval";
+
     private readonly AssemblyLoadContext loadContext;
     private readonly Dictionary<string, Assembly> loadedAssemblies = [];
+    private readonly List<Context> previousContexts = [];
     // TODO: Temporary, until we can inherit everything from the host
     private readonly ImmutableArray<MetadataReference> metadataReferences;
-    private readonly List<Context> previousContexts = [];
 
     public ReplSession(ImmutableArray<MetadataReference> metadataReferences)
     {
@@ -37,84 +39,75 @@ public sealed class ReplSession
 
     public ReplResult Evaluate(SyntaxNode node)
     {
-        // 1. In case it's an expression, we need to evaluate it
-        // 2. In case it's a declaration, compile it and do nothing
-        // 3. In case it's a statement, compile it and execute it
-
-        var compilation = node switch
+        // Translate to a runnable function
+        var decl = node switch
         {
-            ExpressionSyntax expr => this.CompileExpression(expr),
-            DeclarationSyntax decl => this.CompileDeclaration(decl),
-            StatementSyntax stmt => this.CompileStatement(stmt),
+            ExpressionSyntax expr => this.ToDeclaration(expr),
+            DeclarationSyntax d => this.ToDeclaration(d),
+            StatementSyntax stmt => this.ToDeclaration(stmt),
             _ => throw new ArgumentOutOfRangeException(nameof(node)),
         };
 
+        // Wrap in a tree
+        var tree = SyntaxTree.Create(CompilationUnit(decl));
+
+        // Make compilation
+        var compilation = this.MakeCompilation(tree);
+
+        // Emit the assembly
         var peStream = new MemoryStream();
         var result = compilation.Emit(peStream: peStream);
 
-        if (!result.Success)
-        {
-            return new(
-                Success: false,
-                Value: null,
-                Diagnostics: result.Diagnostics);
-        }
+        // Check for errors
+        if (!result.Success) return new(Success: false, Value: null, Diagnostics: result.Diagnostics);
 
         // We need to load the assembly in the current context
         var assembly = this.LoadAssembly(peStream);
 
-        // Stash previous context
-        this.previousContexts.Add(new Context(
-            Compilation: compilation,
-            Assembly: assembly));
+        // Stash it for future use
+        this.previousContexts.Add(new Context(Compilation: compilation, Assembly: assembly));
 
-        // Execute the code
+        // Retrieve the main module
         var mainModule = assembly.GetType(compilation.RootModulePath);
         Debug.Assert(mainModule is not null);
 
-        var getValue = mainModule.GetMethod(".getvalue");
-        if (getValue is not null)
+        // Run the eval function
+        var eval = mainModule.GetMethod(EvalFunctionName);
+        if (eval is not null)
         {
-            var value = getValue.Invoke(null, null);
+            var value = eval.Invoke(null, null);
             return new(
                 Success: true,
                 Value: value,
                 Diagnostics: result.Diagnostics);
         }
 
-        var execute = mainModule.GetMethod(".execute");
-        if (execute is not null)
-        {
-            _ = execute.Invoke(null, null);
-            return new(
-                Success: true,
-                Value: null,
-                Diagnostics: result.Diagnostics);
-        }
-
-        // This happens with declarations
+        // This happens with declarations, nothing to run
         return new(
             Success: true,
             Value: null,
             Diagnostics: result.Diagnostics);
     }
 
-    private Compilation CompileExpression(ExpressionSyntax expr)
+    // public func .eval(): object = decl;
+    private DeclarationSyntax ToDeclaration(ExpressionSyntax expr) => FunctionDeclaration(
+        Visibility.Public,
+        EvalFunctionName,
+        ParameterList(),
+        NameType("object"),
+        InlineFunctionBody(expr));
+
+    // public func .eval() = stmt;
+    private DeclarationSyntax ToDeclaration(StatementSyntax stmt) => FunctionDeclaration(
+        Visibility.Public,
+        EvalFunctionName,
+        ParameterList(),
+        null,
+        InlineFunctionBody(StatementExpression(stmt)));
+
+    private DeclarationSyntax ToDeclaration(DeclarationSyntax decl)
     {
-        // func .getvalue(): object = expr;
-
-        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
-            Visibility.Public,
-            ".getvalue",
-            ParameterList(),
-            NameType("object"),
-            InlineFunctionBody(expr))));
-
-        return this.MakeCompilation(tree);
-    }
-
-    private Compilation CompileDeclaration(DeclarationSyntax decl)
-    {
+        // TODO: We can get rid of this if we make scoping smarter
         if (decl is VariableDeclarationSyntax varDecl)
         {
             decl = VariableDeclaration(
@@ -129,39 +122,16 @@ public sealed class ReplSession
             throw new NotImplementedException();
         }
 
-        var tree = SyntaxTree.Create(CompilationUnit(decl));
-
-        return this.MakeCompilation(tree);
+        return decl;
     }
 
-    private Compilation CompileStatement(StatementSyntax stmt)
-    {
-        // func .execute() = stmt;
-
-        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
-            Visibility.Public,
-            ".execute",
-            ParameterList(),
-            null,
-            InlineFunctionBody(StatementExpression(stmt)))));
-
-        return this.MakeCompilation(tree);
-    }
-
-    private Compilation MakeCompilation(SyntaxTree tree)
-    {
-        var moduleName = $"Context{this.previousContexts.Count}";
-        var assemblyName = $"ReplAssembly{this.previousContexts.Count}";
-
-        var compilation = Compilation.Create(
-            syntaxTrees: [tree],
-            metadataReferences: this.metadataReferences
-                .Concat(this.previousContexts.Select(c => MetadataReference.FromAssembly(c.Assembly)))
-                .ToImmutableArray(),
-            rootModulePath: moduleName,
-            assemblyName: assemblyName);
-        return compilation;
-    }
+    private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
+        syntaxTrees: [tree],
+        metadataReferences: this.metadataReferences
+            .Concat(this.previousContexts.Select(c => MetadataReference.FromAssembly(c.Assembly)))
+            .ToImmutableArray(),
+        rootModulePath: $"Context{this.previousContexts.Count}",
+        assemblyName: $"ReplAssembly{this.previousContexts.Count}");
 
     private Assembly? LoadContextResolving(AssemblyLoadContext context, AssemblyName name)
     {

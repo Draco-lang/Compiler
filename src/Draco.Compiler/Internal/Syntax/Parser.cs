@@ -164,7 +164,6 @@ internal sealed class Parser(
             var op = this.Advance();
             var right = this.ParseExpression(level);
             result = new BinaryExpressionSyntax(result, op, right);
-            if (this.CanBailOut(result)) return result;
         }
         return result;
     };

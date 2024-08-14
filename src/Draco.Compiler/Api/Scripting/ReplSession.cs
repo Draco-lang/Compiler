@@ -49,7 +49,7 @@ public sealed class ReplSession
         };
 
         // Wrap in a tree
-        var tree = SyntaxTree.Create(CompilationUnit(decl));
+        var tree = this.ToSyntaxTree(decl);
 
         // Make compilation
         var compilation = this.MakeCompilation(tree);
@@ -104,6 +104,8 @@ public sealed class ReplSession
         ParameterList(),
         null,
         InlineFunctionBody(StatementExpression(stmt)));
+
+    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(decl));
 
     private DeclarationSyntax ToDeclaration(DeclarationSyntax decl)
     {

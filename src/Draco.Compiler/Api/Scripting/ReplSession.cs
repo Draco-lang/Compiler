@@ -30,7 +30,7 @@ public sealed class ReplSession
 
     public ReplSession(ImmutableArray<MetadataReference> metadataReferences)
     {
-        this.loadContext = new AssemblyLoadContext("ReplSession", true);
+        this.loadContext = new AssemblyLoadContext("ReplSession");
         this.loadContext.Resolving += this.LoadContextResolving;
         this.metadataReferences = metadataReferences;
     }

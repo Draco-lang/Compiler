@@ -275,12 +275,7 @@ internal sealed class Parser(
         var expr = this.ParseExpression();
 
         // If there is a newline in the last token of the expression, we can assume it's an expression
-        var trailingTrivia = expr.LastToken?.TrailingTrivia;
-        if (trailingTrivia?.Any(t => t.Kind == TriviaKind.Newline) == true)
-        {
-            // It's an expression
-            return expr;
-        }
+        if (this.CanBailOut(expr)) return expr;
 
         // We can peek for a semicolon
         if (this.Matches(TokenKind.Semicolon, out var semicolon))

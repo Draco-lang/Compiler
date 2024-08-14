@@ -30,7 +30,6 @@ public sealed class ReplSession
     // TODO: Temporary, until we can inherit everything from the host
     private readonly ImmutableArray<MetadataReference> metadataReferences;
     private readonly List<Context> previousContexts = [];
-    private int contextCounter;
 
     public ReplSession(ImmutableArray<MetadataReference> metadataReferences)
     {
@@ -156,8 +155,8 @@ public sealed class ReplSession
 
     private (Compilation Compilation, string MainModuleName) MakeCompilation(SyntaxTree tree)
     {
-        var moduleName = $"Context{this.contextCounter}";
-        var assemblyName = $"ReplAssembly{this.contextCounter}";
+        var moduleName = $"Context{this.previousContexts.Count}";
+        var assemblyName = $"ReplAssembly{this.previousContexts.Count}";
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
@@ -168,7 +167,6 @@ public sealed class ReplSession
             })).ToImmutableArray(),
             rootModulePath: moduleName,
             assemblyName: assemblyName);
-        ++this.contextCounter;
         return (compilation, moduleName);
     }
 

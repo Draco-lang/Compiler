@@ -41,7 +41,7 @@ public sealed class ReplSession
         // 2. In case it's a declaration, compile it and do nothing
         // 3. In case it's a statement, compile it and execute it
 
-        var (compilation, mainModuleName) = node switch
+        var compilation = node switch
         {
             ExpressionSyntax expr => this.CompileExpression(expr),
             DeclarationSyntax decl => this.CompileDeclaration(decl),
@@ -69,7 +69,7 @@ public sealed class ReplSession
             Assembly: assembly));
 
         // Execute the code
-        var mainModule = assembly.GetType(mainModuleName);
+        var mainModule = assembly.GetType(compilation.RootModulePath);
         Debug.Assert(mainModule is not null);
 
         var getValue = mainModule.GetMethod(".getvalue");
@@ -99,7 +99,7 @@ public sealed class ReplSession
             Diagnostics: result.Diagnostics);
     }
 
-    private (Compilation Compilation, string MainModuleName) CompileExpression(ExpressionSyntax expr)
+    private Compilation CompileExpression(ExpressionSyntax expr)
     {
         // func .getvalue(): object = expr;
 
@@ -113,7 +113,7 @@ public sealed class ReplSession
         return this.MakeCompilation(tree);
     }
 
-    private (Compilation Compilation, string MainModuleName) CompileDeclaration(DeclarationSyntax decl)
+    private Compilation CompileDeclaration(DeclarationSyntax decl)
     {
         if (decl is VariableDeclarationSyntax varDecl)
         {
@@ -134,7 +134,7 @@ public sealed class ReplSession
         return this.MakeCompilation(tree);
     }
 
-    private (Compilation Compilation, string MainModuleName) CompileStatement(StatementSyntax stmt)
+    private Compilation CompileStatement(StatementSyntax stmt)
     {
         // func .execute() = stmt;
 
@@ -148,7 +148,7 @@ public sealed class ReplSession
         return this.MakeCompilation(tree);
     }
 
-    private (Compilation Compilation, string MainModuleName) MakeCompilation(SyntaxTree tree)
+    private Compilation MakeCompilation(SyntaxTree tree)
     {
         var moduleName = $"Context{this.previousContexts.Count}";
         var assemblyName = $"ReplAssembly{this.previousContexts.Count}";
@@ -160,7 +160,7 @@ public sealed class ReplSession
                 .ToImmutableArray(),
             rootModulePath: moduleName,
             assemblyName: assemblyName);
-        return (compilation, moduleName);
+        return compilation;
     }
 
     private Assembly? LoadContextResolving(AssemblyLoadContext context, AssemblyName name)

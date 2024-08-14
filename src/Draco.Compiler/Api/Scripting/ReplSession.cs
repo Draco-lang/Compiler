@@ -9,7 +9,13 @@ using System.Runtime.Loader;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
+using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
+using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
+using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
+using VariableDeclarationSyntax = Draco.Compiler.Api.Syntax.VariableDeclarationSyntax;
 
 namespace Draco.Compiler.Api.Scripting;
 
@@ -35,6 +41,37 @@ public sealed class ReplSession
         this.loadContext = new AssemblyLoadContext("ReplSession", isCollectible: true);
         this.loadContext.Resolving += this.LoadContextResolving;
         this.metadataReferences = metadataReferences;
+    }
+
+    public ReplResult Evaluate(TextReader reader)
+    {
+        var syntaxDiagnostics = new SyntaxDiagnosticTable();
+
+        // Construct a source reader
+        var sourceReader = SourceReader.From(reader);
+        // Construct a lexer
+        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
+        // Construct a token source
+        var tokenSource = TokenSource.From(lexer);
+        // Construct a parser
+        var parser = new Parser(tokenSource, syntaxDiagnostics, parserMode: ParserMode.Repl);
+        // Parse a repl entry
+        var node = parser.ParseReplEntry();
+        // Make it into a tree
+        var tree = SyntaxTree.Create(node);
+
+        // Check for syntax errors
+        if (syntaxDiagnostics.HasErrors)
+        {
+            var diagnostics = tree.Root
+                .PreOrderTraverse()
+                .SelectMany(syntaxDiagnostics.Get)
+                .ToImmutableArray();
+            return new(Success: false, Value: null, Diagnostics: diagnostics);
+        }
+
+        // Actually evaluate
+        return this.Evaluate(tree.Root);
     }
 
     public ReplResult Evaluate(SyntaxNode node)

@@ -6,13 +6,33 @@ using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
+/// The different parser modes.
+/// </summary>
+internal enum ParserMode
+{
+    /// <summary>
+    /// The default parsing mode.
+    /// </summary>
+    None,
+
+    /// <summary>
+    /// A mode that bails out as early as possible for expression parsing when a newline is encountered.
+    /// </summary>
+    Repl,
+}
+
+/// <summary>
 /// Parses a sequence of <see cref="SyntaxToken"/>s into a <see cref="SyntaxNode"/>.
 /// </summary>
-internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable diagnostics)
+internal sealed class Parser(
+    ITokenSource tokenSource,
+    SyntaxDiagnosticTable diagnostics,
+    ParserMode parserMode = ParserMode.None)
 {
     /// <summary>
     /// The different declaration contexts.
@@ -116,7 +136,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     {
         // We unroll left-associativity into a loop
         var result = this.ParseExpression(level + 1);
-        while (true)
+        while (!this.CanBailOut(result))
         {
             var opKind = this.Peek();
             if (!operators.Contains(opKind)) break;
@@ -137,12 +157,14 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     {
         // Right-associativity is simply right-recursion
         var result = this.ParseExpression(level + 1);
+        if (this.CanBailOut(result)) return result;
         var opKind = this.Peek();
         if (operators.Contains(this.Peek()))
         {
             var op = this.Advance();
             var right = this.ParseExpression(level);
             result = new BinaryExpressionSyntax(result, op, right);
+            if (this.CanBailOut(result)) return result;
         }
         return result;
     };
@@ -231,6 +253,45 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         while (this.Peek() != TokenKind.EndOfInput) decls.Add(this.ParseDeclaration());
         var end = this.Expect(TokenKind.EndOfInput);
         return new(decls.ToSyntaxList(), end);
+    }
+
+    // TODO: Better name and doc comment
+    public SyntaxNode ParseReplEntry()
+    {
+        var visibility = this.ParseVisibilityModifier();
+        if (visibility is not null)
+        {
+            // Must be a declaration
+            return this.ParseDeclaration();
+        }
+
+        if (this.IsDeclarationStarter(this.Peek()))
+        {
+            // Must be a declaration
+            return this.ParseDeclaration();
+        }
+
+        // Either an expression or a statement
+        // We can start by parsing an expression
+        var expr = this.ParseExpression();
+
+        // If there is a newline in the last token of the expression, we can assume it's an expression
+        var trailingTrivia = expr.LastToken?.TrailingTrivia;
+        if (trailingTrivia?.Any(t => t.Kind == TriviaKind.Newline) == true)
+        {
+            // It's an expression
+            return expr;
+        }
+
+        // We can peek for a semicolon
+        if (this.Matches(TokenKind.Semicolon, out var semicolon))
+        {
+            // It's a statement
+            return new ExpressionStatementSyntax(expr, semicolon);
+        }
+
+        // It's an expression
+        return expr;
     }
 
     /// <summary>
@@ -924,6 +985,8 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     private ExpressionSyntax ParseRelationalLevelExpression(int level)
     {
         var left = this.ParseExpression(level + 1);
+        if (this.CanBailOut(left)) return left;
+
         var comparisons = SyntaxList.CreateBuilder<ComparisonElementSyntax>();
         while (true)
         {
@@ -932,6 +995,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             var op = this.Advance();
             var right = this.ParseExpression(level + 1);
             comparisons.Add(new(op, right));
+            if (this.CanBailOut(right)) break;
         }
         return comparisons.Count == 0
             ? left
@@ -941,7 +1005,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     private ExpressionSyntax ParseCallLevelExpression(int level)
     {
         var result = this.ParseExpression(level + 1);
-        while (true)
+        while (!this.CanBailOut(result))
         {
             var peek = this.Peek();
             if (peek == TokenKind.ParenOpen)
@@ -1300,6 +1364,12 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     }
 
     private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.Peek()) ? this.Advance() : null;
+
+    private bool CanBailOut(SyntaxNode node)
+    {
+        if (parserMode != ParserMode.Repl) return false;
+        return node.LastToken?.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline) == true;
+    }
 
     // Token-level operators
 

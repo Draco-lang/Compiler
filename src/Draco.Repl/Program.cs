@@ -20,24 +20,12 @@ internal static class Program
     {
         var session = new ReplSession([.. BclReferences]);
 
-        // val x = System.Random.Shared.Next();
-        // PrevModulesName.x
-        // PrevModulesName.x
-
-        var result1 = session.Evaluate(
-            VariableDeclaration(
-                "x",
-                null,
-                CallExpression(MemberExpression(MemberExpression(MemberExpression(NameExpression("System"), "Random"), "Shared"), "Next"))));
-        PrintResult(result1);
-
-        var result2 = session.Evaluate(
-            BinaryExpression(MemberExpression(NameExpression("Context0"), "x"), Plus, LiteralExpression(2)));
-        PrintResult(result2);
-
-        var result3 = session.Evaluate(
-            BinaryExpression(MemberExpression(NameExpression("Context0"), "x"), Plus, LiteralExpression(2)));
-        PrintResult(result3);
+        while (true)
+        {
+            Console.Write("> ");
+            var result = session.Evaluate(Console.In);
+            PrintResult(result);
+        }
     }
 
     private static void PrintResult(ReplResult result)
@@ -48,8 +36,13 @@ internal static class Program
         }
         else
         {
+            var oldColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+
             Console.WriteLine("Errors:");
             foreach (var diagnostic in result.Diagnostics) Console.WriteLine(diagnostic);
+
+            Console.ForegroundColor = oldColor;
         }
     }
 }

@@ -12,6 +12,13 @@ namespace Draco.Compiler.Internal.Syntax;
 /// </summary>
 internal readonly struct SyntaxDiagnosticTable
 {
+    /// <summary>
+    /// True, if there are any errors in the diagnostics table.
+    /// </summary>
+    public bool HasErrors => this.diagnostics
+        .SelectMany(diags => diags.Value)
+        .Any(d => d.Info.Severity == DiagnosticSeverity.Error);
+
     private readonly ConditionalWeakTable<SyntaxNode, List<SyntaxDiagnosticInfo>> diagnostics = [];
 
     public SyntaxDiagnosticTable()

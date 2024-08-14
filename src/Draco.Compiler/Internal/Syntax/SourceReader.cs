@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -79,6 +81,45 @@ internal static class SourceReader
         }
     }
 
+    private sealed class TextReaderSourceReader(TextReader reader) : ISourceReader
+    {
+        public bool IsEnd => reader.Peek() == -1;
+        public int Position { get; set; }
+
+        private readonly List<char> peekBuffer = [];
+
+        public ReadOnlyMemory<char> Advance(int amount = 1)
+        {
+            if (amount == 0) return ReadOnlyMemory<char>.Empty;
+
+            this.TryPeek(amount - 1, out _);
+            var result = this.peekBuffer.GetRange(0, amount).ToArray();
+            this.peekBuffer.RemoveRange(0, amount);
+            this.Position += amount;
+            return result;
+        }
+
+        public char Peek(int offset = 0, char @default = '\0') => this.TryPeek(offset, out var result)
+            ? result
+            : @default;
+
+        public bool TryPeek(int offset, out char result)
+        {
+            while (offset >= this.peekBuffer.Count)
+            {
+                var read = reader.Read();
+                if (read == -1)
+                {
+                    result = default;
+                    return false;
+                }
+                this.peekBuffer.Add((char)read);
+            }
+            result = this.peekBuffer[offset];
+            return true;
+        }
+    }
+
     /// <summary>
     /// Constructs an <see cref="ISourceReader"/> from a <see cref="ReadOnlyMemory{char}"/>.
     /// </summary>
@@ -92,4 +133,11 @@ internal static class SourceReader
     /// <param name="source">The source text as a <see cref="string"/>.</param>
     /// <returns>An <see cref="ISourceReader"/> reading <paramref name="source"/>.</returns>
     public static ISourceReader From(string source) => new MemorySourceReader(source.AsMemory());
+
+    /// <summary>
+    /// Constructs an <see cref="ISourceReader"/> from a <see cref="TextReader"/>.
+    /// </summary>
+    /// <param name="reader">The <see cref="TextReader"/> to read from.</param>
+    /// <returns>An <see cref="ISourceReader"/> reading from <paramref name="reader"/>.</returns>
+    public static ISourceReader From(TextReader reader) => new TextReaderSourceReader(reader);
 }

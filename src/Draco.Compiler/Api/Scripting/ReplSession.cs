@@ -20,10 +20,7 @@ public readonly record struct ReplResult(
 
 public sealed class ReplSession
 {
-    private readonly record struct Context(
-        Compilation Compilation,
-        Assembly Assembly,
-        MemoryStream PeStream);
+    private readonly record struct Context(Compilation Compilation, Assembly Assembly);
 
     private readonly AssemblyLoadContext loadContext;
     private readonly Dictionary<string, Assembly> loadedAssemblies = [];
@@ -67,11 +64,9 @@ public sealed class ReplSession
         var assembly = this.LoadAssembly(peStream);
 
         // Stash previous context
-        peStream.Position = 0;
         this.previousContexts.Add(new Context(
             Compilation: compilation,
-            Assembly: assembly,
-            PeStream: peStream));
+            Assembly: assembly));
 
         // Execute the code
         var mainModule = assembly.GetType(mainModuleName);
@@ -160,11 +155,9 @@ public sealed class ReplSession
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: this.metadataReferences.Concat(this.previousContexts.Select(c =>
-            {
-                c.PeStream.Position = 0;
-                return MetadataReference.FromPeStream(c.PeStream);
-            })).ToImmutableArray(),
+            metadataReferences: this.metadataReferences
+                .Concat(this.previousContexts.Select(c => MetadataReference.FromAssembly(c.Assembly)))
+                .ToImmutableArray(),
             rootModulePath: moduleName,
             assemblyName: assemblyName);
         return (compilation, moduleName);

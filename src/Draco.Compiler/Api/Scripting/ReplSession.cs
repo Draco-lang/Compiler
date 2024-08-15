@@ -14,6 +14,7 @@ using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
 using FunctionDeclarationSyntax = Draco.Compiler.Api.Syntax.FunctionDeclarationSyntax;
+using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
 using VariableDeclarationSyntax = Draco.Compiler.Api.Syntax.VariableDeclarationSyntax;
@@ -34,6 +35,7 @@ public sealed class ReplSession
     private readonly AssemblyLoadContext loadContext;
     private readonly Dictionary<string, Assembly> loadedAssemblies = [];
     private readonly List<Context> previousContexts = [];
+    private readonly List<ImportDeclarationSyntax> importDeclarations = [];
     // TODO: Temporary, until we can inherit everything from the host
     private readonly ImmutableArray<MetadataReference> metadataReferences;
 
@@ -77,6 +79,13 @@ public sealed class ReplSession
 
     public ReplResult Evaluate(SyntaxNode node)
     {
+        // Check for imports
+        if (node is ImportDeclarationSyntax import)
+        {
+            this.importDeclarations.Add(import);
+            return new(Success: true, Value: null, Diagnostics: []);
+        }
+
         // Translate to a runnable function
         var decl = node switch
         {
@@ -143,7 +152,8 @@ public sealed class ReplSession
         null,
         InlineFunctionBody(StatementExpression(stmt)));
 
-    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(decl));
+    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(
+        this.importDeclarations.Append(decl)));
 
     private DeclarationSyntax ToDeclaration(DeclarationSyntax decl)
     {

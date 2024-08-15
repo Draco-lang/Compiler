@@ -191,7 +191,7 @@ internal sealed class TypeProvider(Compilation compilation)
 
         // TODO: If we don't have the assembly report error
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
-        var assembly = compilation.MetadataAssemblies.Values.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
+        var assembly = compilation.MetadataAssemblies.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
         return assembly.RootNamespace.Lookup([.. parts]).OfType<TypeSymbol>().Single();
     }
 

@@ -103,7 +103,7 @@ internal sealed class XmlDocumentationExtractor
     }
 
     private Symbol? GetSymbolFromDocumentationName(string documentationName) =>
-        this.Assembly.Compilation.MetadataAssemblies.Values
+        this.Assembly.Compilation.MetadataAssemblies
             .Select(x => x.RootNamespace.LookupByPrefixedDocumentationName(documentationName))
             .OfType<Symbol>()
             .FirstOrDefault();

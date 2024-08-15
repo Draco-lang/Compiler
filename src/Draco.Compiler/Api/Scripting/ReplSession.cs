@@ -9,6 +9,7 @@ using System.Runtime.Loader;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
@@ -36,14 +37,15 @@ public sealed class ReplSession
     private readonly Dictionary<string, Assembly> loadedAssemblies = [];
     private readonly List<Context> previousContexts = [];
     private readonly List<ImportDeclarationSyntax> importDeclarations = [];
+    private readonly List<Symbol> symbols = [];
     // TODO: Temporary, until we can inherit everything from the host
-    private readonly ImmutableArray<MetadataReference> metadataReferences;
+    private readonly ImmutableArray<MetadataReference>.Builder metadataReferences;
 
     public ReplSession(ImmutableArray<MetadataReference> metadataReferences)
     {
         this.loadContext = new AssemblyLoadContext("ReplSession", isCollectible: true);
         this.loadContext.Resolving += this.LoadContextResolving;
-        this.metadataReferences = metadataReferences;
+        this.metadataReferences = metadataReferences.ToBuilder();
     }
 
     public ReplResult Evaluate(TextReader reader)
@@ -108,11 +110,24 @@ public sealed class ReplSession
         // Check for errors
         if (!result.Success) return new(Success: false, Value: null, Diagnostics: result.Diagnostics);
 
+        // If it was a declaration, track it
+        if (node is DeclarationSyntax)
+        {
+            var semanticModel = compilation.GetSemanticModel(tree);
+            var decl2 = tree.Root
+                .PreOrderTraverse()
+                .OfType<DeclarationSyntax>()
+                .First(d => d.GetType() == decl.GetType());
+            var symbol = semanticModel.GetDeclaredSymbolInternal(decl2);
+            if (symbol is not null) this.symbols.Add(symbol);
+        }
+
         // We need to load the assembly in the current context
         var assembly = this.LoadAssembly(peStream);
 
         // Stash it for future use
         this.previousContexts.Add(new Context(Compilation: compilation, Assembly: assembly));
+        this.metadataReferences.Add(MetadataReference.FromAssembly(assembly));
 
         // Retrieve the main module
         var mainModule = assembly.GetType(compilation.RootModulePath);
@@ -187,11 +202,15 @@ public sealed class ReplSession
 
     private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
         syntaxTrees: [tree],
-        metadataReferences: this.metadataReferences
-            .Concat(this.previousContexts.Select(c => MetadataReference.FromAssembly(c.Assembly)))
+        metadataReferences: this.metadataReferences.ToImmutableArray(),
+        injectedSymbols: this.symbols
+            .Select(s => (Name: s.Name, FullName: s.FullName))
             .ToImmutableArray(),
         rootModulePath: $"Context{this.previousContexts.Count}",
-        assemblyName: $"ReplAssembly{this.previousContexts.Count}");
+        assemblyName: $"ReplAssembly{this.previousContexts.Count}",
+        metadataAssemblies: this.previousContexts.Count == 0
+            ? null
+            : this.previousContexts[^1].Compilation.MetadataAssembliesDict);
 
     private Assembly? LoadContextResolving(AssemblyLoadContext context, AssemblyName name)
     {

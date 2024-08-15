@@ -13,6 +13,7 @@ using Draco.Compiler.Internal.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
+using FunctionDeclarationSyntax = Draco.Compiler.Api.Syntax.FunctionDeclarationSyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
 using VariableDeclarationSyntax = Draco.Compiler.Api.Syntax.VariableDeclarationSyntax;
@@ -154,6 +155,16 @@ public sealed class ReplSession
                 varDecl.Name.Text,
                 varDecl.Type?.Type,
                 varDecl.Value?.Value);
+        }
+        else if (decl is FunctionDeclarationSyntax funcDecl)
+        {
+            decl = FunctionDeclaration(
+                Visibility.Public,
+                funcDecl.Name.Text,
+                funcDecl.Generics?.Parameters,
+                funcDecl.ParameterList,
+                funcDecl.ReturnType?.Type,
+                funcDecl.Body);
         }
         else
         {

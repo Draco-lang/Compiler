@@ -784,7 +784,7 @@ internal partial class Binder
         }
     }
 
-    private async BindingTask<BoundExpression> WrapFunctions(
+    private BindingTask<BoundExpression> WrapFunctions(
         SyntaxNode syntax,
         BoundExpression? receiver,
         ImmutableArray<FunctionSymbol> functions)
@@ -792,7 +792,8 @@ internal partial class Binder
         if (IsMethodOfCallExpression(syntax))
         {
             // Direct call
-            return new BoundFunctionGroupExpression(syntax, receiver, functions);
+            return BindingTask.FromResult<BoundExpression>(
+                new BoundFunctionGroupExpression(syntax, receiver, functions));
         }
         else
         {
@@ -808,7 +809,8 @@ internal partial class Binder
                     .First(ctor => ctor.Parameters.Length == 2
                                 && SymbolEqualityComparer.Default.Equals(ctor.Parameters[0].Type, this.WellKnownTypes.SystemObject)
                                 && SymbolEqualityComparer.Default.Equals(ctor.Parameters[1].Type, this.WellKnownTypes.SystemIntPtr));
-                return new BoundDelegateCreationExpression(syntax, receiver, functions[0], delegateCtor);
+                return BindingTask.FromResult<BoundExpression>(
+                    new BoundDelegateCreationExpression(syntax, receiver, functions[0], delegateCtor));
             }
             else
             {

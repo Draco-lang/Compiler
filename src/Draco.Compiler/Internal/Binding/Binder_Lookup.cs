@@ -154,7 +154,11 @@ internal partial class Binder
             syntax);
     }
 
-    // TODO: Doc
+    /// <summary>
+    /// Looks up the appropriate delegate type for the given function type.
+    /// </summary>
+    /// <param name="type">The function type to look up the delegate type for.</param>
+    /// <returns>The appropriate delegate type for <paramref name="type"/>.</returns>
     private TypeSymbol LookupDelegateForType(TypeSymbol type)
     {
         if (type.IsDelegateType) return type;

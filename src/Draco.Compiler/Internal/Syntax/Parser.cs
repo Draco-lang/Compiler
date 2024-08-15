@@ -264,7 +264,8 @@ internal sealed class Parser(
             return this.ParseDeclaration();
         }
 
-        if (this.IsDeclarationStarter(this.Peek()))
+        // NOTE: We don't use IsDeclarationStarter here to avoid peeking for a label
+        if (declarationStarters.Contains(this.Peek()))
         {
             // Must be a declaration
             return this.ParseDeclaration();

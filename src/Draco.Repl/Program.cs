@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using static Basic.Reference.Assemblies.Net80;
-using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Repl;
 
@@ -39,7 +37,6 @@ internal static class Program
             var oldColor = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
 
-            Console.WriteLine("Errors:");
             foreach (var diagnostic in result.Diagnostics) Console.WriteLine(diagnostic);
 
             Console.ForegroundColor = oldColor;

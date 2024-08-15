@@ -18,6 +18,8 @@
   <Type Name="System.Int16" Assembly="System.Runtime" />
   <Type Name="System.Int32" Assembly="System.Runtime" />
   <Type Name="System.Int64" Assembly="System.Runtime" />
+  
+  <Type Name="System.IntPtr" Assembly="System.Runtime" />
 
   <Type Name="System.Single" Assembly="System.Runtime" />
   <Type Name="System.Double" Assembly="System.Runtime" />
@@ -28,5 +30,6 @@
   <Type Name="System.Type" Assembly="System.Runtime" />
   <Type Name="System.Array" Assembly="System.Runtime" />
   <Type Name="System.ValueType" Assembly="System.Runtime" />
+  <Type Name="System.Delegate" Assembly="System.Runtime" />
 
 </WellKnownTypes>

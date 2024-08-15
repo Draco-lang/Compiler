@@ -111,12 +111,12 @@ internal partial class Binder
         return new BoundStringExpression(syntax, await BindingTask.WhenAll(partsTask), this.WellKnownTypes.SystemString);
     }
 
-    private BindingTask<BoundExpression> BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> BindNameExpression(NameExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
-        return FromResult(this.SymbolToExpression(syntax, symbol, constraints, diagnostics));
+        return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
     private async BindingTask<BoundExpression> BindBlockExpression(BlockExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -615,7 +615,7 @@ internal partial class Binder
 
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetValue(memberName, syntax, diagnostics);
-            return this.SymbolToExpression(syntax, symbol, constraints, diagnostics);
+            return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
         }
         else
         {
@@ -628,9 +628,9 @@ internal partial class Binder
             case Symbol when member.IsError:
                 return new BoundReferenceErrorExpression(syntax, member);
             case FunctionSymbol func:
-                return new BoundFunctionGroupExpression(syntax, receiver, [func]);
+                return await this.WrapFunctions(syntax, receiver, [func]);
             case OverloadSymbol overload:
-                return new BoundFunctionGroupExpression(syntax, receiver, overload.Functions);
+                return await this.WrapFunctions(syntax, receiver, overload.Functions);
             case FieldSymbol field:
                 return new BoundFieldExpression(syntax, receiver, field);
             case PropertySymbol prop:
@@ -750,7 +750,8 @@ internal partial class Binder
         }
     }
 
-    private BoundExpression SymbolToExpression(SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private async BindingTask<BoundExpression> StaticSymbolToExpression(
+        SyntaxNode syntax, Symbol symbol, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
         if (symbol.IsError) return new BoundReferenceErrorExpression(syntax, symbol);
         switch (symbol)
@@ -775,11 +776,47 @@ internal partial class Binder
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
-            return new BoundFunctionGroupExpression(syntax, null, [func]);
+            return await this.WrapFunctions(syntax, null, [func]);
         case OverloadSymbol overload:
-            return new BoundFunctionGroupExpression(syntax, null, overload.Functions);
+            return await this.WrapFunctions(syntax, null, overload.Functions);
         default:
             throw new InvalidOperationException();
+        }
+    }
+
+    private BindingTask<BoundExpression> WrapFunctions(
+        SyntaxNode syntax,
+        BoundExpression? receiver,
+        ImmutableArray<FunctionSymbol> functions)
+    {
+        if (IsMethodOfCallExpression(syntax))
+        {
+            // Direct call
+            return BindingTask.FromResult<BoundExpression>(
+                new BoundFunctionGroupExpression(syntax, receiver, functions));
+        }
+        else
+        {
+            // It's a delegate construction
+            if (functions.Length == 1)
+            {
+                // No need to create a constraint to resolve which one
+                // Look up delegate type to target
+                var delegateType = this.LookupDelegateForType(functions[0].Type);
+                // Look up delegate constructor
+                var delegateCtor = delegateType
+                    .Constructors
+                    .First(ctor => ctor.Parameters.Length == 2
+                                && SymbolEqualityComparer.Default.Equals(ctor.Parameters[0].Type, this.WellKnownTypes.SystemObject)
+                                && SymbolEqualityComparer.Default.Equals(ctor.Parameters[1].Type, this.WellKnownTypes.SystemIntPtr));
+                return BindingTask.FromResult<BoundExpression>(
+                    new BoundDelegateCreationExpression(syntax, receiver, functions[0], delegateCtor));
+            }
+            else
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
         }
     }
 
@@ -799,5 +836,12 @@ internal partial class Binder
         ForExpressionSyntax @for => ExtractValueSyntax(@for.Then),
         BlockExpressionSyntax block => block.Value is null ? block : ExtractValueSyntax(block.Value),
         _ => syntax,
+    };
+
+    private static bool IsMethodOfCallExpression(SyntaxNode syntax) => syntax.Parent switch
+    {
+        CallExpressionSyntax call => call.Function.Equals(syntax),
+        GenericExpressionSyntax gen => IsMethodOfCallExpression(gen),
+        _ => false,
     };
 }

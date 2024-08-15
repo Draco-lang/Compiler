@@ -40,14 +40,16 @@ internal sealed partial class ConstraintSolver
                                            && assignable.AssignedType.IsGroundType)
             .Body((ConstraintStore store, Assignable assignable) =>
             {
-                if (SymbolEqualityComparer.Default.IsBaseOf(assignable.TargetType, assignable.AssignedType))
+                var targetType = assignable.TargetType;
+                var assignedType = assignable.AssignedType;
+                if (SymbolEqualityComparer.Default.IsBaseOf(targetType, assignedType))
                 {
                     // Ok
                     return;
                 }
                 // Error
                 assignable.ReportDiagnostic(diagnostics, diag => diag
-                    .WithFormatArgs(assignable.TargetType.Substitution, assignable.AssignedType.Substitution));
+                    .WithFormatArgs(targetType, assignedType));
             })
             .Named("assignable"),
 
@@ -218,7 +220,10 @@ internal sealed partial class ConstraintSolver
                 }
 
                 // We can now check if it's a function
-                if (called is not FunctionTypeSymbol functionType)
+                // The called thing is either a function, or is a delegate with the appropriate signature
+                var functionType = called as FunctionTypeSymbol
+                                ?? called.InvokeSignatureType;
+                if (functionType is null)
                 {
                     // Error
                     UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);

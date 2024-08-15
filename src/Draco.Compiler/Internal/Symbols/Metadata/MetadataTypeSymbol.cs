@@ -44,6 +44,10 @@ internal sealed class MetadataTypeSymbol(
         this.Assembly.Compilation.WellKnownTypes.SystemValueType,
         SymbolEqualityComparer.Default);
 
+    public override bool IsDelegateType => this.BaseTypes.Contains(
+        this.Assembly.Compilation.WellKnownTypes.SystemDelegate,
+        SymbolEqualityComparer.Default);
+
     public override bool IsInterface => typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
 
     public override bool IsAbstract => typeDefinition.Attributes.HasFlag(TypeAttributes.Abstract);

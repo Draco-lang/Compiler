@@ -145,6 +145,11 @@ internal partial class BoundObjectCreationExpression
     public override TypeSymbol Type => this.ObjectType;
 }
 
+internal partial class BoundDelegateCreationExpression
+{
+    public override TypeSymbol Type => (TypeSymbol)this.DelegateConstructor.ContainingSymbol!;
+}
+
 internal partial class BoundArrayAccessExpression
 {
     public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];

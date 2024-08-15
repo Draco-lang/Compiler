@@ -856,42 +856,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
     }
 
     [Fact]
-    public void FunctionGroupIsIllegalInExpressionContext()
-    {
-        // func main()
-        // {
-        //     foo
-        // }
-        // func foo() { }
-
-        // Arrange
-        var tree = SyntaxTree.Create(CompilationUnit(
-            FunctionDeclaration(
-                "main",
-                ParameterList(),
-                null,
-                BlockFunctionBody(
-                    ExpressionStatement(NameExpression("foo")))),
-            FunctionDeclaration(
-                "foo",
-                ParameterList(),
-                null,
-                BlockFunctionBody())));
-
-        var funcGroupRef = tree.FindInChildren<NameExpressionSyntax>(0);
-
-        // Act
-        var compilation = CreateCompilation(tree);
-        var semanticModel = compilation.GetSemanticModel(tree);
-
-        var diags = semanticModel.Diagnostics;
-
-        // Assert
-        Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalExpression);
-    }
-
-    [Fact]
     public void ImportPointsToNonExistingModuleInCompilationUnit()
     {
         // import Nonexisting;

@@ -389,6 +389,19 @@ internal sealed class CilCodegen
             this.StoreRegister(newObj.Target);
             break;
         }
+        case NewDelegateInstruction newDel:
+        {
+            // Receiver
+            if (newDel.Receiver is null) this.InstructionEncoder.OpCode(ILOpCode.Ldnull);
+            else this.EncodePush(newDel.Receiver);
+            // Push the method address
+            this.InstructionEncoder.OpCode(ILOpCode.Ldftn);
+            this.EncodeToken(newDel.Function);
+            // Create the delegate
+            this.InstructionEncoder.OpCode(ILOpCode.Newobj);
+            this.EncodeToken(newDel.DelegateConstructor);
+            break;
+        }
         case NewArrayInstruction newArr:
         {
             // Dimensions

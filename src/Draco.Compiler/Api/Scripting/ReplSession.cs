@@ -9,6 +9,7 @@ using System.Runtime.Loader;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Scripting;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Syntax;
 using Draco.Compiler.Internal.Utilities;
@@ -25,15 +26,14 @@ namespace Draco.Compiler.Api.Scripting;
 
 public sealed class ReplSession
 {
-    private readonly record struct Context(Compilation Compilation, Assembly Assembly);
+    private readonly record struct HistoryEntry(Compilation Compilation, Assembly Assembly);
 
     private const string EvalFunctionName = ".eval";
 
     private readonly AssemblyLoadContext loadContext;
     private readonly Dictionary<string, Assembly> loadedAssemblies = [];
-    private readonly List<Context> previousContexts = [];
-    private readonly List<ImportDeclarationSyntax> importDeclarations = [];
-    private readonly List<Symbol> symbols = [];
+    private readonly List<HistoryEntry> previousEntries = [];
+    private readonly ReplContext context = new();
     // TODO: Temporary, until we can inherit everything from the host
     private readonly ImmutableArray<MetadataReference>.Builder metadataReferences;
 
@@ -84,7 +84,7 @@ public sealed class ReplSession
         // Check for imports
         if (node is ImportDeclarationSyntax import)
         {
-            this.importDeclarations.Add(import);
+            this.context.AddImport(ExtractImportPath(import.Path));
             return ExecutionResult.Success(default(TResult)!);
         }
 
@@ -119,14 +119,14 @@ public sealed class ReplSession
                 .OfType<DeclarationSyntax>()
                 .First(d => d.GetType() == decl.GetType());
             var symbol = semanticModel.GetDeclaredSymbolInternal(decl2);
-            if (symbol is not null) this.symbols.Add(symbol);
+            this.context.AddSymbol(symbol);
         }
 
         // We need to load the assembly in the current context
         var assembly = this.LoadAssembly(peStream);
 
         // Stash it for future use
-        this.previousContexts.Add(new Context(Compilation: compilation, Assembly: assembly));
+        this.previousEntries.Add(new HistoryEntry(Compilation: compilation, Assembly: assembly));
         this.metadataReferences.Add(MetadataReference.FromAssembly(assembly));
 
         // Retrieve the main module
@@ -161,8 +161,7 @@ public sealed class ReplSession
         null,
         InlineFunctionBody(StatementExpression(stmt)));
 
-    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(
-        this.importDeclarations.Append(decl)));
+    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(decl));
 
     private DeclarationSyntax ToDeclaration(DeclarationSyntax decl)
     {
@@ -197,14 +196,12 @@ public sealed class ReplSession
     private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
         syntaxTrees: [tree],
         metadataReferences: this.metadataReferences.ToImmutableArray(),
-        injectedSymbols: this.symbols
-            .Select(s => (Name: s.Name, FullName: s.FullName))
-            .ToImmutableArray(),
-        rootModulePath: $"Context{this.previousContexts.Count}",
-        assemblyName: $"ReplAssembly{this.previousContexts.Count}",
-        metadataAssemblies: this.previousContexts.Count == 0
+        globalImports: this.context.GlobalImports,
+        rootModulePath: $"Context{this.previousEntries.Count}",
+        assemblyName: $"ReplAssembly{this.previousEntries.Count}",
+        metadataAssemblies: this.previousEntries.Count == 0
             ? null
-            : this.previousContexts[^1].Compilation.MetadataAssembliesDict);
+            : this.previousEntries[^1].Compilation.MetadataAssembliesDict);
 
     private Assembly? LoadContextResolving(AssemblyLoadContext context, AssemblyName name)
     {
@@ -220,4 +217,11 @@ public sealed class ReplSession
         if (assemblyName is not null) this.loadedAssemblies.Add(assemblyName, assembly);
         return assembly;
     }
+
+    private static string ExtractImportPath(ImportPathSyntax path) => path switch
+    {
+        RootImportPathSyntax root => root.Name.Text,
+        MemberImportPathSyntax member => $"{ExtractImportPath(member.Accessed)}.{member.Member.Text}",
+        _ => throw new ArgumentOutOfRangeException(nameof(path)),
+    };
 }

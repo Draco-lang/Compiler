@@ -44,7 +44,7 @@ internal sealed class BinderCache(Compilation compilation)
     private Binder BuildCompilationUnitBinder(CompilationUnitSyntax syntax)
     {
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
-        if (this.compilation.InjectedSymbols.Length > 0) binder = new InjectBinder(binder, this.compilation.InjectedSymbols);
+        if (!this.compilation.GlobalImports.IsDefault) binder = new GlobalImportsBinder(binder);
         binder = new ModuleBinder(binder, this.compilation.RootModule);
         binder = new ModuleBinder(binder, this.compilation.GetModuleForSyntaxTree(syntax.Tree));
         binder = WrapInImportBinder(binder, syntax);

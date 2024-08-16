@@ -95,8 +95,8 @@ public sealed class ReplSession
         var decl = node switch
         {
             ExpressionSyntax expr => this.ToDeclaration(expr),
-            DeclarationSyntax d => this.ToDeclaration(d),
             StatementSyntax stmt => this.ToDeclaration(stmt),
+            DeclarationSyntax d => d,
             _ => throw new ArgumentOutOfRangeException(nameof(node)),
         };
 
@@ -148,17 +148,15 @@ public sealed class ReplSession
         return ExecutionResult.Success(default(TResult)!, result.Diagnostics);
     }
 
-    // public func .eval(): object = decl;
+    // func .eval(): object = decl;
     private DeclarationSyntax ToDeclaration(ExpressionSyntax expr) => FunctionDeclaration(
-        Visibility.Public,
         EvalFunctionName,
         ParameterList(),
         NameType("object"),
         InlineFunctionBody(expr));
 
-    // public func .eval() = stmt;
+    // func .eval() = stmt;
     private DeclarationSyntax ToDeclaration(StatementSyntax stmt) => FunctionDeclaration(
-        Visibility.Public,
         EvalFunctionName,
         ParameterList(),
         null,
@@ -166,39 +164,10 @@ public sealed class ReplSession
 
     private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(decl));
 
-    private DeclarationSyntax ToDeclaration(DeclarationSyntax decl)
-    {
-        // TODO: We can get rid of this if we make scoping smarter
-        if (decl is VariableDeclarationSyntax varDecl)
-        {
-            decl = VariableDeclaration(
-                Visibility.Public,
-                varDecl.Name.Text,
-                varDecl.Type?.Type,
-                varDecl.Value?.Value);
-        }
-        else if (decl is FunctionDeclarationSyntax funcDecl)
-        {
-            decl = FunctionDeclaration(
-                Visibility.Public,
-                funcDecl.Name.Text,
-                funcDecl.Generics?.Parameters,
-                funcDecl.ParameterList,
-                funcDecl.ReturnType?.Type,
-                funcDecl.Body);
-        }
-        else
-        {
-            // TODO
-            throw new NotImplementedException();
-        }
-
-        return decl;
-    }
-
     private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
         syntaxTrees: [tree],
         metadataReferences: this.metadataReferences.ToImmutableArray(),
+        flags: CompilationFlags.ImplicitPublicSymbols,
         globalImports: this.context.GlobalImports,
         rootModulePath: $"Context{this.previousEntries.Count}",
         assemblyName: $"ReplAssembly{this.previousEntries.Count}",

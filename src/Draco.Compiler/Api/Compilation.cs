@@ -43,6 +43,7 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
     /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
+    /// <param name="flags">Special compiler flags.</param>
     /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
@@ -50,9 +51,11 @@ public sealed class Compilation : IBinderProvider
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences = null,
+        CompilationFlags flags = CompilationFlags.None,
         string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null) => new(
+        flags: flags,
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
         rootModulePath: rootModulePath,
@@ -63,6 +66,7 @@ public sealed class Compilation : IBinderProvider
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
+    /// <param name="flags">Special compiler flags.</param>
     /// <param name="globalImports">The global imports for the compilation.</param>
     /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
     /// <param name="rootModulePath">The path of the root module.</param>
@@ -71,6 +75,7 @@ public sealed class Compilation : IBinderProvider
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     internal static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
+        CompilationFlags flags,
         GlobalImports globalImports,
         ImmutableArray<MetadataReference>? metadataReferences = null,
         string? rootModulePath = null,
@@ -79,8 +84,9 @@ public sealed class Compilation : IBinderProvider
         IReadOnlyDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies = null) => new(
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
-        rootModulePath: rootModulePath,
+        flags: flags,
         globalImports: globalImports,
+        rootModulePath: rootModulePath,
         outputPath: outputPath,
         assemblyName: assemblyName,
         metadataAssemblies: metadataAssemblies);
@@ -93,6 +99,11 @@ public sealed class Compilation : IBinderProvider
         .SelectMany(model => model.Diagnostics)
         .Concat(this.GlobalDiagnosticBag)
         .ToImmutableArray();
+
+    /// <summary>
+    /// Special settings flags.
+    /// </summary>
+    public CompilationFlags Flags { get; }
 
     /// <summary>
     /// The trees that are being compiled.
@@ -181,6 +192,7 @@ public sealed class Compilation : IBinderProvider
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences,
+        CompilationFlags flags = CompilationFlags.None,
         GlobalImports? globalImports = null,
         string? rootModulePath = null,
         string? outputPath = null,
@@ -193,6 +205,7 @@ public sealed class Compilation : IBinderProvider
         TypeProvider? typeProvider = null,
         BinderCache? binderCache = null)
     {
+        this.Flags = flags;
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? [];
         this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);

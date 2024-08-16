@@ -13,11 +13,11 @@ using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
 using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSyntax;
+using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
+using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
+using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
-using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
-using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
-using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
 
 namespace Draco.Compiler.Api.Scripting;
 

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols;

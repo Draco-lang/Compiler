@@ -1,6 +1,5 @@
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
-using Draco.Compiler.Internal.Utilities;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.Tests.Repl;

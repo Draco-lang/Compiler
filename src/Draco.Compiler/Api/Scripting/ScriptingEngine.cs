@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.IO;
 using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;

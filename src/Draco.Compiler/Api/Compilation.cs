@@ -63,16 +63,16 @@ public sealed class Compilation : IBinderProvider
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
-    /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
     /// <param name="globalImports">The global imports for the compilation.</param>
+    /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
     /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     internal static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
+        GlobalImports globalImports,
         ImmutableArray<MetadataReference>? metadataReferences = null,
-        GlobalImports? globalImports = null,
         string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null,

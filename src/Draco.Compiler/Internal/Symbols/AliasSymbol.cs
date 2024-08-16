@@ -14,7 +14,7 @@ internal abstract class AliasSymbol : Symbol, IMemberSymbol
     /// </summary>
     public abstract Symbol Substitution { get; }
 
-    public override void Accept(SymbolVisitor visitor) => visitor.VisitTypeAlias(this);
+    public override void Accept(SymbolVisitor visitor) => visitor.VisitAlias(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitAlias(this);
     public override ISymbol ToApiSymbol() => new Api.Semantics.AliasSymbol(this);
 }

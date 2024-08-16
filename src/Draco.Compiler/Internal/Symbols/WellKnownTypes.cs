@@ -117,7 +117,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
             FromAllocating((codegen, target, operands) => codegen.Write(Call(target, this.SystemString_Concat, operands))));
     }
 
-    private static SynthetizedTypeAliasSymbol Alias(string name, TypeSymbol type) =>
+    private static SynthetizedAliasSymbol Alias(string name, TypeSymbol type) =>
         new(name, type);
     #endregion
 

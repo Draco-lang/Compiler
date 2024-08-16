@@ -21,6 +21,9 @@ using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSynta
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
 using VariableDeclarationSyntax = Draco.Compiler.Api.Syntax.VariableDeclarationSyntax;
+using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
+using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
+using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
 
 namespace Draco.Compiler.Api.Scripting;
 
@@ -119,7 +122,7 @@ public sealed class ReplSession
                 .OfType<DeclarationSyntax>()
                 .First(d => d.GetType() == decl.GetType());
             var symbol = semanticModel.GetDeclaredSymbolInternal(decl2);
-            this.context.AddSymbol(symbol);
+            if (symbol is not null) this.context.AddSymbol(symbol);
         }
 
         // We need to load the assembly in the current context

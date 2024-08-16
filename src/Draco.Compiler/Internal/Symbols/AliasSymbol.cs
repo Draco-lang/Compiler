@@ -1,0 +1,20 @@
+using Draco.Compiler.Api.Semantics;
+
+namespace Draco.Compiler.Internal.Symbols;
+
+/// <summary>
+/// Alias for a symbol.
+/// </summary>
+internal abstract class AliasSymbol : Symbol, IMemberSymbol
+{
+    public bool IsStatic => true;
+
+    /// <summary>
+    /// The symbol being aliased.
+    /// </summary>
+    public abstract Symbol Substitution { get; }
+
+    public override void Accept(SymbolVisitor visitor) => visitor.VisitTypeAlias(this);
+    public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitAlias(this);
+    public override ISymbol ToApiSymbol() => new Api.Semantics.AliasSymbol(this);
+}

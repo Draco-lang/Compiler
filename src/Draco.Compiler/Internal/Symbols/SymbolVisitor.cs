@@ -18,9 +18,9 @@ internal abstract class SymbolVisitor
         foreach (var member in typeSymbol.Members) member.Accept(this);
     }
 
-    public virtual void VisitTypeAlias(TypeAliasSymbol typeAliasSymbol)
+    public virtual void VisitAlias(AliasSymbol aliasSymbol)
     {
-        typeAliasSymbol.Substitution.Accept(this);
+        aliasSymbol.Substitution.Accept(this);
     }
 
     public virtual void VisitTypeParameter(TypeParameterSymbol typeParameterSymbol)
@@ -73,9 +73,9 @@ internal abstract class SymbolVisitor<TResult>
         return default!;
     }
 
-    public virtual TResult VisitTypeAlias(TypeAliasSymbol typeAliasSymbol)
+    public virtual TResult VisitAlias(AliasSymbol aliasSymbol)
     {
-        typeAliasSymbol.Substitution.Accept(this);
+        aliasSymbol.Substitution.Accept(this);
         return default!;
     }
 

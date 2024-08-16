@@ -64,14 +64,15 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
     /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
+    /// <param name="globalImports">The global imports for the compilation.</param>
     /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
     /// <returns>The constructed <see cref="Compilation"/>.</returns>
     internal static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
-        ImmutableArray<(string Name, string FullyQualifiedName)> injectedSymbols,
         ImmutableArray<MetadataReference>? metadataReferences = null,
+        GlobalImports? globalImports = null,
         string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null,
@@ -79,7 +80,7 @@ public sealed class Compilation : IBinderProvider
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
         rootModulePath: rootModulePath,
-        injectedSymbols: injectedSymbols,
+        globalImports: globalImports,
         outputPath: outputPath,
         assemblyName: assemblyName,
         metadataAssemblies: metadataAssemblies);
@@ -119,9 +120,9 @@ public sealed class Compilation : IBinderProvider
     public string AssemblyName { get; }
 
     /// <summary>
-    /// The symbols injected into the compilation.
+    /// Global imports for the compilation.
     /// </summary>
-    internal ImmutableArray<(string Name, string FullyQualifiedName)> InjectedSymbols { get; }
+    public GlobalImports GlobalImports { get; }
 
     /// <summary>
     /// The metadata assemblies this compilation references.
@@ -180,7 +181,7 @@ public sealed class Compilation : IBinderProvider
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences,
-        ImmutableArray<(string Name, string FullyQualifiedName)>? injectedSymbols = null,
+        GlobalImports? globalImports = null,
         string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null,
@@ -196,7 +197,7 @@ public sealed class Compilation : IBinderProvider
         this.MetadataReferences = metadataReferences ?? [];
         this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
         this.OutputPath = outputPath ?? ".";
-        this.InjectedSymbols = injectedSymbols ?? [];
+        this.GlobalImports = globalImports ?? default;
         this.AssemblyName = assemblyName ?? "output";
         this.rootModule = rootModule;
         this.metadataAssemblies = metadataAssemblies?.ToDictionary(kv => kv.Key, kv => kv.Value) ?? [];

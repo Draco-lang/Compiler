@@ -126,4 +126,19 @@ public sealed partial class Diagnostic
         sb.Append(": ").Append(this.Message);
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Converts this diagnostic to the MSBuild error format.
+    /// </summary>
+    /// <returns>The MSBuild error format of this diagnostic.</returns>
+    public string ToMsbuildString()
+    {
+        var file = string.Empty;
+        if (!this.Location.IsNone && this.Location.SourceText.Path is not null)
+        {
+            var range = this.Location.Range!.Value;
+            file = $"{this.Location.SourceText.Path.OriginalString}({range.Start.Line + 1},{range.Start.Column + 1},{range.End.Line + 1},{range.End.Column + 1})";
+        }
+        return $"{file} : {this.Severity.ToString().ToLower()} {this.Template.Code} : {this.Message}";
+    }
 }

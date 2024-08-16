@@ -137,6 +137,15 @@ public sealed class ReplSession
         // Wrap in a tree
         var tree = this.ToSyntaxTree(decl);
 
+        // Find the relocated node in the tree, we need this to shift diagnostics
+        var relocatedNode = node switch
+        {
+            ExpressionSyntax expr => tree.FindInChildren<ExpressionSyntax>() as SyntaxNode,
+            StatementSyntax stmt => tree.FindInChildren<StatementSyntax>(),
+            DeclarationSyntax d => tree.FindInChildren<DeclarationSyntax>(1),
+            _ => throw new ArgumentOutOfRangeException(nameof(node)),
+        };
+
         // Make compilation
         var compilation = this.MakeCompilation(tree);
 
@@ -144,15 +153,19 @@ public sealed class ReplSession
         var peStream = new MemoryStream();
         var result = compilation.Emit(peStream: peStream);
 
+        // Transform all the diagnostics
+        var diagnostics = result.Diagnostics
+            .Select(d => d.RelativeTo(relocatedNode))
+            .ToImmutableArray();
+
         // Check for errors
-        if (!result.Success) return ExecutionResult.Fail<TResult>(result.Diagnostics);
+        if (!result.Success) return ExecutionResult.Fail<TResult>(diagnostics);
 
         // If it was a declaration, track it
         if (node is DeclarationSyntax)
         {
             var semanticModel = compilation.GetSemanticModel(tree);
-            var decl2 = tree.Root.FindInChildren<DeclarationSyntax>(1);
-            var symbol = semanticModel.GetDeclaredSymbolInternal(decl2);
+            var symbol = semanticModel.GetDeclaredSymbolInternal(relocatedNode);
             if (symbol is not null) this.context.AddSymbol(symbol);
         }
 
@@ -172,11 +185,11 @@ public sealed class ReplSession
         if (eval is not null)
         {
             var value = (TResult?)eval.Invoke(null, null);
-            return ExecutionResult.Success(value!, result.Diagnostics);
+            return ExecutionResult.Success(value!, diagnostics);
         }
 
         // This happens with declarations, nothing to run
-        return ExecutionResult.Success(default(TResult)!, result.Diagnostics);
+        return ExecutionResult.Success(default(TResult)!, diagnostics);
     }
 
     // func .eval(): object = decl;

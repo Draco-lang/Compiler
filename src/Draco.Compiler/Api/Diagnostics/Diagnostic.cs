@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Text;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.Diagnostics;
 
@@ -99,6 +100,16 @@ public sealed partial class Diagnostic
         this.Location = location ?? Location.None;
         this.RelatedInformation = relatedInformation;
     }
+
+    /// <summary>
+    /// Transforms this diagnostic to have relative positioning to a given syntax node.
+    /// </summary>
+    /// <param name="syntax">The syntax node to be relative to.</param>
+    /// <returns>The transformed diagnostic.</returns>
+    internal Diagnostic RelativeTo(SyntaxNode syntax) => this
+        .ToBuilder()
+        .WithLocation(new RelativeLocation(syntax, this.Location))
+        .Build();
 
     public override string ToString()
     {

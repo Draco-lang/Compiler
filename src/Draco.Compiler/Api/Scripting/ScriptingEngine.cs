@@ -7,18 +7,6 @@ using Draco.Compiler.Internal.Codegen;
 namespace Draco.Compiler.Api.Scripting;
 
 /// <summary>
-/// The result type of script execution.
-/// </summary>
-/// <typeparam name="TResult">The expected result type.</typeparam>
-/// <param name="Success">True, if the execution was successful without errors.</param>
-/// <param name="Result">The result of execution.</param>
-/// <param name="Diagnostics">The <see cref="Diagnostic"/>s produced during execution.</param>
-public readonly record struct ExecutionResult<TResult>(
-    bool Success,
-    TResult? Result,
-    ImmutableArray<Diagnostic> Diagnostics);
-
-/// <summary>
 /// Exposes a scripting API.
 /// </summary>
 public static class ScriptingEngine
@@ -28,8 +16,7 @@ public static class ScriptingEngine
     /// </summary>
     /// <param name="compilation">The <see cref="Compilation"/> to execute.</param>
     /// <returns>The result of the execution.</returns>
-    public static ExecutionResult<object?> Execute(
-        Compilation compilation) =>
+    public static ExecutionResult<object?> Execute(Compilation compilation) =>
         Execute<object?>(compilation);
 
     /// <summary>
@@ -38,20 +25,13 @@ public static class ScriptingEngine
     /// <typeparam name="TResult">The expected result type.</typeparam>
     /// <param name="compilation">The <see cref="Compilation"/> to execute.</param>
     /// <returns>The result of the execution.</returns>
-    public static ExecutionResult<TResult> Execute<TResult>(
-        Compilation compilation)
+    public static ExecutionResult<TResult> Execute<TResult>(Compilation compilation)
     {
         using var peStream = new MemoryStream();
         var emitResult = compilation.Emit(peStream: peStream);
 
         // Check emission results
-        if (!emitResult.Success)
-        {
-            return new(
-                Success: false,
-                Result: default,
-                Diagnostics: emitResult.Diagnostics);
-        }
+        if (!emitResult.Success) return ExecutionResult.Fail<TResult>(emitResult.Diagnostics);
 
         // Load emitted bytes as assembly
         peStream.Position = 0;
@@ -65,16 +45,10 @@ public static class ScriptingEngine
             var diag = Diagnostic.Create(
                 template: CodegenErrors.NoMainMethod,
                 location: Location.None);
-            return new(
-                Success: false,
-                Result: default,
-                Diagnostics: [diag]);
+            return ExecutionResult.Fail<TResult>([diag]);
         }
 
         var result = (TResult?)mainMethod.Invoke(null, []);
-        return new(
-            Success: true,
-            Result: result,
-            Diagnostics: []);
+        return ExecutionResult.Success(result!);
     }
 }

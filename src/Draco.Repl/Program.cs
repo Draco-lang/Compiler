@@ -26,7 +26,7 @@ internal static class Program
         }
     }
 
-    private static void PrintResult(ReplResult result)
+    private static void PrintResult(ExecutionResult<object?> result)
     {
         if (result.Success)
         {

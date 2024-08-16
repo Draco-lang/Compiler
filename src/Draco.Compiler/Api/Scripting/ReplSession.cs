@@ -11,6 +11,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
@@ -21,11 +22,6 @@ using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
 using VariableDeclarationSyntax = Draco.Compiler.Api.Syntax.VariableDeclarationSyntax;
 
 namespace Draco.Compiler.Api.Scripting;
-
-public readonly record struct ReplResult(
-    bool Success,
-    object? Value,
-    ImmutableArray<Diagnostic> Diagnostics);
 
 public sealed class ReplSession
 {
@@ -48,7 +44,11 @@ public sealed class ReplSession
         this.metadataReferences = metadataReferences.ToBuilder();
     }
 
-    public ReplResult Evaluate(TextReader reader)
+    public ExecutionResult<object?> Evaluate(TextReader reader) => this.Evaluate<object?>(reader);
+
+    public ExecutionResult<object?> Evaluate(SyntaxNode node) => this.Evaluate<object?>(node);
+
+    public ExecutionResult<TResult> Evaluate<TResult>(TextReader reader)
     {
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
 
@@ -72,20 +72,20 @@ public sealed class ReplSession
                 .PreOrderTraverse()
                 .SelectMany(syntaxDiagnostics.Get)
                 .ToImmutableArray();
-            return new(Success: false, Value: null, Diagnostics: diagnostics);
+            return ExecutionResult.Fail<TResult>(diagnostics);
         }
 
         // Actually evaluate
-        return this.Evaluate(tree.Root);
+        return this.Evaluate<TResult>(tree.Root);
     }
 
-    public ReplResult Evaluate(SyntaxNode node)
+    public ExecutionResult<TResult> Evaluate<TResult>(SyntaxNode node)
     {
         // Check for imports
         if (node is ImportDeclarationSyntax import)
         {
             this.importDeclarations.Add(import);
-            return new(Success: true, Value: null, Diagnostics: []);
+            return ExecutionResult.Success(default(TResult)!);
         }
 
         // Translate to a runnable function
@@ -108,7 +108,7 @@ public sealed class ReplSession
         var result = compilation.Emit(peStream: peStream);
 
         // Check for errors
-        if (!result.Success) return new(Success: false, Value: null, Diagnostics: result.Diagnostics);
+        if (!result.Success) return ExecutionResult.Fail<TResult>(result.Diagnostics);
 
         // If it was a declaration, track it
         if (node is DeclarationSyntax)
@@ -137,18 +137,12 @@ public sealed class ReplSession
         var eval = mainModule.GetMethod(EvalFunctionName);
         if (eval is not null)
         {
-            var value = eval.Invoke(null, null);
-            return new(
-                Success: true,
-                Value: value,
-                Diagnostics: result.Diagnostics);
+            var value = (TResult?)eval.Invoke(null, null);
+            return ExecutionResult.Success(value!, result.Diagnostics);
         }
 
         // This happens with declarations, nothing to run
-        return new(
-            Success: true,
-            Value: null,
-            Diagnostics: result.Diagnostics);
+        return ExecutionResult.Success(default(TResult)!, result.Diagnostics);
     }
 
     // public func .eval(): object = decl;

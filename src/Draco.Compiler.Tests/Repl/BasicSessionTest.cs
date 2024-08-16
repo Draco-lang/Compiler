@@ -56,6 +56,25 @@ public sealed class BasicSessionTest
         ("id(1)", 1),
         ("id(\"asd\")", "asd"));
 
+    [Fact]
+    public void ComplexSession4() => AssertSequence(
+        ("var x = 4;", null),
+        ("func foo(): int32 = x;", null),
+        ("foo()", 4),
+        ("var x = 5;", null),
+        ("foo()", 4),
+        ("func foo(): int32 = x;", null),
+        ("foo()", 5));
+
+    [Fact]
+    public void ComplexSession5() => AssertSequence(
+        ("import System.Collections.Generic;", null),
+        ("var l = List<int32>();", null),
+        ("l.Add(1);", null),
+        ("l.Add(2);", null),
+        ("l.Add(3);", null),
+        ("l.Count", 3));
+
     private static void AssertSequence(params (string Code, object? Value)[] pairs)
     {
         var results = ExecuteSequence(pairs.Select(p => p.Code));

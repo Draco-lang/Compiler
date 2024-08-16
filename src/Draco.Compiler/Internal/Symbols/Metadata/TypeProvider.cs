@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
@@ -191,7 +192,7 @@ internal sealed class TypeProvider(Compilation compilation)
 
         // TODO: If we don't have the assembly report error
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
-        var assembly = compilation.MetadataAssemblies.Single(x => x.AssemblyName.FullName == assemblyName.FullName);
+        var assembly = compilation.MetadataAssemblies.Single(x => AssemblyNamesEqual(x.AssemblyName, assemblyName));
         return assembly.RootNamespace.Lookup([.. parts]).OfType<TypeSymbol>().Single();
     }
 
@@ -219,4 +220,11 @@ internal sealed class TypeProvider(Compilation compilation)
 
     private static string ConcatenateNamespaceAndName(string? @namespace, string name) =>
         string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";
+
+    // NOTE: For some reason we had to disregard public key token, otherwise some weird type referencing
+    // case in the REPL with lists threw an exception
+    // TODO: Could it be that we don't write the public key token in the type refs we use?
+    private static bool AssemblyNamesEqual(AssemblyName a, AssemblyName b) =>
+           a.Name == b.Name
+        && a.Version == b.Version;
 }

@@ -6,27 +6,24 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
-using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Scripting;
-using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Syntax;
-using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
-using FunctionDeclarationSyntax = Draco.Compiler.Api.Syntax.FunctionDeclarationSyntax;
 using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
-using VariableDeclarationSyntax = Draco.Compiler.Api.Syntax.VariableDeclarationSyntax;
 using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
 using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
 using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
 
 namespace Draco.Compiler.Api.Scripting;
 
+/// <summary>
+/// Represents an interactive REPL session.
+/// </summary>
 public sealed class ReplSession
 {
     private readonly record struct HistoryEntry(Compilation Compilation, Assembly Assembly);
@@ -47,10 +44,26 @@ public sealed class ReplSession
         this.metadataReferences = metadataReferences.ToBuilder();
     }
 
+    /// <summary>
+    /// Evaluates the given source code.
+    /// </summary>
+    /// <param name="reader">The reader to read input from.</param>
+    /// <returns>The execution result.</returns>
     public ExecutionResult<object?> Evaluate(TextReader reader) => this.Evaluate<object?>(reader);
 
+    /// <summary>
+    /// Evaluates the given syntax node.
+    /// </summary>
+    /// <param name="node">The node to evaluate.</param>
+    /// <returns>The execution result.</returns>
     public ExecutionResult<object?> Evaluate(SyntaxNode node) => this.Evaluate<object?>(node);
 
+    /// <summary>
+    /// Evaluates the given source code.
+    /// </summary>
+    /// <typeparam name="TResult">The result type expected.</typeparam>
+    /// <param name="reader">The reader to read input from.</param>
+    /// <returns>The execution result.</returns>
     public ExecutionResult<TResult> Evaluate<TResult>(TextReader reader)
     {
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
@@ -82,6 +95,12 @@ public sealed class ReplSession
         return this.Evaluate<TResult>(tree.Root);
     }
 
+    /// <summary>
+    /// Evaluates the given syntax node.
+    /// </summary>
+    /// <typeparam name="TResult">The result type expected.</typeparam>
+    /// <param name="node">The node to evaluate.</param>
+    /// <returns>The execution result.</returns>
     public ExecutionResult<TResult> Evaluate<TResult>(SyntaxNode node)
     {
         // Check for imports
@@ -117,10 +136,7 @@ public sealed class ReplSession
         if (node is DeclarationSyntax)
         {
             var semanticModel = compilation.GetSemanticModel(tree);
-            var decl2 = tree.Root
-                .PreOrderTraverse()
-                .OfType<DeclarationSyntax>()
-                .First(d => d.GetType() == decl.GetType());
+            var decl2 = tree.Root.FindInChildren<DeclarationSyntax>(1);
             var symbol = semanticModel.GetDeclaredSymbolInternal(decl2);
             if (symbol is not null) this.context.AddSymbol(symbol);
         }

@@ -9,11 +9,11 @@ namespace Draco.Compiler.Api;
 /// <param name="ImportAliases">All symbol paths that should be implicitly aliased to a given name in global namespace.</param>
 public readonly record struct GlobalImports(
     ImmutableArray<string> ModuleImports,
-    ImmutableDictionary<string, string> ImportAliases)
+    ImmutableArray<(string Name, string FullPath)> ImportAliases)
 {
     /// <summary>
     /// True, if this is a default or empty structure.
     /// </summary>
     public bool IsDefault => this.ModuleImports.IsDefaultOrEmpty
-                          && (this.ImportAliases is null || this.ImportAliases.IsEmpty);
+                          && this.ImportAliases.IsDefaultOrEmpty;
 }

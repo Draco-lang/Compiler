@@ -59,7 +59,7 @@ internal sealed class GlobalImportsBinder : Binder
             }
         }
 
-        if (globalImports.ImportAliases?.IsEmpty == false)
+        if (!globalImports.ImportAliases.IsDefaultOrEmpty)
         {
             foreach (var (aliasName, aliasPath) in globalImports.ImportAliases)
             {

@@ -19,7 +19,8 @@ internal sealed class ReplContext
         this.globalAliases.ToImmutable());
 
     private readonly ImmutableArray<string>.Builder globalImports = ImmutableArray.CreateBuilder<string>();
-    private readonly ImmutableDictionary<string, string>.Builder globalAliases = ImmutableDictionary.CreateBuilder<string, string>();
+    private readonly ImmutableArray<(string Name, string FullPath)>.Builder globalAliases
+        = ImmutableArray.CreateBuilder<(string Name, string FullPath)>();
 
     /// <summary>
     /// Adds a global import to the context.
@@ -34,8 +35,11 @@ internal sealed class ReplContext
     /// <param name="symbol">The symbol to add to the context.</param>
     public void AddSymbol(Symbol symbol)
     {
-        // TODO: Remove shadowed stuff
+        // We remove shadowed symbols
+        // NOTE: For simplicity and to not cross compilation borders, we remove by name
+        this.globalAliases.RemoveAll(s => s.Name == symbol.Name);
 
-        this.globalAliases.Add(symbol.Name, symbol.FullName);
+        // Add the new symbol
+        this.globalAliases.Add((symbol.Name, symbol.FullName));
     }
 }

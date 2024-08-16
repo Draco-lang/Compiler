@@ -34,7 +34,6 @@ public sealed class ReplSession
     private readonly Dictionary<string, Assembly> loadedAssemblies = [];
     private readonly List<HistoryEntry> previousEntries = [];
     private readonly ReplContext context = new();
-    // TODO: Temporary, until we can inherit everything from the host
     private readonly ImmutableArray<MetadataReference>.Builder metadataReferences;
 
     public ReplSession(ImmutableArray<MetadataReference> metadataReferences)
@@ -42,6 +41,22 @@ public sealed class ReplSession
         this.loadContext = new AssemblyLoadContext("ReplSession", isCollectible: true);
         this.loadContext.Resolving += this.LoadContextResolving;
         this.metadataReferences = metadataReferences.ToBuilder();
+    }
+
+    /// <summary>
+    /// Adds global imports to the session.
+    /// </summary>
+    /// <param name="importPaths">The import paths to add.</param>
+    public void AddImports(params string[] importPaths) =>
+        this.AddImports(importPaths.AsEnumerable());
+
+    /// <summary>
+    /// Adds global imports to the session.
+    /// </summary>
+    /// <param name="importPaths">The import paths to add.</param>
+    public void AddImports(IEnumerable<string> importPaths)
+    {
+        foreach (var path in importPaths) this.context.AddImport(path);
     }
 
     /// <summary>

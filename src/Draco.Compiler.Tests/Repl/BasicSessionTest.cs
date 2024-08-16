@@ -50,6 +50,12 @@ public sealed class BasicSessionTest
         ("add(1, 2);", null),
         ("add(1, 2)", 3));
 
+    [Fact]
+    public void ComplexSession3() => AssertSequence(
+        ("func id<T>(x: T): T = x;", null),
+        ("id(1)", 1),
+        ("id(\"asd\")", "asd"));
+
     private static void AssertSequence(params (string Code, object? Value)[] pairs)
     {
         var results = ExecuteSequence(pairs.Select(p => p.Code));

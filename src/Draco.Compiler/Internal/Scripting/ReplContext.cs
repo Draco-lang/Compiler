@@ -40,6 +40,6 @@ internal sealed class ReplContext
         this.globalAliases.RemoveAll(s => s.Name == symbol.Name);
 
         // Add the new symbol
-        this.globalAliases.Add((symbol.Name, symbol.FullName));
+        this.globalAliases.Add((symbol.Name, symbol.MetadataFullName));
     }
 }

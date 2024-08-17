@@ -197,14 +197,17 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     ];
 
     /// <summary>
-    /// Checks, if the current token kind and the potentially following tokens form a declaration.
+    /// Checks, if the tokens at the given offset form the start of a declaration.
     /// </summary>
-    /// <param name="kind">The current token kind.</param>
-    /// <returns>True, if <paramref name="kind"/> in the current state can form the start of a declaration.</returns>
-    private bool IsDeclarationStarter(TokenKind kind) =>
-           declarationStarters.Contains(kind)
-        // Label
-        || kind == TokenKind.Identifier && this.Peek(1) == TokenKind.Colon;
+    /// <param name="offset">The offset to check at.</param>
+    /// <returns>True, if the tokens at <paramref name="offset"/> in the current state can form the start of a declaration.</returns>
+    private bool IsDeclarationStarter(int offset = 0)
+    {
+        var peek = this.Peek(offset);
+        return declarationStarters.Contains(peek)
+            // Label
+            || peek == TokenKind.Identifier && this.Peek(offset + 1) == TokenKind.Colon;
+    }
 
     /// <summary>
     /// Checks if the token kind is visibility modifier.
@@ -270,7 +273,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         {
             var input = this.Synchronize(t => t switch
             {
-                _ when this.IsDeclarationStarter(t) => false,
+                _ when this.IsDeclarationStarter() => false,
                 _ when IsVisibilityModifier(t) => false,
                 _ => true,
             });
@@ -292,7 +295,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         switch (this.Peek())
         {
         // Declarations
-        case TokenKind t when allowDecl && this.IsDeclarationStarter(t):
+        case TokenKind _ when allowDecl && this.IsDeclarationStarter():
         {
             var decl = this.ParseDeclaration(DeclarationContext.Local);
             return new DeclarationStatementSyntax(decl);
@@ -729,7 +732,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
                 // On a close curly or out of input, we can immediately exit
                 goto end_of_block;
 
-            case TokenKind t when this.IsDeclarationStarter(t):
+            case TokenKind _ when this.IsDeclarationStarter():
             {
                 var decl = this.ParseDeclaration(DeclarationContext.Local);
                 stmts.Add(new DeclarationStatementSyntax(decl));
@@ -778,7 +781,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
                     var input = this.Synchronize(kind => kind switch
                     {
                         TokenKind.CurlyClose => false,
-                        _ when this.IsDeclarationStarter(kind) => false,
+                        _ when this.IsDeclarationStarter() => false,
                         _ when IsExpressionStarter(kind) => false,
                         _ => true,
                     });

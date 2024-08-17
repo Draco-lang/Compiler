@@ -373,8 +373,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);
         var identifier = this.Expect(TokenKind.Identifier);
         // We don't necessarily have type specifier
-        TypeSpecifierSyntax? type = null;
-        if (this.Peek() == TokenKind.Colon) type = this.ParseTypeSpecifier();
+        var type = this.ParseOptionalTypeSpecifier();
         // We don't necessarily have value assigned to the variable
         ValueSpecifierSyntax? assignment = null;
         if (this.Matches(TokenKind.Assign, out var assign))
@@ -410,8 +409,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var closeParen = this.Expect(TokenKind.ParenClose);
 
         // We don't necessarily have type specifier
-        TypeSpecifierSyntax? returnType = null;
-        if (this.Peek() == TokenKind.Colon) returnType = this.ParseTypeSpecifier();
+        var returnType = this.ParseOptionalTypeSpecifier();
 
         var body = this.ParseFunctionBody();
 
@@ -575,6 +573,14 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             return node;
         }
     }
+
+    /// <summary>
+    /// Parses an optional type specifier, if the upcoming token is a colon.
+    /// </summary>
+    /// <returns>The optionally parsed <see cref="TypeSpecifierSyntax"/>.</returns>
+    private TypeSpecifierSyntax? ParseOptionalTypeSpecifier() => this.Peek() == TokenKind.Colon
+        ? this.ParseTypeSpecifier()
+        : null;
 
     /// <summary>
     /// Parses a type specifier.
@@ -849,8 +855,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var forKeyword = this.Expect(TokenKind.KeywordFor);
         var openParen = this.Expect(TokenKind.ParenOpen);
         var iterator = this.Expect(TokenKind.Identifier);
-        TypeSpecifierSyntax? elementType = null;
-        if (this.Peek() == TokenKind.Colon) elementType = this.ParseTypeSpecifier();
+        var elementType = this.ParseOptionalTypeSpecifier();
         var inKeyword = this.Expect(TokenKind.KeywordIn);
         var sequence = this.ParseExpression();
         var closeParen = this.Expect(TokenKind.ParenClose);
@@ -1206,8 +1211,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             stopKind: TokenKind.ParenClose);
         var closeParen = this.Expect(TokenKind.ParenClose);
 
-        TypeSpecifierSyntax? returnType = null;
-        if (this.Peek() == TokenKind.Colon) returnType = this.ParseTypeSpecifier();
+        var returnType = this.ParseOptionalTypeSpecifier();
 
         var body = this.ParseFunctionBody();
 
@@ -1222,8 +1226,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     {
         this.Matches(TokenKind.Ellipsis, out var variadic);
         var name = this.Expect(TokenKind.Identifier);
-        TypeSpecifierSyntax? type = null;
-        if (this.Peek() == TokenKind.Colon) type = this.ParseTypeSpecifier();
+        var type = this.ParseOptionalTypeSpecifier();
 
         return new(variadic, name, type);
     }

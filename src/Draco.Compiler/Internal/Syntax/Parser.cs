@@ -180,7 +180,6 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         TokenKind.LineStringStart,
         TokenKind.MultiLineStringStart,
         TokenKind.KeywordFalse,
-        // NOTE: This is for later, when we decide if the lambda syntax should be func(...) = ...
         TokenKind.KeywordFunc,
         TokenKind.KeywordGoto,
         TokenKind.KeywordIf,
@@ -254,7 +253,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         case TokenKind.KeywordImport:
             return this.ParseImportDeclaration(modifier);
 
-        case TokenKind.KeywordFunc:
+        case TokenKind.KeywordFunc when this.Peek(1) == TokenKind.Identifier:
             return this.ParseFunctionDeclaration(modifier);
 
         case TokenKind.KeywordModule:
@@ -1028,6 +1027,8 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         case TokenKind.KeywordWhile:
         case TokenKind.KeywordFor:
             return this.ParseControlFlowExpression(ControlFlowContext.Expr);
+        case TokenKind.KeywordFunc when this.Peek(1) == TokenKind.ParenOpen:
+            return this.ParseLambdaExpression();
         default:
         {
             var input = this.Synchronize(t => t switch
@@ -1185,6 +1186,43 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             this.AddDiagnostic(closeQuote, diag);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
+    }
+
+    /// <summary>
+    /// Parses a lambda expression.
+    /// </summary>
+    /// <returns>The parsed <see cref="LambdaExpressionSyntax"/>.</returns>
+    private LambdaExpressionSyntax ParseLambdaExpression()
+    {
+        var funcKeyword = this.Expect(TokenKind.KeywordFunc);
+
+        var openParen = this.Expect(TokenKind.ParenOpen);
+        var parameters = this.ParseSeparatedSyntaxList(
+            elementParser: this.ParseLambdaParameter,
+            separatorKind: TokenKind.Comma,
+            stopKind: TokenKind.ParenClose);
+        var closeParen = this.Expect(TokenKind.ParenClose);
+
+        TypeSpecifierSyntax? returnType = null;
+        if (this.Peek() == TokenKind.Colon) returnType = this.ParseTypeSpecifier();
+
+        var body = this.ParseFunctionBody();
+
+        return new(funcKeyword, openParen, parameters, closeParen, returnType, body);
+    }
+
+    /// <summary>
+    /// Parses a lambda parameter.
+    /// </summary>
+    /// <returns>The parsed <see cref="LambdaParameterSyntax"/>.</returns>
+    private LambdaParameterSyntax ParseLambdaParameter()
+    {
+        this.Matches(TokenKind.Ellipsis, out var variadic);
+        var name = this.Expect(TokenKind.Identifier);
+        TypeSpecifierSyntax? type = null;
+        if (this.Peek() == TokenKind.Colon) type = this.ParseTypeSpecifier();
+
+        return new(variadic, name, type);
     }
 
     /// <summary>

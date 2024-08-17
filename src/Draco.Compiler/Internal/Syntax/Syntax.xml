@@ -900,6 +900,75 @@
     </Field>
   </Node>
 
+  <Node Name="LambdaExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      A lambda expression,  basically a function without a name or required type specifications.
+    </Documentation>
+
+    <Field Name="FunctionKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'func' keyword.
+      </Documentation>
+
+      <Token Kind="KeywordFunc" />
+    </Field>
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;LambdaParameterSyntax&gt;">
+      <Documentation>
+        The parameters this function declares.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the parameter list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+    <Field Name="ReturnType" Type="TypeSpecifierSyntax?">
+      <Documentation>
+        The return type of the function, in case it's sppecified.
+      </Documentation>
+    </Field>
+    <Field Name="Body" Type="FunctionBodySyntax">
+      <Documentation>
+        The body of the function.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="LambdaParameterSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single parameter in a lambda function parameter list.
+    </Documentation>
+
+    <Field Name="Variadic" Type="SyntaxToken?">
+      <Documentation>
+        The ellipsis token, in case it's variadic.
+      </Documentation>
+
+      <Token Kind="Ellipsis" />
+    </Field>
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the parameter.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Type" Type="TypeSpecifierSyntax?">
+      <Documentation>
+        The type of the parameter, in case it's specified.
+      </Documentation>
+    </Field>
+  </Node>
+
   <Node Name="CallExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
       A function call expression.

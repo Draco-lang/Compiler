@@ -81,6 +81,11 @@ public enum TokenKind
     KeywordAnd,
 
     /// <summary>
+    /// The keyword 'class'.
+    /// </summary>
+    KeywordClass,
+
+    /// <summary>
     /// The keyword 'else'.
     /// </summary>
     KeywordElse,
@@ -89,6 +94,11 @@ public enum TokenKind
     /// The keyword 'false'.
     /// </summary>
     KeywordFalse,
+
+    /// <summary>
+    /// The keyword 'field'.
+    /// </summary>
+    KeywordField,
 
     /// <summary>
     /// The keyword 'for'.
@@ -169,6 +179,11 @@ public enum TokenKind
     /// The keyword 'val'.
     /// </summary>
     KeywordVal,
+
+    /// <summary>
+    /// The keyword 'value'.
+    /// </summary>
+    KeywordValue,
 
     /// <summary>
     /// The keyword 'var'.

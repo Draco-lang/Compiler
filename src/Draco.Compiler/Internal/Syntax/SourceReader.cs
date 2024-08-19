@@ -83,7 +83,7 @@ internal static class SourceReader
 
     private sealed class TextReaderSourceReader(TextReader reader) : ISourceReader
     {
-        public bool IsEnd => reader.Peek() == -1;
+        public bool IsEnd => !this.TryPeek(0, out _);
         public int Position { get; set; }
 
         private readonly List<char> peekBuffer = [];

@@ -483,4 +483,18 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal(Math.PI, result);
     }
+
+    [Fact]
+    public void ChainedValueTypeMemberAccess()
+    {
+        var assembly = Compile("""
+            import System;
+
+            public func get_datetime_str(): string = DateTime.Now.TimeOfDay.ToString();
+            """);
+
+        var result = Invoke<string>(assembly: assembly, methodName: "get_datetime_str");
+
+        Assert.NotNull(result);
+    }
 }

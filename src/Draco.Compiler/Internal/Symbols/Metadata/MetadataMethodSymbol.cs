@@ -194,8 +194,8 @@ internal class MetadataMethodSymbol(
         var definition = this.MetadataReader.GetMethodDefinition(methodDef);
         var name = this.MetadataReader.GetString(definition.Name);
         var provider = this.Assembly.Compilation.TypeProvider;
-        var signature = definition.DecodeSignature(provider, this);
         var containingType = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
+        var signature = definition.DecodeSignature(provider, containingType);
         return GetFunctionWithSignature(containingType, name, signature);
     }
 
@@ -204,9 +204,21 @@ internal class MetadataMethodSymbol(
         var reference = this.MetadataReader.GetMemberReference(methodRef);
         var name = this.MetadataReader.GetString(reference.Name);
         var provider = this.Assembly.Compilation.TypeProvider;
-        var signature = reference.DecodeMethodSignature(provider, this);
-        var containingType = provider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)reference.Parent, 0);
+        var containingType = this.GetTypeFromHandle(reference.Parent);
+        var signature = reference.DecodeMethodSignature(provider, containingType);
         return GetFunctionWithSignature(containingType, name, signature);
+    }
+
+    private TypeSymbol GetTypeFromHandle(EntityHandle handle)
+    {
+        var typeProvider = this.Assembly.Compilation.TypeProvider;
+        return handle.Kind switch
+        {
+            HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)handle, 0),
+            HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)handle, 0),
+            HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)handle, 0),
+            _ => throw new InvalidOperationException(),
+        };
     }
 
     private static FunctionSymbol? GetFunctionWithSignature(

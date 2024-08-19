@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -15,9 +16,14 @@ internal readonly struct SyntaxDiagnosticTable
     /// <summary>
     /// True, if there are any errors in the diagnostics table.
     /// </summary>
-    public bool HasErrors => this.diagnostics
+    public bool HasErrors => !this.IsDefault && this.diagnostics
         .SelectMany(diags => diags.Value)
         .Any(d => d.Info.Severity == DiagnosticSeverity.Error);
+
+    /// <summary>
+    /// True, if this table is a default, uninitialized instance.
+    /// </summary>
+    public bool IsDefault => this.diagnostics is null;
 
     private readonly ConditionalWeakTable<SyntaxNode, List<SyntaxDiagnosticInfo>> diagnostics = [];
 
@@ -38,9 +44,8 @@ internal readonly struct SyntaxDiagnosticTable
     /// </summary>
     /// <param name="node">The <see cref="SyntaxNode"/> to retrieve the <see cref="SyntaxDiagnosticInfo"/> messages for.</param>
     /// <returns>All <see cref="SyntaxDiagnosticInfo"/> messages for <paramref name="node"/>.</returns>
-    public IReadOnlyCollection<SyntaxDiagnosticInfo> Get(SyntaxNode node) => this.diagnostics.TryGetValue(node, out var diagnostics)
-        ? diagnostics
-        : ImmutableArray<SyntaxDiagnosticInfo>.Empty;
+    public IReadOnlyCollection<SyntaxDiagnosticInfo> Get(SyntaxNode node) =>
+        (!this.IsDefault && this.diagnostics.TryGetValue(node, out var diagnostics)) ? diagnostics : [];
 
     /// <summary>
     /// Adds a <see cref="SyntaxDiagnosticInfo"/> to the given <see cref="SyntaxNode"/>.
@@ -60,6 +65,7 @@ internal readonly struct SyntaxDiagnosticTable
 
     private List<SyntaxDiagnosticInfo> GetDiagnosticList(SyntaxNode node)
     {
+        if (this.IsDefault) throw new InvalidOperationException("cannot add diagnostics to a default table");
         if (!this.diagnostics.TryGetValue(node, out var diagnosticList))
         {
             diagnosticList = [];

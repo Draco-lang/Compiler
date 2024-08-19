@@ -476,9 +476,43 @@ internal sealed class CilCodegen
         case Constant c:
             switch (c.Value)
             {
+            // Unsigned integers
+            case byte b:
+                this.InstructionEncoder.LoadConstantI4(b);
+                break;
+            case ushort s:
+                this.InstructionEncoder.LoadConstantI4(s);
+                break;
+            case uint i:
+                this.InstructionEncoder.LoadConstantI4(unchecked((int)i));
+                break;
+            case ulong l:
+                this.InstructionEncoder.LoadConstantI8(unchecked((long)l));
+                break;
+
+            // Signed integers
+            case sbyte b:
+                this.InstructionEncoder.LoadConstantI4(b);
+                break;
+            case short s:
+                this.InstructionEncoder.LoadConstantI4(s);
+                break;
             case int i:
                 this.InstructionEncoder.LoadConstantI4(i);
                 break;
+            case long l:
+                this.InstructionEncoder.LoadConstantI8(l);
+                break;
+
+            // Floating point
+            case float f:
+                this.InstructionEncoder.LoadConstantR4(f);
+                break;
+            case double d:
+                this.InstructionEncoder.LoadConstantR8(d);
+                break;
+
+            // Others
             case bool b:
                 this.InstructionEncoder.LoadConstantI4(b ? 1 : 0);
                 break;
@@ -489,6 +523,7 @@ internal sealed class CilCodegen
                 var stringHandle = this.GetStringLiteralHandle(s);
                 this.InstructionEncoder.LoadString(stringHandle);
                 break;
+
             default:
                 throw new NotImplementedException();
             }

@@ -469,4 +469,18 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal(new Vector2(-1, -2), result);
     }
+
+    [Fact]
+    public void AccessingConstants()
+    {
+        var assembly = Compile("""
+            import System.Math;
+
+            public func get_pi(): float64 = PI;
+            """);
+
+        var result = Invoke<double>(assembly: assembly, methodName: "get_pi");
+
+        Assert.Equal(Math.PI, result);
+    }
 }

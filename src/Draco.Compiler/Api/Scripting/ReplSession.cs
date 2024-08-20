@@ -32,7 +32,7 @@ public sealed class ReplSession
     /// </summary>
     /// <param name="text">The text to check.</param>
     /// <returns>True, if <paramref name="text"/> is a complete entry.</returns>
-    internal static bool IsCompleteEntry(string text)
+    public static bool IsCompleteEntry(string text)
     {
         var reader = new DetectOverpeekSourceReader(SourceReader.From(text));
         _ = ParseReplEntry(reader);

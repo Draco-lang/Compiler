@@ -62,6 +62,13 @@ public sealed class ReplSession
     /// <summary>
     /// Evaluates the given source code.
     /// </summary>
+    /// <param name="text">The source code to evaluate.</param>
+    /// <returns>The execution result.</returns>
+    public ExecutionResult<object?> Evaluate(string text) => this.Evaluate<object?>(new StringReader(text));
+
+    /// <summary>
+    /// Evaluates the given source code.
+    /// </summary>
     /// <param name="reader">The reader to read input from.</param>
     /// <returns>The execution result.</returns>
     public ExecutionResult<object?> Evaluate(TextReader reader) => this.Evaluate<object?>(reader);
@@ -72,6 +79,14 @@ public sealed class ReplSession
     /// <param name="node">The node to evaluate.</param>
     /// <returns>The execution result.</returns>
     public ExecutionResult<object?> Evaluate(SyntaxNode node) => this.Evaluate<object?>(node);
+
+    /// <summary>
+    /// Evaluates the given source code.
+    /// </summary>
+    /// <typeparam name="TResult">The result type expected.</typeparam>
+    /// <param name="text">The source code to evaluate.</param>
+    /// <returns>The execution result.</returns>
+    public ExecutionResult<TResult> Evaluate<TResult>(string text) => this.Evaluate<TResult>(new StringReader(text));
 
     /// <summary>
     /// Evaluates the given source code.

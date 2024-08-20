@@ -70,6 +70,11 @@ public sealed class SyntaxTree
     private SyntaxNode? root;
 
     /// <summary>
+    /// True, if the tree has any errors.
+    /// </summary>
+    public bool HasErrors => this.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error);
+
+    /// <summary>
     /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.
     /// </summary>
     public IEnumerable<Diagnostic> Diagnostics => this

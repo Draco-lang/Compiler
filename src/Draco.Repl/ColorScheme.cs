@@ -6,10 +6,11 @@ namespace Draco.Repl;
 internal sealed class ColorScheme<TKey>
     where TKey : notnull
 {
-    public AnsiColor Default { get; init; } = AnsiColor.White;
+    public ConsoleFormat Default { get; init; } = new(Foreground: AnsiColor.White);
 
-    private readonly Dictionary<TKey, AnsiColor> colors = [];
+    private readonly Dictionary<TKey, ConsoleFormat> colors = [];
 
-    public AnsiColor Get(TKey key) => this.colors.TryGetValue(key, out var color) ? color : this.Default;
-    public void Set(TKey key, AnsiColor color) => this.colors[key] = color;
+    public ConsoleFormat Get(TKey key) => this.colors.TryGetValue(key, out var color) ? color : this.Default;
+    public void Set(TKey key, ConsoleFormat color) => this.colors[key] = color;
+    public void Set(TKey key, AnsiColor color) => this.Set(key, new ConsoleFormat(Foreground: color));
 }

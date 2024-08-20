@@ -39,6 +39,13 @@ public sealed class ReplSession
         return !reader.HasOverpeeked;
     }
 
+    /// <summary>
+    /// Parses a REPL entry from the given text.
+    /// </summary>
+    /// <param name="text">The text to parse.</param>
+    /// <returns>The parsed REPL entry.</returns>
+    public static SyntaxTree ParseReplEntry(string text) => ParseReplEntry(SourceReader.From(text));
+
     private readonly record struct HistoryEntry(Compilation Compilation, Assembly Assembly);
 
     private const string EvalFunctionName = ".eval";

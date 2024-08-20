@@ -1,6 +1,6 @@
 namespace Draco.Repl;
 
-internal enum InterfaceColors
+internal enum InterfaceColor
 {
     PromptColor,
     ErrorColor,

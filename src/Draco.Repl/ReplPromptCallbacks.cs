@@ -4,12 +4,16 @@ using System;
 using PrettyPrompt;
 using PrettyPrompt.Consoles;
 using Draco.Compiler.Api.Scripting;
+using System.Collections.Generic;
+using PrettyPrompt.Highlighting;
+using System.Linq;
 
 namespace Draco.Repl;
 
-internal sealed class ReplPromptCallbacks : PromptCallbacks
+internal sealed class ReplPromptCallbacks(Configuration configuration) : PromptCallbacks
 {
-    protected override async Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
+    protected override async Task<KeyPress> TransformKeyPressAsync(
+        string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
     {
         // Incomplete prompt, just add newline
         if (keyPress.ConsoleKeyInfo.Key == ConsoleKey.Enter
@@ -22,4 +26,10 @@ internal sealed class ReplPromptCallbacks : PromptCallbacks
 
         return keyPress;
     }
+
+    protected override async Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(
+        string text, CancellationToken cancellationToken) => SyntaxHighlighter
+            .Highlight(text)
+            .Select(t => new FormatSpan(t.Span.Start, t.Span.Length, configuration.SyntaxColors.Get(t.Color)))
+            .ToList();
 }

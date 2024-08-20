@@ -188,6 +188,7 @@ public sealed class ReplSession
         }
 
         // We need to load the assembly in the current context
+        peStream.Position = 0;
         var assembly = this.context.LoadAssembly(peStream);
 
         // Stash it for future use

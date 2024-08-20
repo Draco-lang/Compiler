@@ -18,7 +18,7 @@ public enum SyntaxColoring
     /// <summary>
     /// A documentation comment.
     /// </summary>
-    DocComment,
+    DocumentationComment,
 
     /// <summary>
     /// An element with syntax coloring for whitespace.
@@ -46,6 +46,11 @@ public enum SyntaxColoring
     CharacterContent,
 
     /// <summary>
+    /// Quotes for interpolation.
+    /// </summary>
+    InterpolationQuotes,
+
+    /// <summary>
     /// A boolean literal.
     /// </summary>
     BooleanLiteral,
@@ -71,19 +76,44 @@ public enum SyntaxColoring
     ControlFlowKeyword,
 
     /// <summary>
-    /// Name of a method.
+    /// A keyword for visibility.
     /// </summary>
-    MethodName,
+    VisibilityKeyword,
 
     /// <summary>
-    /// The name of a type.
+    /// Name of a method.
     /// </summary>
-    TypeName,
+    FunctionName,
+
+    /// <summary>
+    /// The name of a reference type.
+    /// </summary>
+    ReferenceTypeName,
+
+    /// <summary>
+    /// The name of a value type.
+    /// </summary>
+    ValueTypeName,
 
     /// <summary>
     /// The name of a variable.
     /// </summary>
     VariableName,
+
+    /// <summary>
+    /// The name of a parameter.
+    /// </summary>
+    ParameterName,
+
+    /// <summary>
+    /// The name of a field.
+    /// </summary>
+    FieldName,
+
+    /// <summary>
+    /// The name of a property.
+    /// </summary>
+    PropertyName,
 
     /// <summary>
     /// The name of a module.
@@ -99,4 +129,9 @@ public enum SyntaxColoring
     /// An operator.
     /// </summary>
     Operator,
+
+    /// <summary>
+    /// Pairs of different parentheses.
+    /// </summary>
+    Parenthesis,
 }

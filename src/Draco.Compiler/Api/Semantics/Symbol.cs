@@ -173,6 +173,10 @@ public interface IFunctionSymbol : ISymbol, ITypedSymbol, IMemberSymbol
 /// </summary>
 public interface ITypeSymbol : ISymbol, IMemberSymbol
 {
+    /// <summary>
+    /// True, if this type is a value type.
+    /// </summary>
+    public bool IsValueType { get; }
 }
 
 /// <summary>
@@ -300,6 +304,7 @@ internal sealed class TypeSymbol(Internal.Symbols.TypeSymbol type)
     : SymbolBase<Internal.Symbols.TypeSymbol>(type), ITypeSymbol
 {
     public bool IsStatic => this.Symbol.IsStatic;
+    public bool IsValueType => this.Symbol.IsValueType;
 }
 
 internal sealed class AliasSymbol(Internal.Symbols.AliasSymbol type)
@@ -314,6 +319,7 @@ internal sealed class TypeParameterSymbol(Internal.Symbols.TypeParameterSymbol t
     : SymbolBase<Internal.Symbols.TypeParameterSymbol>(type), ITypeParameterSymbol
 {
     public bool IsStatic => this.Symbol.IsStatic;
+    public bool IsValueType => this.Symbol.IsValueType;
 }
 
 // NOTE: Mostly for generic error sentinel values

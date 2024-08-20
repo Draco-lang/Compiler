@@ -114,6 +114,14 @@ public sealed class ParserTests
         }
     }
 
+    private void StringEscape(string content)
+    {
+        this.N<TextStringPartSyntax>();
+        {
+            this.TValue(TokenKind.EscapeSequence, content);
+        }
+    }
+
     [Fact]
     public void TestEmpty()
     {
@@ -332,7 +340,12 @@ public sealed class ParserTests
         {
             this.T(TokenKind.LineStringStart);
             this.N<SyntaxList<StringPartSyntax>>();
-            this.StringContent("Hello, \nWorld! 👽");
+            {
+                this.StringContent("Hello, ");
+                this.StringEscape("\n");
+                this.StringContent("World! ");
+                this.StringEscape("👽");
+            }
             this.T(TokenKind.LineStringEnd);
         }
     }

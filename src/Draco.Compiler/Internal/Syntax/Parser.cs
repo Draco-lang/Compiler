@@ -1119,7 +1119,7 @@ internal sealed class Parser(
         while (true)
         {
             var peek = this.Peek();
-            if (peek == TokenKind.StringContent)
+            if (peek == TokenKind.StringContent || peek == TokenKind.EscapeSequence)
             {
                 var part = this.Advance();
                 content.Add(new TextStringPartSyntax(part));
@@ -1167,7 +1167,7 @@ internal sealed class Parser(
         while (true)
         {
             var peek = this.Peek();
-            if (peek == TokenKind.StringContent || peek == TokenKind.StringNewline)
+            if (peek == TokenKind.StringContent || peek == TokenKind.StringNewline || peek == TokenKind.EscapeSequence)
             {
                 var part = this.Advance();
                 content.Add(new TextStringPartSyntax(part));

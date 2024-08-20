@@ -66,7 +66,7 @@ public enum TokenKind
     StringNewline,
 
     /// <summary>
-    /// An escape sequence in a string or character literal.
+    /// An escape sequence in a string.
     /// </summary>
     EscapeSequence,
 

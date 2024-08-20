@@ -66,6 +66,11 @@ public enum TokenKind
     StringNewline,
 
     /// <summary>
+    /// An escape sequence in a string or character literal.
+    /// </summary>
+    EscapeSequence,
+
+    /// <summary>
     /// The start of string interpolation.
     /// </summary>
     InterpolationStart,

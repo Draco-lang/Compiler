@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 using System.Runtime.Loader;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Scripting;
@@ -30,17 +31,12 @@ public sealed class ReplSession
 
     private const string EvalFunctionName = ".eval";
 
-    private readonly AssemblyLoadContext loadContext;
-    private readonly Dictionary<string, Assembly> loadedAssemblies = [];
     private readonly List<HistoryEntry> previousEntries = [];
     private readonly ReplContext context = new();
-    private readonly ImmutableArray<MetadataReference>.Builder metadataReferences;
 
     public ReplSession(ImmutableArray<MetadataReference> metadataReferences)
     {
-        this.loadContext = new AssemblyLoadContext("ReplSession", isCollectible: true);
-        this.loadContext.Resolving += this.LoadContextResolving;
-        this.metadataReferences = metadataReferences.ToBuilder();
+        foreach (var reference in metadataReferences) this.context.AddMetadataReference(reference);
     }
 
     /// <summary>
@@ -64,14 +60,16 @@ public sealed class ReplSession
     /// </summary>
     /// <param name="text">The source code to evaluate.</param>
     /// <returns>The execution result.</returns>
-    public ExecutionResult<object?> Evaluate(string text) => this.Evaluate<object?>(new StringReader(text));
+    public ExecutionResult<object?> Evaluate(string text) =>
+        this.Evaluate<object?>(SourceReader.From(text));
 
     /// <summary>
     /// Evaluates the given source code.
     /// </summary>
     /// <param name="reader">The reader to read input from.</param>
     /// <returns>The execution result.</returns>
-    public ExecutionResult<object?> Evaluate(TextReader reader) => this.Evaluate<object?>(reader);
+    public ExecutionResult<object?> Evaluate(TextReader reader) =>
+        this.Evaluate<object?>(SourceReader.From(reader));
 
     /// <summary>
     /// Evaluates the given syntax node.
@@ -86,39 +84,32 @@ public sealed class ReplSession
     /// <typeparam name="TResult">The result type expected.</typeparam>
     /// <param name="text">The source code to evaluate.</param>
     /// <returns>The execution result.</returns>
-    public ExecutionResult<TResult> Evaluate<TResult>(string text) => this.Evaluate<TResult>(new StringReader(text));
+    public ExecutionResult<TResult> Evaluate<TResult>(string text) =>
+        this.Evaluate<TResult>(SourceReader.From(text));
 
     /// <summary>
     /// Evaluates the given source code.
     /// </summary>
     /// <typeparam name="TResult">The result type expected.</typeparam>
-    /// <param name="reader">The reader to read input from.</param>
+    /// <param name="reader">The text reader to read input from.</param>
     /// <returns>The execution result.</returns>
-    public ExecutionResult<TResult> Evaluate<TResult>(TextReader reader)
-    {
-        var syntaxDiagnostics = new SyntaxDiagnosticTable();
+    public ExecutionResult<TResult> Evaluate<TResult>(TextReader reader) =>
+        this.Evaluate<TResult>(SourceReader.From(reader));
 
-        // Construct a source reader
-        var sourceReader = SourceReader.From(reader);
-        // Construct a lexer
-        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
-        // Construct a token source
-        var tokenSource = TokenSource.From(lexer);
-        // Construct a parser
-        var parser = new Parser(tokenSource, syntaxDiagnostics, parserMode: ParserMode.Repl);
-        // Parse a repl entry
-        var node = parser.ParseReplEntry();
-        // Make it into a tree
-        var tree = SyntaxTree.Create(node);
+    /// <summary>
+    /// Evaluates the given source code.
+    /// </summary>
+    /// <typeparam name="TResult">The result type expected.</typeparam>
+    /// <param name="sourceReader">The source reader to read input from.</param>
+    /// <returns>The execution result.</returns>
+    internal ExecutionResult<TResult> Evaluate<TResult>(ISourceReader sourceReader)
+    {
+        var tree = ParseReplEntry(sourceReader);
 
         // Check for syntax errors
-        if (syntaxDiagnostics.HasErrors)
+        if (tree.HasErrors)
         {
-            var diagnostics = tree.Root
-                .PreOrderTraverse()
-                .SelectMany(syntaxDiagnostics.Get)
-                .ToImmutableArray();
-            return ExecutionResult.Fail<TResult>(diagnostics);
+            return ExecutionResult.Fail<TResult>(tree.Diagnostics.ToImmutableArray());
         }
 
         // Actually evaluate
@@ -185,11 +176,13 @@ public sealed class ReplSession
         }
 
         // We need to load the assembly in the current context
-        var assembly = this.LoadAssembly(peStream);
+        var assembly = this.context.LoadAssembly(peStream);
 
         // Stash it for future use
         this.previousEntries.Add(new HistoryEntry(Compilation: compilation, Assembly: assembly));
-        this.metadataReferences.Add(MetadataReference.FromAssembly(assembly));
+
+        // Register the metadata reference
+        this.context.AddMetadataReference(MetadataReference.FromAssembly(assembly));
 
         // Retrieve the main module
         var mainModule = assembly.GetType(compilation.RootModulePath);
@@ -225,7 +218,7 @@ public sealed class ReplSession
 
     private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
         syntaxTrees: [tree],
-        metadataReferences: this.metadataReferences.ToImmutableArray(),
+        metadataReferences: this.context.MetadataReferences,
         flags: CompilationFlags.ImplicitPublicSymbols,
         globalImports: this.context.GlobalImports,
         rootModulePath: $"Context{this.previousEntries.Count}",
@@ -234,19 +227,26 @@ public sealed class ReplSession
             ? null
             : this.previousEntries[^1].Compilation.MetadataAssembliesDict);
 
-    private Assembly? LoadContextResolving(AssemblyLoadContext context, AssemblyName name)
-    {
-        if (name.Name is null) return null;
-        return this.loadedAssemblies.TryGetValue(name.Name, out var assembly) ? assembly : null;
-    }
+    private static SyntaxTree ParseReplEntry(ISourceReader sourceReader) => ParseReplEntry(sourceReader, out _);
 
-    private Assembly LoadAssembly(MemoryStream peStream)
+    private static SyntaxTree ParseReplEntry(ISourceReader sourceReader, out bool isCompleteEntry)
     {
-        peStream.Position = 0;
-        var assembly = this.loadContext.LoadFromStream(peStream);
-        var assemblyName = assembly.GetName().Name;
-        if (assemblyName is not null) this.loadedAssemblies.Add(assemblyName, assembly);
-        return assembly;
+        var syntaxDiagnostics = new SyntaxDiagnosticTable();
+
+        // Construct a lexer
+        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
+        // Construct a token source
+        var tokenSource = TokenSource.From(lexer);
+        // Construct a parser
+        var parser = new Parser(tokenSource, syntaxDiagnostics, parserMode: ParserMode.Repl);
+        // Parse a repl entry
+        var node = parser.ParseReplEntry();
+        // Make it into a tree
+        var tree = SyntaxTree.Create(node);
+
+        isCompleteEntry = parser.IsEndOfInput;
+
+        return tree;
     }
 
     private static string ExtractImportPath(ImportPathSyntax path) => path switch

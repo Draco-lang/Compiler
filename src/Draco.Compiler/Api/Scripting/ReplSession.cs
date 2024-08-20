@@ -5,8 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.PortableExecutable;
-using System.Runtime.Loader;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Scripting;
 using Draco.Compiler.Internal.Syntax;

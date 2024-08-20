@@ -12,7 +12,7 @@ internal sealed class DetectOverpeekSourceReader(ISourceReader underlying) : ISo
     // We report false to encourage the parser to peek freely initially,
     // but once it has overpeeked, we will terminate this source as well to
     // prevent an infinite parse loop.
-    public bool IsEnd => !this.HasOverpeeked;
+    public bool IsEnd => this.HasOverpeeked;
 
     public int Position
     {

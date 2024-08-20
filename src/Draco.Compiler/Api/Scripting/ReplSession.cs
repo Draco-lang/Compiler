@@ -34,6 +34,8 @@ public sealed class ReplSession
     /// <returns>True, if <paramref name="text"/> is a complete entry.</returns>
     public static bool IsCompleteEntry(string text)
     {
+        // We add a newline to make sure we don't peek past with trailing trivia if not needed
+        text = string.Concat(text, Environment.NewLine);
         var reader = new DetectOverpeekSourceReader(SourceReader.From(text));
         _ = ParseReplEntry(reader);
         return !reader.HasOverpeeked;

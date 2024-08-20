@@ -27,6 +27,11 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsValueType => false;
 
     /// <summary>
+    /// True, if this type is a delegate type.
+    /// </summary>
+    public virtual bool IsDelegateType => false;
+
+    /// <summary>
     /// True, if this type is an interface.
     /// </summary>
     public virtual bool IsInterface => false;
@@ -81,7 +86,8 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// </summary>
     public IEnumerable<Symbol> NonSpecialMembers => this.Members.Where(m => !m.IsSpecialName);
 
-    public override sealed IEnumerable<Symbol> Members => InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
+    public override sealed IEnumerable<Symbol> Members =>
+        InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     /// <summary>
@@ -94,6 +100,18 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public override TypeSymbol? GenericDefinition => null;
 
     public bool IsStatic => true;
+
+    /// <summary>
+    /// The invokable function, if this is a delegate type.
+    /// </summary>
+    public FunctionSymbol? InvokeMethod =>
+        InterlockedUtils.InitializeMaybeNull(ref this.invokeMethod, this.BuildInvokeMethod);
+    private FunctionSymbol? invokeMethod;
+
+    /// <summary>
+    /// The signature of the invokable function, if this is a delegate type.
+    /// </summary>
+    public FunctionTypeSymbol? InvokeSignatureType => this.InvokeMethod?.Type as FunctionTypeSymbol;
 
     public override bool CanBeShadowedBy(Symbol other)
     {
@@ -134,6 +152,16 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         return builder.ToImmutable();
     }
 
+    private FunctionSymbol? BuildInvokeMethod()
+    {
+        if (!this.IsDelegateType) return null;
+
+        // Look for the Invoke method
+        return this.DefinedMembers
+            .OfType<FunctionSymbol>()
+            .FirstOrDefault(f => !f.IsStatic && f.Name == "Invoke");
+    }
+    
     private ImmutableArray<TypeSymbol> BuildBaseTypes() => GraphTraversal.DepthFirst(
         start: this,
         getNeighbors: s => s.ImmediateBaseTypes,

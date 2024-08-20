@@ -215,6 +215,12 @@
     <Field Name="Value" Type="BoundExpression"/>
   </Node>
 
+  <Node Name="BoundDelegateCreationExpression" Base="BoundExpression">
+    <Field Name="Receiver" Type="BoundExpression?" />
+    <Field Name="Method" Type="FunctionSymbol" />
+    <Field Name="DelegateConstructor" Type="FunctionSymbol" />
+  </Node>
+
   <Node Name="BoundParameterExpression" Base="BoundExpression">
     <Field Name="Parameter" Type="ParameterSymbol" />
   </Node>

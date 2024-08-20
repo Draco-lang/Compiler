@@ -53,6 +53,7 @@ internal sealed class TypeInstanceSymbol(
         .ToImmutableArray();
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;
+    public override bool IsDelegateType => this.GenericDefinition.IsDelegateType;
     public override bool IsInterface => this.GenericDefinition.IsInterface;
     public override string Name => this.GenericDefinition.Name;
 

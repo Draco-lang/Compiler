@@ -469,4 +469,32 @@ public sealed class BclUsageTests : EndToEndTestsBase
 
         Assert.Equal(new Vector2(-1, -2), result);
     }
+
+    [Fact]
+    public void AccessingConstants()
+    {
+        var assembly = Compile("""
+            import System.Math;
+
+            public func get_pi(): float64 = PI;
+            """);
+
+        var result = Invoke<double>(assembly: assembly, methodName: "get_pi");
+
+        Assert.Equal(Math.PI, result);
+    }
+
+    [Fact]
+    public void ChainedValueTypeMemberAccess()
+    {
+        var assembly = Compile("""
+            import System;
+
+            public func get_datetime_str(): string = DateTime.Now.TimeOfDay.ToString();
+            """);
+
+        var result = Invoke<string>(assembly: assembly, methodName: "get_datetime_str");
+
+        Assert.NotNull(result);
+    }
 }

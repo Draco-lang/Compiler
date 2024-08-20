@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -151,6 +152,40 @@ internal partial class Binder
                 .ToImmutableArray(),
             out _,
             syntax);
+    }
+
+    /// <summary>
+    /// Looks up the appropriate delegate type for the given function type.
+    /// </summary>
+    /// <param name="type">The function type to look up the delegate type for.</param>
+    /// <returns>The appropriate delegate type for <paramref name="type"/>.</returns>
+    private TypeSymbol LookupDelegateForType(TypeSymbol type)
+    {
+        if (type.IsDelegateType) return type;
+        if (type is not FunctionTypeSymbol funcType)
+        {
+            throw new InvalidOperationException("the type is not a function type, can not determine delegate type");
+        }
+
+        var isUnit = SymbolEqualityComparer.Default.Equals(funcType.ReturnType, WellKnownTypes.Unit);
+        var typeName = isUnit ? "Action" : "Func";
+        var genericArgc = funcType.Parameters.Length + (isUnit ? 0 : 1);
+        if (genericArgc > 0) typeName = $"{typeName}`{genericArgc}";
+        var genericDefinition = this
+            .WellKnownTypes
+            .GetTypeFromAssembly(this.WellKnownTypes.SystemRuntime, ["System", typeName]);
+        // TODO: This can fail for many parameters...
+        if (genericDefinition is null)
+        {
+            throw new NotImplementedException();
+        }
+
+        // Instantiate the generic type
+        var typeArgs = funcType.Parameters
+            .Select(p => p.Type)
+            .Concat(isUnit ? [] : [funcType.ReturnType])
+            .ToImmutableArray();
+        return genericDefinition.GenericInstantiate(null, typeArgs);
     }
 
     /// <summary>

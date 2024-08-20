@@ -51,6 +51,7 @@ internal class FunctionInstanceSymbol(
     public override TypeSymbol ReturnType => LazyInitializer.EnsureInitialized(ref this.returnType, this.BuildReturnType);
     private TypeSymbol? returnType;
 
+    public override bool IsConstructor => this.GenericDefinition.IsConstructor;
     public override string Name => this.GenericDefinition.Name;
     public override bool IsVirtual => this.GenericDefinition.IsVirtual;
     public override bool IsStatic => this.GenericDefinition.IsStatic;

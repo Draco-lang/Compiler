@@ -330,6 +330,16 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
+    public override IOperand VisitDelegateCreationExpression(BoundDelegateCreationExpression node)
+    {
+        var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
+        var function = this.TranslateFunctionSymbol(node.Method);
+        var delegateCtor = this.TranslateFunctionSymbol(node.DelegateConstructor);
+        var result = this.DefineRegister(node.TypeRequired);
+        this.Write(NewDelegate(result, receiver, function, delegateCtor));
+        return result;
+    }
+
     public override IOperand VisitArrayAccessExpression(BoundArrayAccessExpression node)
     {
         var array = this.Compile(node.Array);

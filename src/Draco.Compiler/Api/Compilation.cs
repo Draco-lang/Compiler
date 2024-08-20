@@ -39,6 +39,11 @@ public readonly record struct EmitResult(
 public sealed class Compilation : IBinderProvider
 {
     /// <summary>
+    /// An empty compilation.
+    /// </summary>
+    public static Compilation Empty { get; } = Create(syntaxTrees: []);
+
+    /// <summary>
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
@@ -396,7 +401,7 @@ public sealed class Compilation : IBinderProvider
         return metadataAssembly;
     }
 
-    private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees, this);
+    private DeclarationTable BuildDeclarationTable() => new(this);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
     private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
         containingSymbol: null,

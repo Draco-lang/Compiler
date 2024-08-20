@@ -27,6 +27,18 @@ namespace Draco.Compiler.Api.Scripting;
 /// </summary>
 public sealed class ReplSession
 {
+    /// <summary>
+    /// Checks if the given text is a complete entry to be parsed by the REPL.
+    /// </summary>
+    /// <param name="text">The text to check.</param>
+    /// <returns>True, if <paramref name="text"/> is a complete entry.</returns>
+    internal static bool IsCompleteEntry(string text)
+    {
+        var reader = new DetectOverpeekSourceReader(SourceReader.From(text));
+        _ = ParseReplEntry(reader);
+        return !reader.HasOverpeeked;
+    }
+
     private readonly record struct HistoryEntry(Compilation Compilation, Assembly Assembly);
 
     private const string EvalFunctionName = ".eval";
@@ -227,9 +239,7 @@ public sealed class ReplSession
             ? null
             : this.previousEntries[^1].Compilation.MetadataAssembliesDict);
 
-    private static SyntaxTree ParseReplEntry(ISourceReader sourceReader) => ParseReplEntry(sourceReader, out _);
-
-    private static SyntaxTree ParseReplEntry(ISourceReader sourceReader, out bool isCompleteEntry)
+    private static SyntaxTree ParseReplEntry(ISourceReader sourceReader)
     {
         var syntaxDiagnostics = new SyntaxDiagnosticTable();
 
@@ -243,8 +253,6 @@ public sealed class ReplSession
         var node = parser.ParseReplEntry();
         // Make it into a tree
         var tree = SyntaxTree.Create(node);
-
-        isCompleteEntry = parser.IsEndOfInput;
 
         return tree;
     }

@@ -5,9 +5,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Draco.Compiler.Api.CodeCompletion;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Scripting;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
@@ -47,11 +49,14 @@ public sealed class ReplSession
     public static SyntaxTree ParseReplEntry(string text) => ParseReplEntry(SourceReader.From(text));
 
     private readonly record struct HistoryEntry(Compilation Compilation, Assembly Assembly);
+    private readonly record struct SyntaxWrap(SyntaxTree Tree, SyntaxNode RelocatedNode);
 
     private const string EvalFunctionName = ".eval";
 
     private readonly List<HistoryEntry> previousEntries = [];
     private readonly ReplContext context = new();
+
+    private readonly CompletionService completionService = CompletionService.CreateDefault();
 
     public ReplSession(ImmutableArray<MetadataReference> metadataReferences)
     {
@@ -72,6 +77,24 @@ public sealed class ReplSession
     public void AddImports(IEnumerable<string> importPaths)
     {
         foreach (var path in importPaths) this.context.AddImport(path);
+    }
+
+    /// <summary>
+    /// Gets the completions for the given text and caret position.
+    /// </summary>
+    /// <param name="text">The text to get completions for.</param>
+    /// <param name="caret">The caret position to get completions at.</param>
+    /// <returns>The completions available at the given position.</returns>
+    public IEnumerable<CompletionItem> GetCompletions(string text, int caret)
+    {
+        var node = ParseReplEntry(text);
+        var (tree, relocatedNode) = WrapSyntax(node.Root);
+        // Offset the caret to the relocated node
+        caret += relocatedNode.FullPosition;
+        var compilation = this.MakeCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var position = CaretPositionToSyntaxPosition(text, caret);
+        return this.completionService.GetCompletions(tree, semanticModel, position);
     }
 
     /// <summary>
@@ -151,25 +174,7 @@ public sealed class ReplSession
         }
 
         // Translate to a runnable function
-        var decl = node switch
-        {
-            ExpressionSyntax expr => this.ToDeclaration(expr),
-            StatementSyntax stmt => this.ToDeclaration(stmt),
-            DeclarationSyntax d => d,
-            _ => throw new ArgumentOutOfRangeException(nameof(node)),
-        };
-
-        // Wrap in a tree
-        var tree = this.ToSyntaxTree(decl);
-
-        // Find the relocated node in the tree, we need this to shift diagnostics
-        var relocatedNode = node switch
-        {
-            ExpressionSyntax expr => tree.FindInChildren<ExpressionSyntax>() as SyntaxNode,
-            StatementSyntax stmt => tree.FindInChildren<StatementSyntax>(),
-            DeclarationSyntax d => tree.FindInChildren<DeclarationSyntax>(1),
-            _ => throw new ArgumentOutOfRangeException(nameof(node)),
-        };
+        var (tree, relocatedNode) = WrapSyntax(node);
 
         // Make compilation
         var compilation = this.MakeCompilation(tree);
@@ -220,22 +225,6 @@ public sealed class ReplSession
         return ExecutionResult.Success(default(TResult)!, diagnostics);
     }
 
-    // func .eval(): object = decl;
-    private DeclarationSyntax ToDeclaration(ExpressionSyntax expr) => FunctionDeclaration(
-        EvalFunctionName,
-        ParameterList(),
-        NameType("object"),
-        InlineFunctionBody(expr));
-
-    // func .eval() = stmt;
-    private DeclarationSyntax ToDeclaration(StatementSyntax stmt) => FunctionDeclaration(
-        EvalFunctionName,
-        ParameterList(),
-        null,
-        InlineFunctionBody(StatementExpression(stmt)));
-
-    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(decl));
-
     private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
         syntaxTrees: [tree],
         metadataReferences: this.context.MetadataReferences,
@@ -246,6 +235,48 @@ public sealed class ReplSession
         metadataAssemblies: this.previousEntries.Count == 0
             ? null
             : this.previousEntries[^1].Compilation.MetadataAssembliesDict);
+
+    private static SyntaxWrap WrapSyntax(SyntaxNode node)
+    {
+        // Translate to a runnable function
+        var decl = node switch
+        {
+            ExpressionSyntax expr => ToDeclaration(expr),
+            StatementSyntax stmt => ToDeclaration(stmt),
+            DeclarationSyntax d => d,
+            _ => throw new ArgumentOutOfRangeException(nameof(node)),
+        };
+
+        // Wrap in a tree
+        var tree = ToSyntaxTree(decl);
+
+        // Find the relocated node in the tree, we need this to shift diagnostics
+        var relocatedNode = node switch
+        {
+            ExpressionSyntax => tree.FindInChildren<ExpressionSyntax>() as SyntaxNode,
+            StatementSyntax => tree.FindInChildren<StatementSyntax>(),
+            DeclarationSyntax => tree.FindInChildren<DeclarationSyntax>(1),
+            _ => throw new ArgumentOutOfRangeException(nameof(node)),
+        };
+
+        return new(tree, relocatedNode);
+    }
+
+    // func .eval(): object = decl;
+    private static DeclarationSyntax ToDeclaration(ExpressionSyntax expr) => FunctionDeclaration(
+        EvalFunctionName,
+        ParameterList(),
+        NameType("object"),
+        InlineFunctionBody(expr));
+
+    // func .eval() = stmt;
+    private static DeclarationSyntax ToDeclaration(StatementSyntax stmt) => FunctionDeclaration(
+        EvalFunctionName,
+        ParameterList(),
+        null,
+        InlineFunctionBody(StatementExpression(stmt)));
+
+    private static SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(decl));
 
     private static SyntaxTree ParseReplEntry(ISourceReader sourceReader)
     {
@@ -271,4 +302,10 @@ public sealed class ReplSession
         MemberImportPathSyntax member => $"{ExtractImportPath(member.Accessed)}.{member.Member.Text}",
         _ => throw new ArgumentOutOfRangeException(nameof(path)),
     };
+
+    private static SyntaxPosition CaretPositionToSyntaxPosition(string text, int caret)
+    {
+        var sourceText = SourceText.FromText(text);
+        return sourceText.IndexToSyntaxPosition(caret);
+    }
 }

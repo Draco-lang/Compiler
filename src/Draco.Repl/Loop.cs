@@ -21,13 +21,13 @@ internal sealed class Loop(Configuration configuration, IConsole console)
 
     public async Task Run()
     {
-        await using var prompt = new Prompt(
-            callbacks: new ReplPromptCallbacks(configuration),
-            configuration: new PromptConfiguration(
-                prompt: configuration.GetFormattedPrompt()));
-
         var session = new ReplSession([.. BclReferences]);
         session.AddImports(configuration.DefaultImports);
+
+        await using var prompt = new Prompt(
+            callbacks: new ReplPromptCallbacks(configuration, session),
+            configuration: new PromptConfiguration(
+                prompt: configuration.GetFormattedPrompt()));
 
         while (true)
         {

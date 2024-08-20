@@ -7,10 +7,12 @@ using Draco.Compiler.Api.Scripting;
 using System.Collections.Generic;
 using PrettyPrompt.Highlighting;
 using System.Linq;
+using PrettyPrompt.Completion;
+using PrettyPrompt.Documents;
 
 namespace Draco.Repl;
 
-internal sealed class ReplPromptCallbacks(Configuration configuration) : PromptCallbacks
+internal sealed class ReplPromptCallbacks(Configuration configuration, ReplSession session) : PromptCallbacks
 {
     protected override async Task<KeyPress> TransformKeyPressAsync(
         string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
@@ -32,4 +34,10 @@ internal sealed class ReplPromptCallbacks(Configuration configuration) : PromptC
             .Highlight(text)
             .Select(t => new FormatSpan(t.Span.Start, t.Span.Length, configuration.SyntaxColors.Get(t.Color)))
             .ToList();
+
+    protected override async Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(
+        string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken) => session
+        .GetCompletions(text, caret)
+        .Select(c => new CompletionItem(c.DisplayText))
+        .ToList();
 }

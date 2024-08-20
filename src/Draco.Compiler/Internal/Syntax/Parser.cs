@@ -253,7 +253,10 @@ internal sealed class Parser(
         return new(decls.ToSyntaxList(), end);
     }
 
-    // TODO: Better name and doc comment
+    /// <summary>
+    /// Parses a REPL entry.
+    /// </summary>
+    /// <returns>The parsed <see cref="SyntaxNode"/>.</returns>
     public SyntaxNode ParseReplEntry()
     {
         var visibility = this.ParseVisibilityModifier();

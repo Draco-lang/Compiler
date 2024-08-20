@@ -145,7 +145,21 @@ public static class SyntaxHighlighter
 
         if (semanticModel is not null)
         {
-            // TODO
+            var referenced = semanticModel.GetReferencedSymbol(token);
+            if (referenced is not null)
+            {
+                // NOTE: Do we want to simplify this in the API?
+                while (referenced is ITypeAliasSymbol alias) referenced = alias.Substitution;
+                return referenced switch
+                {
+                    ITypeSymbol t when t.IsValueType => SyntaxColoring.ValueTypeName,
+                    ITypeSymbol => SyntaxColoring.ReferenceTypeName,
+                    IFunctionSymbol => SyntaxColoring.FunctionName,
+                    IParameterSymbol => SyntaxColoring.ParameterName,
+                    IVariableSymbol => SyntaxColoring.VariableName,
+                    _ => SyntaxColoring.Unknown,
+                };
+            }
         }
 
         // Best effort approximation

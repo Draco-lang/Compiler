@@ -2,8 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
+using PrettyPrompt;
+using PrettyPrompt.Consoles;
+using PrettyPrompt.Highlighting;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Repl;
@@ -14,36 +18,47 @@ internal static class Program
     private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
         .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
 
-    internal static void Main(string[] args)
+    internal static async Task Main(string[] args)
     {
+        var console = new SystemConsole();
+
         var session = new ReplSession([.. BclReferences]);
         session.AddImports(
             "System",
             "System.Collections.Generic",
             "System.Linq");
 
+        await using var prompt = new Prompt(
+            callbacks: new ReplPromptCallbacks(),
+            configuration: new PromptConfiguration(
+                prompt: "> "));
+
         while (true)
         {
-            Console.Write("> ");
-            var result = session.Evaluate(Console.In);
-            PrintResult(result);
+            var promptResult = await prompt.ReadLineAsync().ConfigureAwait(false);
+            if (!promptResult.IsSuccess) break;
+
+            var replResult = session.Evaluate(promptResult.Text);
+            PrintResult(console, replResult);
         }
     }
 
-    private static void PrintResult(ExecutionResult<object?> result)
+    private static void PrintResult(IConsole console, ExecutionResult<object?> result)
     {
         if (result.Success)
         {
-            Console.WriteLine(result.Value);
+            console.Write(result.Value?.ToString());
+            console.Write(Environment.NewLine);
         }
         else
         {
-            var oldColor = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
-
-            foreach (var diagnostic in result.Diagnostics) Console.WriteLine(diagnostic);
-
-            Console.ForegroundColor = oldColor;
+            foreach (var diagnostic in result.Diagnostics)
+            {
+                console.Write(new FormattedString(
+                    diagnostic.ToString(),
+                    new ConsoleFormat(Foreground: AnsiColor.Red)));
+                console.Write(Environment.NewLine);
+            }
         }
     }
 }

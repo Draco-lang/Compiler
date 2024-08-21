@@ -8,7 +8,7 @@ namespace Draco.Compiler.Api.Diagnostics;
 internal sealed class RelativeLocation(SyntaxNode relativeTo, Location originalLocation) : Location
 {
     public override SourceText SourceText => originalLocation.SourceText;
-    public override SyntaxRange? Range => originalLocation.Range?.RelativeTo(relativeTo.Range.Start);
+    public override SourceSpan? Span => originalLocation.Span?.RelativeTo(relativeTo.Span.Start);
 
     public override string ToString()
     {

@@ -156,13 +156,41 @@ public sealed class SyntaxTree
     /// <returns>Array of <see cref="TextEdit"/>s.</returns>
     public ImmutableArray<TextEdit> SyntaxTreeDiff(SyntaxTree other) =>
         // TODO: We can use a better diff algo
-        [new TextEdit(this.Root.Range, other.ToString())];
+        [new TextEdit(this.SourceText, this.Root.Span, other.ToString())];
 
     /// <summary>
     /// Syntactically formats this <see cref="SyntaxTree"/>.
     /// </summary>
     /// <returns>The formatted tree.</returns>
     public SyntaxTree Format() => Formatter.Format(this);
+
+    /// <summary>
+    /// Utility method to convert an index to a syntax position.
+    /// </summary>
+    /// <param name="index">The index to convert.</param>
+    /// <returns>The equivalent syntax position to <paramref name="index"/>.</returns>
+    public SyntaxPosition IndexToSyntaxPosition(int index) => this.SourceText.IndexToSyntaxPosition(index);
+
+    /// <summary>
+    /// Utility method to convert a syntax position to an index.
+    /// </summary>
+    /// <param name="position">The position to convert.</param>
+    /// <returns>The equivalent index to <paramref name="position"/>.</returns>
+    public int SyntaxPositionToIndex(SyntaxPosition position) => this.SourceText.SyntaxPositionToIndex(position);
+
+    /// <summary>
+    /// Utility method to convert a source span to a syntax range.
+    /// </summary>
+    /// <param name="span">The source span to convert.</param>
+    /// <returns>The equivalent syntax range to <paramref name="span"/>.</returns>
+    public SyntaxRange SourceSpanToSyntaxRange(SourceSpan span) => this.SourceText.SourceSpanToSyntaxRange(span);
+
+    /// <summary>
+    /// Utility method to convert a syntax range to a source span.
+    /// </summary>
+    /// <param name="range">The syntax range to convert.</param>
+    /// <returns>The equivalent source span to <paramref name="range"/>.</returns>
+    public SourceSpan SyntaxRangeToSourceSpan(SyntaxRange range) => this.SourceText.SyntaxRangeToSourceSpan(range);
 
     /// <summary>
     /// The internal root of the tree.

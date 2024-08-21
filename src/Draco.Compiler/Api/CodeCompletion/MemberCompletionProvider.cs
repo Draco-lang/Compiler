@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api.CodeCompletion;
 

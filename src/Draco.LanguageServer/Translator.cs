@@ -1,4 +1,5 @@
 using System.Linq;
+using Draco.Compiler.Api.Syntax;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = Draco.Lsp.Model;
 
@@ -139,7 +140,7 @@ internal static class Translator
         };
     }
 
-    public static LspModels.ITextEdit ToLsp(CompilerApi.TextEdit edit) => new LspModels.TextEdit()
+    public static LspModels.ITextEdit ToLsp(TextEdit edit) => new LspModels.TextEdit()
     {
         NewText = edit.Text,
         Range = ToLsp(edit.Range),

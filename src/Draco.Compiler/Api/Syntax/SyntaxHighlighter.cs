@@ -143,9 +143,9 @@ public static class SyntaxHighlighter
         if (token.Parent is VariableDeclarationSyntax varDecl && varDecl.Name.Equals(token)) return SyntaxColoring.VariableName;
         if (token.Parent is FunctionDeclarationSyntax funcDecl && funcDecl.Name.Equals(token)) return SyntaxColoring.FunctionName;
 
-        if (semanticModel is not null)
+        if (semanticModel is not null && token.Parent is not null)
         {
-            var referenced = semanticModel.GetReferencedSymbol(token);
+            var referenced = semanticModel.GetReferencedSymbol(token.Parent);
             if (referenced is not null)
             {
                 // NOTE: Do we want to simplify this in the API?

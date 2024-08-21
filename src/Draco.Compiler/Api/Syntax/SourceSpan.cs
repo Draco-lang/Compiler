@@ -13,6 +13,13 @@ public readonly record struct SourceSpan(int Start, int Length)
     public int End => this.Start + this.Length;
 
     /// <summary>
+    /// Transforms this span to be relative to the given start index.
+    /// </summary>
+    /// <param name="start">The start index to make this span relative to.</param>
+    /// <returns>A new span that is relative to <paramref name="start"/>.</returns>
+    public SourceSpan RelativeTo(int start) => new(this.Start - start, this.Length);
+
+    /// <summary>
     /// Checks if this span contains the given index.
     /// </summary>
     /// <param name="index">The index to check for containment.</param>

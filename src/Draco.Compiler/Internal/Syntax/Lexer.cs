@@ -383,7 +383,7 @@ internal sealed class Lexer
                 this.tokenBuilder
                     .SetKind(TokenKind.LiteralCharacter)
                     .SetText(errText)
-                    .SetValue(' ');
+                    .SetValue(new Rune(' '));
                 return default;
             }
             var resultChar = default(Rune);
@@ -572,6 +572,17 @@ internal sealed class Lexer
                 if (this.Peek(offset + i + 1) != '#') goto not_escape_sequence;
             }
 
+            if (escapeStart != 0)
+            {
+                // This is an escape, but we have content before it
+                // Return that, the next call will return the escape
+                this.tokenBuilder
+                    .SetKind(TokenKind.StringContent)
+                    .SetText(this.AdvanceWithText(offset))
+                    .SetValue(this.valueBuilder.ToString());
+                return default;
+            }
+
             // Interpolation
             if (this.Peek(offset + mode.ExtendedDelims + 1) == '{')
             {
@@ -633,9 +644,12 @@ internal sealed class Lexer
             offset += mode.ExtendedDelims + 1;
             // Try to parse an escape
             var escaped = this.ParseEscapeSequence(escapeStart, ref offset);
-            // Append to result
-            this.valueBuilder.Append(escaped);
-            goto start;
+            // Return as the result
+            this.tokenBuilder
+                .SetKind(TokenKind.EscapeSequence)
+                .SetText(this.AdvanceWithText(offset))
+                .SetValue(escaped);
+            return default;
         }
 
     not_escape_sequence:

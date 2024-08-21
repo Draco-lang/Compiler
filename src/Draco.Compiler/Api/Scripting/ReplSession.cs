@@ -237,8 +237,7 @@ public sealed class ReplSession
         null,
         InlineFunctionBody(StatementExpression(stmt)));
 
-    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) =>
-        SyntaxTree.Create(CompilationUnit(decl));
+    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(decl));
 
     private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
         syntaxTrees: [tree],

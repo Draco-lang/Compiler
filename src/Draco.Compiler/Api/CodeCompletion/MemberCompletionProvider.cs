@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api.CodeCompletion;
 
@@ -17,19 +18,21 @@ public sealed class MemberCompletionProvider : CompletionProvider
         return context.HasFlag(CompletionContext.Expression) || context.HasFlag(CompletionContext.Type) || context.HasFlag(CompletionContext.Import);
     }
 
-    public override ImmutableArray<CompletionItem> GetCompletionItems(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor, CompletionContext contexts)
+    public override ImmutableArray<CompletionItem> GetCompletionItems(
+        SyntaxTree tree, SemanticModel semanticModel, int cursorIndex, CompletionContext contexts)
     {
+        var cursor = tree.IndexToSyntaxPosition(cursorIndex);
         var nodesAtCursor = tree.Root.TraverseSubtreesAtCursorPosition(cursor);
         if (nodesAtCursor.LastOrDefault() is not SyntaxToken token) return [];
         var expr = token.Parent;
-        var range = token.Kind == TokenKind.Dot ? new SyntaxRange(token.Range.End, 0) : token.Range;
+        var span = token.Kind == TokenKind.Dot ? new SourceSpan(token.Span.End, 0) : token.Span;
         // If we can't get the accessed propery, we just return empty array
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return [];
         var completions = symbols
             // NOTE: Not very robust, just like in the other place
             // Also, duplication
             .GroupBy(x => (x.GetType(), x.Name))
-            .Select(x => GetCompletionItem([.. x], contexts, range));
+            .Select(x => GetCompletionItem(tree.SourceText, [.. x], contexts, span));
         return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 
@@ -74,26 +77,27 @@ public sealed class MemberCompletionProvider : CompletionProvider
         }
     }
 
-    private static CompletionItem? GetCompletionItem(ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SyntaxRange range) => symbols.First() switch
-    {
-        TypeSymbol when currentContexts.HasFlag(CompletionContext.Type)
-                     || currentContexts.HasFlag(CompletionContext.Expression) =>
-            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Class),
+    private static CompletionItem? GetCompletionItem(
+        SourceText source, ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SourceSpan span) => symbols.First() switch
+        {
+            TypeSymbol when currentContexts.HasFlag(CompletionContext.Type)
+                         || currentContexts.HasFlag(CompletionContext.Expression) =>
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Class),
 
-        ModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
-                       || currentContexts.HasFlag(CompletionContext.Expression)
-                       || currentContexts.HasFlag(CompletionContext.Import) =>
-            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Module),
+            ModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
+                           || currentContexts.HasFlag(CompletionContext.Expression)
+                           || currentContexts.HasFlag(CompletionContext.Import) =>
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Module),
 
-        IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Variable),
+            IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Variable),
 
-        PropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Property),
+            PropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Property),
 
-        FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
-            CompletionItem.Create(symbols.First().Name, range, symbols, CompletionKind.Function),
+            FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Function),
 
-        _ => null,
-    };
+            _ => null,
+        };
 }

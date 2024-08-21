@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Scripting;
 using Draco.Compiler.Internal.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using CompilationUnitSyntax = Draco.Compiler.Api.Syntax.CompilationUnitSyntax;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
 using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSyntax;
@@ -35,8 +36,11 @@ public sealed class ReplSession
         // We add a newline to make sure we don't peek past with trailing trivia if not needed
         text = string.Concat(text, Environment.NewLine);
         var reader = new DetectOverpeekSourceReader(SourceReader.From(text));
-        _ = ParseReplEntry(reader);
-        return !reader.HasOverpeeked;
+        var entry = ParseReplEntry(reader);
+        // We either haven't overpeeked, or as a special case, we have an empty compilation unit
+        // which signals an empty entry
+        return !reader.HasOverpeeked
+            || entry.Root is CompilationUnitSyntax { Declarations.Count: 0 };
     }
 
     private readonly record struct HistoryEntry(Compilation Compilation, Assembly Assembly);

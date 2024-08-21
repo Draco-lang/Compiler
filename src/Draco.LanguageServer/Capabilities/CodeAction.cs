@@ -24,7 +24,9 @@ internal sealed partial class DracoLanguageServer : ICodeAction
         if (syntaxTree is null) return Task.FromResult(null as IList<OneOf<Command, CodeAction>>);
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
-        var fixes = this.codeFixService.GetCodeFixes(syntaxTree, semanticModel, Translator.ToCompiler(param.Range));
+        var range = Translator.ToCompiler(param.Range);
+        var span = syntaxTree.SyntaxRangeToSourceSpan(range);
+        var fixes = this.codeFixService.GetCodeFixes(syntaxTree, semanticModel, span);
         var actions = new List<OneOf<Command, CodeAction>>();
 
         foreach (var fix in fixes)

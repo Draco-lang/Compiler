@@ -17,7 +17,8 @@ public sealed class CodeCompletionTests : SemanticTestsBase
         service.AddProvider(new KeywordCompletionProvider());
         service.AddProvider(new ExpressionCompletionProvider());
         service.AddProvider(new MemberCompletionProvider());
-        return service.GetCompletions(tree, model, cursor);
+        var cursorIndex = tree.SourceText.SyntaxPositionToIndex(cursor);
+        return service.GetCompletions(tree, model, cursorIndex);
     }
 
     [Fact]

@@ -1179,6 +1179,7 @@
 
       <Token Kind="StringContent" />
       <Token Kind="StringNewline" />
+      <Token Kind="EscapeSequence" />
     </Field>
   </Node>
 

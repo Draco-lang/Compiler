@@ -9,6 +9,8 @@ public sealed class BasicSessionTests
     private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
         .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
 
+    [InlineData("", null)]
+    [InlineData("// hello", null)]
     [InlineData("1 + 2", 3)]
     [InlineData("2 < 3 < 4", true)]
     [InlineData("\"asd\" + \"def\"", "asddef")]

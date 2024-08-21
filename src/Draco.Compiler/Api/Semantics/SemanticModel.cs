@@ -197,7 +197,6 @@ public sealed partial class SemanticModel : IBinderProvider
         .GetReferencedSymbolInternal(syntax)
         ?.ToApiSymbol();
 
-
     internal Symbol? GetReferencedSymbolInternal(SyntaxNode syntax)
     {
         if (syntax is ImportPathSyntax)

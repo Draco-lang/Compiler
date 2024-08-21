@@ -93,8 +93,7 @@ public sealed class ReplSession
         caret += relocatedNode.FullPosition;
         var compilation = this.MakeCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
-        var position = CaretPositionToSyntaxPosition(text, caret);
-        return this.completionService.GetCompletions(tree, semanticModel, position);
+        return this.completionService.GetCompletions(tree, semanticModel, caret);
     }
 
     /// <summary>
@@ -302,10 +301,4 @@ public sealed class ReplSession
         MemberImportPathSyntax member => $"{ExtractImportPath(member.Accessed)}.{member.Member.Text}",
         _ => throw new ArgumentOutOfRangeException(nameof(path)),
     };
-
-    private static SyntaxPosition CaretPositionToSyntaxPosition(string text, int caret)
-    {
-        var sourceText = SourceText.FromText(text);
-        return sourceText.IndexToSyntaxPosition(caret);
-    }
 }

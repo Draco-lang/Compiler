@@ -149,7 +149,7 @@ public static class SyntaxHighlighter
             if (referenced is not null)
             {
                 // NOTE: Do we want to simplify this in the API?
-                while (referenced is ITypeAliasSymbol alias) referenced = alias.Substitution;
+                while (referenced is IAliasSymbol alias) referenced = alias.Substitution;
                 return referenced switch
                 {
                     ITypeSymbol t when t.IsValueType => SyntaxColoring.ValueTypeName,
@@ -169,10 +169,10 @@ public static class SyntaxHighlighter
     }
 
     private static IEnumerable<HighlightFragment> Fragment(SyntaxTrivia trivia, SyntaxColoring color) =>
-        [new HighlightFragment(trivia.Span, trivia.Text, color)];
+        [new HighlightFragment(trivia, color)];
 
     private static IEnumerable<HighlightFragment> Fragment(SyntaxToken token, SyntaxColoring color) =>
-        [new HighlightFragment(token.Span, token.Text, color)];
+        [new HighlightFragment(token, color)];
 
     private static IEnumerable<HighlightFragment> SplitUp(SyntaxToken token, IEnumerable<(int Length, SyntaxColoring Color)> parts)
     {
@@ -181,10 +181,7 @@ public static class SyntaxHighlighter
         {
             if (token.Text.Length <= offset) break;
 
-            yield return new HighlightFragment(
-                new SourceSpan(token.Span.Start + offset, len),
-                token.Text.Substring(offset, len),
-                color);
+            yield return new HighlightFragment(token, new SourceSpan(offset, len), color);
             offset += len;
         }
     }

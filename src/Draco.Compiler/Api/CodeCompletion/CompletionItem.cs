@@ -12,12 +12,12 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// <param name="Kind">The <see cref="CompletionKind"/> of this completion.</param>
 public sealed record class CompletionItem(ImmutableArray<TextEdit> Edits, string DisplayText, ImmutableArray<ISymbol> Symbols, CompletionKind Kind)
 {
-    public static CompletionItem Create(string text, SyntaxRange range, CompletionKind kind) =>
-        new([new TextEdit(range, text)], text, [], kind);
+    public static CompletionItem Create(SourceText source, string text, SourceSpan span, CompletionKind kind) =>
+        new([new TextEdit(source, span, text)], text, [], kind);
 
-    public static CompletionItem Create(string text, SyntaxRange range, ISymbol symbol, CompletionKind kind) =>
-        new([new TextEdit(range, text)], text, [symbol], kind);
+    public static CompletionItem Create(SourceText source, string text, SourceSpan span, ISymbol symbol, CompletionKind kind) =>
+        new([new TextEdit(source, span, text)], text, [symbol], kind);
 
-    public static CompletionItem Create(string text, SyntaxRange range, ImmutableArray<ISymbol> symbols, CompletionKind kind) =>
-        new([new TextEdit(range, text)], text, symbols, kind);
+    public static CompletionItem Create(SourceText source, string text, SourceSpan span, ImmutableArray<ISymbol> symbols, CompletionKind kind) =>
+        new([new TextEdit(source, span, text)], text, symbols, kind);
 }

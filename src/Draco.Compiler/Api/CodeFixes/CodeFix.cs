@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.CodeFixes;
 

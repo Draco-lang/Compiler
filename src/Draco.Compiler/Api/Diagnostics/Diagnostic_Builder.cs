@@ -13,6 +13,10 @@ public sealed partial class Diagnostic
     /// <returns>A new, empty diagnostic builder.</returns>
     public static Builder CreateBuilder() => new();
 
+    /// <summary>
+    /// Converts this diagnostic to a builder.
+    /// </summary>
+    /// <returns>The builder containing this diagnostic's data.</returns>
     public Builder ToBuilder() => CreateBuilder()
         .WithTemplate(this.Template)
         .WithFormatArgs(this.FormatArgs)

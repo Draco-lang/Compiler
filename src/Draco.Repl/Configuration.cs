@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using PrettyPrompt.Highlighting;
 
 namespace Draco.Repl;
@@ -8,7 +9,7 @@ internal sealed class Configuration
 {
     public string Prompt { get; set; } = "> ";
     public ColorScheme<InterfaceColor> InterfaceColors { get; set; } = ConfigurationDefaults.GetInterfaceColors();
-    public ColorScheme<SyntaxColor> SyntaxColors { get; set; } = ConfigurationDefaults.GetSyntaxColors();
+    public ColorScheme<SyntaxColoring> SyntaxColors { get; set; } = ConfigurationDefaults.GetSyntaxColors();
     public List<string> DefaultImports { get; set; } = [
         "System",
         "System.Collections.Generic",

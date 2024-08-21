@@ -9,6 +9,7 @@ using PrettyPrompt.Highlighting;
 using System.Linq;
 using PrettyPrompt.Completion;
 using PrettyPrompt.Documents;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Repl;
 
@@ -30,8 +31,8 @@ internal sealed class ReplPromptCallbacks(Configuration configuration, ReplSessi
     }
 
     protected override async Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(
-        string text, CancellationToken cancellationToken) => SyntaxHighlighter
-            .Highlight(text)
+        string text, CancellationToken cancellationToken) => session
+            .GetHighlighting(text)
             .Select(t => new FormatSpan(t.Span.Start, t.Span.Length, configuration.SyntaxColors.Get(t.Color)))
             .ToList();
 

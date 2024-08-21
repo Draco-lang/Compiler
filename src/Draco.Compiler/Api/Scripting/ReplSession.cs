@@ -80,6 +80,25 @@ public sealed class ReplSession
     }
 
     /// <summary>
+    /// Gets the highlighting for the given text.
+    /// </summary>
+    /// <param name="text">The text to get highlighting for.</param>
+    /// <returns>The highlighting fragments for the given text.</returns>
+    public IEnumerable<HighlightFragment> GetHighlighting(string text)
+    {
+        var node = ParseReplEntry(text);
+        var (tree, relocatedNode) = WrapSyntax(node.Root);
+        var offset = relocatedNode.Span.Start;
+        var endOffset = relocatedNode.Span.End;
+        var compilation = this.MakeCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        return SyntaxHighlighter
+            .Highlight(tree, semanticModel)
+            .SkipWhile(f => f.Span.Start < offset)
+            .TakeWhile(f => f.Span.End <= endOffset);
+    }
+
+    /// <summary>
     /// Gets the completions for the given text and caret position.
     /// </summary>
     /// <param name="text">The text to get completions for.</param>

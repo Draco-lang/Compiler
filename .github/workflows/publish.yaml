@@ -61,7 +61,7 @@ jobs:
       run: |
         cd src
         $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
-        $replProjects = "Compiler", "Compiler.Repl"
+        $replProjects = "Compiler", "Repl"
         $langserverProjects = "Compiler", "LanguageServer", "Lsp", "JsonRpc"
         $debugadapterProjects = "DebugAdapter", "Dap", "JsonRpc"
         $projects = @()

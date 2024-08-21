@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Api.CodeCompletion;
 
@@ -80,22 +79,22 @@ public sealed class MemberCompletionProvider : CompletionProvider
     private static CompletionItem? GetCompletionItem(
         SourceText source, ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SourceSpan span) => symbols.First() switch
         {
-            TypeSymbol when currentContexts.HasFlag(CompletionContext.Type)
+            ITypeSymbol when currentContexts.HasFlag(CompletionContext.Type)
                          || currentContexts.HasFlag(CompletionContext.Expression) =>
                 CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Class),
 
-            ModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
-                           || currentContexts.HasFlag(CompletionContext.Expression)
-                           || currentContexts.HasFlag(CompletionContext.Import) =>
+            IModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
+                            || currentContexts.HasFlag(CompletionContext.Expression)
+                            || currentContexts.HasFlag(CompletionContext.Import) =>
                 CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Module),
 
             IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
                 CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Variable),
 
-            PropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+            IPropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
                 CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Property),
 
-            FunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
+            IFunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
                 CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Function),
 
             _ => null,

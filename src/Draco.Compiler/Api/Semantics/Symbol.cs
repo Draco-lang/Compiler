@@ -180,14 +180,14 @@ public interface ITypeSymbol : ISymbol, IMemberSymbol
 }
 
 /// <summary>
-/// Represents a type alias symbol.
+/// Represents an alias symbol.
 /// </summary>
-public interface ITypeAliasSymbol : ISymbol, IMemberSymbol
+public interface IAliasSymbol : ISymbol, IMemberSymbol
 {
     /// <summary>
-    /// The type this alias substitutes.
+    /// The symbol this alias substitutes.
     /// </summary>
-    public ITypeSymbol Substitution { get; }
+    public ISymbol Substitution { get; }
 }
 
 /// <summary>
@@ -307,12 +307,12 @@ internal sealed class TypeSymbol(Internal.Symbols.TypeSymbol type)
     public bool IsValueType => this.Symbol.IsValueType;
 }
 
-internal sealed class TypeAliasSymbol(Internal.Symbols.TypeAliasSymbol type)
-    : SymbolBase<Internal.Symbols.TypeAliasSymbol>(type), ITypeAliasSymbol
+internal sealed class AliasSymbol(Internal.Symbols.AliasSymbol type)
+    : SymbolBase<Internal.Symbols.AliasSymbol>(type), IAliasSymbol
 {
     public bool IsStatic => this.Symbol.IsStatic;
 
-    public ITypeSymbol Substitution => this.Symbol.Substitution.ToApiSymbol();
+    public ISymbol Substitution => this.Symbol.Substitution.ToApiSymbol();
 }
 
 internal sealed class TypeParameterSymbol(Internal.Symbols.TypeParameterSymbol type)

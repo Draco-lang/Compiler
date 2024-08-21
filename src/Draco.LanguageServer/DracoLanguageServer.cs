@@ -39,9 +39,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private Uri rootUri;
     private volatile Compilation compilation;
 
-    private readonly CompletionService completionService;
-    private readonly SignatureService signatureService;
-    private readonly CodeFixService codeFixService;
+    private readonly CompletionService completionService = CompletionService.CreateDefault();
+    private readonly SignatureService signatureService = new();
+    private readonly CodeFixService codeFixService = CodeFixService.CreateDefault();
 
     public DracoLanguageServer(ILanguageClient client)
     {
@@ -53,16 +53,6 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.compilation = Compilation.Create(
             syntaxTrees: [],
             metadataReferences: []);
-
-        this.completionService = new CompletionService();
-        this.completionService.AddProvider(new KeywordCompletionProvider());
-        this.completionService.AddProvider(new ExpressionCompletionProvider());
-        this.completionService.AddProvider(new MemberCompletionProvider());
-
-        this.signatureService = new SignatureService();
-
-        this.codeFixService = new CodeFixService();
-        this.codeFixService.AddProvider(new ImportCodeFixProvider());
     }
 
     private async Task CreateCompilation()

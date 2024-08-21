@@ -7,7 +7,7 @@ using Draco.Compiler.Internal.Symbols;
 namespace Draco.Compiler.Internal.Binding;
 
 /// <summary>
-/// Binds compiler-intrinsic symbols
+/// Binds compiler-intrinsic symbols.
 /// </summary>
 internal sealed class IntrinsicsBinder : Binder
 {

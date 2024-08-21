@@ -133,7 +133,7 @@ internal class Program
         var execResult = ScriptingEngine.Execute(compilation);
         if (!EmitDiagnostics(execResult))
         {
-            Console.WriteLine($"Result: {execResult.Result}");
+            Console.WriteLine($"Result: {execResult.Value}");
         }
     }
 

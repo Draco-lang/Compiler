@@ -117,7 +117,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
             FromAllocating((codegen, target, operands) => codegen.Write(Call(target, this.SystemString_Concat, operands))));
     }
 
-    private static SynthetizedTypeAliasSymbol Alias(string name, TypeSymbol type) =>
+    private static SynthetizedAliasSymbol Alias(string name, TypeSymbol type) =>
         new(name, type);
     #endregion
 
@@ -193,13 +193,13 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
 
     private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>
-        compilation.MetadataAssemblies.Values.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
+        compilation.MetadataAssemblies.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
 
     private MetadataAssemblySymbol GetAssemblyWithNameAndToken(string name, byte[] token)
     {
         var assemblyName = new AssemblyName() { Name = name };
         assemblyName.SetPublicKeyToken(token);
-        return compilation.MetadataAssemblies.Values
+        return compilation.MetadataAssemblies
             .SingleOrDefault(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName))
             ?? throw new InvalidOperationException($"Failed to locate assembly with name '{name}' and public key token '{BitConverter.ToString(token)}'.");
     }

@@ -144,7 +144,8 @@ internal sealed class Lexer
         case ModeKind.MultiLineString:
             this.LexString();
             // If we are starting interpolation, we can consume trailing trivia
-            if (this.tokenBuilder.Kind == TokenKind.InterpolationStart) this.ParseTrailingTriviaList();
+            if (this.tokenBuilder.Kind == TokenKind.InterpolationStart
+             || this.tokenBuilder.Kind == TokenKind.LineStringEnd) this.ParseTrailingTriviaList();
             break;
 
         default:

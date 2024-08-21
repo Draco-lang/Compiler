@@ -30,7 +30,7 @@ public abstract class SemanticTestsBase
     private protected static Symbol GetMetadataSymbol(Compilation compilation, string? assemblyName, params string[] path)
     {
         assemblyName ??= TestUtilities.DefaultAssemblyName;
-        var asm = compilation.MetadataAssemblies.Values.Single(a => a.AssemblyName.Name == assemblyName);
+        var asm = compilation.MetadataAssemblies.Single(a => a.AssemblyName.Name == assemblyName);
         return asm.RootNamespace.Lookup([.. path]).First();
     }
 

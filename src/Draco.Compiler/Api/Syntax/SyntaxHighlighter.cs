@@ -149,7 +149,7 @@ public static class SyntaxHighlighter
             if (referenced is not null)
             {
                 // NOTE: Do we want to simplify this in the API?
-                while (referenced is ITypeAliasSymbol alias) referenced = alias.Substitution;
+                while (referenced is IAliasSymbol alias) referenced = alias.Substitution;
                 return referenced switch
                 {
                     ITypeSymbol t when t.IsValueType => SyntaxColoring.ValueTypeName,

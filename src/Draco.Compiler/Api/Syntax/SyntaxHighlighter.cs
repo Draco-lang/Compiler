@@ -64,12 +64,12 @@ public static class SyntaxHighlighter
 
         TokenKind.StringContent => Fragment(token, SyntaxColoring.StringContent),
 
-        // Escaped characters are split up for the escapes
-        TokenKind.LiteralCharacter when token.Text.Contains('\\') => SplitUp(token, [
+        // Characters are split up into quotes and contents
+        TokenKind.LiteralCharacter => SplitUp(token, [
             (1, SyntaxColoring.CharacterQuotes),
-            (token.Text.Length - 2, SyntaxColoring.EscapeSequence),
+            // The categorization depends if this is an escape
+            (token.Text.Length - 2, token.Text.Contains('\\') ? SyntaxColoring.EscapeSequence : SyntaxColoring.CharacterContent),
             (1, SyntaxColoring.CharacterQuotes)]),
-        TokenKind.LiteralCharacter => Fragment(token, SyntaxColoring.CharacterContent),
 
         TokenKind.Plus
      or TokenKind.Minus

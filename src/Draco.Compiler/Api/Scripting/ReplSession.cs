@@ -140,6 +140,12 @@ public sealed class ReplSession
     /// <returns>The execution result.</returns>
     public ExecutionResult<TResult> Evaluate<TResult>(SyntaxNode node)
     {
+        // Check for an empty entry
+        if (node is CompilationUnitSyntax { Declarations.Count: 0 })
+        {
+            return ExecutionResult.Success(default(TResult)!);
+        }
+
         // Check for imports
         if (node is ImportDeclarationSyntax import)
         {
@@ -162,7 +168,6 @@ public sealed class ReplSession
         // Find the relocated node in the tree, we need this to shift diagnostics
         var relocatedNode = node switch
         {
-            CompilationUnitSyntax => node,
             ExpressionSyntax expr => tree.FindInChildren<ExpressionSyntax>() as SyntaxNode,
             StatementSyntax stmt => tree.FindInChildren<StatementSyntax>(),
             DeclarationSyntax d => tree.FindInChildren<DeclarationSyntax>(1),
@@ -185,7 +190,7 @@ public sealed class ReplSession
         if (!result.Success) return ExecutionResult.Fail<TResult>(diagnostics);
 
         // If it was a non-empty declaration, track it
-        if (node is DeclarationSyntax and not CompilationUnitSyntax { Declarations.Count: 0 })
+        if (node is DeclarationSyntax)
         {
             var semanticModel = compilation.GetSemanticModel(tree);
             var symbol = semanticModel.GetDeclaredSymbolInternal(relocatedNode);

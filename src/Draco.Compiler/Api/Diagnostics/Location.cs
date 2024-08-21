@@ -23,7 +23,14 @@ public abstract partial class Location
     public virtual SourceText SourceText => SourceText.None;
 
     /// <summary>
+    /// The span of this location.
+    /// </summary>
+    public virtual SourceSpan? Span => null;
+
+    /// <summary>
     /// The range of this location.
     /// </summary>
-    public virtual SyntaxRange? Range => null;
+    public SyntaxRange? Range => this.Span is null
+        ? null
+        : this.SourceText.SourceSpanToSyntaxRange(this.Span.Value);
 }

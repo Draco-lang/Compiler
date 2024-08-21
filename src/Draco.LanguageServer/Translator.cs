@@ -139,7 +139,7 @@ internal static class Translator
         };
     }
 
-    public static LspModels.ITextEdit ToLsp(CompilerApi.TextEdit edit) => new LspModels.TextEdit()
+    public static LspModels.ITextEdit ToLsp(CompilerApi.Syntax.TextEdit edit) => new LspModels.TextEdit()
     {
         NewText = edit.Text,
         Range = ToLsp(edit.Range),

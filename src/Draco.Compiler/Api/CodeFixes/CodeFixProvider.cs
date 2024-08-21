@@ -19,7 +19,7 @@ public abstract class CodeFixProvider
     /// </summary>
     /// <param name="diagnostic">Diagnostic for which the <see cref="CodeFixProvider"/> shold provide <see cref="CodeFix"/>es.</param>
     /// <param name="tree">The <see cref="SyntaxTree"/> for which the <see cref="CodeFix"/>es should be generated.</param>
-    /// <param name="range">The <see cref="SyntaxRange"/> of the <see cref="Diagnostic"/>.</param>
+    /// <param name="span">The <see cref="SourceSpan"/> for which the <see cref="CodeFix"/>es should be generated..</param>
     /// <returns>All <see cref="CodeFix"/>es from this <see cref="CodeFixProvider"/>.</returns>
-    public abstract ImmutableArray<CodeFix> GetCodeFixes(Diagnostic diagnostic, SyntaxTree tree, SyntaxRange range);
+    public abstract ImmutableArray<CodeFix> GetCodeFixes(Diagnostic diagnostic, SyntaxTree tree, SourceSpan span);
 }

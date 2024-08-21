@@ -169,10 +169,10 @@ public static class SyntaxHighlighter
     }
 
     private static IEnumerable<HighlightFragment> Fragment(SyntaxTrivia trivia, SyntaxColoring color) =>
-        [new HighlightFragment(trivia.Range, trivia.Text, color)];
+        [new HighlightFragment(trivia.Span, trivia.Text, color)];
 
     private static IEnumerable<HighlightFragment> Fragment(SyntaxToken token, SyntaxColoring color) =>
-        [new HighlightFragment(token.Range, token.Text, color)];
+        [new HighlightFragment(token.Span, token.Text, color)];
 
     private static IEnumerable<HighlightFragment> SplitUp(SyntaxToken token, IEnumerable<(int Length, SyntaxColoring Color)> parts)
     {
@@ -182,11 +182,7 @@ public static class SyntaxHighlighter
             if (token.Text.Length <= offset) break;
 
             yield return new HighlightFragment(
-                new SyntaxRange(
-                    new SyntaxPosition(
-                        Line: token.Range.Start.Line,
-                        Column: token.Range.Start.Column + offset),
-                    len),
+                new SourceSpan(token.Span.Start + offset, len),
                 token.Text.Substring(offset, len),
                 color);
             offset += len;

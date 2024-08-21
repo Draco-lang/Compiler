@@ -37,30 +37,31 @@ public sealed class CompletionService
     /// </summary>
     /// <param name="tree">The <see cref="SyntaxTree"/> for which this service will create suggestions.</param>
     /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
-    /// <param name="cursor">Position of cursor in the <paramref name="tree"/>.</param>
+    /// <param name="cursorIndex">Index of the cursor in the <paramref name="tree"/>.</param>
     /// <returns><see cref="CompletionItem"/>s from all <see cref="CompletionProvider"/>s.</returns>
-    public ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
+    public ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, int cursorIndex)
     {
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        var currentContext = this.GetCurrentContexts(tree, cursor);
+        var currentContext = this.GetCurrentContexts(tree, cursorIndex);
         foreach (var provider in this.providers)
         {
             if (provider.IsApplicableIn(currentContext))
             {
-                result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursor, currentContext));
+                result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursorIndex, currentContext));
             }
         }
         return result.ToImmutable();
     }
 
     /// <summary>
-    /// Gets current context based on location of <paramref name="cursor"/> in the <paramref name="syntaxTree"/>.
+    /// Gets current context based on location of <paramref name="cursorIndex"/> in the <paramref name="syntaxTree"/>.
     /// </summary>
     /// <param name="syntaxTree">The <see cref="SyntaxTree"/> in which to find contexts.</param>
-    /// <param name="cursor">The location in the <paramref name="syntaxTree"/>.</param>
+    /// <param name="cursorIndex">The location in the <paramref name="syntaxTree"/>.</param>
     /// <returns>Flag enum of the currently valid <see cref="CompletionContext"/>s.</returns>
-    private CompletionContext GetCurrentContexts(SyntaxTree syntaxTree, SyntaxPosition cursor)
+    private CompletionContext GetCurrentContexts(SyntaxTree syntaxTree, int cursorIndex)
     {
+        var cursor = syntaxTree.IndexToSyntaxPosition(cursorIndex);
         var node = syntaxTree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
         return node switch
         {

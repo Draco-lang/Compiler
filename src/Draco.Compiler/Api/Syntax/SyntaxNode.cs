@@ -214,7 +214,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <param name="position">The position that has to be contained.</param>
     /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
     public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(SyntaxPosition position) =>
-        this.TraverseSubtreesAtIndex(this.Tree.SourceText.SyntaxPositionToIndex(position));
+        this.TraverseSubtreesAtIndex(this.Tree.SyntaxPositionToIndex(position));
 
     /// <summary>
     /// Enumerates this subtree, yielding all descendant nodes intersecting the given range.
@@ -222,7 +222,7 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     /// <param name="range">The range to check for intersection with the nodes.</param>
     /// <returns>All subtrees in intersecting <paramref name="range"/> in parent-child order.</returns>
     public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range) =>
-        this.TraverseSubtreesIntersectingSpan(this.Tree.SourceText.SyntaxRangeToSourceSpan(range));
+        this.TraverseSubtreesIntersectingSpan(this.Tree.SyntaxRangeToSourceSpan(range));
 
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);

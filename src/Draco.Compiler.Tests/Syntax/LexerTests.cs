@@ -166,6 +166,34 @@ public sealed class LexerTests
 
     [Fact]
     [Trait("Feature", "Strings")]
+    public void TestTriviaAfterLineString()
+    {
+        var ws = "  ";
+        var text = $"""
+            "Abc"{ws}
+
+            """;
+        this.Lex(text);
+
+        this.AssertNextToken(TokenKind.LineStringStart, "\"");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.StringContent, "Abc", "Abc");
+        this.AssertNoTriviaOrDiagnostics();
+
+        this.AssertNextToken(TokenKind.LineStringEnd, "\"");
+        this.AssertDiagnostics();
+        this.AssertLeadingTrivia();
+        this.AssertTrailingTrivia(
+            (TriviaKind.Whitespace, ws),
+            (TriviaKind.Newline, "\n"));
+
+        this.AssertNextToken(TokenKind.EndOfInput);
+        this.AssertNoTriviaOrDiagnostics();
+    }
+
+    [Fact]
+    [Trait("Feature", "Strings")]
     public void TestUnclosedLineString()
     {
         var text = """

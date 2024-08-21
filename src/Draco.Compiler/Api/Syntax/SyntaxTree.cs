@@ -22,12 +22,15 @@ public sealed class SyntaxTree
     /// <returns>A new <see cref="SyntaxTree"/> with <see cref="Root"/> <paramref name="root"/> and <see cref="SourceText.Path"/> <paramref name="path"/>.</returns>
     public static SyntaxTree Create(SyntaxNode root, string? path = null) => Create(root.Green, path);
 
-    internal static SyntaxTree Create(Internal.Syntax.SyntaxNode root, string? path = null) => new(
+    internal static SyntaxTree Create(
+        Internal.Syntax.SyntaxNode root,
+        string? path = null,
+        SyntaxDiagnosticTable syntaxDiagnostics = default) => new(
         sourceText: SourceText.FromText(
             path: path is null ? null : new Uri(path),
             text: root.ToCode().AsMemory()),
         greenRoot: root,
-        syntaxDiagnostics: new());
+        syntaxDiagnostics: syntaxDiagnostics);
 
     /// <summary>
     /// Parses the given text into a <see cref="SyntaxTree"/> with <see cref="SourceText.Path"/> <paramref name="path"/>.
@@ -65,6 +68,11 @@ public sealed class SyntaxTree
     public SyntaxNode Root =>
         LazyInitializer.EnsureInitialized(ref this.root, () => this.GreenRoot.ToRedNode(this, null, 0));
     private SyntaxNode? root;
+
+    /// <summary>
+    /// True, if the tree has any errors.
+    /// </summary>
+    public bool HasErrors => this.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error);
 
     /// <summary>
     /// All <see cref="Diagnostic"/> messages that were produced during parsing this syntax tree.

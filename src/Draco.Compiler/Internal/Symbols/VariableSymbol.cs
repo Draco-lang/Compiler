@@ -16,6 +16,7 @@ internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
 
     public override Api.Semantics.Visibility Visibility => this.DeclaringSyntax switch
     {
+        _ when this.ImplicitPublicEnabled => Api.Semantics.Visibility.Public,
         VariableDeclarationSyntax varDecl => GetVisibilityFromTokenKind(varDecl.VisibilityModifier?.Kind),
         _ => Api.Semantics.Visibility.Internal,
     };

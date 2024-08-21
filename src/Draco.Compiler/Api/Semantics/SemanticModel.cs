@@ -137,9 +137,13 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <param name="syntax">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="syntax"/>, or null if it does not
     /// declared any.</returns>
-    public ISymbol? GetDeclaredSymbol(SyntaxNode syntax)
+    public ISymbol? GetDeclaredSymbol(SyntaxNode syntax) => this
+        .GetDeclaredSymbolInternal(syntax)
+        ?.ToApiSymbol();
+
+    internal Symbol? GetDeclaredSymbolInternal(SyntaxNode syntax)
     {
-        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing;
 
         // Get enclosing context
         var binder = this.GetBinder(syntax);
@@ -150,14 +154,14 @@ public sealed partial class SemanticModel : IBinderProvider
         case SourceFunctionSymbol func:
         {
             // This is just the function itself
-            if (func.DeclaringSyntax == syntax) return containingSymbol.ToApiSymbol();
+            if (func.DeclaringSyntax == syntax) return containingSymbol;
 
             // Could be a generic parameter
             if (syntax is GenericParameterSyntax genericParam)
             {
                 var paramSymbol = containingSymbol.GenericParameters
                     .FirstOrDefault(p => p.DeclaringSyntax == syntax);
-                return paramSymbol?.ToApiSymbol();
+                return paramSymbol;
             }
 
             // Bind the function contents
@@ -166,17 +170,17 @@ public sealed partial class SemanticModel : IBinderProvider
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
-            return symbol?.ToApiSymbol();
+            return symbol;
         }
         case SourceModuleSymbol module:
         {
             // The module itself
-            if (module.DeclaringSyntaxes.Contains(syntax)) return containingSymbol.ToApiSymbol();
+            if (module.DeclaringSyntaxes.Contains(syntax)) return containingSymbol;
 
             // Just search for the corresponding syntax
             var symbol = module.Members
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
-            return symbol?.ToApiSymbol();
+            return symbol;
         }
         default:
             return null;
@@ -189,7 +193,11 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <param name="syntax">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="syntax"/>, or null
     /// if it does not reference any.</returns>
-    public ISymbol? GetReferencedSymbol(SyntaxNode syntax)
+    public ISymbol? GetReferencedSymbol(SyntaxNode syntax) => this
+        .GetReferencedSymbolInternal(syntax)
+        ?.ToApiSymbol();
+
+    internal Symbol? GetReferencedSymbolInternal(SyntaxNode syntax)
     {
         if (syntax is ImportPathSyntax)
         {
@@ -211,10 +219,10 @@ public sealed partial class SemanticModel : IBinderProvider
                 .SingleOrDefault();
             // Not found in path
             if (pathSymbol is null) return null;
-            return pathSymbol.ToApiSymbol();
+            return pathSymbol;
         }
 
-        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing;
 
         // Get enclosing context
         var binder = this.GetBinder(syntax);
@@ -241,7 +249,7 @@ public sealed partial class SemanticModel : IBinderProvider
 
         // Attempt to retrieve
         this.symbolMap.TryGetValue(syntax, out var symbol);
-        return symbol?.ToApiSymbol();
+        return symbol;
     }
 
     private ImportBinder GetImportBinder(SyntaxNode syntax)

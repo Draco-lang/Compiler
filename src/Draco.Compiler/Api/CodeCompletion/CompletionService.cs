@@ -11,6 +11,19 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public sealed class CompletionService
 {
+    /// <summary>
+    /// Creates a new <see cref="CompletionService"/> with the default <see cref="CompletionProvider"/>s.
+    /// </summary>
+    /// <returns>A new <see cref="CompletionService"/> with default providers.</returns>
+    public static CompletionService CreateDefault()
+    {
+        var service = new CompletionService();
+        service.AddProvider(new KeywordCompletionProvider());
+        service.AddProvider(new ExpressionCompletionProvider());
+        service.AddProvider(new MemberCompletionProvider());
+        return service;
+    }
+
     private readonly List<CompletionProvider> providers = [];
 
     /// <summary>

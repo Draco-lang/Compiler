@@ -466,6 +466,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitReturnExpression(BoundReturnExpression node)
     {
         var operand = this.Compile(node.Value);
+        operand = this.BoxIfNeeded(this.procedure.ReturnType, operand);
         this.Write(Ret(operand));
         this.DetachBlock();
         return default!;

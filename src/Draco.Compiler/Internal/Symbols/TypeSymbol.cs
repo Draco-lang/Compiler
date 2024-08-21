@@ -161,7 +161,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
             .OfType<FunctionSymbol>()
             .FirstOrDefault(f => !f.IsStatic && f.Name == "Invoke");
     }
-    
+
     private ImmutableArray<TypeSymbol> BuildBaseTypes() => GraphTraversal.DepthFirst(
         start: this,
         getNeighbors: s => s.ImmediateBaseTypes,

@@ -14,6 +14,16 @@ public sealed partial class Diagnostic
     public static Builder CreateBuilder() => new();
 
     /// <summary>
+    /// Converts this diagnostic to a builder.
+    /// </summary>
+    /// <returns>The builder containing this diagnostic's data.</returns>
+    public Builder ToBuilder() => CreateBuilder()
+        .WithTemplate(this.Template)
+        .WithFormatArgs(this.FormatArgs)
+        .WithLocation(this.Location)
+        .WithRelatedInformation(this.RelatedInformation);
+
+    /// <summary>
     /// A builder type for <see cref="Diagnostic"/>.
     /// </summary>
     public sealed class Builder

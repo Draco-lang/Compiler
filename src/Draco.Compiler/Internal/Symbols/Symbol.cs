@@ -174,6 +174,12 @@ internal abstract partial class Symbol
     public virtual ImmutableArray<TypeSymbol> GenericArguments => [];
 
     /// <summary>
+    /// True, if the compilation has implicit public symbol declarations enabled.
+    /// </summary>
+    protected bool ImplicitPublicEnabled =>
+        this.DeclaringCompilation?.Flags.HasFlag(Api.CompilationFlags.ImplicitPublicSymbols) == true;
+
+    /// <summary>
     /// Checks if this symbol can be shadowed by <paramref name="other"/> symbol.
     /// </summary>
     /// <param name="other">The other symbol.</param>

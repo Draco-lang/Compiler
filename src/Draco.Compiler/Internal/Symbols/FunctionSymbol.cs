@@ -108,6 +108,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     public override Api.Semantics.Visibility Visibility => this.DeclaringSyntax switch
     {
+        _ when this.ImplicitPublicEnabled => Api.Semantics.Visibility.Public,
         FunctionDeclarationSyntax funcDecl => GetVisibilityFromTokenKind(funcDecl.VisibilityModifier?.Kind),
         _ => Api.Semantics.Visibility.Internal,
     };

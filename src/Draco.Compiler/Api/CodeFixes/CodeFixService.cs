@@ -11,6 +11,17 @@ namespace Draco.Compiler.Api.CodeFixes;
 /// </summary>
 public sealed class CodeFixService
 {
+    /// <summary>
+    /// Creates a new <see cref="CodeFixService"/> with the default <see cref="CodeFixProvider"/>s.
+    /// </summary>
+    /// <returns>A new <see cref="CodeFixService"/> with default providers.</returns>
+    public static CodeFixService CreateDefault()
+    {
+        var service = new CodeFixService();
+        service.AddProvider(new ImportCodeFixProvider());
+        return service;
+    }
+
     private readonly List<CodeFixProvider> providers = [];
 
     /// <summary>

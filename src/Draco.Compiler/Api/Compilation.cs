@@ -191,7 +191,7 @@ public sealed class Compilation : IBinderProvider
 
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
-    private readonly Dictionary<MetadataReference, MetadataAssemblySymbol> metadataAssemblies = [];
+    private readonly ConcurrentDictionary<MetadataReference, MetadataAssemblySymbol> metadataAssemblies = [];
 
     // Main ctor with all state
     private Compilation(
@@ -218,7 +218,7 @@ public sealed class Compilation : IBinderProvider
         this.GlobalImports = globalImports ?? default;
         this.AssemblyName = assemblyName ?? "output";
         this.rootModule = rootModule;
-        this.metadataAssemblies = metadataAssemblies?.ToDictionary(kv => kv.Key, kv => kv.Value) ?? [];
+        this.metadataAssemblies = new(metadataAssemblies?.AsEnumerable() ?? []);
         this.sourceModule = sourceModule;
         this.declarationTable = declarationTable;
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
@@ -385,21 +385,8 @@ public sealed class Compilation : IBinderProvider
     Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);
     Binder IBinderProvider.GetBinder(Symbol symbol) => this.GetBinder(symbol);
 
-    private MetadataAssemblySymbol GetMetadataAssembly(MetadataReference metadataReference)
-    {
-        if (!this.metadataAssemblies.TryGetValue(metadataReference, out var metadataAssembly))
-        {
-            // NOTE: In case the dict is carried on into another compilation,
-            // the metadata compilation will have an outdated ref to the compilation
-            // I don't know if this will cause any problems in the future
-            metadataAssembly = new MetadataAssemblySymbol(
-                this,
-                metadataReference.MetadataReader,
-                metadataReference.Documentation);
-            this.metadataAssemblies.Add(metadataReference, metadataAssembly);
-        }
-        return metadataAssembly;
-    }
+    private MetadataAssemblySymbol GetMetadataAssembly(MetadataReference metadataReference) =>
+        this.metadataAssemblies.GetOrAdd(metadataReference, _ => this.BuildMetadataAssembly(metadataReference));
 
     private DeclarationTable BuildDeclarationTable() => new(this);
     private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
@@ -411,4 +398,9 @@ public sealed class Compilation : IBinderProvider
             .Cast<ModuleSymbol>()
             .Append(this.SourceModule)
             .ToImmutableArray());
+    private MetadataAssemblySymbol BuildMetadataAssembly(MetadataReference metadataReference) =>
+        // NOTE: In case the dict is carried on into another compilation,
+        // the metadata compilation will have an outdated ref to the compilation
+        // I don't know if this will cause any problems in the future
+        new(this, metadataReference.MetadataReader, metadataReference.Documentation);
 }

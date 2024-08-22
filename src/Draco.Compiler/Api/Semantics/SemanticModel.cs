@@ -199,6 +199,11 @@ public sealed partial class SemanticModel : IBinderProvider
 
     internal Symbol? GetReferencedSymbolInternal(SyntaxNode syntax)
     {
+        // If it's a token, we assume it's wrapped in a more sensible syntax node
+        if (syntax is SyntaxToken token && token.Parent is not null)
+        {
+            return this.GetReferencedSymbolInternal(token.Parent);
+        }
         if (syntax is ImportPathSyntax)
         {
             // Imports are special, we need to search in the binder

@@ -131,17 +131,26 @@ public static class SyntaxHighlighter
      or TokenKind.BracketOpen
      or TokenKind.BracketClose => Fragment(token, SyntaxColoring.Parenthesis),
 
-        TokenKind.Identifier => Fragment(token, ColorIdentifier(token, semanticModel)),
+        TokenKind.Identifier => Identifier(token, semanticModel),
 
         _ => Fragment(token, SyntaxColoring.Unknown),
     };
 
-    private static SyntaxColoring ColorIdentifier(SyntaxToken token, SemanticModel? semanticModel)
+    private static IEnumerable<HighlightFragment> Identifier(SyntaxToken token, SemanticModel? semanticModel)
     {
         // Make a guess based on syntax
-        if (token.Parent is ParameterSyntax param && param.Name.Equals(token)) return SyntaxColoring.ParameterName;
-        if (token.Parent is VariableDeclarationSyntax varDecl && varDecl.Name.Equals(token)) return SyntaxColoring.VariableName;
-        if (token.Parent is FunctionDeclarationSyntax funcDecl && funcDecl.Name.Equals(token)) return SyntaxColoring.FunctionName;
+        if (token.Parent is ParameterSyntax param && param.Name.Equals(token))
+        {
+            return Fragment(token, SyntaxColoring.ParameterName);
+        }
+        if (token.Parent is VariableDeclarationSyntax varDecl && varDecl.Name.Equals(token))
+        {
+            return Fragment(token, SyntaxColoring.VariableName);
+        }
+        if (token.Parent is FunctionDeclarationSyntax funcDecl && funcDecl.Name.Equals(token))
+        {
+            return Fragment(token, SyntaxColoring.FunctionName);
+        }
 
         if (semanticModel is not null)
         {
@@ -150,7 +159,7 @@ public static class SyntaxHighlighter
             {
                 // NOTE: Do we want to simplify this in the API?
                 while (referenced is IAliasSymbol alias) referenced = alias.Substitution;
-                return referenced switch
+                var color = referenced switch
                 {
                     IModuleSymbol => SyntaxColoring.ModuleName,
                     ITypeSymbol t => t.IsValueType
@@ -161,13 +170,14 @@ public static class SyntaxHighlighter
                     IVariableSymbol => SyntaxColoring.VariableName,
                     _ => SyntaxColoring.Unknown,
                 };
+                return [new HighlightFragment(token, color, referenced)];
             }
         }
 
         // Best effort approximation
-        if (token.Parent is NameTypeSyntax) return SyntaxColoring.ReferenceTypeName;
+        if (token.Parent is NameTypeSyntax) return Fragment(token, SyntaxColoring.ReferenceTypeName);
 
-        return SyntaxColoring.Unknown;
+        return Fragment(token, SyntaxColoring.Unknown);
     }
 
     private static IEnumerable<HighlightFragment> Fragment(SyntaxTrivia trivia, SyntaxColoring color) =>
@@ -183,7 +193,7 @@ public static class SyntaxHighlighter
         {
             if (token.Text.Length <= offset) break;
 
-            yield return new HighlightFragment(token, new SourceSpan(offset, len), color);
+            yield return new HighlightFragment(token, new SourceSpan(offset, len), color, null);
             offset += len;
         }
     }

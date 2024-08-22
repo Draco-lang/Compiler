@@ -1,4 +1,5 @@
 using System;
+using Draco.Compiler.Api.Semantics;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -8,13 +9,15 @@ namespace Draco.Compiler.Api.Syntax;
 /// <param name="Syntax">The syntax element being colored.</param>
 /// <param name="Span">The span of the colored fragment within <paramref name="Syntax"/>.</param>
 /// <param name="Color">The syntax color of the fragment.</param>
+/// <param name="Symbol">The symbol associated with the fragment, if any.</param>
 public readonly record struct HighlightFragment(
     SyntaxNode Syntax,
     SourceSpan Span,
-    SyntaxColoring Color)
+    SyntaxColoring Color,
+    ISymbol? Symbol)
 {
-    public HighlightFragment(SyntaxNode syntax, SyntaxColoring color)
-        : this(syntax, new SourceSpan(0, syntax.Green.Width), color)
+    public HighlightFragment(SyntaxNode syntax, SyntaxColoring color, ISymbol? symbol = null)
+        : this(syntax, new SourceSpan(0, syntax.Green.Width), color, symbol)
     {
     }
 

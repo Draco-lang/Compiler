@@ -54,7 +54,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                 });
                 break;
             }
-            case ForExpressionSyntax @for when config.ParameterNames:
+            case ForExpressionSyntax @for when config.VariableTypes:
             {
                 if (@for.ElementType is not null) continue;
 

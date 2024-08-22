@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Drawing;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Tests.Semantics;
 
@@ -181,11 +182,9 @@ public sealed class SyntaxHighlighterTests : SemanticTestsBase
         var highlighting = SyntaxHighlighter.Highlight(tree, semanticModel);
 
         // Assert
-        var nonWhitespaceHighlighting = highlighting.Where(h => h.Color != SyntaxColoring.Whitespace);
-        foreach (var (expected, got) in expectedHighlighting.Zip(nonWhitespaceHighlighting))
-        {
-            Assert.Equal(expected.Text, got.Text);
-            Assert.Equal(expected.Color, got.Color);
-        }
+        var nonWhitespaceHighlighting = highlighting
+            .Where(h => h.Color != SyntaxColoring.Whitespace)
+            .Select(h => (Text: h.Text, Color: h.Color));
+        Assert.Equal(expectedHighlighting, nonWhitespaceHighlighting);
     }
 }

@@ -63,7 +63,9 @@ internal static class ValueUtils
         {
             var strValue = new CorDebugStringValue((ICorDebugStringValue)value.Raw);
             if (strValue.TryGetLength(out var length) != HRESULT.S_OK)
+            {
                 throw new InvalidOperationException("failed to read out string length");
+            }
             return strValue.GetString(length);
         }
 
@@ -89,7 +91,9 @@ internal static class ValueUtils
     private static nint GetIntegralValue(this CorDebugValue value)
     {
         if (value is not CorDebugGenericValue genericValue)
+        {
             throw new ArgumentException("the provided value can not provide a generic view", nameof(value));
+        }
         return genericValue.Value;
     }
 

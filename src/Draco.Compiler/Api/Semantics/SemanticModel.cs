@@ -204,6 +204,27 @@ public sealed partial class SemanticModel : IBinderProvider
         {
             return this.GetReferencedSymbolInternal(token.Parent);
         }
+
+        // Resolve calls to a function
+        if (syntax is NameExpressionSyntax name)
+        {
+            // If it's a method of a call, we want the method referenced by the call instead
+            var called = syntax;
+
+            if (name.Parent is GenericExpressionSyntax generic
+             && generic.Instantiated.Equals(called))
+            {
+                called = generic;
+            }
+
+            if (called.Parent is CallExpressionSyntax call
+             && call.Function.Equals(called))
+            {
+                // This is a call, we want the function
+                return this.GetReferencedSymbolInternal(call);
+            }
+        }
+
         if (syntax is ImportPathSyntax)
         {
             // Imports are special, we need to search in the binder

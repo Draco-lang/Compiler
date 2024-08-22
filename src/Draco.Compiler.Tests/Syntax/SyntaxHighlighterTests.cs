@@ -10,6 +10,7 @@ public sealed class SyntaxHighlighterTests : SemanticTestsBase
     private const string sampleCode = """
         import System;
         import System.Console;
+        import System.Collections.Generic;
 
         /// Hello doc comment
         func hashThem(x: int32, y: int32): int32 {
@@ -40,6 +41,14 @@ public sealed class SyntaxHighlighterTests : SemanticTestsBase
         ("System", SyntaxColoring.ModuleName),
         (".", SyntaxColoring.Punctuation),
         ("Console", SyntaxColoring.ModuleName),
+        (";", SyntaxColoring.Punctuation),
+
+        ("import", SyntaxColoring.DeclarationKeyword),
+        ("System", SyntaxColoring.ModuleName),
+        (".", SyntaxColoring.Punctuation),
+        ("Collections", SyntaxColoring.ModuleName),
+        (".", SyntaxColoring.Punctuation),
+        ("Generic", SyntaxColoring.ModuleName),
         (";", SyntaxColoring.Punctuation),
 
         ("/// Hello doc comment", SyntaxColoring.DocumentationComment),
@@ -116,7 +125,7 @@ public sealed class SyntaxHighlighterTests : SemanticTestsBase
         ("var", SyntaxColoring.DeclarationKeyword),
         ("l1", SyntaxColoring.VariableName),
         ("=", SyntaxColoring.Operator),
-        ("List", SyntaxColoring.ReferenceTypeName),
+        ("List", SyntaxColoring.FunctionName),
         ("<", SyntaxColoring.Parenthesis),
         ("string", SyntaxColoring.ReferenceTypeName),
         (">", SyntaxColoring.Parenthesis),
@@ -139,7 +148,7 @@ public sealed class SyntaxHighlighterTests : SemanticTestsBase
         ("val", SyntaxColoring.DeclarationKeyword),
         ("l2", SyntaxColoring.VariableName),
         ("=", SyntaxColoring.Operator),
-        ("List", SyntaxColoring.ValueTypeName),
+        ("List", SyntaxColoring.FunctionName),
         ("<", SyntaxColoring.Parenthesis),
         ("char", SyntaxColoring.ValueTypeName),
         (">", SyntaxColoring.Parenthesis),
@@ -168,6 +177,8 @@ public sealed class SyntaxHighlighterTests : SemanticTestsBase
         (";", SyntaxColoring.Punctuation),
 
         ("}", SyntaxColoring.Parenthesis),
+
+        ("", SyntaxColoring.Unknown),
     ];
 
     [Fact]

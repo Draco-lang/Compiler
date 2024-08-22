@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
@@ -12,6 +13,17 @@ namespace Draco.Compiler.Internal.Lowering;
 /// </summary>
 internal sealed class SequencePointInjector : BoundTreeRewriter
 {
+    /// <summary>
+    /// Represents a value that was temporarily stored.
+    /// </summary>
+    /// <param name="Symbol">The synthetized local symbol.</param>
+    /// <param name="Reference">The expression referencing the stored temporary.</param>
+    /// <param name="Assignment">The assignment that stores the temporary.</param>
+    private readonly record struct TemporaryStorage(
+        LocalSymbol Symbol,
+        BoundExpression Reference,
+        BoundStatement Assignment);
+
     public static BoundNode Inject(BoundNode node)
     {
         var rewriter = new SequencePointInjector(node);
@@ -202,24 +214,70 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
 
     public override BoundNode VisitForExpression(BoundForExpression node)
     {
-        // We wrap the iterated sequence
-        var sequence = SequencePointExpression(
-            expression: (BoundExpression)node.Sequence.Accept(this),
-            range: node.Sequence.Syntax?.Range,
-            emitNop: false);
+        // For loops are a bit more complex, transformation can be found below
+        //
+        // for (i in SomeSequence) body;
+        //
+        // =>
+        //
+        // val storedSequence = SomeSequence; // first sequence point, pointing at 'SomeSequence'
+        // for (newIterator in storedSequence) {
+        //                     ^^^^^^^^^^^^^^ second sequence point for 'in' keyword
+        //     val i = newIterator; // third sequence point, pointing at 'i'
+        //     body;
+        // }
 
-        // TODO: we should jump to in and such...
+        var syntax = node.Syntax as ForExpressionSyntax;
+
+        // Wrap the sequence and store it
+        var sequence = (BoundExpression)node.Sequence.Accept(this);
+        var sequenceStorage = this.StoreTemporary(sequence);
+        var sequenceAssignment = SequencePointStatement(
+            statement: sequenceStorage.Assignment,
+            range: node.Sequence.Syntax?.Range,
+            emitNop: true);
+
+        // Wrap the sequence reference for 'in'
+        var sequenceIn = SequencePointExpression(
+            expression: sequenceStorage.Reference,
+            range: syntax?.InKeyword.Range,
+            emitNop: true);
+
+        // Create a new iterator variable
+        var newIterator = new SynthetizedLocalSymbol(node.Iterator.Type, false);
+
+        // Create the assignment, pointing at the iterator syntax
+        var iteratorAssignment = SequencePointStatement(
+            statement: LocalDeclaration(node.Iterator, LocalExpression(newIterator)),
+            range: syntax?.Iterator.Range,
+            emitNop: true);
+
+        // Wrap the body
         var then = (BoundExpression)node.Then.Accept(this);
 
-        return ForExpression(
-            iterator: node.Iterator,
-            sequence: sequence,
-            then: then,
-            continueLabel: node.ContinueLabel,
-            breakLabel: node.BreakLabel,
-            getEnumeratorMethod: node.GetEnumeratorMethod,
-            moveNextMethod: node.MoveNextMethod,
-            currentProperty: node.CurrentProperty);
+        // Reconstruction
+        return BlockExpression(
+            locals: [sequenceStorage.Symbol],
+            statements:
+            [
+                sequenceAssignment,
+                ExpressionStatement(ForExpression(
+                    iterator: newIterator,
+                    sequence: sequenceIn,
+                    then: BlockExpression(
+                        locals: [node.Iterator],
+                        statements: [
+                            iteratorAssignment,
+                            ExpressionStatement(then),
+                        ],
+                        value: BoundUnitExpression.Default),
+                    continueLabel: node.ContinueLabel,
+                    breakLabel: node.BreakLabel,
+                    getEnumeratorMethod: node.GetEnumeratorMethod,
+                    moveNextMethod: node.MoveNextMethod,
+                    currentProperty: node.CurrentProperty)),
+            ],
+            value: BoundUnitExpression.Default);
     }
 
     public override BoundNode VisitReturnExpression(BoundReturnExpression node)
@@ -260,6 +318,20 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
                     emitNop: false),
             ],
             value: BoundUnitExpression.Default);
+    }
+
+    // Utility to store an expression to a temporary variable
+    // NOTE: Almost copypaste from local rewriter, but we always store here
+    // this is because here the goal is not eliminating double evaluation,
+    // but to provide a sequence point for a given hidden expression
+    private TemporaryStorage StoreTemporary(BoundExpression expr)
+    {
+        var symbol = new SynthetizedLocalSymbol(expr.TypeRequired, false);
+        var symbolRef = LocalExpression(symbol);
+        var assignment = LocalDeclaration(
+            local: symbol,
+            value: (BoundExpression)expr.Accept(this));
+        return new(symbol, symbolRef, assignment);
     }
 
     private BlockFunctionBodySyntax? GetBlockFunctionBodyAncestor()

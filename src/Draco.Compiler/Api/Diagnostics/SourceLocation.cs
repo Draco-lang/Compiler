@@ -5,9 +5,10 @@ namespace Draco.Compiler.Api.Diagnostics;
 /// <summary>
 /// Represents an in-source location.
 /// </summary>
-internal sealed class SourceLocation(SourceText sourceText, SourceSpan Span) : Location
+internal sealed class SourceLocation(SourceText sourceText, SourceSpan span) : Location
 {
     public override SourceText SourceText { get; } = sourceText;
+    public override SourceSpan? Span => span;
 
     public SourceLocation(SyntaxTree syntaxTree, SourceSpan span)
         : this(syntaxTree.SourceText, span)

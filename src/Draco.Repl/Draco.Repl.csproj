@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="Basic.Reference.Assemblies.Net80" Version="1.4.5" />
+    <PackageReference Include="PrettyPrompt" Version="4.1.1" />
   </ItemGroup>
 
 </Project>

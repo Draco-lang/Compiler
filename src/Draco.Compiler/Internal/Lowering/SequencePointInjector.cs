@@ -124,9 +124,9 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             statements:
             [
                 SequencePointStatement(
-                            statement: null,
-                            range: openBrace.Range,
-                            emitNop: true),
+                    statement: null,
+                    range: openBrace.Range,
+                    emitNop: true),
                 LocalDeclaration(blockValue, BlockExpression(
                     locals: node.Locals,
                     statements: statements,
@@ -198,6 +198,28 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             then: then,
             continueLabel: node.ContinueLabel,
             breakLabel: node.BreakLabel);
+    }
+
+    public override BoundNode VisitForExpression(BoundForExpression node)
+    {
+        // We wrap the iterated sequence
+        var sequence = SequencePointExpression(
+            expression: (BoundExpression)node.Sequence.Accept(this),
+            range: node.Sequence.Syntax?.Range,
+            emitNop: false);
+
+        // TODO: we should jump to in and such...
+        var then = (BoundExpression)node.Then.Accept(this);
+
+        return ForExpression(
+            iterator: node.Iterator,
+            sequence: sequence,
+            then: then,
+            continueLabel: node.ContinueLabel,
+            breakLabel: node.BreakLabel,
+            getEnumeratorMethod: node.GetEnumeratorMethod,
+            moveNextMethod: node.MoveNextMethod,
+            currentProperty: node.CurrentProperty);
     }
 
     public override BoundNode VisitReturnExpression(BoundReturnExpression node)
@@ -283,7 +305,10 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
 
     private static bool IsCompoundExpression(BoundExpression expr) => expr switch
     {
-        BoundBlockExpression or BoundWhileExpression or BoundIfExpression => true,
+        BoundBlockExpression
+     or BoundWhileExpression
+     or BoundIfExpression
+     or BoundForExpression => true,
         BoundSequencePointExpression sp => IsCompoundExpression(sp.Expression),
         _ => false,
     };

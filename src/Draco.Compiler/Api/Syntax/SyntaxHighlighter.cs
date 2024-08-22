@@ -152,6 +152,7 @@ public static class SyntaxHighlighter
                 while (referenced is IAliasSymbol alias) referenced = alias.Substitution;
                 return referenced switch
                 {
+                    IModuleSymbol => SyntaxColoring.ModuleName,
                     ITypeSymbol t => t.IsValueType
                         ? SyntaxColoring.ValueTypeName
                         : SyntaxColoring.ReferenceTypeName,

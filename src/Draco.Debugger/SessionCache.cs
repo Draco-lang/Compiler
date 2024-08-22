@@ -63,7 +63,7 @@ internal sealed class SessionCache
     private MethodBreakpoint BuildBreakpoint(CorDebugBreakpoint breakpoint, bool isEntryPoint) => breakpoint switch
     {
         CorDebugFunctionBreakpoint f when isEntryPoint => new EntryPointBreakpoint(this, f),
-        CorDebugFunctionBreakpoint f => new(this, f),
+        CorDebugFunctionBreakpoint f => new MethodBreakpoint(this, f),
         _ => throw new ArgumentOutOfRangeException(nameof(breakpoint)),
     };
 }

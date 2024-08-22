@@ -259,6 +259,12 @@ internal sealed class Parser(
     /// <returns>The parsed <see cref="SyntaxNode"/>.</returns>
     public SyntaxNode ParseReplEntry()
     {
+        if (this.Matches(TokenKind.EndOfInput, out var endOfInput))
+        {
+            // We accept an empty line as a no-op to consume trivia like comments
+            return new CompilationUnitSyntax(SyntaxList<DeclarationSyntax>.Empty, endOfInput);
+        }
+
         var visibility = this.ParseVisibilityModifier();
         if (visibility is not null)
         {
@@ -1297,6 +1303,11 @@ internal sealed class Parser(
             }
             case TokenKind.Identifier:
             {
+                // Special case, we are in REPL mode
+                // and are past an identifier
+                // If we can bail, do so to avoid overpeeking
+                if (this.CanBailOut(this.PeekToken(offset))) return LessThanDisambiguation.Operator;
+
                 ++offset;
                 // We can have a nested generic here
                 if (this.Peek(offset) == TokenKind.LessThan)
@@ -1438,8 +1449,14 @@ internal sealed class Parser(
     /// <param name="offset">The amount to peek ahead.</param>
     /// <returns>The <see cref="TokenKind"/> of the <see cref="SyntaxToken"/> that is <paramref name="offset"/>
     /// ahead.</returns>
-    private TokenKind Peek(int offset = 0) =>
-        tokenSource.Peek(offset).Kind;
+    private TokenKind Peek(int offset = 0) => this.PeekToken(offset).Kind;
+
+    /// <summary>
+    /// Peeks ahead a <see cref="SyntaxToken"/> in the token source.
+    /// </summary>
+    /// <param name="offset">The amount to peek ahead.</param>
+    /// <returns>The <see cref="SyntaxToken"/> that is <paramref name="offset"/> ahead.</returns>
+    private SyntaxToken PeekToken(int offset = 0) => tokenSource.Peek(offset);
 
     /// <summary>
     /// Advances the parser in the token source with one token.

@@ -62,8 +62,14 @@ internal static class ValueUtils
         case CorElementType.String:
         {
             var strValue = new CorDebugStringValue((ICorDebugStringValue)value.Raw);
-            var result = strValue.TryGetString(out var str);
-            if (result != HRESULT.S_OK) throw new InvalidOperationException("failed to read out string");
+            if (strValue.TryGetLength(out var length) != HRESULT.S_OK)
+            {
+                throw new InvalidOperationException("failed to read out string length");
+            }
+            if (strValue.TryGetString(length, out var str) != HRESULT.S_OK)
+            {
+                throw new InvalidOperationException("failed to read out string");
+            }
             return str;
         }
 

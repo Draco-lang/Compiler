@@ -399,5 +399,8 @@ public sealed class Compilation : IBinderProvider
             .Append(this.SourceModule)
             .ToImmutableArray());
     private MetadataAssemblySymbol BuildMetadataAssembly(MetadataReference metadataReference) =>
+        // NOTE: In case the dict is carried on into another compilation,
+        // the metadata compilation will have an outdated ref to the compilation
+        // I don't know if this will cause any problems in the future
         new(this, metadataReference.MetadataReader, metadataReference.Documentation);
 }

@@ -266,14 +266,12 @@ public sealed partial class SemanticModel : IBinderProvider
                 // If it's a method of a call, we want the method referenced by the call instead
                 var called = syntax;
 
-                if (name.Parent is GenericExpressionSyntax generic
-                 && generic.Instantiated.Equals(called))
+                if (name.Parent is GenericExpressionSyntax generic && generic.Instantiated.Equals(called))
                 {
                     called = generic;
                 }
 
-                if (called.Parent is CallExpressionSyntax call
-                 && call.Function.Equals(called))
+                if (called.Parent is CallExpressionSyntax call && call.Function.Equals(called))
                 {
                     // This is a call, we want the function
                     return this.GetReferencedSymbolInternal(call);

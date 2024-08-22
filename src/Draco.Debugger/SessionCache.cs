@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ClrDebug;
+using Draco.Debugger.Breakpoints;
 
 namespace Draco.Debugger;
 

@@ -1,6 +1,7 @@
 using System;
+using Draco.Debugger.Breakpoints;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.Events;
 
 /// <summary>
 /// The event arguments for the event when a breakpoint is hit.

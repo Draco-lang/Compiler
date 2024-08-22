@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ClrDebug;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.RuntimeValues;
 
 /// <summary>
 /// Represents a lazily discovered array in the debugged program.

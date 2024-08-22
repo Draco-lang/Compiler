@@ -1,6 +1,6 @@
 using ClrDebug;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.Breakpoints;
 
 internal sealed class EntryPointBreakpoint(
     SessionCache sessionCache,

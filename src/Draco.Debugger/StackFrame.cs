@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Reflection.Metadata.Ecma335;
 using ClrDebug;
+using Draco.Debugger.RuntimeValues;
 
 namespace Draco.Debugger;
 

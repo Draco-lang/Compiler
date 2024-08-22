@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using ClrDebug;
+using Draco.Debugger.Breakpoints;
+using Draco.Debugger.RuntimeValues;
 
 namespace Draco.Debugger;
 

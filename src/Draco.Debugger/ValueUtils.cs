@@ -66,11 +66,7 @@ internal static class ValueUtils
             {
                 throw new InvalidOperationException("failed to read out string length");
             }
-            if (strValue.TryGetString(length, out var str) != HRESULT.S_OK)
-            {
-                throw new InvalidOperationException("failed to read out string");
-            }
-            return str;
+            return strValue.GetString(length);
         }
 
         case CorElementType.SZArray:

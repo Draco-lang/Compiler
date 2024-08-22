@@ -17,7 +17,14 @@ public readonly record struct SourceSpan(int Start, int Length)
     /// </summary>
     /// <param name="start">The start index to make this span relative to.</param>
     /// <returns>A new span that is relative to <paramref name="start"/>.</returns>
-    public SourceSpan RelativeTo(int start) => new(this.Start - start, this.Length);
+    public SourceSpan RelativeTo(int start) => this.OffsetBy(-start);
+
+    /// <summary>
+    /// Transforms this span to be offset by the given amount.
+    /// </summary>
+    /// <param name="offset">The amount to offset this span by.</param>
+    /// <returns>A new span that is offset by <paramref name="offset"/>.</returns>
+    public SourceSpan OffsetBy(int offset) => new(this.Start + offset, this.Length);
 
     /// <summary>
     /// Checks if this span contains the given index.

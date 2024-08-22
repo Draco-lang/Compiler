@@ -199,6 +199,12 @@ public sealed partial class SemanticModel : IBinderProvider
 
     internal Symbol? GetReferencedSymbolInternal(SyntaxNode syntax)
     {
+        // If it's a token, we assume it's wrapped in a more sensible syntax node
+        if (syntax is SyntaxToken token && token.Parent is not null)
+        {
+            return this.GetReferencedSymbolInternal(token.Parent);
+        }
+
         if (syntax is ImportPathSyntax)
         {
             // Imports are special, we need to search in the binder
@@ -249,6 +255,30 @@ public sealed partial class SemanticModel : IBinderProvider
 
         // Attempt to retrieve
         this.symbolMap.TryGetValue(syntax, out var symbol);
+
+        if (symbol is null)
+        {
+            // Apply some fallback strategies
+
+            // Resolve calls to a function
+            if (syntax is NameExpressionSyntax name)
+            {
+                // If it's a method of a call, we want the method referenced by the call instead
+                var called = syntax;
+
+                if (name.Parent is GenericExpressionSyntax generic && generic.Instantiated.Equals(called))
+                {
+                    called = generic;
+                }
+
+                if (called.Parent is CallExpressionSyntax call && call.Function.Equals(called))
+                {
+                    // This is a call, we want the function
+                    return this.GetReferencedSymbolInternal(call);
+                }
+            }
+        }
+
         return symbol;
     }
 

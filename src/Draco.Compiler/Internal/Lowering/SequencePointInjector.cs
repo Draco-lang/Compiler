@@ -231,7 +231,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
 
         // Wrap the sequence and store it
         var sequence = (BoundExpression)node.Sequence.Accept(this);
-        var sequenceStorage = this.StoreTemporary(sequence);
+        var sequenceStorage = StoreTemporary(sequence);
         var sequenceAssignment = SequencePointStatement(
             statement: sequenceStorage.Assignment,
             range: node.Sequence.Syntax?.Range,
@@ -320,20 +320,6 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             value: BoundUnitExpression.Default);
     }
 
-    // Utility to store an expression to a temporary variable
-    // NOTE: Almost copypaste from local rewriter, but we always store here
-    // this is because here the goal is not eliminating double evaluation,
-    // but to provide a sequence point for a given hidden expression
-    private TemporaryStorage StoreTemporary(BoundExpression expr)
-    {
-        var symbol = new SynthetizedLocalSymbol(expr.TypeRequired, false);
-        var symbolRef = LocalExpression(symbol);
-        var assignment = LocalDeclaration(
-            local: symbol,
-            value: (BoundExpression)expr.Accept(this));
-        return new(symbol, symbolRef, assignment);
-    }
-
     private BlockFunctionBodySyntax? GetBlockFunctionBodyAncestor()
     {
         var syntax = this.context.Syntax;
@@ -373,6 +359,20 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
                 new(@while.OpenParen.Range.Start, @while.CloseParen.Range.End),
             _ => syntax.Range,
         };
+    }
+
+    // Utility to store an expression to a temporary variable
+    // NOTE: Almost copypaste from local rewriter, but we always store here
+    // this is because here the goal is not eliminating double evaluation,
+    // but to provide a sequence point for a given hidden expression
+    // We also DO NOT call lowering anywhere
+    // If the expression passed in is assumed to be injected, caller should cater for that
+    private static TemporaryStorage StoreTemporary(BoundExpression expr)
+    {
+        var symbol = new SynthetizedLocalSymbol(expr.TypeRequired, false);
+        var symbolRef = LocalExpression(symbol);
+        var assignment = LocalDeclaration(local: symbol, value: expr);
+        return new(symbol, symbolRef, assignment);
     }
 
     private static bool IsCompoundExpression(BoundExpression expr) => expr switch

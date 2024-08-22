@@ -41,6 +41,7 @@ public sealed class ArrayValue : IReadOnlyList<object?>
         this.value = value;
     }
 
+    // TODO: Let's not force enumeration here
     public override string ToString() => $"[{this.Count}]{{{string.Join(", ", this)}}}";
 
     public IEnumerator<object?> GetEnumerator() => Enumerable

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Drawing;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Tests.Semantics;
 

@@ -1,6 +1,6 @@
 using ClrDebug;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.Breakpoints;
 
 // NOTE: Not sealed, entry-point breakpoint reuses this
 internal class MethodBreakpoint : Breakpoint

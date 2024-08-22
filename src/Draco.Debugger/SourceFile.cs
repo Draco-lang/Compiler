@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using ClrDebug;
+using Draco.Debugger.Breakpoints;
 
 namespace Draco.Debugger;
 

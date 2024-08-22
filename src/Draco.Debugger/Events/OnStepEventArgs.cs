@@ -1,6 +1,6 @@
 using System;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.Events;
 
 /// <summary>
 /// The event arguments for the event when a step is complete.

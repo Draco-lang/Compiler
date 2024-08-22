@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using ClrDebug;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.Breakpoints;
 
 /// <summary>
 /// Represents a breakpoint.

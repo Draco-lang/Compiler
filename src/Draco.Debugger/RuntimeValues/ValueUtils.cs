@@ -1,7 +1,7 @@
 using System;
 using ClrDebug;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.RuntimeValues;
 
 /// <summary>
 /// Utilities for handling <see cref="CorDebugValue"/>s.
@@ -62,9 +62,11 @@ internal static class ValueUtils
         case CorElementType.String:
         {
             var strValue = new CorDebugStringValue((ICorDebugStringValue)value.Raw);
-            var result = strValue.TryGetString(out var str);
-            if (result != HRESULT.S_OK) throw new InvalidOperationException("failed to read out string");
-            return str;
+            if (strValue.TryGetLength(out var length) != HRESULT.S_OK)
+            {
+                throw new InvalidOperationException("failed to read out string length");
+            }
+            return strValue.GetString(length);
         }
 
         case CorElementType.SZArray:

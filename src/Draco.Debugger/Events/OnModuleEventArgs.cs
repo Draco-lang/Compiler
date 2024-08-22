@@ -1,6 +1,6 @@
 using System;
 
-namespace Draco.Debugger;
+namespace Draco.Debugger.Events;
 
 public sealed class OnModuleEventArgs : EventArgs
 {

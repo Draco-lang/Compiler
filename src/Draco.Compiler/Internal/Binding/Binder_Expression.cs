@@ -628,9 +628,9 @@ internal partial class Binder
             case Symbol when member.IsError:
                 return new BoundReferenceErrorExpression(syntax, member);
             case FunctionSymbol func:
-                return await this.WrapFunctions(syntax, receiver, [func]);
+                return await this.WrapFunctions(syntax, receiver, [func], constraints, diagnostics);
             case OverloadSymbol overload:
-                return await this.WrapFunctions(syntax, receiver, overload.Functions);
+                return await this.WrapFunctions(syntax, receiver, overload.Functions, constraints, diagnostics);
             case FieldSymbol field:
                 return new BoundFieldExpression(syntax, receiver, field);
             case PropertySymbol prop:
@@ -776,9 +776,9 @@ internal partial class Binder
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
-            return await this.WrapFunctions(syntax, null, [func]);
+            return await this.WrapFunctions(syntax, null, [func], constraints, diagnostics);
         case OverloadSymbol overload:
-            return await this.WrapFunctions(syntax, null, overload.Functions);
+            return await this.WrapFunctions(syntax, null, overload.Functions, constraints, diagnostics);
         default:
             throw new InvalidOperationException();
         }
@@ -787,7 +787,9 @@ internal partial class Binder
     private BindingTask<BoundExpression> WrapFunctions(
         SyntaxNode syntax,
         BoundExpression? receiver,
-        ImmutableArray<FunctionSymbol> functions)
+        ImmutableArray<FunctionSymbol> functions,
+        ConstraintSolver constraints,
+        DiagnosticBag diagnostics)
     {
         if (IsMethodOfCallExpression(syntax))
         {
@@ -814,8 +816,13 @@ internal partial class Binder
             }
             else
             {
-                // TODO
-                throw new NotImplementedException();
+                // TODO: We should construct some constraints to resolve which one
+                // For now we report an error to not crash tools
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.IllegalExpression,
+                    location: syntax.Location));
+                return BindingTask.FromResult<BoundExpression>(
+                    new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType));
             }
         }
     }

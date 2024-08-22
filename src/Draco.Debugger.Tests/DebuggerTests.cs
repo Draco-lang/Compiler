@@ -28,8 +28,7 @@ public sealed class DebuggerTests(ITestOutputHelper output)
                     i += 1;
                 }
             }
-            """,
-        this.output);
+            """, this.output);
         var debugger = session.Debugger;
         debugger.Continue();
         await debugger.Terminated;
@@ -39,14 +38,13 @@ public sealed class DebuggerTests(ITestOutputHelper output)
     public async Task SingleBreakpoint() => await Timeout(async () =>
     {
         var session = await TestDebugSession.DebugAsync("""
-import System.Console;
-func main() {
-    WriteLine("A");
-    WriteLine("B");
-    WriteLine("C");
-}
-""",
-                                        this.output);
+            import System.Console;
+            func main() {
+                WriteLine("A");
+                WriteLine("B");
+                WriteLine("C");
+            }
+            """, this.output);
         var debugger = session.Debugger;
         Assert.True(session.File.TryPlaceBreakpoint(3, out var breakpoint));
         debugger.Continue();
@@ -61,15 +59,14 @@ func main() {
     public async Task MultipleBreakpointBreak() => await Timeout(async () =>
     {
         var session = await TestDebugSession.DebugAsync("""
-                import System.IO;
-                func main() {
-                    var i = 0;
-                    while(i < 10) {
-                        i += 1;
-                    }
+            import System.IO;
+            func main() {
+                var i = 0;
+                while(i < 10) {
+                    i += 1;
                 }
-                """,
-            this.output);
+            }
+            """, this.output);
 
         Assert.True(session.File.TryPlaceBreakpoint(5, out var breakpoint));
 
@@ -92,15 +89,14 @@ func main() {
     public async Task HiddenLocalsDoesNotThrow() => await Timeout(async () =>
     {
         var session = await TestDebugSession.DebugAsync("""
-                import System.Console;
-                func main() {
-                    var i = 1;
-                    WriteLine("\{i.ToString()}a");
-                    WriteLine("\{i.ToString()}b");
-                    WriteLine("\{i.ToString()}c");
-                }
-                """,
-            this.output);
+            import System.Console;
+            func main() {
+                var i = 1;
+                WriteLine("\{i.ToString()}a");
+                WriteLine("\{i.ToString()}b");
+                WriteLine("\{i.ToString()}c");
+            }
+            """, this.output);
 
         var debugger = session.Debugger;
 
@@ -120,12 +116,11 @@ func main() {
     public async Task CanStartProcess() => await Timeout(async () =>
     {
         var session = await TestDebugSession.DebugAsync("""
-                import System.Console;
-                func main() {
-                    WriteLine("Hello, World!");
-                }
-                """,
-                this.output);
+            import System.Console;
+            func main() {
+                WriteLine("Hello, World!");
+            }
+            """, this.output);
 
         var debugger = session.Debugger;
         var output = null as string;

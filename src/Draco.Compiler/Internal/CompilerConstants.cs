@@ -11,4 +11,9 @@ internal static class CompilerConstants
     /// Name of the entry point of the application.
     /// </summary>
     public const string EntryPointName = "main";
+
+    /// <summary>
+    /// The name of a scripts entry point.
+    /// </summary>
+    public const string ScriptEntryPointName = ".evaluate";
 }

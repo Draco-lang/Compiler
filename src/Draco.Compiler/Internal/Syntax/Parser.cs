@@ -256,15 +256,31 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a REPL entry.
     /// </summary>
-    /// <returns>The parsed <see cref="SyntaxNode"/>.</returns>
-    public SyntaxNode ParseReplEntry()
+    /// <returns>The parsed <see cref="ReplEntrySyntax"/>.</returns>
+    public ReplEntrySyntax ParseReplEntry()
     {
+        var syntaxes = SyntaxList.CreateBuilder<SyntaxNode>();
+
         if (this.Matches(TokenKind.EndOfInput, out var endOfInput))
         {
             // We accept an empty line as a no-op to consume trivia like comments
-            return new CompilationUnitSyntax(SyntaxList<DeclarationSyntax>.Empty, endOfInput);
+            syntaxes.Add(endOfInput);
+            return new ReplEntrySyntax(syntaxes.ToSyntaxList());
         }
 
+        // We parse until we can bail out
+        while (true)
+        {
+            var element = this.ParseReplEntryElement();
+            syntaxes.Add(element);
+            if (this.CanBailOut(element)) break;
+        }
+
+        return new ReplEntrySyntax(syntaxes.ToSyntaxList());
+    }
+
+    private SyntaxNode ParseReplEntryElement()
+    {
         var visibility = this.ParseVisibilityModifier();
         if (visibility is not null)
         {

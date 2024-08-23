@@ -1283,4 +1283,16 @@
       <Token Kind="Identifier" />
     </Field>
   </Node>
+
+  <Node Name="ReplEntrySyntax" Base="SyntaxNode">
+    <Documentation>
+      A single entry in the REPL.
+    </Documentation>
+
+    <Field Name="Elements" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The elements of the entry.
+      </Documentation>
+    </Field>
+  </Node>
 </Tree>

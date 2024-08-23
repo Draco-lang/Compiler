@@ -15,9 +15,11 @@ using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
 using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSyntax;
 using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
 using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
+using ReplEntrySyntax = Draco.Compiler.Api.Syntax.ReplEntrySyntax;
 using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
+using SyntaxToken = Draco.Compiler.Api.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Api.Scripting;
 
@@ -36,11 +38,10 @@ public sealed class ReplSession
         // We add a newline to make sure we don't peek past with trailing trivia if not needed
         text = string.Concat(text, Environment.NewLine);
         var reader = new DetectOverpeekSourceReader(SourceReader.From(text));
-        var entry = ParseReplEntry(reader);
+        var tree = ParseReplEntry(reader);
         // We either haven't overpeeked, or as a special case, we have an empty compilation unit
         // which signals an empty entry
-        return !reader.HasOverpeeked
-            || entry.Root is CompilationUnitSyntax { Declarations.Count: 0 };
+        return !reader.HasOverpeeked || IsEmptyTree(tree);
     }
 
     private readonly record struct HistoryEntry(Compilation Compilation, Assembly Assembly);
@@ -274,4 +275,9 @@ public sealed class ReplSession
         MemberImportPathSyntax member => $"{ExtractImportPath(member.Accessed)}.{member.Member.Text}",
         _ => throw new ArgumentOutOfRangeException(nameof(path)),
     };
+
+    private static bool IsEmptyTree(SyntaxTree tree) =>
+        tree.Root is ReplEntrySyntax replEntry
+     && replEntry.Elements.Count == 1
+     && replEntry.Elements[0] is SyntaxToken { Kind: TokenKind.EndOfInput };
 }

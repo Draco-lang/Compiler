@@ -2,7 +2,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using static Basic.Reference.Assemblies.Net80;
 
-namespace Draco.Compiler.Tests.Repl;
+namespace Draco.Compiler.Tests.Scripting;
 
 public sealed class ReplSessionTests
 {

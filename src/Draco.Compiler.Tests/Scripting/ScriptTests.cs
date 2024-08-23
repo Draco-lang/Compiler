@@ -4,6 +4,7 @@ namespace Draco.Compiler.Tests.Scripting;
 
 public sealed class ScriptTests
 {
+    [Fact]
     public void BasicAssignmentAndAddition()
     {
         // Arrange

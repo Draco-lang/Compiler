@@ -117,6 +117,7 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="node"/> defines its own scope.</returns>
     public static bool DefinesScope(SyntaxNode node) => node
         is CompilationUnitSyntax
+        or ScriptEntrySyntax
         or FunctionDeclarationSyntax
         or ModuleDeclarationSyntax
         or FunctionBodySyntax

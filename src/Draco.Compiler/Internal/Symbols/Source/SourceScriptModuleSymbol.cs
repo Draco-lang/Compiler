@@ -72,12 +72,9 @@ internal sealed class SourceScriptModuleSymbol : ModuleSymbol, ISourceSymbol
                 formatArgs: member.Name));
         }
 
-        // If there is a value, we need to synthetize a function to evaluate it
-        if (this.syntax.Value is not null)
-        {
-            // TODO
-            throw new NotImplementedException();
-        }
+        // We add a function to evaluate the script
+        var evalFunction = new ScriptEvalFunctionSymbol(this, this.syntax);
+        result.Add(evalFunction);
 
         return result.ToImmutable();
     }

@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
@@ -50,8 +53,23 @@ internal sealed class SourceScriptModuleSymbol : ModuleSymbol, ISourceSymbol
             if (statement is not DeclarationStatementSyntax decl) continue;
 
             // Build the declaration
-            var symbol = this.BuildMember(decl.Declaration);
-            result.Add(symbol);
+            var member = this.BuildMember(decl.Declaration);
+            var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
+            result.Add(member);
+
+            // We chech for illegal shadowing
+            if (earlierMember is null) continue;
+
+            // Overloading is legal
+            if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
+
+            // Illegal
+            var syntax = member.DeclaringSyntax;
+            Debug.Assert(syntax is not null);
+            binderProvider.DiagnosticBag.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalShadowing,
+                location: syntax.Location,
+                formatArgs: member.Name));
         }
 
         // If there is a value, we need to synthetize a function to evaluate it

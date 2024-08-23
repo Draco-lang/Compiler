@@ -254,29 +254,45 @@ internal sealed class Parser(
     }
 
     /// <summary>
-    /// Parses a REPL entry.
+    /// Parses a script entry.
     /// </summary>
-    /// <returns>The parsed <see cref="ReplEntrySyntax"/>.</returns>
-    public ReplEntrySyntax ParseReplEntry()
+    /// <returns>The parsed <see cref="ScriptEntrySyntax"/>.</returns>
+    public ScriptEntrySyntax ParseScriptEntry()
     {
-        var syntaxes = SyntaxList.CreateBuilder<SyntaxNode>();
-
         if (this.Matches(TokenKind.EndOfInput, out var endOfInput))
         {
             // We accept an empty line as a no-op to consume trivia like comments
-            syntaxes.Add(endOfInput);
-            return new ReplEntrySyntax(syntaxes.ToSyntaxList());
+            return new ScriptEntrySyntax(SyntaxList<StatementSyntax>.Empty, null, endOfInput);
         }
+
+        var statements = SyntaxList.CreateBuilder<StatementSyntax>();
+        var value = null as ExpressionSyntax;
 
         // We parse until we can bail out
         while (true)
         {
             var element = this.ParseReplEntryElement();
-            syntaxes.Add(element);
+            if (element is StatementSyntax stmt)
+            {
+                statements.Add(stmt);
+            }
+            else if (element is DeclarationSyntax decl)
+            {
+                statements.Add(new DeclarationStatementSyntax(decl));
+            }
+            else if (element is ExpressionSyntax expr)
+            {
+                value = expr;
+                break;
+            }
+            else
+            {
+                throw new InvalidOperationException("illegal script entry parsed");
+            }
             if (this.CanBailOut(element)) break;
         }
 
-        return new ReplEntrySyntax(syntaxes.ToSyntaxList());
+        return new ScriptEntrySyntax(statements.ToSyntaxList(), value, null);
     }
 
     private SyntaxNode ParseReplEntryElement()

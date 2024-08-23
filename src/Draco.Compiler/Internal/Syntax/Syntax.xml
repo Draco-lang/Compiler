@@ -1284,15 +1284,29 @@
     </Field>
   </Node>
 
-  <Node Name="ReplEntrySyntax" Base="SyntaxNode">
+  <Node Name="ScriptEntrySyntax" Base="SyntaxNode">
     <Documentation>
-      A single entry in the REPL.
+      A script entry with multiple possible elements.
     </Documentation>
 
-    <Field Name="Elements" Type="SyntaxList&lt;SyntaxNode&gt;">
+    <Field Name="Statements" Type="SyntaxList&lt;StatementSyntax&gt;">
       <Documentation>
-        The elements of the entry.
+        The statements within the script.
       </Documentation>
+    </Field>
+
+    <Field Name="Value" Type="ExpressionSyntax?">
+      <Documentation>
+        The value the script evaluates to.
+      </Documentation>
+    </Field>
+
+    <Field Name="End" Type="SyntaxToken?">
+      <Documentation>
+        The optional end of input token.
+      </Documentation>
+
+      <Token Kind="EndOfInput" />
     </Field>
   </Node>
 </Tree>

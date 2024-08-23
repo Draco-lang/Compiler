@@ -9,17 +9,15 @@ using Draco.Compiler.Internal.FlowAnalysis;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
-internal sealed class SourceGlobalSymbol(
-    Symbol containingSymbol,
-    GlobalDeclaration declaration) : GlobalSymbol, ISourceSymbol
+internal sealed class SourceGlobalSymbol : GlobalSymbol, ISourceSymbol
 {
     public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
 
-    public override bool IsMutable => declaration.Syntax.Keyword.Kind == TokenKind.KeywordVar;
-    public override Symbol ContainingSymbol { get; } = containingSymbol;
-    public override string Name => declaration.Name;
+    public override bool IsMutable => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVar;
+    public override Symbol ContainingSymbol { get; }
+    public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override VariableDeclarationSyntax DeclaringSyntax => declaration.Syntax;
+    public override VariableDeclarationSyntax DeclaringSyntax { get; }
 
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
 
@@ -36,6 +34,17 @@ internal sealed class SourceGlobalSymbol(
     private BoundExpression? value;
 
     private readonly object buildLock = new();
+
+    public SourceGlobalSymbol(Symbol containingSymbol, VariableDeclarationSyntax syntax)
+    {
+        this.ContainingSymbol = containingSymbol;
+        this.DeclaringSyntax = syntax;
+    }
+
+    public SourceGlobalSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
+        : this(containingSymbol, declaration.Syntax)
+    {
+    }
 
     public void Bind(IBinderProvider binderProvider)
     {

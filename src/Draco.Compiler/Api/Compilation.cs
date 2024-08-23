@@ -389,7 +389,19 @@ public sealed class Compilation : IBinderProvider
         this.metadataAssemblies.GetOrAdd(metadataReference, _ => this.BuildMetadataAssembly(metadataReference));
 
     private DeclarationTable BuildDeclarationTable() => new(this);
-    private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
+
+    private ModuleSymbol BuildSourceModule()
+    {
+        if (this.Flags.HasFlag(CompilationFlags.ScriptingMode))
+        {
+            // NOTE: We might want some checks in the constructor?
+            var syntax = (ScriptEntrySyntax)this.SyntaxTrees.Single().Root;
+            return new SourceScriptModuleSymbol(this, null, syntax);
+        }
+        // Regular source module
+        return new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
+    }
+
     private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
         containingSymbol: null,
         name: string.Empty,

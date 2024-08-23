@@ -22,6 +22,25 @@ public sealed class Script<TResult>
     /// </summary>
     public string? EntryPoint { get; }
 
+    /// <summary>
+    /// The assembly produced by the script.
+    /// Might be null, if the script failed to compile.
+    /// </summary>
+    public Assembly? Assembly => this.GetAssembly();
+
+    /// <summary>
+    /// The errors produced during compilation.
+    /// </summary>
+    public ImmutableArray<Diagnostic> Errors
+    {
+        get
+        {
+            // Force compilation to get the errors
+            _ = this.GetAssembly();
+            return this.errors;
+        }
+    }
+
     // The cached entry point method
     private MethodInfo? entryPoint;
     // NOTE: Extra flag, as the entry point might be null even if it was looked up

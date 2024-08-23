@@ -1294,16 +1294,14 @@
         The statements within the script.
       </Documentation>
     </Field>
-
     <Field Name="Value" Type="ExpressionSyntax?">
       <Documentation>
         The value the script evaluates to.
       </Documentation>
     </Field>
-
-    <Field Name="End" Type="SyntaxToken?">
+    <Field Name="End" Type="SyntaxToken">
       <Documentation>
-        The optional end of input token.
+        The end of input token.
       </Documentation>
 
       <Token Kind="EndOfInput" />

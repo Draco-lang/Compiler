@@ -259,17 +259,10 @@ internal sealed class Parser(
     /// <returns>The parsed <see cref="ScriptEntrySyntax"/>.</returns>
     public ScriptEntrySyntax ParseScriptEntry()
     {
-        if (this.Matches(TokenKind.EndOfInput, out var endOfInput))
-        {
-            // We accept an empty line as a no-op to consume trivia like comments
-            return new ScriptEntrySyntax(SyntaxList<StatementSyntax>.Empty, null, endOfInput);
-        }
-
         var statements = SyntaxList.CreateBuilder<StatementSyntax>();
         var value = null as ExpressionSyntax;
 
-        // We parse until we can bail out
-        while (true)
+        while (this.Peek() != TokenKind.EndOfInput)
         {
             var element = this.ParseReplEntryElement();
             if (element is StatementSyntax stmt)
@@ -289,10 +282,10 @@ internal sealed class Parser(
             {
                 throw new InvalidOperationException("illegal script entry parsed");
             }
-            if (this.CanBailOut(element)) break;
         }
 
-        return new ScriptEntrySyntax(statements.ToSyntaxList(), value, null);
+        var end = this.Expect(TokenKind.EndOfInput);
+        return new ScriptEntrySyntax(statements.ToSyntaxList(), value, end);
     }
 
     private SyntaxNode ParseReplEntryElement()

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.IO;
 using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
@@ -19,12 +20,14 @@ public static class ScriptingEngine
     /// <typeparam name="TResult">The expected result type.</typeparam>
     /// <param name="code">The code of the script.</param>
     /// <returns>The created <see cref="Script{TResult}"/>.</returns>
-    public static Script<TResult> CreateScript<TResult>(ReadOnlyMemory<char> code)
+    public static Script<TResult> CreateScript<TResult>(
+        ReadOnlyMemory<char> code,
+        ImmutableArray<MetadataReference> metadataReferences)
     {
         var syntaxTree = SyntaxTree.ParseScript(SourceReader.From(code));
         var compilation = Compilation.Create(
             syntaxTrees: [syntaxTree],
-            flags: CompilationFlags.ScriptingMode);
+            flags: CompilationFlags.ScriptingMode | CompilationFlags.ImplicitPublicSymbols);
         return new Script<TResult>(compilation);
     }
 

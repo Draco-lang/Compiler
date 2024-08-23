@@ -16,6 +16,7 @@ using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSynta
 using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
 using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
 using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
+using ScriptEntrySyntax = Draco.Compiler.Api.Syntax.ScriptEntrySyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
 using SyntaxToken = Draco.Compiler.Api.Syntax.SyntaxToken;
@@ -37,7 +38,7 @@ public sealed class ReplSession
         // We add a newline to make sure we don't peek past with trailing trivia if not needed
         text = string.Concat(text, Environment.NewLine);
         var reader = new DetectOverpeekSourceReader(SourceReader.From(text));
-        var tree = ParseReplEntry(reader);
+        var tree = SyntaxTree.ParseScript(reader);
         // We either haven't overpeeked, or as a special case, we have an empty compilation unit
         // which signals an empty entry
         return !reader.HasOverpeeked || IsEmptyTree(tree);
@@ -120,7 +121,7 @@ public sealed class ReplSession
     /// <returns>The execution result.</returns>
     internal ExecutionResult<TResult> Evaluate<TResult>(ISourceReader sourceReader)
     {
-        var tree = ParseReplEntry(sourceReader);
+        var tree = SyntaxTree.ParseScript(sourceReader);
 
         // Check for syntax errors
         if (tree.HasErrors)
@@ -258,7 +259,5 @@ public sealed class ReplSession
     };
 
     private static bool IsEmptyTree(SyntaxTree tree) =>
-        tree.Root is ReplEntrySyntax replEntry
-     && replEntry.Elements.Count == 1
-     && replEntry.Elements[0] is SyntaxToken { Kind: TokenKind.EndOfInput };
+        tree.Root is ScriptEntrySyntax { Statements.Count: 0, Value: null };
 }

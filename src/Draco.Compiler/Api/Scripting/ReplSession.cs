@@ -15,7 +15,6 @@ using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
 using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSyntax;
 using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
 using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
-using ReplEntrySyntax = Draco.Compiler.Api.Syntax.ReplEntrySyntax;
 using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
@@ -250,24 +249,6 @@ public sealed class ReplSession
         metadataAssemblies: this.previousEntries.Count == 0
             ? null
             : this.previousEntries[^1].Compilation.MetadataAssembliesDict);
-
-    private static SyntaxTree ParseReplEntry(ISourceReader sourceReader)
-    {
-        var syntaxDiagnostics = new SyntaxDiagnosticTable();
-
-        // Construct a lexer
-        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
-        // Construct a token source
-        var tokenSource = TokenSource.From(lexer);
-        // Construct a parser
-        var parser = new Parser(tokenSource, syntaxDiagnostics, parserMode: ParserMode.Repl);
-        // Parse a repl entry
-        var node = parser.ParseReplEntry();
-        // Make it into a tree
-        var tree = SyntaxTree.Create(node);
-
-        return tree;
-    }
 
     private static string ExtractImportPath(ImportPathSyntax path) => path switch
     {

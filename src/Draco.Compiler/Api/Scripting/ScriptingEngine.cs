@@ -1,7 +1,10 @@
+using System;
 using System.IO;
 using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Codegen;
+using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Api.Scripting;
 
@@ -10,6 +13,21 @@ namespace Draco.Compiler.Api.Scripting;
 /// </summary>
 public static class ScriptingEngine
 {
+    /// <summary>
+    /// Creates a new script from the given code.
+    /// </summary>
+    /// <typeparam name="TResult">The expected result type.</typeparam>
+    /// <param name="code">The code of the script.</param>
+    /// <returns>The created <see cref="Script{TResult}"/>.</returns>
+    public static Script<TResult> CreateScript<TResult>(ReadOnlyMemory<char> code)
+    {
+        var syntaxTree = SyntaxTree.ParseScript(SourceReader.From(code));
+        var compilation = Compilation.Create(
+            syntaxTrees: [syntaxTree],
+            flags: CompilationFlags.ScriptingMode);
+        return new Script<TResult>(compilation);
+    }
+
     /// <summary>
     /// Executes the code of the given compilation as a full program.
     /// </summary>

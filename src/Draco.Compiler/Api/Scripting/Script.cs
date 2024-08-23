@@ -41,6 +41,12 @@ public sealed class Script<TResult>
         }
     }
 
+    /// <summary>
+    /// The entry point method of the script.
+    /// Might be null, if the script failed to compile or no entry point was found.
+    /// </summary>
+    public MethodInfo? EntryPointMethod => this.GetEntryPoint();
+
     // The cached entry point method
     private MethodInfo? entryPoint;
     // NOTE: Extra flag, as the entry point might be null even if it was looked up

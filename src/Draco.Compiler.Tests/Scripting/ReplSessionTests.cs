@@ -4,7 +4,7 @@ using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.Tests.Repl;
 
-public sealed class BasicSessionTests
+public sealed class ReplSessionTests
 {
     private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
         .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));

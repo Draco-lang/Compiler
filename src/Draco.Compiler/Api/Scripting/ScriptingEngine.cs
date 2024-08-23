@@ -17,17 +17,74 @@ public static class ScriptingEngine
     /// <summary>
     /// Creates a new script from the given code.
     /// </summary>
+    /// <param name="code">The code of the script.</param>
+    /// <param name="globalImports">Optional global imports to use in the script.</param>
+    /// <param name="metadataReferences">Optional metadata references to use in the script.</param>
+    /// <param name="previousCompilation">Optional previous compilation to use for incremental compilation.</param>
+    /// <returns>The created <see cref="Script{TResult}"/>.</returns>
+    public static Script<object?> CreateScript(
+        string code,
+        GlobalImports globalImports = default,
+        ImmutableArray<MetadataReference>? metadataReferences = null,
+        Compilation? previousCompilation = null) =>
+        CreateScript(code.AsMemory(), globalImports, metadataReferences, previousCompilation);
+
+    /// <summary>
+    /// Creates a new script from the given code.
+    /// </summary>
+    /// <param name="code">The code of the script.</param>
+    /// <param name="globalImports">Optional global imports to use in the script.</param>
+    /// <param name="metadataReferences">Optional metadata references to use in the script.</param>
+    /// <param name="previousCompilation">Optional previous compilation to use for incremental compilation.</param>
+    /// <returns>The created <see cref="Script{TResult}"/>.</returns>
+    public static Script<object?> CreateScript(
+        ReadOnlyMemory<char> code,
+        GlobalImports globalImports = default,
+        ImmutableArray<MetadataReference>? metadataReferences = null,
+        Compilation? previousCompilation = null) =>
+        CreateScript<object?>(code, globalImports, metadataReferences, previousCompilation);
+
+    /// <summary>
+    /// Creates a new script from the given code.
+    /// </summary>
     /// <typeparam name="TResult">The expected result type.</typeparam>
     /// <param name="code">The code of the script.</param>
+    /// <param name="globalImports">Optional global imports to use in the script.</param>
+    /// <param name="metadataReferences">Optional metadata references to use in the script.</param>
+    /// <param name="previousCompilation">Optional previous compilation to use for incremental compilation.</param>
+    /// <returns>The created <see cref="Script{TResult}"/>.</returns>
+    public static Script<TResult> CreateScript<TResult>(
+        string code,
+        GlobalImports globalImports = default,
+        ImmutableArray<MetadataReference>? metadataReferences = null,
+        Compilation? previousCompilation = null) =>
+        CreateScript<TResult>(code.AsMemory(), globalImports, metadataReferences, previousCompilation);
+
+    /// <summary>
+    /// Creates a new script from the given code.
+    /// </summary>
+    /// <typeparam name="TResult">The expected result type.</typeparam>
+    /// <param name="code">The code of the script.</param>
+    /// <param name="globalImports">Optional global imports to use in the script.</param>
+    /// <param name="metadataReferences">Optional metadata references to use in the script.</param>
+    /// <param name="previousCompilation">Optional previous compilation to use for incremental compilation.</param>
     /// <returns>The created <see cref="Script{TResult}"/>.</returns>
     public static Script<TResult> CreateScript<TResult>(
         ReadOnlyMemory<char> code,
-        ImmutableArray<MetadataReference> metadataReferences)
+        GlobalImports globalImports = default,
+        ImmutableArray<MetadataReference>? metadataReferences = null,
+        Compilation? previousCompilation = null)
     {
+        var moduleName = $"Context_{Guid.NewGuid():N}";
         var syntaxTree = SyntaxTree.ParseScript(SourceReader.From(code));
         var compilation = Compilation.Create(
             syntaxTrees: [syntaxTree],
-            flags: CompilationFlags.ScriptingMode | CompilationFlags.ImplicitPublicSymbols);
+            flags: CompilationFlags.ScriptingMode | CompilationFlags.ImplicitPublicSymbols,
+            globalImports: globalImports,
+            metadataReferences: metadataReferences,
+            rootModulePath: moduleName,
+            assemblyName: moduleName,
+            metadataAssemblies: previousCompilation?.MetadataAssembliesDict);
         return new Script<TResult>(compilation);
     }
 

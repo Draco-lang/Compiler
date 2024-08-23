@@ -17,7 +17,7 @@ internal sealed class E2eFuzzer(IGenerator<string> inputGenerator)
         var parseTree = SyntaxTree.Parse(sourceText);
         var compilation = Compilation.Create(
             syntaxTrees: [parseTree]);
-        _ = ScriptingEngine.Execute(compilation);
+        _ = ScriptingEngine.ExecuteProgram(compilation);
     }
 
     protected override void NextMutationInternal(string oldInput, string newInput) =>

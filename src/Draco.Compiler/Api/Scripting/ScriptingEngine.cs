@@ -11,20 +11,20 @@ namespace Draco.Compiler.Api.Scripting;
 public static class ScriptingEngine
 {
     /// <summary>
-    /// Executes the code of the given compilation.
+    /// Executes the code of the given compilation as a full program.
     /// </summary>
     /// <param name="compilation">The <see cref="Compilation"/> to execute.</param>
     /// <returns>The result of the execution.</returns>
-    public static ExecutionResult<object?> Execute(Compilation compilation) =>
-        Execute<object?>(compilation);
+    public static ExecutionResult<object?> ExecuteProgram(Compilation compilation) =>
+        ExecuteProgram<object?>(compilation);
 
     /// <summary>
-    /// Executes the code of the given compilation.
+    /// Executes the code of the given compilation as a full program.
     /// </summary>
     /// <typeparam name="TResult">The expected result type.</typeparam>
     /// <param name="compilation">The <see cref="Compilation"/> to execute.</param>
     /// <returns>The result of the execution.</returns>
-    public static ExecutionResult<TResult> Execute<TResult>(Compilation compilation)
+    public static ExecutionResult<TResult> ExecuteProgram<TResult>(Compilation compilation)
     {
         using var peStream = new MemoryStream();
         var emitResult = compilation.Emit(peStream: peStream);

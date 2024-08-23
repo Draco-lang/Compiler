@@ -136,7 +136,7 @@ internal class Program
                 .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName);
-        var execResult = ScriptingEngine.Execute(compilation);
+        var execResult = ScriptingEngine.ExecuteProgram(compilation);
         if (!EmitDiagnostics(execResult, msbuildDiags))
         {
             Console.WriteLine($"Result: {execResult.Value}");

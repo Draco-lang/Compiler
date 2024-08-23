@@ -58,6 +58,11 @@ public sealed class Script<TResult>
 
     internal Script(Compilation compilation, string? entryPoint = null)
     {
+        if (!compilation.Flags.HasFlag(CompilationFlags.ScriptingMode))
+        {
+            throw new InvalidOperationException("the compilation is not in scripting mode");
+        }
+
         this.Compilation = compilation;
         this.EntryPoint = entryPoint;
     }

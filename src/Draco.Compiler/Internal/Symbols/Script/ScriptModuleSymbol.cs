@@ -82,7 +82,7 @@ internal sealed class ScriptModuleSymbol(
     };
 
     private SourceFunctionSymbol BuildFunction(FunctionDeclarationSyntax syntax) => new(this, syntax);
-    private SourceGlobalSymbol BuildGlobal(VariableDeclarationSyntax syntax) => new(this, syntax);
+    private ScriptGlobalSymbol BuildGlobal(VariableDeclarationSyntax syntax) => new(this, syntax);
 
     private SourceModuleSymbol BuildModule(ModuleDeclarationSyntax syntax)
     {

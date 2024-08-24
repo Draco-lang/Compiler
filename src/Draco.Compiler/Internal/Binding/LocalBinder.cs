@@ -76,11 +76,8 @@ internal sealed class LocalBinder : Binder
     public override IEnumerable<Symbol> DeclaredSymbols => this.Declarations
         .Concat(this.LocalDeclarations.Select(d => d.Symbol));
 
-    public override FunctionSymbol ContainingSymbol => base.ContainingSymbol switch
-    {
-        FunctionSymbol f => f,
-        _ => throw new InvalidOperationException(),
-    };
+    public override Symbol ContainingSymbol => base.ContainingSymbol
+                                            ?? throw new InvalidOperationException("local binder is not contained in a symbol");
 
     // IMPORTANT: The choice of flag field is important because of write order
     private bool NeedsBuild => Volatile.Read(ref this.relativePositions) is null;
@@ -171,7 +168,7 @@ internal sealed class LocalBinder : Binder
     private Symbol? BuildSymbol(SyntaxNode syntax, int localCount) => syntax switch
     {
         FunctionDeclarationSyntax function => new SourceFunctionSymbol(this.ContainingSymbol, function),
-        ParameterSyntax parameter => new SourceParameterSymbol(this.ContainingSymbol, parameter),
+        ParameterSyntax parameter => new SourceParameterSymbol((FunctionSymbol)this.ContainingSymbol, parameter),
         VariableDeclarationSyntax variable => new SourceLocalSymbol(this.ContainingSymbol, new TypeVariable(localCount), variable),
         LabelDeclarationSyntax label => new SourceLabelSymbol(this.ContainingSymbol, label),
         _ => null,

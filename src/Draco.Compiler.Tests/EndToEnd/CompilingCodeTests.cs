@@ -778,4 +778,25 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         Assert.Equal("Hello, World!", stringWriter.ToString());
     }
+
+    [Fact]
+    public void GlobalInferredFromBlock()
+    {
+        var assembly = Compile("""
+            import System.Collections.Generic;
+
+            val l = {
+                val l = List();
+                l.Add(1);
+                l
+            };
+
+            public func get_l(): List<int32> = l;
+            """);
+
+        var l = Invoke<List<int>>(assembly, "get_l");
+
+        Assert.Single(l);
+        Assert.Equal(1, l[0]);
+    }
 }

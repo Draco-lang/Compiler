@@ -28,6 +28,11 @@ internal sealed class ScriptModuleSymbol(
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override string Name => this.DeclaringCompilation.RootModulePath;
 
+    /// <summary>
+    /// The evaluation function of the script.
+    /// </summary>
+    public ScriptEvalFunctionSymbol EvalFunction => this.Members.OfType<ScriptEvalFunctionSymbol>().Single();
+
     private readonly ScriptEntrySyntax syntax = syntax;
 
     public void Bind(IBinderProvider binderProvider) =>

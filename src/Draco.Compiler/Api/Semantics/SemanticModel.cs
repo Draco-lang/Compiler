@@ -85,13 +85,13 @@ public sealed partial class SemanticModel : IBinderProvider
                 break;
             }
             // NOTE: Only globals need binding
-            case VariableDeclarationSyntax when containingSymbol is SourceModuleSymbol containingModule:
+            case VariableDeclarationSyntax varDecl when containingSymbol is SourceModuleSymbol containingModule:
             {
                 // We need to search for this global
                 var globalSymbol = containingModule.Members
                     .OfType<SourceGlobalSymbol>()
-                    .Single(s => s.DeclaringSyntax == syntaxNode);
-                globalSymbol.Bind(this);
+                    .FirstOrDefault(s => s.Name == varDecl.Name.Text);
+                globalSymbol?.Bind(this);
                 break;
             }
             case ImportDeclarationSyntax:

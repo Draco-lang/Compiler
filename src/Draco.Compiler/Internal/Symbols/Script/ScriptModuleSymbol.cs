@@ -8,33 +8,27 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Symbols.Source;
 
-namespace Draco.Compiler.Internal.Symbols.Source;
+namespace Draco.Compiler.Internal.Symbols.Script;
 
 /// <summary>
 /// A module defined by a script.
 /// </summary>
-internal sealed class SourceScriptModuleSymbol : ModuleSymbol, ISourceSymbol
+internal sealed class ScriptModuleSymbol(
+    Compilation compilation,
+    Symbol? containingSymbol,
+    ScriptEntrySyntax syntax) : ModuleSymbol, ISourceSymbol
 {
-    public override Compilation DeclaringCompilation { get; }
+    public override Compilation DeclaringCompilation { get; } = compilation;
 
     public override IEnumerable<Symbol> Members => this.BindMembersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<Symbol> members;
 
-    public override Symbol? ContainingSymbol { get; }
+    public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override string Name => this.DeclaringCompilation.RootModulePath;
 
-    private readonly ScriptEntrySyntax syntax;
-
-    public SourceScriptModuleSymbol(
-        Compilation compilation,
-        Symbol? containingSymbol,
-        ScriptEntrySyntax syntax)
-    {
-        this.DeclaringCompilation = compilation;
-        this.ContainingSymbol = containingSymbol;
-        this.syntax = syntax;
-    }
+    private readonly ScriptEntrySyntax syntax = syntax;
 
     public void Bind(IBinderProvider binderProvider) =>
         this.BindMembersIfNeeded(binderProvider);

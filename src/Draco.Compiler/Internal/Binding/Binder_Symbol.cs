@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -76,8 +79,21 @@ internal partial class Binder
 
         var solver = new ConstraintSolver(module.DeclaringSyntax, "script");
 
+        var evalFuncStatements = new List<BindingTask<BoundStatement>>();
+
         // Go through all statements and bind them
-        // TODO
-        throw new System.NotImplementedException();
+        foreach (var stmt in module.DeclaringSyntax.Statements)
+        {
+            if (stmt is DeclarationStatementSyntax declStmt)
+            {
+                // TODO
+            }
+            else
+            {
+                // Regular statement, that goes into the eval function
+                var evalFuncStmt = this.BindStatement(stmt, solver, diagnostics);
+                evalFuncStatements.Add(evalFuncStmt);
+            }
+        }
     }
 }

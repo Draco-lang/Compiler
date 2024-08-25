@@ -101,7 +101,7 @@ internal partial class Binder
                     var symbol = module.Members
                         .OfType<ScriptGlobalSymbol>()
                         .First(g => g.DeclaringSyntax == varDecl);
-                    // TODO
+                    BindGlobal(symbol, varDecl);
                     continue;
                 }
                 // Functions are just bound in this context
@@ -111,7 +111,7 @@ internal partial class Binder
                     var symbol = module.Members
                         .OfType<ScriptFunctionSymbol>()
                         .First(f => f.DeclaringSyntax == funcDecl);
-                    // TODO
+                    BindFunction(symbol, funcDecl);
                     continue;
                 }
             }
@@ -122,6 +122,15 @@ internal partial class Binder
                 evalFuncStatements.Add(evalFuncStmt);
             }
         }
+        // Infer evaluation type
+        var evalType = WellKnownTypes.Unit;
+        if (module.DeclaringSyntax.Value is not null)
+        {
+            // Bind the expression
+            var resultValue = this.BindExpression(module.DeclaringSyntax.Value, solver, diagnostics);
+            evalType = resultValue.GetResultType(module.DeclaringSyntax.Value, solver, diagnostics);
+            // TODO: Add return statement
+        }
 
         return new ScriptBinding(
             GlobalBindings: globalBindings.ToImmutable(),
@@ -130,6 +139,16 @@ internal partial class Binder
                 locals: [],
                 statements: evalFuncStatements.Select(s => s.Result).ToImmutableArray(),
                 value: BoundUnitExpression.Default)),
-            EvalType: TODO);
+            EvalType: evalType);
+
+        void BindGlobal(GlobalSymbol symbol, VariableDeclarationSyntax syntax)
+        {
+            // TODO
+        }
+
+        void BindFunction(FunctionSymbol symbol, FunctionDeclarationSyntax syntax)
+        {
+            // TODO
+        }
     }
 }

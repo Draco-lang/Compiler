@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -19,7 +20,7 @@ internal partial class Binder
     {
         var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
         Debug.Assert(containingFunction is not null);
-        var returnTypeSyntax = (containingFunction as SourceFunctionSymbol)?.DeclaringSyntax?.ReturnType?.Type;
+        var returnTypeSyntax = (containingFunction as SyntaxFunctionSymbol)?.DeclaringSyntax.ReturnType?.Type;
         constraints.Assignable(
             containingFunction.ReturnType,
             returnValue.GetResultType(returnSyntax, constraints, diagnostics),

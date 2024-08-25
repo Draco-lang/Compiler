@@ -5,6 +5,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -83,7 +84,7 @@ internal sealed class BinderCache(Compilation compilation)
         // For that we unwrap from the injected import layer(s)
         var parent = UnwrapFromImportBinder(binder);
         var functionSymbol = parent.DeclaredSymbols
-            .OfType<SourceFunctionSymbol>()
+            .OfType<SyntaxFunctionSymbol>()
             .FirstOrDefault(member => member.DeclaringSyntax == syntax);
         Debug.Assert(functionSymbol is not null);
         // NOTE: We are not using the unwrapped parent, we need the injected import layers

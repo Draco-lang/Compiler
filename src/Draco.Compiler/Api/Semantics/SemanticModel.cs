@@ -12,6 +12,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -38,8 +39,8 @@ public sealed partial class SemanticModel : IBinderProvider
     private readonly Compilation compilation;
 
     // Filled out by incremental binding
-    private readonly ConcurrentDictionary<SourceFunctionSymbol, BoundStatement> boundFunctions = new();
-    private readonly ConcurrentDictionary<SourceGlobalSymbol, GlobalBinding> boundGlobals = new();
+    private readonly ConcurrentDictionary<SyntaxFunctionSymbol, BoundStatement> boundFunctions = new();
+    private readonly ConcurrentDictionary<SyntaxGlobalSymbol, GlobalBinding> boundGlobals = new();
     private readonly ConcurrentDictionary<SyntaxNode, BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 
@@ -89,9 +90,16 @@ public sealed partial class SemanticModel : IBinderProvider
             {
                 // We need to search for this global
                 var globalSymbol = containingModule.Members
-                    .OfType<SourceGlobalSymbol>()
+                    .OfType<SyntaxGlobalSymbol>()
                     .FirstOrDefault(s => s.Name == varDecl.Name.Text);
-                globalSymbol?.Bind(this);
+                if (globalSymbol is SourceGlobalSymbol sourceGlobal)
+                {
+                    sourceGlobal.Bind(this);
+                }
+                else
+                {
+                    // TODO: Do we want to bind the parent of a script module for example?
+                }
                 break;
             }
             case ImportDeclarationSyntax:
@@ -151,7 +159,7 @@ public sealed partial class SemanticModel : IBinderProvider
 
         switch (containingSymbol)
         {
-        case SourceFunctionSymbol func:
+        case SyntaxFunctionSymbol func:
         {
             // This is just the function itself
             if (func.DeclaringSyntax == syntax) return containingSymbol;
@@ -165,7 +173,7 @@ public sealed partial class SemanticModel : IBinderProvider
             }
 
             // Bind the function contents
-            func.Bind(this);
+            if (func is SourceFunctionSymbol sourceFunc) sourceFunc.Bind(this);
 
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
@@ -236,10 +244,10 @@ public sealed partial class SemanticModel : IBinderProvider
 
         switch (containingSymbol)
         {
-        case SourceFunctionSymbol func:
+        case SyntaxFunctionSymbol func:
         {
             // Bind the function contents
-            func.Bind(this);
+            if (func is SourceFunctionSymbol sourceFunc) sourceFunc.Bind(this);
             break;
         }
         case SourceModuleSymbol module:
@@ -312,10 +320,10 @@ public sealed partial class SemanticModel : IBinderProvider
 
         switch (containingSymbol)
         {
-        case SourceFunctionSymbol func:
+        case SyntaxFunctionSymbol func:
         {
             // Bind the function contents
-            func.Bind(this);
+            if (func is SourceFunctionSymbol sourceFunc) sourceFunc.Bind(this);
             break;
         }
         case SourceModuleSymbol module:

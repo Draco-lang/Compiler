@@ -54,7 +54,7 @@ public sealed partial class SemanticModel
                 key: function,
                 valueFactory: _ => base.BindFunction(function, diagnostics));
 
-        public override (Internal.Symbols.TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics) =>
+        public override GlobalBinding BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics) =>
             semanticModel.boundGlobals.GetOrAdd(
                 key: global,
                 valueFactory: _ => base.BindGlobal(global, diagnostics));

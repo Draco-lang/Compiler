@@ -73,7 +73,7 @@ internal abstract partial class Binder(Compilation compilation, Binder? parent)
         return statementTask.Result;
     }
 
-    public virtual (TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
+    public virtual GlobalBinding BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
         var globalName = global.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(global.DeclaringSyntax, $"global {globalName}");
@@ -120,7 +120,7 @@ internal abstract partial class Binder(Compilation compilation, Binder? parent)
         }
 
         // Done
-        return (declaredType, boundValue);
+        return new(declaredType, boundValue);
     }
 
     // NOTE: This is a hack, until we find out something nicer

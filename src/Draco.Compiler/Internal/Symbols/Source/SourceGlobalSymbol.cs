@@ -69,7 +69,7 @@ internal sealed class SourceGlobalSymbol(
         }
     }
 
-    private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValue(IBinderProvider binderProvider)
+    private GlobalBinding BindTypeAndValue(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindGlobal(this, binderProvider.DiagnosticBag);

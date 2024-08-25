@@ -16,6 +16,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 using ModuleSymbol = Draco.Compiler.Internal.Symbols.ModuleSymbol;
 
@@ -396,7 +397,7 @@ public sealed class Compilation : IBinderProvider
         {
             // NOTE: We might want some checks in the constructor?
             var syntax = (ScriptEntrySyntax)this.SyntaxTrees.Single().Root;
-            return new SourceScriptModuleSymbol(this, null, syntax);
+            return new ScriptModuleSymbol(this, null, syntax);
         }
         // Regular source module
         return new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);

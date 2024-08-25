@@ -39,7 +39,7 @@ public sealed partial class SemanticModel : IBinderProvider
 
     // Filled out by incremental binding
     private readonly ConcurrentDictionary<SourceFunctionSymbol, BoundStatement> boundFunctions = new();
-    private readonly ConcurrentDictionary<SourceGlobalSymbol, (Internal.Symbols.TypeSymbol Type, BoundExpression? Value)> boundGlobals = new();
+    private readonly ConcurrentDictionary<SourceGlobalSymbol, GlobalBinding> boundGlobals = new();
     private readonly ConcurrentDictionary<SyntaxNode, BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 

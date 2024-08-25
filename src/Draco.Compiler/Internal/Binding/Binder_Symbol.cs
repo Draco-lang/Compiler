@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -80,6 +81,8 @@ internal partial class Binder
 
         var solver = new ConstraintSolver(module.DeclaringSyntax, "script");
 
+        var globalBindings = ImmutableDictionary.CreateBuilder<VariableDeclarationSyntax, GlobalBinding>();
+        var functionBodies = ImmutableDictionary.CreateBuilder<FunctionDeclarationSyntax, BoundStatement>();
         var evalFuncStatements = new List<BindingTask<BoundStatement>>();
 
         // Go through all statements and bind them

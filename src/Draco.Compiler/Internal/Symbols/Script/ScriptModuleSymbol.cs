@@ -82,6 +82,8 @@ internal sealed class ScriptModuleSymbol(
 
             // Build the declaration
             var member = this.BuildMember(decl.Declaration);
+            if (member is null) continue;
+
             var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
             result.Add(member);
 
@@ -122,8 +124,9 @@ internal sealed class ScriptModuleSymbol(
         }
     }
 
-    private Symbol BuildMember(DeclarationSyntax decl) => decl switch
+    private Symbol? BuildMember(DeclarationSyntax decl) => decl switch
     {
+        ImportDeclarationSyntax => null,
         FunctionDeclarationSyntax f => this.BuildFunction(f),
         VariableDeclarationSyntax v => this.BuildGlobal(v),
         ModuleDeclarationSyntax m => this.BuildModule(m),

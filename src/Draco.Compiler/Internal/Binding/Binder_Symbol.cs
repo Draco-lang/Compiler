@@ -207,10 +207,7 @@ internal partial class Binder
 
         void BindFunction(ScriptFunctionSymbol symbol)
         {
-            var functionName = symbol.DeclaringSyntax.Name.Text;
-            var constraints = new ConstraintSolver(symbol.DeclaringSyntax, $"function {functionName}");
-            var statementTask = this.BindStatement(symbol.DeclaringSyntax.Body, constraints, diagnostics);
-
+            var statementTask = this.BindStatement(symbol.DeclaringSyntax.Body, solver, diagnostics);
             fillerTasks.Add(() => functionBodies.Add(symbol.DeclaringSyntax, statementTask.Result));
         }
     }

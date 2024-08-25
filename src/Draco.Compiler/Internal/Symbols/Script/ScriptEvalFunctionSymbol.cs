@@ -17,6 +17,7 @@ internal sealed class ScriptEvalFunctionSymbol(
     public override ImmutableArray<ParameterSymbol> Parameters => [];
     public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
     public override ScriptEntrySyntax DeclaringSyntax => syntax;
+    public override bool IsSpecialName => true;
 
     public override string Name => CompilerConstants.ScriptEntryPointName;
     public override TypeSymbol ReturnType => this.ContainingSymbol.ScriptBindings.EvalType;

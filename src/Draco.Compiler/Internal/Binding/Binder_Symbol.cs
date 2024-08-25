@@ -129,6 +129,7 @@ internal partial class Binder
                 evalFuncStatements.Add(evalFuncStmt);
             }
         }
+
         // Infer evaluation type
         var evalType = WellKnownTypes.Unit;
         if (module.DeclaringSyntax.Value is not null)
@@ -136,7 +137,7 @@ internal partial class Binder
             // Bind the expression
             var resultValue = this.BindExpression(module.DeclaringSyntax.Value, solver, diagnostics);
             evalType = resultValue.GetResultType(module.DeclaringSyntax.Value, solver, diagnostics);
-            // TODO: Add return statement
+            // TODO: Add return statement to eval function
         }
 
         return new ScriptBinding(

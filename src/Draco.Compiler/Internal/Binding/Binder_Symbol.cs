@@ -177,6 +177,9 @@ internal partial class Binder
             // Infer declared type
             var declaredType = type ?? solver.AllocateTypeVariable();
 
+            // Unify with the type declared on the symbol
+            ConstraintSolver.UnifyAsserted(declaredType, symbol.Type);
+
             // Add assignability constraint, if needed
             if (valueTask is not null)
             {

@@ -15,7 +15,8 @@ internal sealed class ScriptGlobalSymbol(
     ScriptModuleSymbol containingSymbol,
     VariableDeclarationSyntax syntax) : SyntaxGlobalSymbol(containingSymbol, syntax)
 {
-    public override TypeSymbol Type =>
-        ((ScriptModuleSymbol)this.ContainingSymbol).ScriptBindings.GlobalBindings[this.DeclaringSyntax].Type;
+    public override TypeSymbol Type => this.type ??= new TypeVariable(1);
+    private TypeSymbol? type;
+
     public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 }

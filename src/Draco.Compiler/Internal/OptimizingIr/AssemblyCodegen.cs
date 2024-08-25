@@ -22,7 +22,7 @@ internal sealed partial class AssemblyCodegen
         var assemblyCodegen = new AssemblyCodegen(compilation);
         var moduleCodegen = new ModuleCodegen(compilation, assemblyCodegen.assembly.RootModule, emitSequencePoints);
         compilation.SourceModule.Accept(moduleCodegen);
-        assemblyCodegen.Complete();
+        assemblyCodegen.Complete(compilation);
         return assemblyCodegen.assembly;
     }
 
@@ -36,11 +36,18 @@ internal sealed partial class AssemblyCodegen
         };
     }
 
-    private void Complete()
+    private void Complete(Compilation compilation)
     {
         // Set the entry point, in case we have one
-        var mainProcedure = (Procedure?)this.assembly.RootModule.Procedures.Values
-            .FirstOrDefault(p => p.Name == CompilerConstants.EntryPointName);
-        this.assembly.EntryPoint = mainProcedure;
+        this.assembly.EntryPoint = this.GetEntryPoint(compilation);
+    }
+
+    private Procedure? GetEntryPoint(Compilation compilation)
+    {
+        var mainProcName = compilation.Flags.HasFlag(CompilationFlags.ScriptingMode)
+            ? CompilerConstants.ScriptEntryPointName
+            : CompilerConstants.EntryPointName;
+        return (Procedure?)this.assembly.RootModule.Procedures.Values
+            .FirstOrDefault(p => p.Name == mainProcName);
     }
 }

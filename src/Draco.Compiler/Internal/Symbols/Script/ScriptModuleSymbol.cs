@@ -86,7 +86,7 @@ internal sealed class ScriptModuleSymbol(
         _ => throw new ArgumentOutOfRangeException(nameof(decl)),
     };
 
-    private SourceFunctionSymbol BuildFunction(FunctionDeclarationSyntax syntax) => new(this, syntax);
+    private ScriptFunctionSymbol BuildFunction(FunctionDeclarationSyntax syntax) => new(this, syntax);
     private ScriptGlobalSymbol BuildGlobal(VariableDeclarationSyntax syntax) => new(this, syntax);
 
     private SourceModuleSymbol BuildModule(ModuleDeclarationSyntax syntax)

@@ -63,7 +63,7 @@ internal sealed class ScriptModuleSymbol(
             var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
             result.Add(member);
 
-            // We chech for illegal shadowing
+            // We check for illegal shadowing
             if (earlierMember is null) continue;
 
             // Overloading is legal

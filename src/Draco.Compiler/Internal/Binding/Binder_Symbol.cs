@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -85,7 +86,12 @@ internal partial class Binder
 
         var globalBindings = ImmutableDictionary.CreateBuilder<VariableDeclarationSyntax, GlobalBinding>();
         var functionBodies = ImmutableDictionary.CreateBuilder<FunctionDeclarationSyntax, BoundStatement>();
-        var evalFuncStatements = new List<BindingTask<BoundStatement>>();
+        var evalFuncStatements = ImmutableArray.CreateBuilder<BoundStatement>();
+
+        // NOTE: Since the API is asynchronous where task results are only available after
+        // the solver has been asked to solve, we store "continuations" here and run them at the end
+        // Quite hacky, but will work for now
+        var fillerTasks = new List<Action>();
 
         // Go through all statements and bind them
         foreach (var stmt in module.DeclaringSyntax.Statements)
@@ -103,8 +109,7 @@ internal partial class Binder
                         .OfType<ScriptGlobalSymbol>()
                         .First(g => g.DeclaringSyntax == varDecl);
 
-                    var binding = BindGlobal(symbol);
-                    globalBindings.Add(varDecl, binding);
+                    BindGlobal(symbol);
 
                     continue;
                 }
@@ -116,8 +121,7 @@ internal partial class Binder
                         .OfType<ScriptFunctionSymbol>()
                         .First(f => f.DeclaringSyntax == funcDecl);
 
-                    var binding = BindFunction(symbol);
-                    functionBodies.Add(funcDecl, binding);
+                    BindFunction(symbol);
 
                     continue;
                 }
@@ -126,7 +130,7 @@ internal partial class Binder
             {
                 // Regular statement, that goes into the eval function
                 var evalFuncStmt = this.BindStatement(stmt, solver, diagnostics);
-                evalFuncStatements.Add(evalFuncStmt);
+                fillerTasks.Add(() => evalFuncStatements.Add(evalFuncStmt.Result));
             }
         }
 
@@ -137,19 +141,32 @@ internal partial class Binder
             // Bind the expression
             var resultValue = this.BindExpression(module.DeclaringSyntax.Value, solver, diagnostics);
             evalType = resultValue.GetResultType(module.DeclaringSyntax.Value, solver, diagnostics);
-            // TODO: Add return statement to eval function
+            // Add return statement
+            fillerTasks.Add(() => evalFuncStatements.Add(ExpressionStatement(ReturnExpression(resultValue.Result))));
+        }
+        else
+        {
+            // Add a default return statement
+            fillerTasks.Add(() => evalFuncStatements.Add(ExpressionStatement(ReturnExpression(BoundUnitExpression.Default))));
         }
 
+        // Run the solver
+        solver.Solve(diagnostics);
+
+        // Now we can run the fillers
+        foreach (var filler in fillerTasks) filler();
+
+        // And finally have all the results
         return new ScriptBinding(
             GlobalBindings: globalBindings.ToImmutable(),
             FunctionBodies: functionBodies.ToImmutable(),
             EvalBody: ExpressionStatement(BlockExpression(
                 locals: [],
-                statements: evalFuncStatements.Select(s => s.Result).ToImmutableArray(),
+                statements: evalFuncStatements.ToImmutableArray(),
                 value: BoundUnitExpression.Default)),
             EvalType: evalType);
 
-        GlobalBinding BindGlobal(ScriptGlobalSymbol symbol)
+        void BindGlobal(ScriptGlobalSymbol symbol)
         {
             var typeSyntax = symbol.DeclaringSyntax.Type;
             var valueSyntax = symbol.DeclaringSyntax.Value;
@@ -169,17 +186,29 @@ internal partial class Binder
                     valueSyntax.Value);
             }
 
-            // TODO: Add assignment to eval function
-            // TODO: Return binding
+            fillerTasks.Add(() =>
+            {
+                var assignedValue = valueTask?.Result;
+                if (assignedValue is not null)
+                {
+                    // Add the assignment to the eval function
+                    evalFuncStatements.Add(ExpressionStatement(AssignmentExpression(
+                        compoundOperator: null,
+                        left: GlobalLvalue(symbol),
+                        right: assignedValue)));
+                }
+
+                globalBindings.Add(symbol.DeclaringSyntax, new(declaredType, assignedValue));
+            });
         }
 
-        BoundStatement BindFunction(ScriptFunctionSymbol symbol)
+        void BindFunction(ScriptFunctionSymbol symbol)
         {
             var functionName = symbol.DeclaringSyntax.Name.Text;
             var constraints = new ConstraintSolver(symbol.DeclaringSyntax, $"function {functionName}");
             var statementTask = this.BindStatement(symbol.DeclaringSyntax.Body, constraints, diagnostics);
 
-            // TODO: return statement
+            fillerTasks.Add(() => functionBodies.Add(symbol.DeclaringSyntax, statementTask.Result));
         }
     }
 }

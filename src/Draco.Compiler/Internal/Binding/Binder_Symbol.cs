@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding.Tasks;
@@ -92,12 +93,20 @@ internal partial class Binder
                 // Globals mean an assignment into the eval function
                 if (decl is VariableDeclarationSyntax varDecl)
                 {
+                    // Retrieve the symbol
+                    var symbol = module.Members
+                        .OfType<ScriptGlobalSymbol>()
+                        .First(g => g.DeclaringSyntax == varDecl);
                     // TODO
                     continue;
                 }
                 // Functions are just bound in this context
                 if (decl is FunctionDeclarationSyntax funcDecl)
                 {
+                    // Retrieve the symbol
+                    var symbol = module.Members
+                        .OfType<ScriptFunctionSymbol>()
+                        .First(f => f.DeclaringSyntax == funcDecl);
                     // TODO
                     continue;
                 }

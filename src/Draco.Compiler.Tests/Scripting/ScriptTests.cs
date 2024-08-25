@@ -10,7 +10,7 @@ public sealed class ScriptTests
     public void BasicAssignmentAndAddition()
     {
         // Arrange
-        var script = ScriptingEngine.CreateScript<int>("""
+        var script = Script.Create<int>("""
             var x = 3;
             var y = 4;
             x + y

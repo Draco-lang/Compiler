@@ -130,7 +130,7 @@ internal class Program
                 .Concat(BclReferences)
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName);
-        var execResult = ScriptingEngine.ExecuteProgram(compilation);
+        var execResult = Script.ExecuteAsProgram(compilation);
         if (!EmitDiagnostics(execResult))
         {
             Console.WriteLine($"Result: {execResult.Value}");

@@ -141,9 +141,7 @@ public sealed class ReplSession
         var tree = ToSyntaxTree(node);
 
         // Create a script
-        var script = new Script<object?>(
-            compilation: this.MakeCompilation(tree),
-            assemblyLoadContext: this.context.AssemblyLoadContext);
+        var script = this.MakeScript(tree);
 
         // Try to execute
         var result = script.Execute();
@@ -163,16 +161,14 @@ public sealed class ReplSession
         return ExecutionResult.Success((TResult)result.Value!);
     }
 
-    private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
-        syntaxTrees: [tree],
-        metadataReferences: this.context.MetadataReferences,
-        flags: CompilationFlags.ScriptingMode,
+    private Script<object?> MakeScript(SyntaxTree tree) => Script.Create(
+        syntaxTree: tree,
         globalImports: this.context.GlobalImports,
-        rootModulePath: $"Context{this.previousEntries.Count}",
-        assemblyName: $"ReplAssembly{this.previousEntries.Count}",
-        metadataAssemblies: this.previousEntries.Count == 0
+        metadataReferences: this.context.MetadataReferences,
+        previousCompilation: this.previousEntries.Count == 0
             ? null
-            : this.previousEntries[^1].Compilation.MetadataAssembliesDict);
+            : this.previousEntries[^1].Compilation,
+        assemblyLoadContext: this.context.AssemblyLoadContext);
 
     private static SyntaxTree ToSyntaxTree(SyntaxNode node) => node switch
     {

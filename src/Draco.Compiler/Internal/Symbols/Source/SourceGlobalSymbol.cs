@@ -6,27 +6,16 @@ using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.FlowAnalysis;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
 internal sealed class SourceGlobalSymbol(
     Symbol containingSymbol,
-    VariableDeclarationSyntax syntax) : GlobalSymbol, ISourceSymbol
+    VariableDeclarationSyntax syntax) : SyntaxGlobalSymbol(containingSymbol, syntax), ISourceSymbol
 {
     public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
-
-    public override bool IsMutable => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVar;
-    public override string Name => this.DeclaringSyntax.Name.Text;
-
-    public override Symbol ContainingSymbol => containingSymbol;
-    public override VariableDeclarationSyntax DeclaringSyntax => syntax;
-
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
-
-    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
-    private SymbolDocumentation? documentation;
-
-    internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
     // IMPORTANT: flag is type, needs to be written last
     // NOTE: We check the TYPE here, as value is nullable
@@ -74,7 +63,4 @@ internal sealed class SourceGlobalSymbol(
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindGlobal(this, binderProvider.DiagnosticBag);
     }
-
-    private SymbolDocumentation BuildDocumentation() =>
-        MarkdownDocumentationExtractor.Extract(this);
 }

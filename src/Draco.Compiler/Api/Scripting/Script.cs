@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Reflection;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Symbols.Script;
 
 namespace Draco.Compiler.Api.Scripting;
 
@@ -46,6 +47,18 @@ public sealed class Script<TResult>
     /// Might be null, if the script failed to compile or no entry point was found.
     /// </summary>
     public MethodInfo? EntryPointMethod => this.GetEntryPoint();
+
+    /// <summary>
+    /// The globally exported symbols that can be used for importing for future contexts.
+    /// </summary>
+    public GlobalImports GlobalImports
+    {
+        get
+        {
+            var rootModule = (ScriptModuleSymbol)this.Compilation.SourceModule;
+            return rootModule.GlobalImports;
+        }
+    }
 
     // The cached entry point method
     private MethodInfo? entryPoint;

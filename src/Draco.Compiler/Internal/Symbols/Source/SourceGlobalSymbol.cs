@@ -10,6 +10,9 @@ using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
+/// <summary>
+/// An in-source defined global variable.
+/// </summary>
 internal sealed class SourceGlobalSymbol(
     Symbol containingSymbol,
     VariableDeclarationSyntax syntax) : SyntaxGlobalSymbol(containingSymbol, syntax), ISourceSymbol

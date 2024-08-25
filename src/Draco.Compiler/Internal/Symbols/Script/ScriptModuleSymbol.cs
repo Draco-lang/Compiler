@@ -20,7 +20,8 @@ internal sealed class ScriptModuleSymbol(
     Symbol? containingSymbol,
     ScriptEntrySyntax syntax) : ModuleSymbol, ISourceSymbol
 {
-    public override Compilation DeclaringCompilation { get; } = compilation;
+    public override Compilation DeclaringCompilation => compilation;
+    public override ScriptEntrySyntax DeclaringSyntax => syntax;
 
     public override IEnumerable<Symbol> Members => this.BindMembersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<Symbol> members;
@@ -33,7 +34,13 @@ internal sealed class ScriptModuleSymbol(
     /// </summary>
     public ScriptEvalFunctionSymbol EvalFunction => this.Members.OfType<ScriptEvalFunctionSymbol>().Single();
 
-    private readonly ScriptEntrySyntax syntax = syntax;
+    /// <summary>
+    /// The imports of the script.
+    /// </summary>
+    public IEnumerable<ImportDeclarationSyntax> Imports => this.DeclaringSyntax.Statements
+        .OfType<DeclarationStatementSyntax>()
+        .Select(s => s.Declaration)
+        .OfType<ImportDeclarationSyntax>();
 
     public void Bind(IBinderProvider binderProvider) =>
         this.BindMembersIfNeeded(binderProvider);
@@ -46,7 +53,7 @@ internal sealed class ScriptModuleSymbol(
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // Statements
-        foreach (var statement in this.syntax.Statements)
+        foreach (var statement in this.DeclaringSyntax.Statements)
         {
             // Non-declaration statements are compiled into an initializer method
             if (statement is not DeclarationStatementSyntax decl) continue;
@@ -72,7 +79,7 @@ internal sealed class ScriptModuleSymbol(
         }
 
         // We add a function to evaluate the script
-        var evalFunction = new ScriptEvalFunctionSymbol(this, this.syntax);
+        var evalFunction = new ScriptEvalFunctionSymbol(this, this.DeclaringSyntax);
         result.Add(evalFunction);
 
         return result.ToImmutable();

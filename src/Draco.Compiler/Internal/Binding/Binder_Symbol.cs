@@ -3,6 +3,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -66,5 +67,17 @@ internal partial class Binder
 
         // Done
         return new(declaredType, boundValue);
+    }
+
+    public virtual ScriptBinding BindScript(ScriptModuleSymbol module, DiagnosticBag diagnostics)
+    {
+        // Binding scripts is a little different, since they share the inference context,
+        // meaning that a global can be inferred from a much later context
+
+        var solver = new ConstraintSolver(module.DeclaringSyntax, "script");
+
+        // Go through all statements and bind them
+        // TODO
+        throw new System.NotImplementedException();
     }
 }

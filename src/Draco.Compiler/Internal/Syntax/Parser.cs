@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -248,21 +249,30 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     private DeclarationSyntax ParseDeclaration(DeclarationContext context)
     {
-        var modifier = this.ParseVisibilityModifier();
+        var visibility = this.ParseVisibilityModifier();
         switch (this.Peek())
         {
         case TokenKind.KeywordImport:
-            return this.ParseImportDeclaration(modifier);
+            return this.ParseImportDeclaration(visibility);
+
+        case TokenKind.KeywordValue:
+        {
+            var valueKeyword = this.Expect(TokenKind.KeywordValue);
+            return this.ParseClassDeclaration(visibility: visibility, valueType: valueKeyword);
+        }
+
+        case TokenKind.KeywordClass:
+            return this.ParseClassDeclaration(visibility: visibility, valueType: null);
 
         case TokenKind.KeywordFunc:
-            return this.ParseFunctionDeclaration(modifier);
+            return this.ParseFunctionDeclaration(visibility);
 
         case TokenKind.KeywordModule:
             return this.ParseModuleDeclaration(context);
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration(modifier);
+            return this.ParseVariableDeclaration(visibility);
 
         case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
             return this.ParseLabelDeclaration(context);
@@ -277,7 +287,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
-            var node = new UnexpectedDeclarationSyntax(modifier, input);
+            var node = new UnexpectedDeclarationSyntax(visibility, input);
             this.AddDiagnostic(node, diag);
             return node;
         }
@@ -358,6 +368,82 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             result = new MemberImportPathSyntax(result, dot, memberName);
         }
         return result;
+    }
+
+    /// <summary>
+    /// Parses a class declaration.
+    /// </summary>
+    /// <param name="visibility">Optional visibility modifier token.</param>
+    /// <param name="valueType">Optional valuetype modifier token.</param>
+    /// <returns>The parsed <see cref="ClassDeclarationSyntax"/>.</returns>
+    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxToken? visibility, SyntaxToken? valueType)
+    {
+        // Class keyword and name of the class
+        var classKeyword = this.Expect(TokenKind.KeywordClass);
+        var name = this.Expect(TokenKind.Identifier);
+
+        // Optional generics
+        var generics = null as GenericParameterListSyntax;
+        if (this.Peek() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
+
+        var body = this.ParseClassBody();
+
+        return new ClassDeclarationSyntax(
+            visibility,
+            valueType,
+            classKeyword,
+            name,
+            generics,
+            body);
+    }
+
+    /// <summary>
+    /// Parses the body of a class.
+    /// </summary>
+    /// <returns>The parsed <see cref="ClassBodySyntax"/>.</returns>
+    private ClassBodySyntax ParseClassBody()
+    {
+        switch (this.Peek())
+        {
+        case TokenKind.Semicolon:
+            return this.ParseEmptyClassBody();
+        case TokenKind.CurlyOpen:
+            return this.ParseBlockClassBody();
+        default:
+            // TODO
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Parses an empty class body, which is just a semicolon.
+    /// </summary>
+    /// <returns>The parsed <see cref="EmptyClassBodySyntax"/>.</returns>
+    private EmptyClassBodySyntax ParseEmptyClassBody()
+    {
+        var semicolon = this.Expect(TokenKind.Semicolon);
+        return new EmptyClassBodySyntax(semicolon);
+    }
+
+    /// <summary>
+    /// Parses a block class body declared with curly braces.
+    /// </summary>
+    /// <returns>The parsed <see cref="BlockClassBodySyntax"/>.</returns>
+    private BlockClassBodySyntax ParseBlockClassBody()
+    {
+        var openBrace = this.Expect(TokenKind.CurlyOpen);
+        var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
+        while (true)
+        {
+            // Break on the end of the block
+            if (this.Peek() is TokenKind.EndOfInput or TokenKind.CurlyClose) break;
+
+            // Parse a declaration
+            var decl = this.ParseDeclaration(DeclarationContext.Global);
+            decls.Add(decl);
+        }
+        var closeBrace = this.Expect(TokenKind.CurlyClose);
+        return new(openBrace, decls.ToSyntaxList(), closeBrace);
     }
 
     /// <summary>

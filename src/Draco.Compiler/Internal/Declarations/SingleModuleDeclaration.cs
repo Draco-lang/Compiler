@@ -45,6 +45,7 @@ internal sealed class SingleModuleDeclaration(string name, SplitPath path, Conta
         ImportDeclarationSyntax => null,
         VariableDeclarationSyntax var => new GlobalDeclaration(var),
         FunctionDeclarationSyntax func => new FunctionDeclaration(func),
+        ClassDeclarationSyntax @class => new ClassDeclaration(@class),
         ModuleDeclarationSyntax module => new SingleModuleDeclaration(module.Name.Text, this.Path.Append(module.Name.Text), module),
         UnexpectedDeclarationSyntax => null,
         _ => throw new ArgumentOutOfRangeException(nameof(node)),

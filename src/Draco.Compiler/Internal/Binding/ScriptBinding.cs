@@ -21,8 +21,8 @@ internal readonly record struct ScriptBinding(
     /// <summary>
     /// True if this binding is the default binding.
     /// </summary>
-    public bool IsDefault => this.GlobalBindings.IsEmpty
-                          && this.FunctionBodies.IsEmpty
+    public bool IsDefault => this.GlobalBindings is null
+                          && this.FunctionBodies is null
                           && this.EvalBody is null
                           && this.EvalType is null;
 }

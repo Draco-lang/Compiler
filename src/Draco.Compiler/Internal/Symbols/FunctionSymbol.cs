@@ -106,13 +106,6 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     // NOTE: We override for covariant return type
     public override FunctionSymbol? GenericDefinition => null;
 
-    public override Api.Semantics.Visibility Visibility => this.DeclaringSyntax switch
-    {
-        _ when this.ImplicitPublicEnabled => Api.Semantics.Visibility.Public,
-        FunctionDeclarationSyntax funcDecl => GetVisibilityFromTokenKind(funcDecl.VisibilityModifier?.Kind),
-        _ => Api.Semantics.Visibility.Internal,
-    };
-
     public override IEnumerable<Symbol> Members => this.Parameters;
 
     public TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);

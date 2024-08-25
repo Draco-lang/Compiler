@@ -13,11 +13,4 @@ internal abstract partial class VariableSymbol : Symbol, ITypedSymbol
     /// True, if this variable is mutable.
     /// </summary>
     public abstract bool IsMutable { get; }
-
-    public override Api.Semantics.Visibility Visibility => this.DeclaringSyntax switch
-    {
-        _ when this.ImplicitPublicEnabled => Api.Semantics.Visibility.Public,
-        VariableDeclarationSyntax varDecl => GetVisibilityFromTokenKind(varDecl.VisibilityModifier?.Kind),
-        _ => Api.Semantics.Visibility.Internal,
-    };
 }

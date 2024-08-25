@@ -16,9 +16,9 @@ internal sealed class SourceGlobalSymbol(
     public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
 
     public override bool IsMutable => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVar;
-    public override Symbol ContainingSymbol => containingSymbol;
     public override string Name => this.DeclaringSyntax.Name.Text;
 
+    public override Symbol ContainingSymbol => containingSymbol;
     public override VariableDeclarationSyntax DeclaringSyntax => syntax;
 
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;

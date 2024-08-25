@@ -243,7 +243,7 @@ public sealed class ReplSession
     private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
         syntaxTrees: [tree],
         metadataReferences: this.context.MetadataReferences,
-        flags: CompilationFlags.ImplicitPublicSymbols,
+        flags: CompilationFlags.ScriptingMode,
         globalImports: this.context.GlobalImports,
         rootModulePath: $"Context{this.previousEntries.Count}",
         assemblyName: $"ReplAssembly{this.previousEntries.Count}",

@@ -79,7 +79,7 @@ public static class ScriptingEngine
         var syntaxTree = SyntaxTree.ParseScript(SourceReader.From(code));
         var compilation = Compilation.Create(
             syntaxTrees: [syntaxTree],
-            flags: CompilationFlags.ScriptingMode | CompilationFlags.ImplicitPublicSymbols,
+            flags: CompilationFlags.ScriptingMode,
             globalImports: globalImports,
             metadataReferences: metadataReferences,
             rootModulePath: moduleName,

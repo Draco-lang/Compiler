@@ -79,6 +79,12 @@ internal partial class Binder
 
         // Set up state
         var flags = LookupFlags.None;
+        if (this.Compilation.Flags.HasFlag(Api.CompilationFlags.ScriptingMode))
+        {
+            // In scripting mode, we allow globals to be looked up immediately without crossing
+            // a function boundary
+            flags |= LookupFlags.AllowGlobals;
+        }
         var currentReference = reference;
 
         // Iterate over the binder chain

@@ -28,6 +28,11 @@ internal sealed class ReplContext
     /// </summary>
     public ImmutableArray<MetadataReference> MetadataReferences => this.metadataReferences.ToImmutable();
 
+    /// <summary>
+    /// The assembly load context of the REPL.
+    /// </summary>
+    public AssemblyLoadContext AssemblyLoadContext => this.assemblyLoadContext;
+
     // Symbols and imports
     private readonly ImmutableArray<string>.Builder globalImports = ImmutableArray.CreateBuilder<string>();
     private readonly ImmutableArray<(string Name, string FullPath)>.Builder globalAliases

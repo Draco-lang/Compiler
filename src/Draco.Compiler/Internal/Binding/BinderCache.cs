@@ -58,6 +58,7 @@ internal sealed class BinderCache(Compilation compilation)
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         if (!this.compilation.GlobalImports.IsDefault) binder = new GlobalImportsBinder(binder);
         binder = new ModuleBinder(binder, this.compilation.RootModule);
+        binder = new ModuleBinder(binder, this.compilation.SourceModule);
         return binder;
     }
 

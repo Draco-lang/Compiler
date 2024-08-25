@@ -141,7 +141,9 @@ public sealed class ReplSession
         var tree = ToSyntaxTree(node);
 
         // Create a script
-        var script = new Script<object?>(this.MakeCompilation(tree));
+        var script = new Script<object?>(
+            compilation: this.MakeCompilation(tree),
+            assemblyLoadContext: this.context.AssemblyLoadContext);
 
         // Try to execute
         var result = script.Execute();

@@ -5,6 +5,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Syntax;
 
@@ -12,7 +13,7 @@ namespace Draco.Compiler.Internal.Binding;
 
 internal partial class Binder
 {
-    protected void ConstraintReturnType(
+    protected virtual void ConstraintReturnType(
         SyntaxNode returnSyntax,
         BindingTask<BoundExpression> returnValue,
         ConstraintSolver constraints,

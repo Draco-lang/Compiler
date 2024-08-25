@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Loader;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Symbols.Script;
 
@@ -13,6 +14,11 @@ namespace Draco.Compiler.Api.Scripting;
 /// <typeparam name="TResult">The execution result type.</typeparam>
 public sealed class Script<TResult>
 {
+    /// <summary>
+    /// The assembly load context of the script.
+    /// </summary>
+    public AssemblyLoadContext AssemblyLoadContext { get; }
+
     /// <summary>
     /// The compilation of the script.
     /// </summary>
@@ -69,13 +75,17 @@ public sealed class Script<TResult>
     // Cached errors, if the script failed to compile
     private ImmutableArray<Diagnostic> errors;
 
-    internal Script(Compilation compilation, string? entryPoint = null)
+    internal Script(
+        Compilation compilation,
+        string? entryPoint = null,
+        AssemblyLoadContext? assemblyLoadContext = null)
     {
         if (!compilation.Flags.HasFlag(CompilationFlags.ScriptingMode))
         {
             throw new InvalidOperationException("the compilation is not in scripting mode");
         }
 
+        this.AssemblyLoadContext = assemblyLoadContext ?? AssemblyLoadContext.Default;
         this.Compilation = compilation;
         this.EntryPoint = entryPoint;
     }
@@ -122,12 +132,10 @@ public sealed class Script<TResult>
             return null;
         }
 
-        // Load emitted bytes as assembly
+        // Load emitted bytes as assembly and cache
         peStream.Position = 0;
-        var peBytes = peStream.ToArray();
+        this.assembly = this.AssemblyLoadContext.LoadFromStream(peStream);
 
-        // Cache the assembly
-        this.assembly = Assembly.Load(peBytes);
         return this.assembly;
     }
 

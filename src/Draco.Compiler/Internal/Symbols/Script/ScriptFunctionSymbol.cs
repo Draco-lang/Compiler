@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Script;
 /// A function defined inside a script.
 /// </summary>
 internal sealed class ScriptFunctionSymbol(
-    Symbol containingSymbol,
+    ScriptModuleSymbol containingSymbol,
     FunctionDeclarationSyntax syntax) : SyntaxFunctionSymbol(containingSymbol, syntax)
 {
     public override BoundStatement Body => throw new System.NotImplementedException();

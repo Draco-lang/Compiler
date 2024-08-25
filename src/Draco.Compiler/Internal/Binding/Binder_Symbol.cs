@@ -86,7 +86,21 @@ internal partial class Binder
         {
             if (stmt is DeclarationStatementSyntax declStmt)
             {
-                // TODO
+                var decl = declStmt.Declaration;
+                // Imports are skipped
+                if (decl is ImportDeclarationSyntax) continue;
+                // Globals mean an assignment into the eval function
+                if (decl is VariableDeclarationSyntax varDecl)
+                {
+                    // TODO
+                    continue;
+                }
+                // Functions are just bound in this context
+                if (decl is FunctionDeclarationSyntax funcDecl)
+                {
+                    // TODO
+                    continue;
+                }
             }
             else
             {

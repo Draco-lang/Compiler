@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -101,7 +102,10 @@ internal partial class Binder
                     var symbol = module.Members
                         .OfType<ScriptGlobalSymbol>()
                         .First(g => g.DeclaringSyntax == varDecl);
-                    BindGlobal(symbol, varDecl);
+
+                    var binding = BindGlobal(symbol);
+                    globalBindings.Add(varDecl, binding);
+
                     continue;
                 }
                 // Functions are just bound in this context
@@ -111,7 +115,10 @@ internal partial class Binder
                     var symbol = module.Members
                         .OfType<ScriptFunctionSymbol>()
                         .First(f => f.DeclaringSyntax == funcDecl);
-                    BindFunction(symbol, funcDecl);
+
+                    var binding = BindFunction(symbol);
+                    functionBodies.Add(funcDecl, binding);
+
                     continue;
                 }
             }
@@ -141,14 +148,37 @@ internal partial class Binder
                 value: BoundUnitExpression.Default)),
             EvalType: evalType);
 
-        void BindGlobal(GlobalSymbol symbol, VariableDeclarationSyntax syntax)
+        GlobalBinding BindGlobal(ScriptGlobalSymbol symbol)
         {
-            // TODO
+            var typeSyntax = symbol.DeclaringSyntax.Type;
+            var valueSyntax = symbol.DeclaringSyntax.Value;
+
+            var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
+            var valueTask = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, solver, diagnostics);
+
+            // Infer declared type
+            var declaredType = type ?? solver.AllocateTypeVariable();
+
+            // Add assignability constraint, if needed
+            if (valueTask is not null)
+            {
+                solver.Assignable(
+                    declaredType,
+                    valueTask.GetResultType(valueSyntax!.Value, solver, diagnostics),
+                    valueSyntax.Value);
+            }
+
+            // TODO: Add assignment to eval function
+            // TODO: Return binding
         }
 
-        void BindFunction(FunctionSymbol symbol, FunctionDeclarationSyntax syntax)
+        BoundStatement BindFunction(ScriptFunctionSymbol symbol)
         {
-            // TODO
+            var functionName = symbol.DeclaringSyntax.Name.Text;
+            var constraints = new ConstraintSolver(symbol.DeclaringSyntax, $"function {functionName}");
+            var statementTask = this.BindStatement(symbol.DeclaringSyntax.Body, constraints, diagnostics);
+
+            // TODO: return statement
         }
     }
 }

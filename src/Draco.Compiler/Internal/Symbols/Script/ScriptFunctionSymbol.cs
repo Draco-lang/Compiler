@@ -12,6 +12,7 @@ internal sealed class ScriptFunctionSymbol(
     ScriptModuleSymbol containingSymbol,
     FunctionDeclarationSyntax syntax) : SyntaxFunctionSymbol(containingSymbol, syntax)
 {
-    public override BoundStatement Body => throw new System.NotImplementedException();
+    public override BoundStatement Body =>
+        ((ScriptModuleSymbol)this.ContainingSymbol).ScriptBindings.FunctionBodies[this.DeclaringSyntax];
     public override Visibility Visibility => Visibility.Public;
 }

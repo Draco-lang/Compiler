@@ -11,7 +11,7 @@ namespace Draco.Compiler.Internal.Symbols.Script;
 /// </summary>
 internal sealed class ScriptEvalFunctionSymbol(
     ScriptModuleSymbol containingSymbol,
-    ScriptEntrySyntax syntax) : FunctionSymbol, ISourceSymbol
+    ScriptEntrySyntax syntax) : FunctionSymbol
 {
     public override ScriptModuleSymbol ContainingSymbol => containingSymbol;
     public override ImmutableArray<ParameterSymbol> Parameters => [];
@@ -19,8 +19,6 @@ internal sealed class ScriptEvalFunctionSymbol(
     public override ScriptEntrySyntax DeclaringSyntax => syntax;
 
     public override string Name => CompilerConstants.ScriptEntryPointName;
-    public override TypeSymbol ReturnType => throw new System.NotImplementedException();
-    public override BoundStatement Body => throw new System.NotImplementedException();
-
-    public void Bind(IBinderProvider binderProvider) => throw new System.NotImplementedException();
+    public override TypeSymbol ReturnType => this.ContainingSymbol.ScriptBindings.EvalType;
+    public override BoundStatement Body => this.ContainingSymbol.ScriptBindings.EvalBody;
 }

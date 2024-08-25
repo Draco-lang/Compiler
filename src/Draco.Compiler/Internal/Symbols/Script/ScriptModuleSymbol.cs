@@ -29,6 +29,11 @@ internal sealed class ScriptModuleSymbol(
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override string Name => this.DeclaringCompilation.RootModulePath;
 
+    public ScriptBinding ScriptBindings => this.BindScriptBindingsIfNeeded(this.DeclaringCompilation!);
+    private ScriptBinding scriptBindings;
+
+    private object buildLock = new();
+
     /// <summary>
     /// The evaluation function of the script.
     /// </summary>
@@ -83,6 +88,21 @@ internal sealed class ScriptModuleSymbol(
         result.Add(evalFunction);
 
         return result.ToImmutable();
+    }
+
+    private ScriptBinding BindScriptBindingsIfNeeded(IBinderProvider binderProvider)
+    {
+        if (!this.scriptBindings.IsDefault) return this.scriptBindings;
+
+        lock (this.buildLock)
+        {
+            if (!this.scriptBindings.IsDefault) return this.scriptBindings;
+
+            var binder = binderProvider.GetBinder(this.DeclaringSyntax);
+            var result = binder.BindScript(this, binderProvider.DiagnosticBag);
+            this.scriptBindings = result;
+            return result;
+        }
     }
 
     private Symbol BuildMember(DeclarationSyntax decl) => decl switch

@@ -16,4 +16,13 @@ internal readonly record struct ScriptBinding(
     ImmutableDictionary<VariableDeclarationSyntax, GlobalBinding> GlobalBindings,
     ImmutableDictionary<FunctionDeclarationSyntax, BoundStatement> FunctionBodies,
     BoundStatement EvalBody,
-    TypeSymbol EvalType);
+    TypeSymbol EvalType)
+{
+    /// <summary>
+    /// True if this binding is the default binding.
+    /// </summary>
+    public bool IsDefault => this.GlobalBindings.IsEmpty
+                          && this.FunctionBodies.IsEmpty
+                          && this.EvalBody is null
+                          && this.EvalType is null;
+}

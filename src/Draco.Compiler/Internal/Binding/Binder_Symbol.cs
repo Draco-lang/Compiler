@@ -10,6 +10,7 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
+using static Draco.Compiler.Internal.BoundTree.BoundTreeFactory;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -121,5 +122,14 @@ internal partial class Binder
                 evalFuncStatements.Add(evalFuncStmt);
             }
         }
+
+        return new ScriptBinding(
+            GlobalBindings: globalBindings.ToImmutable(),
+            FunctionBodies: functionBodies.ToImmutable(),
+            EvalBody: ExpressionStatement(BlockExpression(
+                locals: [],
+                statements: evalFuncStatements.Select(s => s.Result).ToImmutableArray(),
+                value: BoundUnitExpression.Default)),
+            EvalType: TODO);
     }
 }

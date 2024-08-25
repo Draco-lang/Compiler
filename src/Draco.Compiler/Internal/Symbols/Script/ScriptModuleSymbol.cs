@@ -29,6 +29,9 @@ internal sealed class ScriptModuleSymbol(
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override string Name => this.DeclaringCompilation.RootModulePath;
 
+    /// <summary>
+    /// The binding results.
+    /// </summary>
     public ScriptBinding ScriptBindings => this.BindScriptBindingsIfNeeded(this.DeclaringCompilation!);
     private ScriptBinding scriptBindings;
 

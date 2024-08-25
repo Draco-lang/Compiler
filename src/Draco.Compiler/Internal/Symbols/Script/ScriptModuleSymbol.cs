@@ -35,7 +35,7 @@ internal sealed class ScriptModuleSymbol(
     public ScriptBinding ScriptBindings => this.BindScriptBindingsIfNeeded(this.DeclaringCompilation!);
     private ScriptBinding scriptBindings;
 
-    private object buildLock = new();
+    private readonly object buildLock = new();
 
     /// <summary>
     /// The evaluation function of the script.
@@ -49,6 +49,20 @@ internal sealed class ScriptModuleSymbol(
         .OfType<DeclarationStatementSyntax>()
         .Select(s => s.Declaration)
         .OfType<ImportDeclarationSyntax>();
+
+    /// <summary>
+    /// The public symbol aliases of the script that can be used to import them for a future context.
+    /// </summary>
+    public IEnumerable<(string Name, string FullPath)> PublicSymbolAliases => this.Members
+        .Where(m => !m.IsSpecialName)
+        .Select(m => (Name: m.Name, FullPath: m.MetadataFullName));
+
+    /// <summary>
+    /// The global imports that can be used to import this scripts context in a future context.
+    /// </summary>
+    public GlobalImports GlobalImports => new(
+        ModuleImports: this.Imports.Select(i => SyntaxFacts.ImportPathToString(i.Path)).ToImmutableArray(),
+        ImportAliases: this.PublicSymbolAliases.ToImmutableArray());
 
     public void Bind(IBinderProvider binderProvider) =>
         this.BindMembersIfNeeded(binderProvider);

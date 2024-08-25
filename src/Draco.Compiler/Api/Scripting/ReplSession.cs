@@ -251,13 +251,6 @@ public sealed class ReplSession
             ? null
             : this.previousEntries[^1].Compilation.MetadataAssembliesDict);
 
-    private static string ExtractImportPath(ImportPathSyntax path) => path switch
-    {
-        RootImportPathSyntax root => root.Name.Text,
-        MemberImportPathSyntax member => $"{ExtractImportPath(member.Accessed)}.{member.Member.Text}",
-        _ => throw new ArgumentOutOfRangeException(nameof(path)),
-    };
-
     private static bool IsEmptyTree(SyntaxTree tree) =>
         tree.Root is ScriptEntrySyntax { Statements.Count: 0, Value: null };
 }

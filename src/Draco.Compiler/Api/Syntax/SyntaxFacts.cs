@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -161,4 +162,16 @@ public static class SyntaxFacts
         Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Kind == TriviaKind.Whitespace);
         return str.CloseQuotes.LeadingTrivia[1].Text;
     }
+
+    /// <summary>
+    /// Extracts the import path from an <see cref="ImportPathSyntax"/> as a string.
+    /// </summary>
+    /// <param name="path">The path to extract.</param>
+    /// <returns>The string representation of <paramref name="path"/>.</returns>
+    public static string ImportPathToString(ImportPathSyntax path) => path switch
+    {
+        RootImportPathSyntax root => root.Name.Text,
+        MemberImportPathSyntax member => $"{ImportPathToString(member.Accessed)}.{member.Member.Text}",
+        _ => throw new ArgumentOutOfRangeException(nameof(path)),
+    };
 }

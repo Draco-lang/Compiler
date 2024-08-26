@@ -35,13 +35,8 @@ public sealed class ReplSession
     /// <returns>True, if <paramref name="text"/> is a complete entry.</returns>
     public static bool IsCompleteEntry(string text)
     {
-        // We add a newline to make sure we don't peek past with trailing trivia if not needed
-        text = string.Concat(text, Environment.NewLine);
-        var reader = new DetectOverpeekSourceReader(SourceReader.From(text));
-        var tree = SyntaxTree.ParseScript(reader);
-        // We either haven't overpeeked, or as a special case, we have an empty compilation unit
-        // which signals an empty entry
-        return !reader.HasOverpeeked || IsEmptyTree(tree);
+        var tree = SyntaxTree.ParseScript(SourceReader.From(text));
+        return SyntaxFacts.IsCompleteEntry(tree.Root);
     }
 
     private readonly List<Script<object?>> previousEntries = [];
@@ -178,7 +173,4 @@ public sealed class ReplSession
         DeclarationSyntax d => SyntaxTree.Create(ScriptEntry(SyntaxList<StatementSyntax>(DeclarationStatement(d)), null, EndOfInput)),
         _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
-
-    private static bool IsEmptyTree(SyntaxTree tree) =>
-        tree.Root is ScriptEntrySyntax { Statements.Count: 0, Value: null };
 }

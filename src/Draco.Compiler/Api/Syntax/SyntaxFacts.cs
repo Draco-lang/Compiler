@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -174,4 +175,68 @@ public static class SyntaxFacts
         MemberImportPathSyntax member => $"{ImportPathToString(member.Accessed)}.{member.Member.Text}",
         _ => throw new ArgumentOutOfRangeException(nameof(path)),
     };
+
+    /// <summary>
+    /// Checks, if the given node is a complete entry.
+    /// </summary>
+    /// <param name="node">The node to check.</param>
+    /// <returns>True, if <paramref name="node"/> is a complete entry, false otherwise.</returns>
+    public static bool IsCompleteEntry(SyntaxNode? node)
+    {
+        static bool IsMissing(SyntaxNode? node) => node switch
+        {
+            SyntaxToken t => t.Kind != TokenKind.EndOfInput && t.Text.Length == 0,
+            UnexpectedDeclarationSyntax d => d.Nodes.Count == 0,
+            UnexpectedFunctionBodySyntax b => b.Nodes.Count == 0,
+            UnexpectedTypeSyntax t => t.Nodes.Count == 0,
+            UnexpectedStatementSyntax s => s.Nodes.Count == 0,
+            UnexpectedExpressionSyntax e => e.Nodes.Count == 0,
+            UnexpectedStringPartSyntax p => p.Nodes.Count == 0,
+            _ => false,
+        };
+
+        if (node is null) return true;
+        return node switch
+        {
+            _ when IsMissing(node) => false,
+            CompilationUnitSyntax cu => !IsMissing(cu.Declarations[^1]),
+            GenericParameterListSyntax gpl => !IsMissing(gpl.CloseBracket),
+            ModuleDeclarationSyntax md => !IsMissing(md.CloseBrace),
+            ImportDeclarationSyntax id => !IsMissing(id.Semicolon),
+            FunctionDeclarationSyntax fd => IsCompleteEntry(fd.Body),
+            ParameterSyntax p => IsCompleteEntry(p.Type),
+            BlockFunctionBodySyntax bfb => !IsMissing(bfb.CloseBrace),
+            InlineFunctionBodySyntax ifb => !IsMissing(ifb.Semicolon),
+            LabelDeclarationSyntax ld => !IsMissing(ld.Colon),
+            VariableDeclarationSyntax vd => !IsMissing(vd.Semicolon),
+            NameTypeSyntax nt => !IsMissing(nt.Name),
+            MemberTypeSyntax mt => !IsMissing(mt.Member),
+            GenericTypeSyntax gt => !IsMissing(gt.CloseBracket),
+            DeclarationStatementSyntax ds => IsCompleteEntry(ds.Declaration),
+            ExpressionStatementSyntax es => IsCompleteEntry(es.Expression) && !IsMissing(es.Semicolon),
+            StatementExpressionSyntax se => IsCompleteEntry(se.Statement),
+            BlockExpressionSyntax be => !IsMissing(be.CloseBrace),
+            IfExpressionSyntax ie => IsCompleteEntry(ie.Then) && IsCompleteEntry(ie.Else),
+            WhileExpressionSyntax we => IsCompleteEntry(we.Then),
+            ForExpressionSyntax fe => IsCompleteEntry(fe.Then),
+            GotoExpressionSyntax ge => IsCompleteEntry(ge.Target),
+            ReturnExpressionSyntax re => IsCompleteEntry(re.Value),
+            LiteralExpressionSyntax le => !IsMissing(le.Literal),
+            CallExpressionSyntax ce => !IsMissing(ce.CloseParen),
+            IndexExpressionSyntax ie => !IsMissing(ie.CloseBracket),
+            GenericExpressionSyntax ge => !IsMissing(ge.CloseBracket),
+            NameExpressionSyntax ne => !IsMissing(ne.Name),
+            MemberExpressionSyntax me => !IsMissing(me.Member),
+            UnaryExpressionSyntax ue => IsCompleteEntry(ue.Operand),
+            BinaryExpressionSyntax be => IsCompleteEntry(be.Right),
+            RelationalExpressionSyntax re => IsCompleteEntry(re.Comparisons[^1].Right),
+            GroupingExpressionSyntax ge => !IsMissing(ge.CloseParen),
+            StringExpressionSyntax se => !IsMissing(se.CloseQuotes),
+            NameLabelSyntax nl => !IsMissing(nl.Name),
+            ScriptEntrySyntax se => se.Value is null
+                ? se.Statements.Count == 0 || IsCompleteEntry(se.Statements[^1])
+                : IsCompleteEntry(se.Value),
+            _ => true,
+        };
+    }
 }

@@ -69,6 +69,9 @@ public sealed class CompletionService
             BlockFunctionBodySyntax => CompletionContext.Declaration | CompletionContext.Expression,
             _ => node.Parent switch
             {
+                // Special case, we are in a script
+                NameExpressionSyntax expr when expr.Parent is ScriptEntrySyntax =>
+                    CompletionContext.Declaration | CompletionContext.Expression,
                 // Type expression
                 NameTypeSyntax => CompletionContext.Type,
                 // Parameter name declaration

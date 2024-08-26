@@ -1,6 +1,10 @@
 using System;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding.Tasks;
+using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Script;
 
@@ -19,6 +23,16 @@ internal sealed class ScriptModuleBinder : ModuleBinder
     public ScriptModuleBinder(Binder parent, ScriptModuleSymbol symbol)
         : base(parent, symbol)
     {
+    }
+
+    protected override void ConstraintReturnType(
+        SyntaxNode returnSyntax,
+        BindingTask<BoundExpression> returnValue,
+        ConstraintSolver constraints,
+        DiagnosticBag diagnostics)
+    {
+        // NOTE: We ignore script module return constraints, as they have implicit returns
+        // which are hopefully correct
     }
 
     internal override void LookupLocal(

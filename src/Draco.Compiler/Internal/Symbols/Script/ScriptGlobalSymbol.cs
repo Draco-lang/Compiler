@@ -13,10 +13,12 @@ namespace Draco.Compiler.Internal.Symbols.Script;
 /// </summary>
 internal sealed class ScriptGlobalSymbol(
     ScriptModuleSymbol containingSymbol,
-    VariableDeclarationSyntax syntax) : SyntaxGlobalSymbol(containingSymbol, syntax)
+    VariableDeclarationSyntax syntax) : SyntaxGlobalSymbol(containingSymbol, syntax), ISourceSymbol
 {
     public override TypeSymbol Type => this.type ??= new TypeVariable(1);
     private TypeSymbol? type;
 
     public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
+
+    public override void Bind(IBinderProvider binderProvider) => containingSymbol.Bind(binderProvider);
 }

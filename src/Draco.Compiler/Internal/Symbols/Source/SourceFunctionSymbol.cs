@@ -30,7 +30,7 @@ internal sealed class SourceFunctionSymbol(
     {
     }
 
-    public void Bind(IBinderProvider binderProvider)
+    public override void Bind(IBinderProvider binderProvider)
     {
         this.BindGenericParametersIfNeeded(binderProvider);
         this.BindParametersIfNeeded(binderProvider);

@@ -34,7 +34,7 @@ internal sealed class SourceGlobalSymbol(
     {
     }
 
-    public void Bind(IBinderProvider binderProvider)
+    public override void Bind(IBinderProvider binderProvider)
     {
         var (_, value) = this.BindTypeAndValueIfNeeded(binderProvider);
 

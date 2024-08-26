@@ -86,20 +86,13 @@ public sealed partial class SemanticModel : IBinderProvider
                 break;
             }
             // NOTE: Only globals need binding
-            case VariableDeclarationSyntax varDecl when containingSymbol is SourceModuleSymbol containingModule:
+            case VariableDeclarationSyntax varDecl:
             {
                 // We need to search for this global
-                var globalSymbol = containingModule.Members
+                var globalSymbol = binder.ContainingSymbol?.Members
                     .OfType<SyntaxGlobalSymbol>()
                     .FirstOrDefault(s => s.Name == varDecl.Name.Text);
-                if (globalSymbol is SourceGlobalSymbol sourceGlobal)
-                {
-                    sourceGlobal.Bind(this);
-                }
-                else
-                {
-                    // TODO: Do we want to bind the parent of a script module for example?
-                }
+                globalSymbol?.Bind(this);
                 break;
             }
             case ImportDeclarationSyntax:
@@ -173,7 +166,7 @@ public sealed partial class SemanticModel : IBinderProvider
             }
 
             // Bind the function contents
-            if (func is SourceFunctionSymbol sourceFunc) sourceFunc.Bind(this);
+            func.Bind(this);
 
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
@@ -242,23 +235,11 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.GetBinder(syntax);
         var containingSymbol = binder.ContainingSymbol;
 
-        switch (containingSymbol)
+        // Source containers need to get bound
+        if (containingSymbol is ISourceSymbol sourceSymbol)
         {
-        case SyntaxFunctionSymbol func:
-        {
-            // Bind the function contents
-            if (func is SourceFunctionSymbol sourceFunc) sourceFunc.Bind(this);
-            break;
-        }
-        case SourceModuleSymbol module:
-        {
-            // Bind top-level members
-            foreach (var member in module.Members.OfType<ISourceSymbol>())
-            {
-                member.Bind(this);
-            }
-            break;
-        }
+            sourceSymbol.Bind(this);
+            foreach (var nested in containingSymbol.Members.OfType<ISourceSymbol>()) nested.Bind(this);
         }
 
         // Attempt to retrieve
@@ -318,24 +299,8 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.GetBinder(syntax);
         var containingSymbol = binder.ContainingSymbol;
 
-        switch (containingSymbol)
-        {
-        case SyntaxFunctionSymbol func:
-        {
-            // Bind the function contents
-            if (func is SourceFunctionSymbol sourceFunc) sourceFunc.Bind(this);
-            break;
-        }
-        case SourceModuleSymbol module:
-        {
-            // Bind top-level members
-            foreach (var member in module.Members.OfType<ISourceSymbol>())
-            {
-                member.Bind(this);
-            }
-            break;
-        }
-        }
+        // Source containers need to get bound
+        if (containingSymbol is ISourceSymbol sourceSymbol) sourceSymbol.Bind(this);
 
         // Attempt to retrieve
         this.TryGetBoundNode(syntax, out var node);

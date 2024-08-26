@@ -16,7 +16,7 @@ namespace Draco.Compiler.Internal.Symbols.Syntax;
 /// </summary>
 internal abstract class SyntaxFunctionSymbol(
     Symbol containingSymbol,
-    FunctionDeclarationSyntax syntax) : FunctionSymbol
+    FunctionDeclarationSyntax syntax) : FunctionSymbol, ISourceSymbol
 {
     public override Symbol ContainingSymbol => containingSymbol;
     public override FunctionDeclarationSyntax DeclaringSyntax => syntax;
@@ -40,6 +40,8 @@ internal abstract class SyntaxFunctionSymbol(
     internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
     public override abstract BoundStatement Body { get; }
+
+    public abstract void Bind(IBinderProvider binderProvider);
 
     protected ImmutableArray<TypeParameterSymbol> BindGenericParametersIfNeeded(IBinderProvider binderProvider) =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, () => this.BindGenericParameters(binderProvider));

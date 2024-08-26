@@ -64,8 +64,11 @@ internal sealed class ScriptModuleSymbol(
         ModuleImports: this.Imports.Select(i => SyntaxFacts.ImportPathToString(i.Path)).ToImmutableArray(),
         ImportAliases: this.PublicSymbolAliases.ToImmutableArray());
 
-    public void Bind(IBinderProvider binderProvider) =>
+    public void Bind(IBinderProvider binderProvider)
+    {
         this.BindMembersIfNeeded(binderProvider);
+        this.BindScriptBindingsIfNeeded(binderProvider);
+    }
 
     private ImmutableArray<Symbol> BindMembersIfNeeded(IBinderProvider binderProvider) =>
         InterlockedUtils.InitializeDefault(ref this.members, () => this.BindMembers(binderProvider));
@@ -117,11 +120,16 @@ internal sealed class ScriptModuleSymbol(
         {
             if (!this.scriptBindings.IsDefault) return this.scriptBindings;
 
-            var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-            var result = binder.BindScript(this, binderProvider.DiagnosticBag);
+            var result = this.BindScriptBindings(binderProvider);
             this.scriptBindings = result;
             return result;
         }
+    }
+
+    private ScriptBinding BindScriptBindings(IBinderProvider binderProvider)
+    {
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
+        return binder.BindScript(this, binderProvider.DiagnosticBag);
     }
 
     private Symbol? BuildMember(DeclarationSyntax decl) => decl switch

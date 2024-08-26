@@ -1,7 +1,9 @@
 using System.Threading;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Symbols.Syntax;
 
@@ -10,7 +12,7 @@ namespace Draco.Compiler.Internal.Symbols.Syntax;
 /// </summary>
 internal abstract class SyntaxGlobalSymbol(
     Symbol containingSymbol,
-    VariableDeclarationSyntax syntax) : GlobalSymbol
+    VariableDeclarationSyntax syntax) : GlobalSymbol, ISourceSymbol
 {
     public override Symbol ContainingSymbol => containingSymbol;
     public override VariableDeclarationSyntax DeclaringSyntax => syntax;
@@ -25,6 +27,8 @@ internal abstract class SyntaxGlobalSymbol(
     private SymbolDocumentation? documentation;
 
     internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
+
+    public abstract void Bind(IBinderProvider binderProvider);
 
     private SymbolDocumentation BuildDocumentation() =>
         MarkdownDocumentationExtractor.Extract(this);

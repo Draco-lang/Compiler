@@ -1,12 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
 using Draco.Compiler.Api;
-using Draco.Compiler.Api.Semantics;
-using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Scripting;
 

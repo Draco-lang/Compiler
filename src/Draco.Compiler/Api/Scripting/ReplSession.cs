@@ -1,25 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Scripting;
 using Draco.Compiler.Internal.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using CompilationUnitSyntax = Draco.Compiler.Api.Syntax.CompilationUnitSyntax;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
-using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSyntax;
-using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
-using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
-using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
 using ScriptEntrySyntax = Draco.Compiler.Api.Syntax.ScriptEntrySyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
-using SyntaxToken = Draco.Compiler.Api.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Api.Scripting;
 

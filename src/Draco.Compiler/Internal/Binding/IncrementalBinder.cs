@@ -7,7 +7,6 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 
 // NOTE: We don't follow the file-hierarchy here

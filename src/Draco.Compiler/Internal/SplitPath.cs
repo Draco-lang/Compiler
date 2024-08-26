@@ -17,6 +17,13 @@ internal readonly record struct SplitPath(ReadOnlyMemory<string> Parts)
     public static SplitPath Empty = new(ReadOnlyMemory<string>.Empty);
 
     /// <summary>
+    /// Creates a <see cref="SplitPath"/> from path segments.
+    /// </summary>
+    /// <param name="parts">The path segments.</param>
+    /// <returns>A new <see cref="SplitPath"/> with the given path segments.</returns>
+    public static SplitPath FromParts(params string[] parts) => new(parts);
+
+    /// <summary>
     /// Creates a <see cref="SplitPath"/> from a file path, excluding the file name.
     /// </summary>
     /// <param name="path">The file path from which to create the <see cref="SplitPath"/>.</param>

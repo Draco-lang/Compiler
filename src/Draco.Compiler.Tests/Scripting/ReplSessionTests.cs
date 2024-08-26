@@ -2,9 +2,9 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using static Basic.Reference.Assemblies.Net80;
 
-namespace Draco.Compiler.Tests.Repl;
+namespace Draco.Compiler.Tests.Scripting;
 
-public sealed class BasicSessionTests
+public sealed class ReplSessionTests
 {
     private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
         .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
@@ -15,24 +15,28 @@ public sealed class BasicSessionTests
     [InlineData("2 < 3 < 4", true)]
     [InlineData("\"asd\" + \"def\"", "asddef")]
     [InlineData("\"1 + 2 = \\{1 + 2}\"", "1 + 2 = 3")]
+    [InlineData("func foo() {}", null)]
     [Theory]
     public void BasicExpressions(string input, object? output)
     {
         var replSession = new ReplSession([.. BclReferences]);
 
-        var ms = new MemoryStream();
-
-        var writer = new StreamWriter(ms);
-        writer.WriteLine(input);
-        writer.Flush();
-
-        ms.Position = 0;
-        var reader = new StreamReader(ms);
-
-        var result = replSession.Evaluate(reader);
+        var result = replSession.Evaluate(input);
 
         Assert.True(result.Success);
         Assert.Equal(output, result.Value);
+    }
+
+    [InlineData("func add(x: int32, y: int32) = x + y;")]
+    [Theory]
+    public void InvalidEntries(string input)
+    {
+        var replSession = new ReplSession([.. BclReferences]);
+
+        var result = replSession.Evaluate(input);
+
+        Assert.False(result.Success);
+        Assert.NotEmpty(result.Diagnostics);
     }
 
     [Fact]

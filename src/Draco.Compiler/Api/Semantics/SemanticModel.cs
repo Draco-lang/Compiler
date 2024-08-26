@@ -12,6 +12,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -38,8 +39,8 @@ public sealed partial class SemanticModel : IBinderProvider
     private readonly Compilation compilation;
 
     // Filled out by incremental binding
-    private readonly ConcurrentDictionary<SourceFunctionSymbol, BoundStatement> boundFunctions = new();
-    private readonly ConcurrentDictionary<SourceGlobalSymbol, (Internal.Symbols.TypeSymbol Type, BoundExpression? Value)> boundGlobals = new();
+    private readonly ConcurrentDictionary<SyntaxFunctionSymbol, BoundStatement> boundFunctions = new();
+    private readonly ConcurrentDictionary<SyntaxGlobalSymbol, GlobalBinding> boundGlobals = new();
     private readonly ConcurrentDictionary<SyntaxNode, BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 
@@ -85,11 +86,11 @@ public sealed partial class SemanticModel : IBinderProvider
                 break;
             }
             // NOTE: Only globals need binding
-            case VariableDeclarationSyntax varDecl when containingSymbol is SourceModuleSymbol containingModule:
+            case VariableDeclarationSyntax varDecl:
             {
                 // We need to search for this global
-                var globalSymbol = containingModule.Members
-                    .OfType<SourceGlobalSymbol>()
+                var globalSymbol = binder.ContainingSymbol?.Members
+                    .OfType<SyntaxGlobalSymbol>()
                     .FirstOrDefault(s => s.Name == varDecl.Name.Text);
                 globalSymbol?.Bind(this);
                 break;
@@ -151,7 +152,7 @@ public sealed partial class SemanticModel : IBinderProvider
 
         switch (containingSymbol)
         {
-        case SourceFunctionSymbol func:
+        case SyntaxFunctionSymbol func:
         {
             // This is just the function itself
             if (func.DeclaringSyntax == syntax) return containingSymbol;
@@ -234,23 +235,11 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.GetBinder(syntax);
         var containingSymbol = binder.ContainingSymbol;
 
-        switch (containingSymbol)
+        // Source containers need to get bound
+        if (containingSymbol is ISourceSymbol sourceSymbol)
         {
-        case SourceFunctionSymbol func:
-        {
-            // Bind the function contents
-            func.Bind(this);
-            break;
-        }
-        case SourceModuleSymbol module:
-        {
-            // Bind top-level members
-            foreach (var member in module.Members.OfType<ISourceSymbol>())
-            {
-                member.Bind(this);
-            }
-            break;
-        }
+            sourceSymbol.Bind(this);
+            foreach (var nested in containingSymbol.Members.OfType<ISourceSymbol>()) nested.Bind(this);
         }
 
         // Attempt to retrieve
@@ -310,24 +299,8 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.GetBinder(syntax);
         var containingSymbol = binder.ContainingSymbol;
 
-        switch (containingSymbol)
-        {
-        case SourceFunctionSymbol func:
-        {
-            // Bind the function contents
-            func.Bind(this);
-            break;
-        }
-        case SourceModuleSymbol module:
-        {
-            // Bind top-level members
-            foreach (var member in module.Members.OfType<ISourceSymbol>())
-            {
-                member.Bind(this);
-            }
-            break;
-        }
-        }
+        // Source containers need to get bound
+        if (containingSymbol is ISourceSymbol sourceSymbol) sourceSymbol.Bind(this);
 
         // Attempt to retrieve
         this.TryGetBoundNode(syntax, out var node);

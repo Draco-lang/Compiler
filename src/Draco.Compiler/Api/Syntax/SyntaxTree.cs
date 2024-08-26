@@ -58,6 +58,27 @@ public sealed class SyntaxTree
     }
 
     /// <summary>
+    /// Parses a script from the given <see cref="ISourceReader"/>.
+    /// </summary>
+    /// <param name="sourceReader">The source reader to parse from.</param>
+    /// <returns>The parsed tree.</returns>
+    internal static SyntaxTree ParseScript(ISourceReader sourceReader)
+    {
+        var syntaxDiagnostics = new SyntaxDiagnosticTable();
+
+        // Construct a lexer
+        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
+        // Construct a token source
+        var tokenSource = TokenSource.From(lexer);
+        // Construct a parser
+        var parser = new Parser(tokenSource, syntaxDiagnostics, parserMode: ParserMode.Repl);
+        // Parse a repl entry
+        var node = parser.ParseScriptEntry();
+        // Make it into a tree
+        return Create(node);
+    }
+
+    /// <summary>
     /// The <see cref="Syntax.SourceText"/> that the tree was parsed from.
     /// </summary>
     public SourceText SourceText { get; }

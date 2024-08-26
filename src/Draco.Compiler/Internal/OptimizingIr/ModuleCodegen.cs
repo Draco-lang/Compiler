@@ -5,6 +5,7 @@ using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr;
@@ -44,9 +45,11 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     public override void VisitGlobal(GlobalSymbol globalSymbol)
     {
-        if (globalSymbol is not SourceGlobalSymbol sourceGlobal) return;
+        if (globalSymbol is not SyntaxGlobalSymbol syntaxGlobal) return;
 
-        this.module.DefineGlobal(sourceGlobal);
+        this.module.DefineGlobal(syntaxGlobal);
+
+        if (syntaxGlobal is not SourceGlobalSymbol sourceGlobal) return;
 
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)

@@ -7,10 +7,11 @@ using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
 
+// NOTE: Not sealed, as script module binder is derived from this
 /// <summary>
 /// Binds on a module level.
 /// </summary>
-internal sealed class ModuleBinder : Binder
+internal class ModuleBinder : Binder
 {
     public override SyntaxNode? DeclaringSyntax => this.symbol.DeclaringSyntax;
 

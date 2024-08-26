@@ -3,30 +3,20 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
-using Draco.Compiler.Internal.Documentation;
-using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.FlowAnalysis;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
+/// <summary>
+/// An in-source defined global variable.
+/// </summary>
 internal sealed class SourceGlobalSymbol(
     Symbol containingSymbol,
-    GlobalDeclaration declaration) : GlobalSymbol, ISourceSymbol
+    VariableDeclarationSyntax syntax) : SyntaxGlobalSymbol(containingSymbol, syntax), ISourceSymbol
 {
     public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
-
-    public override bool IsMutable => declaration.Syntax.Keyword.Kind == TokenKind.KeywordVar;
-    public override Symbol ContainingSymbol { get; } = containingSymbol;
-    public override string Name => declaration.Name;
-
-    public override VariableDeclarationSyntax DeclaringSyntax => declaration.Syntax;
-
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
-
-    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
-    private SymbolDocumentation? documentation;
-
-    internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
     // IMPORTANT: flag is type, needs to be written last
     // NOTE: We check the TYPE here, as value is nullable
@@ -37,7 +27,12 @@ internal sealed class SourceGlobalSymbol(
 
     private readonly object buildLock = new();
 
-    public void Bind(IBinderProvider binderProvider)
+    public SourceGlobalSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
+        : this(containingSymbol, declaration.Syntax)
+    {
+    }
+
+    public override void Bind(IBinderProvider binderProvider)
     {
         var (_, value) = this.BindTypeAndValueIfNeeded(binderProvider);
 
@@ -64,12 +59,9 @@ internal sealed class SourceGlobalSymbol(
         }
     }
 
-    private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValue(IBinderProvider binderProvider)
+    private GlobalBinding BindTypeAndValue(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindGlobal(this, binderProvider.DiagnosticBag);
     }
-
-    private SymbolDocumentation BuildDocumentation() =>
-        MarkdownDocumentationExtractor.Extract(this);
 }

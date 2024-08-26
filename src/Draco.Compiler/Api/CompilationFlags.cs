@@ -14,9 +14,10 @@ public enum CompilationFlags
     None = 0,
 
     /// <summary>
-    /// All defined symbols will be public in the compilation.
+    /// The compilation is in scripting mode.
     ///
-    /// This can be used by things like the REPL to omit visibility.
+    /// This generally means that it will only consume a single syntax tree with a single
+    /// script entry syntax.
     /// </summary>
-    ImplicitPublicSymbols = 1 << 0,
+    ScriptingMode = 1 << 0,
 }

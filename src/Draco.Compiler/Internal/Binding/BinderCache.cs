@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -32,6 +34,7 @@ internal sealed class BinderCache(Compilation compilation)
     private Binder BuildBinder(SyntaxNode syntax) => syntax switch
     {
         CompilationUnitSyntax cu => this.BuildCompilationUnitBinder(cu),
+        ScriptEntrySyntax entry => this.BuildScriptEntryBinder(entry),
         ModuleDeclarationSyntax mo => this.BuildModuleBinder(mo),
         FunctionDeclarationSyntax decl => this.BuildFunctionDeclarationBinder(decl),
         FunctionBodySyntax body => this.BuildFunctionBodyBinder(body),
@@ -47,6 +50,16 @@ internal sealed class BinderCache(Compilation compilation)
         if (!this.compilation.GlobalImports.IsDefault) binder = new GlobalImportsBinder(binder);
         binder = new ModuleBinder(binder, this.compilation.RootModule);
         binder = new ModuleBinder(binder, this.compilation.GetModuleForSyntaxTree(syntax.Tree));
+        binder = WrapInImportBinder(binder, syntax);
+        return binder;
+    }
+
+    private Binder BuildScriptEntryBinder(ScriptEntrySyntax syntax)
+    {
+        var binder = new IntrinsicsBinder(this.compilation) as Binder;
+        if (!this.compilation.GlobalImports.IsDefault) binder = new GlobalImportsBinder(binder);
+        binder = new ModuleBinder(binder, this.compilation.RootModule);
+        binder = new ScriptModuleBinder(binder, (ScriptModuleSymbol)this.compilation.SourceModule);
         binder = WrapInImportBinder(binder, syntax);
         return binder;
     }
@@ -74,7 +87,7 @@ internal sealed class BinderCache(Compilation compilation)
         // For that we unwrap from the injected import layer(s)
         var parent = UnwrapFromImportBinder(binder);
         var functionSymbol = parent.DeclaredSymbols
-            .OfType<SourceFunctionSymbol>()
+            .OfType<SyntaxFunctionSymbol>()
             .FirstOrDefault(member => member.DeclaringSyntax == syntax);
         Debug.Assert(functionSymbol is not null);
         // NOTE: We are not using the unwrapped parent, we need the injected import layers

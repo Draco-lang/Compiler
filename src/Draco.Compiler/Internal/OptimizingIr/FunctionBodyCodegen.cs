@@ -9,6 +9,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
@@ -520,7 +521,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         // Functions with inline codegen
         FunctionSymbol f when f.Codegen is not null => f,
         // Source functions
-        SourceFunctionSymbol func => this.DefineProcedure(func).Symbol,
+        SyntaxFunctionSymbol func => this.DefineProcedure(func).Symbol,
         // Metadata functions
         MetadataMethodSymbol m => m,
         _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),

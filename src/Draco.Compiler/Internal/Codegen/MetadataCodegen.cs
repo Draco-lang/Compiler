@@ -12,6 +12,7 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -229,8 +230,10 @@ internal sealed class MetadataCodegen : MetadataWriter
                 }));
         }
 
-        case SourceModuleSymbol module:
+        case SourceModuleSymbol:
+        case ScriptModuleSymbol:
         {
+            var module = (ModuleSymbol)symbol;
             var irModule = this.assembly.Lookup(module);
             return this.GetModuleReferenceHandle(irModule);
         }

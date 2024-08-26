@@ -4,7 +4,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
 using Draco.Compiler.Api;
-using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Scripting;
 
@@ -25,6 +24,11 @@ internal sealed class ReplContext
     /// The metadata references for the context to be used in the compilation.
     /// </summary>
     public ImmutableArray<MetadataReference> MetadataReferences => this.metadataReferences.ToImmutable();
+
+    /// <summary>
+    /// The assembly load context of the REPL.
+    /// </summary>
+    public AssemblyLoadContext AssemblyLoadContext => this.assemblyLoadContext;
 
     // Symbols and imports
     private readonly ImmutableArray<string>.Builder globalImports = ImmutableArray.CreateBuilder<string>();
@@ -52,18 +56,22 @@ internal sealed class ReplContext
     public void AddImport(string path) => this.globalImports.Add(path);
 
     /// <summary>
-    /// Adds a symbol to be accessible in the context.
-    /// Might shadows earlier symbols added.
+    /// Adds a set of global imports to the context.
     /// </summary>
-    /// <param name="symbol">The symbol to add to the context.</param>
-    public void AddSymbol(Symbol symbol)
+    /// <param name="globalImports">The global imports to add.</param>
+    public void AddAll(GlobalImports globalImports)
     {
-        // We remove shadowed symbols
-        // NOTE: For simplicity and to not cross compilation borders, we remove by name
-        this.globalAliases.RemoveAll(s => s.Name == symbol.Name);
+        this.globalImports.AddRange(globalImports.ModuleImports);
 
-        // Add the new symbol
-        this.globalAliases.Add((symbol.Name, symbol.MetadataFullName));
+        foreach (var alias in globalImports.ImportAliases)
+        {
+            // We remove shadowed symbols
+            // NOTE: For simplicity and to not cross compilation borders, we remove by name
+            this.globalAliases.RemoveAll(s => s.Name == alias.Name);
+
+            // Add the new symbol
+            this.globalAliases.Add(alias);
+        }
     }
 
     /// <summary>

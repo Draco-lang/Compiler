@@ -1,21 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Scripting;
 using Draco.Compiler.Internal.Syntax;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
-using CompilationUnitSyntax = Draco.Compiler.Api.Syntax.CompilationUnitSyntax;
 using DeclarationSyntax = Draco.Compiler.Api.Syntax.DeclarationSyntax;
 using ExpressionSyntax = Draco.Compiler.Api.Syntax.ExpressionSyntax;
-using ImportDeclarationSyntax = Draco.Compiler.Api.Syntax.ImportDeclarationSyntax;
-using ImportPathSyntax = Draco.Compiler.Api.Syntax.ImportPathSyntax;
-using MemberImportPathSyntax = Draco.Compiler.Api.Syntax.MemberImportPathSyntax;
-using RootImportPathSyntax = Draco.Compiler.Api.Syntax.RootImportPathSyntax;
+using ScriptEntrySyntax = Draco.Compiler.Api.Syntax.ScriptEntrySyntax;
 using StatementSyntax = Draco.Compiler.Api.Syntax.StatementSyntax;
 using SyntaxNode = Draco.Compiler.Api.Syntax.SyntaxNode;
 
@@ -33,21 +27,11 @@ public sealed class ReplSession
     /// <returns>True, if <paramref name="text"/> is a complete entry.</returns>
     public static bool IsCompleteEntry(string text)
     {
-        // We add a newline to make sure we don't peek past with trailing trivia if not needed
-        text = string.Concat(text, Environment.NewLine);
-        var reader = new DetectOverpeekSourceReader(SourceReader.From(text));
-        var entry = ParseReplEntry(reader);
-        // We either haven't overpeeked, or as a special case, we have an empty compilation unit
-        // which signals an empty entry
-        return !reader.HasOverpeeked
-            || entry.Root is CompilationUnitSyntax { Declarations.Count: 0 };
+        var tree = SyntaxTree.ParseScript(SourceReader.From(text));
+        return SyntaxFacts.IsCompleteEntry(tree.Root);
     }
 
-    private readonly record struct HistoryEntry(Compilation Compilation, Assembly Assembly);
-
-    private const string EvalFunctionName = ".eval";
-
-    private readonly List<HistoryEntry> previousEntries = [];
+    private readonly List<Script<object?>> previousEntries = [];
     private readonly ReplContext context = new();
 
     public ReplSession(ImmutableArray<MetadataReference> metadataReferences)
@@ -120,7 +104,7 @@ public sealed class ReplSession
     /// <returns>The execution result.</returns>
     internal ExecutionResult<TResult> Evaluate<TResult>(ISourceReader sourceReader)
     {
-        var tree = ParseReplEntry(sourceReader);
+        var tree = SyntaxTree.ParseScript(sourceReader);
 
         // Check for syntax errors
         if (tree.HasErrors)
@@ -140,138 +124,45 @@ public sealed class ReplSession
     /// <returns>The execution result.</returns>
     public ExecutionResult<TResult> Evaluate<TResult>(SyntaxNode node)
     {
-        // Check for an empty entry
-        if (node is CompilationUnitSyntax { Declarations.Count: 0 })
-        {
-            return ExecutionResult.Success(default(TResult)!);
-        }
-
-        // Check for imports
-        if (node is ImportDeclarationSyntax import)
-        {
-            this.context.AddImport(ExtractImportPath(import.Path));
-            return ExecutionResult.Success(default(TResult)!);
-        }
-
-        // Translate to a runnable function
-        var decl = node switch
-        {
-            ExpressionSyntax expr => this.ToDeclaration(expr),
-            StatementSyntax stmt => this.ToDeclaration(stmt),
-            DeclarationSyntax d => d,
-            _ => throw new ArgumentOutOfRangeException(nameof(node)),
-        };
-
         // Wrap in a tree
-        var tree = this.ToSyntaxTree(decl);
+        var tree = ToSyntaxTree(node);
 
-        // Find the relocated node in the tree, we need this to shift diagnostics
-        var relocatedNode = node switch
-        {
-            ExpressionSyntax expr => tree.FindInChildren<ExpressionSyntax>() as SyntaxNode,
-            StatementSyntax stmt => tree.FindInChildren<StatementSyntax>(),
-            DeclarationSyntax d => tree.FindInChildren<DeclarationSyntax>(1),
-            _ => throw new ArgumentOutOfRangeException(nameof(node)),
-        };
+        // Create a script
+        var script = this.MakeScript(tree);
 
-        // Make compilation
-        var compilation = this.MakeCompilation(tree);
+        // Try to execute
+        var result = script.Execute();
 
-        // Emit the assembly
-        var peStream = new MemoryStream();
-        var result = compilation.Emit(peStream: peStream);
+        // If failed, bail out
+        if (!result.Success) return ExecutionResult.Fail<TResult>(result.Diagnostics);
 
-        // Transform all the diagnostics
-        var diagnostics = result.Diagnostics
-            .Select(d => d.RelativeTo(relocatedNode))
-            .ToImmutableArray();
+        // Stash the entry
+        this.previousEntries.Add(script);
 
-        // Check for errors
-        if (!result.Success) return ExecutionResult.Fail<TResult>(diagnostics);
+        // We want to stash the exports of the script
+        this.context.AddAll(script.GlobalImports);
+        // And the metadata references
+        this.context.AddMetadataReference(MetadataReference.FromAssembly(script.Assembly!));
 
-        // If it was a non-empty declaration, track it
-        if (node is DeclarationSyntax)
-        {
-            var semanticModel = compilation.GetSemanticModel(tree);
-            var symbol = semanticModel.GetDeclaredSymbolInternal(relocatedNode);
-            if (symbol is not null) this.context.AddSymbol(symbol);
-        }
-
-        // We need to load the assembly in the current context
-        peStream.Position = 0;
-        var assembly = this.context.LoadAssembly(peStream);
-
-        // Stash it for future use
-        this.previousEntries.Add(new HistoryEntry(Compilation: compilation, Assembly: assembly));
-
-        // Register the metadata reference
-        this.context.AddMetadataReference(MetadataReference.FromAssembly(assembly));
-
-        // Retrieve the main module
-        var mainModule = assembly.GetType(compilation.RootModulePath);
-        Debug.Assert(mainModule is not null);
-
-        // Run the eval function
-        var eval = mainModule.GetMethod(EvalFunctionName);
-        if (eval is not null)
-        {
-            var value = (TResult?)eval.Invoke(null, null);
-            return ExecutionResult.Success(value!, diagnostics);
-        }
-
-        // This happens with declarations, nothing to run
-        return ExecutionResult.Success(default(TResult)!, diagnostics);
+        // Return result
+        return ExecutionResult.Success((TResult)result.Value!);
     }
 
-    // func .eval(): object = decl;
-    private DeclarationSyntax ToDeclaration(ExpressionSyntax expr) => FunctionDeclaration(
-        EvalFunctionName,
-        ParameterList(),
-        NameType("object"),
-        InlineFunctionBody(expr));
-
-    // func .eval() = stmt;
-    private DeclarationSyntax ToDeclaration(StatementSyntax stmt) => FunctionDeclaration(
-        EvalFunctionName,
-        ParameterList(),
-        null,
-        InlineFunctionBody(StatementExpression(stmt)));
-
-    private SyntaxTree ToSyntaxTree(DeclarationSyntax decl) => SyntaxTree.Create(CompilationUnit(decl));
-
-    private Compilation MakeCompilation(SyntaxTree tree) => Compilation.Create(
-        syntaxTrees: [tree],
-        metadataReferences: this.context.MetadataReferences,
-        flags: CompilationFlags.ImplicitPublicSymbols,
+    private Script<object?> MakeScript(SyntaxTree tree) => Script.Create(
+        syntaxTree: tree,
         globalImports: this.context.GlobalImports,
-        rootModulePath: $"Context{this.previousEntries.Count}",
-        assemblyName: $"ReplAssembly{this.previousEntries.Count}",
-        metadataAssemblies: this.previousEntries.Count == 0
+        metadataReferences: this.context.MetadataReferences,
+        previousCompilation: this.previousEntries.Count == 0
             ? null
-            : this.previousEntries[^1].Compilation.MetadataAssembliesDict);
+            : this.previousEntries[^1].Compilation,
+        assemblyLoadContext: this.context.AssemblyLoadContext);
 
-    private static SyntaxTree ParseReplEntry(ISourceReader sourceReader)
+    private static SyntaxTree ToSyntaxTree(SyntaxNode node) => node switch
     {
-        var syntaxDiagnostics = new SyntaxDiagnosticTable();
-
-        // Construct a lexer
-        var lexer = new Lexer(sourceReader, syntaxDiagnostics);
-        // Construct a token source
-        var tokenSource = TokenSource.From(lexer);
-        // Construct a parser
-        var parser = new Parser(tokenSource, syntaxDiagnostics, parserMode: ParserMode.Repl);
-        // Parse a repl entry
-        var node = parser.ParseReplEntry();
-        // Make it into a tree
-        var tree = SyntaxTree.Create(node);
-
-        return tree;
-    }
-
-    private static string ExtractImportPath(ImportPathSyntax path) => path switch
-    {
-        RootImportPathSyntax root => root.Name.Text,
-        MemberImportPathSyntax member => $"{ExtractImportPath(member.Accessed)}.{member.Member.Text}",
-        _ => throw new ArgumentOutOfRangeException(nameof(path)),
+        ScriptEntrySyntax se => SyntaxTree.Create(se),
+        ExpressionSyntax e => SyntaxTree.Create(ScriptEntry(SyntaxList<StatementSyntax>(), e, EndOfInput)),
+        StatementSyntax s => SyntaxTree.Create(ScriptEntry(SyntaxList(s), null, EndOfInput)),
+        DeclarationSyntax d => SyntaxTree.Create(ScriptEntry(SyntaxList<StatementSyntax>(DeclarationStatement(d)), null, EndOfInput)),
+        _ => throw new ArgumentOutOfRangeException(nameof(node)),
     };
 }

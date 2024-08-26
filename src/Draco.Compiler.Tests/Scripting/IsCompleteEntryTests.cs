@@ -1,6 +1,6 @@
 using Draco.Compiler.Api.Scripting;
 
-namespace Draco.Compiler.Tests.Repl;
+namespace Draco.Compiler.Tests.Scripting;
 
 public sealed class IsCompleteEntryTests
 {

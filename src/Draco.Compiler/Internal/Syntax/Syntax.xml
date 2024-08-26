@@ -1283,4 +1283,28 @@
       <Token Kind="Identifier" />
     </Field>
   </Node>
+
+  <Node Name="ScriptEntrySyntax" Base="SyntaxNode">
+    <Documentation>
+      A script entry with multiple possible elements.
+    </Documentation>
+
+    <Field Name="Statements" Type="SyntaxList&lt;StatementSyntax&gt;">
+      <Documentation>
+        The statements within the script.
+      </Documentation>
+    </Field>
+    <Field Name="Value" Type="ExpressionSyntax?">
+      <Documentation>
+        The value the script evaluates to.
+      </Documentation>
+    </Field>
+    <Field Name="End" Type="SyntaxToken">
+      <Documentation>
+        The end of input token.
+      </Documentation>
+
+      <Token Kind="EndOfInput" />
+    </Field>
+  </Node>
 </Tree>

@@ -12,6 +12,16 @@ public readonly record struct GlobalImports(
     ImmutableArray<(string Name, string FullPath)> ImportAliases)
 {
     /// <summary>
+    /// Combines two global import structures into one.
+    /// </summary>
+    /// <param name="i1">The first global import structure.</param>
+    /// <param name="i2">The second global import structure.</param>
+    /// <returns>The combined global import structure.</returns>
+    public static GlobalImports Combine(GlobalImports i1, GlobalImports i2) => new(
+        i1.ModuleImports.AddRange(i2.ModuleImports),
+        i1.ImportAliases.AddRange(i2.ImportAliases));
+
+    /// <summary>
     /// True, if this is a default or empty structure.
     /// </summary>
     public bool IsDefault => this.ModuleImports.IsDefaultOrEmpty

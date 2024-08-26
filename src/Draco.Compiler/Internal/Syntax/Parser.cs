@@ -254,17 +254,42 @@ internal sealed class Parser(
     }
 
     /// <summary>
-    /// Parses a REPL entry.
+    /// Parses a script entry.
     /// </summary>
-    /// <returns>The parsed <see cref="SyntaxNode"/>.</returns>
-    public SyntaxNode ParseReplEntry()
+    /// <returns>The parsed <see cref="ScriptEntrySyntax"/>.</returns>
+    public ScriptEntrySyntax ParseScriptEntry()
     {
-        if (this.Matches(TokenKind.EndOfInput, out var endOfInput))
+        var statements = SyntaxList.CreateBuilder<StatementSyntax>();
+        var value = null as ExpressionSyntax;
+
+        while (this.Peek() != TokenKind.EndOfInput)
         {
-            // We accept an empty line as a no-op to consume trivia like comments
-            return new CompilationUnitSyntax(SyntaxList<DeclarationSyntax>.Empty, endOfInput);
+            var element = this.ParseReplEntryElement();
+            if (element is StatementSyntax stmt)
+            {
+                statements.Add(stmt);
+            }
+            else if (element is DeclarationSyntax decl)
+            {
+                statements.Add(new DeclarationStatementSyntax(decl));
+            }
+            else if (element is ExpressionSyntax expr)
+            {
+                value = expr;
+                break;
+            }
+            else
+            {
+                throw new InvalidOperationException("illegal script entry parsed");
+            }
         }
 
+        var end = this.Expect(TokenKind.EndOfInput);
+        return new ScriptEntrySyntax(statements.ToSyntaxList(), value, end);
+    }
+
+    private SyntaxNode ParseReplEntryElement()
+    {
         var visibility = this.ParseVisibilityModifier();
         if (visibility is not null)
         {

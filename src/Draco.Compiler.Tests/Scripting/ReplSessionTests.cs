@@ -15,24 +15,28 @@ public sealed class ReplSessionTests
     [InlineData("2 < 3 < 4", true)]
     [InlineData("\"asd\" + \"def\"", "asddef")]
     [InlineData("\"1 + 2 = \\{1 + 2}\"", "1 + 2 = 3")]
+    [InlineData("func foo() {}", null)]
     [Theory]
     public void BasicExpressions(string input, object? output)
     {
         var replSession = new ReplSession([.. BclReferences]);
 
-        var ms = new MemoryStream();
-
-        var writer = new StreamWriter(ms);
-        writer.WriteLine(input);
-        writer.Flush();
-
-        ms.Position = 0;
-        var reader = new StreamReader(ms);
-
-        var result = replSession.Evaluate(reader);
+        var result = replSession.Evaluate(input);
 
         Assert.True(result.Success);
         Assert.Equal(output, result.Value);
+    }
+
+    [InlineData("func add(x: int32, y: int32) = x + y;")]
+    [Theory]
+    public void InvalidEntries(string input)
+    {
+        var replSession = new ReplSession([.. BclReferences]);
+
+        var result = replSession.Evaluate(input);
+
+        Assert.False(result.Success);
+        Assert.NotEmpty(result.Diagnostics);
     }
 
     [Fact]

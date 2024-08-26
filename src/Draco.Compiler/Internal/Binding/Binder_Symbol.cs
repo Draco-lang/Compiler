@@ -207,7 +207,8 @@ internal partial class Binder
 
         void BindFunction(ScriptFunctionSymbol symbol)
         {
-            var statementTask = this.BindStatement(symbol.DeclaringSyntax.Body, solver, diagnostics);
+            var binder = this.GetBinder(symbol.DeclaringSyntax);
+            var statementTask = binder.BindStatement(symbol.DeclaringSyntax.Body, solver, diagnostics);
             fillerTasks.Add(() => functionBodies.Add(symbol.DeclaringSyntax, statementTask.Result));
         }
     }

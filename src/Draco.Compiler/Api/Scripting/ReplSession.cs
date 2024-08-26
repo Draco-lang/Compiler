@@ -31,6 +31,23 @@ public sealed class ReplSession
         return SyntaxFacts.IsCompleteEntry(tree.Root);
     }
 
+    /// <summary>
+    /// The metadata references used in the session.
+    /// </summary>
+    public ImmutableArray<MetadataReference> MetadataReferences => this.context.MetadataReferences;
+
+    /// <summary>
+    /// The global imports used in the session.
+    /// </summary>
+    public GlobalImports GlobalImports => this.context.GlobalImports;
+
+    /// <summary>
+    /// The last compilation in the session.
+    /// </summary>
+    public Compilation? LastCompilation => this.previousEntries.Count == 0
+        ? null
+        : this.previousEntries[^1].Compilation;
+
     private readonly List<Script<object?>> previousEntries = [];
     private readonly ReplContext context = new();
 
@@ -150,11 +167,9 @@ public sealed class ReplSession
 
     private Script<object?> MakeScript(SyntaxTree tree) => Script.Create(
         syntaxTree: tree,
-        globalImports: this.context.GlobalImports,
-        metadataReferences: this.context.MetadataReferences,
-        previousCompilation: this.previousEntries.Count == 0
-            ? null
-            : this.previousEntries[^1].Compilation,
+        globalImports: this.GlobalImports,
+        metadataReferences: this.MetadataReferences,
+        previousCompilation: this.LastCompilation,
         assemblyLoadContext: this.context.AssemblyLoadContext);
 
     private static SyntaxTree ToSyntaxTree(SyntaxNode node) => node switch

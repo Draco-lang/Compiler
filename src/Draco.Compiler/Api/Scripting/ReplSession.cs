@@ -31,13 +31,6 @@ public sealed class ReplSession
         return SyntaxFacts.IsCompleteEntry(tree.Root);
     }
 
-    /// <summary>
-    /// Parses a script from the given source code.
-    /// </summary>
-    /// <param name="code">The source code to parse from.</param>
-    /// <returns>The parsed tree.</returns>
-    public static SyntaxTree ParseScript(string code) => SyntaxTree.ParseScript(SourceReader.From(code));
-
     private readonly List<Script<object?>> previousEntries = [];
     private readonly ReplContext context = new();
 

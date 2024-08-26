@@ -30,7 +30,7 @@ internal sealed class Loop(Configuration configuration, IConsole console)
         session.AddImports(configuration.DefaultImports);
 
         await using var prompt = new Prompt(
-            callbacks: new ReplPromptCallbacks(configuration),
+            callbacks: new ReplPromptCallbacks(),
             configuration: new PromptConfiguration(
                 prompt: configuration.GetFormattedPrompt()));
 

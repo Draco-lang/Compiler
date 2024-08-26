@@ -33,11 +33,6 @@ internal sealed class Configuration
         "System.Linq"];
 
     /// <summary>
-    /// The indentation string.
-    /// </summary>
-    public string Indentation { get; set; } = "\t";
-
-    /// <summary>
     /// Utility to get the formatted prompt string.
     /// </summary>
     /// <returns>The formatted prompt string.</returns>

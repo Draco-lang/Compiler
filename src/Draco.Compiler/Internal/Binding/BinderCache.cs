@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Syntax;
 
@@ -58,7 +59,7 @@ internal sealed class BinderCache(Compilation compilation)
         var binder = new IntrinsicsBinder(this.compilation) as Binder;
         if (!this.compilation.GlobalImports.IsDefault) binder = new GlobalImportsBinder(binder);
         binder = new ModuleBinder(binder, this.compilation.RootModule);
-        binder = new ModuleBinder(binder, this.compilation.SourceModule);
+        binder = new ScriptModuleBinder(binder, (ScriptModuleSymbol)this.compilation.SourceModule);
         binder = WrapInImportBinder(binder, syntax);
         return binder;
     }

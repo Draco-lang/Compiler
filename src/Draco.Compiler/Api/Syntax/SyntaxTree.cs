@@ -146,6 +146,15 @@ public sealed class SyntaxTree
     public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range) => this.Root.TraverseSubtreesIntersectingRange(range);
 
     /// <summary>
+    /// Enumerates this subtree, yielding all descendant nodes that are involved with a cursor position.
+    /// This differs from <see cref="TraverseSubtreesAtPosition(SyntaxPosition)"/> in a sense, because a
+    /// cursor cares about things immediately before or after it.
+    /// </summary>
+    /// <param name="position">The position of the cursor.</param>
+    /// <returns>All subtrees involved with <paramref name="position"/> in parent-child order.</returns>
+    public IEnumerable<SyntaxNode> TraverseSubtreesAtCursorPosition(SyntaxPosition position) => this.Root.TraverseSubtreesAtCursorPosition(position);
+
+    /// <summary>
     /// Reorders the <see cref="SyntaxTree"/> that contains <paramref name="toReorder"/> node and puts <paramref name="toReorder"/> to specified <paramref name="position"/> in the original <see cref="SyntaxList"/>.
     /// </summary>
     /// <param name="toReorder">The <see cref="SyntaxNode"/> that will be reordered.</param>

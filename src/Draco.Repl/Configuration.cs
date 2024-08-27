@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using PrettyPrompt.Highlighting;
 
 namespace Draco.Repl;
@@ -23,6 +24,11 @@ internal sealed class Configuration
     /// The colors used in the REPL interface.
     /// </summary>
     public ColorScheme<InterfaceColor> InterfaceColors { get; set; } = ConfigurationDefaults.GetInterfaceColors();
+
+    /// <summary>
+    /// The colors used for syntax highlighting.
+    /// </summary>
+    public ColorScheme<SyntaxColoring> SyntaxColors { get; set; } = ConfigurationDefaults.GetSyntaxColors();
 
     /// <summary>
     /// The default imports for the REPL session.

@@ -12,27 +12,29 @@ public sealed class KeywordCompletionProvider : CompletionProvider
 {
     private static ImmutableArray<CompletionItem> GetDeclarationKeywords(SourceText source, SourceSpan span) =>
     [
-        CompletionItem.Create(source, "import", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "var", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "val", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "func", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "internal", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "public", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "module", span, CompletionKind.Keyword),
+        CompletionItem.Create(source, "import", span, CompletionKind.DeclarationKeyword),
+        CompletionItem.Create(source, "var", span, CompletionKind.DeclarationKeyword),
+        CompletionItem.Create(source, "val", span, CompletionKind.DeclarationKeyword),
+        CompletionItem.Create(source, "func", span, CompletionKind.DeclarationKeyword),
+        CompletionItem.Create(source, "module", span, CompletionKind.DeclarationKeyword),
+
+        CompletionItem.Create(source, "internal", span, CompletionKind.VisibilityKeyword),
+        CompletionItem.Create(source, "public", span, CompletionKind.VisibilityKeyword),
     ];
 
     private static ImmutableArray<CompletionItem> GetExpressionKeywords(SourceText source, SourceSpan span) =>
     [
-        CompletionItem.Create(source, "if", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "while", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "for", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "return", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "goto", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "and", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "or", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "not", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "mod", span, CompletionKind.Keyword),
-        CompletionItem.Create(source, "rem", span, CompletionKind.Keyword),
+        CompletionItem.Create(source, "if", span, CompletionKind.ControlFlowKeyword),
+        CompletionItem.Create(source, "while", span, CompletionKind.ControlFlowKeyword),
+        CompletionItem.Create(source, "for", span, CompletionKind.ControlFlowKeyword),
+        CompletionItem.Create(source, "return", span, CompletionKind.ControlFlowKeyword),
+        CompletionItem.Create(source, "goto", span, CompletionKind.ControlFlowKeyword),
+
+        CompletionItem.Create(source, "and", span, CompletionKind.Operator),
+        CompletionItem.Create(source, "or", span, CompletionKind.Operator),
+        CompletionItem.Create(source, "not", span, CompletionKind.Operator),
+        CompletionItem.Create(source, "mod", span, CompletionKind.Operator),
+        CompletionItem.Create(source, "rem", span, CompletionKind.Operator),
     ];
 
     public override bool IsApplicableIn(CompletionContext context)

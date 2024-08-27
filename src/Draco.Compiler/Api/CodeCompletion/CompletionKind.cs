@@ -5,10 +5,19 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// </summary>
 public enum CompletionKind
 {
-    Variable,
-    Function,
-    Class,
-    Module,
-    Property,
-    Keyword,
+    DeclarationKeyword,
+    VisibilityKeyword,
+    ControlFlowKeyword,
+
+    VariableName,
+    ParameterName,
+    ModuleName,
+    FunctionName,
+    PropertyName,
+    FieldName,
+
+    ReferenceTypeName,
+    ValueTypeName,
+
+    Operator,
 }

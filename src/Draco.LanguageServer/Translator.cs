@@ -101,12 +101,24 @@ internal static class Translator
 
     public static LspModels.CompletionItemKind ToLsp(CompilerApi.CodeCompletion.CompletionKind kind) => kind switch
     {
-        CompilerApi.CodeCompletion.CompletionKind.Variable => LspModels.CompletionItemKind.Variable,
-        CompilerApi.CodeCompletion.CompletionKind.Function => LspModels.CompletionItemKind.Function,
-        CompilerApi.CodeCompletion.CompletionKind.Keyword => LspModels.CompletionItemKind.Keyword,
-        CompilerApi.CodeCompletion.CompletionKind.Class => LspModels.CompletionItemKind.Class,
-        CompilerApi.CodeCompletion.CompletionKind.Module => LspModels.CompletionItemKind.Module,
-        CompilerApi.CodeCompletion.CompletionKind.Property => LspModels.CompletionItemKind.Property,
+        CompilerApi.CodeCompletion.CompletionKind.ControlFlowKeyword
+     or CompilerApi.CodeCompletion.CompletionKind.DeclarationKeyword
+     or CompilerApi.CodeCompletion.CompletionKind.VisibilityKeyword => LspModels.CompletionItemKind.Keyword,
+
+        CompilerApi.CodeCompletion.CompletionKind.VariableName
+     or CompilerApi.CodeCompletion.CompletionKind.ParameterName => LspModels.CompletionItemKind.Variable,
+
+        CompilerApi.CodeCompletion.CompletionKind.ModuleName => LspModels.CompletionItemKind.Module,
+
+        CompilerApi.CodeCompletion.CompletionKind.FunctionName => LspModels.CompletionItemKind.Method,
+
+        CompilerApi.CodeCompletion.CompletionKind.PropertyName => LspModels.CompletionItemKind.Property,
+
+        CompilerApi.CodeCompletion.CompletionKind.FieldName => LspModels.CompletionItemKind.Field,
+
+        CompilerApi.CodeCompletion.CompletionKind.ReferenceTypeName => LspModels.CompletionItemKind.Class,
+        CompilerApi.CodeCompletion.CompletionKind.ValueTypeName => LspModels.CompletionItemKind.Struct,
+
         _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
     };
 

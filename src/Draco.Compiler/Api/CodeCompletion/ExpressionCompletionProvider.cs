@@ -32,27 +32,44 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
     }
 
     private static CompletionItem? GetCompletionItem(
-        SourceText source, ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SourceSpan span) => symbols.First() switch
+        SourceText source, ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SourceSpan span)
+    {
+        var sym = symbols.First();
+        // NOTE: We should have something for this in the API
+        while (sym is IAliasSymbol alias) sym = alias.Substitution;
+        return sym switch
         {
-            ITypeSymbol or IAliasSymbol when currentContexts.HasFlag(CompletionContext.Expression)
-                                          || currentContexts.HasFlag(CompletionContext.Type) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Class),
+            ITypeSymbol t when currentContexts.HasFlag(CompletionContext.Expression)
+                            || currentContexts.HasFlag(CompletionContext.Type) =>
+                CompletionItem.Create(
+                    source,
+                    t.Name,
+                    span,
+                    symbols,
+                    t.IsValueType ? CompletionKind.ValueTypeName : CompletionKind.ReferenceTypeName),
+
+            IParameterSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.ParameterName),
 
             IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Variable),
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.VariableName),
 
             IPropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Property),
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.PropertyName),
+
+            IFieldSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.FieldName),
 
             // We need the type context here for qualified type references
             IModuleSymbol when currentContexts.HasFlag(CompletionContext.Expression)
-                           || currentContexts.HasFlag(CompletionContext.Type)
-                           || currentContexts.HasFlag(CompletionContext.Import) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Module),
+                            || currentContexts.HasFlag(CompletionContext.Type)
+                            || currentContexts.HasFlag(CompletionContext.Import) =>
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.ModuleName),
 
             IFunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.Function),
+                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.FunctionName),
 
             _ => null,
         };
+    }
 }

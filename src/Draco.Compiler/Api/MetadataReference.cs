@@ -54,6 +54,17 @@ public abstract class MetadataReference
     }
 
     /// <summary>
+    /// Creates a metadata reference from the given PE reader.
+    /// </summary>
+    /// <param name="peStream">The PE reader to create the metadata reference from.</param>
+    /// <returns>The <see cref="MetadataReference"/> reading up from <paramref name="peStream"/>.</returns>
+    public static MetadataReference FromPeReader(PEReader peReader)
+    {
+        var metadataReader = peReader.GetMetadataReader();
+        return new MetadataReaderReference(metadataReader);
+    }
+
+    /// <summary>
     /// Adds xml documentation to this metadata reference.
     /// </summary>
     /// <param name="xmlStream">The stream with the xml documentation.</param>

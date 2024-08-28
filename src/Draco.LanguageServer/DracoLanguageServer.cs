@@ -73,13 +73,16 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         }
 
         var project = projects[0];
-        var designTimeBuild = project.BuildDesignTime();
+        var buildResult = project.BuildDesignTime();
 
-        if (!designTimeBuild.Succeeded)
+        if (!buildResult.Success)
         {
-            await this.client.LogMessageAsync(MessageType.Error, designTimeBuild.BuildLog);
+            await this.client.LogMessageAsync(MessageType.Error, buildResult.Log);
             await this.client.ShowMessageAsync(MessageType.Error, "Design-time build failed! See logs for details.");
+            return;
         }
+
+        var designTimeBuild = buildResult.Value;
 
         var syntaxTrees = Directory
             .GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)

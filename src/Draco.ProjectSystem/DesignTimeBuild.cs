@@ -16,16 +16,6 @@ public readonly struct DesignTimeBuild
     public Project Project { get; }
 
     /// <summary>
-    /// True, if the build succeeded.
-    /// </summary>
-    public bool Succeeded { get; }
-
-    /// <summary>
-    /// The build log.
-    /// </summary>
-    public string BuildLog { get; }
-
-    /// <summary>
     /// The reference paths of the project.
     /// </summary>
     public ImmutableArray<FileInfo> References => this.ProjectInstance
@@ -40,13 +30,9 @@ public readonly struct DesignTimeBuild
 
     internal DesignTimeBuild(
         Project project,
-        MSBuildProjectInstance projectInstance,
-        bool success,
-        string buildLog)
+        MSBuildProjectInstance projectInstance)
     {
         this.Project = project;
         this.ProjectInstance = projectInstance;
-        this.Succeeded = success;
-        this.BuildLog = buildLog;
     }
 }

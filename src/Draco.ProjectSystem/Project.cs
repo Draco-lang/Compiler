@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Evaluation;
+using Microsoft.Build.Framework;
 using MSBuildProject = Microsoft.Build.Evaluation.Project;
 using MSBuildProjectInstance = Microsoft.Build.Execution.ProjectInstance;
 
@@ -43,12 +44,7 @@ public sealed class Project
     /// <summary>
     /// Project for reading out the target framework(s).
     /// </summary>
-    internal MSBuildProject TfmProject => this.tfmProject ??= new(
-        projectFile: this.ProjectFile.FullName,
-        projectCollection: this.Workspace.ProjectCollection,
-        globalProperties: GetGlobalProperties(),
-        toolsVersion: null,
-        loadSettings: ProjectLoadSettings.IgnoreMissingImports | ProjectLoadSettings.IgnoreInvalidImports);
+    internal MSBuildProject TfmProject => this.tfmProject ??= this.CreateTfmProject();
     private MSBuildProject? tfmProject;
 
     /// <summary>
@@ -61,28 +57,7 @@ public sealed class Project
     /// <summary>
     /// Project for design-time builds.
     /// </summary>
-    internal MSBuildProject BuildProject
-    {
-        get
-        {
-            if (this.buildProject is null)
-            {
-                var globalProps = GetGlobalProperties();
-                var targetFramework = this.TargetFramework;
-                if (targetFramework is not null)
-                {
-                    globalProps.Add("TargetFramework", targetFramework);
-                }
-                this.buildProject = new(
-                    projectFile: this.ProjectFile.FullName,
-                    projectCollection: this.Workspace.ProjectCollection,
-                    globalProperties: globalProps,
-                    toolsVersion: null,
-                    loadSettings: ProjectLoadSettings.IgnoreMissingImports | ProjectLoadSettings.IgnoreInvalidImports);
-            }
-            return this.buildProject;
-        }
-    }
+    internal MSBuildProject BuildProject => this.buildProject ??= this.CreateBuildProject();
     private MSBuildProject? buildProject;
 
     internal Project(FileInfo projectFile, Workspace workspace)
@@ -92,19 +67,71 @@ public sealed class Project
     }
 
     /// <summary>
+    /// Performs a restore of the project.
+    /// </summary>
+    /// <returns>The result of the restore.</returns>
+    public BuildResult<Unit> Restore()
+    {
+        var log = new StringWriter();
+        var logger = new StringWriterLogger(log);
+
+        var buildTargets = GetRestoreBuildTargets();
+        var projectInstance = this.BuildProject.CreateProjectInstance();
+        var success = projectInstance.Build(buildTargets, [logger]);
+
+        return success
+            ? BuildResult.Success(Unit.Default, log.ToString())
+            : BuildResult.Failure<Unit>(log.ToString());
+    }
+
+    /// <summary>
     /// Performs a design-time build of the project.
     /// </summary>
     /// <returns>The result of the build.</returns>
-    public DesignTimeBuild BuildDesignTime()
+    public BuildResult<DesignTimeBuild> BuildDesignTime()
     {
-        var stringLog = new StringWriter();
-        var stringLogger = new StringWriterLogger(stringLog);
+        var log = new StringWriter();
+        var logger = new StringWriterLogger(log);
 
-        var projectInstance = this.BuildProject.CreateProjectInstance();
+        // First restore the project
+        var restoreResult = this.Restore();
+        if (!restoreResult.Success) return BuildResult.Failure<DesignTimeBuild>(restoreResult.Log);
+
+        // NOTE: I have no idea why, but this is needed
+        // I suppose it's because a restore introduces files since the last run, something that the API doesn't handle?
+        // Mark the project as dirty
+        this.BuildProject.MarkDirty();
+
         var buildTargets = GetDesignTimeBuildTargets();
-        var success = projectInstance.Build(buildTargets, [stringLogger]);
+        var projectInstance = this.BuildProject.CreateProjectInstance();
+        var success = projectInstance.Build(buildTargets, [logger]);
 
-        return new(this, projectInstance, success, stringLog.ToString());
+        return success
+            ? BuildResult.Success(new DesignTimeBuild(this, projectInstance), log.ToString())
+            : BuildResult.Failure<DesignTimeBuild>(log.ToString());
+    }
+
+    private MSBuildProject CreateTfmProject() => new(
+        projectFile: this.ProjectFile.FullName,
+        projectCollection: this.Workspace.ProjectCollection,
+        globalProperties: GetGlobalProperties(),
+        toolsVersion: null,
+        loadSettings: ProjectLoadSettings.IgnoreMissingImports | ProjectLoadSettings.IgnoreInvalidImports);
+
+    private MSBuildProject CreateBuildProject()
+    {
+        var globalProps = GetGlobalProperties();
+        var targetFramework = this.TargetFramework;
+        if (targetFramework is not null)
+        {
+            globalProps.Add("TargetFramework", targetFramework);
+        }
+        return new MSBuildProject(
+            projectFile: this.ProjectFile.FullName,
+            projectCollection: this.Workspace.ProjectCollection,
+            globalProperties: globalProps,
+            toolsVersion: null,
+            loadSettings: ProjectLoadSettings.IgnoreMissingImports | ProjectLoadSettings.IgnoreInvalidImports);
     }
 
     private static IDictionary<string, string> GetGlobalProperties() => new Dictionary<string, string>
@@ -121,6 +148,9 @@ public sealed class Project
         ["NonExistentFile"] = Path.Combine("__NonExistentSubDir__", "__NonExistentFile__"),
         ["DotnetProjInfo"] = "true",
     };
+
+    private static string[] GetRestoreBuildTargets() => [
+        "Restore"];
 
     private static string[] GetDesignTimeBuildTargets() => [
         "ResolveAssemblyReferencesDesignTime",

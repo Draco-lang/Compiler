@@ -119,7 +119,9 @@ internal static class Translator
         CompilerApi.CodeCompletion.CompletionKind.ReferenceTypeName => LspModels.CompletionItemKind.Class,
         CompilerApi.CodeCompletion.CompletionKind.ValueTypeName => LspModels.CompletionItemKind.Struct,
 
-        _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
+        CompilerApi.CodeCompletion.CompletionKind.Operator => LspModels.CompletionItemKind.Operator,
+
+        _ => LspModels.CompletionItemKind.Text,
     };
 
     public static LspModels.SignatureHelp? ToLsp(CompilerApi.CodeCompletion.SignatureItem? item) => item is null ? null : new()

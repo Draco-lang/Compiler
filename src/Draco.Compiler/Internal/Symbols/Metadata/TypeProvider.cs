@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -192,9 +194,18 @@ internal sealed class TypeProvider(Compilation compilation)
         if (!string.IsNullOrEmpty(@namespace)) parts.AddRange(@namespace.Split('.').Reverse());
         parts.Reverse();
 
-        // TODO: If we don't have the assembly report error
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
-        var assembly = compilation.MetadataAssemblies.Single(x => AssemblyNamesEqual(x.AssemblyName, assemblyName));
+        var assembly = compilation.MetadataAssemblies.FirstOrDefault(x => AssemblyNamesEqual(x.AssemblyName, assemblyName));
+        if (assembly is null)
+        {
+            // The assembly for some reason isn't included, report it
+            compilation.GlobalDiagnosticBag.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.CanNotResolveReferencedAssembly,
+                location: Location.None,
+                formatArgs: assemblyName));
+            return WellKnownTypes.ErrorType;
+        }
+
         return assembly.RootNamespace.Lookup([.. parts]).OfType<TypeSymbol>().Single();
     }
 

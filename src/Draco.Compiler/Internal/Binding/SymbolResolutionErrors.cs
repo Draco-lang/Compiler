@@ -164,4 +164,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "the member {0} must be a gettable property",
         code: Code(17));
+
+    /// <summary>
+    /// The referenced assembly can not be found.
+    /// </summary>
+    public static readonly DiagnosticTemplate CanNotResolveReferencedAssembly = DiagnosticTemplate.Create(
+        title: "can not resolve referenced assembly",
+        severity: DiagnosticSeverity.Error,
+        format: "the referenced assembly {0} can not be resolved",
+        code: Code(18));
 }

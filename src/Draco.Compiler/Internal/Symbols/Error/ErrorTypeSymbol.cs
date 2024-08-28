@@ -1,3 +1,6 @@
+using Draco.Compiler.Internal.Symbols.Generic;
+using System.Collections.Immutable;
+
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
@@ -13,4 +16,7 @@ internal sealed class ErrorTypeSymbol(string name) : TypeSymbol
     public string DisplayName { get; } = name;
 
     public override string ToString() => this.DisplayName;
+
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) => this;
+    public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) => this;
 }

@@ -195,7 +195,8 @@ internal sealed class TypeProvider(Compilation compilation)
         parts.Reverse();
 
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
-        var assembly = compilation.MetadataAssemblies.FirstOrDefault(x => AssemblyNamesEqual(x.AssemblyName, assemblyName));
+        var assembly = compilation.MetadataAssemblies.FirstOrDefault(x =>
+            AssemblyIsSufficient(assemblyName, x.AssemblyName));
         if (assembly is null)
         {
             // The assembly for some reason isn't included, report it
@@ -237,7 +238,7 @@ internal sealed class TypeProvider(Compilation compilation)
     // NOTE: For some reason we had to disregard public key token, otherwise some weird type referencing
     // case in the REPL with lists threw an exception
     // TODO: Could it be that we don't write the public key token in the type refs we use?
-    private static bool AssemblyNamesEqual(AssemblyName a, AssemblyName b) =>
-           a.Name == b.Name
-        && a.Version == b.Version;
+    private static bool AssemblyIsSufficient(AssemblyName wanted, AssemblyName got) =>
+           got.Name == wanted.Name
+        && got.Version >= wanted.Version;
 }

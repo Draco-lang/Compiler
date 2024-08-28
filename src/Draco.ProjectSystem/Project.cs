@@ -90,9 +90,6 @@ public sealed class Project
     /// <returns>The result of the build.</returns>
     public BuildResult<DesignTimeBuild> BuildDesignTime()
     {
-        var log = new StringWriter();
-        var logger = new StringWriterLogger(log);
-
         // First restore the project
         var restoreResult = this.Restore();
         if (!restoreResult.Success) return BuildResult.Failure<DesignTimeBuild>(restoreResult.Log);
@@ -101,6 +98,9 @@ public sealed class Project
         // I suppose it's because a restore introduces files since the last run, something that the API doesn't handle?
         // Mark the project as dirty
         this.BuildProject.MarkDirty();
+
+        var log = new StringWriter();
+        var logger = new StringWriterLogger(log);
 
         var buildTargets = GetDesignTimeBuildTargets();
         var projectInstance = this.BuildProject.CreateProjectInstance();

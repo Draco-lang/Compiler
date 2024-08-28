@@ -22,6 +22,7 @@
     <PackageReference Include="NuGet.Packaging" Version="6.11.0" ExcludeAssets="runtime" />
     <PackageReference Include="NuGet.Common" Version="6.11.0" ExcludeAssets="runtime" />
     <PackageReference Include="NuGet.Versioning" Version="6.11.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Configuration" Version="6.11.0" ExcludeAssets="runtime" />
   </ItemGroup>
 
 </Project>

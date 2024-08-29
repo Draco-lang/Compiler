@@ -799,4 +799,25 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         Assert.Single(l);
         Assert.Equal(1, l[0]);
     }
+
+    [Fact]
+    public void EnumEqualityOperators()
+    {
+        var assembly = Compile("""
+            import System;
+
+            public func equate(a: StringComparison, b: StringComparison): bool = a == b;
+            public func inequate(a: StringComparison, b: StringComparison): bool = a != b;
+            """);
+
+        var eq1 = Invoke<bool>(assembly, "equate", StringComparison.Ordinal, StringComparison.Ordinal);
+        var eq2 = Invoke<bool>(assembly, "equate", StringComparison.Ordinal, StringComparison.OrdinalIgnoreCase);
+        var neq1 = Invoke<bool>(assembly, "inequate", StringComparison.Ordinal, StringComparison.Ordinal);
+        var neq2 = Invoke<bool>(assembly, "inequate", StringComparison.Ordinal, StringComparison.OrdinalIgnoreCase);
+
+        Assert.True(eq1);
+        Assert.False(eq2);
+        Assert.False(neq1);
+        Assert.True(neq2);
+    }
 }

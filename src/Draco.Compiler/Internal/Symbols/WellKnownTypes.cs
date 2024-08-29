@@ -64,7 +64,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         for (var i = 2; i <= 8; ++i)
         {
             // Type
-            var arrayType = new ArrayTypeSymbol(i, this.SystemInt32);
+            var arrayType = new ArrayTypeSymbol(compilation, i, this.SystemInt32);
             yield return arrayType;
             // Ctor
             yield return new ArrayConstructorSymbol(arrayType);
@@ -170,12 +170,12 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     public TypeSymbol InstantiateArray(TypeSymbol elementType, int rank = 1) => rank switch
     {
         1 => this.ArrayType.GenericInstantiate(elementType),
-        int n => new ArrayTypeSymbol(n, this.SystemInt32).GenericInstantiate(elementType),
+        int n => new ArrayTypeSymbol(compilation, n, this.SystemInt32).GenericInstantiate(elementType),
     };
 
     #endregion
 
-    public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(1, this.SystemInt32));
+    public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(compilation, 1, this.SystemInt32));
     private ArrayTypeSymbol? array;
 
     public ArrayConstructorSymbol ArrayCtor => LazyInitializer.EnsureInitialized(ref this.arrayCtor, () => new(this.ArrayType));

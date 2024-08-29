@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -23,6 +25,12 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
     /// </summary>
     public int Rank { get; }
 
+    public override Compilation DeclaringCompilation { get; }
+
+    public override ImmutableArray<TypeSymbol> ImmediateBaseTypes =>
+        InterlockedUtils.InitializeDefault(ref this.immediateBaseTypes, this.BuildImmediateBaseTypes);
+    private ImmutableArray<TypeSymbol> immediateBaseTypes;
+
     public override string Name => this.Rank switch
     {
         1 => "Array",
@@ -33,12 +41,12 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
 
     public override IEnumerable<Symbol> DefinedMembers =>
     [
-        new ArrayLengthPropertySymbol(this) as Symbol,
         new ArrayIndexPropertySymbol(this),
     ];
 
-    public ArrayTypeSymbol(int rank, TypeSymbol indexType)
+    public ArrayTypeSymbol(Compilation compilation, int rank, TypeSymbol indexType)
     {
+        this.DeclaringCompilation = compilation;
         this.ElementType = new SynthetizedTypeParameterSymbol(this, "T");
         this.Rank = rank;
         this.IndexType = indexType;
@@ -48,4 +56,15 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
         this.GenericInstantiate(containingSymbol: null, ImmutableArray.Create(elementType));
 
     public override string ToString() => $"{this.Name}{this.GenericsToString()}";
+
+    private ImmutableArray<TypeSymbol> BuildImmediateBaseTypes()
+    {
+        var wellKnownTypes = this.DeclaringCompilation.WellKnownTypes;
+
+        // We need to implement System.Array, IList, IReadOnlyList
+        return [
+            wellKnownTypes.SystemArray,
+            wellKnownTypes.SystemCollectionsGenericIList_1.GenericInstantiate(this.ContainingSymbol, [this.ElementType]),
+            wellKnownTypes.SystemCollectionsGenericIReadOnlyList_1.GenericInstantiate(this.ContainingSymbol, [this.ElementType])];
+    }
 }

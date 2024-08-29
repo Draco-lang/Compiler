@@ -41,7 +41,7 @@ internal sealed class TypeProvider(Compilation compilation)
     private readonly ConcurrentDictionary<CacheKey, TypeSymbol> cache = new();
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
-        new ArrayTypeSymbol(shape.Rank, this.WellKnownTypes.SystemInt32).GenericInstantiate(elementType);
+        new ArrayTypeSymbol(compilation, shape.Rank, this.WellKnownTypes.SystemInt32).GenericInstantiate(elementType);
     public TypeSymbol GetSZArrayType(TypeSymbol elementType) =>
         this.WellKnownTypes.ArrayType.GenericInstantiate(elementType);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;

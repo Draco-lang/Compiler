@@ -634,16 +634,8 @@ internal partial class Binder
             case FieldSymbol field:
                 return new BoundFieldExpression(syntax, receiver, field);
             case PropertySymbol prop:
-                // It could be array length
-                if (prop.GenericDefinition is ArrayLengthPropertySymbol)
-                {
-                    return new BoundArrayLengthExpression(syntax, receiver);
-                }
-                else
-                {
-                    var getter = GetGetterSymbol(syntax, prop, diagnostics);
-                    return new BoundPropertyGetExpression(syntax, receiver, getter);
-                }
+                var getter = GetGetterSymbol(syntax, prop, diagnostics);
+                return new BoundPropertyGetExpression(syntax, receiver, getter);
             default:
                 // TODO
                 throw new NotImplementedException();

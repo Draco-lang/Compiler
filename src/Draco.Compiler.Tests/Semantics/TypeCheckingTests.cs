@@ -2287,4 +2287,40 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var intArray = compilation.WellKnownTypes.InstantiateArray(compilation.WellKnownTypes.SystemInt32);
         Assert.True(SymbolEqualityComparer.Default.Equals(intArray, aSym.Type));
     }
+
+    [Fact]
+    public void ArrayIteratorVariableCorrectlyInferredInForLoop()
+    {
+        // func main() {
+        //     val a = Array<int32>(3);
+        //     for (x in a) { }
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(GenericExpression(NameExpression("Array"), NameType("int32")), LiteralExpression(3)))),
+                ExpressionStatement(ForExpression(
+                    "x",
+                    NameExpression("a"),
+                    BlockExpression()))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xDecl = main.FindInChildren<ForExpressionSyntax>().Iterator;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.Equal(compilation.WellKnownTypes.SystemInt32, xSym.Type);
+    }
 }

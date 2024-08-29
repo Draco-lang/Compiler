@@ -34,13 +34,7 @@ public abstract class MetadataReference
         // We assume the docs are under the same path, same name but with .xml extension
         var docPath = Path.ChangeExtension(path, ".xml");
         var docStream = File.Exists(docPath) ? File.OpenRead(docPath) : null;
-        var docXml = null as XmlDocument;
-        if (docStream is not null)
-        {
-            docXml = new XmlDocument();
-            docXml.Load(docStream);
-        }
-        return FromPeStream(peStream, docXml);
+        return FromPeStream(peStream, docStream);
     }
 
     /// <summary>
@@ -74,6 +68,25 @@ public abstract class MetadataReference
         var peReader = new PEReader(peStream);
         var metadataReader = peReader.GetMetadataReader();
         return new MetadataReaderReference(metadataReader, documentation);
+    }
+
+    /// <summary>
+    /// Creates a metadata reference from the given PE stream.
+    /// </summary>
+    /// <param name="peStream">The PE stream to create the metadata reference from.</param>
+    /// <param name="xmlDocStream">The stream to read up XML documentation from for the assembly.</param>
+    /// <returns>The <see cref="MetadataReference"/> reading up from <paramref name="peStream"/>.</returns>
+    public static MetadataReference FromPeStream(Stream peStream, Stream? xmlDocStream)
+    {
+        var peReader = new PEReader(peStream);
+        var metadataReader = peReader.GetMetadataReader();
+        var docXml = null as XmlDocument;
+        if (xmlDocStream is not null)
+        {
+            docXml = new XmlDocument();
+            docXml.Load(xmlDocStream);
+        }
+        return new MetadataReaderReference(metadataReader, docXml);
     }
 
     private sealed class MetadataReaderReference(

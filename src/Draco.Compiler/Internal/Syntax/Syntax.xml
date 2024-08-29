@@ -1046,6 +1046,7 @@
       <Token Kind="Plus" />
       <Token Kind="Minus" />
       <Token Kind="KeywordNot" />
+      <Token Kind="CNot" />
     </Field>
     <Field Name="Operand" Type="ExpressionSyntax">
       <Documentation>
@@ -1082,6 +1083,9 @@
       <Token Kind="KeywordRem" />
       <Token Kind="KeywordAnd" />
       <Token Kind="KeywordOr" />
+      <Token Kind="CMod"/>
+      <Token Kind="COr"/>
+      <Token Kind="CAnd"/>
     </Field>
     <Field Name="Right" Type="ExpressionSyntax">
       <Documentation>

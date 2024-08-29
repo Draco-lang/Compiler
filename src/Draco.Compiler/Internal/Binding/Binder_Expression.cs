@@ -443,7 +443,7 @@ internal partial class Binder
                 return new BoundAssignmentExpression(syntax, null, left, await rightTask);
             }
         }
-        else if (syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr)
+        else if (syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr or TokenKind.CAnd or TokenKind.COr)
         {
             var leftTask = this.BindExpression(syntax.Left, constraints, diagnostics);
             var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
@@ -458,7 +458,7 @@ internal partial class Binder
                 rightTask.GetResultType(syntax.Left, constraints, diagnostics),
                 syntax.Right);
 
-            return syntax.Operator.Kind == TokenKind.KeywordAnd
+            return syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.CAnd
                 ? new BoundAndExpression(syntax, await leftTask, await rightTask)
                 : new BoundOrExpression(syntax, await leftTask, await rightTask);
         }

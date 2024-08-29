@@ -2323,4 +2323,34 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.False(xSym.IsError);
         Assert.Equal(compilation.WellKnownTypes.SystemInt32, xSym.Type);
     }
+
+    [Fact]
+    public void ErrorExpressionsDoNotCascadeErrorsInOverloading()
+    {
+        // import System.Numerics;
+        //
+        // func foo(): Vector3 = Vector3() + Vector3();
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Numerics"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("Vector3"),
+                InlineFunctionBody(BinaryExpression(
+                    CallExpression(NameExpression("Vector3")),
+                    Plus,
+                    CallExpression(NameExpression("Vector3")))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+
+        Assert.True(diags.All(d => !d.ToString().Contains("operator", StringComparison.OrdinalIgnoreCase)));
+    }
 }

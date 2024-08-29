@@ -175,6 +175,22 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
 
     #endregion
 
+    #region Additives/Mixins for types
+    /// <summary>
+    /// Returns all the equality operator members for an enum type.
+    /// </summary>
+    /// <param name="type">The enum type.</param>
+    /// <returns>The equality operator members.</returns>
+    public IEnumerable<Symbol> GetEnumEqualityMembers(TypeSymbol type)
+    {
+        if (!type.IsEnumType) throw new ArgumentException("the type must be an enum type", nameof(type));
+
+        // == and !=
+        yield return this.Comparison(TokenKind.Equal, type, type, FromAllocating(this.CodegenEqual));
+        yield return this.Comparison(TokenKind.NotEqual, type, type, FromAllocating(this.CodegenNotEqual));
+    }
+    #endregion
+
     public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(compilation, 1, this.SystemInt32));
     private ArrayTypeSymbol? array;
 

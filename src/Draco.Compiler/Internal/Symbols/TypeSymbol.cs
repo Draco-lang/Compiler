@@ -32,6 +32,11 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsDelegateType => false;
 
     /// <summary>
+    /// True, if this type is an enum type.
+    /// </summary>
+    public virtual bool IsEnumType => false;
+
+    /// <summary>
     /// True, if this type is an interface.
     /// </summary>
     public virtual bool IsInterface => false;

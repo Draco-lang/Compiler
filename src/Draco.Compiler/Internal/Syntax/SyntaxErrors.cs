@@ -153,4 +153,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "unexpected {0} before import statement",
         code: Code(16));
+
+    /// <summary>
+    /// A C-heritage symbol is used instead of the appropriate keyword.
+    /// </summary>
+    public static readonly DiagnosticTemplate CHertiageSymbol = DiagnosticTemplate.Create(
+        title: "C heritage symbol",
+        severity: DiagnosticSeverity.Error,
+        format: "{0} is not used by Draco, use {1} instead",
+        code: Code(17));
 }

@@ -115,6 +115,15 @@ internal sealed class Parser(
         {
             // There is such operator on this level
             var op = this.Advance();
+
+            // Check if the operator is a C-heritage operator
+            if (SyntaxFacts.GetHeritageReplacement(op.Kind) is { } replacementKind)
+            {
+                var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageSymbol, SyntaxFacts.GetUserFriendlyName(op.Kind), SyntaxFacts.GetUserFriendlyName(replacementKind));
+                var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: op.Width);
+                this.AddDiagnostic(op, diag);
+            }
+
             var subexpr = this.ParseExpression(level);
             return new UnaryExpressionSyntax(op, subexpr);
         }
@@ -140,6 +149,15 @@ internal sealed class Parser(
             var opKind = this.Peek();
             if (!operators.Contains(opKind)) break;
             var op = this.Advance();
+
+            // Check if the operator is a C-heritage operator
+            if (SyntaxFacts.GetHeritageReplacement(op.Kind) is { } replacementKind)
+            {
+                var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageSymbol, SyntaxFacts.GetUserFriendlyName(op.Kind), SyntaxFacts.GetUserFriendlyName(replacementKind));
+                var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: op.Width);
+                this.AddDiagnostic(op, diag);
+            }
+
             var right = this.ParseExpression(level + 1);
             result = new BinaryExpressionSyntax(result, op, right);
         }
@@ -205,6 +223,7 @@ internal sealed class Parser(
         TokenKind.KeywordGoto,
         TokenKind.KeywordIf,
         TokenKind.KeywordNot,
+        TokenKind.CNot,
         TokenKind.KeywordReturn,
         TokenKind.KeywordTrue,
         TokenKind.KeywordWhile,
@@ -966,17 +985,17 @@ internal sealed class Parser(
             TokenKind.PlusAssign, TokenKind.MinusAssign,
             TokenKind.StarAssign, TokenKind.SlashAssign)(level),
         // Then binary or
-        2 => this.BinaryLeft(TokenKind.KeywordOr)(level),
+        2 => this.BinaryLeft(TokenKind.KeywordOr, TokenKind.COr)(level),
         // Then binary and
-        3 => this.BinaryLeft(TokenKind.KeywordAnd)(level),
+        3 => this.BinaryLeft(TokenKind.KeywordAnd, TokenKind.CAnd)(level),
         // Then unary not
-        4 => this.Prefix(TokenKind.KeywordNot)(level),
+        4 => this.Prefix(TokenKind.KeywordNot, TokenKind.CNot)(level),
         // Then relational operators
         5 => this.ParseRelationalLevelExpression(level),
         // Then binary +, -
         6 => this.BinaryLeft(TokenKind.Plus, TokenKind.Minus)(level),
         // Then binary *, /, mod, rem
-        7 => this.BinaryLeft(TokenKind.Star, TokenKind.Slash, TokenKind.KeywordMod, TokenKind.KeywordRem)(level),
+        7 => this.BinaryLeft(TokenKind.Star, TokenKind.Slash, TokenKind.KeywordMod, TokenKind.CMod, TokenKind.KeywordRem)(level),
         // Then prefix unary + and -
         8 => this.Prefix(TokenKind.Plus, TokenKind.Minus)(level),
         // Then comes call, indexing and member access

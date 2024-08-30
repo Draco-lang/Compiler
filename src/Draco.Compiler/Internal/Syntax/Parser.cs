@@ -119,7 +119,7 @@ internal sealed class Parser(
             // Check if the operator is a C-heritage operator
             if (SyntaxFacts.GetHeritageReplacement(op.Kind) is { } replacementKind)
             {
-                var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageSymbol, SyntaxFacts.GetUserFriendlyName(op.Kind), SyntaxFacts.GetUserFriendlyName(replacementKind));
+                var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageToken, "operator", SyntaxFacts.GetUserFriendlyName(op.Kind), SyntaxFacts.GetUserFriendlyName(replacementKind));
                 var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: op.Width);
                 this.AddDiagnostic(op, diag);
             }
@@ -153,7 +153,7 @@ internal sealed class Parser(
             // Check if the operator is a C-heritage operator
             if (SyntaxFacts.GetHeritageReplacement(op.Kind) is { } replacementKind)
             {
-                var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageSymbol, SyntaxFacts.GetUserFriendlyName(op.Kind), SyntaxFacts.GetUserFriendlyName(replacementKind));
+                var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageToken, "operator", SyntaxFacts.GetUserFriendlyName(op.Kind), SyntaxFacts.GetUserFriendlyName(replacementKind));
                 var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: op.Width);
                 this.AddDiagnostic(op, diag);
             }

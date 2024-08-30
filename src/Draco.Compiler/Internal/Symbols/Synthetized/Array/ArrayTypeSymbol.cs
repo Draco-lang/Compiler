@@ -73,7 +73,8 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
         var iEnumerableBase = this.BaseTypes.First(b => b.Name == "IEnumerable" && b.IsGenericInstance);
         var iListBase = this.BaseTypes.First(b => b.Name == "IList" && b.IsGenericInstance);
         return iEnumerableBase.DefinedMembers
-            .Concat(iListBase.DefinedMembers)
+            // We filter out indexing
+            .Concat(iListBase.DefinedMembers.Where(m => m.Name != "Item"))
             .Append(new ArrayIndexPropertySymbol(this))
             .ToImmutableArray();
     }

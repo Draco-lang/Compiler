@@ -116,13 +116,7 @@ internal sealed class Parser(
             // There is such operator on this level
             var op = this.Advance();
 
-            // Check if the operator is a C-heritage operator
-            if (SyntaxFacts.GetHeritageReplacement(op.Kind) is { } replacementKind)
-            {
-                var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageToken, SyntaxFacts.GetUserFriendlyName(op.Kind), "operator", SyntaxFacts.GetUserFriendlyName(replacementKind));
-                var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: op.Width);
-                this.AddDiagnostic(op, diag);
-            }
+            this.CheckHeritageToken(op, "operator");
 
             var subexpr = this.ParseExpression(level);
             return new UnaryExpressionSyntax(op, subexpr);
@@ -150,13 +144,7 @@ internal sealed class Parser(
             if (!operators.Contains(opKind)) break;
             var op = this.Advance();
 
-            // Check if the operator is a C-heritage operator
-            if (SyntaxFacts.GetHeritageReplacement(op.Kind) is { } replacementKind)
-            {
-                var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageToken, SyntaxFacts.GetUserFriendlyName(op.Kind), "operator", SyntaxFacts.GetUserFriendlyName(replacementKind));
-                var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: op.Width);
-                this.AddDiagnostic(op, diag);
-            }
+            this.CheckHeritageToken(op, "operator");
 
             var right = this.ParseExpression(level + 1);
             result = new BinaryExpressionSyntax(result, op, right);
@@ -1421,6 +1409,21 @@ internal sealed class Parser(
     {
         if (parserMode != ParserMode.Repl) return false;
         return node.LastToken?.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline) == true;
+    }
+
+    /// <summary>
+    /// Checks a <see cref="SyntaxToken"/> for whether it is a heritage token and reports an error in case it is.
+    /// </summary>
+    /// <param name="token">The token to check.</param>
+    /// <param name="syntaxKind">The text which is displayed in the reported diagnostic indicating what kind of syntactic element the heritage token is.</param>
+    private void CheckHeritageToken(SyntaxToken token, string syntaxKind)
+    {
+        if (SyntaxFacts.GetHeritageReplacement(token.Kind) is { } replacementKind)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageToken, SyntaxFacts.GetUserFriendlyName(token.Kind), syntaxKind, SyntaxFacts.GetUserFriendlyName(replacementKind));
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: token.Width);
+            this.AddDiagnostic(token, diag);
+        }
     }
 
     // Token-level operators

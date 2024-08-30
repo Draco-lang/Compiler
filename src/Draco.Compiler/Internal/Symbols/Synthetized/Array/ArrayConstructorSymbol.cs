@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
-namespace Draco.Compiler.Internal.Symbols.Synthetized;
+namespace Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 /// <summary>
 /// A global constructor for arrays.

@@ -115,6 +115,9 @@ internal sealed class Parser(
         {
             // There is such operator on this level
             var op = this.Advance();
+
+            this.CheckHeritageToken(op, "operator");
+
             var subexpr = this.ParseExpression(level);
             return new UnaryExpressionSyntax(op, subexpr);
         }
@@ -140,6 +143,9 @@ internal sealed class Parser(
             var opKind = this.Peek();
             if (!operators.Contains(opKind)) break;
             var op = this.Advance();
+
+            this.CheckHeritageToken(op, "operator");
+
             var right = this.ParseExpression(level + 1);
             result = new BinaryExpressionSyntax(result, op, right);
         }
@@ -205,6 +211,7 @@ internal sealed class Parser(
         TokenKind.KeywordGoto,
         TokenKind.KeywordIf,
         TokenKind.KeywordNot,
+        TokenKind.CNot,
         TokenKind.KeywordReturn,
         TokenKind.KeywordTrue,
         TokenKind.KeywordWhile,
@@ -966,17 +973,17 @@ internal sealed class Parser(
             TokenKind.PlusAssign, TokenKind.MinusAssign,
             TokenKind.StarAssign, TokenKind.SlashAssign)(level),
         // Then binary or
-        2 => this.BinaryLeft(TokenKind.KeywordOr)(level),
+        2 => this.BinaryLeft(TokenKind.KeywordOr, TokenKind.COr)(level),
         // Then binary and
-        3 => this.BinaryLeft(TokenKind.KeywordAnd)(level),
+        3 => this.BinaryLeft(TokenKind.KeywordAnd, TokenKind.CAnd)(level),
         // Then unary not
-        4 => this.Prefix(TokenKind.KeywordNot)(level),
+        4 => this.Prefix(TokenKind.KeywordNot, TokenKind.CNot)(level),
         // Then relational operators
         5 => this.ParseRelationalLevelExpression(level),
         // Then binary +, -
         6 => this.BinaryLeft(TokenKind.Plus, TokenKind.Minus)(level),
         // Then binary *, /, mod, rem
-        7 => this.BinaryLeft(TokenKind.Star, TokenKind.Slash, TokenKind.KeywordMod, TokenKind.KeywordRem)(level),
+        7 => this.BinaryLeft(TokenKind.Star, TokenKind.Slash, TokenKind.KeywordMod, TokenKind.CMod, TokenKind.KeywordRem)(level),
         // Then prefix unary + and -
         8 => this.Prefix(TokenKind.Plus, TokenKind.Minus)(level),
         // Then comes call, indexing and member access
@@ -1402,6 +1409,20 @@ internal sealed class Parser(
     {
         if (parserMode != ParserMode.Repl) return false;
         return node.LastToken?.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline) == true;
+    }
+
+    /// <summary>
+    /// Checks a <see cref="SyntaxToken"/> for whether it is a heritage token and reports an error in case it is.
+    /// </summary>
+    /// <param name="token">The token to check.</param>
+    /// <param name="syntaxKind">The text which is displayed in the reported diagnostic indicating what kind of syntactic element the heritage token is.</param>
+    private void CheckHeritageToken(SyntaxToken token, string syntaxKind)
+    {
+        if (SyntaxFacts.GetHeritageReplacement(token.Kind) is not { } replacementKind) return;
+
+        var info = DiagnosticInfo.Create(SyntaxErrors.CHeritageToken, SyntaxFacts.GetUserFriendlyName(token.Kind), syntaxKind, SyntaxFacts.GetUserFriendlyName(replacementKind));
+        var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: token.Width);
+        this.AddDiagnostic(token, diag);
     }
 
     // Token-level operators

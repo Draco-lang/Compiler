@@ -314,4 +314,24 @@ public enum TokenKind
     /// '...'.
     /// </summary>
     Ellipsis,
+
+    /// <summary>
+    /// '%' (C-heritage).
+    /// </summary>
+    CMod,
+
+    /// <summary>
+    /// '||' (C-heritage).
+    /// </summary>
+    COr,
+
+    /// <summary>
+    /// '&amp;&amp;' (C-heritage).
+    /// </summary>
+    CAnd,
+
+    /// <summary>
+    /// '!' (C-heritage).
+    /// </summary>
+    CNot
 }

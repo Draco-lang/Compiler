@@ -237,7 +237,13 @@ internal sealed class Lexer
             return TakeBasic(TokenKind.Assign, 1);
         case '!':
             if (this.Peek(1) == '=') return TakeBasic(TokenKind.NotEqual, 2);
-            // NOTE: '!' in it self is not negation!
+            return TakeBasic(TokenKind.CNot, 1);
+        case '%': return TakeBasic(TokenKind.CMod, 1);
+        case '|':
+            if (this.Peek(1) == '|') return TakeBasic(TokenKind.COr, 2);
+            break;
+        case '&':
+            if (this.Peek(1) == '&') return TakeBasic(TokenKind.CAnd, 2);
             break;
         }
 

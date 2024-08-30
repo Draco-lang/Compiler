@@ -1156,6 +1156,10 @@ public sealed class LexerTests
     [InlineData("rem", TokenKind.KeywordRem)]
     [InlineData("and", TokenKind.KeywordAnd)]
     [InlineData("not", TokenKind.KeywordNot)]
+    [InlineData("%", TokenKind.CMod)]
+    [InlineData("||", TokenKind.COr)]
+    [InlineData("&&", TokenKind.CAnd)]
+    [InlineData("!", TokenKind.CNot)]
     [Trait("Feature", "Operators")]
     public void TestOperator(string text, TokenKind tokenKind)
     {

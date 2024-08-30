@@ -65,6 +65,10 @@ public static class SyntaxFacts
         TokenKind.StarAssign => "*=",
         TokenKind.SlashAssign => "/=",
         TokenKind.Ellipsis => "...",
+        TokenKind.CMod => "%",
+        TokenKind.COr => "||",
+        TokenKind.CAnd => "&&",
+        TokenKind.CNot => "!",
         _ => null,
     };
 
@@ -137,6 +141,20 @@ public static class SyntaxFacts
     /// <returns>True, if <paramref name="tokenKind"/> is a keyword, false otherwise.</returns>
     public static bool IsKeyword(TokenKind tokenKind) =>
         tokenKind.ToString().StartsWith("Keyword");
+
+    /// <summary>
+    /// Returns the replacement token for a given C-heritage token.
+    /// </summary>
+    /// <param name="tokenKind">The <see cref="TokenKind"/> of the heritage token.</param>
+    /// <returns>The syntactically valid token which replaces the <paramref name="tokenKind"/> heritage token, or null if <paramref name="tokenKind"/> is not a heritage token.</returns>
+    public static TokenKind? GetHeritageReplacement(TokenKind tokenKind) => tokenKind switch
+    {
+        TokenKind.CMod => TokenKind.KeywordMod,
+        TokenKind.COr => TokenKind.KeywordOr,
+        TokenKind.CAnd => TokenKind.KeywordAnd,
+        TokenKind.CNot => TokenKind.KeywordNot,
+        _ => null
+    };
 
     /// <summary>
     /// Computes the cutoff sequence that is removed from each line of a multiline string.

@@ -36,7 +36,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     {
         TokenKind.Plus => "op_UnaryPlus",
         TokenKind.Minus => "op_UnaryNegation",
-        TokenKind.KeywordNot => "op_LogicalNot",
+        TokenKind.KeywordNot or TokenKind.CNot => "op_LogicalNot",
         _ => throw new System.ArgumentOutOfRangeException(nameof(token)),
     };
 
@@ -54,7 +54,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         // NOTE: This is actually remainder
         TokenKind.KeywordRem => "op_Modulus",
         // TODO: Consider for interop
-        TokenKind.KeywordMod => "op_DracoModulo",
+        TokenKind.KeywordMod or TokenKind.CMod => "op_DracoModulo",
         _ => throw new System.ArgumentOutOfRangeException(nameof(token)),
     };
 

@@ -2289,6 +2289,42 @@ public sealed class TypeCheckingTests : SemanticTestsBase
     }
 
     [Fact]
+    public void ArrayIndexResultHasTheRightType()
+    {
+        // func main() {
+        //     val a = Array<int32>(3);
+        //     val x = a[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(GenericExpression(NameExpression("Array"), NameType("int32")), LiteralExpression(3)))),
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "x",
+                    null,
+                    IndexExpression(NameExpression("a"), LiteralExpression(0))))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.Equal(compilation.WellKnownTypes.SystemInt32, xSym.Type);
+    }
+
+    [Fact]
     public void ArrayIteratorVariableCorrectlyInferredInForLoop()
     {
         // func main() {

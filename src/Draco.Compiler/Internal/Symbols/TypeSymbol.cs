@@ -105,6 +105,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public override TypeSymbol? GenericDefinition => null;
 
     public bool IsStatic => true;
+    public bool IsExplicitImplementation => false;
 
     /// <summary>
     /// The invokable function, if this is a delegate type.

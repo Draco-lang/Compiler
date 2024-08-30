@@ -27,6 +27,7 @@ internal abstract class PropertySymbol : Symbol, ITypedSymbol, IMemberSymbol, IO
     /// </summary>
     public abstract bool IsIndexer { get; }
     public abstract bool IsStatic { get; }
+    public abstract bool IsExplicitImplementation { get; }
 
     public virtual Symbol? Override => null;
 

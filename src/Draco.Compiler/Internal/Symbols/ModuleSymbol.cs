@@ -15,6 +15,7 @@ internal abstract partial class ModuleSymbol : Symbol, IMemberSymbol
         : Visibility.Internal;
 
     public bool IsStatic => true;
+    public bool IsExplicitImplementation => false;
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitModule(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitModule(this);

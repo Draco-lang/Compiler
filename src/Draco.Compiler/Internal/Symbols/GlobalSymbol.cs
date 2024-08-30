@@ -10,6 +10,7 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract partial class GlobalSymbol : VariableSymbol, IMemberSymbol
 {
     public bool IsStatic => true;
+    public bool IsExplicitImplementation => false;
 
     // NOTE: Override for covariant return type
     public override GlobalSymbol? GenericDefinition => null;

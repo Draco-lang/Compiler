@@ -15,6 +15,7 @@ internal sealed class ArrayIndexPropertySymbol : PropertySymbol
 
     public override bool IsIndexer => true;
     public override bool IsStatic => false;
+    public override bool IsExplicitImplementation => false;
 
     public ArrayIndexPropertySymbol(ArrayTypeSymbol containingSymbol)
     {

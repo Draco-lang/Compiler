@@ -15,6 +15,7 @@ internal sealed class ErrorMemberSymbol : Symbol, ITypedSymbol, IMemberSymbol
     public TypeSymbol Type => WellKnownTypes.ErrorType;
 
     public bool IsStatic => true;
+    public bool IsExplicitImplementation => false;
 
     private ErrorMemberSymbol()
     {

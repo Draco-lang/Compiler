@@ -93,7 +93,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
             syntaxTrees: syntaxTrees,
 
             metadataReferences: designTimeBuild.References
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Select(r => MetadataReference.FromFile(r.FullName))
                 .ToImmutableArray(),
             rootModulePath: rootPath);
     }

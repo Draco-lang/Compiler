@@ -13,6 +13,7 @@ using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -634,16 +635,8 @@ internal partial class Binder
             case FieldSymbol field:
                 return new BoundFieldExpression(syntax, receiver, field);
             case PropertySymbol prop:
-                // It could be array length
-                if (prop.GenericDefinition is ArrayLengthPropertySymbol)
-                {
-                    return new BoundArrayLengthExpression(syntax, receiver);
-                }
-                else
-                {
-                    var getter = GetGetterSymbol(syntax, prop, diagnostics);
-                    return new BoundPropertyGetExpression(syntax, receiver, getter);
-                }
+                var getter = GetGetterSymbol(syntax, prop, diagnostics);
+                return new BoundPropertyGetExpression(syntax, receiver, getter);
             default:
                 // TODO
                 throw new NotImplementedException();
@@ -672,8 +665,7 @@ internal partial class Binder
         var receiver = await receiverTask;
         var indexer = await indexerTask;
 
-        var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
-        if (arrayIndexProperty is not null)
+        if (receiver.TypeRequired.IsArrayType)
         {
             // Array getter
             return new BoundArrayAccessExpression(syntax, receiver, await BindingTask.WhenAll(argsTask));

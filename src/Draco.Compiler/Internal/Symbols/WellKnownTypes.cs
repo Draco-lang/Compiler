@@ -12,6 +12,7 @@ using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -64,7 +65,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         for (var i = 2; i <= 8; ++i)
         {
             // Type
-            var arrayType = new ArrayTypeSymbol(i, this.SystemInt32);
+            var arrayType = new ArrayTypeSymbol(compilation, i, this.SystemInt32);
             yield return arrayType;
             // Ctor
             yield return new ArrayConstructorSymbol(arrayType);
@@ -170,12 +171,28 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     public TypeSymbol InstantiateArray(TypeSymbol elementType, int rank = 1) => rank switch
     {
         1 => this.ArrayType.GenericInstantiate(elementType),
-        int n => new ArrayTypeSymbol(n, this.SystemInt32).GenericInstantiate(elementType),
+        int n => new ArrayTypeSymbol(compilation, n, this.SystemInt32).GenericInstantiate(elementType),
     };
 
     #endregion
 
-    public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(1, this.SystemInt32));
+    #region Additives/Mixins for types
+    /// <summary>
+    /// Returns all the equality operator members for an enum type.
+    /// </summary>
+    /// <param name="type">The enum type.</param>
+    /// <returns>The equality operator members.</returns>
+    public IEnumerable<Symbol> GetEnumEqualityMembers(TypeSymbol type)
+    {
+        if (!type.IsEnumType) throw new ArgumentException("the type must be an enum type", nameof(type));
+
+        // == and !=
+        yield return this.Comparison(TokenKind.Equal, type, type, FromAllocating(this.CodegenEqual));
+        yield return this.Comparison(TokenKind.NotEqual, type, type, FromAllocating(this.CodegenNotEqual));
+    }
+    #endregion
+
+    public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(compilation, 1, this.SystemInt32));
     private ArrayTypeSymbol? array;
 
     public ArrayConstructorSymbol ArrayCtor => LazyInitializer.EnsureInitialized(ref this.arrayCtor, () => new(this.ArrayType));

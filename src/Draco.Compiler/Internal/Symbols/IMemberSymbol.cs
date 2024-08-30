@@ -9,4 +9,9 @@ internal interface IMemberSymbol
     /// Specifying if given symbol is static.
     /// </summary>
     public bool IsStatic { get; }
+
+    /// <summary>
+    /// True if this member is an explicit implementation of an interface member.
+    /// </summary>
+    public bool IsExplicitImplementation { get; }
 }

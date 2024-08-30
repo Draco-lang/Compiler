@@ -4,6 +4,7 @@ using System.Linq;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Solver;
 

@@ -7,7 +7,6 @@ using Draco.Compiler.Api.CodeCompletion;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 using PrettyPrompt;
-using PrettyPrompt.Completion;
 using PrettyPrompt.Consoles;
 using PrettyPrompt.Documents;
 using PrettyPrompt.Highlighting;

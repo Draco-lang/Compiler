@@ -6,7 +6,9 @@ using Draco.Compiler.Internal.Symbols.Synthetized;
 {{include 'Utils.sbncs'}}
 
 {{func nameify(name)}}
-    {{ret string.replace(name, '.', '')}}
+    {{$result = string.replace(name, '.', '')}}
+    {{$result = string.replace($result, '`', '_')}}
+    {{ret $result}}
 {{end}}
 
 #nullable enable

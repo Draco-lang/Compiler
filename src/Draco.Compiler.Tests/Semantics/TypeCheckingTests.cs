@@ -2287,4 +2287,106 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var intArray = compilation.WellKnownTypes.InstantiateArray(compilation.WellKnownTypes.SystemInt32);
         Assert.True(SymbolEqualityComparer.Default.Equals(intArray, aSym.Type));
     }
+
+    [Fact]
+    public void ArrayIndexResultHasTheRightType()
+    {
+        // func main() {
+        //     val a = Array<int32>(3);
+        //     val x = a[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(GenericExpression(NameExpression("Array"), NameType("int32")), LiteralExpression(3)))),
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "x",
+                    null,
+                    IndexExpression(NameExpression("a"), LiteralExpression(0))))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.Equal(compilation.WellKnownTypes.SystemInt32, xSym.Type);
+    }
+
+    [Fact]
+    public void ArrayIteratorVariableCorrectlyInferredInForLoop()
+    {
+        // func main() {
+        //     val a = Array<int32>(3);
+        //     for (x in a) { }
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(GenericExpression(NameExpression("Array"), NameType("int32")), LiteralExpression(3)))),
+                ExpressionStatement(ForExpression(
+                    "x",
+                    NameExpression("a"),
+                    BlockExpression()))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xDecl = main.FindInChildren<ForExpressionSyntax>().Iterator;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.Equal(compilation.WellKnownTypes.SystemInt32, xSym.Type);
+    }
+
+    [Fact]
+    public void ErrorExpressionsDoNotCascadeErrorsInOverloading()
+    {
+        // import System.Numerics;
+        //
+        // func foo(): Vector3 = Vector3() + Vector3();
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Numerics"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("Vector3"),
+                InlineFunctionBody(BinaryExpression(
+                    CallExpression(NameExpression("Vector3")),
+                    Plus,
+                    CallExpression(NameExpression("Vector3")))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+
+        Assert.True(diags.All(d => !d.ToString().Contains("operator", StringComparison.OrdinalIgnoreCase)));
+    }
 }

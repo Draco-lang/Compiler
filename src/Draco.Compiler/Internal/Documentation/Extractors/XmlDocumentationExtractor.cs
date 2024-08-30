@@ -93,13 +93,24 @@ internal sealed class XmlDocumentationExtractor
         return elements.ToImmutable();
     }
 
-    private ReferenceDocumentationElement ConstructReference(XmlNode node)
+    private DocumentationElement ConstructReference(XmlNode node)
     {
+        // It can be a 'cref' or a 'langword'
         var cref = node.Attributes?["cref"]?.Value;
-        var symbol = this.GetSymbolFromDocumentationName(cref ?? string.Empty)
-            // NOTE: The first two characters of the link is the documentation prefix
-            ?? new PrimitiveTypeSymbol(cref?[2..] ?? string.Empty, false);
-        return new ReferenceDocumentationElement(symbol, string.IsNullOrEmpty(node.InnerText) ? null : node.InnerText);
+        if (cref is not null)
+        {
+            var symbol = this.GetSymbolFromDocumentationName(cref)
+                // NOTE: The first two characters of the link is the documentation prefix
+                ?? new PrimitiveTypeSymbol(cref[2..], false);
+            return new ReferenceDocumentationElement(symbol, node.InnerText.Length == 0 ? null : node.InnerText);
+        }
+        var langword = node.Attributes?["langword"]?.Value;
+        if (langword is not null)
+        {
+            return new TextDocumentationElement(langword);
+        }
+        // Bail out with some default
+        return new TextDocumentationElement($"unknown reference element: {node.InnerText}");
     }
 
     private Symbol? GetSymbolFromDocumentationName(string documentationName) =>

@@ -32,6 +32,16 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsDelegateType => false;
 
     /// <summary>
+    /// True, if this type is an enum type.
+    /// </summary>
+    public virtual bool IsEnumType => false;
+
+    /// <summary>
+    /// True. if this is a native .NET array type.
+    /// </summary>
+    public virtual bool IsArrayType => false;
+
+    /// <summary>
     /// True, if this type is an interface.
     /// </summary>
     public virtual bool IsInterface => false;
@@ -100,6 +110,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public override TypeSymbol? GenericDefinition => null;
 
     public bool IsStatic => true;
+    public bool IsExplicitImplementation => false;
 
     /// <summary>
     /// The invokable function, if this is a delegate type.

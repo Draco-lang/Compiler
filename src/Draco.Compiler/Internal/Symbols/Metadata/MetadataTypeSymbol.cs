@@ -40,12 +40,16 @@ internal sealed class MetadataTypeSymbol(
 
     public override Symbol ContainingSymbol { get; } = containingSymbol;
 
-    public override bool IsValueType => this.BaseTypes.Contains(
+    public override bool IsValueType => this.IsEnumType || this.BaseTypes.Contains(
         this.Assembly.Compilation.WellKnownTypes.SystemValueType,
         SymbolEqualityComparer.Default);
 
     public override bool IsDelegateType => this.BaseTypes.Contains(
         this.Assembly.Compilation.WellKnownTypes.SystemDelegate,
+        SymbolEqualityComparer.Default);
+
+    public override bool IsEnumType => this.BaseTypes.Contains(
+        this.Assembly.Compilation.WellKnownTypes.SystemEnum,
         SymbolEqualityComparer.Default);
 
     public override bool IsInterface => typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
@@ -186,6 +190,13 @@ internal sealed class MetadataTypeSymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef);
             if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
+        }
+
+        // If this is an enum, inject == and != operators
+        if (this.IsEnumType)
+        {
+            var wellKnownTypes = this.Assembly.Compilation.WellKnownTypes;
+            result.AddRange(wellKnownTypes.GetEnumEqualityMembers(this));
         }
 
         // Done

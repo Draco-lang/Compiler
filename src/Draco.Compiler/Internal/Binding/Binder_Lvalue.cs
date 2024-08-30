@@ -8,7 +8,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -153,8 +153,7 @@ internal partial class Binder
         var receiver = await receiverTask;
         var indexer = await indexerTask;
 
-        var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
-        if (arrayIndexProperty is not null)
+        if (receiver.TypeRequired.IsArrayType)
         {
             return new BoundArrayAccessLvalue(
                 syntax,

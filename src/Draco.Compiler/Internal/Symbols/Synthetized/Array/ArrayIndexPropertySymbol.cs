@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Draco.Compiler.Internal.Symbols.Synthetized;
+namespace Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 /// <summary>
 /// The indexer property of arrays.
@@ -15,6 +15,7 @@ internal sealed class ArrayIndexPropertySymbol : PropertySymbol
 
     public override bool IsIndexer => true;
     public override bool IsStatic => false;
+    public override bool IsExplicitImplementation => false;
 
     public ArrayIndexPropertySymbol(ArrayTypeSymbol containingSymbol)
     {

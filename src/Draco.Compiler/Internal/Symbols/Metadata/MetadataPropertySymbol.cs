@@ -25,6 +25,9 @@ internal sealed class MetadataPropertySymbol(
     private FunctionSymbol? setter;
 
     public override bool IsStatic => (this.Getter ?? this.Setter)?.IsStatic ?? throw new InvalidOperationException();
+    public override bool IsExplicitImplementation => this.Getter?.IsExplicitImplementation
+                                                  ?? this.Setter?.IsExplicitImplementation
+                                                  ?? false;
 
     public override Api.Semantics.Visibility Visibility => (this.Getter ?? this.Setter)?.Visibility ?? throw new InvalidOperationException();
 

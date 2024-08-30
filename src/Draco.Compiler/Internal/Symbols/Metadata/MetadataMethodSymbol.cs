@@ -62,7 +62,14 @@ internal class MetadataMethodSymbol(
                 || this.Override is not null;
         }
     }
+
     public override bool IsStatic => methodDefinition.Attributes.HasFlag(MethodAttributes.Static);
+
+    // TODO: Very hacky way of doing this
+    public override bool IsExplicitImplementation =>
+           this.Visibility == Api.Semantics.Visibility.Private
+        || this.Name.Contains('.');
+
     public override Api.Semantics.Visibility Visibility
     {
         get

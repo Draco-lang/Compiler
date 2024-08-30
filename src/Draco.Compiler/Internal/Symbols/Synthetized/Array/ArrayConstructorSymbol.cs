@@ -48,7 +48,7 @@ internal sealed class ArrayConstructorSymbol(ArrayTypeSymbol genericArrayType) :
 
     private ImmutableArray<ParameterSymbol> BuildParameters() => this.Rank switch
     {
-        1 => [new SynthetizedParameterSymbol(this, "capacity", genericArrayType.IndexType) as ParameterSymbol],
+        1 => [new SynthetizedParameterSymbol(this, "capacity", genericArrayType.IndexType)],
         int n => Enumerable
             .Range(1, n)
             .Select(i => new SynthetizedParameterSymbol(this, $"capacity{i}", genericArrayType.IndexType) as ParameterSymbol)

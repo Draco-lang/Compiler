@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Draco.Compiler.Internal.Symbols.Synthetized;
+namespace Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 /// <summary>
 /// The indexer property of arrays.

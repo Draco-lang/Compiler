@@ -37,6 +37,11 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsEnumType => false;
 
     /// <summary>
+    /// True. if this is a native .NET array type.
+    /// </summary>
+    public virtual bool IsArrayType => false;
+
+    /// <summary>
     /// True, if this type is an interface.
     /// </summary>
     public virtual bool IsInterface => false;

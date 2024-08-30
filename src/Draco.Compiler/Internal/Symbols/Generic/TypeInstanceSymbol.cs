@@ -51,10 +51,13 @@ internal sealed class TypeInstanceSymbol(
     public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => this.GenericDefinition.ImmediateBaseTypes
         .Select(x => x.GenericInstantiate(x.ContainingSymbol, this.Context))
         .ToImmutableArray();
+    public override bool IsAbstract => this.GenericDefinition.IsAbstract;
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;
     public override bool IsDelegateType => this.GenericDefinition.IsDelegateType;
     public override bool IsInterface => this.GenericDefinition.IsInterface;
+    public override bool IsArrayType => this.GenericDefinition.IsArrayType;
+    public override bool IsSealed => this.GenericDefinition.IsSealed;
     public override string Name => this.GenericDefinition.Name;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;

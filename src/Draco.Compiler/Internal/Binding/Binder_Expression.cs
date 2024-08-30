@@ -665,8 +665,7 @@ internal partial class Binder
         var receiver = await receiverTask;
         var indexer = await indexerTask;
 
-        var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
-        if (arrayIndexProperty is not null)
+        if (receiver.TypeRequired.IsArrayType)
         {
             // Array getter
             return new BoundArrayAccessExpression(syntax, receiver, await BindingTask.WhenAll(argsTask));

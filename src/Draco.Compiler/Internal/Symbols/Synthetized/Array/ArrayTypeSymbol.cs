@@ -25,6 +25,8 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
     /// </summary>
     public int Rank { get; }
 
+    public override bool IsArrayType => true;
+
     public override Compilation DeclaringCompilation { get; }
 
     public override ImmutableArray<TypeSymbol> ImmediateBaseTypes =>
@@ -68,13 +70,20 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
 
     private ImmutableArray<Symbol> BuildDefinedMembers()
     {
-        // We need to re-add all members that should not be hidden by the base types
-        var iEnumerableBase = this.BaseTypes.First(b => b.Name == "IEnumerable" && b.IsGenericInstance);
-        var iListBase = this.BaseTypes.First(b => b.Name == "IList" && b.IsGenericInstance);
-        return iEnumerableBase.DefinedMembers
-            // We filter out indexing
-            .Concat(iListBase.DefinedMembers.Where(m => m.Name != "Item"))
-            .Append(new ArrayIndexPropertySymbol(this))
-            .ToImmutableArray();
+        if (this.Rank == 1)
+        {
+            // We need to re-add all members that should not be hidden by the base types
+            // IList will provide indexing
+            var iEnumerableBase = this.BaseTypes.First(b => b.Name == "IEnumerable" && b.IsGenericInstance);
+            var iListBase = this.BaseTypes.First(b => b.Name == "IList" && b.IsGenericInstance);
+            return iEnumerableBase.DefinedMembers
+                .Concat(iListBase.DefinedMembers)
+                .ToImmutableArray();
+        }
+        else
+        {
+            // We just provide indexing
+            return [new ArrayIndexPropertySymbol(this)];
+        }
     }
 }

@@ -27,4 +27,23 @@ public sealed class ScriptTests
         Assert.True(result.Success);
         Assert.Equal(7, result.Value);
     }
+
+    [Fact]
+    public void SyntaxErrorInScript()
+    {
+        // Arrange
+        var script = Script.Create<int>("""
+            var x = ;
+            """,
+            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
+                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+                .ToImmutableArray());
+
+        // Act
+        var result = script.Execute();
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotEmpty(result.Diagnostics);
+    }
 }

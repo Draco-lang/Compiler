@@ -99,10 +99,10 @@ internal sealed class XmlDocumentationExtractor
         var cref = node.Attributes?["cref"]?.Value;
         if (cref is not null)
         {
-            var symbol = this.GetSymbolFromDocumentationName(cref ?? string.Empty)
+            var symbol = this.GetSymbolFromDocumentationName(cref)
                 // NOTE: The first two characters of the link is the documentation prefix
-                ?? new PrimitiveTypeSymbol(cref?[2..] ?? string.Empty, false);
-            return new ReferenceDocumentationElement(symbol, string.IsNullOrEmpty(node.InnerText) ? null : node.InnerText);
+                ?? new PrimitiveTypeSymbol(cref[2..], false);
+            return new ReferenceDocumentationElement(symbol, node.InnerText.Length == 0 ? null : node.InnerText);
         }
         var langword = node.Attributes?["langword"]?.Value;
         if (langword is not null)

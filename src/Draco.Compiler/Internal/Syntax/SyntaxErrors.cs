@@ -157,7 +157,7 @@ internal static class SyntaxErrors
     /// <summary>
     /// A C-heritage symbol is used instead of the appropriate keyword.
     /// </summary>
-    public static readonly DiagnosticTemplate CHertiageToken = DiagnosticTemplate.Create(
+    public static readonly DiagnosticTemplate CHeritageToken = DiagnosticTemplate.Create(
         title: "C heritage symbol",
         severity: DiagnosticSeverity.Error,
         format: "{0} is not a valid {1} in Draco, use {2} instead",

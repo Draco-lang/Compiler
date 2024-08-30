@@ -1445,7 +1445,7 @@ public sealed class ParserTests
             {
                 this.T(TokenKind.LiteralInteger, "3");
             }
-            this.InvalidT(TokenKind.CMod, SyntaxErrors.CHertiageToken);
+            this.InvalidT(TokenKind.CMod, SyntaxErrors.CHeritageToken);
             this.N<LiteralExpressionSyntax>();
             {
                 this.T(TokenKind.LiteralInteger, "2");
@@ -1501,16 +1501,16 @@ public sealed class ParserTests
                 {
                     this.T(TokenKind.KeywordTrue);
                 }
-                this.InvalidT(TokenKind.CAnd, SyntaxErrors.CHertiageToken);
+                this.InvalidT(TokenKind.CAnd, SyntaxErrors.CHeritageToken);
                 this.N<LiteralExpressionSyntax>();
                 {
                     this.T(TokenKind.KeywordFalse);
                 }
             }
-            this.InvalidT(TokenKind.COr, SyntaxErrors.CHertiageToken);
+            this.InvalidT(TokenKind.COr, SyntaxErrors.CHeritageToken);
             this.N<UnaryExpressionSyntax>();
             {
-                this.InvalidT(TokenKind.CNot, SyntaxErrors.CHertiageToken);
+                this.InvalidT(TokenKind.CNot, SyntaxErrors.CHeritageToken);
                 this.N<LiteralExpressionSyntax>();
                 {
                     this.T(TokenKind.KeywordFalse);

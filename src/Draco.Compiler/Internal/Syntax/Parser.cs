@@ -1418,12 +1418,11 @@ internal sealed class Parser(
     /// <param name="syntaxKind">The text which is displayed in the reported diagnostic indicating what kind of syntactic element the heritage token is.</param>
     private void CheckHeritageToken(SyntaxToken token, string syntaxKind)
     {
-        if (SyntaxFacts.GetHeritageReplacement(token.Kind) is { } replacementKind)
-        {
-            var info = DiagnosticInfo.Create(SyntaxErrors.CHertiageToken, SyntaxFacts.GetUserFriendlyName(token.Kind), syntaxKind, SyntaxFacts.GetUserFriendlyName(replacementKind));
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: token.Width);
-            this.AddDiagnostic(token, diag);
-        }
+        if (!(SyntaxFacts.GetHeritageReplacement(token.Kind) is { } replacementKind)) return;
+
+        var info = DiagnosticInfo.Create(SyntaxErrors.CHeritageToken, SyntaxFacts.GetUserFriendlyName(token.Kind), syntaxKind, SyntaxFacts.GetUserFriendlyName(replacementKind));
+        var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: token.Width);
+        this.AddDiagnostic(token, diag);
     }
 
     // Token-level operators

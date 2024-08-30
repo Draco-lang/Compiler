@@ -66,6 +66,12 @@ public sealed class ParserTests
            t.Kind == type
         && this.diagnostics.Get(t).Any(d => d.Info.Severity == Api.Diagnostics.DiagnosticSeverity.Error)
     );
+    private void InvalidT(TokenKind type, params Api.Diagnostics.DiagnosticTemplate[] diagnostics) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && this.diagnostics.Get(t)
+            .Select(x => x.Info.Template)
+            .ToHashSet()
+            .IsSupersetOf(diagnostics));
 
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {
@@ -1427,6 +1433,27 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void TestHeritageOperatorMod()
+    {
+        this.ParseExpression("""
+            3 % 2
+            """);
+
+        this.N<BinaryExpressionSyntax>();
+        {
+            this.N<LiteralExpressionSyntax>();
+            {
+                this.T(TokenKind.LiteralInteger, "3");
+            }
+            this.InvalidT(TokenKind.CMod, SyntaxErrors.CHertiageToken);
+            this.N<LiteralExpressionSyntax>();
+            {
+                this.T(TokenKind.LiteralInteger, "2");
+            }
+        }
+    }
+
+    [Fact]
     public void TestOperatorAndOrNot()
     {
         this.ParseExpression("""
@@ -1451,6 +1478,39 @@ public sealed class ParserTests
             this.N<UnaryExpressionSyntax>();
             {
                 this.T(TokenKind.KeywordNot);
+                this.N<LiteralExpressionSyntax>();
+                {
+                    this.T(TokenKind.KeywordFalse);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void TestHeritageOperatorAndOrNot()
+    {
+        this.ParseExpression("""
+            true && false || !false
+            """);
+
+        this.N<BinaryExpressionSyntax>();
+        {
+            this.N<BinaryExpressionSyntax>();
+            {
+                this.N<LiteralExpressionSyntax>();
+                {
+                    this.T(TokenKind.KeywordTrue);
+                }
+                this.InvalidT(TokenKind.CAnd, SyntaxErrors.CHertiageToken);
+                this.N<LiteralExpressionSyntax>();
+                {
+                    this.T(TokenKind.KeywordFalse);
+                }
+            }
+            this.InvalidT(TokenKind.COr, SyntaxErrors.CHertiageToken);
+            this.N<UnaryExpressionSyntax>();
+            {
+                this.InvalidT(TokenKind.CNot, SyntaxErrors.CHertiageToken);
                 this.N<LiteralExpressionSyntax>();
                 {
                     this.T(TokenKind.KeywordFalse);

@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Api;
 
-namespace Draco.Compiler.Internal.Symbols.Synthetized;
+namespace Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 /// <summary>
 /// An array modeled as generics.
@@ -39,10 +40,8 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => [this.ElementType];
 
-    public override IEnumerable<Symbol> DefinedMembers =>
-    [
-        new ArrayIndexPropertySymbol(this),
-    ];
+    public override IEnumerable<Symbol> DefinedMembers => InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildDefinedMembers);
+    private ImmutableArray<Symbol> definedMembers;
 
     public ArrayTypeSymbol(Compilation compilation, int rank, TypeSymbol indexType)
     {
@@ -66,5 +65,16 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
             wellKnownTypes.SystemArray,
             wellKnownTypes.SystemCollectionsGenericIList_1.GenericInstantiate(this.ContainingSymbol, [this.ElementType]),
             wellKnownTypes.SystemCollectionsGenericIReadOnlyList_1.GenericInstantiate(this.ContainingSymbol, [this.ElementType])];
+    }
+
+    private ImmutableArray<Symbol> BuildDefinedMembers()
+    {
+        // We need to re-add all members that should not be hidden by the base types
+        var iEnumerableBase = this.BaseTypes.First(b => b.Name == "IEnumerable" && b.IsGenericInstance);
+        var iListBase = this.BaseTypes.First(b => b.Name == "IList" && b.IsGenericInstance);
+        return iEnumerableBase.DefinedMembers
+            .Concat(iListBase.DefinedMembers)
+            .Append(new ArrayIndexPropertySymbol(this))
+            .ToImmutableArray();
     }
 }

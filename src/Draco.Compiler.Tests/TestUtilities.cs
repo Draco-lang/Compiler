@@ -15,6 +15,9 @@ using System.Reflection;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
 using Draco.Compiler.Internal;
 using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
+using System.Runtime.Loader;
+using Microsoft.VisualStudio.TestPlatform.PlatformAbstractions.Interfaces;
 
 namespace Draco.Compiler.Tests;
 
@@ -80,8 +83,9 @@ internal static class TestUtilities
         where TSymbol : Symbol
     {
         Assert.NotNull(symbol);
-        Assert.IsType<TSymbol>(symbol);
+        Assert.IsAssignableFrom<SymbolBase>(symbol);
         var symbolBase = (SymbolBase)symbol!;
+        Assert.IsAssignableFrom<TSymbol>(symbolBase.Symbol);
         return (TSymbol)symbolBase.Symbol;
     }
 

@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
@@ -9,12 +10,12 @@ public sealed class MetadataTests
     [Fact]
     public void TestReferencedAssemblyVersion()
     {
-        using var assemblyBytes = CompileRaw("""
+        using var assemblyBytes = CompileToMemory(CreateCompilation("""
             import System.Console;
             func main() {
                 WriteLine();
             }
-            """);
+            """));
 
         using var peReader = new PEReader(assemblyBytes);
         var metadataReader = peReader.GetMetadataReader();

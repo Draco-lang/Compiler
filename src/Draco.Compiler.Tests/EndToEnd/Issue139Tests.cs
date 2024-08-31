@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Declarations;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
@@ -199,15 +200,7 @@ public sealed class Issue139Tests
         func foo(): string = "\{0}";
         """)]
     [Theory]
-    public void DoesNotCrash(string source)
-    {
-        var syntaxTree = SyntaxTree.Parse(source);
-        var compilation = Compilation.Create(
-            syntaxTrees: [syntaxTree],
-            metadataReferences: TestUtilities.BclReferences);
-        _ = compilation.Diagnostics.ToList();
-        compilation.Emit(peStream: new MemoryStream());
-    }
+    public void DoesNotCrash(string source) => CompileToMemory(CreateCompilation(source));
 
     [Fact]
     public void EmptyDeclarationTableDoesNotCrash()

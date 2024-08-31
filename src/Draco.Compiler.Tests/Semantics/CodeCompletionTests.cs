@@ -13,10 +13,7 @@ public sealed class CodeCompletionTests
 
     private static ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel model, SyntaxPosition cursor)
     {
-        var service = new CompletionService();
-        service.AddProvider(new KeywordCompletionProvider());
-        service.AddProvider(new ExpressionCompletionProvider());
-        service.AddProvider(new MemberCompletionProvider());
+        var service = CompletionService.CreateDefault();
         var cursorIndex = tree.SourceText.SyntaxPositionToIndex(cursor);
         return service.GetCompletions(tree, model, cursorIndex);
     }

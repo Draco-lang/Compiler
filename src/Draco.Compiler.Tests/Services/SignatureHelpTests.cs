@@ -17,14 +17,12 @@ public sealed class SignatureHelpTests
     {
         var tree = SyntaxTree.Parse(code);
         var cursorIndex = code.IndexOf(cursor);
-        var cursorPosition = tree.IndexToSyntaxPosition(cursorIndex);
 
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var signatureService = new SignatureService();
-        // TODO: Any reason signature service doesn't take an index?
-        return signatureService.GetSignature(tree, semanticModel, cursorPosition);
+        var signatureService = SignatureService.CreateDefault();
+        return signatureService.GetSignature(semanticModel, cursorIndex);
     }
 
     [Fact]

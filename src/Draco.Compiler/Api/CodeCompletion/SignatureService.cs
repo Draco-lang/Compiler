@@ -11,14 +11,22 @@ namespace Draco.Compiler.Api.CodeCompletion;
 public sealed class SignatureService
 {
     /// <summary>
+    /// Creates a new <see cref="SignatureService"/> with default settings.
+    /// </summary>
+    /// <returns>A new <see cref="SignatureService"/> with default settings.</returns>
+    public static SignatureService CreateDefault() => new();
+
+    /// <summary>
     /// Gets <see cref="SignatureItem"/> for the current context.
     /// </summary>
-    /// <param name="tree">The <see cref="SyntaxTree"/> in which to get signature information.</param>
-    /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
-    /// <param name="cursor">The cursors <see cref="SyntaxPosition"/> in the <paramref name="tree"/>.</param>
-    /// <returns><see cref="SignatureItem"/> created based on the current context or null, if the context doesn't have any signature information to display.</returns>
-    public SignatureItem? GetSignature(SyntaxTree tree, SemanticModel semanticModel, SyntaxPosition cursor)
+    /// <param name="semanticModel">The <see cref="SemanticModel"/> for the tree.</param>
+    /// <param name="cursorIndex">The cursors index in the tree.</param>
+    /// <returns>A <see cref="SignatureItem"/> created based on the current context or null, if the context doesn't have any signature information to display.</returns>
+    public SignatureItem? GetSignature(SemanticModel semanticModel, int cursorIndex)
     {
+        var tree = semanticModel.Tree;
+        var cursor = tree.IndexToSyntaxPosition(cursorIndex);
+
         // Check if this is a call expression
         var call = tree.Root
             .TraverseSubtreesAtCursorPosition(cursor)

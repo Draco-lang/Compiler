@@ -71,7 +71,7 @@ internal sealed class ReplPromptCallbacks(
             .OfType<SyntaxToken>()
             .LastOrDefault();
 
-        var completionItems = this.completionService.GetCompletions(tree, semanticModel, caret);
+        var completionItems = this.completionService.GetCompletions(semanticModel, caret);
 
         var result = new List<CompletionItem>();
         foreach (var item in completionItems)

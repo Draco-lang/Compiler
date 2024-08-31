@@ -28,7 +28,7 @@ public sealed class CodeCompletionTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var completionService = CompletionService.CreateDefault();
-        return completionService.GetCompletions(tree, semanticModel, cursorIndex);
+        return completionService.GetCompletions(semanticModel, cursorIndex);
     }
 
     [Fact]

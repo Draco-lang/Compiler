@@ -44,8 +44,9 @@ public sealed class KeywordCompletionProvider : CompletionProvider
     }
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(
-        SyntaxTree tree, SemanticModel semanticModel, int cursorIndex, CompletionContext contexts)
+        SemanticModel semanticModel, int cursorIndex, CompletionContext contexts)
     {
+        var tree = semanticModel.Tree;
         var cursor = tree.IndexToSyntaxPosition(cursorIndex);
         var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
         if (syntax is null) return [];

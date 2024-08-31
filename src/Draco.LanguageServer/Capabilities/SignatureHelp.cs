@@ -23,7 +23,8 @@ internal sealed partial class DracoLanguageServer : ISignatureHelp
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var cursorPosition = Translator.ToCompiler(param.Position);
-        var signatureItems = this.signatureService.GetSignature(syntaxTree, semanticModel, cursorPosition);
+        var cursorIndex = syntaxTree.SyntaxPositionToIndex(cursorPosition);
+        var signatureItems = this.signatureService.GetSignature(semanticModel, cursorIndex);
         return Task.FromResult(Translator.ToLsp(signatureItems));
     }
 }

@@ -35,20 +35,33 @@ public sealed class CompletionService
     /// <summary>
     /// Gets <see cref="CompletionItem"/>s from all applicable <see cref="CompletionProvider"/>s.
     /// </summary>
-    /// <param name="tree">The <see cref="SyntaxTree"/> for which this service will create suggestions.</param>
-    /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
-    /// <param name="cursorIndex">Index of the cursor in the <paramref name="tree"/>.</param>
+    /// <param name="semanticModel">The <see cref="SemanticModel"/> for the tree.</param>
+    /// <param name="cursorIndex">Index of the cursor in the tree.</param>
     /// <returns><see cref="CompletionItem"/>s from all <see cref="CompletionProvider"/>s.</returns>
-    public ImmutableArray<CompletionItem> GetCompletions(SyntaxTree tree, SemanticModel semanticModel, int cursorIndex)
+    public ImmutableArray<CompletionItem> GetCompletions(SemanticModel semanticModel, int cursorIndex)
     {
+        var tree = semanticModel.Tree;
+
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
         var currentContext = this.GetCurrentContexts(tree, cursorIndex);
+
+        // Look, if we are under an identifier token that can filter completions
+        var cursorPosition = tree.IndexToSyntaxPosition(cursorIndex);
+        var idAtCursor = tree.TraverseSubtreesAtCursorPosition(cursorPosition)
+            .OfType<SyntaxToken>()
+            .Where(x => x.Kind == TokenKind.Identifier || SyntaxFacts.IsKeyword(x.Kind))
+            .LastOrDefault();
+
         foreach (var provider in this.providers)
         {
-            if (provider.IsApplicableIn(currentContext))
+            if (!provider.IsApplicableIn(currentContext)) continue;
+
+            var completionItems = provider.GetCompletionItems(semanticModel, cursorIndex, currentContext);
+            if (idAtCursor is not null)
             {
-                result.AddRange(provider.GetCompletionItems(tree, semanticModel, cursorIndex, currentContext));
+                // TODO: Filter completionItems
             }
+            result.AddRange(completionItems);
         }
         return result.ToImmutable();
     }

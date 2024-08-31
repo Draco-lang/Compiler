@@ -69,6 +69,13 @@ internal static class TestUtilities
 
     #region Semantic utilities
 
+    public static Symbol GetMetadataSymbol(Compilation compilation, string? assemblyName, params string[] path)
+    {
+        assemblyName ??= DefaultAssemblyName;
+        var asm = compilation.MetadataAssemblies.Single(a => a.AssemblyName.Name == assemblyName);
+        return asm.RootNamespace.Lookup([.. path]).First();
+    }
+
     public static TSymbol GetInternalSymbol<TSymbol>(ISymbol? symbol)
         where TSymbol : Symbol
     {

@@ -270,7 +270,7 @@ public sealed class DocumentationCommentsTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var nestedTypeSym = GetMemberSymbol<TypeSymbol>(typeSym, "NestedTestClass");
+        var nestedTypeSym = GetMember<TypeSymbol>(typeSym, "NestedTestClass");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -358,7 +358,7 @@ public sealed class DocumentationCommentsTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+        var methodSym = GetMember<FunctionSymbol>(typeSym, "TestMethod");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -404,7 +404,7 @@ public sealed class DocumentationCommentsTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+        var methodSym = GetMember<FunctionSymbol>(typeSym, "TestMethod");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -448,7 +448,7 @@ public sealed class DocumentationCommentsTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var fieldSym = GetMemberSymbol<FieldSymbol>(typeSym, "TestField");
+        var fieldSym = GetMember<FieldSymbol>(typeSym, "TestField");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -492,7 +492,7 @@ public sealed class DocumentationCommentsTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var propertySym = GetMemberSymbol<PropertySymbol>(typeSym, "TestProperty");
+        var propertySym = GetMember<PropertySymbol>(typeSym, "TestProperty");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -540,7 +540,7 @@ public sealed class DocumentationCommentsTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+        var methodSym = GetMember<FunctionSymbol>(typeSym, "TestMethod");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -599,7 +599,7 @@ public sealed class DocumentationCommentsTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+        var methodSym = GetMember<FunctionSymbol>(typeSym, "TestMethod");
 
         var xmlGeneratedDocs = """
             <summary>Documentation for TestMethod, which is in <see cref="T:TestNamespace.TestClass" />, random generic link <see cref="T:System.Collections.Generic.List`1" /></summary>

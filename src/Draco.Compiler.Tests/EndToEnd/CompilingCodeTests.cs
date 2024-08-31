@@ -490,7 +490,7 @@ public sealed class CompilingCodeTests
     [Fact]
     public void GenericMemberMethodCall()
     {
-        var csReference = CompileCSharpToMetadataReference("""
+        var csReference = CompileCSharpToStream("""
             public class IdentityProvider
             {
                 public T Identity<T>(T x) => x;
@@ -512,7 +512,7 @@ public sealed class CompilingCodeTests
     [Fact]
     public void PropertiesCompoundAssignment()
     {
-        var csReference = CompileCSharpToMetadataReference("""
+        var csReference = CompileCSharpToStream("""
             public class FooTest
             {
                 public static int StaticProp { get; set; } = 5;
@@ -537,7 +537,7 @@ public sealed class CompilingCodeTests
     [Fact]
     public void MemberFields()
     {
-        var csReference = CompileCSharpToMetadataReference("""
+        var csReference = CompileCSharpToStream("""
             public class FooTest
             {
                 public int number = 3;
@@ -560,7 +560,7 @@ public sealed class CompilingCodeTests
     [Fact]
     public void StaticFields()
     {
-        var csReference = CompileCSharpToMetadataReference(
+        var csReference = CompileCSharpToStream(
             """
             public class FooTest
             {

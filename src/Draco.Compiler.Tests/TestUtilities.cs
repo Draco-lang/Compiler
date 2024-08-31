@@ -141,7 +141,7 @@ internal static class TestUtilities
 
     public static Assembly CompileToAssembly(
         string sourceCode,
-        IEnumerable<MetadataReference>? additionalReferences = null,
+        IEnumerable<Stream>? additionalReferences = null,
         string? rootModulePath = null) => CompileToAssembly(
             syntaxTrees: [SyntaxTree.Parse(sourceCode)],
             additionalReferences: additionalReferences,
@@ -149,15 +149,19 @@ internal static class TestUtilities
 
     public static Assembly CompileToAssembly(
         IEnumerable<SyntaxTree> syntaxTrees,
-        IEnumerable<MetadataReference>? additionalReferences = null,
+        IEnumerable<Stream>? additionalReferences = null,
         string? rootModulePath = null) => CompileToAssemblyImpl(CreateCompilation(
             syntaxTrees: syntaxTrees,
-            additionalReferences: additionalReferences,
+            additionalReferences: additionalReferences?.Select(s =>
+            {
+                s.Position = 0;
+                return MetadataReference.FromPeStream(s);
+            }),
             rootModulePath: rootModulePath), additionalReferences);
 
     private static Assembly CompileToAssemblyImpl(
         Compilation compilation,
-        IEnumerable<MetadataReference>? additionalReferences)
+        IEnumerable<Stream>? additionalReferences)
     {
         additionalReferences ??= [];
 
@@ -177,7 +181,10 @@ internal static class TestUtilities
         // Load additional references
         foreach (var reference in additionalReferences)
         {
-            // TODO
+            reference.Position = 0;
+            var asm = assemblyLoadContext.LoadFromStream(reference);
+            var name = asm.GetName().Name;
+            if (name is not null) loadedAssemblies.Add(name, asm);
         }
 
         return assembly;

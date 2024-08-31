@@ -137,9 +137,19 @@ internal static class TestUtilities
 
     public static Assembly CompileToAssembly(
         string sourceCode,
-        IEnumerable<MetadataReference>? additionalReferences = null) => CompileToAssembly(CreateCompilation(
-            sourceCode: sourceCode,
-            additionalReferences: additionalReferences));
+        IEnumerable<MetadataReference>? additionalReferences = null,
+        string? rootModulePath = null) => CompileToAssembly(
+            syntaxTrees: [SyntaxTree.Parse(sourceCode)],
+            additionalReferences: additionalReferences,
+            rootModulePath: rootModulePath);
+
+    public static Assembly CompileToAssembly(
+        IEnumerable<SyntaxTree> syntaxTrees,
+        IEnumerable<MetadataReference>? additionalReferences = null,
+        string? rootModulePath = null) => CompileToAssembly(CreateCompilation(
+            syntaxTrees: syntaxTrees,
+            additionalReferences: additionalReferences,
+            rootModulePath: rootModulePath));
 
     public static Assembly CompileToAssembly(Compilation compilation)
     {
@@ -160,21 +170,27 @@ internal static class TestUtilities
 
     public static Compilation CreateCompilation(
         string sourceCode,
-        IEnumerable<MetadataReference>? additionalReferences = null) => CreateCompilation(
+        IEnumerable<MetadataReference>? additionalReferences = null,
+        string? rootModulePath = null) => CreateCompilation(
             syntaxTree: SyntaxTree.Parse(sourceCode),
-            additionalReferences: additionalReferences);
+            additionalReferences: additionalReferences,
+            rootModulePath: rootModulePath);
 
     public static Compilation CreateCompilation(
         SyntaxTree syntaxTree,
-        IEnumerable<MetadataReference>? additionalReferences = null) => CreateCompilation(
+        IEnumerable<MetadataReference>? additionalReferences = null,
+        string? rootModulePath = null) => CreateCompilation(
             syntaxTrees: [syntaxTree],
-            additionalReferences: additionalReferences);
+            additionalReferences: additionalReferences,
+            rootModulePath: rootModulePath);
 
     public static Compilation CreateCompilation(
         IEnumerable<SyntaxTree> syntaxTrees,
-        IEnumerable<MetadataReference>? additionalReferences = null) => Compilation.Create(
+        IEnumerable<MetadataReference>? additionalReferences = null,
+        string? rootModulePath = null) => Compilation.Create(
             syntaxTrees: syntaxTrees.ToImmutableArray(),
-            metadataReferences: [.. BclReferences, .. additionalReferences]);
+            metadataReferences: [.. BclReferences, .. additionalReferences],
+            rootModulePath: rootModulePath);
 
     #endregion
 

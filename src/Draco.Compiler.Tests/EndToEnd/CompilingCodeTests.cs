@@ -431,9 +431,15 @@ public sealed class CompilingCodeTests
             val x = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(ToPath("Tests"), bar, foo);
+        var assembly = CompileToAssembly(
+            syntaxTrees: [bar, foo],
+            rootModulePath: ToPath("Tests"));
 
-        var x = Invoke<int>(assembly, "Tests", "bar");
+        var x = Invoke<int>(
+            assembly: assembly,
+            moduleName: "Tests",
+            methodName: "bar");
+
         Assert.Equal(5, x);
     }
 
@@ -450,9 +456,15 @@ public sealed class CompilingCodeTests
             public val x = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(ToPath("Tests"), bar, foo);
+        var assembly = CompileToAssembly(
+            syntaxTrees: [bar, foo],
+            rootModulePath: ToPath("Tests"));
 
-        var x = Invoke<int>(assembly, "Tests", "bar");
+        var x = Invoke<int>(
+            assembly: assembly,
+            moduleName: "Tests",
+            methodName: "bar");
+
         Assert.Equal(5, x);
     }
 
@@ -463,9 +475,15 @@ public sealed class CompilingCodeTests
             public func foo(): int32 = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(ToPath("Tests"), foo);
+        var assembly = CompileToAssembly(
+            syntaxTrees: [foo],
+            rootModulePath: ToPath("Tests"));
 
-        var x = Invoke<int>(assembly, "Tests.FooTest", "foo");
+        var x = Invoke<int>(
+            assembly: assembly,
+            moduleName: "Tests.FooTest",
+            methodName: "foo");
+
         Assert.Equal(5, x);
     }
 

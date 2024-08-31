@@ -1,22 +1,24 @@
-using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
-public sealed class CompilingCodeTests : EndToEndTestsBase
+public sealed class CompilingCodeTests
 {
     [Fact]
     public void Max()
     {
-        var assembly = Compile("""
-            public func max(a: int32, b: int32): int32 = if (a > b) a else b;
+        var assembly = CompileToAssembly("""
+            func max(a: int32, b: int32): int32 = if (a > b) a else b;
             """);
 
         var inputs = new[] { (0, 0), (1, 0), (0, 1), (5, 0), (5, 4), (4, 5) };
         foreach (var (a, b) in inputs)
         {
-            var maxi = Invoke<int>(assembly, "max", a, b);
+            var maxi = Invoke<int>(
+                assembly: assembly,
+                methodName: "max",
+                args: [a, b]);
             Assert.Equal(Math.Max(a, b), maxi);
         }
     }
@@ -24,14 +26,17 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void Abs()
     {
-        var assembly = Compile("""
-            public func abs(n: int32): int32 = if (n > 0) n else -n;
+        var assembly = CompileToAssembly("""
+            func abs(n: int32): int32 = if (n > 0) n else -n;
             """);
 
         var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };
         foreach (var n in inputs)
         {
-            var absi = Invoke<int>(assembly, "abs", n);
+            var absi = Invoke<int>(
+                assembly: assembly,
+                methodName: "abs",
+                args: [n]);
             Assert.Equal(Math.Abs(n), absi);
         }
     }
@@ -39,21 +44,27 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void Between()
     {
-        var assembly = Compile("""
-            public func between(n: int32, a: int32, b: int32): bool = a <= n <= b;
+        var assembly = CompileToAssembly("""
+            func between(n: int32, a: int32, b: int32): bool = a <= n <= b;
             """);
 
         var trueInputs = new[] { (0, 0, 0), (0, 0, 1), (0, -1, 0), (0, 0, 5), (1, 0, 5), (4, 0, 5), (5, 0, 5) };
         foreach (var (n, a, b) in trueInputs)
         {
-            var isBetween = Invoke<bool>(assembly, "between", n, a, b);
+            var isBetween = Invoke<bool>(
+                assembly: assembly,
+                methodName: "between",
+                args: [n, a, b]);
             Assert.True(isBetween);
         }
 
         var falseInputs = new[] { (-1, 0, 0), (2, 0, 1), (1, -1, 0), (6, 0, 5), (-1, 0, 5), (10, 0, 5), (7, 0, 5) };
         foreach (var (n, a, b) in falseInputs)
         {
-            var isBetween = Invoke<bool>(assembly, "between", n, a, b);
+            var isBetween = Invoke<bool>(
+                assembly: assembly,
+                methodName: "between",
+                args: [n, a, b]);
             Assert.False(isBetween);
         }
     }
@@ -61,14 +72,17 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void Negate()
     {
-        var assembly = Compile("""
-            public func negate(n: int32): int32 = if (n < 0) n else -n;
+        var assembly = CompileToAssembly("""
+            func negate(n: int32): int32 = if (n < 0) n else -n;
             """);
 
         var inputs = new[] { 0, 1, -1, 3, 8, -3, -5 };
         foreach (var n in inputs)
         {
-            var neg = Invoke<int>(assembly, "negate", n);
+            var neg = Invoke<int>(
+                assembly: assembly,
+                methodName: "negate",
+                args: [n]);
             Assert.Equal(n < 0 ? n : -n, neg);
         }
     }
@@ -76,8 +90,8 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void Power()
     {
-        var assembly = Compile("""
-            public func power(n: int32, exponent: int32): int32 = {
+        var assembly = CompileToAssembly("""
+            func power(n: int32, exponent: int32): int32 = {
                 var i = 1;
                 var result = n;
                 while (i < exponent){
@@ -91,7 +105,10 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var inputs = new[] { (1, 3), (5, 2), (-2, 4), (3, 3), (8, 2) };
         foreach (var (n, exp) in inputs)
         {
-            var pow = Invoke<int>(assembly, "power", n, exp);
+            var pow = Invoke<int>(
+                assembly: assembly,
+                methodName: "power",
+                args: [n, exp]);
             Assert.Equal(Math.Pow(n, exp), pow);
         }
     }
@@ -99,8 +116,8 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void PowerWithFloat64()
     {
-        var assembly = Compile("""
-            public func power(n: float64, exponent: int32): float64 = {
+        var assembly = CompileToAssembly("""
+            func power(n: float64, exponent: int32): float64 = {
                 var i = 1;
                 var result = n;
                 while (i < exponent){
@@ -114,7 +131,10 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var inputs = new[] { (1.5, 3), (5.28, 2), (-2.5, 4), (3, 3), (8.847, 2) };
         foreach (var (n, exp) in inputs)
         {
-            var pow = Invoke<double>(assembly, "power", n, exp);
+            var pow = Invoke<double>(
+                assembly: assembly,
+                methodName: "power",
+                args: [n, exp]);
             Assert.Equal(Math.Pow(n, exp), pow, 5);
         }
     }
@@ -122,18 +142,18 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void LazyAnd()
     {
-        var assembly = Compile("""
-            public func foo(nx2: bool, nx3: bool): int32 = {
+        var assembly = CompileToAssembly("""
+            func foo(nx2: bool, nx3: bool): int32 = {
                 var result = 1;
                 nx2 and { result *= 2; nx3 } and { result *= 3; false };
                 result
             };
             """);
 
-        var r1 = Invoke<int>(assembly, "foo", false, false);
-        var r2 = Invoke<int>(assembly, "foo", false, true);
-        var r3 = Invoke<int>(assembly, "foo", true, false);
-        var r4 = Invoke<int>(assembly, "foo", true, true);
+        var r1 = Invoke<int>(assembly: assembly, methodName: "foo", args: [false, false]);
+        var r2 = Invoke<int>(assembly: assembly, methodName: "foo", args: [false, true]);
+        var r3 = Invoke<int>(assembly: assembly, methodName: "foo", args: [true, false]);
+        var r4 = Invoke<int>(assembly: assembly, methodName: "foo", args: [true, true]);
 
         Assert.Equal(1, r1);
         Assert.Equal(1, r2);
@@ -144,18 +164,18 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void LazyOr()
     {
-        var assembly = Compile("""
-            public func foo(nx2: bool, nx3: bool): int32 = {
+        var assembly = CompileToAssembly("""
+            func foo(nx2: bool, nx3: bool): int32 = {
                 var result = 1;
                 nx2 or { result *= 2; nx3 } or { result *= 3; false };
                 result
             };
             """);
 
-        var r1 = Invoke<int>(assembly, "foo", false, false);
-        var r2 = Invoke<int>(assembly, "foo", false, true);
-        var r3 = Invoke<int>(assembly, "foo", true, false);
-        var r4 = Invoke<int>(assembly, "foo", true, true);
+        var r1 = Invoke<int>(assembly: assembly, methodName: "foo", args: [false, false]);
+        var r2 = Invoke<int>(assembly: assembly, methodName: "foo", args: [false, true]);
+        var r3 = Invoke<int>(assembly: assembly, methodName: "foo", args: [true, false]);
+        var r4 = Invoke<int>(assembly: assembly, methodName: "foo", args: [true, true]);
 
         Assert.Equal(6, r1);
         Assert.Equal(2, r2);
@@ -166,8 +186,8 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void RecursiveFactorial()
     {
-        var assembly = Compile("""
-            public func fact(n: int32): int32 =
+        var assembly = CompileToAssembly("""
+            func fact(n: int32): int32 =
                 if (n == 0) 1
                 else n * fact(n - 1);
             """);
@@ -175,7 +195,10 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var results = new[] { 1, 1, 2, 6, 24, 120, 720 };
         for (var i = 0; i < 7; ++i)
         {
-            var facti = Invoke<int>(assembly, "fact", i);
+            var facti = Invoke<int>(
+                assembly: assembly,
+                methodName: "fact",
+                args: [i]);
             Assert.Equal(results[i], facti);
         }
     }
@@ -183,8 +206,8 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void RecursiveFibonacci()
     {
-        var assembly = Compile("""
-            public func fib(n: int32): int32 =
+        var assembly = CompileToAssembly("""
+            func fib(n: int32): int32 =
                 if (n < 2) 1
                 else fib(n - 1) + fib(n - 2);
             """);
@@ -192,7 +215,10 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var results = new[] { 1, 1, 2, 3, 5, 8, 13, 21, 34, 55 };
         for (var i = 0; i < 10; ++i)
         {
-            var fibi = Invoke<int>(assembly, "fib", i);
+            var fibi = Invoke<int>(
+                assembly: assembly,
+                methodName: "fib",
+                args: [i]);
             Assert.Equal(results[i], fibi);
         }
     }
@@ -200,8 +226,8 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void IterativeSum()
     {
-        var assembly = Compile("""
-            public func sum(start: int32, end: int32): int32 {
+        var assembly = CompileToAssembly("""
+            func sum(start: int32, end: int32): int32 {
                 var i = start;
                 var s = 0;
                 while (i < end) {
@@ -215,7 +241,10 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
         var results = new[] { 0, 1, 3, 6, 10, 15, 21, 28, 36, 45 };
         for (var i = 0; i < 10; ++i)
         {
-            var sumi = Invoke<int>(assembly, "sum", 0, i);
+            var sumi = Invoke<int>(
+                assembly: assembly,
+                methodName: "sum",
+                args: [0, i]);
             Assert.Equal(results[i], sumi);
         }
     }
@@ -223,10 +252,10 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void Globals()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             var x = 0;
             func bar() { x += 1; }
-            public func foo(): int32 {
+            func foo(): int32 {
                 bar();
                 bar();
                 bar();
@@ -234,17 +263,18 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             }
             """);
 
-        var x = Invoke<int>(assembly, "foo");
+        var x = Invoke<int>(assembly: assembly, methodName: "foo");
+
         Assert.Equal(3, x);
     }
 
     [Fact]
     public void NonzeroGlobals()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             var x = 123;
             func bar() { x += 1; }
-            public func foo(): int32 {
+            func foo(): int32 {
                 bar();
                 bar();
                 bar();
@@ -252,28 +282,30 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             }
             """);
 
-        var x = Invoke<int>(assembly, "foo");
+        var x = Invoke<int>(assembly: assembly, methodName: "foo");
+
         Assert.Equal(126, x);
     }
 
     [Fact]
     public void ComplexInitializerGlobals()
     {
-        var assembly = Compile("""
-            public func foo(): int32 = x;
+        var assembly = CompileToAssembly("""
+            func foo(): int32 = x;
             var x = add(1, 2) + 1 + 2 + 3;
             func add(x: int32, y: int32): int32 = 2 * (x + y);
             """);
 
-        var x = Invoke<int>(assembly, "foo");
+        var x = Invoke<int>(assembly: assembly, methodName: "foo");
+
         Assert.Equal(12, x);
     }
 
     [Fact]
     public void BreakAndContinue()
     {
-        var assembly = Compile("""
-            public func foo(): int32 {
+        var assembly = CompileToAssembly("""
+            func foo(): int32 {
                 var s = 0;
                 var i = 0;
                 while (true) {
@@ -286,15 +318,16 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             }
             """);
 
-        var x = Invoke<int>(assembly, "foo");
+        var x = Invoke<int>(assembly: assembly, methodName: "foo");
+
         Assert.Equal(42, x);
     }
 
     [Fact]
     public void MultiLineStringCutoff()
     {
-        var assembly = Compile(""""
-            public func foo(): string{
+        var assembly = CompileToAssembly(""""
+            func foo(): string{
                 return """
                 Hello
                     World!
@@ -302,7 +335,8 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             }
             """");
 
-        var x = Invoke<string>(assembly, "foo");
+        var x = Invoke<string>(assembly: assembly, methodName: "foo");
+
         Assert.Equal("""
             Hello
                 World!
@@ -312,23 +346,24 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void MultiLineStringInterpolation()
     {
-        var assembly = Compile(""""
-            public func foo(): string{
+        var assembly = CompileToAssembly(""""
+            func foo(): string{
                 return """
                 Hello \{1 + 2} World!
                 """;
             }
             """");
 
-        var x = Invoke<string>(assembly, "foo");
+        var x = Invoke<string>(assembly: assembly, methodName: "foo");
+
         Assert.Equal("Hello 3 World!", x);
     }
 
     [Fact]
     public void MultiLineStringLineContinuation()
     {
-        var assembly = Compile(""""
-            public func foo(): string{
+        var assembly = CompileToAssembly(""""
+            func foo(): string{
                 return """
                 Hello\
                     World!
@@ -336,39 +371,48 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             }
             """");
 
-        var x = Invoke<string>(assembly, "foo");
+        var x = Invoke<string>(assembly: assembly, methodName: "foo");
+
         Assert.Equal("Hello    World!", x);
     }
 
     [Fact]
     public void FunctionsWithExplicitGenerics()
     {
-        var assembly = Compile(""""
+        var assembly = CompileToAssembly(""""
             func identity<T>(x: T): T = x;
             func first<T, U>(a: T, b: U): T = identity<T>(a);
             func second<T, U>(a: T, b: U): U = identity<U>(b);
 
-            public func foo(n: int32, m: int32): int32 =
+            func foo(n: int32, m: int32): int32 =
                 first<int32, string>(n, "Hello") + second<bool, int32>(false, m);
             """");
 
-        var x = Invoke<int>(assembly, "foo", 2, 3);
+        var x = Invoke<int>(
+            assembly: assembly,
+            methodName: "foo",
+            args: [2, 3]);
+
         Assert.Equal(5, x);
     }
 
     [Fact]
     public void FunctionsWithImplicitGenerics()
     {
-        var assembly = Compile(""""
+        var assembly = CompileToAssembly(""""
             func identity<T>(x: T): T = x;
             func first<T, U>(a: T, b: U): T = identity(a);
             func second<T, U>(a: T, b: U): U = identity(b);
 
-            public func foo(n: int32, m: int32): int32 =
+            func foo(n: int32, m: int32): int32 =
                 first(n, "Hello") + second(false, m);
             """");
 
-        var x = Invoke<int>(assembly, "foo", 2, 3);
+        var x = Invoke<int>(
+            assembly: assembly,
+            methodName: "foo",
+            args: [2, 3]);
+
         Assert.Equal(5, x);
     }
 
@@ -386,9 +430,15 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             val x = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(ToPath("Tests"), bar, foo);
+        var assembly = CompileToAssembly(
+            syntaxTrees: [bar, foo],
+            rootModulePath: ToPath("Tests"));
 
-        var x = Invoke<int>(assembly, "Tests", "bar");
+        var x = Invoke<int>(
+            assembly: assembly,
+            moduleName: "Tests",
+            methodName: "bar");
+
         Assert.Equal(5, x);
     }
 
@@ -405,9 +455,15 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             public val x = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(ToPath("Tests"), bar, foo);
+        var assembly = CompileToAssembly(
+            syntaxTrees: [bar, foo],
+            rootModulePath: ToPath("Tests"));
 
-        var x = Invoke<int>(assembly, "Tests", "bar");
+        var x = Invoke<int>(
+            assembly: assembly,
+            moduleName: "Tests",
+            methodName: "bar");
+
         Assert.Equal(5, x);
     }
 
@@ -418,9 +474,15 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             public func foo(): int32 = 5;
             """, ToPath("Tests", "FooTest", "foo.draco"));
 
-        var assembly = Compile(ToPath("Tests"), foo);
+        var assembly = CompileToAssembly(
+            syntaxTrees: [foo],
+            rootModulePath: ToPath("Tests"));
 
-        var x = Invoke<int>(assembly, "Tests.FooTest", "foo");
+        var x = Invoke<int>(
+            assembly: assembly,
+            moduleName: "Tests.FooTest",
+            methodName: "foo");
+
         Assert.Equal(5, x);
     }
 
@@ -433,19 +495,16 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
                 public T Identity<T>(T x) => x;
             }
             """);
-        var foo = SyntaxTree.Parse("""
-            public func foo(): int32 {
+        var assembly = CompileToAssembly("""
+            func foo(): int32 {
                 val provider = IdentityProvider();
                 return provider.Identity<int32>(2) + provider.Identity(123);
             }
-            """);
+            """,
+            additionalReferences: [csReference]);
 
-        var assembly = Compile(
-            root: null,
-            syntaxTrees: [foo],
-            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+        var x = Invoke<int>(assembly: assembly, methodName: "foo");
 
-        var x = Invoke<int>(assembly, "foo");
         Assert.Equal(125, x);
     }
 
@@ -459,48 +518,41 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
                 public int NonStaticProp { get; set; } = 4;
             }
             """);
-        var foo = SyntaxTree.Parse("""
-            public func foo(): int32 {
+        var assembly = CompileToAssembly("""
+            func foo(): int32 {
                 var test = FooTest();
                 test.NonStaticProp += 2;
                 FooTest.StaticProp += 3;
                 return test.NonStaticProp += FooTest.StaticProp;
             }
-            """);
+            """,
+            additionalReferences: [csReference]);
 
-        var assembly = Compile(
-            root: null,
-            syntaxTrees: [foo],
-            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+        var x = Invoke<int>(assembly: assembly, methodName: "foo");
 
-        var x = Invoke<int>(assembly, "foo");
         Assert.Equal(14, x);
     }
 
     [Fact]
     public void MemberFields()
     {
-        var csReference = CompileCSharpToStream(
-            """
+        var csReference = CompileCSharpToStream("""
             public class FooTest
             {
                 public int number = 3;
             }
             """);
-        var foo = SyntaxTree.Parse("""
-            public func foo(): int32 {
+        var assembly = CompileToAssembly("""
+            func foo(): int32 {
                 var test = FooTest();
                 test.number += 2;
                 return test.number;
             }
-            """);
+            """,
+            additionalReferences: [csReference]);
 
-        var assembly = Compile(
-            root: null,
-            syntaxTrees: [foo],
-            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+        var x = Invoke<int>(assembly: assembly, methodName: "foo");
 
-        var x = Invoke<int>(assembly, "foo");
         Assert.Equal(5, x);
     }
 
@@ -514,26 +566,23 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
                 public static int number = 3;
             }
             """);
-        var foo = SyntaxTree.Parse("""
-            public func foo(): int32 {
+        var assembly = CompileToAssembly("""
+            func foo(): int32 {
                 FooTest.number += 2;
                 return FooTest.number;
             }
-            """);
+            """,
+            additionalReferences: [csReference]);
 
-        var assembly = Compile(
-            root: null,
-            syntaxTrees: [foo],
-            additionalPeReferences: ImmutableArray.Create(("Test.dll", csReference)));
+        var x = Invoke<int>(assembly: assembly, methodName: "foo");
 
-        var x = Invoke<int>(assembly, "foo");
         Assert.Equal(5, x);
     }
 
     [Fact]
     public void MergeArrays()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             func merge<T>(a: Array<T>, b: Array<T>): Array<T> {
                 val result = Array(a.Length + b.Length);
                 var offs = 0;
@@ -548,21 +597,25 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
                 return result;
             }
 
-            public func merge_int(a: Array<int32>, b: Array<int32>): Array<int32> = merge(a, b);
+            func merge_int(a: Array<int32>, b: Array<int32>): Array<int32> = merge(a, b);
             """);
 
         var input1 = new[] { 1, 3 };
         var input2 = new[] { 2, 4 };
         var expectedOutput = new[] { 1, 3, 2, 4 };
-        var output = Invoke<int[]>(assembly, "merge_int", input1, input2);
+        var output = Invoke<int[]>(
+            assembly: assembly,
+            methodName: "merge_int",
+            args: [input1, input2]);
+
         Assert.True(output.SequenceEqual(expectedOutput));
     }
 
     [Fact]
     public void BubbleSortArray()
     {
-        var assembly = Compile("""
-            public func bubblesort(a: Array<int32>) {
+        var assembly = CompileToAssembly("""
+            func bubblesort(a: Array<int32>) {
                 var i = 1;
                 while (i < a.Length) {
                     var j = 0;
@@ -581,30 +634,36 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
         var input = new[] { 17, 1, 12, 7, 10, 10, 6, 12, 2, 8 };
         var output = new[] { 1, 2, 6, 7, 8, 10, 10, 12, 12, 17 };
-        Invoke<object?>(assembly, "bubblesort", input);
+
+        Invoke<object?>(
+            assembly: assembly,
+            methodName: "bubblesort",
+            args: [input]);
+
         Assert.True(input.SequenceEqual(output));
     }
 
     [Fact]
     public void InCodeModuleUsage()
     {
-        var assembly = Compile(""""
-            public func foo(): string = FooModule.GetFoo();
+        var assembly = CompileToAssembly(""""
+            func foo(): string = FooModule.GetFoo();
 
             module FooModule{
                 public func GetFoo(): string = "foo";
             }
             """");
 
-        var x = Invoke<string>(assembly, "foo");
+        var x = Invoke<string>(assembly: assembly, methodName: "foo");
+
         Assert.Equal("foo", x);
     }
 
     [Fact]
     public void InCodeModuleUsageImportingInsideModule()
     {
-        var assembly = Compile(""""
-            public func foo(): string = FooModule.Hello();
+        var assembly = CompileToAssembly(""""
+            func foo(): string = FooModule.Hello();
 
             module FooModule {
                 import System.Text;
@@ -617,14 +676,15 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
             }
             """");
 
-        var x = Invoke<string>(assembly, "foo");
+        var x = Invoke<string>(assembly: assembly, methodName: "foo");
+
         Assert.Equal("Hello, World!", x);
     }
 
     [Fact]
     public void VariadicArgsSum()
     {
-        var assembly = Compile(""""
+        var assembly = CompileToAssembly(""""
             func sum(...ns: Array<int32>): int32 {
                 var result = 0;
                 var i = 0;
@@ -635,17 +695,18 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
                 return result;
             }
 
-            public func get_sum(): int32 = sum(1, 2, 3, 4, 5);
+            func get_sum(): int32 = sum(1, 2, 3, 4, 5);
             """");
 
-        var x = Invoke<int>(assembly, "get_sum");
+        var x = Invoke<int>(assembly: assembly, methodName: "get_sum");
+
         Assert.Equal(15, x);
     }
 
     [Fact]
     public void MultidimensionalArrays()
     {
-        var assembly = Compile(""""
+        var assembly = CompileToAssembly(""""
             func make(a: int32, b: int32, c: int32, d: int32): Array2D<int32> {
                 val res = Array2D(2, 2);
                 res[0, 0] = a;
@@ -662,41 +723,47 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
 
             func sum(a: Array2D<int32>): int32 = a[0, 0] + a[1, 0] + a[0, 1] + a[1, 1];
 
-            public func get_result(): int32 {
+            func get_result(): int32 {
                 val m = make(1, 2, 3, 4);
                 add_to_main_diagonal(m, 7);
                 return sum(m);
             }
             """");
 
-        var x = Invoke<int>(assembly, "get_result");
+        var x = Invoke<int>(assembly: assembly, methodName: "get_result");
+
         Assert.Equal(24, x);
     }
 
     [Fact]
     public void SingleInterpolatedElement()
     {
-        var assembly = Compile(""""
-            public func stringify(a: int32): string = "\{a}";
+        var assembly = CompileToAssembly(""""
+            func stringify(a: int32): string = "\{a}";
             """");
 
-        var x = Invoke<string>(assembly, "stringify", 123);
+        var x = Invoke<string>(
+            assembly: assembly,
+            methodName: "stringify",
+            args: [123]);
+
         Assert.Equal("123", x);
     }
 
     [Fact]
     public void PlusIntegerCompiles()
     {
-        var assembly = Compile("""
-            public func zero(): int32 = +0;
+        var assembly = CompileToAssembly("""
+            func zero(): int32 = +0;
             """);
 
-        var x = Invoke<int>(assembly, "zero");
+        var x = Invoke<int>(assembly: assembly, methodName: "zero");
+
         Assert.Equal(0, x);
     }
 
     [Fact]
-    public void ArrayCreationWithGenericArgument() => Compile("""
+    public void ArrayCreationWithGenericArgument() => CompileToAssembly("""
         func main() {
             var memory = Array<int32>(1);
             memory[0] = 1;
@@ -707,13 +774,13 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void DefaultValueIntrinsic()
     {
-        var assembly = Compile("""
-            public func nullObj(): object = default<object>();
-            public func zeroInt(): int32 = default<int32>();
+        var assembly = CompileToAssembly("""
+            func nullObj(): object = default<object>();
+            func zeroInt(): int32 = default<int32>();
             """);
 
-        var nullObj = Invoke<object>(assembly, "nullObj");
-        var zeroInt = Invoke<int>(assembly, "zeroInt");
+        var nullObj = Invoke<object>(assembly: assembly, methodName: "nullObj");
+        var zeroInt = Invoke<int>(assembly: assembly, methodName: "zeroInt");
 
         Assert.Null(nullObj);
         Assert.Equal(0, zeroInt);
@@ -722,15 +789,15 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void FuncDelegates()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System;
 
-            public func getValue(): int32 = getValueImpl(add);
+            func getValue(): int32 = getValueImpl(add);
             func add(a: int32, b: int32): int32 = a + b;
             func getValueImpl(f: Func<int32, int32, int32>): int32 = f(2, 3);
             """);
 
-        var result = Invoke<int>(assembly, "getValue");
+        var result = Invoke<int>(assembly: assembly, methodName: "getValue");
 
         Assert.Equal(5, result);
     }
@@ -738,20 +805,19 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void ActionDelegates()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System;
             import System.Console;
 
-            public func call() = invokeImpl(printThem);
+            func call() = invokeImpl(printThem);
             func printThem(a: string, b: string) = Write(a + ", " + b);
             func invokeImpl(f: Action<string, string>) = f("Hello", "World");
             """);
 
         var stringWriter = new StringWriter();
         _ = Invoke<object?>(
-            assembly,
-            "call",
-            stdin: null,
+            assembly: assembly,
+            methodName: "call",
             stdout: stringWriter);
 
         Assert.Equal("Hello, World", stringWriter.ToString());
@@ -760,20 +826,19 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void ParameterlessActionDelegates()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System;
             import System.Console;
 
-            public func call() = invokeImpl(printHello);
+            func call() = invokeImpl(printHello);
             func printHello() = Write("Hello, World!");
             func invokeImpl(f: Action) = f();
             """);
 
         var stringWriter = new StringWriter();
         _ = Invoke<object?>(
-            assembly,
-            "call",
-            stdin: null,
+            assembly: assembly,
+            methodName: "call",
             stdout: stringWriter);
 
         Assert.Equal("Hello, World!", stringWriter.ToString());
@@ -782,7 +847,7 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void GlobalInferredFromBlock()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Collections.Generic;
 
             val l = {
@@ -791,10 +856,10 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
                 l
             };
 
-            public func get_l(): List<int32> = l;
+            func get_l(): List<int32> = l;
             """);
 
-        var l = Invoke<List<int>>(assembly, "get_l");
+        var l = Invoke<List<int>>(assembly: assembly, methodName: "get_l");
 
         Assert.Single(l);
         Assert.Equal(1, l[0]);
@@ -803,17 +868,29 @@ public sealed class CompilingCodeTests : EndToEndTestsBase
     [Fact]
     public void EnumEqualityOperators()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System;
 
-            public func equate(a: StringComparison, b: StringComparison): bool = a == b;
-            public func inequate(a: StringComparison, b: StringComparison): bool = a != b;
+            func equate(a: StringComparison, b: StringComparison): bool = a == b;
+            func inequate(a: StringComparison, b: StringComparison): bool = a != b;
             """);
 
-        var eq1 = Invoke<bool>(assembly, "equate", StringComparison.Ordinal, StringComparison.Ordinal);
-        var eq2 = Invoke<bool>(assembly, "equate", StringComparison.Ordinal, StringComparison.OrdinalIgnoreCase);
-        var neq1 = Invoke<bool>(assembly, "inequate", StringComparison.Ordinal, StringComparison.Ordinal);
-        var neq2 = Invoke<bool>(assembly, "inequate", StringComparison.Ordinal, StringComparison.OrdinalIgnoreCase);
+        var eq1 = Invoke<bool>(
+            assembly: assembly,
+            methodName: "equate",
+            args: [StringComparison.Ordinal, StringComparison.Ordinal]);
+        var eq2 = Invoke<bool>(
+            assembly: assembly,
+            methodName: "equate",
+            args: [StringComparison.Ordinal, StringComparison.OrdinalIgnoreCase]);
+        var neq1 = Invoke<bool>(
+            assembly: assembly,
+            methodName: "inequate",
+            args: [StringComparison.Ordinal, StringComparison.Ordinal]);
+        var neq2 = Invoke<bool>(
+            assembly: assembly,
+            methodName: "inequate",
+            args: [StringComparison.Ordinal, StringComparison.OrdinalIgnoreCase]);
 
         Assert.True(eq1);
         Assert.False(eq2);

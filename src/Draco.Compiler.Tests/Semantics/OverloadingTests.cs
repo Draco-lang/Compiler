@@ -3,10 +3,11 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class OverloadingTests : SemanticTestsBase
+public sealed class OverloadingTests
 {
     // func foo(l: List<int32>)         {}
     // func foo(l: List<string>)        {}

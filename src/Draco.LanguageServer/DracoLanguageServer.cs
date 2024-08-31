@@ -40,7 +40,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private volatile Compilation compilation;
 
     private readonly CompletionService completionService = CompletionService.CreateDefault();
-    private readonly SignatureService signatureService = new();
+    private readonly SignatureService signatureService = SignatureService.CreateDefault();
     private readonly CodeFixService codeFixService = CodeFixService.CreateDefault();
 
     public DracoLanguageServer(ILanguageClient client)

@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
@@ -8,7 +6,7 @@ using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class TypeCheckingTests : SemanticTestsBase
+public sealed class TypeCheckingTests
 {
     [Fact]
     public void LocalVariableExplicitlyTyped()
@@ -150,7 +148,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        AssertDiagnostics(diags, TypeCheckingErrors.CouldNotInferType);
         Assert.True(xSym.Type.IsError);
     }
 
@@ -183,7 +181,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
         Assert.False(xSym.Type.IsError);
     }
 
@@ -218,7 +216,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.True(xSym.Type.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -307,7 +305,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        AssertDiagnostics(diags, TypeCheckingErrors.CouldNotInferType);
         Assert.True(xSym.Type.IsError);
     }
 
@@ -334,7 +332,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
         Assert.False(xSym.Type.IsError);
     }
 
@@ -360,7 +358,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -382,7 +380,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -431,7 +429,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -480,7 +478,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -510,7 +508,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoCommonType);
     }
 
     // TODO: Unspecified if we want this
@@ -537,7 +535,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 InlineFunctionBody(CallExpr(NameExpression("foo")))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -620,7 +618,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Equal(WellKnownTypes.ErrorType, xSym.Type);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]
@@ -659,11 +657,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -672,7 +667,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]
@@ -709,11 +704,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -722,7 +714,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]
@@ -874,7 +866,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
         Assert.NotSame(fooInt32DeclSym, fooBoolDeclSym);
         Assert.Same(fooInt32DeclSym, fooInt32RefSym);
         Assert.NotSame(fooBoolDeclSym, fooBoolRefSym);
@@ -909,7 +901,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Equal(2, diags.Length);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalOverloadDefinition);
     }
 
     [Fact]
@@ -941,7 +933,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Equal(2, diags.Length);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalOverloadDefinition);
     }
 
     [Fact]
@@ -972,7 +964,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalOverloadDefinition);
     }
 
     [Fact]
@@ -1074,7 +1066,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var stringEmptySym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
+        var stringEmptySym = GetMember<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1107,7 +1099,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var windowWidthSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "WindowWidth");
+        var windowWidthSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "WindowWidth");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1142,7 +1134,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var indexSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(listRef)).Type, "Item");
+        var indexSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(listRef)).Type, "Item");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1176,7 +1168,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CallNonFunction);
+        AssertDiagnostics(diags, TypeCheckingErrors.CallNonFunction);
     }
 
     [Fact]
@@ -1245,7 +1237,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         // NOTE: This might not be the best error...
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
 
         Assert.True(identitySym.IsGenericDefinition);
         Assert.True(firstCalledSym.IsGenericInstance);
@@ -1296,7 +1288,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoGenericFunctionWithParamCount);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoGenericFunctionWithParamCount);
     }
 
     [Fact]
@@ -1325,7 +1317,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NotGenericConstruct);
+        AssertDiagnostics(diags, TypeCheckingErrors.NotGenericConstruct);
     }
 
     [Fact]
@@ -1349,7 +1341,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.GenericTypeParamCountMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.GenericTypeParamCountMismatch);
     }
 
     [Fact]
@@ -1473,7 +1465,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.InferenceIncomplete);
+        AssertDiagnostics(diags, TypeCheckingErrors.InferenceIncomplete);
     }
 
     [Fact]
@@ -1578,7 +1570,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.AmbiguousOverloadedCall);
+        AssertDiagnostics(diags, TypeCheckingErrors.AmbiguousOverloadedCall);
     }
 
     [Fact]
@@ -1758,7 +1750,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -1798,7 +1790,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -1864,7 +1856,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
         Assert.Equal(compilation.WellKnownTypes.SystemString, xSym.Type);
     }
 
@@ -1938,7 +1930,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]
@@ -2176,7 +2168,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -2194,7 +2186,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             using System;
             public static class FooModule{
                 public static Random foo;
@@ -2204,12 +2196,9 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2385,7 +2374,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Equal(2, diags.Length);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
 
         Assert.True(diags.All(d => !d.ToString().Contains("operator", StringComparison.OrdinalIgnoreCase)));
     }

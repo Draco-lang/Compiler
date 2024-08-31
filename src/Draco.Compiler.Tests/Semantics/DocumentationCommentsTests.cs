@@ -10,7 +10,7 @@ using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class DocumentationCommentsTests : SemanticTestsBase
+public sealed class DocumentationCommentsTests
 {
     private static string CreateXmlDocComment(string originalXml)
     {
@@ -211,10 +211,10 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             /// {{docs}}
             public class TestClass { }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
@@ -251,13 +251,13 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             public class TestClass
             {
                 /// {{docs}}
                 public class NestedTestClass { }
             }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
@@ -295,14 +295,14 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             /// {{docs}}
             public static class TestClass
             {
                 // Just so i can use it in draco
                 public static int foo = 0;
             }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var @class = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
@@ -339,13 +339,13 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             public class TestClass
             {
                 /// {{docs}}
                 public void TestMethod(int arg1, string arg2) { }
             }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
@@ -383,7 +383,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             using System;
 
             public class TestClass
@@ -391,7 +391,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{docs}}
                 public void TestMethod() { }
             }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
@@ -429,13 +429,13 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             public class TestClass
             {
                 /// {{docs}}
                 public int TestField = 5;
             }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
@@ -473,13 +473,13 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             public class TestClass
             {
                 /// {{docs}}
                 public int TestProperty { get; }
             }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
@@ -518,7 +518,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             using System;
 
             /// {{classDocs}}
@@ -527,7 +527,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{methodDocs}}
                 public void TestMethod<U>(T arg1, T arg2, U arg3) { }
             }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var call = tree.FindInChildren<CallExpressionSyntax>(0);
 
@@ -579,14 +579,14 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             namespace TestNamespace;
             public class TestClass
             {
                 {{CreateXmlDocComment(originalDocs)}}
                 public int TestMethod<T>(int arg1, int arg2) => arg1 + arg2; 
             }
-            """, xmlStream: xmlStream);
+            """, xmlDocStream: xmlStream);
 
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 

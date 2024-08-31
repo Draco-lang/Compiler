@@ -4,7 +4,7 @@ using System.Reflection.PortableExecutable;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
-public sealed class MetadataTests : EndToEndTestsBase
+public sealed class MetadataTests
 {
     [Fact]
     public void TestReferencedAssemblyVersion()

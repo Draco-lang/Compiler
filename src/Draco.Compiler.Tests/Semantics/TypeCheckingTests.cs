@@ -8,7 +8,7 @@ using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class TypeCheckingTests : SemanticTestsBase
+public sealed class TypeCheckingTests
 {
     [Fact]
     public void LocalVariableExplicitlyTyped()
@@ -2190,7 +2190,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             using System;
             public static class FooModule{
                 public static Random foo;

@@ -8,7 +8,7 @@ using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class SemanticModelTests : SemanticTestsBase
+public sealed class SemanticModelTests
 {
     // Reported in https://github.com/Draco-lang/Compiler/issues/220
     [Fact]

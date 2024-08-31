@@ -4,7 +4,7 @@ using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class FlowAnalysisTests : SemanticTestsBase
+public sealed class FlowAnalysisTests
 {
     [Fact]
     public void UnitFunctionReturnsImplicitly()

@@ -6,7 +6,7 @@ using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class LocalFunctionsTests : SemanticTestsBase
+public sealed class LocalFunctionsTests
 {
     [Fact]
     public void ParameterRedefinitionError()

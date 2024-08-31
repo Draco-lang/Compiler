@@ -6,7 +6,7 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class CodeCompletionTests : SemanticTestsBase
+public sealed class CodeCompletionTests
 {
     private static void AssertCompletions(ImmutableArray<TextEdit> actual, params string[] expected) =>
         Assert.True(actual.Select(x => x.Text).ToHashSet().SetEquals(expected));

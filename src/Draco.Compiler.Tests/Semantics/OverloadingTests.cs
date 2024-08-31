@@ -6,7 +6,7 @@ using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class OverloadingTests : SemanticTestsBase
+public sealed class OverloadingTests
 {
     // func foo(l: List<int32>)         {}
     // func foo(l: List<string>)        {}

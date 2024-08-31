@@ -15,10 +15,7 @@ public sealed class ScriptTests
             var y = 4;
             x + y
             """,
-            // TODO: We could factor out BCL refs into some global, we repeat this LINQ a lot in tests
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         // Act
         var result = script.Execute();
@@ -35,9 +32,7 @@ public sealed class ScriptTests
         var script = Script.Create<int>("""
             var x = ;
             """,
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         // Act
         var result = script.Execute();

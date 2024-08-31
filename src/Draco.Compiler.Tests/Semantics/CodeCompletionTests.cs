@@ -124,9 +124,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Consol"))).ToImmutableArray();
@@ -161,9 +159,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Consol"))).ToImmutableArray();
@@ -196,9 +192,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Co"))).ToImmutableArray();
@@ -226,9 +220,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith('S'))).ToImmutableArray();
@@ -250,9 +242,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Wr"))).ToImmutableArray();
@@ -280,9 +270,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("App"))).ToImmutableArray();
@@ -311,9 +299,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).Where(x => x.DisplayText.Contains('W')).ToImmutableArray();
@@ -354,9 +340,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor)
@@ -380,9 +364,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor)
@@ -406,9 +388,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var completions = GetCompletions(tree, semanticModel, cursor).SelectMany(x => x.Edits.Where(y => y.Text.Contains("WindowW"))).ToImmutableArray();
@@ -436,9 +416,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var service = new SignatureService();
@@ -466,9 +444,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var service = new SignatureService();
@@ -493,9 +469,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var service = new SignatureService();
@@ -519,9 +493,7 @@ public sealed class CodeCompletionTests : SemanticTestsBase
 
         var compilation = Compilation.Create(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+            metadataReferences: TestUtilities.BclReferences);
 
         var semanticModel = compilation.GetSemanticModel(tree);
         var service = new SignatureService();

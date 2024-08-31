@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 using Draco.Compiler.Api;
 using Microsoft.CodeAnalysis.CSharp;
@@ -9,6 +10,10 @@ namespace Draco.Compiler.Tests;
 internal static class TestUtilities
 {
     public const string DefaultAssemblyName = "Test.dll";
+
+    public static ImmutableArray<MetadataReference> BclReferences { get; } = Basic.Reference.Assemblies.Net80.ReferenceInfos.All
+        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+        .ToImmutableArray();
 
     public static string ToPath(params string[] parts) => Path.GetFullPath(Path.Combine(parts));
 

@@ -661,9 +661,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
+            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -711,9 +709,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
+            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -2206,8 +2202,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Act
         var compilation = Compilation.Create(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+            metadataReferences: TestUtilities.BclReferences
                 .Append(fooRef)
                 .ToImmutableArray());
 

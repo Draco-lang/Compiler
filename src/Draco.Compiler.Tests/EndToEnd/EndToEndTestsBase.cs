@@ -37,8 +37,7 @@ public abstract class EndToEndTestsBase
     {
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+            metadataReferences: TestUtilities.BclReferences
                 .Concat(additionalPeReferences.Select(r =>
                 {
                     var streamCopy = new MemoryStream();

@@ -12,9 +12,7 @@ public abstract class SemanticTestsBase
 {
     private protected static Compilation CreateCompilation(params SyntaxTree[] syntaxTrees) => Compilation.Create(
         syntaxTrees: [.. syntaxTrees],
-        metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-            .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-            .ToImmutableArray());
+        metadataReferences: TestUtilities.BclReferences);
 
     private protected static TSymbol GetInternalSymbol<TSymbol>(ISymbol? symbol)
         where TSymbol : Symbol

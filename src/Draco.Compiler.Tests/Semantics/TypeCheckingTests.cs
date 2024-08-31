@@ -537,7 +537,7 @@ public sealed class TypeCheckingTests
                 InlineFunctionBody(CallExpr(NameExpression("foo")))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
@@ -659,9 +659,8 @@ public sealed class TypeCheckingTests
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -707,9 +706,8 @@ public sealed class TypeCheckingTests
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -2200,11 +2198,9 @@ public sealed class TypeCheckingTests
         var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 

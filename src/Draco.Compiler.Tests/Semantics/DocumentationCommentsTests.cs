@@ -219,11 +219,9 @@ public sealed class DocumentationCommentsTests
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -262,11 +260,9 @@ public sealed class DocumentationCommentsTests
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -307,11 +303,9 @@ public sealed class DocumentationCommentsTests
         var @class = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(@class));
@@ -350,11 +344,9 @@ public sealed class DocumentationCommentsTests
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -396,11 +388,9 @@ public sealed class DocumentationCommentsTests
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -440,11 +430,9 @@ public sealed class DocumentationCommentsTests
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -484,11 +472,9 @@ public sealed class DocumentationCommentsTests
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -532,11 +518,9 @@ public sealed class DocumentationCommentsTests
         var call = tree.FindInChildren<CallExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -591,11 +575,9 @@ public sealed class DocumentationCommentsTests
         var call = tree.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -668,9 +650,7 @@ public sealed class DocumentationCommentsTests
         var testMethodDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: [tree],
-            metadataReferences: TestUtilities.BclReferences);
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var methodSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(testMethodDecl));

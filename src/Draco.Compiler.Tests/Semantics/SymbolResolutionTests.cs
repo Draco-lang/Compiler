@@ -1058,9 +1058,8 @@ public sealed class SymbolResolutionTests
         var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var mainModel = compilation.GetSemanticModel(main);
@@ -1103,9 +1102,8 @@ public sealed class SymbolResolutionTests
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -1148,9 +1146,8 @@ public sealed class SymbolResolutionTests
         var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -1192,9 +1189,8 @@ public sealed class SymbolResolutionTests
                     InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var fooCall = main.FindInChildren<MemberExpressionSyntax>(0);
@@ -1233,9 +1229,8 @@ public sealed class SymbolResolutionTests
            ToPath("Tests", "BarModule", "bar.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -1271,11 +1266,9 @@ public sealed class SymbolResolutionTests
             """);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1308,11 +1301,9 @@ public sealed class SymbolResolutionTests
             """);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1353,9 +1344,8 @@ public sealed class SymbolResolutionTests
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
@@ -1403,9 +1393,8 @@ public sealed class SymbolResolutionTests
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -1447,9 +1436,8 @@ public sealed class SymbolResolutionTests
                     InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var fooDecl = main.FindInChildren<FunctionDeclarationSyntax>(1);
@@ -1496,9 +1484,8 @@ public sealed class SymbolResolutionTests
                     InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var fooCall = main.FindInChildren<NameExpressionSyntax>(0);
@@ -1541,9 +1528,8 @@ public sealed class SymbolResolutionTests
            ToPath("Tests", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
@@ -1576,9 +1562,8 @@ public sealed class SymbolResolutionTests
             ToPath("NotRoot", "main.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var diags = compilation.Diagnostics;
@@ -1630,9 +1615,8 @@ public sealed class SymbolResolutionTests
                     ExpressionStatement(CallExpression(NameExpression("WriteLine")))))));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences,
             rootModulePath: ToPath("Tests"));
 
         var writeLineCall = main.FindInChildren<CallExpressionSyntax>(4).Function;
@@ -1734,11 +1718,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1783,11 +1765,9 @@ public sealed class SymbolResolutionTests
         var fooNameRef = main.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1832,11 +1812,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1876,11 +1854,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1920,11 +1896,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1965,11 +1939,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2009,11 +1981,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2054,11 +2024,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2095,11 +2063,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2137,11 +2103,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2185,11 +2149,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2234,11 +2196,9 @@ public sealed class SymbolResolutionTests
         var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2283,11 +2243,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2329,11 +2287,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2372,11 +2328,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2417,11 +2371,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2463,11 +2415,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2510,11 +2460,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2552,11 +2500,9 @@ public sealed class SymbolResolutionTests
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2603,11 +2549,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2649,11 +2593,9 @@ public sealed class SymbolResolutionTests
         var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2693,11 +2635,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2750,11 +2690,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2801,11 +2739,9 @@ public sealed class SymbolResolutionTests
         var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2848,11 +2784,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2896,11 +2830,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2941,11 +2873,9 @@ public sealed class SymbolResolutionTests
         var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2989,11 +2919,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3030,11 +2958,9 @@ public sealed class SymbolResolutionTests
         var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3072,11 +2998,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<TypeSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3113,11 +3037,9 @@ public sealed class SymbolResolutionTests
         var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3160,11 +3082,9 @@ public sealed class SymbolResolutionTests
         var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3207,11 +3127,9 @@ public sealed class SymbolResolutionTests
         var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3257,11 +3175,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3309,11 +3225,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3389,11 +3303,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3433,11 +3345,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3488,12 +3398,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(baseRef)
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [baseRef, fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3534,11 +3441,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3584,11 +3489,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3632,11 +3535,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3677,11 +3578,9 @@ public sealed class SymbolResolutionTests
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3734,11 +3633,9 @@ public sealed class SymbolResolutionTests
         var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3785,11 +3682,9 @@ public sealed class SymbolResolutionTests
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3836,11 +3731,9 @@ public sealed class SymbolResolutionTests
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3893,12 +3786,9 @@ public sealed class SymbolResolutionTests
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .Append(baseRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef, baseRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3945,11 +3835,9 @@ public sealed class SymbolResolutionTests
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3996,11 +3884,9 @@ public sealed class SymbolResolutionTests
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -4119,11 +4005,9 @@ public sealed class SymbolResolutionTests
             """);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -4167,11 +4051,9 @@ public sealed class SymbolResolutionTests
             """);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: TestUtilities.BclReferences
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 

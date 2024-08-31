@@ -189,6 +189,7 @@ internal static class TestUtilities
     {
         var peStream = new MemoryStream();
         var emitResult = compilation.Emit(peStream: peStream);
+        Assert.True(emitResult.Success);
         peStream.Position = 0;
         return peStream;
     }

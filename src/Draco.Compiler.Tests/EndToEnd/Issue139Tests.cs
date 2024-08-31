@@ -197,7 +197,12 @@ public sealed class Issue139Tests
         func foo(): string = "\{0}";
         """)]
     [Theory]
-    public void DoesNotCrash(string source) => CompileToMemory(CreateCompilation(source));
+    public void DoesNotCrash(string source)
+    {
+        var peStream = new MemoryStream();
+        var compilation = CreateCompilation(source);
+        _ = compilation.Emit(peStream);
+    }
 
     [Fact]
     public void EmptyDeclarationTableDoesNotCrash()

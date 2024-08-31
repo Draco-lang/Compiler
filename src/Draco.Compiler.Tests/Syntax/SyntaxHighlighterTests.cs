@@ -1,10 +1,11 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Tests.Semantics;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Syntax;
 
-public sealed class SyntaxHighlighterTests : SemanticTestsBase
+public sealed class SyntaxHighlighterTests
 {
     private const string sampleCode = """
         import System;

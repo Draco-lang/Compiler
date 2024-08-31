@@ -193,7 +193,7 @@ internal static class TestUtilities
         IEnumerable<MetadataReference>? additionalReferences = null,
         string? rootModulePath = null) => Compilation.Create(
             syntaxTrees: syntaxTrees.ToImmutableArray(),
-            metadataReferences: [.. BclReferences, .. additionalReferences],
+            metadataReferences: [.. BclReferences, .. (additionalReferences ?? [])],
             rootModulePath: rootModulePath);
 
     #endregion

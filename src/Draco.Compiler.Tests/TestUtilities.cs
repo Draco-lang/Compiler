@@ -11,7 +11,10 @@ internal static class TestUtilities
 {
     public const string DefaultAssemblyName = "Test.dll";
 
-    public static ImmutableArray<MetadataReference> BclReferences { get; } = Basic.Reference.Assemblies.Net80.ReferenceInfos.All
+    private static IEnumerable<Basic.Reference.Assemblies.Net80.ReferenceInfo> Net8Bcl =>
+        Basic.Reference.Assemblies.Net80.ReferenceInfos.All;
+
+    public static ImmutableArray<MetadataReference> BclReferences { get; } = Net8Bcl
         .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
         .ToImmutableArray();
 
@@ -29,7 +32,7 @@ internal static class TestUtilities
         var sourceText = SourceText.From(code, Encoding.UTF8);
         var tree = SyntaxFactory.ParseSyntaxTree(sourceText);
 
-        var defaultReferences = Basic.Reference.Assemblies.Net80.ReferenceInfos.All
+        var defaultReferences = Net8Bcl
             .Select(r => RoslynMetadataReference.CreateFromStream(new MemoryStream(r.ImageBytes)))
             .Concat(aditionalReferences.Select(r => RoslynMetadataReference.CreateFromStream(r)));
 

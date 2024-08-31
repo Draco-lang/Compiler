@@ -59,7 +59,8 @@ public sealed class CompletionService
             var completionItems = provider.GetCompletionItems(semanticModel, cursorIndex, currentContext);
             if (idAtCursor is not null)
             {
-                // TODO: Filter completionItems
+                // Filter by the identifier at the cursor
+                completionItems = this.FilterResultsByPrefixToken(idAtCursor, completionItems);
             }
             result.AddRange(completionItems);
         }
@@ -110,5 +111,23 @@ public sealed class CompletionService
                 _ => CompletionContext.Expression,
             },
         };
+    }
+
+    private ImmutableArray<CompletionItem> FilterResultsByPrefixToken(
+        SyntaxToken atCursor,
+        IEnumerable<CompletionItem> completionItems) => completionItems
+        .Where(x => this.KeepCompletionItemByPrefixToken(atCursor, x))
+        .ToImmutableArray();
+
+    // TODO: This will be a nice place to put some fuzzy equality logic
+    private bool KeepCompletionItemByPrefixToken(
+        SyntaxToken atCursor,
+        CompletionItem item)
+    {
+        // We don't deal with this
+        if (item.Edits.Length != 1) return true;
+
+        var replacementText = item.Edits[0].Text;
+        return replacementText.Contains(atCursor.Text);
     }
 }

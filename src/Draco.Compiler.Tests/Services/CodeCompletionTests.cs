@@ -9,12 +9,12 @@ namespace Draco.Compiler.Tests.Services;
 
 public sealed class CodeCompletionTests
 {
-    private static void AssertCompletions(IEnumerable<TextEdit> actual, params string[] expected) =>
+    private static void AssertCompletions(IEnumerable<string> actual, params string[] expected) =>
         AssertCompletions(actual, expected.AsEnumerable());
 
-    private static void AssertCompletions(IEnumerable<TextEdit> actual, IEnumerable<string> expected)
+    private static void AssertCompletions(IEnumerable<string> actual, IEnumerable<string> expected)
     {
-        var actualSet = actual.Select(x => x.Text).ToHashSet();
+        var actualSet = actual.ToHashSet();
         var expectedSet = expected.ToHashSet();
         Assert.True(actualSet.SetEquals(expectedSet));
     }
@@ -31,29 +31,32 @@ public sealed class CodeCompletionTests
         return completionService.GetCompletions(semanticModel, cursorIndex);
     }
 
+    private static ImmutableArray<string> GetCompletionWords(string code, char cursor = '|') =>
+        GetCompletions(code, cursor).Select(c => c.Edits[0].Text).ToImmutableArray();
+
     [Fact]
     public void TestLocalCompletionGlobalVariable()
     {
         // TODO: Can we get rid of all this filtering by filtering in the completion service?
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             val global = 5;
             func main(){
                 var local = gl|
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("gl")));
+            """);
 
-        AssertCompletions(completions, "global");
+        AssertCompletions(completions, "global", "Single");
     }
 
     [Fact]
     public void TestLocalCompletionLocalVariable()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             func main(){
                 val local = 5;
                 var x = lo|
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("lo")));
+            """);
 
         AssertCompletions(completions, "local");
     }
@@ -61,49 +64,49 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestLocalCompletionFunction()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             func main(){
                 var x = so|
             }
 
             func something(): int32 = 5;
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("so")));
+            """);
 
-        AssertCompletions(completions, "something");
+        AssertCompletions(completions, "something", "Microsoft");
     }
 
     [Fact]
     public void TestGlobalCompletionGlobalVariable()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             val global = 5;
             val x = gl|
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("gl")));
+            """);
 
-        AssertCompletions(completions, "global");
+        AssertCompletions(completions, "global", "Single");
     }
 
     [Fact]
     public void TestGlobalCompletionFunction()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             var x = so|
 
             func something(): int32 = 5;
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("so")));
+            """);
 
-        AssertCompletions(completions, "something");
+        AssertCompletions(completions, "something", "Microsoft");
     }
 
     [Fact]
     public void TestCompletionImportedSystem()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             import System;
             func main(){
                 Consol|
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Consol")));
+            """);
 
         AssertCompletions(completions, [
             "Console",
@@ -122,11 +125,11 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionFullyQualifiedName()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             func main(){
                 System.Consol|
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Consol")));
+            """);
 
         AssertCompletions(completions, [
             "Console",
@@ -145,9 +148,9 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionImportMember()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             import System.Co|
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Co")));
+            """);
 
         AssertCompletions(completions, [
             "CodeDom",
@@ -155,15 +158,17 @@ public sealed class CodeCompletionTests
             "ComponentModel",
             "Configuration",
             "Console",
-            "Convert"]);
+            "Convert",
+            "AppContext",
+            "BitConverter"]);
     }
 
     [Fact]
     public void TestCompletionImportRoot()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             import S|
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith('S')));
+            """);
 
         AssertCompletions(completions, "System");
     }
@@ -171,12 +176,12 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionModuleMemberAccess()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             import System;
             func main(){
                 Console.Wr|
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Wr")));
+            """);
 
         AssertCompletions(completions, "Write", "WriteLine");
     }
@@ -184,13 +189,13 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionLocalMemberAccess()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             import System.Text;
             func main(){
                 var builder = StringBuilder();
                 builder.App|
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("App")));
+            """);
 
         AssertCompletions(completions, [
             "Append",
@@ -207,7 +212,7 @@ public sealed class CodeCompletionTests
             func main(){
                 Console.W|
             }
-            """).Where(x => x.DisplayText.Contains('W')).ToImmutableArray();
+            """);
 
         var expected = new Dictionary<string, int>
         {
@@ -234,25 +239,25 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionTypeMemberAccess()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             import System;
             func main(){
                 String.Empt|
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Empt", StringComparison.Ordinal)));
+            """);
 
-        AssertCompletions(completions, "Empty");
+        AssertCompletions(completions, "Empty", "IsNullOrEmpty");
     }
 
     [Fact]
     public void TestCompletionGenericTypeMemberAccess()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             import System;
             func main(){
                 Memory<int32>.Empt|
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.StartsWith("Empt", StringComparison.Ordinal)));
+            """);
 
         AssertCompletions(completions, "Empty");
     }
@@ -260,12 +265,12 @@ public sealed class CodeCompletionTests
     [Fact]
     public void TestCompletionMemberLvalue()
     {
-        var completions = GetCompletions("""
+        var completions = GetCompletionWords("""
             import System;
             func main(){
                 Console.WindowW| = 5;
             }
-            """).SelectMany(x => x.Edits.Where(y => y.Text.Contains("WindowW")));
+            """);
 
         AssertCompletions(completions, "WindowWidth", "LargestWindowWidth");
     }

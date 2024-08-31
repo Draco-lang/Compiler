@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Scripting;
 
@@ -15,7 +16,7 @@ public sealed class ScriptTests
             var y = 4;
             x + y
             """,
-            metadataReferences: TestUtilities.BclReferences);
+            metadataReferences: BclReferences);
 
         // Act
         var result = script.Execute();
@@ -32,7 +33,7 @@ public sealed class ScriptTests
         var script = Script.Create<int>("""
             var x = ;
             """,
-            metadataReferences: TestUtilities.BclReferences);
+            metadataReferences: BclReferences);
 
         // Act
         var result = script.Execute();

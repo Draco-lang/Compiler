@@ -82,16 +82,16 @@ public sealed class SymbolResolutionTests
         var sym6 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(x6));
 
         // Assert
-        AssertParentOf(GetDefiningScope(compilation, sym2), GetDefiningScope(compilation, sym3));
-        AssertParentOf(GetDefiningScope(compilation, sym1), GetDefiningScope(compilation, sym2));
-        AssertParentOf(GetDefiningScope(compilation, sym4), GetDefiningScope(compilation, sym5));
-        AssertParentOf(GetDefiningScope(compilation, sym4), GetDefiningScope(compilation, sym6));
-        AssertParentOf(GetDefiningScope(compilation, sym1), GetDefiningScope(compilation, sym4));
+        AssertParentOf(GetDefiningScope(sym2), GetDefiningScope(sym3));
+        AssertParentOf(GetDefiningScope(sym1), GetDefiningScope(sym2));
+        AssertParentOf(GetDefiningScope(sym4), GetDefiningScope(sym5));
+        AssertParentOf(GetDefiningScope(sym4), GetDefiningScope(sym6));
+        AssertParentOf(GetDefiningScope(sym1), GetDefiningScope(sym4));
 
-        AssertParentOf(GetDefiningScope(compilation, symn), GetDefiningScope(compilation, sym1));
+        AssertParentOf(GetDefiningScope(symn), GetDefiningScope(sym1));
 
-        AssertParentOf(GetDefiningScope(compilation, symFoo), GetDefiningScope(compilation, symn));
-        Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), GetDefiningScope(compilation, symn)));
+        AssertParentOf(GetDefiningScope(symFoo), GetDefiningScope(symn));
+        Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), GetDefiningScope(symn)));
 
         Assert.Equal(6, diagnostics.Length);
         Assert.All(diagnostics, diag => Assert.Equal(TypeCheckingErrors.CouldNotInferType, diag.Template));
@@ -353,7 +353,7 @@ public sealed class SymbolResolutionTests
         Assert.False(x1SymDecl.IsError);
         Assert.False(x2SymDecl.IsError);
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -410,7 +410,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -443,7 +443,7 @@ public sealed class SymbolResolutionTests
         Assert.False(varSym.IsError);
         Assert.False(funcSym.IsError);
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -852,7 +852,7 @@ public sealed class SymbolResolutionTests
         Assert.True(localSymbol.Type.IsError);
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalExpression);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
     }
 
     [Fact]
@@ -872,7 +872,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -898,7 +898,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -929,7 +929,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.ImportNotAtTop);
+        AssertDiagnostics(diags, SymbolResolutionErrors.ImportNotAtTop);
     }
 
     [Fact]
@@ -962,7 +962,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.ImportNotAtTop);
+        AssertDiagnostics(diags, SymbolResolutionErrors.ImportNotAtTop);
     }
 
     [Fact]
@@ -992,7 +992,7 @@ public sealed class SymbolResolutionTests
         Assert.NotNull(returnTypeSymbol);
         Assert.False(returnTypeSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.IllegalModuleType);
     }
 
     [Fact]
@@ -1024,7 +1024,7 @@ public sealed class SymbolResolutionTests
         Assert.NotNull(varTypeSymbol);
         Assert.False(varTypeSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.IllegalModuleType);
     }
 
     [Fact]
@@ -1114,7 +1114,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1207,7 +1207,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.Single(diags);
         Assert.True(fooCallSymbol.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1244,7 +1244,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1283,7 +1283,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1320,7 +1320,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1414,7 +1414,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1511,7 +1511,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.Single(diags);
         Assert.True(fooCallSymbol.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1585,7 +1585,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.FilePathOutsideOfRootPath);
+        AssertDiagnostics(diags, SymbolResolutionErrors.FilePathOutsideOfRootPath);
     }
 
     [Fact]
@@ -1645,7 +1645,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.Single(diags);
         Assert.True(writeLineCallSymbol.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1674,8 +1674,8 @@ public sealed class SymbolResolutionTests
         Assert.NotNull(returnTypeSymbol);
         Assert.True(returnTypeSymbol.IsError);
         Assert.Equal(2, diags.Length);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
-        AssertDiagnostic(diags, FlowAnalysisErrors.DoesNotReturn);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, FlowAnalysisErrors.DoesNotReturn);
     }
 
     [Fact]
@@ -1704,7 +1704,7 @@ public sealed class SymbolResolutionTests
         Assert.NotNull(paramTypeSymbol);
         Assert.True(paramTypeSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1744,7 +1744,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = GetMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -1842,7 +1842,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -1885,14 +1885,14 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = GetMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -1929,14 +1929,14 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = GetMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -1974,14 +1974,14 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)).Type, "foo");
+        var fooSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -2027,7 +2027,7 @@ public sealed class SymbolResolutionTests
         Assert.False(fooTypeSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
     [Fact]
@@ -2070,7 +2070,7 @@ public sealed class SymbolResolutionTests
         Assert.Single(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
     [Fact]
@@ -2111,7 +2111,7 @@ public sealed class SymbolResolutionTests
         Assert.Single(diags);
         Assert.False(fooModuleSym.IsError);
         Assert.Same(fooModuleSym, fooModuleDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -2155,7 +2155,7 @@ public sealed class SymbolResolutionTests
         Assert.False(fooModuleSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fooModuleSym, fooModuleDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -2195,7 +2195,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -2293,7 +2293,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2338,14 +2338,14 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
     }
 
     [Fact]
@@ -2381,14 +2381,14 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
     }
 
     [Fact]
@@ -2426,14 +2426,14 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
     }
 
     [Fact]
@@ -2473,7 +2473,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2481,7 +2481,7 @@ public sealed class SymbolResolutionTests
         Assert.False(fooSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
     }
 
     [Fact]
@@ -2519,7 +2519,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2561,7 +2561,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -2613,7 +2613,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -2663,7 +2663,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.Single(diags);
         Assert.True(fooSym.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]
@@ -2703,7 +2703,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -2711,7 +2711,7 @@ public sealed class SymbolResolutionTests
         Assert.False(fooSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
@@ -2760,8 +2760,8 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
-        var indexSym = GetMemberSymbol<PropertySymbol>(fooSym.Type, "Item");
+        var fooSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = GetMember<PropertySymbol>(fooSym.Type, "Item");
         var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
 
         // Assert
@@ -2815,7 +2815,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.Single(diags);
         Assert.True(fooSym.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]
@@ -2858,8 +2858,8 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
-        var indexSym = GetMemberSymbol<PropertySymbol>(fooSym.Type, "Item");
+        var fooSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = GetMember<PropertySymbol>(fooSym.Type, "Item");
         var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
 
         // Assert
@@ -2868,7 +2868,7 @@ public sealed class SymbolResolutionTests
         Assert.False(fooSym.IsError);
         Assert.False(indexSym.IsError);
         Assert.Same(indexSym, indexDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
@@ -2914,7 +2914,7 @@ public sealed class SymbolResolutionTests
         Assert.False(xSym.IsError);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
@@ -2955,7 +2955,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.Single(diags);
         Assert.True(fooSym.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]
@@ -2998,7 +2998,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -3039,7 +3039,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = GetMember<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3122,7 +3122,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = GetMember<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3169,7 +3169,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = GetMember<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3216,7 +3216,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = GetMember<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3744,7 +3744,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fieldSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.ImmediateBaseTypes[0], "Field");
+        var fieldSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.ImmediateBaseTypes[0], "Field");
         var fieldDecl = GetMetadataSymbol(compilation, null, "ParentType", "Field");
 
         // Assert
@@ -4085,7 +4085,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
     [Fact]
@@ -4131,7 +4131,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
     [Fact]
@@ -4179,6 +4179,6 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NotGettableProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NotGettableProperty);
     }
 }

@@ -1,23 +1,18 @@
 using System.Collections.Immutable;
+using System.Reflection;
+using System.Runtime.Loader;
 using System.Text;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal;
+using Draco.Compiler.Internal.Symbols;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Text;
+using Binder = Draco.Compiler.Internal.Binding.Binder;
+using CSharpSourceText = Microsoft.CodeAnalysis.Text.SourceText;
 using RoslynMetadataReference = Microsoft.CodeAnalysis.MetadataReference;
 using RoslynSyntaxFactory = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using CSharpSourceText = Microsoft.CodeAnalysis.Text.SourceText;
-using Draco.Compiler.Api.Semantics;
-using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Binding;
-using Draco.Compiler.Api.Diagnostics;
-using System.Reflection;
-using Binder = Draco.Compiler.Internal.Binding.Binder;
-using Draco.Compiler.Internal;
-using System.Runtime.CompilerServices;
-using System.Collections.Concurrent;
-using System.Runtime.Loader;
-using Microsoft.VisualStudio.TestPlatform.PlatformAbstractions.Interfaces;
 
 namespace Draco.Compiler.Tests;
 

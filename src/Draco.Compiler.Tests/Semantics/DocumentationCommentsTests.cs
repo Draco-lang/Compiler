@@ -1,8 +1,6 @@
-using System.Collections.Immutable;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;

@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Tests.TestUtilities;
 

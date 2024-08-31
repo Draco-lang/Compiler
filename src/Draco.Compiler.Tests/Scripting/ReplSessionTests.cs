@@ -1,4 +1,3 @@
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using static Draco.Compiler.Tests.TestUtilities;
 

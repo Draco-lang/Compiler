@@ -8,7 +8,6 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Binding;
 

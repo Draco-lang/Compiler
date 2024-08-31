@@ -150,18 +150,37 @@ internal static class TestUtilities
     public static Assembly CompileToAssembly(
         IEnumerable<SyntaxTree> syntaxTrees,
         IEnumerable<MetadataReference>? additionalReferences = null,
-        string? rootModulePath = null) => CompileToAssembly(CreateCompilation(
+        string? rootModulePath = null) => CompileToAssemblyImpl(CreateCompilation(
             syntaxTrees: syntaxTrees,
             additionalReferences: additionalReferences,
-            rootModulePath: rootModulePath));
+            rootModulePath: rootModulePath), additionalReferences);
 
-    public static Assembly CompileToAssembly(Compilation compilation)
+    private static Assembly CompileToAssemblyImpl(
+        Compilation compilation,
+        IEnumerable<MetadataReference>? additionalReferences)
     {
-        // TODO: We need a custom load context
-        // And also have C# compilations magically resolve here
-        // Maybe we can use the test name to have keys of loaded stuff
-        // A CWT might be the best here
-        throw new NotImplementedException();
+        additionalReferences ??= [];
+
+        var loadedAssemblies = new Dictionary<string, Assembly>();
+        var assemblyLoadContext = new AssemblyLoadContext("Test", isCollectible: true);
+
+        assemblyLoadContext.Resolving += (context, name) =>
+        {
+            if (name.Name is null) return null;
+            if (loadedAssemblies.TryGetValue(name.Name, out var asm)) return asm;
+            return null;
+        };
+
+        var peStream = CompileToMemory(compilation);
+        var assembly = assemblyLoadContext.LoadFromStream(peStream);
+
+        // Load additional references
+        foreach (var reference in additionalReferences)
+        {
+            // TODO
+        }
+
+        return assembly;
     }
 
     public static MemoryStream CompileToMemory(Compilation compilation)

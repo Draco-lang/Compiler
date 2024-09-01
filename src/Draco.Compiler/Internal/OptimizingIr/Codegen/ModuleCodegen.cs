@@ -25,7 +25,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
     /// </summary>
     public bool EmitSequencePoints { get; }
 
-    private readonly FunctionBodyCodegen globalInitializer;
+    private readonly LocalCodegen globalInitializer;
     private readonly Module module;
 
     public ModuleCodegen(Compilation compilation, Module module, bool emitSequencePoints)
@@ -80,7 +80,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // Yank out potential local functions and closures
         var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
         // Compile it
-        var bodyCodegen = new FunctionBodyCodegen(this.Compilation, procedure);
+        var bodyCodegen = new LocalCodegen(this.Compilation, procedure);
         bodyWithoutLocalFunctions.Accept(bodyCodegen);
 
         // Compile the local functions

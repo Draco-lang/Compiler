@@ -61,31 +61,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
-    private Module GetDefiningModule(Symbol symbol)
-    {
-        var pathToSymbol = symbol.AncestorChain.OfType<ModuleSymbol>().First();
-        return (Module)this.procedure.Assembly.Lookup(pathToSymbol);
-    }
-
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
-
-    private FunctionSymbol SynthetizeProcedure(FunctionSymbol func)
-    {
-        Debug.Assert(func.Body is not null);
-
-        // We handle synthetized functions a bit specially, as they are not part of our symbol
-        // tree, so we compile them, in case they have not yet been
-        var compiledAlready = this.procedure.DeclaringModule.Procedures.ContainsKey(func);
-        var proc = this.procedure.DeclaringModule.DefineProcedure(func);
-        if (!compiledAlready)
-        {
-            var codegen = new FunctionBodyCodegen(this.compilation, proc);
-            func.Body.Accept(codegen);
-        }
-        return func;
-    }
 
     private static bool NeedsBoxing(TypeSymbol targetType, TypeSymbol sourceType)
     {

@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// Represents a tree-ified instruction, that's only part of the stackification process.

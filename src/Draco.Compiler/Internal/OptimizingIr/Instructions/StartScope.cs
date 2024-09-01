@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
 
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// A pseudo-instruction for representing the start of a local scope.

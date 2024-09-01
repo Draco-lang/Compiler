@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// Stores a value in a field.

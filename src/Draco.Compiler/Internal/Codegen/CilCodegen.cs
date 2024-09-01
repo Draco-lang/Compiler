@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
@@ -145,7 +146,7 @@ internal sealed class CilCodegen
 
         switch (instruction)
         {
-        case OptimizingIr.Model.SequencePoint sp:
+        case OptimizingIr.Instructions.SequencePoint sp:
         {
             this.PdbCodegen?.AddSequencePoint(this.InstructionEncoder, sp);
             break;
@@ -357,26 +358,13 @@ internal sealed class CilCodegen
         }
         case CallInstruction call:
         {
-            // Arguments
+            // Optional receiver and arguments
             foreach (var arg in RemainingOperands()) this.EncodePush(arg);
             // Call
-            this.InstructionEncoder.OpCode(ILOpCode.Call);
+            this.InstructionEncoder.OpCode(call.Procedure.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
             this.EncodeToken(call.Procedure);
             // Store result
             this.StoreRegister(call.Target);
-            break;
-        }
-        case MemberCallInstruction mcall:
-        {
-            // Receiver
-            this.EncodePush(NextOperand());
-            // Arguments
-            foreach (var arg in RemainingOperands()) this.EncodePush(arg);
-            // Call
-            this.InstructionEncoder.OpCode(mcall.Procedure.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
-            this.EncodeToken(mcall.Procedure);
-            // Store result
-            this.StoreRegister(mcall.Target);
             break;
         }
         case NewObjectInstruction newObj:

@@ -105,7 +105,7 @@ internal sealed class PdbCodegen(MetadataCodegen metadataCodegen) : MetadataWrit
             Length: ilOffset - start.StartOffset));
     }
 
-    public void AddSequencePoint(InstructionEncoder encoder, OptimizingIr.Model.SequencePoint sequencePoint)
+    public void AddSequencePoint(InstructionEncoder encoder, OptimizingIr.Instructions.SequencePoint sequencePoint)
     {
         var sp = MakeSequencePoint(encoder, sequencePoint.Range);
         this.sequencePoints.Add(sp);

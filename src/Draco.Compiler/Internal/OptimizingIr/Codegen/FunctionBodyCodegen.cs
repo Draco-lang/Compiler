@@ -75,6 +75,29 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return targetIsValueType && !sourceIsValueType;
     }
 
+    public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
+    {
+        if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
+
+        var needsBox = NeedsBoxing(targetType, source.Type);
+        var needsUnbox = NeedsUnboxing(targetType, source.Type);
+
+        if (needsBox)
+        {
+            var result = this.DefineRegister(targetType.Substitution);
+            this.Write(Box(result, targetType.Substitution, source));
+            return result;
+        }
+
+        if (needsUnbox)
+        {
+            // TODO
+            throw new System.NotImplementedException();
+        }
+
+        return source;
+    }
+
     private void PatchLoadTarget(IInstruction loadInstr, Register target)
     {
         switch (loadInstr)
@@ -110,29 +133,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         default:
             throw new System.ArgumentOutOfRangeException(nameof(storeInstr));
         }
-    }
-
-    public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
-    {
-        if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
-
-        var needsBox = NeedsBoxing(targetType, source.Type);
-        var needsUnbox = NeedsUnboxing(targetType, source.Type);
-
-        if (needsBox)
-        {
-            var result = this.DefineRegister(targetType.Substitution);
-            this.Write(Box(result, targetType.Substitution, source));
-            return result;
-        }
-
-        if (needsUnbox)
-        {
-            // TODO
-            throw new System.NotImplementedException();
-        }
-
-        return source;
     }
 
     // Manifesting an expression as an address

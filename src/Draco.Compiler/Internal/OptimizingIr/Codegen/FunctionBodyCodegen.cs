@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Binding;
@@ -7,10 +6,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Generic;
-using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
@@ -79,6 +75,43 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return targetIsValueType && !sourceIsValueType;
     }
 
+    private void PatchLoadTarget(IInstruction loadInstr, Register target)
+    {
+        switch (loadInstr)
+        {
+        case LoadInstruction load:
+            load.Target = target;
+            break;
+        case LoadElementInstruction loadElement:
+            loadElement.Target = target;
+            break;
+        case LoadFieldInstruction loadField:
+            loadField.Target = target;
+            break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(loadInstr));
+        }
+    }
+
+    private void PatchStoreSource(IInstruction storeInstr, TypeSymbol targetType, IOperand source)
+    {
+        source = this.BoxIfNeeded(targetType, source);
+        switch (storeInstr)
+        {
+        case StoreInstruction store:
+            store.Source = source;
+            break;
+        case StoreElementInstruction storeElement:
+            storeElement.Source = source;
+            break;
+        case StoreFieldInstruction storeField:
+            storeField.Source = source;
+            break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(storeInstr));
+        }
+    }
+
     public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
     {
         if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
@@ -100,6 +133,93 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
 
         return source;
+    }
+
+    // Manifesting an expression as an address
+    private IOperand CompileToAddress(BoundExpression expression)
+    {
+        switch (expression)
+        {
+        case BoundLocalExpression local:
+        {
+            var target = this.DefineRegister(new ReferenceTypeSymbol(local.TypeRequired));
+            this.Write(AddressOf(target, local.Local));
+            return target;
+        }
+        default:
+        {
+            // We allocate a local so we can take its address
+            var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
+            this.procedure.DefineLocal(local);
+            // Store the value in it
+            var value = this.Compile(expression);
+            this.Write(Store(local, value));
+            // Take its address
+            var target = this.DefineRegister(new ReferenceTypeSymbol(expression.TypeRequired));
+            this.Write(AddressOf(target, local));
+            return target;
+        }
+        }
+    }
+
+    private IOperand? CompileReceiver(BoundCallExpression call)
+    {
+        if (call.Receiver is null) return null;
+        // Box receiver, if needed
+        if (call.Method.ContainingSymbol is TypeSymbol methodContainer
+         && NeedsBoxing(methodContainer, call.Receiver.TypeRequired))
+        {
+            var valueReceiver = this.Compile(call.Receiver);
+            var receiver = this.DefineRegister(methodContainer);
+            this.Write(Box(receiver, methodContainer, valueReceiver));
+            return receiver;
+        }
+        else
+        {
+            return call.Receiver.TypeRequired.IsValueType
+                ? this.CompileToAddress(call.Receiver)
+                : this.Compile(call.Receiver);
+        }
+    }
+
+    private (IInstruction Load, IInstruction Store) CompileLvalue(BoundLvalue lvalue)
+    {
+        switch (lvalue)
+        {
+        case BoundLocalLvalue local:
+        {
+            return (Load: Load(default!, local.Local), Store: Store(local.Local, default!));
+        }
+        case BoundGlobalLvalue global:
+        {
+            return (Load: Load(default!, global.Global), Store: Store(global.Global, default!));
+        }
+        case BoundFieldLvalue field:
+        {
+            var receiver = field.Receiver is null ? null : this.Compile(field.Receiver);
+            if (receiver is null)
+            {
+                var src = field.Field;
+                return (Load: Load(default!, src), Store: Store(src, default!));
+            }
+            else
+            {
+                return (
+                    Load: LoadField(default!, receiver, field.Field),
+                    Store: StoreField(receiver, field.Field, default!));
+            }
+        }
+        case BoundArrayAccessLvalue arrayAccess:
+        {
+            var array = this.Compile(arrayAccess.Array);
+            var indices = arrayAccess.Indices
+                .Select(this.Compile)
+                .ToList();
+            return (Load: LoadElement(default!, array, indices), Store: StoreElement(array, indices, default!));
+        }
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(lvalue));
+        }
     }
 
     // Statements //////////////////////////////////////////////////////////////
@@ -162,75 +282,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return default!;
     }
 
-    // Lvalues /////////////////////////////////////////////////////////////////
-
-    private (IInstruction Load, IInstruction Store) CompileLvalue(BoundLvalue lvalue)
-    {
-        switch (lvalue)
-        {
-        case BoundLocalLvalue local:
-        {
-            return (Load: Load(default!, local.Local), Store: Store(local.Local, default!));
-        }
-        case BoundGlobalLvalue global:
-        {
-            return (Load: Load(default!, global.Global), Store: Store(global.Global, default!));
-        }
-        case BoundFieldLvalue field:
-        {
-            var receiver = field.Receiver is null ? null : this.Compile(field.Receiver);
-            if (receiver is null)
-            {
-                var src = field.Field;
-                return (Load: Load(default!, src), Store: Store(src, default!));
-            }
-            else
-            {
-                return (
-                    Load: LoadField(default!, receiver, field.Field),
-                    Store: StoreField(receiver, field.Field, default!));
-            }
-        }
-        case BoundArrayAccessLvalue arrayAccess:
-        {
-            var array = this.Compile(arrayAccess.Array);
-            var indices = arrayAccess.Indices
-                .Select(this.Compile)
-                .ToList();
-            return (Load: LoadElement(default!, array, indices), Store: StoreElement(array, indices, default!));
-        }
-        default:
-            throw new System.ArgumentOutOfRangeException(nameof(lvalue));
-        }
-    }
-
-    // Manifesting an expression as an address
-    private IOperand CompileToAddress(BoundExpression expression)
-    {
-        switch (expression)
-        {
-        case BoundLocalExpression local:
-        {
-            var target = this.DefineRegister(new ReferenceTypeSymbol(local.TypeRequired));
-            this.Write(AddressOf(target, local.Local));
-            return target;
-        }
-        default:
-        {
-            // We allocate a local so we can take its address
-            var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
-            this.procedure.DefineLocal(local);
-            // Store the value in it
-            var value = this.Compile(expression);
-            this.Write(Store(local, value));
-            // Take its address
-            var target = this.DefineRegister(new ReferenceTypeSymbol(expression.TypeRequired));
-            this.Write(AddressOf(target, local));
-            return target;
-        }
-        }
-    }
-
     // Expressions /////////////////////////////////////////////////////////////
 
     public override IOperand VisitStringExpression(BoundStringExpression node) =>
@@ -270,26 +321,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             var callResult = this.DefineRegister(node.TypeRequired);
             this.Write(Call(callResult, proc, receiver, args));
             return callResult;
-        }
-    }
-
-    private IOperand? CompileReceiver(BoundCallExpression call)
-    {
-        if (call.Receiver is null) return null;
-        // Box receiver, if needed
-        if (call.Method.ContainingSymbol is TypeSymbol methodContainer
-         && NeedsBoxing(methodContainer, call.Receiver.TypeRequired))
-        {
-            var valueReceiver = this.Compile(call.Receiver);
-            var receiver = this.DefineRegister(methodContainer);
-            this.Write(Box(receiver, methodContainer, valueReceiver));
-            return receiver;
-        }
-        else
-        {
-            return call.Receiver.TypeRequired.IsValueType
-                ? this.CompileToAddress(call.Receiver)
-                : this.Compile(call.Receiver);
         }
     }
 
@@ -379,7 +410,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
             var leftValue = this.DefineRegister(node.Left.Type);
             // Patch
-            PatchLoadTarget(leftLoad, leftValue);
+            this.PatchLoadTarget(leftLoad, leftValue);
             this.Write(leftLoad);
             if (node.CompoundOperator.Codegen is { } codegen)
             {
@@ -396,43 +427,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.PatchStoreSource(leftStore, node.Left.Type, toStore);
         this.Write(leftStore);
         return toStore;
-    }
-
-    private static void PatchLoadTarget(IInstruction loadInstr, Register target)
-    {
-        switch (loadInstr)
-        {
-        case LoadInstruction load:
-            load.Target = target;
-            break;
-        case LoadElementInstruction loadElement:
-            loadElement.Target = target;
-            break;
-        case LoadFieldInstruction loadField:
-            loadField.Target = target;
-            break;
-        default:
-            throw new System.ArgumentOutOfRangeException(nameof(loadInstr));
-        }
-    }
-
-    private void PatchStoreSource(IInstruction storeInstr, TypeSymbol targetType, IOperand source)
-    {
-        source = this.BoxIfNeeded(targetType, source);
-        switch (storeInstr)
-        {
-        case StoreInstruction store:
-            store.Source = source;
-            break;
-        case StoreElementInstruction storeElement:
-            storeElement.Source = source;
-            break;
-        case StoreFieldInstruction storeField:
-            storeField.Source = source;
-            break;
-        default:
-            throw new System.ArgumentOutOfRangeException(nameof(storeInstr));
-        }
     }
 
     public override IOperand VisitReturnExpression(BoundReturnExpression node)

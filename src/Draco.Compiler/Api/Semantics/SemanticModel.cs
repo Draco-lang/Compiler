@@ -81,6 +81,7 @@ public sealed partial class SemanticModel : IBinderProvider
             {
             case CompilationUnitSyntax:
             case FunctionDeclarationSyntax:
+            case ScriptEntrySyntax:
             {
                 containingSymbol?.Bind(this);
                 break;

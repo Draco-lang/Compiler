@@ -17,6 +17,8 @@ namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 /// </summary>
 internal sealed partial class LocalCodegen : BoundTreeVisitor<IOperand>
 {
+    private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
+
     private readonly Compilation compilation;
     private readonly Procedure procedure;
 
@@ -465,7 +467,7 @@ internal sealed partial class LocalCodegen : BoundTreeVisitor<IOperand>
         {
             // NOTE: Literals possibly have a different type than the signature of the global
             var defaultValue = node.Global.LiteralValue;
-            if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.WellKnownTypes, out var literalType))
+            if (!BinderFacts.TryGetLiteralType(defaultValue, this.WellKnownTypes, out var literalType))
             {
                 throw new System.InvalidOperationException();
             }

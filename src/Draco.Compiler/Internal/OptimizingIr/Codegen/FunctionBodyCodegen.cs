@@ -256,7 +256,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
             .ToImmutableArray();
 
-        var proc = this.TranslateFunctionSymbol(node.Method);
+        var proc = node.Method;
         if (proc.Codegen is { } codegen)
         {
             if (receiver is not null)
@@ -295,7 +295,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitObjectCreationExpression(BoundObjectCreationExpression node)
     {
-        var ctor = this.TranslateFunctionSymbol(node.Constructor);
+        var ctor = node.Constructor;
         var args = node.Arguments.Select(this.Compile).ToList();
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(NewObject(result, ctor, args));
@@ -305,8 +305,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitDelegateCreationExpression(BoundDelegateCreationExpression node)
     {
         var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
-        var function = this.TranslateFunctionSymbol(node.Method);
-        var delegateCtor = this.TranslateFunctionSymbol(node.DelegateConstructor);
+        var function = node.Method;
+        var delegateCtor = node.DelegateConstructor;
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(NewDelegate(result, receiver, function, delegateCtor));
         return result;
@@ -476,20 +476,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(Load(result, node.Parameter));
         return result;
-    }
-
-    private FunctionSymbol TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
-    {
-        // Generic functions
-        FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
-        _ => symbol,
-    };
-
-    private FunctionInstanceSymbol TranslateFunctionInstanceSymbol(FunctionInstanceSymbol i)
-    {
-        // NOTE: We visit the underlying instantiated symbol in case it's synthetized by us
-        this.TranslateFunctionSymbol(i.GenericDefinition);
-        return i;
     }
 
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) =>

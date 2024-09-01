@@ -67,7 +67,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return (Module)this.procedure.Assembly.Lookup(pathToSymbol);
     }
 
-    private Procedure DefineProcedure(FunctionSymbol function) => this.GetDefiningModule(function).DefineProcedure(function);
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
@@ -510,15 +509,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     {
         // Generic functions
         FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
-        // Functions with synthetized body
-        FunctionSymbol f when f.DeclaringSyntax is null && f.Body is not null => this.SynthetizeProcedure(f),
-        // Functions with inline codegen
-        FunctionSymbol f when f.Codegen is not null => f,
-        // Source functions
-        SyntaxFunctionSymbol func => this.DefineProcedure(func).Symbol,
-        // Metadata functions
-        MetadataMethodSymbol m => m,
-        _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
+        _ => symbol,
     };
 
     private FunctionInstanceSymbol TranslateFunctionInstanceSymbol(FunctionInstanceSymbol i)

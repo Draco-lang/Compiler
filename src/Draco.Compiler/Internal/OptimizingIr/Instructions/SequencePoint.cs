@@ -1,7 +1,7 @@
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// A pseudo-instruction for representing sequence points.

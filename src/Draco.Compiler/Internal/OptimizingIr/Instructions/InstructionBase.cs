@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Draco.Compiler.Internal.OptimizingIr.Instructions;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// A mutable base class for <see cref="IInstruction"/> implementations.

@@ -42,6 +42,11 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
     internal override string RawDocumentation => LazyInitializer.EnsureInitialized(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
+    public override bool IsLiteral => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal);
+
+    public override object? LiteralValue => InterlockedUtils.InitializeMaybeNull(ref this.literalValue, this.BuildLiteralValue);
+    private object? literalValue;
+
     public override Symbol? ContainingSymbol { get; }
 
     /// <summary>
@@ -55,18 +60,6 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
     /// The metadata reader that was used to read up this metadata symbol.
     /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
-
-    /// <summary>
-    /// True, if this is a literal that cannot be referenced as a field, but needs to be inlined as a value.
-    /// This is the case for enum members.
-    /// </summary>
-    public bool IsLiteral => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal);
-
-    /// <summary>
-    /// The default value of this field.
-    /// </summary>
-    public object? DefaultValue => InterlockedUtils.InitializeMaybeNull(ref this.defaultValue, this.BuildDefaultValue);
-    private object? defaultValue;
 
     private readonly FieldDefinition fieldDefinition;
 
@@ -84,7 +77,7 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
     private TypeSymbol BuildType() =>
         this.fieldDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
 
-    private object? BuildDefaultValue()
+    private object? BuildLiteralValue()
     {
         var constantHandle = this.fieldDefinition.GetDefaultValue();
         if (constantHandle.IsNil) return null;

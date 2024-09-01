@@ -14,6 +14,7 @@ using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Codegen;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Script;

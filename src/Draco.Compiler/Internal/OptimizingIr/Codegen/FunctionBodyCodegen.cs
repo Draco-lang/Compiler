@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Binding;
@@ -7,14 +6,11 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Generic;
-using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
-namespace Draco.Compiler.Internal.OptimizingIr;
+namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 
 /// <summary>
 /// Generates IR code on function-local level.
@@ -61,32 +57,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
-    private Module GetDefiningModule(Symbol symbol)
-    {
-        var pathToSymbol = symbol.AncestorChain.OfType<ModuleSymbol>().First();
-        return (Module)this.procedure.Assembly.Lookup(pathToSymbol);
-    }
-
-    private Procedure DefineProcedure(FunctionSymbol function) => this.GetDefiningModule(function).DefineProcedure(function);
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
     public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
-
-    private FunctionSymbol SynthetizeProcedure(FunctionSymbol func)
-    {
-        Debug.Assert(func.Body is not null);
-
-        // We handle synthetized functions a bit specially, as they are not part of our symbol
-        // tree, so we compile them, in case they have not yet been
-        var compiledAlready = this.procedure.DeclaringModule.Procedures.ContainsKey(func);
-        var proc = this.procedure.DeclaringModule.DefineProcedure(func);
-        if (!compiledAlready)
-        {
-            var codegen = new FunctionBodyCodegen(this.compilation, proc);
-            func.Body.Accept(codegen);
-        }
-        return func;
-    }
 
     private static bool NeedsBoxing(TypeSymbol targetType, TypeSymbol sourceType)
     {
@@ -123,6 +96,130 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
 
         return source;
+    }
+
+    private void PatchLoadTarget(IInstruction loadInstr, Register target)
+    {
+        switch (loadInstr)
+        {
+        case LoadInstruction load:
+            load.Target = target;
+            break;
+        case LoadElementInstruction loadElement:
+            loadElement.Target = target;
+            break;
+        case LoadFieldInstruction loadField:
+            loadField.Target = target;
+            break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(loadInstr));
+        }
+    }
+
+    private void PatchStoreSource(IInstruction storeInstr, TypeSymbol targetType, IOperand source)
+    {
+        source = this.BoxIfNeeded(targetType, source);
+        switch (storeInstr)
+        {
+        case StoreInstruction store:
+            store.Source = source;
+            break;
+        case StoreElementInstruction storeElement:
+            storeElement.Source = source;
+            break;
+        case StoreFieldInstruction storeField:
+            storeField.Source = source;
+            break;
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(storeInstr));
+        }
+    }
+
+    // Manifesting an expression as an address
+    private IOperand CompileToAddress(BoundExpression expression)
+    {
+        switch (expression)
+        {
+        case BoundLocalExpression local:
+        {
+            var target = this.DefineRegister(new ReferenceTypeSymbol(local.TypeRequired));
+            this.Write(AddressOf(target, local.Local));
+            return target;
+        }
+        default:
+        {
+            // We allocate a local so we can take its address
+            var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
+            this.procedure.DefineLocal(local);
+            // Store the value in it
+            var value = this.Compile(expression);
+            this.Write(Store(local, value));
+            // Take its address
+            var target = this.DefineRegister(new ReferenceTypeSymbol(expression.TypeRequired));
+            this.Write(AddressOf(target, local));
+            return target;
+        }
+        }
+    }
+
+    private IOperand? CompileReceiver(BoundCallExpression call)
+    {
+        if (call.Receiver is null) return null;
+        // Box receiver, if needed
+        if (call.Method.ContainingSymbol is TypeSymbol methodContainer
+         && NeedsBoxing(methodContainer, call.Receiver.TypeRequired))
+        {
+            var valueReceiver = this.Compile(call.Receiver);
+            var receiver = this.DefineRegister(methodContainer);
+            this.Write(Box(receiver, methodContainer, valueReceiver));
+            return receiver;
+        }
+        else
+        {
+            return call.Receiver.TypeRequired.IsValueType
+                ? this.CompileToAddress(call.Receiver)
+                : this.Compile(call.Receiver);
+        }
+    }
+
+    private (IInstruction Load, IInstruction Store) CompileLvalue(BoundLvalue lvalue)
+    {
+        switch (lvalue)
+        {
+        case BoundLocalLvalue local:
+        {
+            return (Load: Load(default!, local.Local), Store: Store(local.Local, default!));
+        }
+        case BoundGlobalLvalue global:
+        {
+            return (Load: Load(default!, global.Global), Store: Store(global.Global, default!));
+        }
+        case BoundFieldLvalue field:
+        {
+            var receiver = field.Receiver is null ? null : this.Compile(field.Receiver);
+            if (receiver is null)
+            {
+                var src = field.Field;
+                return (Load: Load(default!, src), Store: Store(src, default!));
+            }
+            else
+            {
+                return (
+                    Load: LoadField(default!, receiver, field.Field),
+                    Store: StoreField(receiver, field.Field, default!));
+            }
+        }
+        case BoundArrayAccessLvalue arrayAccess:
+        {
+            var array = this.Compile(arrayAccess.Array);
+            var indices = arrayAccess.Indices
+                .Select(this.Compile)
+                .ToList();
+            return (Load: LoadElement(default!, array, indices), Store: StoreElement(array, indices, default!));
+        }
+        default:
+            throw new System.ArgumentOutOfRangeException(nameof(lvalue));
+        }
     }
 
     // Statements //////////////////////////////////////////////////////////////
@@ -185,75 +282,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return default!;
     }
 
-    // Lvalues /////////////////////////////////////////////////////////////////
-
-    private (IInstruction Load, IInstruction Store) CompileLvalue(BoundLvalue lvalue)
-    {
-        switch (lvalue)
-        {
-        case BoundLocalLvalue local:
-        {
-            return (Load: Load(default!, local.Local), Store: Store(local.Local, default!));
-        }
-        case BoundGlobalLvalue global:
-        {
-            return (Load: Load(default!, global.Global), Store: Store(global.Global, default!));
-        }
-        case BoundFieldLvalue field:
-        {
-            var receiver = field.Receiver is null ? null : this.Compile(field.Receiver);
-            if (receiver is null)
-            {
-                var src = field.Field;
-                return (Load: Load(default!, src), Store: Store(src, default!));
-            }
-            else
-            {
-                return (
-                    Load: LoadField(default!, receiver, field.Field),
-                    Store: StoreField(receiver, field.Field, default!));
-            }
-        }
-        case BoundArrayAccessLvalue arrayAccess:
-        {
-            var array = this.Compile(arrayAccess.Array);
-            var indices = arrayAccess.Indices
-                .Select(this.Compile)
-                .ToList();
-            return (Load: LoadElement(default!, array, indices), Store: StoreElement(array, indices, default!));
-        }
-        default:
-            throw new System.ArgumentOutOfRangeException(nameof(lvalue));
-        }
-    }
-
-    // Manifesting an expression as an address
-    private IOperand CompileToAddress(BoundExpression expression)
-    {
-        switch (expression)
-        {
-        case BoundLocalExpression local:
-        {
-            var target = this.DefineRegister(new ReferenceTypeSymbol(local.TypeRequired));
-            this.Write(AddressOf(target, local.Local));
-            return target;
-        }
-        default:
-        {
-            // We allocate a local so we can take its address
-            var local = new SynthetizedLocalSymbol(expression.TypeRequired, false);
-            this.procedure.DefineLocal(local);
-            // Store the value in it
-            var value = this.Compile(expression);
-            this.Write(Store(local, value));
-            // Take its address
-            var target = this.DefineRegister(new ReferenceTypeSymbol(expression.TypeRequired));
-            this.Write(AddressOf(target, local));
-            return target;
-        }
-        }
-    }
-
     // Expressions /////////////////////////////////////////////////////////////
 
     public override IOperand VisitStringExpression(BoundStringExpression node) =>
@@ -279,7 +307,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
             .Select(pair => this.BoxIfNeeded(pair.Second.Type, this.Compile(pair.First)))
             .ToImmutableArray();
 
-        var proc = this.TranslateFunctionSymbol(node.Method);
+        var proc = node.Method;
         if (proc.Codegen is { } codegen)
         {
             if (receiver is not null)
@@ -296,29 +324,9 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         }
     }
 
-    private IOperand? CompileReceiver(BoundCallExpression call)
-    {
-        if (call.Receiver is null) return null;
-        // Box receiver, if needed
-        if (call.Method.ContainingSymbol is TypeSymbol methodContainer
-         && NeedsBoxing(methodContainer, call.Receiver.TypeRequired))
-        {
-            var valueReceiver = this.Compile(call.Receiver);
-            var receiver = this.DefineRegister(methodContainer);
-            this.Write(Box(receiver, methodContainer, valueReceiver));
-            return receiver;
-        }
-        else
-        {
-            return call.Receiver.TypeRequired.IsValueType
-                ? this.CompileToAddress(call.Receiver)
-                : this.Compile(call.Receiver);
-        }
-    }
-
     public override IOperand VisitObjectCreationExpression(BoundObjectCreationExpression node)
     {
-        var ctor = this.TranslateFunctionSymbol(node.Constructor);
+        var ctor = node.Constructor;
         var args = node.Arguments.Select(this.Compile).ToList();
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(NewObject(result, ctor, args));
@@ -328,8 +336,8 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitDelegateCreationExpression(BoundDelegateCreationExpression node)
     {
         var receiver = node.Receiver is null ? null : this.Compile(node.Receiver);
-        var function = this.TranslateFunctionSymbol(node.Method);
-        var delegateCtor = this.TranslateFunctionSymbol(node.DelegateConstructor);
+        var function = node.Method;
+        var delegateCtor = node.DelegateConstructor;
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(NewDelegate(result, receiver, function, delegateCtor));
         return result;
@@ -402,7 +410,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
             var leftValue = this.DefineRegister(node.Left.Type);
             // Patch
-            PatchLoadTarget(leftLoad, leftValue);
+            this.PatchLoadTarget(leftLoad, leftValue);
             this.Write(leftLoad);
             if (node.CompoundOperator.Codegen is { } codegen)
             {
@@ -421,43 +429,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return toStore;
     }
 
-    private static void PatchLoadTarget(IInstruction loadInstr, Register target)
-    {
-        switch (loadInstr)
-        {
-        case LoadInstruction load:
-            load.Target = target;
-            break;
-        case LoadElementInstruction loadElement:
-            loadElement.Target = target;
-            break;
-        case LoadFieldInstruction loadField:
-            loadField.Target = target;
-            break;
-        default:
-            throw new System.ArgumentOutOfRangeException(nameof(loadInstr));
-        }
-    }
-
-    private void PatchStoreSource(IInstruction storeInstr, TypeSymbol targetType, IOperand source)
-    {
-        source = this.BoxIfNeeded(targetType, source);
-        switch (storeInstr)
-        {
-        case StoreInstruction store:
-            store.Source = source;
-            break;
-        case StoreElementInstruction storeElement:
-            storeElement.Source = source;
-            break;
-        case StoreFieldInstruction storeField:
-            storeField.Source = source;
-            break;
-        default:
-            throw new System.ArgumentOutOfRangeException(nameof(storeInstr));
-        }
-    }
-
     public override IOperand VisitReturnExpression(BoundReturnExpression node)
     {
         var operand = this.Compile(node.Value);
@@ -470,11 +441,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitGlobalExpression(BoundGlobalExpression node)
     {
         // Check, if constant literal that has to be inlined
-        var metadataGlobal = ExtractMetadataStaticField(node.Global);
-        if (metadataGlobal is not null && metadataGlobal.IsLiteral)
+        if (node.Global.IsLiteral)
         {
-            var defaultValue = metadataGlobal.DefaultValue;
             // NOTE: Literals possibly have a different type than the signature of the global
+            var defaultValue = node.Global.LiteralValue;
             if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.WellKnownTypes, out var literalType))
             {
                 throw new System.InvalidOperationException();
@@ -502,32 +472,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitFunctionGroupExpression(BoundFunctionGroupExpression node) =>
-        // TODO
-        throw new System.NotImplementedException();
-
-    private FunctionSymbol TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
-    {
-        // Generic functions
-        FunctionInstanceSymbol i => this.TranslateFunctionInstanceSymbol(i),
-        // Functions with synthetized body
-        FunctionSymbol f when f.DeclaringSyntax is null && f.Body is not null => this.SynthetizeProcedure(f),
-        // Functions with inline codegen
-        FunctionSymbol f when f.Codegen is not null => f,
-        // Source functions
-        SyntaxFunctionSymbol func => this.DefineProcedure(func).Symbol,
-        // Metadata functions
-        MetadataMethodSymbol m => m,
-        _ => throw new System.ArgumentOutOfRangeException(nameof(symbol)),
-    };
-
-    private FunctionInstanceSymbol TranslateFunctionInstanceSymbol(FunctionInstanceSymbol i)
-    {
-        // NOTE: We visit the underlying instantiated symbol in case it's synthetized by us
-        this.TranslateFunctionSymbol(i.GenericDefinition);
-        return i;
-    }
-
     public override IOperand VisitLiteralExpression(BoundLiteralExpression node) =>
         new Constant(node.Value, node.TypeRequired);
     public override IOperand VisitUnitExpression(BoundUnitExpression node) => default(Void);
@@ -540,17 +484,37 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitUnaryExpression(BoundUnaryExpression node) =>
-        throw new System.InvalidOperationException();
+    // Lowered nodes //////////////////////////////////////////////////////////
 
-    public override IOperand VisitBinaryExpression(BoundBinaryExpression node) =>
-        throw new System.InvalidOperationException();
+    public override IOperand VisitAndExpression(BoundAndExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitOrExpression(BoundOrExpression node) => ShouldHaveBeenLowered(node);
 
-    // TODO: This will likely disappear once all globals can have a constant value
-    private static MetadataStaticFieldSymbol? ExtractMetadataStaticField(GlobalSymbol global) => global switch
-    {
-        MetadataStaticFieldSymbol m => m,
-        // TODO: Global instances?
-        _ => null,
-    };
+    public override IOperand VisitIfExpression(BoundIfExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitWhileExpression(BoundWhileExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitForExpression(BoundForExpression node) => ShouldHaveBeenLowered(node);
+
+    public override IOperand VisitIndexGetExpression(BoundIndexGetExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitIndexSetExpression(BoundIndexSetExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitPropertyGetExpression(BoundPropertyGetExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitPropertySetExpression(BoundPropertySetExpression node) => ShouldHaveBeenLowered(node);
+
+    public override IOperand VisitIndirectCallExpression(BoundIndirectCallExpression node) => ShouldHaveBeenLowered(node);
+
+    public override IOperand VisitRelationalExpression(BoundRelationalExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitUnaryExpression(BoundUnaryExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitBinaryExpression(BoundBinaryExpression node) => ShouldHaveBeenLowered(node);
+
+    // Illegal nodes //////////////////////////////////////////////////////////
+
+    public override IOperand VisitFunctionGroupExpression(BoundFunctionGroupExpression node) => Illegal(node);
+    public override IOperand VisitTypeExpression(BoundTypeExpression node) => Illegal(node);
+    public override IOperand VisitModuleExpression(BoundModuleExpression node) => Illegal(node);
+
+    // Error utils ////////////////////////////////////////////////////////////
+
+    private static IOperand ShouldHaveBeenLowered(BoundNode node) =>
+        throw new System.InvalidOperationException($"node {node.GetType().Name} should have been lowered");
+
+    private static IOperand Illegal(BoundNode node) =>
+        throw new System.InvalidOperationException($"illegal node {node.GetType().Name} in code generation");
 }

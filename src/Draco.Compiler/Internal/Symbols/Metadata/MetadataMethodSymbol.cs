@@ -57,6 +57,7 @@ internal class MetadataMethodSymbol(
     {
         get
         {
+            if (this.IsStatic) return false;
             if (this.ContainingSymbol is TypeSymbol { IsValueType: true }) return false;
             return methodDefinition.Attributes.HasFlag(MethodAttributes.Virtual)
                 || this.Override is not null;

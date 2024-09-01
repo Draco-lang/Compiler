@@ -135,6 +135,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         where T : Symbol, IOverridableSymbol => this.BaseTypes
         .SelectMany(x => x.DefinedMembers)
         .OfType<T>()
+        .Except([@override])
         .FirstOrDefault(x => x.CanBeOverriddenBy(@override));
 
     private ImmutableArray<Symbol> BuildMembers()

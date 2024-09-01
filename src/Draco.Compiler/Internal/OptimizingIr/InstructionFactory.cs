@@ -29,10 +29,10 @@ internal static class InstructionFactory
     public static JumpInstruction Jump(BasicBlock target) => new(target);
     public static BranchInstruction Branch(IOperand condition, BasicBlock then, BasicBlock @else) =>
         new(condition, then, @else);
-    public static CallInstruction Call(Register target, FunctionSymbol proc, IEnumerable<IOperand> args) =>
-        new(target, proc, args);
-    public static MemberCallInstruction MemberCall(Register target, FunctionSymbol proc, IOperand receiver, IEnumerable<IOperand> args) =>
+    public static CallInstruction Call(Register target, FunctionSymbol proc, IOperand? receiver, IEnumerable<IOperand> args) =>
         new(target, proc, receiver, args);
+    public static CallInstruction Call(Register target, FunctionSymbol proc, IEnumerable<IOperand> args) =>
+        Call(target, proc, null, args);
     public static NewObjectInstruction NewObject(Register target, FunctionSymbol ctor, IEnumerable<IOperand> args) =>
         new(target, ctor, args);
     public static NewDelegateInstruction NewDelegate(Register target, IOperand? receiver, FunctionSymbol function, FunctionSymbol delegateCtor) =>

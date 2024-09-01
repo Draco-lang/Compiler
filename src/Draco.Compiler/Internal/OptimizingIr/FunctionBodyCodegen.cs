@@ -291,14 +291,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         else
         {
             var callResult = this.DefineRegister(node.TypeRequired);
-            if (receiver is null)
-            {
-                this.Write(Call(callResult, proc, args));
-            }
-            else
-            {
-                this.Write(MemberCall(callResult, proc, receiver, args));
-            }
+            this.Write(Call(callResult, proc, receiver, args));
             return callResult;
         }
     }

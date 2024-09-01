@@ -24,6 +24,8 @@ public sealed class ReplSessionTests
     }
 
     [InlineData("func add(x: int32, y: int32) = x + y;")]
+    [InlineData("List()")]
+    [InlineData("System.Collections.Generic.List()")]
     [Theory]
     public void InvalidEntries(string input)
     {

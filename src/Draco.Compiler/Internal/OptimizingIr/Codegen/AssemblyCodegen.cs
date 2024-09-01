@@ -2,7 +2,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 
-namespace Draco.Compiler.Internal.OptimizingIr;
+namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 
 /// <summary>
 /// Generates IR code on top-level.

@@ -469,11 +469,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     public override IOperand VisitGlobalExpression(BoundGlobalExpression node)
     {
         // Check, if constant literal that has to be inlined
-        var metadataGlobal = ExtractMetadataStaticField(node.Global);
-        if (metadataGlobal is not null && metadataGlobal.IsLiteral)
+        if (node.Global.IsLiteral)
         {
-            var defaultValue = metadataGlobal.DefaultValue;
             // NOTE: Literals possibly have a different type than the signature of the global
+            var defaultValue = node.Global.LiteralValue;
             if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.WellKnownTypes, out var literalType))
             {
                 throw new System.InvalidOperationException();
@@ -536,12 +535,4 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitBinaryExpression(BoundBinaryExpression node) =>
         throw new System.InvalidOperationException();
-
-    // TODO: This will likely disappear once all globals can have a constant value
-    private static MetadataStaticFieldSymbol? ExtractMetadataStaticField(GlobalSymbol global) => global switch
-    {
-        MetadataStaticFieldSymbol m => m,
-        // TODO: Global instances?
-        _ => null,
-    };
 }

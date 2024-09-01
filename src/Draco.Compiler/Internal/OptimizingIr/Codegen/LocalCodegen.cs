@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 /// <summary>
 /// Generates IR code on function-local level.
 /// </summary>
-internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
+internal sealed partial class LocalCodegen : BoundTreeVisitor<IOperand>
 {
     private readonly Compilation compilation;
     private readonly Procedure procedure;
@@ -24,7 +24,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private bool isDetached;
     private int blockIndex = 0;
 
-    public FunctionBodyCodegen(Compilation compilation, Procedure procedure)
+    public LocalCodegen(Compilation compilation, Procedure procedure)
     {
         this.compilation = compilation;
         this.procedure = procedure;

@@ -1,4 +1,4 @@
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// The different arithmetic operations supported.

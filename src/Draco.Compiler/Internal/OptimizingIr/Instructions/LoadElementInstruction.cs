@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// An array element access.

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Passes;

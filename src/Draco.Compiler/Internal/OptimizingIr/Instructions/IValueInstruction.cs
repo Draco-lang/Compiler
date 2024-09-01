@@ -1,4 +1,6 @@
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+using Draco.Compiler.Internal.OptimizingIr.Model;
+
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// An instruction that produces a result in a register.

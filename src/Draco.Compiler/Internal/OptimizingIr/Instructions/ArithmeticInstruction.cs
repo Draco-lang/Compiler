@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// Represents some kind of binary arithmetic instruction.

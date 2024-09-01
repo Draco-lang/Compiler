@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using Draco.Compiler.Internal.OptimizingIr.Model;
 
-namespace Draco.Compiler.Internal.OptimizingIr.Model;
+namespace Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 /// <summary>
 /// Returns from the current procedure.

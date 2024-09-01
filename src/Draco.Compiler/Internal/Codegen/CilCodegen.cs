@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
@@ -145,7 +146,7 @@ internal sealed class CilCodegen
 
         switch (instruction)
         {
-        case OptimizingIr.Model.SequencePoint sp:
+        case OptimizingIr.Instructions.SequencePoint sp:
         {
             this.PdbCodegen?.AddSequencePoint(this.InstructionEncoder, sp);
             break;

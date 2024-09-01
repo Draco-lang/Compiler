@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 

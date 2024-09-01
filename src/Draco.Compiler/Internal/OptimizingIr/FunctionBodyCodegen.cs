@@ -4,6 +4,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Generic;

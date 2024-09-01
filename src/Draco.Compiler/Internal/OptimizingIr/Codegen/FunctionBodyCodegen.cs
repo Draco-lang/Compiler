@@ -478,10 +478,6 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitFunctionGroupExpression(BoundFunctionGroupExpression node) =>
-        // TODO
-        throw new System.NotImplementedException();
-
     private FunctionSymbol TranslateFunctionSymbol(FunctionSymbol symbol) => symbol switch
     {
         // Generic functions
@@ -508,9 +504,37 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitUnaryExpression(BoundUnaryExpression node) =>
-        throw new System.InvalidOperationException();
+    // Lowered nodes //////////////////////////////////////////////////////////
 
-    public override IOperand VisitBinaryExpression(BoundBinaryExpression node) =>
-        throw new System.InvalidOperationException();
+    public override IOperand VisitAndExpression(BoundAndExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitOrExpression(BoundOrExpression node) => ShouldHaveBeenLowered(node);
+
+    public override IOperand VisitIfExpression(BoundIfExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitWhileExpression(BoundWhileExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitForExpression(BoundForExpression node) => ShouldHaveBeenLowered(node);
+
+    public override IOperand VisitIndexGetExpression(BoundIndexGetExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitIndexSetExpression(BoundIndexSetExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitPropertyGetExpression(BoundPropertyGetExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitPropertySetExpression(BoundPropertySetExpression node) => ShouldHaveBeenLowered(node);
+
+    public override IOperand VisitIndirectCallExpression(BoundIndirectCallExpression node) => ShouldHaveBeenLowered(node);
+
+    public override IOperand VisitRelationalExpression(BoundRelationalExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitUnaryExpression(BoundUnaryExpression node) => ShouldHaveBeenLowered(node);
+    public override IOperand VisitBinaryExpression(BoundBinaryExpression node) => ShouldHaveBeenLowered(node);
+
+    // Illegal nodes //////////////////////////////////////////////////////////
+
+    public override IOperand VisitFunctionGroupExpression(BoundFunctionGroupExpression node) => Illegal(node);
+    public override IOperand VisitTypeExpression(BoundTypeExpression node) => Illegal(node);
+    public override IOperand VisitModuleExpression(BoundModuleExpression node) => Illegal(node);
+
+    // Error utils ////////////////////////////////////////////////////////////
+
+    private static IOperand ShouldHaveBeenLowered(BoundNode node) =>
+        throw new System.InvalidOperationException($"node {node.GetType().Name} should have been lowered");
+
+    private static IOperand Illegal(BoundNode node) =>
+        throw new System.InvalidOperationException($"illegal node {node.GetType().Name} in code generation");
 }

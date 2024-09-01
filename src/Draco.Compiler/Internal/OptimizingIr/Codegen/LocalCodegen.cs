@@ -44,6 +44,10 @@ internal sealed partial class LocalCodegen : BoundTreeVisitor<IOperand>
     }
     private void DetachBlock() => this.isDetached = true;
 
+    /// <summary>
+    /// Writes an instruction to the current basic block.
+    /// </summary>
+    /// <param name="instr">The instruction to write.</param>
     public void Write(IInstruction instr)
     {
         // Happens, when the basic block got detached and there's code left over to compile
@@ -57,9 +61,26 @@ internal sealed partial class LocalCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
+    /// <summary>
+    /// Writes the necessary instructions to assign a value to a target.
+    /// </summary>
+    /// <param name="target">The target to assign to.</param>
+    /// <param name="value">The value to assign.</param>
+    public void WriteAssignment(VariableSymbol target, IOperand value)
+    {
+        value = this.BoxIfNeeded(target.Type, value);
+        this.Write(Store(target, value));
+    }
+
+    /// <summary>
+    /// Defines a register in the current procedure.
+    /// </summary>
+    /// <param name="type">The type of value the register will hold.</param>
+    /// <returns>The defined register.</returns>
+    public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
+
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
-    public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
     private static bool NeedsBoxing(TypeSymbol targetType, TypeSymbol sourceType)
     {
@@ -75,7 +96,7 @@ internal sealed partial class LocalCodegen : BoundTreeVisitor<IOperand>
         return targetIsValueType && !sourceIsValueType;
     }
 
-    public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
+    private IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
     {
         if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
 
@@ -243,8 +264,7 @@ internal sealed partial class LocalCodegen : BoundTreeVisitor<IOperand>
         if (node.Value is null) return default!;
 
         var right = this.Compile(node.Value);
-        right = this.BoxIfNeeded(node.Local.Type, right);
-        this.Write(Store(node.Local, right));
+        this.WriteAssignment(node.Local, right);
 
         return default!;
     }

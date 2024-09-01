@@ -14,7 +14,7 @@ using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
-namespace Draco.Compiler.Internal.OptimizingIr;
+namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 
 /// <summary>
 /// Generates IR code on function-local level.

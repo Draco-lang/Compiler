@@ -8,7 +8,7 @@ using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Syntax;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
-namespace Draco.Compiler.Internal.OptimizingIr;
+namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 
 /// <summary>
 /// Generates IR code on module-level.
@@ -100,6 +100,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         {
             member.Accept(this);
         }
+
         this.Complete();
     }
 

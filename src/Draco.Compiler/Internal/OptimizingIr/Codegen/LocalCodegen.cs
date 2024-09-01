@@ -15,7 +15,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 /// <summary>
 /// Generates IR code on function-local level.
 /// </summary>
-internal sealed partial class LocalCodegen : BoundTreeVisitor<IOperand>
+internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
 {
     private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
 

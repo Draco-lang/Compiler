@@ -25,6 +25,7 @@ internal sealed class BasicBlock(Procedure procedure, LabelSymbol symbol) : IBas
     {
         get
         {
+            if (this.firstInstruction is null) yield break;
             for (var instr = this.FirstInstruction; instr is not null; instr = instr.Next) yield return instr;
         }
     }

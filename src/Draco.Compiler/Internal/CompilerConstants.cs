@@ -16,4 +16,9 @@ internal static class CompilerConstants
     /// The name of a scripts entry point.
     /// </summary>
     public const string ScriptEntryPointName = ".evaluate";
+
+    /// <summary>
+    /// The name of the module that contains compile-time code.
+    /// </summary>
+    public const string CompileTimeModuleName = "__CompileTime";
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api;
@@ -6,7 +5,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Source;
+using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 
@@ -16,12 +15,31 @@ namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 /// </summary>
 internal sealed class MinimalAssemblyCodegen(Compilation compilation)
 {
-    private Module Module => this.assembly.RootModule;
+    /// <summary>
+    /// The assembly containing the compiled procedures.
+    /// </summary>
+    public Assembly Assembly { get; } = new(new MinimalModuleSymbol(CompilerConstants.CompileTimeModuleName));
 
-    private readonly Assembly assembly = new(TODO_SYMBOL);
+    private Module Module => this.Assembly.RootModule;
 
     private readonly Dictionary<FunctionSymbol, Procedure> compiledProcedures = [];
     private readonly Queue<FunctionSymbol> functionsToCompile = [];
+
+    public void Compile(FunctionSymbol function)
+    {
+        this.functionsToCompile.Enqueue(function);
+        this.CompileAllFunctions();
+        this.CompleteGlobalInitializerIfneeded();
+    }
+
+    private void CompleteGlobalInitializerIfneeded()
+    {
+        var firstBasicBlock = this.Module.GlobalInitializer.BasicBlocks.Values.First();
+        if (firstBasicBlock.Instructions.Any()) return;
+
+        var globalInitializer = new LocalCodegen(compilation, this.Module.GlobalInitializer);
+        globalInitializer.Write(Ret(default(Void)));
+    }
 
     private void CompileAllFunctions()
     {
@@ -42,7 +60,7 @@ internal sealed class MinimalAssemblyCodegen(Compilation compilation)
         if (function.Body is null) return null;
 
         // Create a procedure we compile into
-        var procedure = new Procedure(this.Module, function);
+        var procedure = this.Module.DefineProcedure(function);
 
         // TODO: Little copypasta from ModuleCodegen, maybe refactor
         // Create the body

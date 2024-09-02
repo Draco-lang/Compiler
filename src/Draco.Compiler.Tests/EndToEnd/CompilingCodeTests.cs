@@ -921,6 +921,29 @@ public sealed class CompilingCodeTests
     }
 
     [Fact]
+    public void IndexerEvaluationOrder()
+    {
+        var assembly = CompileToAssembly("""
+            import System.Console;
+            import System.Collections.Generic;
+
+            func doIt() {
+                val l = List();
+                l.Add(1);
+                l[{ WriteLine("A"); 0 }] = { WriteLine("B"); 2 };
+            }
+            """);
+
+        var stringWriter = new StringWriter();
+        _ = Invoke<object?>(
+            assembly: assembly,
+            methodName: "doIt",
+            stdout: stringWriter);
+
+        Assert.Equal("A\nB\n", stringWriter.ToString(), ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
     public void RelationalOperatorIsShortCircuiting()
     {
         var assembly = CompileToAssembly("""

@@ -601,11 +601,19 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
 
     public override BoundNode VisitIndexSetExpression(BoundIndexSetExpression node)
     {
-        // indexed[x] = foo
+        // indexed[idx1, idx2, ...] = expr
         //
         // =>
         //
-        // indexed.Item_set(x, foo)
+        // {
+        //     // Pre-evaluate the indices to keep evaluation order
+        //     var tmp1 = idx1;
+        //     var tmp2 = idx2;
+        //     ...
+        //     var tmpN = expr;
+        //     indexed.Item_set(tmp1, tmp2, ..., tmpN);
+        //     tmpN
+        // }
 
         var receiver = (BoundExpression)node.Receiver.Accept(this);
         var setter = node.Setter;
@@ -614,10 +622,25 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             .Select(x => (BoundExpression)x.Accept(this))
             .ToImmutableArray();
 
-        return CallExpression(
-            receiver: receiver,
-            method: setter,
-            arguments: args);
+        var argsStored = args
+            .Select(this.StoreTemporary)
+            .ToList();
+
+        return BlockExpression(
+            locals: argsStored
+                .Select(a => a.Symbol)
+                .OfType<LocalSymbol>()
+                .ToImmutableArray(),
+            statements: argsStored
+                .Select(a => a.Assignment)
+                .Append(ExpressionStatement(CallExpression(
+                    receiver: receiver,
+                    method: setter,
+                    arguments: argsStored
+                        .Select(a => a.Reference)
+                        .ToImmutableArray())))
+                .ToImmutableArray(),
+            value: argsStored[^1].Reference);
     }
 
     public override BoundNode VisitIndexGetExpression(BoundIndexGetExpression node)
@@ -626,7 +649,7 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
         //
         // =>
         //
-        // indexed.Item_get()
+        // indexed.Item_get(x)
 
         var receiver = (BoundExpression)node.Receiver.Accept(this);
         var getter = node.Getter;

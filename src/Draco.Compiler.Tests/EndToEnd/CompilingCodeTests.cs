@@ -897,4 +897,45 @@ public sealed class CompilingCodeTests
         Assert.False(neq1);
         Assert.True(neq2);
     }
+
+    [Fact]
+    public void IndexSetReturnsValue()
+    {
+        var assembly = CompileToAssembly("""
+            import System.Collections.Generic;
+
+            func setItemTo42(l: List<int32>): int32 {
+                val a = (l[0] = 42);
+                return a;
+            }
+            """);
+
+        var l = new List<int> { 1, 2, 3 };
+        var a = Invoke<int>(
+            assembly: assembly,
+            methodName: "setItemTo42",
+            args: [l]);
+
+        Assert.Equal(42, l[0]);
+        Assert.Equal(42, a);
+    }
+
+    [Fact]
+    public void RelationalOperatorIsShortCircuiting()
+    {
+        var assembly = CompileToAssembly("""
+            import System.Console;
+
+            func doCompare(): bool = { WriteLine("A"); 1 } > { WriteLine("B"); 2 } > { WriteLine("C"); 3 };
+            """);
+
+        var stringWriter = new StringWriter();
+        var result = Invoke<bool>(
+            assembly: assembly,
+            methodName: "doCompare",
+            stdout: stringWriter);
+
+        Assert.False(result);
+        Assert.Equal("A\nB\n", stringWriter.ToString(), ignoreLineEndingDifferences: true);
+    }
 }

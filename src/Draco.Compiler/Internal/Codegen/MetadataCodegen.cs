@@ -23,14 +23,22 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class MetadataCodegen : MetadataWriter
 {
-    public static void Generate(Compilation compilation, IAssembly assembly, Stream peStream, Stream? pdbStream)
+    public static void Generate(
+        Compilation compilation,
+        IAssembly assembly,
+        Stream peStream,
+        Stream? pdbStream,
+        CodegenFlags flags = CodegenFlags.None)
     {
+        if (pdbStream is not null) flags |= CodegenFlags.EmitPdb;
+
         var codegen = new MetadataCodegen(
             compilation: compilation,
             assembly: assembly,
-            writePdb: pdbStream is not null);
+            flags: flags);
         codegen.EncodeAssembly();
         codegen.WritePe(peStream);
+
         if (pdbStream is not null) codegen.PdbCodegen!.WritePdb(pdbStream);
     }
 
@@ -40,6 +48,11 @@ internal sealed class MetadataCodegen : MetadataWriter
     /// The compilation that started codegen.
     /// </summary>
     public Compilation Compilation { get; }
+
+    /// <summary>
+    /// The flags for the codegen.
+    /// </summary>
+    public CodegenFlags Flags { get; }
 
     /// <summary>
     /// The PDB code-generator, in case we generate PDBs.
@@ -61,6 +74,21 @@ internal sealed class MetadataCodegen : MetadataWriter
     /// </summary>
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
 
+    /// <summary>
+    /// True, if PDBs should be emitted.
+    /// </summary>
+    public bool EmitPdb => this.Flags.HasFlag(CodegenFlags.EmitPdb);
+
+    /// <summary>
+    /// True, if stackification should be attempted.
+    /// </summary>
+    public bool Stackify => this.Flags.HasFlag(CodegenFlags.Stackify);
+
+    /// <summary>
+    /// True, if handles should be redirected to the compile-time root module.
+    /// </summary>
+    public bool RedirectHandlesToCompileTimeRoot => this.Flags.HasFlag(CodegenFlags.RedirectHandlesToRoot);
+
     private WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
 
     private readonly IAssembly assembly;
@@ -70,17 +98,21 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly AssemblyReferenceHandle systemRuntimeReference;
     private readonly TypeReferenceHandle systemObjectReference;
 
-    private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
+    private MetadataCodegen(Compilation compilation, IAssembly assembly, CodegenFlags flags)
     {
         this.Compilation = compilation;
-        if (writePdb) this.PdbCodegen = new(this);
+        this.Flags = flags;
+        // We set stackification to true by default
+        this.Flags |= CodegenFlags.Stackify;
         this.assembly = assembly;
+
+        if (this.EmitPdb) this.PdbCodegen = new(this);
         this.WriteModuleAndAssemblyDefinition();
 
         // Reference System.Object from System.Runtime
         this.systemRuntimeReference = this.GetOrAddAssemblyReference(
             name: "System.Runtime",
-            version: new System.Version(7, 0, 0, 0),
+            version: new(7, 0, 0, 0),
             publicKeyOrToken: MicrosoftPublicKeyToken);
 
         this.systemObjectReference = this.GetOrAddTypeReference(
@@ -233,6 +265,12 @@ internal sealed class MetadataCodegen : MetadataWriter
         case SourceModuleSymbol:
         case ScriptModuleSymbol:
         {
+            if (this.RedirectHandlesToCompileTimeRoot)
+            {
+                var root = this.Compilation.CompileTimeEvaluator.RootModule;
+                return this.GetModuleReferenceHandle(root);
+            }
+
             var module = (ModuleSymbol)symbol;
             var irModule = this.assembly.Lookup(module);
             return this.GetModuleReferenceHandle(irModule);

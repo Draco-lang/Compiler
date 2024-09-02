@@ -20,7 +20,10 @@ internal sealed class MinimalAssemblyCodegen(Compilation compilation)
     /// </summary>
     public Assembly Assembly { get; } = new(new MinimalModuleSymbol(CompilerConstants.CompileTimeModuleName));
 
-    private Module Module => this.Assembly.RootModule;
+    /// <summary>
+    /// The main module of the assembly.
+    /// </summary>
+    public Module Module => this.Assembly.RootModule;
 
     private readonly Dictionary<FunctionSymbol, Procedure> compiledProcedures = [];
     private readonly Queue<FunctionSymbol> functionsToCompile = [];
@@ -75,6 +78,12 @@ internal sealed class MinimalAssemblyCodegen(Compilation compilation)
         foreach (var localFunction in localFunctions)
         {
             this.functionsToCompile.Enqueue(localFunction);
+        }
+
+        // Add referenced functions to the worklist
+        foreach (var referencedFunction in procedure.GetReferencedFunctions())
+        {
+            this.functionsToCompile.Enqueue(referencedFunction);
         }
 
         return procedure;

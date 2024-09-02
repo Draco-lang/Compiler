@@ -19,6 +19,11 @@ namespace Draco.Compiler.Internal.Evaluation;
 /// </summary>
 internal sealed class CompileTimeEvaluator(Compilation compilation)
 {
+    /// <summary>
+    /// The root module of the generated assembly.
+    /// </summary>
+    public OptimizingIr.Model.Module RootModule => this.codegen.Module;
+
     private readonly MinimalAssemblyCodegen codegen = new(compilation);
     private readonly MemoryStream peStream = new();
     private readonly AssemblyLoadContext assemblyLoadContext = new("compile-time evaluator", isCollectible: true);
@@ -47,7 +52,7 @@ internal sealed class CompileTimeEvaluator(Compilation compilation)
 
         // Reset the stream, emit CIL
         this.peStream.Position = 0;
-        MetadataCodegen.Generate(compilation, assembly, this.peStream, null);
+        MetadataCodegen.Generate(compilation, assembly, this.peStream, null, flags: CodegenFlags.RedirectHandlesToRoot);
 
         // Load the assembly and execute the function
         this.peStream.Position = 0;

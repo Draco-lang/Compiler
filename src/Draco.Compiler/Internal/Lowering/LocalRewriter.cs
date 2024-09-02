@@ -385,47 +385,55 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
         // {
         //     val tmp1 = expr1;
         //     val tmp2 = expr2;
-        //     val tmp3 = expr3;
-        //     val tmp4 = expr4;
-        //     ...
-        //     tmp1 < tmp2 && tmp2 == tmp3 && tmp3 > tmp4 && tmp4 != ...
+        //     (tmp1 < tmp2) && { var tmp3 = expr3; (tmp2 == tmp3) && { var tmp4 = expr4; (tmp3 > tmp4) { ... } } }
         // }
 
-        // Store all expressions as temporary variables
-        var tmpVariables = new List<TemporaryStorage>
-        {
-            this.StoreTemporary(node.First)
-        };
-        foreach (var item in node.Comparisons) tmpVariables.Add(this.StoreTemporary(item.Next));
+        var expr1 = (BoundExpression)node.First.Accept(this);
+        var expr2 = (BoundExpression)node.Comparisons[0].Next.Accept(this);
 
-        // Build pairs of comparisons from symbol references
-        var comparisons = new List<BoundExpression>();
-        for (var i = 0; i < node.Comparisons.Length; ++i)
+        var tmp1 = this.StoreTemporary(expr1);
+        var tmp2 = this.StoreTemporary(expr2);
+
+        var accResult = BlockExpression(
+            locals: (tmp1.Symbol, tmp2.Symbol) switch
+            {
+                (null, null) => [],
+                (null, not null) => [tmp2.Symbol],
+                (not null, null) => [tmp1.Symbol],
+                _ => [tmp1.Symbol, tmp2.Symbol],
+            },
+            statements: [tmp1.Assignment, tmp2.Assignment],
+            value: AndExpression(
+                left: BinaryExpression(
+                    @operator: node.Comparisons[0].Operator,
+                    left: tmp1.Reference,
+                    right: tmp2.Reference),
+                right: GenerateNext(tmp2.Reference, 1)));
+
+        // Conjunction can be lowered too
+        return accResult.Accept(this);
+
+        BoundExpression GenerateNext(BoundExpression prev, int index)
         {
-            var left = tmpVariables[i].Reference;
-            var op = node.Comparisons[i].Operator;
-            var right = tmpVariables[i + 1].Reference;
-            comparisons.Add(BinaryExpression(
-                left: left,
-                @operator: op,
-                right: right));
+            if (index == node.Comparisons.Length) return this.LiteralExpression(true);
+
+            var comparison = node.Comparisons[index];
+            var next = (BoundExpression)comparison.Next.Accept(this);
+            var tmp = this.StoreTemporary(next);
+
+            var cmp = BinaryExpression(
+                left: prev,
+                @operator: comparison.Operator,
+                right: tmp.Reference);
+            var nextExpr = GenerateNext(tmp.Reference, index + 1);
+
+            return BlockExpression(
+                locals: tmp.Symbol is null
+                    ? []
+                    : [tmp.Symbol],
+                statements: [tmp.Assignment],
+                value: AndExpression(cmp, nextExpr));
         }
-
-        // Fold them into conjunctions
-        var conjunction = comparisons.Aggregate((result, current) => AndExpression(result, current));
-        // Desugar them, conjunctions can be desugared too
-        conjunction = (BoundExpression)conjunction.Accept(this);
-
-        // Wrap up in block
-        return BlockExpression(
-            locals: tmpVariables
-                .Select(tmp => tmp.Symbol)
-                .OfType<LocalSymbol>()
-                .ToImmutableArray(),
-            statements: tmpVariables
-                .Select(t => t.Assignment)
-                .ToImmutableArray(),
-            value: conjunction);
     }
 
     public override BoundNode VisitAndExpression(BoundAndExpression node)
@@ -601,11 +609,19 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
 
     public override BoundNode VisitIndexSetExpression(BoundIndexSetExpression node)
     {
-        // indexed[x] = foo
+        // indexed[idx1, idx2, ...] = expr
         //
         // =>
         //
-        // indexed.Item_set(x, foo)
+        // {
+        //     // Pre-evaluate the indices to keep evaluation order
+        //     var tmp1 = idx1;
+        //     var tmp2 = idx2;
+        //     ...
+        //     var tmpN = expr;
+        //     indexed.Item_set(tmp1, tmp2, ..., tmpN);
+        //     tmpN
+        // }
 
         var receiver = (BoundExpression)node.Receiver.Accept(this);
         var setter = node.Setter;
@@ -614,10 +630,25 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             .Select(x => (BoundExpression)x.Accept(this))
             .ToImmutableArray();
 
-        return CallExpression(
-            receiver: receiver,
-            method: setter,
-            arguments: args);
+        var argsStored = args
+            .Select(this.StoreTemporary)
+            .ToList();
+
+        return BlockExpression(
+            locals: argsStored
+                .Select(a => a.Symbol)
+                .OfType<LocalSymbol>()
+                .ToImmutableArray(),
+            statements: argsStored
+                .Select(a => a.Assignment)
+                .Append(ExpressionStatement(CallExpression(
+                    receiver: receiver,
+                    method: setter,
+                    arguments: argsStored
+                        .Select(a => a.Reference)
+                        .ToImmutableArray())))
+                .ToImmutableArray(),
+            value: argsStored[^1].Reference);
     }
 
     public override BoundNode VisitIndexGetExpression(BoundIndexGetExpression node)
@@ -626,7 +657,7 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
         //
         // =>
         //
-        // indexed.Item_get()
+        // indexed.Item_get(x)
 
         var receiver = (BoundExpression)node.Receiver.Accept(this);
         var getter = node.Getter;

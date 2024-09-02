@@ -16,15 +16,17 @@ namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 /// </summary>
 internal sealed class MinimalAssemblyCodegen(Compilation compilation)
 {
-    private readonly Dictionary<FunctionSymbol, Procedure> compiledProcedures = [];
-    private readonly HashSet<FunctionSymbol> functionsToCompile = [];
+    private Module Module => this.assembly.RootModule;
 
-    private void EmptyWorkList()
+    private readonly Assembly assembly = new(TODO_SYMBOL);
+
+    private readonly Dictionary<FunctionSymbol, Procedure> compiledProcedures = [];
+    private readonly Queue<FunctionSymbol> functionsToCompile = [];
+
+    private void CompileAllFunctions()
     {
-        while (this.functionsToCompile.Count > 0)
+        while (this.functionsToCompile.TryDequeue(out var function))
         {
-            var function = this.functionsToCompile.First();
-            this.functionsToCompile.Remove(function);
             if (this.compiledProcedures.ContainsKey(function)) continue;
 
             var procedure = this.CompileFunction(function);
@@ -39,22 +41,25 @@ internal sealed class MinimalAssemblyCodegen(Compilation compilation)
     {
         if (function.Body is null) return null;
 
+        // Create a procedure we compile into
+        var procedure = new Procedure(this.Module, function);
+
         // TODO: Little copypasta from ModuleCodegen, maybe refactor
         // Create the body
         var body = this.RewriteBody(function.Body);
         // Yank out potential local functions and closures
         var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
         // Compile it
-        var bodyCodegen = new LocalCodegen(compilation, TODO_MODULE);
+        var bodyCodegen = new LocalCodegen(compilation, procedure);
         bodyWithoutLocalFunctions.Accept(bodyCodegen);
 
         // Add the rest to the worklist
         foreach (var localFunction in localFunctions)
         {
-            this.functionsToCompile.Add(localFunction);
+            this.functionsToCompile.Enqueue(localFunction);
         }
 
-        // TODO: Return the procedure
+        return procedure;
     }
 
     // NOTE: For now we don't inject sequence points

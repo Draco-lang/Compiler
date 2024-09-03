@@ -125,6 +125,15 @@
       </Documentation>
     </Field>
 
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        An unexpected visibility starting the module.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
+
     <Field Name="ModuleKeyword" Type="SyntaxToken">
       <Documentation>
         The 'module' keyword starting the delcaration.

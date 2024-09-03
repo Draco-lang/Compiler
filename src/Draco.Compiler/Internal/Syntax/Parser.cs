@@ -241,14 +241,25 @@ internal sealed class Parser(
     /// <summary>
     /// Checks, if there is a declaration starting at the given offset.
     /// </summary>
+    /// <param name="context">The current context.</param>
     /// <param name="offset">The offset to check for.</param>
     /// <returns>True, if there is a declaration starting at the given offset, otherwise false.</returns>
-    private bool IsDeclarationStarter(int offset = 0)
+    private bool IsDeclarationStarter(DeclarationContext context, int offset = 0)
     {
         var peek = this.Peek(offset);
         if (declarationStarters.Contains(peek.Kind)) return true;
+        // Attribute
+        if (peek.Kind == TokenKind.AtSign) return true;
+        // Visibility modifier
+        if (IsVisibilityModifier(peek.Kind)) return true;
         // Label
-        if (peek.Kind == TokenKind.Identifier && !this.CanBailOut(peek) && this.PeekKind(offset + 1) == TokenKind.Colon) return true;
+        if (context == DeclarationContext.Local
+         && peek.Kind == TokenKind.Identifier
+         && !this.CanBailOut(peek)
+         && this.PeekKind(offset + 1) == TokenKind.Colon)
+        {
+            return true;
+        }
         return false;
     }
 
@@ -308,7 +319,7 @@ internal sealed class Parser(
             return this.ParseDeclaration();
         }
 
-        if (this.IsDeclarationStarter())
+        if (this.IsDeclarationStarter(DeclarationContext.Local))
         {
             // Must be a declaration
             return this.ParseDeclaration();
@@ -347,36 +358,36 @@ internal sealed class Parser(
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     private DeclarationSyntax ParseDeclaration(DeclarationContext context)
     {
+        var attributes = this.ParseAttributeList();
         var visibility = this.ParseVisibilityModifier();
         switch (this.PeekKind())
         {
         case TokenKind.KeywordImport:
-            return this.ParseImportDeclaration(visibility);
+            return this.ParseImportDeclaration(attributes, visibility);
 
         case TokenKind.KeywordFunc:
-            return this.ParseFunctionDeclaration(visibility);
+            return this.ParseFunctionDeclaration(attributes, visibility);
 
         case TokenKind.KeywordModule:
-            return this.ParseModuleDeclaration(context);
+            return this.ParseModuleDeclaration(attributes, visibility, context);
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration(visibility);
+            return this.ParseVariableDeclaration(attributes, visibility, context);
 
         case TokenKind.Identifier when this.PeekKind(1) == TokenKind.Colon:
-            return this.ParseLabelDeclaration(context);
+            return this.ParseLabelDeclaration(attributes, visibility, context);
 
         default:
         {
             var input = this.Synchronize(t => t switch
             {
-                _ when this.IsDeclarationStarter() => false,
-                _ when IsVisibilityModifier(t.Kind) => false,
+                _ when this.IsDeclarationStarter(context) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
-            var node = new UnexpectedDeclarationSyntax(visibility, input);
+            var node = new UnexpectedDeclarationSyntax(attributes, visibility, input);
             this.AddDiagnostic(node, diag);
             return node;
         }
@@ -427,7 +438,7 @@ internal sealed class Parser(
         switch (this.PeekKind())
         {
         // Declarations
-        case TokenKind when allowDecl && this.IsDeclarationStarter():
+        case TokenKind when allowDecl && this.IsDeclarationStarter(DeclarationContext.Local):
         {
             var decl = this.ParseDeclaration(DeclarationContext.Local);
             return new DeclarationStatementSyntax(decl);
@@ -457,15 +468,23 @@ internal sealed class Parser(
     /// <summary>
     /// Parses an <see cref="ImportDeclarationSyntax"/>.
     /// </summary>
+    /// <param name="attributes">The attributes on the import.</param>
+    /// <param name="visibility">The visibility modifier on the import.</param>
     /// <returns>The parsed <see cref="ImportDeclarationSyntax"/>.</returns>
-    private ImportDeclarationSyntax ParseImportDeclaration(SyntaxToken? modifier)
+    private ImportDeclarationSyntax ParseImportDeclaration(SyntaxList<AttributeSyntax> attributes, SyntaxToken? visibility)
     {
-        // There shouldn't be a modifier on import.
-        if (modifier is not null)
+        // There should not be attributes on import
+        if (attributes.Count > 0)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+        // There shouldn't be a modifier on import
+        if (visibility is not null)
         {
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifierBeforeImport, formatArgs: "declaration");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: modifier.Width);
-            this.AddDiagnostic(modifier, diag);
+            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: visibility.Width);
+            this.AddDiagnostic(visibility, diag);
         }
         // Import keyword
         var importKeyword = this.Expect(TokenKind.KeywordImport);
@@ -473,7 +492,7 @@ internal sealed class Parser(
         var path = this.ParseImportPath();
         // Ending semicolon
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new ImportDeclarationSyntax(modifier, importKeyword, path, semicolon);
+        return new ImportDeclarationSyntax(visibility, importKeyword, path, semicolon);
     }
 
     /// <summary>
@@ -497,8 +516,14 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a <see cref="VariableDeclarationSyntax"/>.
     /// </summary>
+    /// <param name="attributes">The attributes on the import.</param>
+    /// <param name="visibility">The visibility modifier on the import.</param>
+    /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
-    private VariableDeclarationSyntax ParseVariableDeclaration(SyntaxToken? visibility)
+    private VariableDeclarationSyntax ParseVariableDeclaration(
+        SyntaxList<AttributeSyntax> attributes,
+        SyntaxToken? visibility,
+        DeclarationContext context)
     {
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
@@ -522,8 +547,10 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a function declaration.
     /// </summary>
+    /// <param name="attributes">The attributes on the function.</param>
+    /// <param name="visibility">The visibility modifier on the function.</param>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
-    private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxToken? visibility)
+    private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxList<AttributeSyntax> attributes, SyntaxToken? visibility)
     {
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
@@ -562,10 +589,21 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a module declaration.
     /// </summary>
+    /// <param name="attributes">The attributes on the module.</param>
+    /// <param name="visibility">The visibility modifier on the module.</param>
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
-    private DeclarationSyntax ParseModuleDeclaration(DeclarationContext context)
+    private DeclarationSyntax ParseModuleDeclaration(
+        SyntaxList<AttributeSyntax> attributes,
+        SyntaxToken? visibility,
+        DeclarationContext context)
     {
+        if (visibility is not null)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+
         // Module keyword and name of the module
         var moduleKeyword = this.Expect(TokenKind.KeywordModule);
         var name = this.Expect(TokenKind.Identifier);
@@ -611,10 +649,26 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a label declaration.
     /// </summary>
+    /// <param name="attributes">The attributes on the module.</param>
+    /// <param name="visibility">The visibility modifier on the module.</param>
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
-    private DeclarationSyntax ParseLabelDeclaration(DeclarationContext context)
+    private DeclarationSyntax ParseLabelDeclaration(
+        SyntaxList<AttributeSyntax> attributes,
+        SyntaxToken? visibility,
+        DeclarationContext context)
     {
+        if (attributes.Count > 0)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+        if (visibility is not null)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+
         var labelName = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
         var result = new LabelDeclarationSyntax(labelName, colon) as DeclarationSyntax;
@@ -696,8 +750,7 @@ internal sealed class Parser(
             var input = this.Synchronize(t => t.Kind switch
             {
                 TokenKind.Semicolon or TokenKind.CurlyClose => false,
-                // NOTE: We don't consider labels here
-                _ when declarationStarters.Contains(t.Kind) => false,
+                _ when this.IsDeclarationStarter(DeclarationContext.Global) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "function body");
@@ -864,7 +917,7 @@ internal sealed class Parser(
                 // On a close curly or out of input, we can immediately exit
                 goto end_of_block;
 
-            case TokenKind when this.IsDeclarationStarter():
+            case TokenKind when this.IsDeclarationStarter(DeclarationContext.Local):
             {
                 var decl = this.ParseDeclaration(DeclarationContext.Local);
                 stmts.Add(new DeclarationStatementSyntax(decl));
@@ -913,7 +966,7 @@ internal sealed class Parser(
                     var input = this.Synchronize(t => t.Kind switch
                     {
                         TokenKind.CurlyClose => false,
-                        _ when this.IsDeclarationStarter() => false,
+                        _ when this.IsDeclarationStarter(DeclarationContext.Local) => false,
                         _ when IsExpressionStarter(t.Kind) => false,
                         _ => true,
                     });

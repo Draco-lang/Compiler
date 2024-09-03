@@ -450,6 +450,14 @@
         The unexpected attributes starting the label.
       </Documentation>
     </Field>
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        An unexpected visibility starting the label.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
     <Field Name="Name" Type="SyntaxToken">
       <Documentation>
         The name of the declared label.

@@ -492,7 +492,7 @@ internal sealed class Parser(
         var path = this.ParseImportPath();
         // Ending semicolon
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new ImportDeclarationSyntax(visibility, importKeyword, path, semicolon);
+        return new ImportDeclarationSyntax(attributes, visibility, importKeyword, path, semicolon);
     }
 
     /// <summary>
@@ -541,7 +541,7 @@ internal sealed class Parser(
         }
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(visibility, keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(attributes, visibility, keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
@@ -575,6 +575,7 @@ internal sealed class Parser(
         var body = this.ParseFunctionBody();
 
         return new FunctionDeclarationSyntax(
+            attributes,
             visibility,
             funcKeyword,
             name,
@@ -627,6 +628,8 @@ internal sealed class Parser(
         var closeCurly = this.Expect(TokenKind.CurlyClose);
 
         var result = new ModuleDeclarationSyntax(
+            attributes,
+            visibility,
             moduleKeyword,
             name,
             openCurly,
@@ -639,7 +642,8 @@ internal sealed class Parser(
             var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "module");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
-            result = new UnexpectedDeclarationSyntax(null, SyntaxList.Create(result as SyntaxNode));
+            // NOTE: Attributes and visibility are already attached to the module
+            result = new UnexpectedDeclarationSyntax(SyntaxList<AttributeSyntax>.Empty, null, SyntaxList.Create(result as SyntaxNode));
             // Add diagnostic
             this.AddDiagnostic(result, diag);
         }
@@ -671,14 +675,15 @@ internal sealed class Parser(
 
         var labelName = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
-        var result = new LabelDeclarationSyntax(labelName, colon) as DeclarationSyntax;
+        var result = new LabelDeclarationSyntax(attributes, visibility, labelName, colon) as DeclarationSyntax;
         if (context != DeclarationContext.Local)
         {
             // Create diagnostic
             var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "label");
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
-            result = new UnexpectedDeclarationSyntax(null, SyntaxList.Create(result as SyntaxNode));
+            // NOTE: Attributes and visibility are already attached to the label
+            result = new UnexpectedDeclarationSyntax(SyntaxList<AttributeSyntax>.Empty, null, SyntaxList.Create(result as SyntaxNode));
             // Add diagnostic
             this.AddDiagnostic(result, diag);
         }
@@ -691,11 +696,12 @@ internal sealed class Parser(
     /// <returns>The parsed <see cref="ParameterSyntax"/>.</returns>
     private ParameterSyntax ParseParameter()
     {
+        var attributes = this.ParseAttributeList();
         this.Matches(TokenKind.Ellipsis, out var variadic);
         var name = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
-        return new(variadic, name, colon, type);
+        return new(attributes, variadic, name, colon, type);
     }
 
     /// <summary>

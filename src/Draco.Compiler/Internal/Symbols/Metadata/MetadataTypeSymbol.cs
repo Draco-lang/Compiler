@@ -108,24 +108,16 @@ internal sealed class MetadataTypeSymbol(
         var typeProvider = this.Assembly.Compilation.TypeProvider;
         if (!typeDefinition.BaseType.IsNil)
         {
-            builder.Add(GetTypeFromMetadata(typeDefinition.BaseType));
+            builder.Add(MetadataSymbol.GetTypeFromHandle(typeDefinition.BaseType, this));
         }
         foreach (var @interface in typeDefinition.GetInterfaceImplementations())
         {
             var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
             if (interfaceDef.Interface.IsNil) continue;
-            builder.Add(GetTypeFromMetadata(interfaceDef.Interface));
+            builder.Add(MetadataSymbol.GetTypeFromHandle(interfaceDef.Interface, this));
         }
 
         return builder.ToImmutable();
-
-        TypeSymbol GetTypeFromMetadata(EntityHandle type) => type.Kind switch
-        {
-            HandleKind.TypeDefinition => typeProvider!.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)type, 0),
-            HandleKind.TypeReference => typeProvider!.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)type, 0),
-            HandleKind.TypeSpecification => typeProvider!.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)type, 0),
-            _ => throw new InvalidOperationException(),
-        };
     }
 
     private ImmutableArray<Symbol> BuildMembers()
@@ -192,11 +184,13 @@ internal sealed class MetadataTypeSymbol(
         }
 
         // If this is an enum, inject == and != operators
+        // TODO: We caused recursion...
+        /*
         if (this.IsEnumType)
         {
             var wellKnownTypes = this.Assembly.Compilation.WellKnownTypes;
             result.AddRange(wellKnownTypes.GetEnumEqualityMembers(this));
-        }
+        }*/
 
         // Done
         return result.ToImmutable();

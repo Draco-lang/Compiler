@@ -31,18 +31,17 @@ internal sealed class MetadataPropertySymbol(
 
     public override Api.Semantics.Visibility Visibility => (this.Getter ?? this.Setter)?.Visibility ?? throw new InvalidOperationException();
 
-    public override bool IsIndexer
+    public override bool IsIndexer => this.Name == this.DefaultMemberName;
+
+    private string DefaultMemberName
     {
         get
         {
             var defaultMemberAttrType = this.Assembly.Compilation.WellKnownTypes.SystemReflectionDefaultMemberAttribute;
             var defaultMemberAttr = this.ContainingSymbol.GetAttribute(defaultMemberAttrType);
-            if (defaultMemberAttr is not null)
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
-            return this.Name == "get_Item";
+            if (defaultMemberAttr is null) return CompilerConstants.DefaultMemberName;
+            if (defaultMemberAttr.FixedArguments.Length == 0) return CompilerConstants.DefaultMemberName;
+            return defaultMemberAttr.FixedArguments[0] as string ?? CompilerConstants.DefaultMemberName;
         }
     }
 

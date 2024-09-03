@@ -16,4 +16,9 @@ internal static class CompilerConstants
     /// The name of a scripts entry point.
     /// </summary>
     public const string ScriptEntryPointName = ".evaluate";
+
+    /// <summary>
+    /// The default member name.
+    /// </summary>
+    public const string DefaultMemberName = "Item";
 }

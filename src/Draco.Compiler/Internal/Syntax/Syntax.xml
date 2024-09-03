@@ -92,6 +92,12 @@
       Unexpected input in declaration context.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+      <Documentation>
+        The attributes of this declaration.
+      </Documentation>
+    </Field>
+
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
         The visibility modifier keyword of this declaration.
@@ -112,6 +118,12 @@
     <Documentation>
       A module declaration.
     </Documentation>
+
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+      <Documentation>
+        The attributes of this declaration.
+      </Documentation>
+    </Field>
 
     <Field Name="ModuleKeyword" Type="SyntaxToken">
       <Documentation>
@@ -156,6 +168,13 @@
     <Documentation>
       An import declaration.
     </Documentation>
+
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+      <Documentation>
+        Unexpected attributes starting the import.
+      </Documentation>
+    </Field>
+
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
         An unexpected visibility starting the import.
@@ -164,6 +183,7 @@
       <Token Kind="KeywordInternal" />
       <Token Kind="KeywordPublic" />
     </Field>
+
     <Field Name="ImportKeyword" Type="SyntaxToken">
       <Documentation>
         The 'import' keyword starting the delcaration.
@@ -238,6 +258,12 @@
       A function declaration.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+      <Documentation>
+        The attributes of this function.
+      </Documentation>
+    </Field>
+
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
         The visibility modifier keyword possibly starting the declaration.
@@ -302,6 +328,11 @@
       A single parameter in a function parameter list.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+      <Documentation>
+        The attributes of this parameter.
+      </Documentation>
+    </Field>
     <Field Name="Variadic" Type="SyntaxToken?">
       <Documentation>
         The ellipsis token, in case it's variadic.
@@ -405,6 +436,11 @@
       A label declaration.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+      <Documentation>
+        The unexpected attributes starting the label.
+      </Documentation>
+    </Field>
     <Field Name="Name" Type="SyntaxToken">
       <Documentation>
         The name of the declared label.
@@ -425,6 +461,12 @@
     <Documentation>
       A variable declaration.
     </Documentation>
+
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+      <Documentation>
+        The attributes of this variable.
+      </Documentation>
+    </Field>
 
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>

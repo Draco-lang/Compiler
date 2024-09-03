@@ -17,11 +17,13 @@ public sealed class SyntaxTreeSourceGenerator : XmlSourceGenerator
 
         var greenTreeCode = CodeGenerator.GenerateGreenSyntaxTree(domainModel, cancellationToken);
         var redTreeCode = CodeGenerator.GenerateRedSyntaxTree(domainModel, cancellationToken);
+        var quoterCode = CodeGenerator.GenerateQuoter(domainModel, cancellationToken);
 
         return
         [
             new("GreenSyntaxTree.Generated.cs", greenTreeCode),
             new("RedSyntaxTree.Generated.cs", redTreeCode),
+            new("Quoter.Generated.cs", quoterCode),
         ];
     }
 }

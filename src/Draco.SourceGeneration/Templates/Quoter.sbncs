@@ -1,0 +1,29 @@
+using System.Collections.Generic;
+
+namespace Draco.Compiler.Api.Syntax.Quoting;
+
+{{include 'Utils.sbncs'}}
+
+#nullable enable
+public sealed partial class SyntaxQuoter
+{
+    private sealed partial class QuoteVisitor
+    {
+        {{for $node in Nodes}}
+            {{if !$node.IsAbstract}}
+                public override QuoteExpression Visit{{remove_suffix($node.Name, 'Syntax')}}(Internal.Syntax.{{$node.Name}} node) =>
+                    new QuoteFunctionCall("{{remove_suffix($node.Name, 'Syntax')}}", [
+                        {{for $element in $node.Fields}}
+                            {{if $element.IsNullable}}
+                                node.{{$element.Name}}?.Accept(this) ?? new QuoteNull()
+                            {{else}}
+                                node.{{$element.Name}}.Accept(this)
+                            {{end}}
+                            {{if !for.last}},{{end}}
+                        {{end}}
+                    ]);
+            {{end}}
+        {{end}}
+    }
+}
+#nullable restore

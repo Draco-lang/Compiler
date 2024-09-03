@@ -127,5 +127,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "the expression is illegal in this context as it does not produce a value",
         code: Code(13));
+
+    /// <summary>
+    /// A non-attribute type was referenced in an attribute context.
+    /// </summary>
+    public static readonly DiagnosticTemplate NotAnAttribute = DiagnosticTemplate.Create(
+        title: "non-attribute type used as attribute",
+        severity: DiagnosticSeverity.Error,
+        format: "the type {0} is not an attribute",
+        code: Code(14));
 }
 

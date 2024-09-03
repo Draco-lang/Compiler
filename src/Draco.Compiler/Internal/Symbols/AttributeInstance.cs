@@ -7,8 +7,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal sealed class AttributeInstance(
     FunctionSymbol constructor,
-    ImmutableArray<object?> fixedArguments,
-    ImmutableDictionary<string, object?> namedArguments)
+    ImmutableArray<ConstantValue> fixedArguments,
+    ImmutableDictionary<string, ConstantValue> namedArguments)
 {
     /// <summary>
     /// The attribute constructor.
@@ -18,10 +18,10 @@ internal sealed class AttributeInstance(
     /// <summary>
     /// The fixed arguments of the attribute.
     /// </summary>
-    public ImmutableArray<object?> FixedArguments { get; } = fixedArguments;
+    public ImmutableArray<ConstantValue> FixedArguments { get; } = fixedArguments;
 
     /// <summary>
     /// The named arguments of the attribute.
     /// </summary>
-    public ImmutableDictionary<string, object?> NamedArguments { get; } = namedArguments;
+    public ImmutableDictionary<string, ConstantValue> NamedArguments { get; } = namedArguments;
 }

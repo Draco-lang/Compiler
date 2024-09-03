@@ -127,8 +127,11 @@ internal static class MetadataSymbol
                        ?? throw new InvalidOperationException("attribute constructor not found");
 
         var arguments = attribute.DecodeValue(typeProvider);
-        var fixedArgs = arguments.FixedArguments.Select(a => a.Value).ToImmutableArray();
-        var namedArgs = arguments.NamedArguments.ToImmutableDictionary(a => a.Name ?? string.Empty, a => a.Value);
+        var fixedArgs = arguments.FixedArguments
+            .Select(a => new ConstantValue(a.Type, a.Value))
+            .ToImmutableArray();
+        var namedArgs = arguments.NamedArguments
+            .ToImmutableDictionary(a => a.Name ?? string.Empty, a => new ConstantValue(a.Type, a.Value));
 
         return new AttributeInstance(constructor, fixedArgs, namedArgs);
     }

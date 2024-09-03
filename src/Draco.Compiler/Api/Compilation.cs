@@ -13,6 +13,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Evaluation;
 using Draco.Compiler.Internal.OptimizingIr;
 using Draco.Compiler.Internal.OptimizingIr.Codegen;
 using Draco.Compiler.Internal.Symbols;
@@ -191,6 +192,11 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     internal TypeProvider TypeProvider { get; }
 
+    /// <summary>
+    /// The constant evaluator used for constant folding.
+    /// </summary>
+    internal ConstantEvaluator ConstantEvaluator { get; }
+
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
     private readonly ConcurrentDictionary<MetadataReference, MetadataAssemblySymbol> metadataAssemblies = [];
@@ -226,6 +232,7 @@ public sealed class Compilation : IBinderProvider
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
         this.TypeProvider = typeProvider ?? new TypeProvider(this);
         this.binderCache = binderCache ?? new BinderCache(this);
+        this.ConstantEvaluator = new ConstantEvaluator(this);
     }
 
     /// <summary>

@@ -150,14 +150,6 @@ internal abstract partial class Symbol
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => null;
 
-    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
-    {
-        null => Api.Semantics.Visibility.Private,
-        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
-        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
-        _ => throw new System.InvalidOperationException($"illegal visibility modifier token {kind}"),
-    };
-
     /// <summary>
     /// The generic definition of this symbol, in case this is a generic instance.
     /// </summary>
@@ -275,4 +267,12 @@ internal abstract partial class Symbol
         if (this.IsGenericInstance) return $"<{string.Join(", ", this.GenericArguments)}>";
         return string.Empty;
     }
+
+    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
+    {
+        null => Api.Semantics.Visibility.Private,
+        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
+        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
+        _ => throw new System.InvalidOperationException($"illegal visibility modifier token {kind}"),
+    };
 }

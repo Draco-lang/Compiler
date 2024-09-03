@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
@@ -75,6 +76,7 @@ internal partial class Binder
         return new(declaredType, boundValue);
     }
 
+    // TODO: Does this need to be virtual?
     public virtual ScriptBinding BindScript(ScriptModuleSymbol module, DiagnosticBag diagnostics)
     {
         // Binding scripts is a little different, since they share the inference context,
@@ -209,5 +211,50 @@ internal partial class Binder
             var statementTask = binder.BindStatement(symbol.DeclaringSyntax.Body, solver, diagnostics);
             fillerTasks.Add(() => functionBodies.Add(symbol.DeclaringSyntax, statementTask.Result));
         }
+    }
+
+    // TODO: Does this need to be virtual?
+    // NOTE: Probably yes to stash reference between syntax and symbol in incremental binding
+    public virtual AttributeInstance BindAttribute(AttributeSyntax attribute, DiagnosticBag diagnostics)
+    {
+        var attributeType = this.BindTypeToTypeSymbol(attribute.Type, diagnostics);
+        if (!attributeType.IsAttributeType)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.NotAnAttribute,
+                location: attribute.Location,
+                formatArgs: [attributeType]));
+        }
+
+        var fixedArguments = ImmutableArray.CreateBuilder<ConstantValue>();
+        // TODO: Implement named arguments
+        var namedArguments = ImmutableDictionary.CreateBuilder<string, ConstantValue>();
+
+        // We need to resolve the proper overload for the constructor
+        var solver = new ConstraintSolver(attribute, "attribute");
+
+        var attribCtors = attributeType.Constructors;
+        var argTasks = attribute.Arguments?.ArgumentList.Values
+            .Select(arg => this.BindExpression(arg, solver, diagnostics))
+            .ToList() ?? [];
+
+        var ctorTask = solver.Overload(
+            name: attributeType.Name,
+            functions: attribCtors.ToImmutableArray(),
+            args: argTasks
+                .Zip(attribute.Arguments?.ArgumentList.Values ?? [])
+                .Select(pair => solver.Arg(pair.Second, pair.First, diagnostics)).ToImmutableArray(),
+            returnType: out _,
+            syntax: attribute);
+
+        solver.Solve(diagnostics);
+
+        // Turn the bound args into constant values
+        var constantArgs = argTasks
+            .Select(arg => this.Compilation.ConstantEvaluator.Evaluate(arg.Result, diagnostics));
+        fixedArguments.AddRange(constantArgs);
+
+        // TODO: NAMED ARGUMENTS!?
+        return new(ctorTask.Result, fixedArguments.ToImmutable(), namedArguments.ToImmutable());
     }
 }

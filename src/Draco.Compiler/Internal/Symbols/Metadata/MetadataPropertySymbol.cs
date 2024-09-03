@@ -41,7 +41,7 @@ internal sealed class MetadataPropertySymbol(
             var defaultMemberAttr = this.ContainingSymbol.GetAttribute(defaultMemberAttrType);
             if (defaultMemberAttr is null) return CompilerConstants.DefaultMemberName;
             if (defaultMemberAttr.FixedArguments.Length == 0) return CompilerConstants.DefaultMemberName;
-            return defaultMemberAttr.FixedArguments[0] as string ?? CompilerConstants.DefaultMemberName;
+            return defaultMemberAttr.FixedArguments[0].Value as string ?? CompilerConstants.DefaultMemberName;
         }
     }
 

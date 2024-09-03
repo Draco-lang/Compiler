@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -25,6 +27,9 @@ internal abstract class SyntaxFunctionSymbol(
     public override Api.Semantics.Visibility Visibility =>
         GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier?.Kind);
 
+    public override ImmutableArray<AttributeInstance> Attributes => this.BindAttributesIfNeeded(this.DeclaringCompilation!);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.BindGenericParametersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
@@ -42,6 +47,18 @@ internal abstract class SyntaxFunctionSymbol(
     public override abstract BoundStatement Body { get; }
 
     public abstract void Bind(IBinderProvider binderProvider);
+
+    protected ImmutableArray<AttributeInstance> BindAttributesIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeDefault(ref this.attributes, () => this.BindAttributes(binderProvider));
+
+    private ImmutableArray<AttributeInstance> BindAttributes(IBinderProvider binderProvider) =>
+        this.DeclaringSyntax.Attributes?.Select(attr => BindAttribute(binderProvider, attr)).ToImmutableArray() ?? [];
+
+    private static AttributeInstance BindAttribute(IBinderProvider binderProvider, AttributeSyntax attributeSyntax)
+    {
+        var binder = binderProvider.GetBinder(attributeSyntax);
+        return binder.BindAttribute(attributeSyntax, binderProvider.DiagnosticBag);
+    }
 
     protected ImmutableArray<TypeParameterSymbol> BindGenericParametersIfNeeded(IBinderProvider binderProvider) =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, () => this.BindGenericParameters(binderProvider));

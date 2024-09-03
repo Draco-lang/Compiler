@@ -42,6 +42,11 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsArrayType => false;
 
     /// <summary>
+    /// True, if this type is an attribute type derived from <see cref="System.Attribute"/>.
+    /// </summary>
+    public virtual bool IsAttributeType => false;
+
+    /// <summary>
     /// True, if this type is an interface.
     /// </summary>
     public virtual bool IsInterface => false;

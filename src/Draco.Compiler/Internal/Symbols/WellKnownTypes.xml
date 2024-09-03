@@ -32,6 +32,7 @@
   <Type Name="System.Enum" Assembly="System.Runtime" />
   <Type Name="System.ValueType" Assembly="System.Runtime" />
   <Type Name="System.Delegate" Assembly="System.Runtime" />
+  <Type Name="System.Attribute" Assembly="System.Runtime" />
 
   <Type Name="System.Collections.Generic.IList`1" Assembly="System.Runtime" />
   <Type Name="System.Collections.Generic.IReadOnlyList`1" Assembly="System.Runtime" />

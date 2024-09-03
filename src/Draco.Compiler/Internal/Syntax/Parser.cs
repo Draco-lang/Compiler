@@ -386,9 +386,8 @@ internal sealed class Parser(
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedDeclarationSyntax(attributes, visibility, input);
-            this.AddDiagnostic(node, diag);
+            this.AddDiagnostic(node, info);
             return node;
         }
         }
@@ -478,15 +477,14 @@ internal sealed class Parser(
         // There should not be attributes on import
         if (attributes is not null)
         {
-            // TODO
-            throw new NotImplementedException();
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedAttributeList, formatArgs: "import");
+            this.AddDiagnostic(attributes, info);
         }
         // There shouldn't be a modifier on import
         if (visibility is not null)
         {
-            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifierBeforeImport, formatArgs: "declaration");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: visibility.Width);
-            this.AddDiagnostic(visibility, diag);
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "declaration");
+            this.AddDiagnostic(visibility, info);
         }
         // Import keyword
         var importKeyword = this.Expect(TokenKind.KeywordImport);
@@ -529,13 +527,13 @@ internal sealed class Parser(
     {
         if (context == DeclarationContext.Local && attributes is not null)
         {
-            // TODO
-            throw new NotImplementedException();
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedAttributeList, formatArgs: "variable declaration");
+            this.AddDiagnostic(attributes, info);
         }
         if (context == DeclarationContext.Local && visibility is not null)
         {
-            // TODO
-            throw new NotImplementedException();
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "variable declaration");
+            this.AddDiagnostic(visibility, info);
         }
 
         // NOTE: We will always call this function by checking the leading keyword
@@ -614,8 +612,8 @@ internal sealed class Parser(
     {
         if (visibility is not null)
         {
-            // TODO
-            throw new NotImplementedException();
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "module");
+            this.AddDiagnostic(visibility, info);
         }
 
         // Module keyword and name of the module
@@ -653,12 +651,11 @@ internal sealed class Parser(
         {
             // Create diagnostic
             var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "module");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
             // NOTE: Attributes and visibility are already attached to the module
             result = new UnexpectedDeclarationSyntax(null, null, SyntaxList.Create(result as SyntaxNode));
             // Add diagnostic
-            this.AddDiagnostic(result, diag);
+            this.AddDiagnostic(result, info);
         }
         return result;
     }
@@ -677,13 +674,13 @@ internal sealed class Parser(
     {
         if (attributes is not null)
         {
-            // TODO
-            throw new NotImplementedException();
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedAttributeList, formatArgs: "label");
+            this.AddDiagnostic(attributes, info);
         }
         if (visibility is not null)
         {
-            // TODO
-            throw new NotImplementedException();
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "label");
+            this.AddDiagnostic(visibility, info);
         }
 
         var labelName = this.Expect(TokenKind.Identifier);
@@ -693,12 +690,11 @@ internal sealed class Parser(
         {
             // Create diagnostic
             var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "label");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
             // NOTE: Attributes and visibility are already attached to the label
             result = new UnexpectedDeclarationSyntax(null, null, SyntaxList.Create(result as SyntaxNode));
             // Add diagnostic
-            this.AddDiagnostic(result, diag);
+            this.AddDiagnostic(result, info);
         }
         return result;
     }
@@ -773,9 +769,8 @@ internal sealed class Parser(
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "function body");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedFunctionBodySyntax(input);
-            this.AddDiagnostic(node, diag);
+            this.AddDiagnostic(node, info);
             return node;
         }
     }
@@ -855,9 +850,8 @@ internal sealed class Parser(
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "type");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedTypeSyntax(input);
-            this.AddDiagnostic(node, diag);
+            this.AddDiagnostic(node, info);
             return node;
         }
     }
@@ -990,9 +984,8 @@ internal sealed class Parser(
                         _ => true,
                     });
                     var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "statement");
-                    var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
                     var errNode = new UnexpectedStatementSyntax(input);
-                    this.AddDiagnostic(errNode, diag);
+                    this.AddDiagnostic(errNode, info);
                     stmts.Add(errNode);
                 }
                 break;
@@ -1248,9 +1241,8 @@ internal sealed class Parser(
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "expression");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedExpressionSyntax(input);
-            this.AddDiagnostic(node, diag);
+            this.AddDiagnostic(node, info);
             return node;
         }
         }
@@ -1307,9 +1299,8 @@ internal sealed class Parser(
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString);
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var unexpected = new UnexpectedStringPartSyntax(input);
-            this.AddDiagnostic(unexpected, diag);
+            this.AddDiagnostic(unexpected, info);
             content.Add(unexpected);
         }
         while (true)
@@ -1390,8 +1381,7 @@ internal sealed class Parser(
         {
             // Error, the closing quotes are not on a newline
             var info = DiagnosticInfo.Create(SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine);
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: closeQuote.FullWidth);
-            this.AddDiagnostic(closeQuote, diag);
+            this.AddDiagnostic(closeQuote, info);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
     }
@@ -1531,8 +1521,7 @@ internal sealed class Parser(
         if (SyntaxFacts.GetHeritageReplacement(token.Kind) is not { } replacementKind) return;
 
         var info = DiagnosticInfo.Create(SyntaxErrors.CHeritageToken, SyntaxFacts.GetUserFriendlyName(token.Kind), syntaxKind, SyntaxFacts.GetUserFriendlyName(replacementKind));
-        var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: token.Width);
-        this.AddDiagnostic(token, diag);
+        this.AddDiagnostic(token, info);
     }
 
     // Token-level operators
@@ -1622,6 +1611,12 @@ internal sealed class Parser(
         var token = tokenSource.Peek();
         tokenSource.Advance();
         return token;
+    }
+
+    private void AddDiagnostic(SyntaxNode node, DiagnosticInfo info)
+    {
+        var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: node.Width);
+        this.AddDiagnostic(node, diag);
     }
 
     private void AddDiagnostic(SyntaxNode node, SyntaxDiagnosticInfo diagnostic) =>

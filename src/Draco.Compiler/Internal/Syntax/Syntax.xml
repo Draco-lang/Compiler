@@ -92,7 +92,7 @@
       Unexpected input in declaration context.
     </Documentation>
 
-    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
       <Documentation>
         The attributes of this declaration.
       </Documentation>
@@ -119,7 +119,7 @@
       A module declaration.
     </Documentation>
 
-    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
       <Documentation>
         The attributes of this declaration.
       </Documentation>
@@ -178,7 +178,7 @@
       An import declaration.
     </Documentation>
 
-    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
       <Documentation>
         Unexpected attributes starting the import.
       </Documentation>
@@ -267,7 +267,7 @@
       A function declaration.
     </Documentation>
 
-    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
       <Documentation>
         The attributes of this function.
       </Documentation>
@@ -337,7 +337,7 @@
       A single parameter in a function parameter list.
     </Documentation>
 
-    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
       <Documentation>
         The attributes of this parameter.
       </Documentation>
@@ -445,7 +445,7 @@
       A label declaration.
     </Documentation>
 
-    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
       <Documentation>
         The unexpected attributes starting the label.
       </Documentation>
@@ -479,7 +479,7 @@
       A variable declaration.
     </Documentation>
 
-    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;">
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
       <Documentation>
         The attributes of this variable.
       </Documentation>

@@ -398,8 +398,10 @@ internal sealed class Parser(
     /// Parses a list of attributes.
     /// </summary>
     /// <returns>The parsed <see cref="SyntaxList{AttributeSyntax}"/>.</returns>
-    private SyntaxList<AttributeSyntax> ParseAttributeList()
+    private SyntaxList<AttributeSyntax>? ParseAttributeList()
     {
+        if (this.PeekKind() != TokenKind.AtSign) return null;
+
         var result = SyntaxList.CreateBuilder<AttributeSyntax>();
         while (this.PeekKind() == TokenKind.AtSign)
         {
@@ -471,10 +473,10 @@ internal sealed class Parser(
     /// <param name="attributes">The attributes on the import.</param>
     /// <param name="visibility">The visibility modifier on the import.</param>
     /// <returns>The parsed <see cref="ImportDeclarationSyntax"/>.</returns>
-    private ImportDeclarationSyntax ParseImportDeclaration(SyntaxList<AttributeSyntax> attributes, SyntaxToken? visibility)
+    private ImportDeclarationSyntax ParseImportDeclaration(SyntaxList<AttributeSyntax>? attributes, SyntaxToken? visibility)
     {
         // There should not be attributes on import
-        if (attributes.Count > 0)
+        if (attributes is not null)
         {
             // TODO
             throw new NotImplementedException();
@@ -521,10 +523,21 @@ internal sealed class Parser(
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
     private VariableDeclarationSyntax ParseVariableDeclaration(
-        SyntaxList<AttributeSyntax> attributes,
+        SyntaxList<AttributeSyntax>? attributes,
         SyntaxToken? visibility,
         DeclarationContext context)
     {
+        if (context == DeclarationContext.Local && attributes is not null)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+        if (context == DeclarationContext.Local && visibility is not null)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
         Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);
@@ -550,7 +563,7 @@ internal sealed class Parser(
     /// <param name="attributes">The attributes on the function.</param>
     /// <param name="visibility">The visibility modifier on the function.</param>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
-    private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxList<AttributeSyntax> attributes, SyntaxToken? visibility)
+    private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxList<AttributeSyntax>? attributes, SyntaxToken? visibility)
     {
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
@@ -595,7 +608,7 @@ internal sealed class Parser(
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     private DeclarationSyntax ParseModuleDeclaration(
-        SyntaxList<AttributeSyntax> attributes,
+        SyntaxList<AttributeSyntax>? attributes,
         SyntaxToken? visibility,
         DeclarationContext context)
     {
@@ -643,7 +656,7 @@ internal sealed class Parser(
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
             // NOTE: Attributes and visibility are already attached to the module
-            result = new UnexpectedDeclarationSyntax(SyntaxList<AttributeSyntax>.Empty, null, SyntaxList.Create(result as SyntaxNode));
+            result = new UnexpectedDeclarationSyntax(null, null, SyntaxList.Create(result as SyntaxNode));
             // Add diagnostic
             this.AddDiagnostic(result, diag);
         }
@@ -658,11 +671,11 @@ internal sealed class Parser(
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     private DeclarationSyntax ParseLabelDeclaration(
-        SyntaxList<AttributeSyntax> attributes,
+        SyntaxList<AttributeSyntax>? attributes,
         SyntaxToken? visibility,
         DeclarationContext context)
     {
-        if (attributes.Count > 0)
+        if (attributes is not null)
         {
             // TODO
             throw new NotImplementedException();
@@ -683,7 +696,7 @@ internal sealed class Parser(
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
             // NOTE: Attributes and visibility are already attached to the label
-            result = new UnexpectedDeclarationSyntax(SyntaxList<AttributeSyntax>.Empty, null, SyntaxList.Create(result as SyntaxNode));
+            result = new UnexpectedDeclarationSyntax(null, null, SyntaxList.Create(result as SyntaxNode));
             // Add diagnostic
             this.AddDiagnostic(result, diag);
         }

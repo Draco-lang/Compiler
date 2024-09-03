@@ -1288,6 +1288,56 @@
     </Field>
   </Node>
 
+  <Node Name="AttributeSyntax" Base="SyntaxNode">
+    <Documentation>
+      An attribute applied to a declaration.
+    </Documentation>
+
+    <Field Name="AtSign" Type="SyntaxToken">
+      <Documentation>
+        The @ token starting the attribute.
+      </Documentation>
+
+      <Token Kind="AtSign" />
+    </Field>
+    <Field Name="Type" Type="TypeSyntax">
+      <Documentation>
+        The reference to the attribute type.
+      </Documentation>
+    </Field>
+    <Field Name="Arguments" Type="ArgumentListSyntax?">
+      <Documentation>
+        The arguments passed to the attribute.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ArgumentListSyntax" Base="SyntaxNode">
+    <Documentation>
+      A list of arguments between parentheses.
+    </Documentation>
+
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the argument list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="ArgumentList" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;">
+      <Documentation>
+        The argument list.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the argument list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
+    </Field>
+  </Node>
+
   <Node Name="ScriptEntrySyntax" Base="SyntaxNode">
     <Documentation>
       A script entry with multiple possible elements.

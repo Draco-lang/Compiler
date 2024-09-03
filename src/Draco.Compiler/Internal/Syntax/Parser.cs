@@ -384,6 +384,43 @@ internal sealed class Parser(
     }
 
     /// <summary>
+    /// Parses a list of attributes.
+    /// </summary>
+    /// <returns>The parsed <see cref="SyntaxList{AttributeSyntax}"/>.</returns>
+    private SyntaxList<AttributeSyntax> ParseAttributeList()
+    {
+        var result = SyntaxList.CreateBuilder<AttributeSyntax>();
+
+        while (this.PeekKind() == TokenKind.AtSign)
+        {
+            result.Add(this.ParseAttribute());
+        }
+
+        return result.ToSyntaxList();
+    }
+
+    /// <summary>
+    /// Parses a single attribute.
+    /// </summary>
+    /// <returns>The parsed <see cref="AttributeSyntax"/>.</returns>
+    private AttributeSyntax ParseAttribute()
+    {
+        var atSign = this.Expect(TokenKind.AtSign);
+        var type = this.ParseType();
+        var args = null as ArgumentListSyntax;
+        if (this.Matches(TokenKind.ParenOpen, out var openParen))
+        {
+            var argList = this.ParseSeparatedSyntaxList(
+                elementParser: this.ParseExpression,
+                separatorKind: TokenKind.Comma,
+                stopKind: TokenKind.ParenClose);
+            var closeParen = this.Expect(TokenKind.ParenClose);
+            args = new ArgumentListSyntax(openParen, argList, closeParen);
+        }
+        return new AttributeSyntax(atSign, type, args);
+    }
+
+    /// <summary>
     /// Parses a statement.
     /// </summary>
     /// <returns>The parsed <see cref="StatementSyntax"/>.</returns>

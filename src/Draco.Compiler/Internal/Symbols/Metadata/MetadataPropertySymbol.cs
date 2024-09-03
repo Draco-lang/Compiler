@@ -108,5 +108,5 @@ internal sealed class MetadataPropertySymbol(
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
+        MetadataDocumentation.GetDocumentation(this);
 }

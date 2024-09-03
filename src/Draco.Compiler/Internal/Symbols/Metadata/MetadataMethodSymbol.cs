@@ -181,87 +181,21 @@ internal class MetadataMethodSymbol(
         foreach (var impl in type.GetMethodImplementations())
         {
             var implementation = this.MetadataReader.GetMethodImplementation(impl);
-            var body = GetFunctionFromMetadata(implementation.MethodBody);
+            var body = MetadataSymbol.GetFunctionFromHandle(implementation.MethodBody, this);
 
             if (body is null) return null;
 
-            if (!implementation.MethodDeclaration.IsNil && body.CanBeOverriddenBy(this)) return GetFunctionFromMetadata(implementation.MethodDeclaration);
-        }
-        return null;
-
-        FunctionSymbol? GetFunctionFromMetadata(EntityHandle function) => function.Kind switch
-        {
-            HandleKind.MethodDefinition => this.GetFunctionFromDefinition((MethodDefinitionHandle)function),
-            HandleKind.MemberReference => this.GetFunctionFromReference((MemberReferenceHandle)function),
-            _ => throw new InvalidOperationException(),
-        };
-    }
-
-    private FunctionSymbol? GetFunctionFromDefinition(MethodDefinitionHandle methodDef)
-    {
-        var definition = this.MetadataReader.GetMethodDefinition(methodDef);
-        var name = this.MetadataReader.GetString(definition.Name);
-        var provider = this.Assembly.Compilation.TypeProvider;
-        var containingType = provider.GetTypeFromDefinition(this.MetadataReader, definition.GetDeclaringType(), 0);
-        var signature = definition.DecodeSignature(provider, containingType);
-        return GetFunctionWithSignature(containingType, name, signature);
-    }
-
-    private FunctionSymbol? GetFunctionFromReference(MemberReferenceHandle methodRef)
-    {
-        var reference = this.MetadataReader.GetMemberReference(methodRef);
-        var name = this.MetadataReader.GetString(reference.Name);
-        var provider = this.Assembly.Compilation.TypeProvider;
-        var containingType = this.GetTypeFromHandle(reference.Parent);
-        var signature = reference.DecodeMethodSignature(provider, containingType);
-        return GetFunctionWithSignature(containingType, name, signature);
-    }
-
-    private TypeSymbol GetTypeFromHandle(EntityHandle handle)
-    {
-        var typeProvider = this.Assembly.Compilation.TypeProvider;
-        return handle.Kind switch
-        {
-            HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)handle, 0),
-            HandleKind.TypeReference => typeProvider.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)handle, 0),
-            HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)handle, 0),
-            _ => throw new InvalidOperationException(),
-        };
-    }
-
-    private static FunctionSymbol? GetFunctionWithSignature(
-        TypeSymbol containingType,
-        string name,
-        MethodSignature<TypeSymbol> signature)
-    {
-        var functions = containingType.DefinedMembers
-            .OfType<FunctionSymbol>()
-            .Concat(containingType.DefinedPropertyAccessors);
-        foreach (var function in functions)
-        {
-            if (function.Name != name) continue;
-            if (SignaturesMatch(function, signature)) return function;
-        }
-        return null;
-    }
-
-    private static bool SignaturesMatch(FunctionSymbol function, MethodSignature<TypeSymbol> signature)
-    {
-        if (function.Parameters.Length != signature.ParameterTypes.Length) return false;
-        if (function.GenericParameters.Length != signature.GenericParameterCount) return false;
-        for (var i = 0; i < function.Parameters.Length; i++)
-        {
-            if (!SymbolEqualityComparer.Default.Equals(function.Parameters[i].Type, signature.ParameterTypes[i]))
+            if (!implementation.MethodDeclaration.IsNil && body.CanBeOverriddenBy(this))
             {
-                return false;
+                return MetadataSymbol.GetFunctionFromHandle(implementation.MethodDeclaration, this);
             }
         }
-        return true;
+        return null;
     }
 
     private SymbolDocumentation BuildDocumentation() =>
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
+        MetadataDocumentation.GetDocumentation(this);
 }

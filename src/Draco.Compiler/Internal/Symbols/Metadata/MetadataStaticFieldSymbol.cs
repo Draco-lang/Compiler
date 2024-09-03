@@ -90,5 +90,5 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
+        MetadataDocumentation.GetDocumentation(this);
 }

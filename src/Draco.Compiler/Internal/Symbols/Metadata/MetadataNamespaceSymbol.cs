@@ -83,6 +83,6 @@ internal sealed class MetadataNamespaceSymbol(
             if (current is null) return null;
         }
 
-        return current.Members.SingleOrDefault(m => MetadataSymbol.GetPrefixedDocumentationName(m) == prefixedDocumentationName);
+        return current.Members.SingleOrDefault(m => MetadataDocumentation.GetPrefixedDocumentationName(m) == prefixedDocumentationName);
     }
 }

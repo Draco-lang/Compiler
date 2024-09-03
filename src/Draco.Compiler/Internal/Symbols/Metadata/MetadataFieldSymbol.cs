@@ -76,5 +76,5 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
+        MetadataDocumentation.GetDocumentation(this);
 }

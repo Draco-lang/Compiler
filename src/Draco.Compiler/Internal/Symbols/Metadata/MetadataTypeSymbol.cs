@@ -211,8 +211,8 @@ internal sealed class MetadataTypeSymbol(
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
+        MetadataDocumentation.GetDocumentation(this);
 
     private ImmutableArray<Symbol> BuildAdditionalSymbols() =>
-        MetadataSymbol.GetAdditionalSymbols(this, typeDefinition, this.MetadataReader).ToImmutableArray();
+        MetadataSymbol.GetAdditionalSymbols(this).ToImmutableArray();
 }

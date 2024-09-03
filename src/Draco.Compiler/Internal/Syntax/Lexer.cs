@@ -245,6 +245,7 @@ internal sealed class Lexer
         case '&':
             if (this.Peek(1) == '&') return TakeBasic(TokenKind.CAnd, 2);
             break;
+        case '@': return TakeBasic(TokenKind.AtSign, 1);
         }
 
         // Numeric literals

@@ -829,7 +829,7 @@ internal sealed class Parser(
                 // On a close curly or out of input, we can immediately exit
                 goto end_of_block;
 
-            case TokenKind t when this.IsDeclarationStarter(t):
+            case TokenKind when this.IsDeclarationStarter():
             {
                 var decl = this.ParseDeclaration(DeclarationContext.Local);
                 stmts.Add(new DeclarationStatementSyntax(decl));
@@ -1028,7 +1028,7 @@ internal sealed class Parser(
         var comparisons = SyntaxList.CreateBuilder<ComparisonElementSyntax>();
         while (true)
         {
-            var opKind = this.Peek();
+            var opKind = this.PeekKind();
             if (!SyntaxFacts.IsRelationalOperator(opKind)) break;
             var op = this.Advance();
             var right = this.ParseExpression(level + 1);

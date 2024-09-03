@@ -183,15 +183,6 @@ internal sealed class MetadataTypeSymbol(
             if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 
-        // If this is an enum, inject == and != operators
-        // TODO: We caused recursion...
-        /*
-        if (this.IsEnumType)
-        {
-            var wellKnownTypes = this.Assembly.Compilation.WellKnownTypes;
-            result.AddRange(wellKnownTypes.GetEnumEqualityMembers(this));
-        }*/
-
         // Done
         return result.ToImmutable();
     }

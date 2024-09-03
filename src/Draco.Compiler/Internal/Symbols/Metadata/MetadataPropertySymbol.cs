@@ -31,7 +31,20 @@ internal sealed class MetadataPropertySymbol(
 
     public override Api.Semantics.Visibility Visibility => (this.Getter ?? this.Setter)?.Visibility ?? throw new InvalidOperationException();
 
-    public override bool IsIndexer => this.Name == ((IMetadataClass)this.ContainingSymbol).DefaultMemberAttributeName;
+    public override bool IsIndexer
+    {
+        get
+        {
+            var defaultMemberAttrType = this.Assembly.Compilation.WellKnownTypes.SystemReflectionDefaultMemberAttribute;
+            var defaultMemberAttr = this.ContainingSymbol.GetAttribute(defaultMemberAttrType);
+            if (defaultMemberAttr is not null)
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+            return this.Name == "get_Item";
+        }
+    }
 
     public override string Name => this.MetadataReader.GetString(propertyDefinition.Name);
 

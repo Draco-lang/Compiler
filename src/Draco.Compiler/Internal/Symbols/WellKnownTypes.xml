@@ -37,4 +37,6 @@
   <Type Name="System.Collections.Generic.IList`1" Assembly="System.Runtime" />
   <Type Name="System.Collections.Generic.IReadOnlyList`1" Assembly="System.Runtime" />
 
+  <Type Name="System.Reflection.DefaultMemberAttribute" Assembly="System.Runtime" />
+
 </WellKnownTypes>

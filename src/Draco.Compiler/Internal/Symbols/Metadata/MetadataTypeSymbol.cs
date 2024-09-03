@@ -69,11 +69,10 @@ internal sealed class MetadataTypeSymbol(
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
 
-    public string? DefaultMemberAttributeName =>
-        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(typeDefinition, this.Assembly.Compilation, this.MetadataReader));
-    private string? defaultMemberAttributeName;
+    public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public override string ToString() => this.GenericParameters.Length == 0
         ? this.Name
@@ -202,6 +201,9 @@ internal sealed class MetadataTypeSymbol(
         // Done
         return result.ToImmutable();
     }
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(typeDefinition.GetCustomAttributes(), this);
 
     private SymbolDocumentation BuildDocumentation() =>
         XmlDocumentationExtractor.Extract(this);

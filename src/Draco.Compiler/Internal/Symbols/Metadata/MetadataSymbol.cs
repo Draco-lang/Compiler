@@ -96,7 +96,7 @@ internal static class MetadataSymbol
     /// <returns>The decoded attribute list.</returns>
     public static ImmutableArray<AttributeInstance> DecodeAttributeList(
         CustomAttributeHandleCollection handleCollection,
-        IMetadataClass symbol) => handleCollection
+        IMetadataSymbol symbol) => handleCollection
         .Select(handle => DecodeAttribute(handle, symbol))
         .ToImmutableArray();
 

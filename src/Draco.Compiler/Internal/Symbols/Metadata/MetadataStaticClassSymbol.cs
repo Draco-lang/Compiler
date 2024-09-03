@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataStaticClassSymbol(
     Symbol containingSymbol,
-    TypeDefinition typeDefinition) : ModuleSymbol, IMetadataSymbol, IMetadataClass
+    TypeDefinition typeDefinition) : ModuleSymbol, IMetadataSymbol
 {
     public override IEnumerable<Symbol> Members =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);

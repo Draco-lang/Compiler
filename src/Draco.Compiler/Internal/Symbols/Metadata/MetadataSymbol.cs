@@ -45,10 +45,11 @@ internal static class MetadataSymbol
     /// <summary>
     /// Retrieves additional symbols for the given <paramref name="typeSymbol"/>.
     /// </summary>
-    /// <param name="typeSymbol">The type symbol to get additional symbols for.</param>
-    /// <returns>The additional symbols for the given <paramref name="typeSymbol"/>.</returns>
-    public static IEnumerable<Symbol> GetAdditionalSymbols(MetadataTypeSymbol typeSymbol)
+    /// <param name="symbol">The symbol to get additional symbols for.</param>
+    /// <returns>The additional symbols for the given <paramref name="symbol"/>.</returns>
+    public static IEnumerable<Symbol> GetAdditionalSymbols(Symbol symbol)
     {
+        if (symbol is not TypeSymbol typeSymbol) return [];
         if (typeSymbol.IsAbstract) return [];
         return typeSymbol.Constructors.Select(ctor => new ConstructorFunctionSymbol(ctor));
     }

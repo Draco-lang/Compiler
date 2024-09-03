@@ -75,10 +75,6 @@ internal sealed class MetadataTypeSymbol(
         InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
-    public IEnumerable<Symbol> AdditionalSymbols =>
-        InterlockedUtils.InitializeDefault(ref this.additionalSymbols, this.BuildAdditionalSymbols);
-    private ImmutableArray<Symbol> additionalSymbols;
-
     public override string ToString() => this.GenericParameters.Length == 0
         ? this.Name
         : $"{this.Name}<{string.Join(", ", this.GenericParameters)}>";
@@ -149,7 +145,7 @@ internal sealed class MetadataTypeSymbol(
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
+            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol));
         }
 
         // Methods
@@ -212,7 +208,4 @@ internal sealed class MetadataTypeSymbol(
 
     private string BuildRawDocumentation() =>
         MetadataDocumentation.GetDocumentation(this);
-
-    private ImmutableArray<Symbol> BuildAdditionalSymbols() =>
-        MetadataSymbol.GetAdditionalSymbols(this).ToImmutableArray();
 }

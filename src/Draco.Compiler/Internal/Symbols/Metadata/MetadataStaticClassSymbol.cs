@@ -41,8 +41,6 @@ internal sealed class MetadataStaticClassSymbol(
         InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(typeDefinition, this.Assembly.Compilation, this.MetadataReader));
     private string? defaultMemberAttributeName;
 
-    public IEnumerable<Symbol> AdditionalSymbols => [];
-
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
@@ -59,7 +57,7 @@ internal sealed class MetadataStaticClassSymbol(
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
+            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol));
         }
 
         // Methods

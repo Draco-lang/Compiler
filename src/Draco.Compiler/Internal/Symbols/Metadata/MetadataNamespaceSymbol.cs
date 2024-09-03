@@ -55,7 +55,7 @@ internal sealed class MetadataNamespaceSymbol(
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
+            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol));
         }
 
         // Done

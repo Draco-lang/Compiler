@@ -516,6 +516,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             bodyOffset: methodBodyOffset,
             parameterList: parameterList);
 
+        // Add attributes
+        foreach (var attribute in procedure.Attributes) this.EncodeAttribute(attribute, definitionHandle);
+
         // Add generic type parameters
         var genericIndex = 0;
         foreach (var typeParam in procedure.Generics)
@@ -547,6 +550,40 @@ internal sealed class MetadataCodegen : MetadataWriter
             this.EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
         }
     });
+
+    private CustomAttributeHandle EncodeAttribute(AttributeInstance attribute, EntityHandle parent) =>
+        this.MetadataBuilder.AddCustomAttribute(
+            parent: parent,
+            constructor: this.GetEntityHandle(attribute.Constructor),
+            value: this.EncodeBlob(e =>
+            {
+                e.CustomAttributeSignature(out var fixedArgs, out var namedArguments);
+
+                foreach (var arg in attribute.FixedArguments)
+                {
+                    this.EncodeAttributeValue(fixedArgs.AddArgument(), arg);
+                }
+
+                if (attribute.NamedArguments.Count > 0)
+                {
+                    // TODO: Named arguments
+                    throw new NotImplementedException();
+                }
+            }));
+
+    private void EncodeAttributeValue(LiteralEncoder encoder, ConstantValue constant)
+    {
+        var type = constant.Type;
+
+        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemString))
+        {
+            encoder.Scalar().Constant(constant.Value);
+            return;
+        }
+
+        // TODO
+        throw new NotImplementedException();
+    }
 
     private StandaloneSignatureHandle EncodeLocals(
         ImmutableArray<AllocatedLocal> locals,

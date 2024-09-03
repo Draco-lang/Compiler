@@ -1,3 +1,5 @@
+using System;
+using System.Text;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
@@ -29,13 +31,30 @@ internal sealed class ConstantEvaluator(Compilation compilation)
 
     private ConstantValue Evaluate(BoundStringExpression expression, DiagnosticBag diagnostics)
     {
-        if (expression.Parts.Length == 1 && expression.Parts[0] is BoundStringText text)
+        if (expression.Parts.Length == 1 && expression.Parts[0] is BoundStringText t)
         {
-            return new ConstantValue(this.WellKnownTypes.SystemString, text.Text);
+            return new ConstantValue(this.WellKnownTypes.SystemString, t.Text);
         }
 
-        // TODO
-        throw new System.NotImplementedException();
+        var result = new StringBuilder();
+        foreach (var part in expression.Parts)
+        {
+            switch (part)
+            {
+            case BoundStringText text:
+                result.Append(text.Text);
+                break;
+            case BoundStringInterpolation interpolation:
+                var value = this.Evaluate(interpolation.Value, diagnostics);
+                result.Append(value.Value);
+                break;
+            case BoundUnexpectedStringPart:
+                break;
+            default:
+                throw new InvalidOperationException("unexpected string part");
+            }
+        }
+        return new ConstantValue(this.WellKnownTypes.SystemString, result.ToString());
     }
 
     private ConstantValue InvalidConstantExpression(BoundExpression expression, DiagnosticBag diagnostics)

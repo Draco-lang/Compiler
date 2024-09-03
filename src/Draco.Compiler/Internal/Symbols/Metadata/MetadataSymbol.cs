@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -85,6 +86,42 @@ internal static class MetadataSymbol
 
             _ => throw new ArgumentOutOfRangeException(nameof(constant)),
         };
+    }
+
+    /// <summary>
+    /// Decodes the given attribute list.
+    /// </summary>
+    /// <param name="handleCollection">The handle collection to decode.</param>
+    /// <param name="symbol">The contextual metadata symbol.</param>
+    /// <returns>The decoded attribute list.</returns>
+    public static ImmutableArray<AttributeInstance> DecodeAttributeList(
+        CustomAttributeHandleCollection handleCollection,
+        IMetadataClass symbol) => handleCollection
+        .Select(handle => DecodeAttribute(handle, symbol))
+        .ToImmutableArray();
+
+    /// <summary>
+    /// Decodes an attribute from the given handle.
+    /// </summary>
+    /// <param name="handle">The handle to decode the attribute from.</param>
+    /// <param name="symbol">The contextual metadata symbol.</param>
+    /// <returns>The decoded attribute instance.</returns>
+    public static AttributeInstance DecodeAttribute(CustomAttributeHandle handle, IMetadataSymbol symbol)
+    {
+        var assembly = symbol.Assembly;
+        var metadataReader = assembly.MetadataReader;
+        var typeProvider = assembly.Compilation.TypeProvider;
+
+        var attribute = metadataReader.GetCustomAttribute(handle);
+
+        var constructor = GetFunctionFromHandle(attribute.Constructor, symbol)
+                       ?? throw new InvalidOperationException("attribute constructor not found");
+
+        var arguments = attribute.DecodeValue(typeProvider);
+        var fixedArgs = arguments.FixedArguments.Select(a => a.Value).ToImmutableArray();
+        var namedArgs = arguments.NamedArguments.ToImmutableDictionary(a => a.Name ?? string.Empty, a => a.Value);
+
+        return new AttributeInstance(constructor, fixedArgs, namedArgs);
     }
 
     /// <summary>

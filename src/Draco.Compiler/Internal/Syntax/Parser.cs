@@ -390,12 +390,10 @@ internal sealed class Parser(
     private SyntaxList<AttributeSyntax> ParseAttributeList()
     {
         var result = SyntaxList.CreateBuilder<AttributeSyntax>();
-
         while (this.PeekKind() == TokenKind.AtSign)
         {
             result.Add(this.ParseAttribute());
         }
-
         return result.ToSyntaxList();
     }
 

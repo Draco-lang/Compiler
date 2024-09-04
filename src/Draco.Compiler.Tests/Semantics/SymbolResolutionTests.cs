@@ -1721,7 +1721,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -1815,7 +1815,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -1856,7 +1856,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -1898,7 +1898,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -1941,7 +1941,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)).Type, "foo");
+        var fooSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2152,7 +2152,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -2246,7 +2246,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2289,7 +2289,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -2330,7 +2330,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -2373,7 +2373,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2418,7 +2418,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2462,7 +2462,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2502,7 +2502,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -2552,7 +2552,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -2638,7 +2638,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -2693,8 +2693,8 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
-        var indexSym = GetMember<PropertySymbol>(fooSym.Type, "Item");
+        var fooSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = AssertMember<PropertySymbol>(fooSym.Type, "Item");
         var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
 
         // Assert
@@ -2787,8 +2787,8 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
-        var indexSym = GetMember<PropertySymbol>(fooSym.Type, "Item");
+        var fooSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = AssertMember<PropertySymbol>(fooSym.Type, "Item");
         var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
 
         // Assert
@@ -2921,7 +2921,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -2960,7 +2960,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMember<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = AssertMember<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3039,7 +3039,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMember<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = AssertMember<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3084,7 +3084,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMember<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = AssertMember<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3129,7 +3129,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMember<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = AssertMember<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3636,7 +3636,7 @@ public sealed class SymbolResolutionTests
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fieldSym = GetMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.ImmediateBaseTypes[0], "Field");
+        var fieldSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.ImmediateBaseTypes[0], "Field");
         var fieldDecl = GetMetadataSymbol(compilation, null, "ParentType", "Field");
 
         // Assert

@@ -1066,7 +1066,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var stringEmptySym = GetMember<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
+        var stringEmptySym = AssertMember<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1099,7 +1099,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var windowWidthSym = GetMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "WindowWidth");
+        var windowWidthSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "WindowWidth");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1134,7 +1134,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var indexSym = GetMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(listRef)).Type, "Item");
+        var indexSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(listRef)).Type, "Item");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);

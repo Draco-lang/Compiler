@@ -133,11 +133,13 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
         public override QuoteExpression VisitSyntaxList<TNode>(SyntaxList<TNode> node) =>
             new QuoteFunctionCall(
                 "SyntaxList",
+                [typeof(TNode).FullName!], // Todo: hack
                 [new QuoteList(node.Select(n => n.Accept(this)).ToImmutableArray())]);
 
         public override QuoteExpression VisitSeparatedSyntaxList<TNode>(SeparatedSyntaxList<TNode> node) =>
             new QuoteFunctionCall(
                 "SeparatedSyntaxList",
+                [typeof(TNode).FullName!], // Todo: hack
                 [
                 new QuoteList(node.Separators.Select(x => x.Accept(this)).ToImmutableArray()),
                 new QuoteList(node.Values.Select(x => x.Accept(this)).ToImmutableArray())]);

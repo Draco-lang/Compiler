@@ -11,11 +11,19 @@ internal abstract record QuoteExpression;
 /// A function call quote expression.
 /// </summary>
 /// <param name="Function">The name of the function in <see cref="SyntaxFactory"/>.</param>
+/// <param name="TypeArguments">The type arguments to the function.</param>
 /// <param name="Arguments">The arguments to the function.</param>
 internal sealed record QuoteFunctionCall(
     string Function,
+    ImmutableArray<string> TypeArguments,
     ImmutableArray<QuoteExpression> Arguments)
-    : QuoteExpression;
+    : QuoteExpression
+{
+    public QuoteFunctionCall(string function, ImmutableArray<QuoteExpression> arguments)
+        : this(function, [], arguments)
+    {
+    }
+}
 
 /// <summary>
 /// A property access quote expression.

@@ -145,5 +145,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "the attribute {0} can not be applied to element type {1}",
         code: Code(15));
+
+    /// <summary>
+    /// The attribute was applied multiple times to the same element, when it was not allowed.
+    /// </summary>
+    public static readonly DiagnosticTemplate AttributeAlreadyApplied = DiagnosticTemplate.Create(
+        title: "attribute already applied",
+        severity: DiagnosticSeverity.Error,
+        format: "the attribute {0} can not be applied multiple times to the same element",
+        code: Code(16));
 }
 

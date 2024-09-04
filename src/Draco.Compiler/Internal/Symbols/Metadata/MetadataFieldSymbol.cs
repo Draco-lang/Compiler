@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -14,6 +15,9 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 {
     public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
 
     public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
@@ -73,6 +77,9 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
         this.ContainingSymbol = containingSymbol;
         this.fieldDefinition = fieldDefinition;
     }
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(this.fieldDefinition.GetCustomAttributes(), this);
 
     private TypeSymbol BuildType() =>
         this.fieldDefinition.DecodeSignature(this.Assembly.DeclaringCompilation.TypeProvider, this);

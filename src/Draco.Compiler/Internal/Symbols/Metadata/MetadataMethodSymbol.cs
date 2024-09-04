@@ -21,6 +21,9 @@ internal class MetadataMethodSymbol(
 {
     public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
 
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
@@ -131,6 +134,9 @@ internal class MetadataMethodSymbol(
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private readonly object signatureBuildLock = new();
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(methodDefinition.GetCustomAttributes(), this);
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
     {

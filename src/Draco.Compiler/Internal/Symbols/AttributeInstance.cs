@@ -13,6 +13,11 @@ internal sealed class AttributeInstance(
     ImmutableDictionary<string, ConstantValue> namedArguments)
 {
     /// <summary>
+    /// The type of the attribute.
+    /// </summary>
+    public TypeSymbol Type => (TypeSymbol)this.Constructor.ContainingSymbol!;
+
+    /// <summary>
     /// The attribute constructor.
     /// </summary>
     public FunctionSymbol Constructor { get; } = constructor;

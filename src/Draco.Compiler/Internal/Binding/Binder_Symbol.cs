@@ -18,6 +18,11 @@ namespace Draco.Compiler.Internal.Binding;
 
 internal partial class Binder
 {
+    protected readonly record struct AttributeBinding(
+        AttributeSyntax Syntax,
+        AttributeInstance Instance,
+        AttributeUsageAttribute? Usage);
+
     public virtual BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
         var functionName = function.DeclaringSyntax.Name.Text;
@@ -214,9 +219,38 @@ internal partial class Binder
         }
     }
 
+    public virtual ImmutableArray<AttributeInstance> BindAttributeList(
+        Symbol target, SyntaxList<AttributeSyntax> syntaxes, DiagnosticBag diagnostics)
+    {
+        var builder = ImmutableArray.CreateBuilder<AttributeInstance>();
+        foreach (var syntax in syntaxes)
+        {
+            var binding = this.BindAttribute(target, syntax, diagnostics);
+
+            if (binding.Usage?.AllowMultiple == false)
+            {
+                // Check for previous attributes of the same type
+                var previous = builder
+                    .FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.Type, binding.Instance.Type));
+
+                if (previous is not null)
+                {
+                    // Report error
+                    diagnostics.Add(Diagnostic.Create(
+                        template: TypeCheckingErrors.AttributeAlreadyApplied,
+                        location: syntax.Location,
+                        formatArgs: [binding.Instance.Type]));
+                }
+            }
+
+            builder.Add(binding.Instance);
+        }
+        return builder.ToImmutable();
+    }
+
     // TODO: Does this need to be virtual?
     // NOTE: Probably yes to stash reference between syntax and symbol in incremental binding
-    public virtual AttributeInstance BindAttribute(Symbol target, AttributeSyntax syntax, DiagnosticBag diagnostics)
+    protected virtual AttributeBinding BindAttribute(Symbol target, AttributeSyntax syntax, DiagnosticBag diagnostics)
     {
         var attributeType = this.BindTypeToTypeSymbol(syntax.Type, diagnostics);
         if (!attributeType.IsAttributeType)
@@ -255,13 +289,13 @@ internal partial class Binder
             .Select(arg => this.Compilation.ConstantEvaluator.Evaluate(arg.Result, diagnostics));
         fixedArguments.AddRange(constantArgs);
 
-        this.CheckForValidAttributeTarget(target, syntax, attributeType, diagnostics);
+        var instance = new AttributeInstance(ctorTask.Result, fixedArguments.ToImmutable(), namedArguments.ToImmutable());
+        var usage = this.CheckForValidAttributeUsage(target, syntax, attributeType, diagnostics);
 
-        // TODO: NAMED ARGUMENTS!?
-        return new(ctorTask.Result, fixedArguments.ToImmutable(), namedArguments.ToImmutable());
+        return new(syntax, instance, usage);
     }
 
-    private void CheckForValidAttributeTarget(
+    private AttributeUsageAttribute? CheckForValidAttributeUsage(
         Symbol target, AttributeSyntax syntax, TypeSymbol attributeType, DiagnosticBag diagnostics)
     {
         var (targetFlag, targetName) = target switch
@@ -276,7 +310,7 @@ internal partial class Binder
 
         // Check for usage, if not present, we allow
         var attributeUsage = attributeType.GetAttribute<AttributeUsageAttribute>(this.WellKnownTypes.SystemAttributeUsageAttribute);
-        if (attributeUsage is null) return;
+        if (attributeUsage is null) return null;
 
         if (!attributeUsage.ValidOn.HasFlag(targetFlag))
         {
@@ -285,5 +319,7 @@ internal partial class Binder
                 location: syntax.Location,
                 formatArgs: [attributeType, targetName]));
         }
+
+        return attributeUsage;
     }
 }

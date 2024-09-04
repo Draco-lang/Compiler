@@ -19,6 +19,9 @@ internal sealed class MetadataStaticClassSymbol(
 {
     public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
 
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override IEnumerable<Symbol> Members =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
@@ -39,6 +42,9 @@ internal sealed class MetadataStaticClassSymbol(
     // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(this.assemblyDefinition.GetCustomAttributes(), this);
 
     private ImmutableArray<Symbol> BuildMembers()
     {

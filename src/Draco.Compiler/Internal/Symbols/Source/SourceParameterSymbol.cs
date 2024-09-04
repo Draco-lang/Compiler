@@ -35,13 +35,13 @@ internal sealed class SourceParameterSymbol(
     private ImmutableArray<AttributeInstance> BindAttributesIfNeeded(IBinderProvider binderProvider) =>
         InterlockedUtils.InitializeDefault(ref this.attributes, () => this.BindAttributes(binderProvider));
 
-    private ImmutableArray<AttributeInstance> BindAttributes(IBinderProvider binderProvider) =>
-        this.DeclaringSyntax.Attributes?.Select(attr => this.BindAttribute(binderProvider, attr)).ToImmutableArray() ?? [];
-
-    private AttributeInstance BindAttribute(IBinderProvider binderProvider, AttributeSyntax attributeSyntax)
+    private ImmutableArray<AttributeInstance> BindAttributes(IBinderProvider binderProvider)
     {
-        var binder = binderProvider.GetBinder(attributeSyntax);
-        return binder.BindAttribute(this, attributeSyntax, binderProvider.DiagnosticBag);
+        var attrsSyntax = this.DeclaringSyntax.Attributes;
+        if (attrsSyntax is null) return [];
+
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
+        return binder.BindAttributeList(this, attrsSyntax, binderProvider.DiagnosticBag);
     }
 
     private TypeSymbol BindTypeIfNeeded(IBinderProvider binderProvider) =>

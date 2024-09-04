@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Threading;
@@ -14,6 +15,9 @@ internal sealed class MetadataPropertySymbol(
     Symbol containingSymbol,
     PropertyDefinition propertyDefinition) : PropertySymbol, IMetadataSymbol
 {
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override TypeSymbol Type => this.Getter?.ReturnType ?? this.Setter?.Parameters[0].Type ?? throw new InvalidOperationException();
 
     // NOTE: This can lead to re-asking for the accessor, in case there isn't one
@@ -80,6 +84,9 @@ internal sealed class MetadataPropertySymbol(
     /// The metadata reader that was used to read up this metadata symbol.
     /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(propertyDefinition.GetCustomAttributes(), this);
 
     private MetadataPropertyAccessorSymbol? BuildGetter()
     {

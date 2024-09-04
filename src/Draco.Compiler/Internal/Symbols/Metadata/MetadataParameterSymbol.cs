@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
@@ -14,6 +15,9 @@ internal sealed class MetadataParameterSymbol(
 {
     public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
 
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(parameterDefinition.Name);
 
@@ -25,4 +29,7 @@ internal sealed class MetadataParameterSymbol(
     private MetadataAssemblySymbol? assembly;
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(parameterDefinition.GetCustomAttributes(), this);
 }

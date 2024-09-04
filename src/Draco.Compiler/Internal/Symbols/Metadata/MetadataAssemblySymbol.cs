@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
@@ -16,6 +17,9 @@ internal class MetadataAssemblySymbol(
     MetadataReader metadataReader,
     XmlDocument? documentation) : ModuleSymbol, IMetadataSymbol
 {
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override IEnumerable<Symbol> Members => this.RootNamespace.Members;
 
     /// <summary>
@@ -55,6 +59,9 @@ internal class MetadataAssemblySymbol(
 
     private readonly ModuleDefinition moduleDefinition = metadataReader.GetModuleDefinition();
     private readonly AssemblyDefinition assemblyDefinition = metadataReader.GetAssemblyDefinition();
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(this.assemblyDefinition.GetCustomAttributes(), this);
 
     private MetadataNamespaceSymbol BuildRootNamespace()
     {

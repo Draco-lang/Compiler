@@ -20,6 +20,9 @@ internal sealed class MetadataTypeSymbol(
 {
     public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
 
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override IEnumerable<Symbol> DefinedMembers =>
         InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
     private ImmutableArray<Symbol> definedMembers;
@@ -72,14 +75,14 @@ internal sealed class MetadataTypeSymbol(
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
-    private ImmutableArray<AttributeInstance> attributes;
-
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     public override string ToString() => this.GenericParameters.Length == 0
         ? this.Name
         : $"{this.Name}<{string.Join(", ", this.GenericParameters)}>";
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(typeDefinition.GetCustomAttributes(), this);
 
     private string BuildName()
     {
@@ -187,9 +190,6 @@ internal sealed class MetadataTypeSymbol(
         // Done
         return result.ToImmutable();
     }
-
-    private ImmutableArray<AttributeInstance> BuildAttributes() =>
-        MetadataSymbol.DecodeAttributeList(typeDefinition.GetCustomAttributes(), this);
 
     private SymbolDocumentation BuildDocumentation() =>
         XmlDocumentationExtractor.Extract(this);

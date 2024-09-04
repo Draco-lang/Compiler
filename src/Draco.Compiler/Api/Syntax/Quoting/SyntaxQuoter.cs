@@ -132,7 +132,9 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
             throw new NotSupportedException("Quoter does currently not support quoting syntax trivia.");
 
         public override QuoteExpression VisitSyntaxList<TNode>(Internal.Syntax.SyntaxList<TNode> node) =>
-            new QuoteList(node.Select(n => n.Accept(this)).ToImmutableArray());
+            new QuoteFunctionCall(
+                "SyntaxList",
+                [new QuoteList(node.Select(n => n.Accept(this)).ToImmutableArray())]);
 
         public override QuoteExpression VisitSeparatedSyntaxList<TNode>(Internal.Syntax.SeparatedSyntaxList<TNode> node) =>
             new QuoteFunctionCall("SeparatedSyntaxList", [

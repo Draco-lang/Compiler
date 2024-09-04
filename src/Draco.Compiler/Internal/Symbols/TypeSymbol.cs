@@ -63,7 +63,8 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
             if (attributeUsage is null) return AttributeTargets.All;
             if (attributeUsage.FixedArguments.Length == 0) return AttributeTargets.All;
 
-            return (AttributeTargets?)attributeUsage.FixedArguments[0].Value ?? AttributeTargets.All;
+            var result = (int?)attributeUsage.FixedArguments[0].Value;
+            return result.HasValue ? (AttributeTargets)result.Value : AttributeTargets.All;
         }
     }
 

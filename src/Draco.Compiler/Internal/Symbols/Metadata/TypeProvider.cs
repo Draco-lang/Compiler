@@ -145,7 +145,28 @@ internal sealed class TypeProvider(Compilation compilation)
     public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
     public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
     public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;
-    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type) => throw new System.ArgumentOutOfRangeException(nameof(type));
+    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type)
+    {
+        var specialField = type
+            .DefinedMembers
+            .OfType<FieldSymbol>()
+            .FirstOrDefault(f => f.Name == CompilerConstants.EnumTagField);
+
+        if (specialField is null) throw new NotImplementedException("no enum tag field found");
+
+        var fieldType = specialField.Type;
+
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemByte)) return PrimitiveTypeCode.Byte;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemUInt16)) return PrimitiveTypeCode.UInt16;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemUInt32)) return PrimitiveTypeCode.UInt32;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemUInt64)) return PrimitiveTypeCode.UInt64;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemSByte)) return PrimitiveTypeCode.SByte;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemInt16)) return PrimitiveTypeCode.Int16;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemInt32)) return PrimitiveTypeCode.Int32;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemInt64)) return PrimitiveTypeCode.Int64;
+
+        throw new NotImplementedException($"unsupported enum tag field type {fieldType}");
+    }
 
     private TypeSymbol BuildTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {

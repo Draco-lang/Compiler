@@ -20,6 +20,8 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
 
+    public override bool IsSpecialName => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.SpecialName);
+
     public override string Name => this.MetadataReader.GetString(this.fieldDefinition.Name);
 
     public override Api.Semantics.Visibility Visibility

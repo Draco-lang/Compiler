@@ -21,4 +21,9 @@ internal static class CompilerConstants
     /// The default member name.
     /// </summary>
     public const string DefaultMemberName = "Item";
+
+    /// <summary>
+    /// The enum tag field name.
+    /// </summary>
+    public const string EnumTagField = "value__";
 }

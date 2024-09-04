@@ -274,7 +274,7 @@ internal partial class Binder
         };
 
         var attributeTargets = attributeType.AttributeTargets;
-        if (attributeTargets.HasFlag(targetFlag))
+        if (!attributeTargets.HasFlag(targetFlag))
         {
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.CanNotApplyAttribute,

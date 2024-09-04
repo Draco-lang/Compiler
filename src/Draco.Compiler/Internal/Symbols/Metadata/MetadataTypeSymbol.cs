@@ -165,8 +165,6 @@ internal sealed class MetadataTypeSymbol(
         foreach (var fieldHandle in typeDefinition.GetFields())
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
-            // Skip special name
-            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
             // Skip non-public
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Add it

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api.Syntax.Quoting;
 
@@ -113,7 +114,7 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
                 (not null, null) => new QuoteFunctionCall("MakeToken", [kindQuote]),
                 (null, null) => new QuoteFunctionCall("MakeToken", [
                     kindQuote,
-                    new QuoteString(node.Text)
+                    new QuoteString(StringUtils.Unescape(node.Text))
                 ]),
                 (not null, not null) => new QuoteFunctionCall("MakeToken", [
                     kindQuote,
@@ -121,7 +122,7 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
                 ]),
                 (null, not null) => new QuoteFunctionCall("MakeToken", [
                     kindQuote,
-                    new QuoteString(node.Text),
+                    new QuoteString(StringUtils.Unescape(node.Text)),
                     QuoteObjectLiteral(node.Value)
                 ])
             };

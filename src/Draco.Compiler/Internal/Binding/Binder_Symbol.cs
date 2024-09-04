@@ -273,7 +273,7 @@ internal partial class Binder
             _ => throw new ArgumentOutOfRangeException(nameof(target)),
         };
 
-        var attributeTargets = attributeType.AttributeTargets;
+        var attributeTargets = attributeType.AttributeUsage!.ValidOn;
         if (!attributeTargets.HasFlag(targetFlag))
         {
             diagnostics.Add(Diagnostic.Create(

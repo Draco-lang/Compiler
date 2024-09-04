@@ -48,23 +48,19 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsAttributeType => false;
 
     /// <summary>
-    /// The attribute targets the attribute can be applied to, in case this is an attribute type.
+    /// The attribute usage if this attribute, in case this is an attribute type.
     /// </summary>
-    public AttributeTargets AttributeTargets
+    public AttributeUsageAttribute? AttributeUsage
     {
         get
         {
             if (!this.IsAttributeType) return default;
 
             var wellKnownTypes = this.DeclaringCompilation?.WellKnownTypes;
-            if (wellKnownTypes is null) return AttributeTargets.All;
+            if (wellKnownTypes is null) return null;
 
             var attributeUsage = this.GetAttribute(wellKnownTypes.SystemAttributeUsageAttribute);
-            if (attributeUsage is null) return AttributeTargets.All;
-            if (attributeUsage.FixedArguments.Length == 0) return AttributeTargets.All;
-
-            var result = (int?)attributeUsage.FixedArguments[0].Value;
-            return result.HasValue ? (AttributeTargets)result.Value : AttributeTargets.All;
+            return attributeUsage?.ToAttribute<AttributeUsageAttribute>();
         }
     }
 

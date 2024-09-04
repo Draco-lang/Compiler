@@ -125,10 +125,8 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
             };
         }
 
-        public override QuoteExpression VisitSyntaxTrivia(Internal.Syntax.SyntaxTrivia node)
-        {
-            throw new NotImplementedException();
-        }
+        public override QuoteExpression VisitSyntaxTrivia(Internal.Syntax.SyntaxTrivia node) =>
+            throw new NotSupportedException("Quoter does currently not support quoting syntax trivia.");
 
         public override QuoteExpression VisitSyntaxList<TNode>(Internal.Syntax.SyntaxList<TNode> node)
         {

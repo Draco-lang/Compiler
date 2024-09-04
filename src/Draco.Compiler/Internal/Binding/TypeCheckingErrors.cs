@@ -136,5 +136,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "the type {0} is not an attribute",
         code: Code(14));
+
+    /// <summary>
+    /// The attribute was applied to a not supported target element.
+    /// </summary>
+    public static readonly DiagnosticTemplate CanNotApplyAttribute = DiagnosticTemplate.Create(
+        title: "can not apply attribute",
+        severity: DiagnosticSeverity.Error,
+        format: "the attribute {0} can not be applied to element type {1}",
+        code: Code(15));
 }
 

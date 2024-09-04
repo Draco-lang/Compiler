@@ -119,7 +119,7 @@ internal static class MetadataSymbol
     {
         var assembly = symbol.Assembly;
         var metadataReader = assembly.MetadataReader;
-        var typeProvider = assembly.Compilation.TypeProvider;
+        var typeProvider = assembly.DeclaringCompilation.TypeProvider;
 
         var attribute = metadataReader.GetCustomAttribute(handle);
 
@@ -144,7 +144,7 @@ internal static class MetadataSymbol
     /// <returns>The type symbol from the given handle.</returns>
     public static TypeSymbol GetTypeFromHandle(EntityHandle handle, IMetadataSymbol symbol)
     {
-        var typeProvider = symbol.Assembly.Compilation.TypeProvider;
+        var typeProvider = symbol.Assembly.DeclaringCompilation.TypeProvider;
         var metadataReader = symbol.Assembly.MetadataReader;
         return handle.Kind switch
         {
@@ -172,7 +172,7 @@ internal static class MetadataSymbol
     {
         var assembly = symbol.Assembly;
         var metadataReader = assembly.MetadataReader;
-        var provider = assembly.Compilation.TypeProvider;
+        var provider = assembly.DeclaringCompilation.TypeProvider;
         var definition = metadataReader.GetMethodDefinition(methodDef);
         var name = metadataReader.GetString(definition.Name);
         var containingType = provider.GetTypeFromDefinition(metadataReader, definition.GetDeclaringType(), 0);
@@ -184,7 +184,7 @@ internal static class MetadataSymbol
     {
         var assembly = symbol.Assembly;
         var metadataReader = assembly.MetadataReader;
-        var provider = assembly.Compilation.TypeProvider;
+        var provider = assembly.DeclaringCompilation.TypeProvider;
         var reference = metadataReader.GetMemberReference(methodRef);
         var name = metadataReader.GetString(reference.Name);
         var containingType = GetTypeFromHandle(reference.Parent, symbol);

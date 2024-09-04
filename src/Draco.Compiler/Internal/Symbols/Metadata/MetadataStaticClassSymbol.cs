@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -16,6 +17,8 @@ internal sealed class MetadataStaticClassSymbol(
     Symbol containingSymbol,
     TypeDefinition typeDefinition) : ModuleSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
     public override IEnumerable<Symbol> Members =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;

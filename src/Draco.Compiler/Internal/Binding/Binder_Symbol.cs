@@ -215,14 +215,14 @@ internal partial class Binder
 
     // TODO: Does this need to be virtual?
     // NOTE: Probably yes to stash reference between syntax and symbol in incremental binding
-    public virtual AttributeInstance BindAttribute(AttributeSyntax attribute, DiagnosticBag diagnostics)
+    public virtual AttributeInstance BindAttribute(Symbol target, AttributeSyntax syntax, DiagnosticBag diagnostics)
     {
-        var attributeType = this.BindTypeToTypeSymbol(attribute.Type, diagnostics);
+        var attributeType = this.BindTypeToTypeSymbol(syntax.Type, diagnostics);
         if (!attributeType.IsAttributeType)
         {
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.NotAnAttribute,
-                location: attribute.Location,
+                location: syntax.Location,
                 formatArgs: [attributeType]));
         }
 
@@ -231,10 +231,10 @@ internal partial class Binder
         var namedArguments = ImmutableDictionary.CreateBuilder<string, ConstantValue>();
 
         // We need to resolve the proper overload for the constructor
-        var solver = new ConstraintSolver(attribute, "attribute");
+        var solver = new ConstraintSolver(syntax, "attribute");
 
         var attribCtors = attributeType.Constructors;
-        var argTasks = attribute.Arguments?.ArgumentList.Values
+        var argTasks = syntax.Arguments?.ArgumentList.Values
             .Select(arg => this.BindExpression(arg, solver, diagnostics))
             .ToList() ?? [];
 
@@ -242,10 +242,10 @@ internal partial class Binder
             name: attributeType.Name,
             functions: attribCtors.ToImmutableArray(),
             args: argTasks
-                .Zip(attribute.Arguments?.ArgumentList.Values ?? [])
+                .Zip(syntax.Arguments?.ArgumentList.Values ?? [])
                 .Select(pair => solver.Arg(pair.Second, pair.First, diagnostics)).ToImmutableArray(),
             returnType: out _,
-            syntax: attribute);
+            syntax: syntax);
 
         solver.Solve(diagnostics);
 
@@ -254,7 +254,32 @@ internal partial class Binder
             .Select(arg => this.Compilation.ConstantEvaluator.Evaluate(arg.Result, diagnostics));
         fixedArguments.AddRange(constantArgs);
 
+        CheckForValidAttributeTarget(target, syntax, attributeType, diagnostics);
+
         // TODO: NAMED ARGUMENTS!?
         return new(ctorTask.Result, fixedArguments.ToImmutable(), namedArguments.ToImmutable());
+    }
+
+    private static void CheckForValidAttributeTarget(
+        Symbol target, AttributeSyntax syntax, TypeSymbol attributeType, DiagnosticBag diagnostics)
+    {
+        var (targetFlag, targetName) = target switch
+        {
+            FunctionSymbol _ => (AttributeTargets.Method, "function"),
+            GlobalSymbol _ => (AttributeTargets.Field, "global"),
+            ParameterSymbol _ => (AttributeTargets.Parameter, "parameter"),
+            TypeSymbol t when t.IsValueType => (AttributeTargets.Struct, "value-type"),
+            TypeSymbol => (AttributeTargets.Class, "reference-type"),
+            _ => throw new ArgumentOutOfRangeException(nameof(target)),
+        };
+
+        var attributeTargets = attributeType.AttributeTargets;
+        if (attributeTargets.HasFlag(targetFlag))
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.CanNotApplyAttribute,
+                location: syntax.Location,
+                formatArgs: [attributeType, targetName]));
+        }
     }
 }

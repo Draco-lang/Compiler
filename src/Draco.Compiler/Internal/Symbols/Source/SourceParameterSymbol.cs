@@ -36,12 +36,12 @@ internal sealed class SourceParameterSymbol(
         InterlockedUtils.InitializeDefault(ref this.attributes, () => this.BindAttributes(binderProvider));
 
     private ImmutableArray<AttributeInstance> BindAttributes(IBinderProvider binderProvider) =>
-        this.DeclaringSyntax.Attributes?.Select(attr => BindAttribute(binderProvider, attr)).ToImmutableArray() ?? [];
+        this.DeclaringSyntax.Attributes?.Select(attr => this.BindAttribute(binderProvider, attr)).ToImmutableArray() ?? [];
 
-    private static AttributeInstance BindAttribute(IBinderProvider binderProvider, AttributeSyntax attributeSyntax)
+    private AttributeInstance BindAttribute(IBinderProvider binderProvider, AttributeSyntax attributeSyntax)
     {
         var binder = binderProvider.GetBinder(attributeSyntax);
-        return binder.BindAttribute(attributeSyntax, binderProvider.DiagnosticBag);
+        return binder.BindAttribute(this, attributeSyntax, binderProvider.DiagnosticBag);
     }
 
     private TypeSymbol BindTypeIfNeeded(IBinderProvider binderProvider) =>

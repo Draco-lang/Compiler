@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -17,6 +18,8 @@ internal sealed class MetadataTypeSymbol(
     Symbol containingSymbol,
     TypeDefinition typeDefinition) : TypeSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
     public override IEnumerable<Symbol> DefinedMembers =>
         InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
     private ImmutableArray<Symbol> definedMembers;
@@ -41,19 +44,19 @@ internal sealed class MetadataTypeSymbol(
     public override Symbol ContainingSymbol { get; } = containingSymbol;
 
     public override bool IsValueType => this.IsEnumType || this.BaseTypes.Contains(
-        this.Assembly.Compilation.WellKnownTypes.SystemValueType,
+        this.Assembly.DeclaringCompilation.WellKnownTypes.SystemValueType,
         SymbolEqualityComparer.Default);
 
     public override bool IsDelegateType => this.BaseTypes.Contains(
-        this.Assembly.Compilation.WellKnownTypes.SystemDelegate,
+        this.Assembly.DeclaringCompilation.WellKnownTypes.SystemDelegate,
         SymbolEqualityComparer.Default);
 
     public override bool IsEnumType => this.BaseTypes.Contains(
-        this.Assembly.Compilation.WellKnownTypes.SystemEnum,
+        this.Assembly.DeclaringCompilation.WellKnownTypes.SystemEnum,
         SymbolEqualityComparer.Default);
 
     public override bool IsAttributeType => this.BaseTypes.Contains(
-        this.Assembly.Compilation.WellKnownTypes.SystemAttribute,
+        this.Assembly.DeclaringCompilation.WellKnownTypes.SystemAttribute,
         SymbolEqualityComparer.Default);
 
     public override bool IsInterface => typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
@@ -105,7 +108,7 @@ internal sealed class MetadataTypeSymbol(
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
-        var typeProvider = this.Assembly.Compilation.TypeProvider;
+        var typeProvider = this.Assembly.DeclaringCompilation.TypeProvider;
         if (!typeDefinition.BaseType.IsNil)
         {
             builder.Add(MetadataSymbol.GetTypeFromHandle(typeDefinition.BaseType, this));

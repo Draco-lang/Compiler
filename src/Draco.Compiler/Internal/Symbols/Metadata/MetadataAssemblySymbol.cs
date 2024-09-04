@@ -51,10 +51,7 @@ internal class MetadataAssemblySymbol(
     /// </summary>
     public XmlDocument? AssemblyDocumentation { get; } = documentation;
 
-    /// <summary>
-    /// The compilation this assembly belongs to.
-    /// </summary>
-    public Compilation Compilation { get; } = compilation;
+    public override Compilation DeclaringCompilation { get; } = compilation;
 
     private readonly ModuleDefinition moduleDefinition = metadataReader.GetModuleDefinition();
     private readonly AssemblyDefinition assemblyDefinition = metadataReader.GetAssemblyDefinition();

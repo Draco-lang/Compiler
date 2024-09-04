@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -18,6 +19,8 @@ internal class MetadataMethodSymbol(
     Symbol containingSymbol,
     MethodDefinition methodDefinition) : FunctionSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
@@ -147,7 +150,7 @@ internal class MetadataMethodSymbol(
     private void BuildSignature()
     {
         // Decode signature
-        var signature = methodDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
+        var signature = methodDefinition.DecodeSignature(this.Assembly.DeclaringCompilation.TypeProvider, this);
 
         // Build parameters
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();

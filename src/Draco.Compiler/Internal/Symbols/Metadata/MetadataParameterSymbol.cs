@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -11,6 +12,8 @@ internal sealed class MetadataParameterSymbol(
     Parameter parameterDefinition,
     TypeSymbol type) : ParameterSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(parameterDefinition.Name);
 

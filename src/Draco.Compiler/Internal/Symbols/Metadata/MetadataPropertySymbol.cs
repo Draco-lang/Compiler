@@ -37,7 +37,7 @@ internal sealed class MetadataPropertySymbol(
     {
         get
         {
-            var defaultMemberAttrType = this.Assembly.Compilation.WellKnownTypes.SystemReflectionDefaultMemberAttribute;
+            var defaultMemberAttrType = this.Assembly.DeclaringCompilation.WellKnownTypes.SystemReflectionDefaultMemberAttribute;
             var defaultMemberAttr = this.ContainingSymbol.GetAttribute(defaultMemberAttrType);
             if (defaultMemberAttr is null) return CompilerConstants.DefaultMemberName;
             if (defaultMemberAttr.FixedArguments.Length == 0) return CompilerConstants.DefaultMemberName;

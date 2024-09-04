@@ -2,6 +2,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -12,6 +13,8 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
     public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
@@ -75,7 +78,7 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
     }
 
     private TypeSymbol BuildType() =>
-        this.fieldDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
+        this.fieldDefinition.DecodeSignature(this.Assembly.DeclaringCompilation.TypeProvider, this);
 
     private object? BuildLiteralValue()
     {

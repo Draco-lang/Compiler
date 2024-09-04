@@ -24,15 +24,33 @@ internal sealed record QuoteFunctionCall(
 internal sealed record QuoteProperty(string Property) : QuoteExpression;
 
 /// <summary>
+/// A list quote expression.
+/// </summary>
+/// <param name="Values">The values in the list.</param>
+internal sealed record QuoteList(ImmutableArray<QuoteExpression> Values) : QuoteExpression;
+
+/// <summary>
 /// A null quote expression.
 /// </summary>
 internal sealed record QuoteNull : QuoteExpression;
+
+/// <summary>
+/// A token kind quote expression.
+/// </summary>
+/// <param name="Value">The token kind.</param>
+internal sealed record QuoteTokenKind(TokenKind Value) : QuoteExpression;
 
 /// <summary>
 /// An integer quote expression.
 /// </summary>
 /// <param name="Value">The integer value.</param>
 internal sealed record QuoteInteger(int Value) : QuoteExpression;
+
+/// <summary>
+/// A float quote expression.
+/// </summary>
+/// <param name="Value">The float value.</param>
+internal sealed record QuoteFloat(float Value) : QuoteExpression;
 
 /// <summary>
 /// A boolean quote expression.

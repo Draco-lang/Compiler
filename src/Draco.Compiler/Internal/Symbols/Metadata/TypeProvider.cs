@@ -147,14 +147,8 @@ internal sealed class TypeProvider(Compilation compilation)
     public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;
     public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type)
     {
-        var specialField = type
-            .DefinedMembers
-            .OfType<FieldSymbol>()
-            .FirstOrDefault(f => f.Name == CompilerConstants.EnumTagField);
-
-        if (specialField is null) throw new NotImplementedException("no enum tag field found");
-
-        var fieldType = specialField.Type;
+        var fieldType = type.EnumUnderlyingType;
+        if (fieldType is null) throw new NotImplementedException("no enum tag field found");
 
         if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemByte)) return PrimitiveTypeCode.Byte;
         if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemUInt16)) return PrimitiveTypeCode.UInt16;

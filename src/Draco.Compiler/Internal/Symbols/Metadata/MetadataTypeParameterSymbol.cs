@@ -28,5 +28,5 @@ internal sealed class MetadataTypeParameterSymbol(
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
     private ImmutableArray<AttributeInstance> BuildAttributes() =>
-        MetadataSymbol.DecodeAttributeList(this.assemblyDefinition.GetCustomAttributes(), this);
+        MetadataSymbol.DecodeAttributeList(genericParameter.GetCustomAttributes(), this);
 }

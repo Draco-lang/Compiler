@@ -44,7 +44,7 @@ internal sealed class MetadataStaticClassSymbol(
     private MetadataAssemblySymbol? assembly;
 
     private ImmutableArray<AttributeInstance> BuildAttributes() =>
-        MetadataSymbol.DecodeAttributeList(this.assemblyDefinition.GetCustomAttributes(), this);
+        MetadataSymbol.DecodeAttributeList(typeDefinition.GetCustomAttributes(), this);
 
     private ImmutableArray<Symbol> BuildMembers()
     {

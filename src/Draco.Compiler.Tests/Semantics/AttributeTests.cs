@@ -3,6 +3,7 @@ using System.Reflection;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Symbols;
+using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
@@ -96,13 +97,17 @@ public sealed class AttributeTests
     [Fact]
     public void AttributeIsWrittenIntoMetadata()
     {
-        var assembly = CompileToAssembly("""
-            import System;
-            import System.Diagnostics.CodeAnalysis;
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            ImportDeclaration("System", "Diagnostics", "CodeAnalysis"),
+            FunctionDeclaration(
+                [Attribute(NameType("ObsoleteAttribute"), StringExpression("do not use this function"))],
+                "foo",
+                ParameterList(Parameter([Attribute(NameType("AllowNullAttribute"))], "arg", NameType("object"))),
+                null,
+                BlockFunctionBody())));
 
-            @ObsoleteAttribute("do not use this function")
-            func foo(@AllowNullAttribute arg: object) { }
-            """);
+        var assembly = CompileToAssembly([tree]);
 
         var fooSymbol = assembly
             .GetType(CompilerConstants.DefaultModuleName)?
@@ -116,5 +121,7 @@ public sealed class AttributeTests
         var argParam = fooSymbol.GetParameters().Single();
         var allowNullAttr = argParam.GetCustomAttribute<AllowNullAttribute>();
         Assert.NotNull(allowNullAttr);
+
+        // TODO: Check, if syntax references the symbol
     }
 }

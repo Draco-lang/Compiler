@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Internal.Syntax;
 
 namespace Draco.Compiler.Api.Syntax.Quoting;
@@ -131,9 +133,9 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
         public override QuoteExpression VisitSyntaxList<TNode>(Internal.Syntax.SyntaxList<TNode> node) =>
             new QuoteList(node.Select(n => n.Accept(this)).ToImmutableArray());
 
-        public override QuoteExpression VisitSeparatedSyntaxList<TNode>(Internal.Syntax.SeparatedSyntaxList<TNode> node)
-        {
-            throw new NotImplementedException();
-        }
+        public override QuoteExpression VisitSeparatedSyntaxList<TNode>(Internal.Syntax.SeparatedSyntaxList<TNode> node) =>
+            new QuoteFunctionCall("SeparatedSyntaxList", [
+                new QuoteList(node.Separators.Select(x => x.Accept(this)).ToImmutableArray()),
+                new QuoteList(node.Values.Select(x => x.Accept(this)).ToImmutableArray())]);
     }
 }

@@ -84,6 +84,14 @@ public static partial class SyntaxFactory
     public static SyntaxList<TNode> SyntaxList<TNode>(params TNode[] elements)
         where TNode : SyntaxNode => SyntaxList(elements.AsEnumerable());
 
+    public static SeparatedSyntaxList<TNode> SeparatedSyntaxList<TNode>(IEnumerable<SyntaxToken> separators, IEnumerable<TNode> elements)
+        where TNode : SyntaxNode => new(
+            tree: null!,
+            parent: null,
+            fullPosition: 0,
+            green: Internal.Syntax.SeparatedSyntaxList.CreateInterleaved(
+                separators.Select(x => x.Green),
+                elements.Select(x => x.Green)));
     public static SeparatedSyntaxList<TNode> SeparatedSyntaxList<TNode>(SyntaxToken separator, IEnumerable<TNode> elements)
         where TNode : SyntaxNode => new(
             tree: null!,

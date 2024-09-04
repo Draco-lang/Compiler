@@ -75,18 +75,17 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
             _ => throw new ArgumentOutOfRangeException(nameof(mode))
         };
 
-        return this.Quote(node);
+        var red = node.ToRedNode(null!, null, 0);
+
+        return this.Quote(red);
     }
 
     /// <summary>
     /// Produces a string containing the factory method calls required to produce a syntax node.
     /// </summary>
-    /// <param name="node">The <see cref="Api.Syntax.SyntaxNode"/> to quote.</param>
+    /// <param name="node">The <see cref="SyntaxNode"/> to quote.</param>
     /// <returns>A string containing the quoted text.</returns>
-    public string Quote(Api.Syntax.SyntaxNode node) =>
-        this.Quote(node.Green);
-
-    private string Quote(Internal.Syntax.SyntaxNode node)
+    public string Quote(SyntaxNode node)
     {
         var visitor = new QuoteVisitor();
         var expr = node.Accept(visitor);
@@ -104,9 +103,9 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
         _ => throw new ArgumentOutOfRangeException(nameof(value))
     };
 
-    private sealed partial class QuoteVisitor : Internal.Syntax.SyntaxVisitor<QuoteExpression>
+    private sealed partial class QuoteVisitor : SyntaxVisitor<QuoteExpression>
     {
-        public override QuoteExpression VisitSyntaxToken(Internal.Syntax.SyntaxToken node)
+        public override QuoteExpression VisitSyntaxToken(SyntaxToken node)
         {
             var kindQuote = new QuoteTokenKind(node.Kind);
             return (SyntaxFacts.GetTokenText(node.Kind), node.Value) switch
@@ -128,16 +127,18 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
             };
         }
 
-        public override QuoteExpression VisitSyntaxTrivia(Internal.Syntax.SyntaxTrivia node) =>
+        public override QuoteExpression VisitSyntaxTrivia(SyntaxTrivia node) =>
             throw new NotSupportedException("Quoter does currently not support quoting syntax trivia.");
 
-        public override QuoteExpression VisitSyntaxList<TNode>(Internal.Syntax.SyntaxList<TNode> node) =>
+        public override QuoteExpression VisitSyntaxList<TNode>(SyntaxList<TNode> node) =>
             new QuoteFunctionCall(
                 "SyntaxList",
                 [new QuoteList(node.Select(n => n.Accept(this)).ToImmutableArray())]);
 
-        public override QuoteExpression VisitSeparatedSyntaxList<TNode>(Internal.Syntax.SeparatedSyntaxList<TNode> node) =>
-            new QuoteFunctionCall("SeparatedSyntaxList", [
+        public override QuoteExpression VisitSeparatedSyntaxList<TNode>(SeparatedSyntaxList<TNode> node) =>
+            new QuoteFunctionCall(
+                "SeparatedSyntaxList",
+                [
                 new QuoteList(node.Separators.Select(x => x.Accept(this)).ToImmutableArray()),
                 new QuoteList(node.Values.Select(x => x.Accept(this)).ToImmutableArray())]);
     }

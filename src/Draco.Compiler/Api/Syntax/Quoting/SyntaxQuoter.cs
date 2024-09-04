@@ -90,11 +90,39 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
         throw new NotImplementedException();
     }
 
+    private static QuoteExpression QuoteObjectLiteral(object? value) => value switch
+    {
+        null => new QuoteNull(),
+        int @int => new QuoteInteger(@int),
+        float @float => new QuoteFloat(@float),
+        string @string => new QuoteString(@string),
+        bool @bool => new QuoteBoolean(@bool),
+        // Todo: are there any more literal values tokens can have?
+        _ => throw new ArgumentOutOfRangeException(nameof(value))
+    };
+
     private sealed partial class QuoteVisitor : Internal.Syntax.SyntaxVisitor<QuoteExpression>
     {
         public override QuoteExpression VisitSyntaxToken(Internal.Syntax.SyntaxToken node)
         {
-            throw new NotImplementedException();
+            var kindQuote = new QuoteTokenKind(node.Kind);
+            return (SyntaxFacts.GetTokenText(node.Kind), node.Value) switch
+            {
+                (not null, null) => new QuoteFunctionCall("MakeToken", [kindQuote]),
+                (null, null) => new QuoteFunctionCall("MakeToken", [
+                    kindQuote,
+                    new QuoteString(node.Text)
+                ]),
+                (not null, not null) => new QuoteFunctionCall("MakeToken", [
+                    kindQuote,
+                    QuoteObjectLiteral(node.Value)
+                ]),
+                (null, not null) => new QuoteFunctionCall("MakeToken", [
+                    kindQuote,
+                    new QuoteString(node.Text),
+                    QuoteObjectLiteral(node.Value)
+                ])
+            };
         }
 
         public override QuoteExpression VisitSyntaxTrivia(Internal.Syntax.SyntaxTrivia node)

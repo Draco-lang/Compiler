@@ -361,12 +361,12 @@ public static partial class SyntaxFactory
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
     public static SyntaxToken Ellipsis { get; } = MakeToken(TokenKind.Ellipsis);
 
-    private static SyntaxToken MakeToken(TokenKind tokenKind) =>
+    public static SyntaxToken MakeToken(TokenKind tokenKind) =>
         Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);
-    private static SyntaxToken MakeToken(TokenKind tokenKind, string text) =>
+    public static SyntaxToken MakeToken(TokenKind tokenKind, string text) =>
         Internal.Syntax.SyntaxToken.From(tokenKind, text).ToRedNode(null!, null, 0);
-    private static SyntaxToken MakeToken(TokenKind tokenKind, string text, object? value) =>
+    public static SyntaxToken MakeToken(TokenKind tokenKind, string text, object? value) =>
         Internal.Syntax.SyntaxToken.From(tokenKind, text, value).ToRedNode(null!, null, 0);
-    private static SyntaxToken MakeToken(TokenKind tokenKind, object? value) =>
+    public static SyntaxToken MakeToken(TokenKind tokenKind, object? value) =>
         Internal.Syntax.SyntaxToken.From(tokenKind, value: value).ToRedNode(null!, null, 0);
 }

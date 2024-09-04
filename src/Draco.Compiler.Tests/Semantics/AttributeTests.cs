@@ -1,4 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Tests.TestUtilities;
 
@@ -88,5 +91,30 @@ public sealed class AttributeTests
         // Assert that the constructor attribute was inherited by the constructor function
         var ctorAttr = AssertAttribute<ObsoleteAttribute>(callSymbol, obsoleteAttrSymbol);
         Assert.Equal("do not use this constructor", ctorAttr.Message);
+    }
+
+    [Fact]
+    public void AttributeIsWrittenIntoMetadata()
+    {
+        var assembly = CompileToAssembly("""
+            import System;
+            import System.Diagnostics.CodeAnalysis;
+
+            @ObsoleteAttribute("do not use this function")
+            func foo(@AllowNullAttribute arg: object) { }
+            """);
+
+        var fooSymbol = assembly
+            .GetType(CompilerConstants.DefaultModuleName)?
+            .GetMethod("foo", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(fooSymbol);
+
+        var obsoleteAttr = fooSymbol.GetCustomAttribute<ObsoleteAttribute>();
+        Assert.NotNull(obsoleteAttr);
+        Assert.Equal("do not use this function", obsoleteAttr.Message);
+
+        var argParam = fooSymbol.GetParameters().Single();
+        var allowNullAttr = argParam.GetCustomAttribute<AllowNullAttribute>();
+        Assert.NotNull(allowNullAttr);
     }
 }

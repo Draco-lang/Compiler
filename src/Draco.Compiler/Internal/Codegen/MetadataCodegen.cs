@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -501,10 +502,13 @@ internal sealed class MetadataCodegen : MetadataWriter
         var parameterList = this.NextParameterHandle;
         foreach (var param in procedure.Parameters)
         {
-            this.AddParameterDefinition(
+            var paramHandle = this.AddParameterDefinition(
                 attributes: ParameterAttributes.None,
                 name: param.Name,
                 index: procedure.GetParameterIndex(param));
+
+            // Add attributes
+            foreach (var attribute in param.Attributes) this.EncodeAttribute(attribute, paramHandle);
         }
 
         // Add definition
@@ -571,11 +575,27 @@ internal sealed class MetadataCodegen : MetadataWriter
                 }
             }));
 
+    private IEnumerable<TypeSymbol> ScalarConstantTypes => [
+        this.WellKnownTypes.SystemSByte,
+        this.WellKnownTypes.SystemInt16,
+        this.WellKnownTypes.SystemInt32,
+        this.WellKnownTypes.SystemInt64,
+
+        this.WellKnownTypes.SystemByte,
+        this.WellKnownTypes.SystemUInt16,
+        this.WellKnownTypes.SystemUInt32,
+        this.WellKnownTypes.SystemUInt64,
+
+        this.WellKnownTypes.SystemBoolean,
+        this.WellKnownTypes.SystemChar,
+
+        this.WellKnownTypes.SystemString];
+
     private void EncodeAttributeValue(LiteralEncoder encoder, ConstantValue constant)
     {
         var type = constant.Type;
 
-        if (SymbolEqualityComparer.Default.Equals(type, this.WellKnownTypes.SystemString))
+        if (this.ScalarConstantTypes.Contains(type, SymbolEqualityComparer.Default))
         {
             encoder.Scalar().Constant(constant.Value);
             return;

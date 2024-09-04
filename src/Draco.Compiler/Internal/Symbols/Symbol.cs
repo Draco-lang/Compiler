@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -214,14 +215,6 @@ internal abstract partial class Symbol
     /// </summary>
     /// <returns>The equivalent API symbol.</returns>
     public abstract Api.Semantics.ISymbol ToApiSymbol();
-
-    /// <summary>
-    /// Retrieves an attribute of the given type attached to this symbol.
-    /// </summary>
-    /// <param name="attributeType">The type of the attribute to retrieve.</param>
-    /// <returns>The attribute instance, if found, otherwise null.</returns>
-    public AttributeInstance? GetAttribute(TypeSymbol attributeType) =>
-        this.Attributes.FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.Constructor.ContainingSymbol, attributeType));
 
     public abstract void Accept(SymbolVisitor visitor);
     public abstract TResult Accept<TResult>(SymbolVisitor<TResult> visitor);

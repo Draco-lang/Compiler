@@ -63,23 +63,6 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsAttributeType => false;
 
     /// <summary>
-    /// The attribute usage if this attribute, in case this is an attribute type.
-    /// </summary>
-    public AttributeUsageAttribute? AttributeUsage
-    {
-        get
-        {
-            if (!this.IsAttributeType) return default;
-
-            var wellKnownTypes = this.DeclaringCompilation?.WellKnownTypes;
-            if (wellKnownTypes is null) return null;
-
-            var attributeUsage = this.GetAttribute(wellKnownTypes.SystemAttributeUsageAttribute);
-            return attributeUsage?.ToAttribute<AttributeUsageAttribute>();
-        }
-    }
-
-    /// <summary>
     /// True, if this type is an interface.
     /// </summary>
     public virtual bool IsInterface => false;

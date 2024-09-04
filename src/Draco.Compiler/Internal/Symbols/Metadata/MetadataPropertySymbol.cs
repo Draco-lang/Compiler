@@ -38,10 +38,8 @@ internal sealed class MetadataPropertySymbol(
         get
         {
             var defaultMemberAttrType = this.Assembly.DeclaringCompilation.WellKnownTypes.SystemReflectionDefaultMemberAttribute;
-            var defaultMemberAttr = this.ContainingSymbol.GetAttribute(defaultMemberAttrType);
-            if (defaultMemberAttr is null) return CompilerConstants.DefaultMemberName;
-            if (defaultMemberAttr.FixedArguments.Length == 0) return CompilerConstants.DefaultMemberName;
-            return defaultMemberAttr.FixedArguments[0].Value as string ?? CompilerConstants.DefaultMemberName;
+            var defaultMemberAttrib = this.GetAttribute<System.Reflection.DefaultMemberAttribute>(defaultMemberAttrType);
+            return defaultMemberAttrib?.MemberName ?? CompilerConstants.DefaultMemberName;
         }
     }
 

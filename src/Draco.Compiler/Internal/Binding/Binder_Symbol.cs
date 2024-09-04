@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding.Tasks;
@@ -254,13 +255,13 @@ internal partial class Binder
             .Select(arg => this.Compilation.ConstantEvaluator.Evaluate(arg.Result, diagnostics));
         fixedArguments.AddRange(constantArgs);
 
-        CheckForValidAttributeTarget(target, syntax, attributeType, diagnostics);
+        this.CheckForValidAttributeTarget(target, syntax, attributeType, diagnostics);
 
         // TODO: NAMED ARGUMENTS!?
         return new(ctorTask.Result, fixedArguments.ToImmutable(), namedArguments.ToImmutable());
     }
 
-    private static void CheckForValidAttributeTarget(
+    private void CheckForValidAttributeTarget(
         Symbol target, AttributeSyntax syntax, TypeSymbol attributeType, DiagnosticBag diagnostics)
     {
         var (targetFlag, targetName) = target switch
@@ -273,8 +274,11 @@ internal partial class Binder
             _ => throw new ArgumentOutOfRangeException(nameof(target)),
         };
 
-        var attributeTargets = attributeType.AttributeUsage!.ValidOn;
-        if (!attributeTargets.HasFlag(targetFlag))
+        // Check for usage, if not present, we allow
+        var attributeUsage = attributeType.GetAttribute<AttributeUsageAttribute>(this.WellKnownTypes.SystemAttributeUsageAttribute);
+        if (attributeUsage is null) return;
+
+        if (!attributeUsage.ValidOn.HasFlag(targetFlag))
         {
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.CanNotApplyAttribute,

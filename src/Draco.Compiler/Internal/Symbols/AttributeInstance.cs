@@ -27,6 +27,8 @@ internal sealed class AttributeInstance(
     /// </summary>
     public ImmutableDictionary<string, ConstantValue> NamedArguments { get; } = namedArguments;
 
+    private object? builtAttribute = null;
+
     /// <summary>
     /// Translates this attribute instance to an attribute of type <typeparamref name="T"/>.
     /// </summary>
@@ -35,12 +37,27 @@ internal sealed class AttributeInstance(
     public T ToAttribute<T>()
         where T : System.Attribute
     {
+        this.builtAttribute ??= this.BuildAttribute<T>();
+        return (T)this.builtAttribute;
+    }
+
+    private T BuildAttribute<T>()
+        where T : System.Attribute
+    {
         // Search for the constructor
         var ctorInfo = typeof(T).GetConstructors().FirstOrDefault(this.SignatureMatches);
         if (ctorInfo is null) throw new System.ArgumentException("no matching constructor found");
 
+        // Translate potential enum value arguments
+        var args = this.FixedArguments
+            .Zip(ctorInfo.GetParameters())
+            .Select(pair => pair.Second.ParameterType.IsEnum
+                ? System.Enum.ToObject(pair.Second.ParameterType, pair.First.Value!)
+                : pair.First.Value)
+            .ToArray();
+
         // Instantiate
-        var instance = (T)ctorInfo.Invoke(this.FixedArguments.Select(arg => arg.Value).ToArray());
+        var instance = (T)ctorInfo.Invoke(args);
 
         // Fill in properties with named arguments
         foreach (var (argName, argValue) in this.NamedArguments)
@@ -62,37 +79,31 @@ internal sealed class AttributeInstance(
         // Compare arguments sequentially
         for (var i = 0; i < this.Constructor.Parameters.Length; i++)
         {
-            if (this.Constructor.Parameters[i].Name != ctorParams[i].Name) return false;
-            var ctorParamType = this.TranslateType(ctorParams[i].ParameterType);
+            var internalCtorParam = this.Constructor.Parameters[i];
+            var reflCtorParam = ctorParams[i];
 
-            if (!SymbolEqualityComparer.Default.Equals(ctorParamType, this.Constructor.Parameters[i].Type)) return false;
+            if (internalCtorParam.Name != reflCtorParam.Name) return false;
+            if (!this.TypesMatch(reflCtorParam.ParameterType, internalCtorParam.Type)) return false;
         }
 
         return true;
     }
 
-    // TODO: We have a lot of type translation code lying around, we should probably centralize it
-    private TypeSymbol TranslateType(System.Type type)
+    private bool TypesMatch(System.Type reflType, TypeSymbol internalType)
     {
+        if (reflType.IsEnum && internalType.IsEnumType)
+        {
+            if (reflType.FullName != internalType.FullName) return false;
+            reflType = System.Enum.GetUnderlyingType(reflType);
+            internalType = internalType.EnumUnderlyingType!;
+        }
+
         var wellKnownTypes = this.Constructor.DeclaringCompilation?.WellKnownTypes;
         if (wellKnownTypes is null) throw new System.NotImplementedException();
 
-        if (type == typeof(byte)) return wellKnownTypes.SystemByte;
-        if (type == typeof(ushort)) return wellKnownTypes.SystemUInt16;
-        if (type == typeof(uint)) return wellKnownTypes.SystemUInt32;
-        if (type == typeof(ulong)) return wellKnownTypes.SystemUInt64;
-        if (type == typeof(sbyte)) return wellKnownTypes.SystemSByte;
-        if (type == typeof(short)) return wellKnownTypes.SystemInt16;
-        if (type == typeof(int)) return wellKnownTypes.SystemInt32;
-        if (type == typeof(long)) return wellKnownTypes.SystemInt64;
+        var translatedReflType = wellKnownTypes.TranslatePrmitive(reflType);
+        if (translatedReflType is null) throw new System.NotImplementedException();
 
-        if (type == typeof(bool)) return wellKnownTypes.SystemBoolean;
-        if (type == typeof(char)) return wellKnownTypes.SystemChar;
-
-        if (type == typeof(string)) return wellKnownTypes.SystemString;
-
-        if (type.IsEnum) return this.TranslateType(System.Enum.GetUnderlyingType(type));
-
-        throw new System.NotImplementedException();
+        return SymbolEqualityComparer.Default.Equals(translatedReflType, internalType);
     }
 }

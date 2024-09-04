@@ -14,16 +14,11 @@ namespace Draco.Compiler.Tests.Semantics;
 
 public sealed class SymbolResolutionTests
 {
-    private static PropertyInfo BinderParentProperty { get; } = typeof(Binder)
-        .GetProperty("Parent", BindingFlags.NonPublic | BindingFlags.Instance)!;
-
     private static void AssertParentOf(Binder? parent, Binder? child)
     {
         Assert.NotNull(child);
         Assert.False(ReferenceEquals(parent, child));
-        // Since the Parent property is protected, we need to access it via reflection
-        var childParent = (Binder?)BinderParentProperty.GetValue(child);
-        Assert.True(ReferenceEquals(childParent, parent));
+        Assert.True(ReferenceEquals(child.Parent, parent));
     }
 
     [Fact]

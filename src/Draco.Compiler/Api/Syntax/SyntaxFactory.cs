@@ -89,6 +89,7 @@ public static partial class SyntaxFactory
             tree: null!,
             parent: null,
             fullPosition: 0,
+            // Todo: this needs to create a SeparatedSyntaxList<TNode.Green>, how?
             green: Internal.Syntax.SeparatedSyntaxList.CreateInterleaved(
                 separators.Select(x => x.Green),
                 elements.Select(x => x.Green)));

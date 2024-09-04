@@ -559,21 +559,27 @@ internal sealed class MetadataCodegen : MetadataWriter
         this.MetadataBuilder.AddCustomAttribute(
             parent: parent,
             constructor: this.GetEntityHandle(attribute.Constructor),
-            value: this.EncodeBlob(e =>
+            value: this.EncodeAttributeSignature(attribute));
+
+    private BlobHandle EncodeAttributeSignature(AttributeInstance attribute)
+    {
+        if (attribute.FixedArguments.Length == 0 && attribute.NamedArguments.Count == 0) return default;
+        return this.EncodeBlob(e =>
+        {
+            e.CustomAttributeSignature(out var fixedArgs, out var namedArguments);
+
+            foreach (var arg in attribute.FixedArguments)
             {
-                e.CustomAttributeSignature(out var fixedArgs, out var namedArguments);
+                this.EncodeAttributeValue(fixedArgs.AddArgument(), arg);
+            }
 
-                foreach (var arg in attribute.FixedArguments)
-                {
-                    this.EncodeAttributeValue(fixedArgs.AddArgument(), arg);
-                }
-
-                if (attribute.NamedArguments.Count > 0)
-                {
-                    // TODO: Named arguments
-                    throw new NotImplementedException();
-                }
-            }));
+            if (attribute.NamedArguments.Count > 0)
+            {
+                // TODO: Named arguments
+                throw new NotImplementedException();
+            }
+        });
+    }
 
     private IEnumerable<TypeSymbol> ScalarConstantTypes => [
         this.WellKnownTypes.SystemSByte,

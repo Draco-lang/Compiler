@@ -64,6 +64,9 @@ public static partial class SyntaxFactory
 
     public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
+    public static SyntaxToken Float(float value) => MakeToken(TokenKind.LiteralFloat, value.ToString(), value);
+    public static SyntaxToken Character(char value) => MakeToken(TokenKind.LiteralCharacter, value.ToString(), value);
+
     public static SyntaxToken? VisibilityToken(Visibility visibility) => visibility switch
     {
         Visibility.Private => null,

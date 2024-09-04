@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -45,6 +46,26 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// True, if this type is an attribute type derived from <see cref="System.Attribute"/>.
     /// </summary>
     public virtual bool IsAttributeType => false;
+
+    /// <summary>
+    /// The attribute targets the attribute can be applied to, in case this is an attribute type.
+    /// </summary>
+    public AttributeTargets AttributeTargets
+    {
+        get
+        {
+            if (!this.IsAttributeType) return default;
+
+            var wellKnownTypes = this.DeclaringCompilation?.WellKnownTypes;
+            if (wellKnownTypes is null) return AttributeTargets.All;
+
+            var attributeUsage = this.GetAttribute(wellKnownTypes.SystemAttributeUsageAttribute);
+            if (attributeUsage is null) return AttributeTargets.All;
+            if (attributeUsage.FixedArguments.Length == 0) return AttributeTargets.All;
+
+            return (AttributeTargets?)attributeUsage.FixedArguments[0].Value ?? AttributeTargets.All;
+        }
+    }
 
     /// <summary>
     /// True, if this type is an interface.

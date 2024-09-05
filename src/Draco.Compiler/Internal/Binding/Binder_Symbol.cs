@@ -278,7 +278,8 @@ internal partial class Binder
             functions: attribCtors.ToImmutableArray(),
             args: argTasks
                 .Zip(syntax.Arguments?.ArgumentList.Values ?? [])
-                .Select(pair => solver.Arg(pair.Second, pair.First, diagnostics)).ToImmutableArray(),
+                .Select(pair => solver.Arg(pair.Second, pair.First, diagnostics))
+                .ToImmutableArray(),
             returnType: out _,
             syntax: syntax);
 

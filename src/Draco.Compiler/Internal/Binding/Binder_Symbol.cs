@@ -289,6 +289,8 @@ internal partial class Binder
             .Select(arg => this.Compilation.ConstantEvaluator.Evaluate(arg.Result, diagnostics));
         fixedArguments.AddRange(constantArgs);
 
+        this.BindSyntaxToSymbol(syntax, ctorTask.Result);
+
         var instance = new AttributeInstance(ctorTask.Result, fixedArguments.ToImmutable(), namedArguments.ToImmutable());
         var usage = this.CheckForValidAttributeUsage(target, syntax, attributeType, diagnostics);
 

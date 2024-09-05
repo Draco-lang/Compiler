@@ -121,7 +121,40 @@ public sealed class AttributeTests
         var argParam = fooSymbol.GetParameters().Single();
         var allowNullAttr = argParam.GetCustomAttribute<AllowNullAttribute>();
         Assert.NotNull(allowNullAttr);
+    }
 
-        // TODO: Check, if syntax references the symbol
+    [Fact]
+    public void AttributeReferencesTheSymbol()
+    {
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            ImportDeclaration("System", "Diagnostics", "CodeAnalysis"),
+            FunctionDeclaration(
+                [Attribute(NameType("ObsoleteAttribute"), StringExpression("do not use this function"))],
+                "foo",
+                ParameterList(Parameter([Attribute(NameType("AllowNullAttribute"))], "arg", NameType("object"))),
+                null,
+                BlockFunctionBody())));
+
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var obsoleteAttrSyntax = tree.FindInChildren<AttributeSyntax>();
+        var obsoleteAttrSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(obsoleteAttrSyntax));
+
+        var allowNullAttrSyntax = tree.FindInChildren<AttributeSyntax>(1);
+        var allowNullAttrSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(allowNullAttrSyntax));
+
+        // The attribute syntax references the constructor
+
+        Assert.NotNull(obsoleteAttrSymbol);
+        Assert.False(obsoleteAttrSymbol.IsError);
+        Assert.True(obsoleteAttrSymbol.IsConstructor);
+        Assert.True(((TypeSymbol)obsoleteAttrSymbol.ContainingSymbol!).IsAttributeType);
+
+        Assert.NotNull(allowNullAttrSymbol);
+        Assert.False(allowNullAttrSymbol.IsError);
+        Assert.True(allowNullAttrSymbol.IsConstructor);
+        Assert.True(((TypeSymbol)allowNullAttrSymbol.ContainingSymbol!).IsAttributeType);
     }
 }

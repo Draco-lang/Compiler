@@ -21,37 +21,31 @@ internal static class SeparatedSyntaxList
         where TNode : SyntaxNode => new();
 
     /// <summary>
-    /// Creates a <see cref="SeparatedSyntaxList{TNode}"/> by interleaving a sequence of values with a sequence of separators.
+    /// Creates an <see cref="IEnumerable{T}"/> of syntax ndoes by interleaving a sequence of values with a sequence of separators.
     /// </summary>
     /// <typeparam name="TNode">The node type.</typeparam>
     /// <param name="separators">The separator tokens.</param>
     /// <param name="values">The value nodes. Has to be equal to or one more than the length of <paramref name="separators"/>.</param>
-    /// <returns>The constructed <see cref="SeparatedSyntaxList{TNode}"/>.</returns>
-    public static SeparatedSyntaxList<TNode> CreateInterleaved<TNode>(IEnumerable<SyntaxToken> separators, IEnumerable<TNode> values)
-        where TNode : SyntaxNode
+    /// <returns>The constructed interleaved sequence.</returns>
+    public static IEnumerable<SyntaxNode> CreateInterleavedSequence(IEnumerable<SyntaxToken> separators, IEnumerable<SyntaxNode> values)
     {
-        IEnumerable<SyntaxNode> MakeNodes()
+        using var valuesEnum = values.GetEnumerator();
+        using var separatorsEnum = separators.GetEnumerator();
+
+        while (valuesEnum.MoveNext())
         {
-            using var valuesEnum = values.GetEnumerator();
-            using var separatorsEnum = separators.GetEnumerator();
+            yield return valuesEnum.Current;
 
-            while (valuesEnum.MoveNext())
+            if (!separatorsEnum.MoveNext())
             {
-                yield return valuesEnum.Current;
-
-                if (!separatorsEnum.MoveNext())
-                {
-                    if (valuesEnum.MoveNext()) throw new ArgumentException("Found more elements than separators.", nameof(values));
-                    yield break;
-                }
-
-                yield return separatorsEnum.Current;
+                if (valuesEnum.MoveNext()) throw new ArgumentException("Found more elements than separators.", nameof(values));
+                yield break;
             }
 
-            if (separatorsEnum.MoveNext()) throw new ArgumentException("Found more separators than elements.", nameof(separators));
+            yield return separatorsEnum.Current;
         }
 
-        return new(MakeNodes());
+        if (separatorsEnum.MoveNext()) throw new ArgumentException("Found more separators than elements.", nameof(separators));
     }
 }
 

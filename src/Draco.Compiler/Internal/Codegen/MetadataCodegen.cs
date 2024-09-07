@@ -188,8 +188,9 @@ internal sealed class MetadataCodegen : MetadataWriter
                 @namespace: GetNamespaceForSymbol(symbol),
                 name: metadataSymbol.MetadataName);
 
-        // Generic type instance
-        case TypeSymbol typeSymbol when typeSymbol.IsGenericInstance:
+        // Generic type instance that is NOT an array
+        // Arrays are handled by the case below
+        case TypeSymbol typeSymbol when typeSymbol.IsGenericInstance && !typeSymbol.IsArrayType:
         {
             Debug.Assert(typeSymbol.GenericDefinition is not null);
             var blob = this.EncodeBlob(e =>

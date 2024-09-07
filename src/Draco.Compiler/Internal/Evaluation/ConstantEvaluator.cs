@@ -4,7 +4,6 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
-using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Evaluation;

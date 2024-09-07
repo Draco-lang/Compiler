@@ -1,5 +1,4 @@
 using System.Reflection.Metadata;
-using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

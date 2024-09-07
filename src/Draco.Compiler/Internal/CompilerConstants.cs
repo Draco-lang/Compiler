@@ -26,4 +26,14 @@ internal static class CompilerConstants
     /// The enum tag field name.
     /// </summary>
     public const string EnumTagField = "value__";
+
+    /// <summary>
+    /// The metadata name of constructors.
+    /// </summary>
+    public const string ConstructorName = ".ctor";
+
+    /// <summary>
+    /// The prefix for operator methods.
+    /// </summary>
+    public const string OperatorPrefix = "op_";
 }

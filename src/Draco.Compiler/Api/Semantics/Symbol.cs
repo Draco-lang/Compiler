@@ -323,7 +323,7 @@ internal sealed class TypeParameterSymbol(Internal.Symbols.TypeParameterSymbol t
 }
 
 // NOTE: Mostly for generic error sentinel values
-internal sealed class AnySymbol(Internal.Symbols.Symbol type)
-    : SymbolBase<Internal.Symbols.Symbol>(type)
+internal sealed class AnySymbol(Symbol type)
+    : SymbolBase<Symbol>(type)
 {
 }

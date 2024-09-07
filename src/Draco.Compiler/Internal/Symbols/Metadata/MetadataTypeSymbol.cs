@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -20,19 +21,24 @@ internal sealed class MetadataTypeSymbol(
 {
     public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
 
-    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    public override ImmutableArray<AttributeInstance> Attributes =>
+        InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
     private ImmutableArray<AttributeInstance> attributes;
 
     public override IEnumerable<Symbol> DefinedMembers =>
         InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
     private ImmutableArray<Symbol> definedMembers;
 
+    public override IEnumerable<FunctionSymbol> Constructors =>
+        InterlockedUtils.InitializeDefault(ref this.constructors, this.BuildConstructors);
+    private ImmutableArray<FunctionSymbol> constructors;
+
     public override string Name => LazyInitializer.EnsureInitialized(ref this.name, this.BuildName);
     private string? name;
 
     public override string MetadataName => this.MetadataReader.GetString(typeDefinition.Name);
 
-    public override Api.Semantics.Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
@@ -126,6 +132,8 @@ internal sealed class MetadataTypeSymbol(
         return builder.ToImmutable();
     }
 
+    // NOTE: There's a good reason constructors are factored out, the IsEnumType check would cause an infinite recursion
+    // with the members flow
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
@@ -149,11 +157,11 @@ internal sealed class MetadataTypeSymbol(
         foreach (var methodHandle in typeDefinition.GetMethods())
         {
             var method = this.MetadataReader.GetMethodDefinition(methodHandle);
-            // Skip special name, if not a constructor or operator
+            // Skip special name, if not an operator
             if (method.Attributes.HasFlag(MethodAttributes.SpecialName))
             {
                 var name = this.MetadataReader.GetString(method.Name);
-                if (name != ".ctor" && !name.StartsWith("op_")) continue;
+                if (!name.StartsWith(CompilerConstants.OperatorPrefix)) continue;
             }
             // Skip private
             if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
@@ -187,7 +195,42 @@ internal sealed class MetadataTypeSymbol(
             if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 
+        // Add constructors separately
+        result.AddRange(this.Constructors);
+
+        // For enums we provide equality operators
+        // NOTE: We do it here as in the AdditionalSymbols flow the IsEnumType check would cause an infinite recursion
+        // as the members of the module are not initialized yet
+        if (this.IsEnumType)
+        {
+            var wellKnownTypes = this.Assembly.DeclaringCompilation.WellKnownTypes;
+            result.AddRange(wellKnownTypes.GetEnumEqualityMembers(this));
+        }
+
         // Done
+        return result.ToImmutable();
+    }
+
+    private ImmutableArray<FunctionSymbol> BuildConstructors()
+    {
+        var result = ImmutableArray.CreateBuilder<FunctionSymbol>();
+
+        foreach (var methodHandle in typeDefinition.GetMethods())
+        {
+            var method = this.MetadataReader.GetMethodDefinition(methodHandle);
+            // Skip non-constructors
+            if (!method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
+
+            var name = this.MetadataReader.GetString(method.Name);
+            if (name != CompilerConstants.ConstructorName) continue;
+
+            var ctor = new MetadataMethodSymbol(
+                containingSymbol: this,
+                methodDefinition: method);
+
+            result.Add(ctor);
+        }
+
         return result.ToImmutable();
     }
 

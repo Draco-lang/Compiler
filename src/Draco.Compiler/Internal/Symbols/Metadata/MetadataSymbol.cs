@@ -4,10 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
-using Draco.Compiler.Api;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -52,12 +49,6 @@ internal static class MetadataSymbol
     {
         if (symbol is not TypeSymbol typeSymbol) return [];
         if (typeSymbol.IsAbstract) return [];
-        // For enums we provide equality operators
-        /*if (typeSymbol.IsEnumType)
-        {
-            var wellKnownTypes = symbol.DeclaringCompilation!.WellKnownTypes;
-            return wellKnownTypes.GetEnumEqualityMembers(typeSymbol);
-        }*/
         // For other types we provide constructor functions
         return typeSymbol.Constructors.Select(ctor => new ConstructorFunctionSymbol(ctor));
     }

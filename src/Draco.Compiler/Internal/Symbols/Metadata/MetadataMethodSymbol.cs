@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -55,7 +54,7 @@ internal class MetadataMethodSymbol(
 
     public override bool IsConstructor =>
            methodDefinition.Attributes.HasFlag(MethodAttributes.SpecialName)
-        && this.Name == ".ctor";
+        && this.Name == CompilerConstants.ConstructorName;
 
     public override bool IsSpecialName => methodDefinition.Attributes.HasFlag(MethodAttributes.SpecialName);
 

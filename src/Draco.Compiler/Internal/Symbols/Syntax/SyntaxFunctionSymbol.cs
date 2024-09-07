@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;

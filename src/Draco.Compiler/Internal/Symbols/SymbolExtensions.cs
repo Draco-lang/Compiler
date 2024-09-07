@@ -1,7 +1,7 @@
-using Draco.Compiler.Internal.Symbols;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Internal.Symbols;
 
 internal static class SymbolExtensions
 {

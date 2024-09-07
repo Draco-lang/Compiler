@@ -81,7 +81,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Reference System.Object from System.Runtime
         this.systemRuntimeReference = this.GetOrAddAssemblyReference(
             name: "System.Runtime",
-            version: new System.Version(7, 0, 0, 0),
+            version: new Version(7, 0, 0, 0),
             publicKeyOrToken: MicrosoftPublicKeyToken);
 
         this.systemObjectReference = this.GetOrAddTypeReference(
@@ -274,7 +274,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     public EntityHandle GetMultidimensionalArrayCtorHandle(TypeSymbol elementType, int rank) =>
         this.AddMemberReference(
             parent: this.GetMultidimensionalArrayTypeHandle(elementType, rank),
-            name: ".ctor",
+            name: CompilerConstants.ConstructorName,
             signature: this.EncodeBlob(e =>
             {
                 e
@@ -369,7 +369,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 name: "DebuggingModes");
             var debuggableAttributeCtor = this.AddMemberReference(
                 parent: debuggableAttribute,
-                name: ".ctor",
+                name: CompilerConstants.ConstructorName,
                 signature: this.EncodeBlob(e =>
                 {
                     e.MethodSignature().Parameters(1, out var returnType, out var parameters);

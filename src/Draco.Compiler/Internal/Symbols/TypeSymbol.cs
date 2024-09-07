@@ -58,7 +58,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsArrayType => false;
 
     /// <summary>
-    /// True, if this type is an attribute type derived from <see cref="System.Attribute"/>.
+    /// True, if this type is an attribute type derived from <see cref="Attribute"/>.
     /// </summary>
     public virtual bool IsAttributeType => false;
 
@@ -108,7 +108,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// <summary>
     /// The constructors defined directly in this type.
     /// </summary>
-    public IEnumerable<FunctionSymbol> Constructors => this.DefinedMembers
+    public virtual IEnumerable<FunctionSymbol> Constructors => this.DefinedMembers
         .OfType<FunctionSymbol>()
         .Where(f => f.IsConstructor);
 

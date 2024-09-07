@@ -189,7 +189,7 @@ internal abstract partial class Symbol
     {
         if (this.GenericParameters.Length != arguments.Length)
         {
-            throw new System.ArgumentException(
+            throw new ArgumentException(
                 $"the number of generic parameters ({this.GenericParameters.Length}) does not match the passed in number of arguments ({arguments.Length})",
                 nameof(arguments));
         }
@@ -208,7 +208,7 @@ internal abstract partial class Symbol
     /// <param name="context">The generic context.</param>
     /// <returns>This symbol with all type parameters replaced according to <paramref name="context"/>.</returns>
     public virtual Symbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
-        throw new System.NotSupportedException();
+        throw new NotSupportedException();
 
     /// <summary>
     /// Converts this symbol into an API symbol.
@@ -266,6 +266,6 @@ internal abstract partial class Symbol
         null => Api.Semantics.Visibility.Private,
         TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
         TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
-        _ => throw new System.InvalidOperationException($"illegal visibility modifier token {kind}"),
+        _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
     };
 }

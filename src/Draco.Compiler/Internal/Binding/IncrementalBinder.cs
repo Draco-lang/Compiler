@@ -66,7 +66,7 @@ public sealed partial class SemanticModel
         protected override BindingTask<BoundStatement> BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.MemoizeBinding(syntax, constraints, () => base.BindStatement(syntax, constraints, diagnostics));
 
-        protected override BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        internal override BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.MemoizeBinding(syntax, constraints, () => base.BindExpression(syntax, constraints, diagnostics));
 
         protected override BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>

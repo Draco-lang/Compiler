@@ -23,7 +23,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// <param name="operands">The compiled operand references.</param>
     /// <returns>The operand that holds the result of the operation.</returns>
     public delegate IOperand CodegenDelegate(
-        FunctionBodyCodegen codegen,
+        LocalCodegen codegen,
         TypeSymbol targetType,
         ImmutableArray<IOperand> operands);
 

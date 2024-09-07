@@ -7,7 +7,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 /// <summary>
 /// Generates IR code on top-level.
 /// </summary>
-internal sealed partial class AssemblyCodegen
+internal sealed class AssemblyCodegen
 {
     /// <summary>
     /// Generates IR of this <see cref="Compilation"/>.

@@ -15,8 +15,10 @@ namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 /// <summary>
 /// Generates IR code on function-local level.
 /// </summary>
-internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
+internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
 {
+    private WellKnownTypes WellKnownTypes => this.compilation.WellKnownTypes;
+
     private readonly Compilation compilation;
     private readonly Procedure procedure;
 
@@ -24,7 +26,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     private bool isDetached;
     private int blockIndex = 0;
 
-    public FunctionBodyCodegen(Compilation compilation, Procedure procedure)
+    public LocalCodegen(Compilation compilation, Procedure procedure)
     {
         this.compilation = compilation;
         this.procedure = procedure;
@@ -44,6 +46,10 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
     }
     private void DetachBlock() => this.isDetached = true;
 
+    /// <summary>
+    /// Writes an instruction to the current basic block.
+    /// </summary>
+    /// <param name="instr">The instruction to write.</param>
     public void Write(IInstruction instr)
     {
         // Happens, when the basic block got detached and there's code left over to compile
@@ -57,9 +63,26 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         this.currentBasicBlock.InsertLast(instr);
     }
 
+    /// <summary>
+    /// Writes the necessary instructions to assign a value to a target.
+    /// </summary>
+    /// <param name="target">The target to assign to.</param>
+    /// <param name="value">The value to assign.</param>
+    public void WriteAssignment(VariableSymbol target, IOperand value)
+    {
+        value = this.BoxIfNeeded(target.Type, value);
+        this.Write(Store(target, value));
+    }
+
+    /// <summary>
+    /// Defines a register in the current procedure.
+    /// </summary>
+    /// <param name="type">The type of value the register will hold.</param>
+    /// <returns>The defined register.</returns>
+    public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
+
     private BasicBlock DefineBasicBlock(LabelSymbol label) => this.procedure.DefineBasicBlock(label);
     private int DefineLocal(LocalSymbol local) => this.procedure.DefineLocal(local);
-    public Register DefineRegister(TypeSymbol type) => this.procedure.DefineRegister(type);
 
     private static bool NeedsBoxing(TypeSymbol targetType, TypeSymbol sourceType)
     {
@@ -75,7 +98,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         return targetIsValueType && !sourceIsValueType;
     }
 
-    public IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
+    private IOperand BoxIfNeeded(TypeSymbol targetType, IOperand source)
     {
         if (source.Type is null) throw new System.ArgumentException("source must be a typed operand", nameof(source));
 
@@ -243,8 +266,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         if (node.Value is null) return default!;
 
         var right = this.Compile(node.Value);
-        right = this.BoxIfNeeded(node.Local.Type, right);
-        this.Write(Store(node.Local, right));
+        this.WriteAssignment(node.Local, right);
 
         return default!;
     }
@@ -445,7 +467,7 @@ internal sealed partial class FunctionBodyCodegen : BoundTreeVisitor<IOperand>
         {
             // NOTE: Literals possibly have a different type than the signature of the global
             var defaultValue = node.Global.LiteralValue;
-            if (!BinderFacts.TryGetLiteralType(defaultValue, this.compilation.WellKnownTypes, out var literalType))
+            if (!BinderFacts.TryGetLiteralType(defaultValue, this.WellKnownTypes, out var literalType))
             {
                 throw new System.InvalidOperationException();
             }

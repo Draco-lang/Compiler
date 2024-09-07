@@ -197,6 +197,11 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     internal ConstantEvaluator ConstantEvaluator { get; }
 
+    /// <summary>
+    /// A compile-time executor engine.
+    /// </summary>
+    internal CompileTimeExecutor CompileTimeExecutor { get; }
+
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
     private readonly ConcurrentDictionary<MetadataReference, MetadataAssemblySymbol> metadataAssemblies = [];
@@ -232,7 +237,8 @@ public sealed class Compilation : IBinderProvider
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
         this.TypeProvider = typeProvider ?? new TypeProvider(this);
         this.binderCache = binderCache ?? new BinderCache(this);
-        this.ConstantEvaluator = new ConstantEvaluator(this);
+        this.ConstantEvaluator = new(this);
+        this.CompileTimeExecutor = new(this);
     }
 
     /// <summary>

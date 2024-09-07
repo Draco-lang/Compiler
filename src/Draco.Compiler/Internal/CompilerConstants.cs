@@ -36,4 +36,9 @@ internal static class CompilerConstants
     /// The prefix for operator methods.
     /// </summary>
     public const string OperatorPrefix = "op_";
+
+    /// <summary>
+    /// The name of the module that contains compile-time code.
+    /// </summary>
+    public const string CompileTimeModuleName = "__CompileTime";
 }

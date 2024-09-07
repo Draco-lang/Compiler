@@ -268,7 +268,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             if (this.RedirectHandlesToCompileTimeRoot)
             {
-                var root = this.Compilation.CompileTimeEvaluator.RootModule;
+                var root = this.Compilation.CompileTimeExecutor.RootModule;
                 return this.GetModuleReferenceHandle(root);
             }
 

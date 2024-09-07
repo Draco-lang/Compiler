@@ -200,7 +200,7 @@ public sealed class Compilation : IBinderProvider
     /// <summary>
     /// A compile-time executor engine.
     /// </summary>
-    internal CompileTimeExecutor CompileTimeEvaluator { get; }
+    internal CompileTimeExecutor CompileTimeExecutor { get; }
 
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
@@ -238,7 +238,7 @@ public sealed class Compilation : IBinderProvider
         this.TypeProvider = typeProvider ?? new TypeProvider(this);
         this.binderCache = binderCache ?? new BinderCache(this);
         this.ConstantEvaluator = new(this);
-        this.CompileTimeEvaluator = new(this);
+        this.CompileTimeExecutor = new(this);
     }
 
     /// <summary>

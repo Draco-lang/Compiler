@@ -17,7 +17,7 @@ namespace Draco.Compiler.Internal.Evaluation;
 /// <summary>
 /// Implements compile-time evaluation and execution.
 /// </summary>
-internal sealed class CompileTimeEvaluator(Compilation compilation)
+internal sealed class CompileTimeExecutor(Compilation compilation)
 {
     /// <summary>
     /// The root module of the generated assembly.

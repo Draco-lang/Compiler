@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -150,14 +151,6 @@ internal abstract partial class Symbol
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => null;
 
-    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
-    {
-        null => Api.Semantics.Visibility.Private,
-        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
-        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
-        _ => throw new System.InvalidOperationException($"illegal visibility modifier token {kind}"),
-    };
-
     /// <summary>
     /// The generic definition of this symbol, in case this is a generic instance.
     /// </summary>
@@ -172,6 +165,11 @@ internal abstract partial class Symbol
     /// The generic arguments that this symbol was instantiated with.
     /// </summary>
     public virtual ImmutableArray<TypeSymbol> GenericArguments => [];
+
+    /// <summary>
+    /// The attributes attached to this symbol.
+    /// </summary>
+    public virtual ImmutableArray<AttributeInstance> Attributes => [];
 
     /// <summary>
     /// Checks if this symbol can be shadowed by <paramref name="other"/> symbol.
@@ -191,7 +189,7 @@ internal abstract partial class Symbol
     {
         if (this.GenericParameters.Length != arguments.Length)
         {
-            throw new System.ArgumentException(
+            throw new ArgumentException(
                 $"the number of generic parameters ({this.GenericParameters.Length}) does not match the passed in number of arguments ({arguments.Length})",
                 nameof(arguments));
         }
@@ -210,7 +208,7 @@ internal abstract partial class Symbol
     /// <param name="context">The generic context.</param>
     /// <returns>This symbol with all type parameters replaced according to <paramref name="context"/>.</returns>
     public virtual Symbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
-        throw new System.NotSupportedException();
+        throw new NotSupportedException();
 
     /// <summary>
     /// Converts this symbol into an API symbol.
@@ -262,4 +260,12 @@ internal abstract partial class Symbol
         if (this.IsGenericInstance) return $"<{string.Join(", ", this.GenericArguments)}>";
         return string.Empty;
     }
+
+    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
+    {
+        null => Api.Semantics.Visibility.Private,
+        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
+        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
+        _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
+    };
 }

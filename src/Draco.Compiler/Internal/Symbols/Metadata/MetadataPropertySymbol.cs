@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Threading;
@@ -14,6 +15,9 @@ internal sealed class MetadataPropertySymbol(
     Symbol containingSymbol,
     PropertyDefinition propertyDefinition) : PropertySymbol, IMetadataSymbol
 {
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override TypeSymbol Type => this.Getter?.ReturnType ?? this.Setter?.Parameters[0].Type ?? throw new InvalidOperationException();
 
     // NOTE: This can lead to re-asking for the accessor, in case there isn't one
@@ -31,7 +35,17 @@ internal sealed class MetadataPropertySymbol(
 
     public override Api.Semantics.Visibility Visibility => (this.Getter ?? this.Setter)?.Visibility ?? throw new InvalidOperationException();
 
-    public override bool IsIndexer => this.Name == ((IMetadataClass)this.ContainingSymbol).DefaultMemberAttributeName;
+    public override bool IsIndexer => this.Name == this.DefaultMemberName;
+
+    private string DefaultMemberName
+    {
+        get
+        {
+            var defaultMemberAttrType = this.Assembly.DeclaringCompilation.WellKnownTypes.SystemReflectionDefaultMemberAttribute;
+            var defaultMemberAttrib = this.ContainingSymbol.GetAttribute<System.Reflection.DefaultMemberAttribute>(defaultMemberAttrType);
+            return defaultMemberAttrib?.MemberName ?? CompilerConstants.DefaultMemberName;
+        }
+    }
 
     public override string Name => this.MetadataReader.GetString(propertyDefinition.Name);
 
@@ -71,6 +85,9 @@ internal sealed class MetadataPropertySymbol(
     /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(propertyDefinition.GetCustomAttributes(), this);
+
     private MetadataPropertyAccessorSymbol? BuildGetter()
     {
         var accessors = propertyDefinition.GetAccessors();
@@ -108,5 +125,5 @@ internal sealed class MetadataPropertySymbol(
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
+        MetadataDocumentation.GetDocumentation(this);
 }

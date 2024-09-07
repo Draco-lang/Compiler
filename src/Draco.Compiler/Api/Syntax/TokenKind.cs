@@ -316,6 +316,11 @@ public enum TokenKind
     Ellipsis,
 
     /// <summary>
+    /// '@'.
+    /// </summary>
+    AtSign,
+
+    /// <summary>
     /// '%' (C-heritage).
     /// </summary>
     CMod,
@@ -333,5 +338,5 @@ public enum TokenKind
     /// <summary>
     /// '!' (C-heritage).
     /// </summary>
-    CNot
+    CNot,
 }

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -12,6 +13,9 @@ internal sealed class SourceParameterSymbol(
     FunctionSymbol containingSymbol,
     ParameterSyntax syntax) : ParameterSymbol, ISourceSymbol
 {
+    public override ImmutableArray<AttributeInstance> Attributes => this.BindAttributesIfNeeded(this.DeclaringCompilation!);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override TypeSymbol Type => this.BindTypeIfNeeded(this.DeclaringCompilation!);
     private TypeSymbol? type;
 
@@ -21,8 +25,23 @@ internal sealed class SourceParameterSymbol(
 
     public override ParameterSyntax DeclaringSyntax { get; } = syntax;
 
-    public void Bind(IBinderProvider binderProvider) =>
+    public void Bind(IBinderProvider binderProvider)
+    {
         this.BindTypeIfNeeded(binderProvider);
+        this.BindAttributesIfNeeded(binderProvider);
+    }
+
+    private ImmutableArray<AttributeInstance> BindAttributesIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeDefault(ref this.attributes, () => this.BindAttributes(binderProvider));
+
+    private ImmutableArray<AttributeInstance> BindAttributes(IBinderProvider binderProvider)
+    {
+        var attrsSyntax = this.DeclaringSyntax.Attributes;
+        if (attrsSyntax is null) return [];
+
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
+        return binder.BindAttributeList(this, attrsSyntax, binderProvider.DiagnosticBag);
+    }
 
     private TypeSymbol BindTypeIfNeeded(IBinderProvider binderProvider) =>
         LazyInitializer.EnsureInitialized(ref this.type, () => this.BindType(binderProvider));

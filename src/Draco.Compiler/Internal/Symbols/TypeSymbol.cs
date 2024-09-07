@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -37,9 +38,29 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public virtual bool IsEnumType => false;
 
     /// <summary>
+    /// The underlying type of this enum type, in case this is an enum type.
+    /// </summary>
+    public TypeSymbol? EnumUnderlyingType
+    {
+        get
+        {
+            if (!this.IsEnumType) return null;
+            return this.DefinedMembers
+                .OfType<FieldSymbol>()
+                .FirstOrDefault(f => f.Name == CompilerConstants.EnumTagField)
+                ?.Type;
+        }
+    }
+
+    /// <summary>
     /// True. if this is a native .NET array type.
     /// </summary>
     public virtual bool IsArrayType => false;
+
+    /// <summary>
+    /// True, if this type is an attribute type derived from <see cref="Attribute"/>.
+    /// </summary>
+    public virtual bool IsAttributeType => false;
 
     /// <summary>
     /// True, if this type is an interface.
@@ -87,7 +108,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// <summary>
     /// The constructors defined directly in this type.
     /// </summary>
-    public IEnumerable<FunctionSymbol> Constructors => this.DefinedMembers
+    public virtual IEnumerable<FunctionSymbol> Constructors => this.DefinedMembers
         .OfType<FunctionSymbol>()
         .Where(f => f.IsConstructor);
 

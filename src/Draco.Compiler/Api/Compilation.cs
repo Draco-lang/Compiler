@@ -193,9 +193,14 @@ public sealed class Compilation : IBinderProvider
     internal TypeProvider TypeProvider { get; }
 
     /// <summary>
-    /// A compile-time evaluator for constant expressions.
+    /// The constant evaluator used for constant folding.
     /// </summary>
-    internal CompileTimeEvaluator CompileTimeEvaluator { get; }
+    internal ConstantEvaluator ConstantEvaluator { get; }
+
+    /// <summary>
+    /// A compile-time executor engine.
+    /// </summary>
+    internal CompileTimeExecutor CompileTimeEvaluator { get; }
 
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
@@ -232,6 +237,7 @@ public sealed class Compilation : IBinderProvider
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
         this.TypeProvider = typeProvider ?? new TypeProvider(this);
         this.binderCache = binderCache ?? new BinderCache(this);
+        this.ConstantEvaluator = new(this);
         this.CompileTimeEvaluator = new(this);
     }
 

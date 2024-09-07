@@ -65,6 +65,7 @@ public static class SyntaxFacts
         TokenKind.StarAssign => "*=",
         TokenKind.SlashAssign => "/=",
         TokenKind.Ellipsis => "...",
+        TokenKind.AtSign => "@",
         TokenKind.CMod => "%",
         TokenKind.COr => "||",
         TokenKind.CAnd => "&&",

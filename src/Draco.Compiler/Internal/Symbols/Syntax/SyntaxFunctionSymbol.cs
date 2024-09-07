@@ -25,6 +25,9 @@ internal abstract class SyntaxFunctionSymbol(
     public override Api.Semantics.Visibility Visibility =>
         GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier?.Kind);
 
+    public override ImmutableArray<AttributeInstance> Attributes => this.BindAttributesIfNeeded(this.DeclaringCompilation!);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.BindGenericParametersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
 
@@ -42,6 +45,18 @@ internal abstract class SyntaxFunctionSymbol(
     public override abstract BoundStatement Body { get; }
 
     public abstract void Bind(IBinderProvider binderProvider);
+
+    protected ImmutableArray<AttributeInstance> BindAttributesIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeDefault(ref this.attributes, () => this.BindAttributes(binderProvider));
+
+    private ImmutableArray<AttributeInstance> BindAttributes(IBinderProvider binderProvider)
+    {
+        var attrsSyntax = this.DeclaringSyntax.Attributes;
+        if (attrsSyntax is null) return [];
+
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
+        return binder.BindAttributeList(this, attrsSyntax, binderProvider.DiagnosticBag);
+    }
 
     protected ImmutableArray<TypeParameterSymbol> BindGenericParametersIfNeeded(IBinderProvider binderProvider) =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, () => this.BindGenericParameters(binderProvider));

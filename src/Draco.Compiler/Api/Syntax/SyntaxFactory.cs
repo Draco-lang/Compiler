@@ -95,9 +95,11 @@ public static partial class SyntaxFactory
     public static SeparatedSyntaxList<ParameterSyntax> ParameterList(params ParameterSyntax[] parameters) =>
         SeparatedSyntaxList(Comma, parameters);
     public static ParameterSyntax Parameter(string name, TypeSyntax type) =>
-        Parameter(null, Name(name), Colon, type);
+        Parameter([], name, type);
+    public static ParameterSyntax Parameter(IEnumerable<AttributeSyntax> attributes, string name, TypeSyntax type) =>
+        Parameter(SyntaxList(attributes), null, Name(name), Colon, type);
     public static ParameterSyntax VariadicParameter(string name, TypeSyntax type) =>
-        Parameter(Ellipsis, Name(name), Colon, type);
+        Parameter(SyntaxList<AttributeSyntax>(), Ellipsis, Name(name), Colon, type);
 
     public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
         SeparatedSyntaxList(Comma, parameters);
@@ -111,11 +113,12 @@ public static partial class SyntaxFactory
         CompilationUnit(SyntaxList(decls), EndOfInput);
 
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, IEnumerable<DeclarationSyntax> declarations) =>
-        ModuleDeclaration(Module, Name(name), OpenBrace, SyntaxList(declarations), CloseBrace);
+        ModuleDeclaration(SyntaxList<AttributeSyntax>(), null, Module, Name(name), OpenBrace, SyntaxList(declarations), CloseBrace);
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, params DeclarationSyntax[] declarations) =>
         ModuleDeclaration(name, declarations.AsEnumerable());
 
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
+        SyntaxList<AttributeSyntax>(),
         null,
         Import,
         path.Aggregate(
@@ -128,6 +131,21 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
+            [],
+            Visibility.Private,
+            name,
+            null,
+            parameters,
+            returnType,
+            body);
+
+    public static FunctionDeclarationSyntax FunctionDeclaration(
+        IEnumerable<AttributeSyntax> attributes,
+        string name,
+        SeparatedSyntaxList<ParameterSyntax> parameters,
+        TypeSyntax? returnType,
+        FunctionBodySyntax body) => FunctionDeclaration(
+            attributes,
             Visibility.Private,
             name,
             null,
@@ -141,6 +159,7 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
+            [],
             visibility,
             name,
             null,
@@ -154,6 +173,7 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
+            [],
             Visibility.Private,
             name,
             generics,
@@ -162,12 +182,14 @@ public static partial class SyntaxFactory
             body);
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
+        IEnumerable<AttributeSyntax> attributes,
         Visibility visibility,
         string name,
         SeparatedSyntaxList<GenericParameterSyntax>? generics,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
+            SyntaxList(attributes),
             VisibilityToken(visibility),
             Func,
             Name(name),
@@ -206,6 +228,7 @@ public static partial class SyntaxFactory
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) => VariableDeclaration(
+        SyntaxList<AttributeSyntax>(),
         visibility,
         isMutable ? Var : Val,
         Name(name),
@@ -213,7 +236,14 @@ public static partial class SyntaxFactory
         value is null ? null : ValueSpecifier(Assign, value),
         Semicolon);
 
-    public static LabelDeclarationSyntax LabelDeclaration(string name) => LabelDeclaration(Name(name), Colon);
+    public static LabelDeclarationSyntax LabelDeclaration(string name) =>
+        LabelDeclaration(SyntaxList<AttributeSyntax>(), null, Name(name), Colon);
+
+    public static AttributeSyntax Attribute(TypeSyntax type, params ExpressionSyntax[] args) =>
+        Attribute(type, args.AsEnumerable());
+
+    public static AttributeSyntax Attribute(TypeSyntax type, IEnumerable<ExpressionSyntax> args) =>
+        Attribute(AtSign, type, ArgumentList(OpenParen, SeparatedSyntaxList(Comma, args), CloseParen));
 
     public static InlineFunctionBodySyntax InlineFunctionBody(ExpressionSyntax expr) => InlineFunctionBody(Assign, expr, Semicolon);
 
@@ -360,6 +390,7 @@ public static partial class SyntaxFactory
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
     public static SyntaxToken Ellipsis { get; } = MakeToken(TokenKind.Ellipsis);
+    public static SyntaxToken AtSign { get; } = MakeToken(TokenKind.AtSign);
 
     private static SyntaxToken MakeToken(TokenKind tokenKind) =>
         Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);

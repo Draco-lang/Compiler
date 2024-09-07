@@ -57,6 +57,7 @@ internal sealed class TypeInstanceSymbol(
     public override bool IsDelegateType => this.GenericDefinition.IsDelegateType;
     public override bool IsInterface => this.GenericDefinition.IsInterface;
     public override bool IsArrayType => this.GenericDefinition.IsArrayType;
+    public override bool IsAttributeType => this.GenericDefinition.IsAttributeType;
     public override bool IsSealed => this.GenericDefinition.IsSealed;
     public override string Name => this.GenericDefinition.Name;
 

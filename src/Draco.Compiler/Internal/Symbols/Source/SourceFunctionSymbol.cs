@@ -29,6 +29,7 @@ internal sealed class SourceFunctionSymbol(
 
     public override void Bind(IBinderProvider binderProvider)
     {
+        this.BindAttributesIfNeeded(binderProvider);
         this.BindGenericParametersIfNeeded(binderProvider);
         this.BindParametersIfNeeded(binderProvider);
         // Force binding of parameters, as the type is lazy too

@@ -18,6 +18,26 @@ internal static class CompilerConstants
     public const string ScriptEntryPointName = ".evaluate";
 
     /// <summary>
+    /// The default member name.
+    /// </summary>
+    public const string DefaultMemberName = "Item";
+
+    /// <summary>
+    /// The enum tag field name.
+    /// </summary>
+    public const string EnumTagField = "value__";
+
+    /// <summary>
+    /// The metadata name of constructors.
+    /// </summary>
+    public const string ConstructorName = ".ctor";
+
+    /// <summary>
+    /// The prefix for operator methods.
+    /// </summary>
+    public const string OperatorPrefix = "op_";
+
+    /// <summary>
     /// The name of the module that contains compile-time code.
     /// </summary>
     public const string CompileTimeModuleName = "__CompileTime";

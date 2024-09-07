@@ -238,6 +238,22 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Nongeneric function
         case FunctionSymbol func:
         {
+            // This hack is present because of Arrays spit out stuff from their base types
+            // to take priority
+            // Which means we need to correct them here...
+            Symbol GetContainingSymbol()
+            {
+                if (func.ContainingSymbol is not TypeSymbol type) return func.ContainingSymbol!;
+                if (!type.IsArrayType) return type;
+                // Search for the function where the generic definitions are the same but the container is not the array
+                var functionInBase = type.BaseTypes
+                    .Except([type], SymbolEqualityComparer.Default)
+                    .SelectMany(b => b.Members)
+                    .OfType<FunctionSymbol>()
+                    .First(f => SymbolEqualityComparer.Default.Equals(f.GenericDefinition, func.GenericDefinition));
+                return functionInBase.ContainingSymbol!;
+            }
+
             var isInGenericInstance = func.ContainingSymbol?.IsGenericInstance ?? false;
             return this.AddMemberReference(
                 // TODO: Should a function ever have a null container?
@@ -245,7 +261,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 // This is the case for synthetized ctor functions for example
                 parent: func.ContainingSymbol is null
                     ? this.GetModuleReferenceHandle(this.assembly.RootModule)
-                    : this.GetEntityHandle(func.ContainingSymbol),
+                    : this.GetEntityHandle(GetContainingSymbol()),
                 name: func.Name,
                 signature: this.EncodeBlob(e =>
                 {

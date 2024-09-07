@@ -966,10 +966,10 @@ public sealed class CompilingCodeTests
     public void ForLoopOverArray()
     {
         var assembly = CompileToAssembly("""
-            func concat(os: Array<object>) {
+            func concat(os: Array<object>): string {
                 var result = System.Text.StringBuilder();
                 for (o in os) result.Append(o);
-                result.ToString();
+                return result.ToString();
             }
             """);
 

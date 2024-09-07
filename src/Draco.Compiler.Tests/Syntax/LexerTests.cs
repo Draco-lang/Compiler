@@ -1132,6 +1132,7 @@ public sealed class LexerTests
     [InlineData(".", TokenKind.Dot)]
     [InlineData(":", TokenKind.Colon)]
     [InlineData(";", TokenKind.Semicolon)]
+    [InlineData("@", TokenKind.AtSign)]
     [Trait("Feature", "Punctuations")]
     public void TestPunctuation(string text, TokenKind tokenKind)
     {

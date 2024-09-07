@@ -146,13 +146,22 @@ internal static class SyntaxErrors
         code: Code(15));
 
     /// <summary>
-    /// There is a visibility modifier before an import statement.
+    /// There is a visibility modifier before an element.
     /// </summary>
-    public static readonly DiagnosticTemplate UnexpectedVisibilityModifierBeforeImport = DiagnosticTemplate.Create(
-        title: "unexpected visibility modifier before import statement",
+    public static readonly DiagnosticTemplate UnexpectedVisibilityModifier = DiagnosticTemplate.Create(
+        title: "unexpected visibility modifier",
         severity: DiagnosticSeverity.Error,
-        format: "unexpected {0} before import statement",
+        format: "unexpected visibility modifier before {0}",
         code: Code(16));
+
+    /// <summary>
+    /// There is a list of attributes before an element.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedAttributeList = DiagnosticTemplate.Create(
+        title: "unexpected attribute list",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected attribute list before {0}",
+        code: Code(17));
 
     /// <summary>
     /// A C-heritage symbol is used instead of the appropriate keyword.
@@ -161,5 +170,5 @@ internal static class SyntaxErrors
         title: "C heritage symbol",
         severity: DiagnosticSeverity.Error,
         format: "{0} is not a valid {1} in Draco, use {2} instead",
-        code: Code(17));
+        code: Code(18));
 }

@@ -198,6 +198,36 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     public ArrayConstructorSymbol ArrayCtor => LazyInitializer.EnsureInitialized(ref this.arrayCtor, () => new(this.ArrayType));
     private ArrayConstructorSymbol? arrayCtor;
 
+    /// <summary>
+    /// Translates a <see cref="Type"/> to a <see cref="TypeSymbol"/>, if it's a well-known primitive type.
+    /// </summary>
+    /// <param name="type">The reflected type to translate.</param>
+    /// <returns>The translated type symbol, or <see langword="null"/> if it's not a translatable primitive type.</returns>
+    public TypeSymbol? TranslatePrmitive(Type type)
+    {
+        if (type == typeof(byte)) return this.SystemByte;
+        if (type == typeof(ushort)) return this.SystemUInt16;
+        if (type == typeof(uint)) return this.SystemUInt32;
+        if (type == typeof(ulong)) return this.SystemUInt64;
+
+        if (type == typeof(sbyte)) return this.SystemSByte;
+        if (type == typeof(short)) return this.SystemInt16;
+        if (type == typeof(int)) return this.SystemInt32;
+        if (type == typeof(long)) return this.SystemInt64;
+
+        if (type == typeof(float)) return this.SystemSingle;
+        if (type == typeof(double)) return this.SystemDouble;
+
+        if (type == typeof(bool)) return this.SystemBoolean;
+        if (type == typeof(char)) return this.SystemChar;
+
+        if (type == typeof(string)) return this.SystemString;
+        if (type == typeof(object)) return this.SystemObject;
+
+        if (type == typeof(Type)) return this.SystemType;
+
+        return null;
+    }
 
     #region Loader Methods
     public MetadataTypeSymbol GetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)

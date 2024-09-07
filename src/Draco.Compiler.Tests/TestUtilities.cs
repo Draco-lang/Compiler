@@ -84,7 +84,7 @@ internal static class TestUtilities
         return (TSymbol)symbolBase.Symbol;
     }
 
-    public static TMember GetMember<TMember>(Symbol parent, string memberName)
+    public static TMember AssertMember<TMember>(Symbol parent, string memberName)
         where TMember : Symbol
     {
         var member = parent.Members.OfType<TMember>().Where(x => x.Name == memberName).FirstOrDefault();

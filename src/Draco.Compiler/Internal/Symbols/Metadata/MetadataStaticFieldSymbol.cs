@@ -1,7 +1,9 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -12,10 +14,17 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
+
+    public override bool IsSpecialName => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.SpecialName);
 
     public override string Name => this.MetadataReader.GetString(this.fieldDefinition.Name);
 
@@ -74,8 +83,11 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
         this.fieldDefinition = fieldDefinition;
     }
 
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(this.fieldDefinition.GetCustomAttributes(), this);
+
     private TypeSymbol BuildType() =>
-        this.fieldDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
+        this.fieldDefinition.DecodeSignature(this.Assembly.DeclaringCompilation.TypeProvider, this);
 
     private object? BuildLiteralValue()
     {
@@ -90,5 +102,5 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
+        MetadataDocumentation.GetDocumentation(this);
 }

@@ -9,6 +9,7 @@ internal enum DiagnosticCategory
     Syntax = 1,
     SymbolResolution = 2,
     TypeChecking = 3,
-    FlowAnalysis = 4,
-    Codegen = 5,
+    ConstantEvaluation = 4,
+    FlowAnalysis = 5,
+    Codegen = 6,
 }

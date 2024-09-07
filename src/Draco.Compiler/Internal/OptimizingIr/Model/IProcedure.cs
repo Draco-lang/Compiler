@@ -34,6 +34,11 @@ internal interface IProcedure
     public IBasicBlock Entry { get; }
 
     /// <summary>
+    /// The attributes on this procedure.
+    /// </summary>
+    public IReadOnlyList<AttributeInstance> Attributes { get; }
+
+    /// <summary>
     /// The generic parameters on this procedure.
     /// </summary>
     public IReadOnlyList<TypeParameterSymbol> Generics { get; }

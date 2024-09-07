@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using Draco.Compiler.Api;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -13,6 +14,8 @@ internal sealed class MetadataNamespaceSymbol(
     Symbol containingSymbol,
     NamespaceDefinition namespaceDefinition) : ModuleSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
     public override IEnumerable<Symbol> Members =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
@@ -55,7 +58,7 @@ internal sealed class MetadataNamespaceSymbol(
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
+            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol));
         }
 
         // Done
@@ -83,6 +86,6 @@ internal sealed class MetadataNamespaceSymbol(
             if (current is null) return null;
         }
 
-        return current.Members.SingleOrDefault(m => MetadataSymbol.GetPrefixedDocumentationName(m) == prefixedDocumentationName);
+        return current.Members.SingleOrDefault(m => MetadataDocumentation.GetPrefixedDocumentationName(m) == prefixedDocumentationName);
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -14,14 +15,21 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataStaticClassSymbol(
     Symbol containingSymbol,
-    TypeDefinition typeDefinition) : ModuleSymbol, IMetadataSymbol, IMetadataClass
+    TypeDefinition typeDefinition) : ModuleSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override IEnumerable<Symbol> Members =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 
     public override string Name => this.MetadataName;
     public override string MetadataName => this.MetadataReader.GetString(typeDefinition.Name);
+    public MetadataReader MetadataReader => this.Assembly.MetadataReader;
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
 
     public override Api.Semantics.Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
@@ -31,22 +39,12 @@ internal sealed class MetadataStaticClassSymbol(
     internal override string RawDocumentation => LazyInitializer.EnsureInitialized(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
-    public override Symbol ContainingSymbol { get; } = containingSymbol;
-
     // NOTE: thread-safety does not matter, same instance
     public MetadataAssemblySymbol Assembly => this.assembly ??= this.AncestorChain.OfType<MetadataAssemblySymbol>().First();
     private MetadataAssemblySymbol? assembly;
 
-    public MetadataReader MetadataReader => this.Assembly.MetadataReader;
-
-    public string? DefaultMemberAttributeName =>
-        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(typeDefinition, this.Assembly.Compilation, this.MetadataReader));
-
-    public IEnumerable<Symbol> AdditionalSymbols =>
-        InterlockedUtils.InitializeDefault(ref this.additionalSymbols, this.BuildAdditionalSymbols);
-    private ImmutableArray<Symbol> additionalSymbols;
-
-    private string? defaultMemberAttributeName;
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(typeDefinition.GetCustomAttributes(), this);
 
     private ImmutableArray<Symbol> BuildMembers()
     {
@@ -64,7 +62,7 @@ internal sealed class MetadataStaticClassSymbol(
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
+            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol));
         }
 
         // Methods
@@ -118,8 +116,5 @@ internal sealed class MetadataStaticClassSymbol(
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
-
-    private ImmutableArray<Symbol> BuildAdditionalSymbols() =>
-        MetadataSymbol.GetAdditionalSymbols(this, typeDefinition, this.MetadataReader).ToImmutableArray();
+        MetadataDocumentation.GetDocumentation(this);
 }

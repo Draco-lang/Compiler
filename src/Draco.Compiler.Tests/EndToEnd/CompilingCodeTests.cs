@@ -961,4 +961,23 @@ public sealed class CompilingCodeTests
         Assert.False(result);
         Assert.Equal("A\nB\n", stringWriter.ToString(), ignoreLineEndingDifferences: true);
     }
+
+    [Fact]
+    public void ForLoopOverArray()
+    {
+        var assembly = CompileToAssembly("""
+            func concat(os: Array<object>): string {
+                var result = System.Text.StringBuilder();
+                for (o in os) result.Append(o);
+                return result.ToString();
+            }
+            """);
+
+        var result = Invoke<string>(
+            assembly: assembly,
+            methodName: "concat",
+            args: [new object[] { "Hello", ", ", "World!" }]);
+
+        Assert.Equal("Hello, World!", result);
+    }
 }

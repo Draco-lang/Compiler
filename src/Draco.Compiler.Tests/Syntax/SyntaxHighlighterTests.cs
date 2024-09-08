@@ -12,6 +12,7 @@ public sealed class SyntaxHighlighterTests
         import System.Collections.Generic;
 
         /// Hello doc comment
+        @ObsoleteAttribute("old method")
         func hashThem(x: int32, y: int32): int32 {
             var h: HashCode = default<HashCode>();
             h.Add(x);
@@ -51,6 +52,15 @@ public sealed class SyntaxHighlighterTests
         (";", SyntaxColoring.Punctuation),
 
         ("/// Hello doc comment", SyntaxColoring.DocumentationComment),
+
+        ("@", SyntaxColoring.Punctuation),
+        ("ObsoleteAttribute", SyntaxColoring.ReferenceTypeName),
+        ("(", SyntaxColoring.Parenthesis),
+        ("\"", SyntaxColoring.StringQuotes),
+        ("old method", SyntaxColoring.StringContent),
+        ("\"", SyntaxColoring.StringQuotes),
+        (")", SyntaxColoring.Parenthesis),
+
         ("func", SyntaxColoring.DeclarationKeyword),
         ("hashThem", SyntaxColoring.FunctionName),
         ("(", SyntaxColoring.Parenthesis),

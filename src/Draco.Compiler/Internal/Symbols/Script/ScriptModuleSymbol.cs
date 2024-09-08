@@ -134,7 +134,8 @@ internal sealed class ScriptModuleSymbol(
 
     private Symbol? BuildMember(DeclarationSyntax decl) => decl switch
     {
-        ImportDeclarationSyntax => null,
+        ImportDeclarationSyntax
+     or UnexpectedDeclarationSyntax => null,
         FunctionDeclarationSyntax f => this.BuildFunction(f),
         VariableDeclarationSyntax v => this.BuildGlobal(v),
         ModuleDeclarationSyntax m => this.BuildModule(m),

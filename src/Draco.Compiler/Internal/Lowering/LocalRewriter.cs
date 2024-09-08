@@ -332,12 +332,12 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             statements:
             [
                 ExpressionStatement(AssignmentExpression(
-                            compoundOperator: null,
-                            left: LocalLvalue(enumerator),
-                            right: CallExpression(
-                                receiver: node.Sequence,
-                                method: node.GetEnumeratorMethod,
-                                arguments: []))),
+                    compoundOperator: null,
+                    left: LocalLvalue(enumerator),
+                    right: CallExpression(
+                        receiver: node.Sequence,
+                        method: node.GetEnumeratorMethod,
+                        arguments: []))),
                 ExpressionStatement(WhileExpression(
                     condition: CallExpression(
                         receiver: LocalExpression(enumerator),
@@ -348,11 +348,11 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
                         statements:
                         [
                             ExpressionStatement(AssignmentExpression(
-                                                    compoundOperator: null,
-                                                    left: LocalLvalue(node.Iterator),
-                                                    right: PropertyGetExpression(
-                                                        receiver: LocalExpression(enumerator),
-                                                        getter: currentProp.Getter))),
+                                compoundOperator: null,
+                                left: LocalLvalue(node.Iterator),
+                                right: PropertyGetExpression(
+                                    receiver: LocalExpression(enumerator),
+                                    getter: currentProp.Getter))),
                             ExpressionStatement(node.Then),
                         ],
                         value: BoundUnitExpression.Default),

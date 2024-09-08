@@ -67,6 +67,11 @@
         "language": "draco",
         "scopeName": "source.draco",
         "path": "./syntaxes/draco.tmLanguage.json"
+      },
+      {
+        "language": "msbuild-draco",
+        "scopeName": "text.xml.msbuild-draco",
+        "path": "./syntaxes/msbuild-draco.tmLanguage.json"
       }
     ],
     "commands": [

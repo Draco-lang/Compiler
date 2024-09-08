@@ -111,7 +111,7 @@ internal sealed class SourceFunctionSymbol : FunctionSymbol, ISourceSymbol
         if (this.DeclaringSyntax.Generics is null) return [];
 
         var genericParamSyntaxes = this.DeclaringSyntax.Generics.Parameters.Values.ToList();
-        var genericParams = ImmutableArray.CreateBuilder<TypeParameterSymbol>();
+        var genericParams = ImmutableArray.CreateBuilder<TypeParameterSymbol>(genericParamSyntaxes.Count);
 
         foreach (var genericParamSyntax in genericParamSyntaxes)
         {

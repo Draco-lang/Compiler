@@ -99,10 +99,10 @@ public static partial class SyntaxFactory
     public static ParameterSyntax VariadicParameter(string name, TypeSyntax type) =>
         Parameter(Ellipsis, Name(name), Colon, type);
 
-    public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
-        SeparatedSyntaxList(Comma, parameters);
-    public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(params GenericParameterSyntax[] parameters) =>
-        SeparatedSyntaxList(Comma, parameters);
+    public static GenericParameterListSyntax GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
+        GenericParameterList(OpenBracket, SeparatedSyntaxList(Comma, parameters), CloseBracket);
+    public static GenericParameterListSyntax GenericParameterList(params GenericParameterSyntax[] parameters) =>
+        GenericParameterList(OpenBracket, SeparatedSyntaxList(Comma, parameters), CloseBracket);
     public static GenericParameterSyntax GenericParameter(string name) => GenericParameter(Name(name));
 
     public static CompilationUnitSyntax CompilationUnit(IEnumerable<DeclarationSyntax> decls) =>
@@ -150,7 +150,7 @@ public static partial class SyntaxFactory
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
-        SeparatedSyntaxList<GenericParameterSyntax>? generics,
+        GenericParameterListSyntax? generics,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
@@ -164,14 +164,14 @@ public static partial class SyntaxFactory
     public static FunctionDeclarationSyntax FunctionDeclaration(
         Visibility visibility,
         string name,
-        SeparatedSyntaxList<GenericParameterSyntax>? generics,
+        GenericParameterListSyntax? generics,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
             VisibilityToken(visibility),
             Func,
             Name(name),
-            generics is null ? null : GenericParameterList(LessThan, generics, GreaterThan),
+            generics,
             OpenParen,
             parameters,
             CloseParen,
@@ -309,6 +309,18 @@ public static partial class SyntaxFactory
             SeparatedSyntaxList(Comma, typeParameters),
             GreaterThan);
 
+    public static ClassDeclarationSyntax ClassDeclaration(
+        string name,
+        GenericParameterListSyntax? generics,
+        IEnumerable<DeclarationSyntax> members) => ClassDeclaration(
+            null,
+            null,
+            Class,
+            Name(name),
+            generics,
+            BlockClassBody(OpenBrace, SyntaxList(members), CloseBrace)
+    );
+
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, SeparatedSyntaxList<ExpressionSyntax> indices) => IndexExpression(indexed, OpenBracket, indices, CloseBracket);
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) => IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 
@@ -360,6 +372,7 @@ public static partial class SyntaxFactory
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
     public static SyntaxToken Ellipsis { get; } = MakeToken(TokenKind.Ellipsis);
+    public static SyntaxToken Class { get; } = MakeToken(TokenKind.KeywordClass);
 
     private static SyntaxToken MakeToken(TokenKind tokenKind) =>
         Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);

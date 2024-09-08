@@ -102,6 +102,11 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// </summary>
     public virtual bool IsConstructor => false;
 
+    /// <summary>
+    /// True, if this is a nested function.
+    /// </summary>
+    public bool IsNested => this.ContainingSymbol is FunctionSymbol;
+
     public override bool IsSpecialName => this.IsConstructor;
 
     // NOTE: We override for covariant return type
@@ -127,9 +132,13 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     public virtual CodegenDelegate? Codegen => null;
 
     /// <summary>
-    /// True, if this function must be inlined.
+    /// Retrieves the nested name of this function, which prepends the containing function names.
     /// </summary>
-    public virtual bool ForceInline => false;
+    public string NestedName => this.ContainingSymbol switch
+    {
+        FunctionSymbol f => $"{f.NestedName}.{this.Name}",
+        _ => this.Name,
+    };
 
     public override string ToString()
     {

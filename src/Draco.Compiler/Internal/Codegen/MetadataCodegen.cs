@@ -238,13 +238,25 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Nongeneric function
         case FunctionSymbol func:
         {
-            // This hack is present because of Arrays spit out stuff from their base types
-            // to take priority
-            // Which means we need to correct them here...
             Symbol GetContainingSymbol()
             {
+                if (func.IsNested)
+                {
+                    // We can't have nested functions represented in metadata directly, so we'll climb up the parent chain
+                    // To find the first non-function container
+                    var current = func.ContainingSymbol;
+                    while (current is FunctionSymbol func)
+                    {
+                        current = func.ContainingSymbol;
+                    }
+                    return current!;
+                }
+
                 if (func.ContainingSymbol is not TypeSymbol type) return func.ContainingSymbol!;
                 if (!type.IsArrayType) return type;
+                // NOTE: This hack is present because of Arrays spit out stuff from their base types
+                // to take priority
+                // Which means we need to correct them here...
                 // Search for the function where the generic definitions are the same but the container is not the array
                 var functionInBase = type.BaseTypes
                     .Except([type], SymbolEqualityComparer.Default)
@@ -262,7 +274,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 parent: func.ContainingSymbol is null
                     ? this.GetModuleReferenceHandle(this.assembly.RootModule)
                     : this.GetEntityHandle(GetContainingSymbol()),
-                name: func.Name,
+                name: func.NestedName,
                 signature: this.EncodeBlob(e =>
                 {
                     // In generic instances we still need to reference the generic types

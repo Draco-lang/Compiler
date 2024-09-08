@@ -366,7 +366,7 @@ internal sealed class Parser(
             return this.ParseImportDeclaration(attributes, visibility);
 
         case TokenKind.KeywordFunc:
-            return this.ParseFunctionDeclaration(attributes, visibility);
+            return this.ParseFunctionDeclaration(attributes, visibility, context);
 
         case TokenKind.KeywordModule:
             return this.ParseModuleDeclaration(attributes, visibility, context);
@@ -560,9 +560,19 @@ internal sealed class Parser(
     /// </summary>
     /// <param name="attributes">The attributes on the function.</param>
     /// <param name="visibility">The visibility modifier on the function.</param>
+    /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
-    private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxList<AttributeSyntax>? attributes, SyntaxToken? visibility)
+    private FunctionDeclarationSyntax ParseFunctionDeclaration(
+        SyntaxList<AttributeSyntax>? attributes,
+        SyntaxToken? visibility,
+        DeclarationContext context)
     {
+        if (context == DeclarationContext.Local && visibility is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "function declaration");
+            this.AddDiagnostic(visibility, info);
+        }
+
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
         var name = this.Expect(TokenKind.Identifier);

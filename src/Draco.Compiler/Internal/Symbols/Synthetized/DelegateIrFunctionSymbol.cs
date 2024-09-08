@@ -63,7 +63,6 @@ internal sealed class DelegateIrFunctionSymbol : FunctionSymbol
 
     public override TypeSymbol ReturnType { get; }
     public override bool IsSpecialName => true;
-    public override bool ForceInline => true;
 
     public override string Name { get; }
 

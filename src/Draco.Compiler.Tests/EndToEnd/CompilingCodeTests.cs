@@ -980,4 +980,23 @@ public sealed class CompilingCodeTests
 
         Assert.Equal("Hello, World!", result);
     }
+
+    [Fact]
+    public void LocalFunctions()
+    {
+        var assembly = CompileToAssembly("""
+            func outer(x: int32): int32 {
+                func inner(x: int32, y: int32): int32 = x + y;
+
+                return inner(x, 1);
+            }
+            """);
+
+        var result = Invoke<int>(
+            assembly: assembly,
+            methodName: "outer",
+            args: [2]);
+
+        Assert.Equal(3, result);
+    }
 }

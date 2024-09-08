@@ -1990,4 +1990,45 @@ public sealed class ParserTests
             }
         }
     }
+
+    [Fact]
+    public void TestLocalFunctionMustNotHaveVisibilityModifier()
+    {
+        this.ParseDeclaration("""
+            func foo() {
+                public func bar() {}
+            }
+            """);
+
+        this.N<FunctionDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordFunc);
+            this.T(TokenKind.Identifier, "foo");
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
+            this.T(TokenKind.ParenClose);
+            this.N<BlockFunctionBodySyntax>();
+            {
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
+                this.N<DeclarationStatementSyntax>();
+                this.N<FunctionDeclarationSyntax>();
+                {
+                    this.InvalidT(TokenKind.KeywordPublic, SyntaxErrors.UnexpectedVisibilityModifier);
+                    this.T(TokenKind.KeywordFunc);
+                    this.T(TokenKind.Identifier, "bar");
+                    this.T(TokenKind.ParenOpen);
+                    this.N<SeparatedSyntaxList<ParameterSyntax>>();
+                    this.T(TokenKind.ParenClose);
+                    this.N<BlockFunctionBodySyntax>();
+                    {
+                        this.T(TokenKind.CurlyOpen);
+                        this.N<SyntaxList<StatementSyntax>>();
+                        this.T(TokenKind.CurlyClose);
+                    }
+                }
+                this.T(TokenKind.CurlyClose);
+            }
+        }
+    }
 }

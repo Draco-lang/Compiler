@@ -35,11 +35,31 @@
         "extensions": [
           ".draco"
         ],
-        "configuration": "./language-configuration.json",
+        "configuration": "./draco-language-configuration.json",
         "icon": {
           "light": "./resources/draco-source-icon-light.svg",
           "dark": "./resources/draco-source-icon-dark.svg"
         }
+      },
+      {
+        "id": "msbuild-draco",
+        "aliases": [
+          "msbuild",
+          "MSBuild"
+        ],
+        "extensions": [
+          ".dracoproj"
+        ],
+        "configuration": "./msbuild-language-configuration.json",
+        "icon": {
+          "light": "./resources/draco-project-icon-light.svg",
+          "dark": "./resources/draco-project-icon-dark.svg"
+        }
+      }
+    ],
+    "xmlLanguageParticipants": [
+      {
+        "languageId": "msbuild-draco"
       }
     ],
     "grammars": [

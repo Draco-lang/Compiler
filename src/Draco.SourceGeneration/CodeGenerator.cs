@@ -15,8 +15,6 @@ internal static class CodeGenerator
         Render("RedSyntaxTree.sbncs", tree, cancellationToken);
     public static string GenerateBoundTree(BoundTree.Tree tree, CancellationToken cancellationToken) =>
         Render("BoundTree.sbncs", tree, cancellationToken);
-    public static string GenerateOneOf(OneOf.Config config, CancellationToken cancellationToken) =>
-        Render("OneOf.sbncs", config, cancellationToken);
     public static string GenerateLspModel(Lsp.CsModel.Model model, CancellationToken cancellationToken) =>
         Render("LspModel.sbncs", model, cancellationToken);
     public static string GenerateDapModel(Dap.CsModel.Model model, CancellationToken cancellationToken) =>

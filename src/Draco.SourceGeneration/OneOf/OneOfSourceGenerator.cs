@@ -15,7 +15,7 @@ public sealed class OneOfSourceGenerator : XmlSourceGenerator
     {
         var domainModel = Config.FromXml((XmlConfig)xmlModel);
 
-        var oneOfCode = CodeGenerator.GenerateOneOf(domainModel, cancellationToken);
+        var oneOfCode = Template.Generate(domainModel);
 
         return
         [

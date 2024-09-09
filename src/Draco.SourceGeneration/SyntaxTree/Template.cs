@@ -13,6 +13,33 @@ namespace Draco.Compiler.Internal.Syntax;
 
 {{ForEach(tree.Nodes, node => GreenNodeClass(tree, node))}}
 
+/// <summary>
+/// Visitor base class for <see cref="{{tree.Root.Name}}"/>.
+/// </summary>
+internal abstract partial class SyntaxVisitor
+{
+    {{Visitors(tree.Nodes, "void", null)}}
+}
+
+/// <summary>
+/// Visitor base class for <see cref="{{tree.Root.Name}}"/>.
+/// </summary>
+/// <typeparam name="TResult">
+/// The return type of the visitor methods.
+/// </typeparam>
+internal abstract partial class SyntaxVisitor<TResult>
+{
+    {{Visitors(tree.Nodes, "TResult", "default!")}}
+}
+
+/// <summary>
+/// A base class for rewriting <see cref="{{tree.Root.Name}}"/>.
+/// </summary>
+internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}}>
+{
+    {{Rewriters(tree)}}
+}
+
 #nullable restore
 """);
 
@@ -47,7 +74,30 @@ namespace Draco.Compiler.Internal.Syntax;
             {{ForEach(node.Fields, field => $"this.{field.Name} = {CamelCase(field.Name)};")}}
         }
 
-        // TODO: Rest
+        {{When(node.IsAbstract,
+            whenTrue: $"""
+                public abstract {When(node.Base is not null, "override")} Api.Syntax.{node.Name} ToRedNode(
+                    Api.Syntax.SyntaxTree tree, Api.Syntax.{tree.Root.Name}? parent, int fullPosition);
+                """,
+            whenFalse: $"""
+                public override Api.Syntax.{node.Name} ToRedNode(
+                    Api.Syntax.SyntaxTree tree, Api.Syntax.{tree.Root.Name}? parent, int fullPosition) =>
+                    new Api.Syntax.{node.Name}(tree, parent, fullPosition, this);
+                """)}}
+
+        {{When(node.IsAbstract && node.Base is null,
+            whenTrue: """
+                public abstract void Accept(SyntaxVisitor visitor);
+                public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
+                """,
+            whenFalse: $"""
+                public override void Accept(SyntaxVisitor visitor) =>
+                    visitor.{VisitorName(node)}(this);
+                public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+                    visitor.{VisitorName(node)}(this);
+                """)}}
+
+        // TODO: Update functions
     }
     """);
 
@@ -64,6 +114,8 @@ namespace Draco.Compiler.Internal.Syntax;
         }
     }
     """);
+
+    private static string VisitorName(Node node) => $"Visit{RemoveSuffix(node.Name, "Syntax")}";
 
     private static string ClassHeader(Node node) =>
         $"{AbstractSealed(node)} partial class {node.Name} {Base(node)}";

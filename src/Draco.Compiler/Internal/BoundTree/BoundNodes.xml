@@ -175,7 +175,7 @@
   </Node>
 
   <Node Name="BoundTypeExpression" Base="BoundExpression">
-    <Field Name="Type" Type="TypeSymbol" />
+    <Field Name="Type" Type="TypeSymbol" Shadow="true" />
   </Node>
 
   <Node Name="BoundLocalExpression" Base="BoundExpression">

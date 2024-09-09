@@ -54,7 +54,7 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
     private static string GenerateClass(Node node) => $$"""
     internal {{ClassHeader(node)}}
     {
-        {{ForEach(node.Fields, field => Field(field))}}
+        {{ForEach(node.Fields, Field)}}
 
         {{ProtectedPublic(node)}} {{node.Name}}(
             Api.Syntax.SyntaxNode? syntax
@@ -174,7 +174,7 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
     private static string Nullable(Field field) => When(field.IsNullable, "?");
 
     private static string Field(Field field) => $$"""
-        public {{When(field.Override, "override")}} {{field.Type}} {{field.Name}} { get; }
+        {{When(field.Shadow, "new")}} public {{When(field.Override, "override")}} {{field.Type}} {{field.Name}} { get; }
         """;
 
     private static string VisitorName(Node node) => $"Visit{RemovePrefix(node.Name, "Bound")}";

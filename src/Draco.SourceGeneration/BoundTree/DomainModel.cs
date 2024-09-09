@@ -12,7 +12,7 @@ public sealed class Tree(Node root, IList<Node> nodes)
         ValidateXml(tree);
 
         Field MakeField(XmlField field) =>
-            new(field.Name, field.Type, field.Override);
+            new(field.Name, field.Type, field.Override, field.Shadow);
 
         Node MakePredefinedNode(XmlPredefinedNode node) =>
             new(node.Name, GetBaseByName(node.Base), false);
@@ -103,11 +103,12 @@ public sealed class Node
     }
 }
 
-public sealed class Field(string name, string type, bool @override)
+public sealed class Field(string name, string type, bool @override, bool shadow)
 {
     public string Name { get; } = name;
     public string Type { get; } = type;
     public bool Override { get; } = @override;
+    public bool Shadow { get; } = shadow;
     public bool IsNullable => this.Type.EndsWith("?");
     public string NonNullableType => this.IsNullable
         ? this.Type[..^1]

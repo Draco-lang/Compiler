@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -11,6 +12,22 @@ namespace Draco.SourceGeneration;
 /// </summary>
 internal static class TemplateUtils
 {
+    private static readonly string[] keywords =
+    [
+        "if",
+        "else",
+        "while",
+        "for",
+        "foreach",
+        "params",
+        "ref",
+        "out",
+        "operator",
+        "object",
+        "bool",
+        "string"
+    ];
+
     /// <summary>
     /// Formats C# code.
     /// </summary>
@@ -21,6 +38,27 @@ internal static class TemplateUtils
         .NormalizeWhitespace()
         .GetText()
         .ToString();
+
+    /// <summary>
+    /// Converts a name to a valid C# identifier in camel case.
+    /// </summary>
+    /// <param name="name">The name to convert.</param>
+    /// <returns>The converted name in camel-case and escaped if necessary.</returns>
+    public static string CamelCase(string name)
+    {
+        if (name.Length == 0) return name;
+        var result = $"{char.ToLower(name[0])}{name[1..]}";
+        return EscapeKeyword(result);
+    }
+
+    /// <summary>
+    /// Escapes a C# keyword, if necessary.
+    /// </summary>
+    /// <param name="name">The name to escape.</param>
+    /// <returns>The escaped name.</returns>
+    public static string EscapeKeyword(string name) => keywords.Contains(name)
+        ? $"@{name}"
+        : name;
 
     /// <summary>
     /// Loops over a range and applies the iteration function, concatenating the results.

@@ -81,6 +81,8 @@ public sealed class Tree(Node root, IList<Node> nodes)
 
     public Node Root { get; } = root;
     public IList<Node> Nodes { get; } = nodes;
+
+    public bool HasNodeWithName(string name) => this.Nodes.Any(n => n.Name == name);
 }
 
 public sealed class Node

@@ -40,6 +40,26 @@ internal static class TemplateUtils
         .ToString();
 
     /// <summary>
+    /// Removes a prefix from a string, if it starts with the prefix.
+    /// </summary>
+    /// <param name="str">The string to remove the prefix from.</param>
+    /// <param name="prefix">The prefix to remove.</param>
+    /// <returns>The string without the prefix.</returns>
+    public static string RemovePrefix(string str, string prefix) => str.StartsWith(prefix)
+        ? str[prefix.Length..]
+        : str;
+
+    /// <summary>
+    /// Removes a suffix from a string, if it ends with the suffix.
+    /// </summary>
+    /// <param name="str">The string to remove the suffix from.</param>
+    /// <param name="suffix">The suffix to remove.</param>
+    /// <returns>The string without the suffix.</returns>
+    public static string RemoveSuffix(string str, string suffix) => str.EndsWith(suffix)
+        ? str[..^suffix.Length]
+        : str;
+
+    /// <summary>
     /// Converts a name to a valid C# identifier in camel case.
     /// </summary>
     /// <param name="name">The name to convert.</param>
@@ -59,6 +79,34 @@ internal static class TemplateUtils
     public static string EscapeKeyword(string name) => keywords.Contains(name)
         ? $"@{name}"
         : name;
+
+    /// <summary>
+    /// Transforms a nullable value to a string, using the provided function.
+    /// </summary>
+    /// <typeparam name="T">The type of the nullable value.</typeparam>
+    /// <param name="value">The nullable value.</param>
+    /// <param name="func">The function to apply to the value.</param>
+    /// <returns>The result of the function or an empty string if the value is null.</returns>
+    public static string NotNull<T>(T? value, Func<T, string> func) where T : class =>
+        value is null ? string.Empty : func(value);
+
+    /// <summary>
+    /// Emits the value if the condition is true.
+    /// </summary>
+    /// <param name="condition">The condition.</param>
+    /// <param name="value">The value to emit.</param>
+    /// <returns>The value if the condition is true, otherwise an empty string.</returns>
+    public static string When(bool condition, string value) => When(condition, value, string.Empty);
+
+    /// <summary>
+    /// Emits the value if the condition is true, otherwise the alternative value.
+    /// </summary>
+    /// <param name="condition">The condition.</param>
+    /// <param name="whenTrue">The value to emit if the condition is true.</param>
+    /// <param name="whenFalse">The value to emit if the condition is false.</param>
+    /// <returns>The value if the condition is true, otherwise the alternative value.</returns>
+    public static string When(bool condition, string whenTrue, string whenFalse) =>
+        condition ? whenTrue : whenFalse;
 
     /// <summary>
     /// Loops over a range and applies the iteration function, concatenating the results.

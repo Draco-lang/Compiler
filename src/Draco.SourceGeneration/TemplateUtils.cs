@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -79,6 +80,35 @@ internal static class TemplateUtils
     public static string EscapeKeyword(string name) => keywords.Contains(name)
         ? $"@{name}"
         : name;
+
+    /// <summary>
+    /// Unescapes a given text to be a valid C# line-string literal.
+    /// </summary>
+    /// <param name="text">The text to unescape.</param>
+    /// <returns>The unescaped version of <paramref name="text"/>.</returns>
+    public static string Unescape(string text)
+    {
+        var result = new StringBuilder();
+        foreach (var ch in text)
+        {
+            result.Append(ch switch
+            {
+                '\"' => @"\""",
+                '\'' => @"\'",
+                '\\' => @"\\",
+                '\a' => @"\a",
+                '\b' => @"\b",
+                '\f' => @"\f",
+                '\n' => @"\n",
+                '\r' => @"\r",
+                '\t' => @"\t",
+                '\v' => @"\v",
+                '\0' => @"\0",
+                _ => ch,
+            });
+        }
+        return result.ToString();
+    }
 
     /// <summary>
     /// Transforms a nullable value to a string, using the provided function.
@@ -162,6 +192,26 @@ internal static class TemplateUtils
         {
             if (!first) result.Append(separator);
             result.Append(iteration(item));
+            first = false;
+        }
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Loops over the lines of a string and applies the function, concatenating the results.
+    /// </summary>
+    /// <param name="str">The string to loop over.</param>
+    /// <param name="func">The function to apply to each line.</param>
+    /// <returns>The concatenated results of the functions line by line.</returns>
+    public static string ForEachLine(string str, Func<string, string> func)
+    {
+        var result = new StringBuilder();
+        var reader = new StringReader(str);
+        var first = true;
+        while (reader.ReadLine() is { } line)
+        {
+            if (!first) result.AppendLine();
+            result.Append(func(line));
             first = false;
         }
         return result.ToString();

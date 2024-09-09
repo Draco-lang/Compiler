@@ -35,4 +35,11 @@ public sealed class Property : Declaration
         string => "String",
         _ => throw new ArgumentOutOfRangeException(),
     };
+
+    /// <summary>
+    /// Checks, if the property is required.
+    /// </summary>
+    /// <param name="settable">True if the property is settable.</param>
+    /// <returns>True if the property is required.</returns>
+    public bool IsRequired(bool settable) => !this.OmitIfNull && this.Value is null && settable;
 }

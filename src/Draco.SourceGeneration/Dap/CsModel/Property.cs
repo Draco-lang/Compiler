@@ -28,15 +28,6 @@ public sealed class Property : Declaration
     public object? Value { get; set; }
 
     /// <summary>
-    /// A discriminator string for the value.
-    /// </summary>
-    public string ValueDiscriminator => this.Value switch
-    {
-        string => "String",
-        _ => throw new ArgumentOutOfRangeException(),
-    };
-
-    /// <summary>
     /// True, if the property is required.
     /// </summary>
     public bool IsRequired => !this.OmitIfNull && this.Value is null;

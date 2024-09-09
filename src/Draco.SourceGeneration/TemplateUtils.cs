@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -45,6 +46,37 @@ internal static class TemplateUtils
         {
             if (i > range.Start.Value) result.Append(separator);
             result.Append(iteration(i));
+        }
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Loops over a collection and applies the iteration function, concatenating the results.
+    /// </summary>
+    /// <typeparam name="T">The type of the items in the collection.</typeparam>
+    /// <param name="items">The collection to loop over.</param>
+    /// <param name="iteration">The iteration function.</param>
+    /// <returns>The concatenated results of the iteration function.</returns>
+    public static string ForEach<T>(IEnumerable<T> items, Func<T, string> iteration) =>
+        ForEach(items, string.Empty, iteration);
+
+    /// <summary>
+    /// Loops over a collection and applies the iteration function, concatenating the results.
+    /// </summary>
+    /// <typeparam name="T">The type of the items in the collection.</typeparam>
+    /// <param name="items">The collection to loop over.</param>
+    /// <param name="separator">The separator to use between iterations.</param>
+    /// <param name="iteration">The iteration function.</param>
+    /// <returns>The concatenated results of the iteration function.</returns>
+    public static string ForEach<T>(IEnumerable<T> items, string separator, Func<T, string> iteration)
+    {
+        var result = new StringBuilder();
+        var first = true;
+        foreach (var item in items)
+        {
+            if (!first) result.Append(separator);
+            result.Append(iteration(item));
+            first = false;
         }
         return result.ToString();
     }

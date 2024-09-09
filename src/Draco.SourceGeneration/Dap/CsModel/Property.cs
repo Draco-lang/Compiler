@@ -35,4 +35,9 @@ public sealed class Property : Declaration
         string => "String",
         _ => throw new ArgumentOutOfRangeException(),
     };
+
+    /// <summary>
+    /// True, if the property is required.
+    /// </summary>
+    public bool IsRequired => !this.OmitIfNull && this.Value is null;
 }

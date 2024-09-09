@@ -32,7 +32,7 @@ public sealed class XmlDapModelSourceGenerator : XmlSourceGenerator
         var csModel = translator.Translate();
 
         // Finally generate by template
-        var dapModelCode = CodeGenerator.GenerateDapModel(csModel, cancellationToken);
+        var dapModelCode = Template.Generate(csModel);
 
         return
         [

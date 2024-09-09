@@ -13,8 +13,6 @@ internal static class CodeGenerator
         Render("GreenSyntaxTree.sbncs", tree, cancellationToken);
     public static string GenerateRedSyntaxTree(SyntaxTree.Tree tree, CancellationToken cancellationToken) =>
         Render("RedSyntaxTree.sbncs", tree, cancellationToken);
-    public static string GenerateDapModel(Dap.CsModel.Model model, CancellationToken cancellationToken) =>
-        Render("DapModel.sbncs", model, cancellationToken);
 
     private static string Render(string templateName, object model, CancellationToken cancellationToken)
     {

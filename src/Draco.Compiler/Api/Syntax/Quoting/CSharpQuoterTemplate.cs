@@ -137,7 +137,8 @@ internal sealed class CSharpQuoterTemplate(StringBuilder builder, bool prettyPri
 
     private void TryAppendIndentation()
     {
-        if (prettyPrint) builder.Append(' ', this.indentLevel);
+        // Todo: perhaps parameterize indentation size
+        if (prettyPrint) builder.Append(' ', this.indentLevel * 2);
     }
 
     private void TryAppendNewLine()

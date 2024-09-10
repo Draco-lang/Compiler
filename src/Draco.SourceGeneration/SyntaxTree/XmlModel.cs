@@ -9,6 +9,9 @@ public sealed class XmlTree
     [XmlAttribute]
     public string Root { get; set; } = string.Empty;
 
+    [XmlElement("Token")]
+    public List<XmlToken> Tokens { get; set; } = null!;
+
     [XmlElement("PredefinedNode")]
     public List<XmlPredefinedNode> PredefinedNodes { get; set; } = null!;
 
@@ -17,6 +20,19 @@ public sealed class XmlTree
 
     [XmlElement("Node")]
     public List<XmlNode> Nodes { get; set; } = null!;
+}
+
+[XmlRoot(ElementName = "Token")]
+public sealed class XmlToken
+{
+    [XmlAttribute]
+    public string Kind { get; set; } = string.Empty;
+
+    [XmlAttribute]
+    public string? Text { get; set; }
+
+    [XmlAttribute]
+    public string Documentation { get; set; } = string.Empty;
 }
 
 [XmlRoot(ElementName = "PredefinedNode")]
@@ -77,11 +93,11 @@ public sealed class XmlField
     public string? Documentation { get; set; }
 
     [XmlElement("Token")]
-    public List<XmlToken> Tokens { get; set; } = null!;
+    public List<XmlTokenKind> Tokens { get; set; } = null!;
 }
 
 [XmlRoot(ElementName = "Token")]
-public sealed class XmlToken
+public sealed class XmlTokenKind
 {
     [XmlAttribute]
     public string Kind { get; set; } = string.Empty;

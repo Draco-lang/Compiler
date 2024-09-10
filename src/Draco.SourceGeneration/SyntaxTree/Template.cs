@@ -8,6 +8,38 @@ namespace Draco.SourceGeneration.SyntaxTree;
 
 internal static class Template
 {
+    public static string GenerateTokens(Tree tree) => FormatCSharp($$"""
+namespace Draco.Compiler.Api.Syntax;
+
+/// <summary>
+/// The different kinds of tokens in the syntax tree.
+/// </summary>
+public enum TokenKind
+{
+    {{ForEach(tree.Tokens, ",", token => $$"""
+    /// <summary>
+    /// {{token.Documentation}}
+    /// </summary>
+    {{token.Name}}
+    """)}}
+}
+
+public static partial class SyntaxFacts
+{
+    /// <summary>
+    /// Attempts to retrieve the textual representation of a <see cref="TokenKind"/>.
+    /// </summary>
+    /// <param name="tokenKind">The <see cref="TokenKind"/> to get the text of.</param>
+    /// <returns>The textual representation of <paramref name="tokenKind"/>, or null, if it doesn't have a
+    /// unique representation.</returns>
+    public static string? GetTokenText(TokenKind tokenKind) => tokenKind switch
+    {
+        {{ForEach(tree.Tokens, token => NotNull(token.Text, text => $"TokenKind.{token.Name} => \"{text}\","))}}
+        _ => null
+    };
+}
+""");
+
     public static string GenerateGreenTree(Tree tree) => FormatCSharp($$"""
 using System.Collections.Generic;
 

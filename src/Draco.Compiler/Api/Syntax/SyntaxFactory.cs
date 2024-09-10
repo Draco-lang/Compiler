@@ -65,11 +65,11 @@ public static partial class SyntaxFactory
     public static SyntaxToken Identifier(string text) => Token(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => Token(TokenKind.LiteralInteger, value.ToString(), value);
 
-    public static SyntaxToken? VisibilityToken(Visibility visibility) => visibility switch
+    public static TokenKind? Visibility(Visibility visibility) => visibility switch
     {
-        Visibility.Private => null,
-        Visibility.Internal => Token(TokenKind.KeywordInternal),
-        Visibility.Public => Token(TokenKind.KeywordPublic),
+        Semantics.Visibility.Private => null,
+        Semantics.Visibility.Internal => TokenKind.KeywordInternal,
+        Semantics.Visibility.Public => TokenKind.KeywordPublic,
         _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
     };
 
@@ -130,7 +130,7 @@ public static partial class SyntaxFactory
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
             [],
-            Visibility.Private,
+            Semantics.Visibility.Private,
             name,
             null,
             parameters,
@@ -144,7 +144,7 @@ public static partial class SyntaxFactory
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
             attributes,
-            Visibility.Private,
+            Semantics.Visibility.Private,
             name,
             null,
             parameters,
@@ -172,7 +172,7 @@ public static partial class SyntaxFactory
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
             [],
-            Visibility.Private,
+            Semantics.Visibility.Private,
             name,
             generics,
             parameters,
@@ -188,7 +188,7 @@ public static partial class SyntaxFactory
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
             SyntaxList(attributes),
-            VisibilityToken(visibility),
+            Visibility(visibility),
             name,
             generics is null ? null : GenericParameterList(generics),
             parameters,
@@ -204,7 +204,7 @@ public static partial class SyntaxFactory
         Visibility visibility,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(VisibilityToken(visibility), true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), true, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         string name,
@@ -215,17 +215,17 @@ public static partial class SyntaxFactory
         Visibility visibility,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(VisibilityToken(visibility), false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), false, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
-        SyntaxToken? visibility,
+        TokenKind? visibility,
         bool isMutable,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) => VariableDeclaration(
         SyntaxList<AttributeSyntax>(),
         visibility,
-        isMutable ? KeywordVar : KeywordVal,
+        isMutable ? TokenKind.KeywordVar : TokenKind.KeywordVal,
         name,
         type is null ? null : TypeSpecifier(type),
         value is null ? null : ValueSpecifier(value));

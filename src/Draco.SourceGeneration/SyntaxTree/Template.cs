@@ -484,6 +484,25 @@ public static partial class SyntaxFactory
             }
         }
 
+        if (field.IsToken)
+        {
+            var kinds = field.TokenKinds
+                .Select(tree.GetTokenFromKind)
+                .ToList();
+            if (kinds.All(t => t.Text is not null && t.Value is null))
+            {
+                // All token kinds have a well-known text (and no associated value), so we can simplify this to a token kind
+                return new FieldFacade(
+                    IsOriginal: false,
+                    Documentation: field.Documentation,
+                    ParameterName: CamelCase(field.Name),
+                    Type: $"TokenKind{Nullable(field)}",
+                    ReferenceValue: field.IsNullable
+                        ? $"{CamelCase(field.Name)} is null ? null : Token({CamelCase(field.Name)}.Value)"
+                        : $"Token({CamelCase(field.Name)})");
+            }
+        }
+
         // Regular field
         return new FieldFacade(
             IsOriginal: true,

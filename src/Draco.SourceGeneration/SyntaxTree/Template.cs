@@ -308,7 +308,7 @@ public static partial class SyntaxFactory
             /// <returns>
             /// The constructed <see cref="{{node.Name}}"/>.
             /// </returns>
-            {{ForEach(facadedFields, "\n", field => NotNull(field.Documentation, doc => $"""
+            {{ForEach(facadedFields, "\n", field => When(field.IsParameter, $"""
                 /// <param name="{field.ParameterName}">
                 /// {field.Documentation}
                 /// </param>
@@ -317,7 +317,7 @@ public static partial class SyntaxFactory
             /// The constructed <see cref="{{node.Name}}"/>.
             /// </returns>
             public static {{node.Name}} {{FactoryName(node)}}(
-                {{ForEach(facadedFields.Where(f => f.Documentation is not null), ", ", field =>
+                {{ForEach(facadedFields.Where(f => f.IsParameter), ", ", field =>
                     $"{field.Type} {field.ParameterName} {NotNull(field.DefaultValue, v => $"= {v}")}")}}) =>
                 {{FactoryName(node)}}({{ForEach(facadedFields, ", ", field => field.ReferenceValue)}});
             """;
@@ -404,7 +404,10 @@ public static partial class SyntaxFactory
         string? ParameterName,
         string? Type,
         string ReferenceValue,
-        string? DefaultValue = null);
+        string? DefaultValue = null)
+    {
+        public bool IsParameter => this.ParameterName is not null;
+    }
 
     private static IEnumerable<FieldFacade> Simplify(Tree tree, Node node, out bool anySimplified)
     {
@@ -417,9 +420,9 @@ public static partial class SyntaxFactory
             var field = node.Fields[i];
 
             var facade = Simplify(tree, field, ref anySimplified);
-            // We can make it null-defaulted, if this field is nullable and any fields ahead were nullable
+            // We can make it null-defaulted, if this field is nullable and any fields THAT ARE PARAMETERS ahead were nullable
             var canBeNulled = field.IsNullable
-                           && (result.Count == 0 || result[0].DefaultValue is not null);
+                           && result.All(f => !f.IsParameter || f.DefaultValue is not null);
             if (canBeNulled)
             {
                 facade = facade with { DefaultValue = "null" };
@@ -451,7 +454,7 @@ public static partial class SyntaxFactory
         if (field.IsToken && field.TokenKinds.Count == 1)
         {
             var kind = field.TokenKinds[0];
-            if (kind == "Identifier")
+            if (kind == "Identifier" && !field.IsNullable) // We assume identifiers are always required
             {
                 // We can simplify the identifier token to a string
                 anySimplified = true;

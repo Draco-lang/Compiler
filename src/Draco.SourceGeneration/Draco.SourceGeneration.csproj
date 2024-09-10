@@ -23,13 +23,6 @@
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
   </ItemGroup>
 
-  <!-- Embed all Scriban template files -->
-  <ItemGroup>
-    <EmbeddedResource Include="Templates\**\*.*">
-      <LogicalName>Templates.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-
   <!-- Embed the language server protocol specification -->
   <ItemGroup>
     <EmbeddedResource Include="..\..\external\lsp-specification\metaModel.json" Visible="False">

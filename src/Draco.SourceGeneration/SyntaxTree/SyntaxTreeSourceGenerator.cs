@@ -16,7 +16,7 @@ public sealed class SyntaxTreeSourceGenerator : XmlSourceGenerator
         var domainModel = Tree.FromXml((XmlTree)xmlModel);
 
         var greenTreeCode = Template.GenerateGreenTree(domainModel);
-        var redTreeCode = CodeGenerator.GenerateRedSyntaxTree(domainModel, cancellationToken);
+        var redTreeCode = Template.GenerateRedTree(domainModel);
 
         return
         [

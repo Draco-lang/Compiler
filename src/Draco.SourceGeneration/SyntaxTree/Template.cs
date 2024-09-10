@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Draco.SourceGeneration.BoundTree;
 using static Draco.SourceGeneration.TemplateUtils;
 
 namespace Draco.SourceGeneration.SyntaxTree;
@@ -46,10 +48,37 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
 """);
 
     public static string GenerateRedTree(Tree tree) => FormatCSharp($$"""
-// TODO: Implement
+using System.Collections.Generic;
+
+namespace Draco.Compiler.Api.Syntax;
+
+#nullable enable
+
+{{ForEach(tree.Nodes, node => RedNodeClass(tree, node))}}
+
+/// <summary>
+/// Visitor base class for <see cref="{{tree.Root.Name}}"/>.
+/// </summary>
+public abstract partial class SyntaxVisitor
+{
+    {{Visitors(tree.Nodes, "void", null)}}
+}
+
+/// <summary>
+/// Visitor base class for <see cref="{{tree.Root.Name}}"/>.
+/// </summary>
+/// <typeparam name="TResult">
+/// The return type of the visitor methods.
+/// </typeparam>
+public abstract partial class SyntaxVisitor<TResult>
+{
+    {{Visitors(tree.Nodes, "TResult", "default!")}}
+}
+
+#nullable restore
 """);
 
-    private static string GreenNodeClass(Tree tree, Node node) => FormatCSharp($$"""
+    private static string GreenNodeClass(Tree tree, Node node) => $$"""
     /// <summary>
     /// {{node.Documentation}}
     /// </summary>
@@ -138,19 +167,86 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
             }
         """)}}
 
-        {{When(node.IsAbstract && node.Base is null,
-            whenTrue: """
-                public abstract void Accept(SyntaxVisitor visitor);
-                public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
-                """,
-            whenFalse: $"""
-                public override void Accept(SyntaxVisitor visitor) =>
-                    visitor.{VisitorName(node)}(this);
-                public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
-                    visitor.{VisitorName(node)}(this);
-                """)}}
+        {{Accept(node)}}
     }
-    """);
+    """;
+
+    private static string RedNodeClass(Tree tree, Node node) => $$"""
+    /// <summary>
+    /// {{node.Documentation}}
+    /// </summary>
+    public {{ClassHeader(node)}}
+    {
+        {{ForEach(node.Fields, field => When(field.Abstract,
+            whenTrue: $$"""
+                {{FieldPrefix(field)}} { get; }
+                """,
+            whenFalse: $$"""
+                {{FieldPrefix(field)}} =>
+                {{When(field.IsNullable,
+                    "Internal.InterlockedUtils.InitializeMaybeNull(",
+                    "System.Threading.LazyInitializer.EnsureInitialized(")}}
+                    ref this.{{CamelCase(field.Name)}},
+                    () => ({{field.Type}})this.Green.{{field.Name}}{{Nullable(field)}}
+                        .ToRedNode(this.Tree, this, {{AccumulateFullWidth(node, field)}}));
+                private {{field.NonNullableType}}? {{CamelCase(field.Name)}};
+                """))}}
+
+        {{When(node.IsAbstract,
+            whenTrue: $$"""
+                internal abstract {{When(node.Base is not null, "override")}} Internal.Syntax.{{node.Name}} Green { get; }
+                """,
+            whenFalse: $$"""
+                internal override Internal.Syntax.{{node.Name}} Green { get; }
+                """)}}
+
+        {{Children(tree, node)}}
+
+        {{When(node.IsAbstract,
+            whenTrue: When(node.Base is not null, $$"""
+                internal {{node.Name}}(SyntaxTree tree, {{tree.Root.Name}}? parent, int fullPosition)
+                    : base(tree, parent, fullPosition)
+                {
+                }
+                """),
+            whenFalse: $$"""
+                internal {{node.Name}}(SyntaxTree tree, {{tree.Root.Name}}? parent, int fullPosition, Internal.Syntax.{{node.Name}} green)
+                    : base(tree, parent, fullPosition)
+                {
+                    this.Green = green;
+                }
+                """)}}
+
+        {{Accept(node)}}
+    }
+
+    {{When(!node.IsAbstract, $$"""
+        public static partial class SyntaxFactory
+        {
+            /// <summary>
+            /// Constructs a new <see cref="{{node.Name}}"/>.
+            /// </summary>
+            {{ForEach(node.Fields, "\n", field => NotNull(field.Documentation, doc => $"""
+                /// <param name="{CamelCase(field.Name)}">
+                /// {field.Documentation}
+                /// </param>
+                """))}}
+            /// <returns>
+            /// The constructed <see cref="{{node.Name}}"/>.
+            /// </returns>
+            public static {{node.Name}} {{RemoveSuffix(node.Name, "Syntax")}}(
+                {{ForEach(node.Fields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}}) =>
+                new Internal.Syntax.{{node.Name}}(
+                    {{ForEach(node.Fields, ", ", field => $"({InternalType(field.Type)}){CamelCase(field.Name)}{Nullable(field)}.Green")}}
+                ).ToRedNode(null!, null, 0);
+        }
+        """)}}
+    """;
+
+    private static string AccumulateFullWidth(Node node, Field current) =>
+        $"this.FullPosition {ForEach(node.Fields.TakeWhile(f => f != current), field => $" + {When(field.IsNullable,
+            whenTrue: $"(this.Green.{field.Name}?.FullWidth ?? 0)",
+            whenFalse: $"this.Green.{field.Name}.FullWidth")}")}";
 
     private static string Children(Tree tree, Node node) => When(!node.IsAbstract, $$"""
     public override IEnumerable<{{tree.Root.Name}}> Children
@@ -164,7 +260,20 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
             yield break;
         }
     }
+    
     """);
+
+    private static string Accept(Node node) => When(node.IsAbstract && node.Base is null,
+        whenTrue: """
+            public abstract void Accept(SyntaxVisitor visitor);
+            public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);
+            """,
+        whenFalse: $"""
+            public override void Accept(SyntaxVisitor visitor) =>
+                visitor.{VisitorName(node)}(this);
+            public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
+                visitor.{VisitorName(node)}(this);
+            """);
 
     private static string Visitors(IEnumerable<Node> nodes, string returnType, string? returnValue) => ForEach(nodes, node => $$"""
     {{When(node.IsAbstract,
@@ -205,6 +314,9 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
         """)}}
         public {{When(field.Abstract, "abstract")}} {{When(field.Override, "override")}} {{field.Type}} {{field.Name}}
         """;
+
+    private static string InternalType(string type) =>
+        $"Internal.Syntax.{type.Replace("<", "<Internal.Syntax.")}";
 
     private static string AbstractSealed(Node node) => When(node.IsAbstract, "abstract", "sealed");
     private static string ProtectedPublic(Node node) => When(node.IsAbstract, "protected", "public");

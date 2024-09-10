@@ -11,6 +11,8 @@ internal static class Template
     public static string GenerateTokens(Tree tree) => FormatCSharp($$"""
 namespace Draco.Compiler.Api.Syntax;
 
+#nullable enable
+
 /// <summary>
 /// The different kinds of tokens in the syntax tree.
 /// </summary>
@@ -38,6 +40,13 @@ public static partial class SyntaxFacts
         _ => null
     };
 }
+
+public static partial class SyntaxFactory
+{
+    {{TokenFactories(tree)}}
+}
+
+#nullable restore
 """);
 
     public static string GenerateGreenTree(Tree tree) => FormatCSharp($$"""
@@ -263,6 +272,12 @@ public static partial class SyntaxFactory
             whenTrue: $"(this.Green.{field.Name}?.FullWidth ?? 0)",
             whenFalse: $"this.Green.{field.Name}.FullWidth")}")}";
 
+    private static string TokenFactories(Tree tree) => ForEach(tree.Tokens, token => When(token.Text is not null, $$"""
+    public static SyntaxToken {{token.Name}} { get; } = MakeToken(
+        TokenKind.{{token.Name}}
+        {{NotNull(token.Value, value => $", {value}")}});
+    """));
+
     private static string SyntaxFactories(Tree tree) => ForEach(tree.Nodes, node => When(!node.IsAbstract, $$"""
     /// <summary>
     /// Constructs a new <see cref="{{node.Name}}"/>.
@@ -356,4 +371,10 @@ public static partial class SyntaxFactory
     private static string ProtectedPublic(Node node) => When(node.IsAbstract, "protected", "public");
     private static string Base(Node node) => NotNull(node.Base, b => $": {b.Name}");
     private static string Nullable(Field field) => When(field.IsNullable, "?");
+
+    private static bool IsDetermined(Tree tree, Field field) =>
+        !field.IsNullable
+     && field.IsToken
+     && field.TokenKinds.Count == 1
+     && tree.HasTokenKind(field.TokenKinds[0]);
 }

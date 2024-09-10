@@ -20,6 +20,7 @@
   <xs:complexType name="TokenType">
     <xs:attribute name="Kind" type="xs:string" use="required" />
     <xs:attribute name="Text" type="xs:string" use="optional" />
+    <xs:attribute name="Value" type="xs:string" use="optional" />
     <xs:attribute name="Documentation" type="xs:string" use="required" />
   </xs:complexType>
 

@@ -31,7 +31,7 @@ public sealed class Tree(Node root, IList<Node> nodes, IList<Token> tokens)
         }
 
         Token MakeToken(XmlToken token) =>
-            new(token.Kind, token.Text, token.Documentation.Trim());
+            new(token.Kind, token.Text, token.Value, token.Documentation.Trim());
 
         Node MakeNodeByName(string name)
         {
@@ -95,12 +95,15 @@ public sealed class Tree(Node root, IList<Node> nodes, IList<Token> tokens)
     public Node Root { get; } = root;
     public IList<Node> Nodes { get; } = nodes;
     public IList<Token> Tokens { get; } = tokens;
+
+    public bool HasTokenKind(string kind) => this.Tokens.Any(t => t.Name == kind);
 }
 
-public sealed class Token(string name, string? text, string documentation)
+public sealed class Token(string name, string? text, string? value, string documentation)
 {
     public string Name { get; } = name;
     public string? Text { get; } = text;
+    public string? Value { get; } = value;
     public string Documentation { get; } = documentation;
 }
 

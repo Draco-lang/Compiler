@@ -113,14 +113,14 @@ public static partial class SyntaxFactory
         CompilationUnit(SyntaxList(decls), EndOfInput);
 
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, IEnumerable<DeclarationSyntax> declarations) =>
-        ModuleDeclaration(SyntaxList<AttributeSyntax>(), null, Module, Name(name), OpenBrace, SyntaxList(declarations), CloseBrace);
+        ModuleDeclaration(SyntaxList<AttributeSyntax>(), null, KeywordModule, Name(name), CurlyOpen, SyntaxList(declarations), CurlyClose);
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, params DeclarationSyntax[] declarations) =>
         ModuleDeclaration(name, declarations.AsEnumerable());
 
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
         SyntaxList<AttributeSyntax>(),
         null,
-        Import,
+        KeywordImport,
         path.Aggregate(
             RootImportPath(Name(root)) as ImportPathSyntax,
             (path, member) => MemberImportPath(path, Dot, Name(member))),
@@ -191,12 +191,12 @@ public static partial class SyntaxFactory
         FunctionBodySyntax body) => FunctionDeclaration(
             SyntaxList(attributes),
             VisibilityToken(visibility),
-            Func,
+            KeywordFunc,
             Name(name),
             generics is null ? null : GenericParameterList(LessThan, generics, GreaterThan),
-            OpenParen,
+            ParenOpen,
             parameters,
-            CloseParen,
+            ParenClose,
             returnType is null ? null : TypeSpecifier(Colon, returnType),
             body);
 
@@ -230,7 +230,7 @@ public static partial class SyntaxFactory
         ExpressionSyntax? value = null) => VariableDeclaration(
         SyntaxList<AttributeSyntax>(),
         visibility,
-        isMutable ? Var : Val,
+        isMutable ? KeywordVar : KeywordVal,
         Name(name),
         type is null ? null : TypeSpecifier(Colon, type),
         value is null ? null : ValueSpecifier(Assign, value),
@@ -243,44 +243,44 @@ public static partial class SyntaxFactory
         Attribute(type, args.AsEnumerable());
 
     public static AttributeSyntax Attribute(TypeSyntax type, IEnumerable<ExpressionSyntax> args) =>
-        Attribute(AtSign, type, ArgumentList(OpenParen, SeparatedSyntaxList(Comma, args), CloseParen));
+        Attribute(AtSign, type, ArgumentList(ParenOpen, SeparatedSyntaxList(Comma, args), ParenClose));
 
     public static InlineFunctionBodySyntax InlineFunctionBody(ExpressionSyntax expr) => InlineFunctionBody(Assign, expr, Semicolon);
 
     public static BlockFunctionBodySyntax BlockFunctionBody(IEnumerable<StatementSyntax> stmts) => BlockFunctionBody(
-        OpenBrace,
+        CurlyOpen,
         SyntaxList(stmts),
-        CloseBrace);
+        CurlyClose);
     public static BlockFunctionBodySyntax BlockFunctionBody(params StatementSyntax[] stmts) => BlockFunctionBody(stmts.AsEnumerable());
 
     public static ExpressionStatementSyntax ExpressionStatement(ExpressionSyntax expr) => ExpressionStatement(expr, null);
     public static BlockExpressionSyntax BlockExpression(
         IEnumerable<StatementSyntax> stmts,
         ExpressionSyntax? value = null) => BlockExpression(
-        OpenBrace,
+        CurlyOpen,
         SyntaxList(stmts),
         value,
-        CloseBrace);
+        CurlyClose);
     public static BlockExpressionSyntax BlockExpression(params StatementSyntax[] stmts) => BlockExpression(stmts.AsEnumerable());
 
     public static IfExpressionSyntax IfExpression(
         ExpressionSyntax condition,
         ExpressionSyntax then,
         ExpressionSyntax? @else = null) => IfExpression(
-        If,
-        OpenParen,
+        KeywordIf,
+        ParenOpen,
         condition,
-        CloseParen,
+        ParenClose,
         then,
-        @else is null ? null : ElseClause(Else, @else));
+        @else is null ? null : ElseClause(KeywordElse, @else));
 
     public static WhileExpressionSyntax WhileExpression(
         ExpressionSyntax condition,
         ExpressionSyntax body) => WhileExpression(
-        While,
-        OpenParen,
+        KeywordWhile,
+        ParenOpen,
         condition,
-        CloseParen,
+        ParenClose,
         body);
 
     public static ForExpressionSyntax ForExpression(
@@ -288,13 +288,13 @@ public static partial class SyntaxFactory
         TypeSyntax? elementType,
         ExpressionSyntax sequence,
         ExpressionSyntax body) => ForExpression(
-        For,
-        OpenParen,
+        KeywordFor,
+        ParenOpen,
         Name(iterator),
         elementType is null ? null : TypeSpecifier(Colon, elementType),
-        In,
+        KeywordIn,
         sequence,
-        CloseParen,
+        ParenClose,
         body);
 
     public static ForExpressionSyntax ForExpression(
@@ -310,9 +310,9 @@ public static partial class SyntaxFactory
         ExpressionSyntax called,
         IEnumerable<ExpressionSyntax> args) => CallExpression(
         called,
-        OpenParen,
+        ParenOpen,
         SeparatedSyntaxList(Comma, args),
-        CloseParen);
+        ParenClose);
     public static CallExpressionSyntax CallExpression(
         ExpressionSyntax called,
         params ExpressionSyntax[] args) => CallExpression(called, args.AsEnumerable());
@@ -339,16 +339,18 @@ public static partial class SyntaxFactory
             SeparatedSyntaxList(Comma, typeParameters),
             GreaterThan);
 
-    public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, SeparatedSyntaxList<ExpressionSyntax> indices) => IndexExpression(indexed, OpenBracket, indices, CloseBracket);
-    public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) => IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
+    public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, SeparatedSyntaxList<ExpressionSyntax> indices) =>
+        IndexExpression(indexed, BracketOpen, indices, BracketClose);
+    public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) =>
+        IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 
-    public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(Return, value);
-    public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(Goto, NameLabel(Name(label)));
+    public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(KeywordReturn, value);
+    public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(KeywordGoto, NameLabel(Name(label)));
 
     public static NameTypeSyntax NameType(string name) => NameType(Name(name));
     public static NameExpressionSyntax NameExpression(string name) => NameExpression(Name(name));
     public static LiteralExpressionSyntax LiteralExpression(int value) => LiteralExpression(Integer(value));
-    public static LiteralExpressionSyntax LiteralExpression(bool value) => LiteralExpression(value ? True : False);
+    public static LiteralExpressionSyntax LiteralExpression(bool value) => LiteralExpression(value ? KeywordTrue : KeywordFalse);
     public static StringExpressionSyntax StringExpression(string value) =>
         StringExpression(LineStringStart, SyntaxList(TextStringPart(value) as StringPartSyntax), LineStringEnd);
 
@@ -357,40 +359,8 @@ public static partial class SyntaxFactory
 
     // TOKENS //////////////////////////////////////////////////////////////////
 
-    public static SyntaxToken EndOfInput { get; } = MakeToken(TokenKind.EndOfInput);
-    public static SyntaxToken Assign { get; } = MakeToken(TokenKind.Assign);
-    public static SyntaxToken Comma { get; } = MakeToken(TokenKind.Comma);
-    public static SyntaxToken Colon { get; } = MakeToken(TokenKind.Colon);
-    public static SyntaxToken Dot { get; } = MakeToken(TokenKind.Dot);
-    public static SyntaxToken Semicolon { get; } = MakeToken(TokenKind.Semicolon);
-    public static SyntaxToken Import { get; } = MakeToken(TokenKind.KeywordImport);
-    public static SyntaxToken Return { get; } = MakeToken(TokenKind.KeywordReturn);
-    public static SyntaxToken If { get; } = MakeToken(TokenKind.KeywordIf);
-    public static SyntaxToken While { get; } = MakeToken(TokenKind.KeywordWhile);
-    public static SyntaxToken For { get; } = MakeToken(TokenKind.KeywordFor);
-    public static SyntaxToken In { get; } = MakeToken(TokenKind.KeywordIn);
-    public static SyntaxToken Else { get; } = MakeToken(TokenKind.KeywordElse);
-    public static SyntaxToken Var { get; } = MakeToken(TokenKind.KeywordVar);
-    public static SyntaxToken Val { get; } = MakeToken(TokenKind.KeywordVal);
-    public static SyntaxToken Func { get; } = MakeToken(TokenKind.KeywordFunc);
-    public static SyntaxToken Goto { get; } = MakeToken(TokenKind.KeywordGoto);
-    public static SyntaxToken Module { get; } = MakeToken(TokenKind.KeywordModule);
-    public static SyntaxToken True { get; } = MakeToken(TokenKind.KeywordTrue, true);
-    public static SyntaxToken False { get; } = MakeToken(TokenKind.KeywordFalse, false);
-    public static SyntaxToken OpenBrace { get; } = MakeToken(TokenKind.CurlyOpen);
-    public static SyntaxToken CloseBrace { get; } = MakeToken(TokenKind.CurlyClose);
-    public static SyntaxToken OpenParen { get; } = MakeToken(TokenKind.ParenOpen);
-    public static SyntaxToken CloseParen { get; } = MakeToken(TokenKind.ParenClose);
-    public static SyntaxToken OpenBracket { get; } = MakeToken(TokenKind.BracketOpen);
-    public static SyntaxToken CloseBracket { get; } = MakeToken(TokenKind.BracketClose);
-    public static SyntaxToken Plus { get; } = MakeToken(TokenKind.Plus);
-    public static SyntaxToken PlusAssign { get; } = MakeToken(TokenKind.PlusAssign);
-    public static SyntaxToken LessThan { get; } = MakeToken(TokenKind.LessThan);
-    public static SyntaxToken GreaterThan { get; } = MakeToken(TokenKind.GreaterThan);
     public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
-    public static SyntaxToken Ellipsis { get; } = MakeToken(TokenKind.Ellipsis);
-    public static SyntaxToken AtSign { get; } = MakeToken(TokenKind.AtSign);
 
     private static SyntaxToken MakeToken(TokenKind tokenKind) =>
         Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);

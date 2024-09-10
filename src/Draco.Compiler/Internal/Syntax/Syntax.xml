@@ -22,7 +22,7 @@
   <Token Kind="InterpolationEnd" Text="}" Documentation="The end of string interpolation." />
   <Token Kind="KeywordAnd" Text="and" Documentation="The keyword 'and'." />
   <Token Kind="KeywordElse" Text="else" Documentation="The keyword 'else'." />
-  <Token Kind="KeywordFalse" Text="false" Documentation="The keyword 'false'." />
+  <Token Kind="KeywordFalse" Text="false" Value="false" Documentation="The keyword 'false'." />
   <Token Kind="KeywordFor" Text="for" Documentation="The keyword 'for'." />
   <Token Kind="KeywordFunc" Text="func" Documentation="The keyword 'func'." />
   <Token Kind="KeywordGoto" Text="goto" Documentation="The keyword 'goto'." />
@@ -37,7 +37,7 @@
   <Token Kind="KeywordPublic" Text="public" Documentation="The keyword 'public'." />
   <Token Kind="KeywordRem" Text="rem" Documentation="The keyword 'rem'." />
   <Token Kind="KeywordReturn" Text="return" Documentation="The keyword 'return'." />
-  <Token Kind="KeywordTrue" Text="true" Documentation="The keyword 'true'." />
+  <Token Kind="KeywordTrue" Text="true" Value="true" Documentation="The keyword 'true'." />
   <Token Kind="KeywordVal" Text="val" Documentation="The keyword 'val'." />
   <Token Kind="KeywordVar" Text="var" Documentation="The keyword 'var'." />
   <Token Kind="KeywordWhile" Text="while" Documentation="The keyword 'while'" />

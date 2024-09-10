@@ -32,6 +32,9 @@ public sealed class XmlToken
     public string? Text { get; set; }
 
     [XmlAttribute]
+    public string? Value { get; set; }
+
+    [XmlAttribute]
     public string Documentation { get; set; } = string.Empty;
 }
 

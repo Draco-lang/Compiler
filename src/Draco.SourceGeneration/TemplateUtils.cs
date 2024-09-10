@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Web;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -116,6 +118,16 @@ internal static class TemplateUtils
         }
         return result.ToString();
     }
+
+    /// <summary>
+    /// Encodes a text to be a valid XML text.
+    /// </summary>
+    /// <param name="text">The text to encode.</param>
+    /// <returns>The encoded version of <paramref name="text"/>.</returns>
+    [return: NotNullIfNotNull(nameof(text))]
+    public static string? EscapeXml(string? text) => text is null
+        ? null
+        : HttpUtility.HtmlEncode(text);
 
     /// <summary>
     /// Transforms a nullable value to a string, using the provided function.

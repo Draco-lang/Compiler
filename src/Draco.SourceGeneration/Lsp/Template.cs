@@ -121,7 +121,7 @@ namespace Draco.Lsp.Model;
 
     private static string Summary(CsModel.Declaration declaration) => NotNull(declaration.Documentation, doc => $"""
     /// <summary>
-    {ForEachLine(doc, line => $"/// {line}")}
+    {ForEachLine(doc, line => $"/// {EscapeXml(line)}")}
     /// </summary>
     """);
 

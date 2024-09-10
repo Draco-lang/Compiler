@@ -22,7 +22,7 @@ public enum TokenKind
 {
     {{ForEach(tree.Tokens, ",", token => $$"""
     /// <summary>
-    /// {{token.Documentation}}
+    /// {{EscapeXml(token.Documentation)}}
     /// </summary>
     {{token.Name}}
     """)}}
@@ -129,7 +129,7 @@ public static partial class SyntaxFactory
 
     private static string GreenNodeClass(Tree tree, Node node) => $$"""
     /// <summary>
-    /// {{node.Documentation}}
+    /// {{EscapeXml(node.Documentation)}}
     /// </summary>
     internal {{ClassHeader(node)}}
     {
@@ -172,7 +172,7 @@ public static partial class SyntaxFactory
             /// </summary>
             {{ForEach(node.Fields, "\n", field => NotNull(field.Documentation, doc => $"""
                 /// <param name="{DocName(field)}">
-                /// {field.Documentation}
+                /// {EscapeXml(field.Documentation)}
                 /// </param>
             """))}}
             /// <returns>
@@ -222,7 +222,7 @@ public static partial class SyntaxFactory
 
     private static string RedNodeClass(Tree tree, Node node) => $$"""
     /// <summary>
-    /// {{node.Documentation}}
+    /// {{EscapeXml(node.Documentation)}}
     /// </summary>
     public {{ClassHeader(node)}}
     {
@@ -287,7 +287,7 @@ public static partial class SyntaxFactory
     /// </summary>
     {{ForEach(node.Fields.Where(f => f.Documentation is not null), "\n", field => $"""
          /// <param name="{DocName(field)}">
-         /// {field.Documentation}
+         /// {EscapeXml(field.Documentation)}
          /// </param>
          """)}}
     /// <returns>
@@ -348,7 +348,7 @@ public static partial class SyntaxFactory
     /// </returns>
     {{ForEach(facadedFields.Where(f => f.IsParameter), "\n", field => $"""
         /// <param name="{DocName(field)}">
-        /// {field.Documentation}
+        /// {EscapeXml(field.Documentation)}
         /// </param>
         """)}}
     /// <returns>
@@ -420,7 +420,7 @@ public static partial class SyntaxFactory
     private static string FieldPrefix(Field field) => $$"""
         {{NotNull(field.Documentation, doc => $"""
         /// <summary>
-        /// {doc}
+        /// {EscapeXml(doc)}
         /// </summary>
         """)}}
         public {{When(field.Abstract, "abstract")}} {{When(field.Override, "override")}} {{field.Type}} {{field.Name}}

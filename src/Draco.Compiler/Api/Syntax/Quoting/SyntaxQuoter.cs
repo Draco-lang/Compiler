@@ -110,17 +110,21 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
             var kindQuote = new QuoteTokenKind(node.Kind);
             return (SyntaxFacts.GetTokenText(node.Kind), node.Value) switch
             {
-                (not null, null) => new QuoteFunctionCall("MakeToken", [kindQuote]),
-                (null, null) => new QuoteFunctionCall("MakeToken", [
-                    kindQuote,
+                // Token kind does not require any text nor a value
+                (not null, null) => new QuoteProperty(node.Kind.ToString()),
+
+                // Token kind requires text
+                (null, null) => new QuoteFunctionCall(node.Kind.ToString(), [
                     new QuoteString(StringUtils.Unescape(node.Text))
                 ]),
-                (not null, not null) => new QuoteFunctionCall("MakeToken", [
-                    kindQuote,
+
+                // Token kind requires a value
+                (not null, not null) => new QuoteFunctionCall(node.Kind.ToString(), [
                     QuoteObjectLiteral(node.Value)
                 ]),
-                (null, not null) => new QuoteFunctionCall("MakeToken", [
-                    kindQuote,
+
+                // Token kind requires both text and a value
+                (null, not null) => new QuoteFunctionCall(node.Kind.ToString(), [
                     new QuoteString(StringUtils.Unescape(node.Text)),
                     QuoteObjectLiteral(node.Value)
                 ])

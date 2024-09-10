@@ -1,7 +1,9 @@
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
+using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -12,10 +14,17 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
+    public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
+
+    public override bool IsSpecialName => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.SpecialName);
 
     public override string Name => this.MetadataReader.GetString(this.fieldDefinition.Name);
 
@@ -42,6 +51,11 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
     internal override string RawDocumentation => LazyInitializer.EnsureInitialized(ref this.rawDocumentation, this.BuildRawDocumentation);
     private string? rawDocumentation;
 
+    public override bool IsLiteral => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal);
+
+    public override object? LiteralValue => InterlockedUtils.InitializeMaybeNull(ref this.literalValue, this.BuildLiteralValue);
+    private object? literalValue;
+
     public override Symbol? ContainingSymbol { get; }
 
     /// <summary>
@@ -56,18 +70,6 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
     /// </summary>
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
-    /// <summary>
-    /// True, if this is a literal that cannot be referenced as a field, but needs to be inlined as a value.
-    /// This is the case for enum members.
-    /// </summary>
-    public bool IsLiteral => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal);
-
-    /// <summary>
-    /// The default value of this field.
-    /// </summary>
-    public object? DefaultValue => InterlockedUtils.InitializeMaybeNull(ref this.defaultValue, this.BuildDefaultValue);
-    private object? defaultValue;
-
     private readonly FieldDefinition fieldDefinition;
 
     public MetadataStaticFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition)
@@ -81,10 +83,13 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
         this.fieldDefinition = fieldDefinition;
     }
 
-    private TypeSymbol BuildType() =>
-        this.fieldDefinition.DecodeSignature(this.Assembly.Compilation.TypeProvider, this);
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(this.fieldDefinition.GetCustomAttributes(), this);
 
-    private object? BuildDefaultValue()
+    private TypeSymbol BuildType() =>
+        this.fieldDefinition.DecodeSignature(this.Assembly.DeclaringCompilation.TypeProvider, this);
+
+    private object? BuildLiteralValue()
     {
         var constantHandle = this.fieldDefinition.GetDefaultValue();
         if (constantHandle.IsNil) return null;
@@ -97,5 +102,5 @@ internal sealed class MetadataStaticFieldSymbol : GlobalSymbol, IMetadataSymbol
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
+        MetadataDocumentation.GetDocumentation(this);
 }

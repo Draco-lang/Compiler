@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
+using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -15,18 +17,28 @@ namespace Draco.Compiler.Internal.Symbols.Metadata;
 /// </summary>
 internal sealed class MetadataTypeSymbol(
     Symbol containingSymbol,
-    TypeDefinition typeDefinition) : TypeSymbol, IMetadataSymbol, IMetadataClass
+    TypeDefinition typeDefinition) : TypeSymbol, IMetadataSymbol
 {
+    public override Compilation DeclaringCompilation => this.Assembly.DeclaringCompilation;
+
+    public override ImmutableArray<AttributeInstance> Attributes =>
+        InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
+    private ImmutableArray<AttributeInstance> attributes;
+
     public override IEnumerable<Symbol> DefinedMembers =>
         InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildMembers);
     private ImmutableArray<Symbol> definedMembers;
+
+    public override IEnumerable<FunctionSymbol> Constructors =>
+        InterlockedUtils.InitializeDefault(ref this.constructors, this.BuildConstructors);
+    private ImmutableArray<FunctionSymbol> constructors;
 
     public override string Name => LazyInitializer.EnsureInitialized(ref this.name, this.BuildName);
     private string? name;
 
     public override string MetadataName => this.MetadataReader.GetString(typeDefinition.Name);
 
-    public override Api.Semantics.Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
@@ -40,12 +52,20 @@ internal sealed class MetadataTypeSymbol(
 
     public override Symbol ContainingSymbol { get; } = containingSymbol;
 
-    public override bool IsValueType => this.BaseTypes.Contains(
-        this.Assembly.Compilation.WellKnownTypes.SystemValueType,
+    public override bool IsValueType => this.IsEnumType || this.BaseTypes.Contains(
+        this.Assembly.DeclaringCompilation.WellKnownTypes.SystemValueType,
         SymbolEqualityComparer.Default);
 
     public override bool IsDelegateType => this.BaseTypes.Contains(
-        this.Assembly.Compilation.WellKnownTypes.SystemDelegate,
+        this.Assembly.DeclaringCompilation.WellKnownTypes.SystemDelegate,
+        SymbolEqualityComparer.Default);
+
+    public override bool IsEnumType => this.BaseTypes.Contains(
+        this.Assembly.DeclaringCompilation.WellKnownTypes.SystemEnum,
+        SymbolEqualityComparer.Default);
+
+    public override bool IsAttributeType => this.BaseTypes.Contains(
+        this.Assembly.DeclaringCompilation.WellKnownTypes.SystemAttribute,
         SymbolEqualityComparer.Default);
 
     public override bool IsInterface => typeDefinition.Attributes.HasFlag(TypeAttributes.Interface);
@@ -63,17 +83,12 @@ internal sealed class MetadataTypeSymbol(
 
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
 
-    public string? DefaultMemberAttributeName =>
-        InterlockedUtils.InitializeMaybeNull(ref this.defaultMemberAttributeName, () => MetadataSymbol.GetDefaultMemberAttributeName(typeDefinition, this.Assembly.Compilation, this.MetadataReader));
-    private string? defaultMemberAttributeName;
-
-    public IEnumerable<Symbol> AdditionalSymbols =>
-        InterlockedUtils.InitializeDefault(ref this.additionalSymbols, this.BuildAdditionalSymbols);
-    private ImmutableArray<Symbol> additionalSymbols;
-
     public override string ToString() => this.GenericParameters.Length == 0
         ? this.Name
         : $"{this.Name}<{string.Join(", ", this.GenericParameters)}>";
+
+    private ImmutableArray<AttributeInstance> BuildAttributes() =>
+        MetadataSymbol.DecodeAttributeList(typeDefinition.GetCustomAttributes(), this);
 
     private string BuildName()
     {
@@ -102,29 +117,23 @@ internal sealed class MetadataTypeSymbol(
     private ImmutableArray<TypeSymbol> BuildBaseTypes()
     {
         var builder = ImmutableArray.CreateBuilder<TypeSymbol>();
-        var typeProvider = this.Assembly.Compilation.TypeProvider;
+        var typeProvider = this.Assembly.DeclaringCompilation.TypeProvider;
         if (!typeDefinition.BaseType.IsNil)
         {
-            builder.Add(GetTypeFromMetadata(typeDefinition.BaseType));
+            builder.Add(MetadataSymbol.GetTypeFromHandle(typeDefinition.BaseType, this));
         }
         foreach (var @interface in typeDefinition.GetInterfaceImplementations())
         {
             var interfaceDef = this.MetadataReader.GetInterfaceImplementation(@interface);
             if (interfaceDef.Interface.IsNil) continue;
-            builder.Add(GetTypeFromMetadata(interfaceDef.Interface));
+            builder.Add(MetadataSymbol.GetTypeFromHandle(interfaceDef.Interface, this));
         }
 
         return builder.ToImmutable();
-
-        TypeSymbol GetTypeFromMetadata(EntityHandle type) => type.Kind switch
-        {
-            HandleKind.TypeDefinition => typeProvider!.GetTypeFromDefinition(this.MetadataReader, (TypeDefinitionHandle)type, 0),
-            HandleKind.TypeReference => typeProvider!.GetTypeFromReference(this.MetadataReader, (TypeReferenceHandle)type, 0),
-            HandleKind.TypeSpecification => typeProvider!.GetTypeFromSpecification(this.MetadataReader, this, (TypeSpecificationHandle)type, 0),
-            _ => throw new InvalidOperationException(),
-        };
     }
 
+    // NOTE: There's a good reason constructors are factored out, the IsEnumType check would cause an infinite recursion
+    // with the members flow
     private ImmutableArray<Symbol> BuildMembers()
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
@@ -141,18 +150,18 @@ internal sealed class MetadataTypeSymbol(
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(((IMetadataClass)symbol).AdditionalSymbols);
+            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol));
         }
 
         // Methods
         foreach (var methodHandle in typeDefinition.GetMethods())
         {
             var method = this.MetadataReader.GetMethodDefinition(methodHandle);
-            // Skip special name, if not a constructor or operator
+            // Skip special name, if not an operator
             if (method.Attributes.HasFlag(MethodAttributes.SpecialName))
             {
                 var name = this.MetadataReader.GetString(method.Name);
-                if (name != ".ctor" && !name.StartsWith("op_")) continue;
+                if (!name.StartsWith(CompilerConstants.OperatorPrefix)) continue;
             }
             // Skip private
             if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
@@ -167,8 +176,6 @@ internal sealed class MetadataTypeSymbol(
         foreach (var fieldHandle in typeDefinition.GetFields())
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
-            // Skip special name
-            if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
             // Skip non-public
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Add it
@@ -188,7 +195,42 @@ internal sealed class MetadataTypeSymbol(
             if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
         }
 
+        // Add constructors separately
+        result.AddRange(this.Constructors);
+
+        // For enums we provide equality operators
+        // NOTE: We do it here as in the AdditionalSymbols flow the IsEnumType check would cause an infinite recursion
+        // as the members of the module are not initialized yet
+        if (this.IsEnumType)
+        {
+            var wellKnownTypes = this.Assembly.DeclaringCompilation.WellKnownTypes;
+            result.AddRange(wellKnownTypes.GetEnumEqualityMembers(this));
+        }
+
         // Done
+        return result.ToImmutable();
+    }
+
+    private ImmutableArray<FunctionSymbol> BuildConstructors()
+    {
+        var result = ImmutableArray.CreateBuilder<FunctionSymbol>();
+
+        foreach (var methodHandle in typeDefinition.GetMethods())
+        {
+            var method = this.MetadataReader.GetMethodDefinition(methodHandle);
+            // Skip non-constructors
+            if (!method.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
+
+            var name = this.MetadataReader.GetString(method.Name);
+            if (name != CompilerConstants.ConstructorName) continue;
+
+            var ctor = new MetadataMethodSymbol(
+                containingSymbol: this,
+                methodDefinition: method);
+
+            result.Add(ctor);
+        }
+
         return result.ToImmutable();
     }
 
@@ -196,8 +238,5 @@ internal sealed class MetadataTypeSymbol(
         XmlDocumentationExtractor.Extract(this);
 
     private string BuildRawDocumentation() =>
-        MetadataSymbol.GetDocumentation(this);
-
-    private ImmutableArray<Symbol> BuildAdditionalSymbols() =>
-        MetadataSymbol.GetAdditionalSymbols(this, typeDefinition, this.MetadataReader).ToImmutableArray();
+        MetadataDocumentation.GetDocumentation(this);
 }

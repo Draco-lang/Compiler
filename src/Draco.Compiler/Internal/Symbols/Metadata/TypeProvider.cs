@@ -9,6 +9,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -41,7 +42,7 @@ internal sealed class TypeProvider(Compilation compilation)
     private readonly ConcurrentDictionary<CacheKey, TypeSymbol> cache = new();
 
     public TypeSymbol GetArrayType(TypeSymbol elementType, ArrayShape shape) =>
-        new ArrayTypeSymbol(shape.Rank, this.WellKnownTypes.SystemInt32).GenericInstantiate(elementType);
+        new ArrayTypeSymbol(compilation, shape.Rank, this.WellKnownTypes.SystemInt32).GenericInstantiate(elementType);
     public TypeSymbol GetSZArrayType(TypeSymbol elementType) =>
         this.WellKnownTypes.ArrayType.GenericInstantiate(elementType);
     public TypeSymbol GetByReferenceType(TypeSymbol elementType) => UnknownType;
@@ -144,7 +145,22 @@ internal sealed class TypeProvider(Compilation compilation)
     public TypeSymbol GetSystemType() => this.WellKnownTypes.SystemType;
     public bool IsSystemType(TypeSymbol type) => ReferenceEquals(type, this.WellKnownTypes.SystemType);
     public TypeSymbol GetTypeFromSerializedName(string name) => UnknownType;
-    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type) => throw new System.ArgumentOutOfRangeException(nameof(type));
+    public PrimitiveTypeCode GetUnderlyingEnumType(TypeSymbol type)
+    {
+        var fieldType = type.EnumUnderlyingType;
+        if (fieldType is null) throw new NotImplementedException("no enum tag field found");
+
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemByte)) return PrimitiveTypeCode.Byte;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemUInt16)) return PrimitiveTypeCode.UInt16;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemUInt32)) return PrimitiveTypeCode.UInt32;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemUInt64)) return PrimitiveTypeCode.UInt64;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemSByte)) return PrimitiveTypeCode.SByte;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemInt16)) return PrimitiveTypeCode.Int16;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemInt32)) return PrimitiveTypeCode.Int32;
+        if (SymbolEqualityComparer.Default.Equals(fieldType, this.WellKnownTypes.SystemInt64)) return PrimitiveTypeCode.Int64;
+
+        throw new NotImplementedException($"unsupported enum tag field type {fieldType}");
+    }
 
     private TypeSymbol BuildTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
     {

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Draco.SourceGeneration.SyntaxTree;
 
-public sealed class Tree(Node root, IList<Node> nodes)
+public sealed class Tree(Node root, IList<Node> nodes, IList<Token> tokens)
 {
     public static Tree FromXml(XmlTree tree)
     {
@@ -29,6 +29,9 @@ public sealed class Tree(Node root, IList<Node> nodes)
             foreach (var field in node.Fields) result.Fields.Add(MakeField(field));
             return result;
         }
+
+        Token MakeToken(XmlToken token) =>
+            new(token.Kind, token.Text, token.Value, token.Documentation.Trim());
 
         Node MakeNodeByName(string name)
         {
@@ -58,28 +61,63 @@ public sealed class Tree(Node root, IList<Node> nodes)
 
         return new Tree(
             root: GetNodeByName(tree.Root),
-            nodes: tree.AbstractNodes.Select(n => n.Name)
+            nodes: tree.AbstractNodes
+                .Select(n => n.Name)
                 .Concat(tree.Nodes.Select(n => n.Name))
                 .Select(GetNodeByName)
+                .ToList(),
+            tokens: tree.Tokens
+                .Select(MakeToken)
                 .ToList());
     }
 
     private static void ValidateXml(XmlTree tree)
     {
         // Unique node name validation
-        var names = new HashSet<string>();
+        var nodeNames = new HashSet<string>();
         void AddNodeName(string name)
         {
-            if (!names!.Add(name)) throw new InvalidOperationException($"duplicate node named {name} in ther tree");
+            if (!nodeNames!.Add(name)) throw new InvalidOperationException($"duplicate node named {name} in ther tree");
         }
 
+        var tokenKinds = new HashSet<string>();
+        void AddTokenKind(string kind)
+        {
+            if (!tokenKinds!.Add(kind)) throw new InvalidOperationException($"duplicate token kind {kind} in the tree");
+        }
+
+        foreach (var token in tree.Tokens) AddTokenKind(token.Kind);
         foreach (var predefined in tree.PredefinedNodes) AddNodeName(predefined.Name);
         foreach (var @abstract in tree.AbstractNodes) AddNodeName(@abstract.Name);
         foreach (var node in tree.Nodes) AddNodeName(node.Name);
+
+        foreach (var node in tree.Nodes)
+        {
+            foreach (var field in node.Fields)
+            {
+                foreach (var kind in field.Tokens)
+                {
+                    if (tokenKinds.Contains(kind.Kind)) continue;
+                    throw new InvalidOperationException($"token kind {kind.Kind} in field {field.Name} of node {node.Name} is not defined in the tree");
+                }
+            }
+        }
     }
 
     public Node Root { get; } = root;
     public IList<Node> Nodes { get; } = nodes;
+    public IList<Token> Tokens { get; } = tokens;
+
+    public bool HasTokenKind(string kind) => this.Tokens.Any(t => t.Name == kind);
+    public Token GetTokenFromKind(string kind) => this.Tokens.First(t => t.Name == kind);
+}
+
+public sealed class Token(string name, string? text, string? value, string documentation)
+{
+    public string Name { get; } = name;
+    public string? Text { get; } = text;
+    public string? Value { get; } = value;
+    public string Documentation { get; } = documentation;
 }
 
 public sealed class Node
@@ -119,4 +157,6 @@ public sealed class Field(
     public bool IsNullable => this.Type.EndsWith("?");
     public string NonNullableType => this.IsNullable ? this.Type[..^1] : this.Type;
     public bool IsToken => this.NonNullableType == "SyntaxToken";
+    public bool IsSyntaxList => this.NonNullableType.StartsWith("SyntaxList");
+    public string ElementType => this.NonNullableType.Split('<', '>')[1];
 }

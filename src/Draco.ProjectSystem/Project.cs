@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Evaluation;
-using Microsoft.Build.Framework;
 using MSBuildProject = Microsoft.Build.Evaluation.Project;
 using MSBuildProjectInstance = Microsoft.Build.Execution.ProjectInstance;
 

@@ -6,12 +6,13 @@ using System.Reflection;
 using System.Threading;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Codegen;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -64,7 +65,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         for (var i = 2; i <= 8; ++i)
         {
             // Type
-            var arrayType = new ArrayTypeSymbol(i, this.SystemInt32);
+            var arrayType = new ArrayTypeSymbol(compilation, i, this.SystemInt32);
             yield return arrayType;
             // Ctor
             yield return new ArrayConstructorSymbol(arrayType);
@@ -170,17 +171,63 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     public TypeSymbol InstantiateArray(TypeSymbol elementType, int rank = 1) => rank switch
     {
         1 => this.ArrayType.GenericInstantiate(elementType),
-        int n => new ArrayTypeSymbol(n, this.SystemInt32).GenericInstantiate(elementType),
+        int n => new ArrayTypeSymbol(compilation, n, this.SystemInt32).GenericInstantiate(elementType),
     };
 
     #endregion
 
-    public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(1, this.SystemInt32));
+    #region Additives/Mixins for types
+    /// <summary>
+    /// Returns all the equality operator members for an enum type.
+    /// </summary>
+    /// <param name="type">The enum type.</param>
+    /// <returns>The equality operator members.</returns>
+    public IEnumerable<Symbol> GetEnumEqualityMembers(TypeSymbol type)
+    {
+        if (!type.IsEnumType) throw new ArgumentException("the type must be an enum type", nameof(type));
+
+        // == and !=
+        yield return this.Comparison(TokenKind.Equal, type, type, FromAllocating(this.CodegenEqual));
+        yield return this.Comparison(TokenKind.NotEqual, type, type, FromAllocating(this.CodegenNotEqual));
+    }
+    #endregion
+
+    public ArrayTypeSymbol ArrayType => LazyInitializer.EnsureInitialized(ref this.array, () => new(compilation, 1, this.SystemInt32));
     private ArrayTypeSymbol? array;
 
     public ArrayConstructorSymbol ArrayCtor => LazyInitializer.EnsureInitialized(ref this.arrayCtor, () => new(this.ArrayType));
     private ArrayConstructorSymbol? arrayCtor;
 
+    /// <summary>
+    /// Translates a <see cref="Type"/> to a <see cref="TypeSymbol"/>, if it's a well-known primitive type.
+    /// </summary>
+    /// <param name="type">The reflected type to translate.</param>
+    /// <returns>The translated type symbol, or <see langword="null"/> if it's not a translatable primitive type.</returns>
+    public TypeSymbol? TranslatePrmitive(Type type)
+    {
+        if (type == typeof(byte)) return this.SystemByte;
+        if (type == typeof(ushort)) return this.SystemUInt16;
+        if (type == typeof(uint)) return this.SystemUInt32;
+        if (type == typeof(ulong)) return this.SystemUInt64;
+
+        if (type == typeof(sbyte)) return this.SystemSByte;
+        if (type == typeof(short)) return this.SystemInt16;
+        if (type == typeof(int)) return this.SystemInt32;
+        if (type == typeof(long)) return this.SystemInt64;
+
+        if (type == typeof(float)) return this.SystemSingle;
+        if (type == typeof(double)) return this.SystemDouble;
+
+        if (type == typeof(bool)) return this.SystemBoolean;
+        if (type == typeof(char)) return this.SystemChar;
+
+        if (type == typeof(string)) return this.SystemString;
+        if (type == typeof(object)) return this.SystemObject;
+
+        if (type == typeof(Type)) return this.SystemType;
+
+        return null;
+    }
 
     #region Loader Methods
     public MetadataTypeSymbol GetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)
@@ -237,7 +284,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     #region Codegen Methods
 
     private delegate void AllocatingCodegenDelegate(
-        FunctionBodyCodegen codegen,
+        LocalCodegen codegen,
         Register target,
         ImmutableArray<IOperand> operands);
 
@@ -249,32 +296,32 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
             return target;
         };
 
-    private IOperand CodegenPlus(FunctionBodyCodegen codegen, TypeSymbol targetType, ImmutableArray<IOperand> operands) =>
+    private IOperand CodegenPlus(LocalCodegen codegen, TypeSymbol targetType, ImmutableArray<IOperand> operands) =>
         // Simply return the operand holding the value
         operands[0];
 
-    private void CodegenMinus(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenMinus(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Mul(target, operands[0], new Constant(-1, this.SystemInt32)));
 
-    private void CodegenNot(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenNot(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Equal(target, operands[0], new Constant(false, this.SystemBoolean)));
 
-    private void CodegenAdd(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenAdd(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Add(target, operands[0], operands[1]));
 
-    private void CodegenSub(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenSub(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Sub(target, operands[0], operands[1]));
 
-    private void CodegenMul(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenMul(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Mul(target, operands[0], operands[1]));
 
-    private void CodegenDiv(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenDiv(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Div(target, operands[0], operands[1]));
 
-    private void CodegenRem(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenRem(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Rem(target, operands[0], operands[1]));
 
-    private void CodegenMod(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenMod(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // a mod b
         //  <=>
@@ -286,16 +333,16 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         codegen.Write(Rem(target, tmp1, operands[1]));
     }
 
-    private void CodegenLess(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenLess(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Less(target, operands[0], operands[1]));
 
-    private void CodegenGreater(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenGreater(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         // a > b
         //  <=>
         // b < a
         codegen.Write(Less(target, operands[1], operands[0]));
 
-    private void CodegenLessEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenLessEqual(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // a <= b
         //  <=>
@@ -305,7 +352,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         codegen.Write(Equal(target, tmp, new Constant(false, this.SystemBoolean)));
     }
 
-    private void CodegenGreaterEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenGreaterEqual(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // a >= b
         //  <=>
@@ -315,10 +362,10 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         codegen.Write(Equal(target, tmp, new Constant(false, this.SystemBoolean)));
     }
 
-    private void CodegenEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
+    private void CodegenEqual(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands) =>
         codegen.Write(Equal(target, operands[0], operands[1]));
 
-    private void CodegenNotEqual(FunctionBodyCodegen codegen, Register target, ImmutableArray<IOperand> operands)
+    private void CodegenNotEqual(LocalCodegen codegen, Register target, ImmutableArray<IOperand> operands)
     {
         // a != b
         //  <=>

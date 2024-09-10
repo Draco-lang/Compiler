@@ -37,7 +37,7 @@ public sealed class XmlLspModelSourceGenerator : XmlSourceGenerator
         var csModel = translator.Translate();
 
         // Finally generate by template
-        var lspModelCode = CodeGenerator.GenerateLspModel(csModel, cancellationToken);
+        var lspModelCode = Template.Generate(csModel);
 
         return
         [

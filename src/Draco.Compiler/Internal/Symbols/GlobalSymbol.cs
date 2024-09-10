@@ -10,9 +10,20 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract partial class GlobalSymbol : VariableSymbol, IMemberSymbol
 {
     public bool IsStatic => true;
+    public bool IsExplicitImplementation => false;
 
     // NOTE: Override for covariant return type
     public override GlobalSymbol? GenericDefinition => null;
+
+    /// <summary>
+    /// True, if this global is a literal, meaning its value is known at compile-time and has to be inlined.
+    /// </summary>
+    public virtual bool IsLiteral => false;
+
+    /// <summary>
+    /// The literal value of this global, if it is a literal.
+    /// </summary>
+    public virtual object? LiteralValue => null;
 
     public override ISymbol ToApiSymbol() => new Api.Semantics.GlobalSymbol(this);
 

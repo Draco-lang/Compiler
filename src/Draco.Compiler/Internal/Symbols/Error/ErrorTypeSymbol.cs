@@ -1,5 +1,5 @@
-using Draco.Compiler.Internal.Symbols.Generic;
 using System.Collections.Immutable;
+using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols.Error;
 

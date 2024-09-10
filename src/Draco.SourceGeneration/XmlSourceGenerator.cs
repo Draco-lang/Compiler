@@ -13,16 +13,8 @@ namespace Draco.SourceGeneration;
 public abstract class XmlSourceGenerator : IIncrementalGenerator
 {
 #pragma warning disable RS2008 // Enable analyzer release tracking
-    private static readonly DiagnosticDescriptor XmlNotFound = new(
-        id: "DRC0001",
-        title: "XML file not found",
-        messageFormat: "{0} file was not found in the project",
-        category: "XmlSourceGenerator",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
     private static readonly DiagnosticDescriptor CouldNotReadXml = new(
-        id: "DRC0002",
+        id: "DRC0001",
         title: "Could not read XML file",
         messageFormat: "{0} file could not be read",
         category: "XmlSourceGenerator",
@@ -30,7 +22,7 @@ public abstract class XmlSourceGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor GenerationError = new(
-        id: "DRC0003",
+        id: "DRC0002",
         title: "Generation error",
         messageFormat: "Error while generating code from {0}: {1}",
         category: "XmlSourceGenerator",
@@ -72,14 +64,8 @@ public abstract class XmlSourceGenerator : IIncrementalGenerator
         {
             var xmlFile = xmlFiles.SingleOrDefault();
 
-            if (xmlFile is null)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    descriptor: XmlNotFound,
-                    location: null,
-                    messageArgs: this.XmlFileName));
-                return;
-            }
+            // We interpret it as the project not needing it
+            if (xmlFile is null) return;
 
             var xmlSource = xmlFile.GetText();
             if (xmlSource is null)

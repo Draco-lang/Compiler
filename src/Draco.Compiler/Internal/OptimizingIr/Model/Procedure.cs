@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal sealed class Procedure : IProcedure
 {
     public FunctionSymbol Symbol { get; }
-    public string Name => this.Symbol.Name;
+    public string Name => this.Symbol.NestedName;
     public TypeSymbol? Type => this.Symbol.Type;
     public Module DeclaringModule { get; }
     IModule IProcedure.DeclaringModule => this.DeclaringModule;
@@ -20,6 +20,7 @@ internal sealed class Procedure : IProcedure
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
+    public IReadOnlyList<AttributeInstance> Attributes => this.Symbol.Attributes;
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
     public IReadOnlyList<ParameterSymbol> Parameters => this.Symbol.Parameters;
     public TypeSymbol ReturnType => this.Symbol.ReturnType;

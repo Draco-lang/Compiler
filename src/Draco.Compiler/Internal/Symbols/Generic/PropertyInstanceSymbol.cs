@@ -26,6 +26,8 @@ internal sealed class PropertyInstanceSymbol(
 
     public override bool IsStatic => this.GenericDefinition.IsStatic;
 
+    public override bool IsExplicitImplementation => this.GenericDefinition.IsExplicitImplementation;
+
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override PropertySymbol GenericDefinition { get; } = genericDefinition;
 

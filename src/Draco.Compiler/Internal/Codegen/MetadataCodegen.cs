@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -14,7 +15,7 @@ using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
-using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -23,14 +24,22 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class MetadataCodegen : MetadataWriter
 {
-    public static void Generate(Compilation compilation, IAssembly assembly, Stream peStream, Stream? pdbStream)
+    public static void Generate(
+        Compilation compilation,
+        IAssembly assembly,
+        Stream peStream,
+        Stream? pdbStream,
+        CodegenFlags flags = CodegenFlags.None)
     {
+        if (pdbStream is not null) flags |= CodegenFlags.EmitPdb;
+
         var codegen = new MetadataCodegen(
             compilation: compilation,
             assembly: assembly,
-            writePdb: pdbStream is not null);
+            flags: flags);
         codegen.EncodeAssembly();
         codegen.WritePe(peStream);
+
         if (pdbStream is not null) codegen.PdbCodegen!.WritePdb(pdbStream);
     }
 
@@ -40,6 +49,11 @@ internal sealed class MetadataCodegen : MetadataWriter
     /// The compilation that started codegen.
     /// </summary>
     public Compilation Compilation { get; }
+
+    /// <summary>
+    /// The flags for the codegen.
+    /// </summary>
+    public CodegenFlags Flags { get; }
 
     /// <summary>
     /// The PDB code-generator, in case we generate PDBs.
@@ -61,6 +75,21 @@ internal sealed class MetadataCodegen : MetadataWriter
     /// </summary>
     public MethodDefinitionHandle EntryPointHandle { get; private set; }
 
+    /// <summary>
+    /// True, if PDBs should be emitted.
+    /// </summary>
+    public bool EmitPdb => this.Flags.HasFlag(CodegenFlags.EmitPdb);
+
+    /// <summary>
+    /// True, if stackification should be attempted.
+    /// </summary>
+    public bool Stackify => this.Flags.HasFlag(CodegenFlags.Stackify);
+
+    /// <summary>
+    /// True, if handles should be redirected to the compile-time root module.
+    /// </summary>
+    public bool RedirectHandlesToCompileTimeRoot => this.Flags.HasFlag(CodegenFlags.RedirectHandlesToRoot);
+
     private WellKnownTypes WellKnownTypes => this.Compilation.WellKnownTypes;
 
     private readonly IAssembly assembly;
@@ -70,17 +99,21 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly AssemblyReferenceHandle systemRuntimeReference;
     private readonly TypeReferenceHandle systemObjectReference;
 
-    private MetadataCodegen(Compilation compilation, IAssembly assembly, bool writePdb)
+    private MetadataCodegen(Compilation compilation, IAssembly assembly, CodegenFlags flags)
     {
         this.Compilation = compilation;
-        if (writePdb) this.PdbCodegen = new(this);
+        this.Flags = flags;
+        // We set stackification to true by default
+        this.Flags |= CodegenFlags.Stackify;
         this.assembly = assembly;
+
+        if (this.EmitPdb) this.PdbCodegen = new(this);
         this.WriteModuleAndAssemblyDefinition();
 
         // Reference System.Object from System.Runtime
         this.systemRuntimeReference = this.GetOrAddAssemblyReference(
             name: "System.Runtime",
-            version: new System.Version(7, 0, 0, 0),
+            version: new(7, 0, 0, 0),
             publicKeyOrToken: MicrosoftPublicKeyToken);
 
         this.systemObjectReference = this.GetOrAddTypeReference(
@@ -148,15 +181,16 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.AddAssemblyReference(assembly);
 
         // Metadata types
-        case IMetadataClass metadataSymbol:
+        case IMetadataSymbol metadataSymbol when metadataSymbol is MetadataStaticClassSymbol or MetadataTypeSymbol:
             Debug.Assert(symbol.ContainingSymbol is not null);
             return this.GetOrAddTypeReference(
                 parent: this.GetContainerEntityHandle(symbol.ContainingSymbol),
                 @namespace: GetNamespaceForSymbol(symbol),
                 name: metadataSymbol.MetadataName);
 
-        // Generic type instance
-        case TypeSymbol typeSymbol when typeSymbol.IsGenericInstance:
+        // Generic type instance that is NOT an array
+        // Arrays are handled by the case below
+        case TypeSymbol typeSymbol when typeSymbol.IsGenericInstance && !typeSymbol.IsArrayType:
         {
             Debug.Assert(typeSymbol.GenericDefinition is not null);
             var blob = this.EncodeBlob(e =>
@@ -204,6 +238,34 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Nongeneric function
         case FunctionSymbol func:
         {
+            Symbol GetContainingSymbol()
+            {
+                if (func.IsNested)
+                {
+                    // We can't have nested functions represented in metadata directly, so we'll climb up the parent chain
+                    // To find the first non-function container
+                    var current = func.ContainingSymbol;
+                    while (current is FunctionSymbol func)
+                    {
+                        current = func.ContainingSymbol;
+                    }
+                    return current!;
+                }
+
+                if (func.ContainingSymbol is not TypeSymbol type) return func.ContainingSymbol!;
+                if (!type.IsArrayType) return type;
+                // NOTE: This hack is present because of Arrays spit out stuff from their base types
+                // to take priority
+                // Which means we need to correct them here...
+                // Search for the function where the generic definitions are the same but the container is not the array
+                var functionInBase = type.BaseTypes
+                    .Except([type], SymbolEqualityComparer.Default)
+                    .SelectMany(b => b.Members)
+                    .OfType<FunctionSymbol>()
+                    .First(f => SymbolEqualityComparer.Default.Equals(f.GenericDefinition, func.GenericDefinition));
+                return functionInBase.ContainingSymbol!;
+            }
+
             var isInGenericInstance = func.ContainingSymbol?.IsGenericInstance ?? false;
             return this.AddMemberReference(
                 // TODO: Should a function ever have a null container?
@@ -211,8 +273,8 @@ internal sealed class MetadataCodegen : MetadataWriter
                 // This is the case for synthetized ctor functions for example
                 parent: func.ContainingSymbol is null
                     ? this.GetModuleReferenceHandle(this.assembly.RootModule)
-                    : this.GetEntityHandle(func.ContainingSymbol),
-                name: func.Name,
+                    : this.GetEntityHandle(GetContainingSymbol()),
+                name: func.NestedName,
                 signature: this.EncodeBlob(e =>
                 {
                     // In generic instances we still need to reference the generic types
@@ -233,6 +295,12 @@ internal sealed class MetadataCodegen : MetadataWriter
         case SourceModuleSymbol:
         case ScriptModuleSymbol:
         {
+            if (this.RedirectHandlesToCompileTimeRoot)
+            {
+                var root = this.Compilation.CompileTimeExecutor.RootModule;
+                return this.GetModuleReferenceHandle(root);
+            }
+
             var module = (ModuleSymbol)symbol;
             var irModule = this.assembly.Lookup(module);
             return this.GetModuleReferenceHandle(irModule);
@@ -273,7 +341,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     public EntityHandle GetMultidimensionalArrayCtorHandle(TypeSymbol elementType, int rank) =>
         this.AddMemberReference(
             parent: this.GetMultidimensionalArrayTypeHandle(elementType, rank),
-            name: ".ctor",
+            name: CompilerConstants.ConstructorName,
             signature: this.EncodeBlob(e =>
             {
                 e
@@ -341,13 +409,13 @@ internal sealed class MetadataCodegen : MetadataWriter
             name: module.Name,
             version: module.Version);
 
-    private static string? GetNamespaceForSymbol(Symbol symbol) => symbol switch
+    private static string? GetNamespaceForSymbol(Symbol? symbol) => symbol switch
     {
         // NOTE: For nested classes we don't need a namespace
-        IMetadataClass mclass when mclass.ContainingSymbol is TypeSymbol => null,
-        IMetadataClass mclass => GetNamespaceForSymbol(mclass.ContainingSymbol),
+        TypeSymbol when symbol.ContainingSymbol is TypeSymbol => null,
+        TypeSymbol type => GetNamespaceForSymbol(type.ContainingSymbol),
         MetadataNamespaceSymbol ns => ns.FullName,
-        _ when symbol.ContainingSymbol is not null => GetNamespaceForSymbol(symbol.ContainingSymbol),
+        _ when symbol?.ContainingSymbol is not null => GetNamespaceForSymbol(symbol.ContainingSymbol),
         _ => throw new ArgumentOutOfRangeException(nameof(symbol)),
     };
 
@@ -368,7 +436,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 name: "DebuggingModes");
             var debuggableAttributeCtor = this.AddMemberReference(
                 parent: debuggableAttribute,
-                name: ".ctor",
+                name: CompilerConstants.ConstructorName,
                 signature: this.EncodeBlob(e =>
                 {
                     e.MethodSignature().Parameters(1, out var returnType, out var parameters);
@@ -501,10 +569,13 @@ internal sealed class MetadataCodegen : MetadataWriter
         var parameterList = this.NextParameterHandle;
         foreach (var param in procedure.Parameters)
         {
-            this.AddParameterDefinition(
+            var paramHandle = this.AddParameterDefinition(
                 attributes: ParameterAttributes.None,
                 name: param.Name,
                 index: procedure.GetParameterIndex(param));
+
+            // Add attributes
+            foreach (var attribute in param.Attributes) this.EncodeAttribute(attribute, paramHandle);
         }
 
         // Add definition
@@ -515,6 +586,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             signature: this.EncodeProcedureSignature(procedure),
             bodyOffset: methodBodyOffset,
             parameterList: parameterList);
+
+        // Add attributes
+        foreach (var attribute in procedure.Attributes) this.EncodeAttribute(attribute, definitionHandle);
 
         // Add generic type parameters
         var genericIndex = 0;
@@ -547,6 +621,62 @@ internal sealed class MetadataCodegen : MetadataWriter
             this.EncodeSignatureType(paramsEncoder.AddParameter().Type(), param.Type);
         }
     });
+
+    private CustomAttributeHandle EncodeAttribute(AttributeInstance attribute, EntityHandle parent) =>
+        this.MetadataBuilder.AddCustomAttribute(
+            parent: parent,
+            constructor: this.GetEntityHandle(attribute.Constructor),
+            value: this.EncodeAttributeSignature(attribute));
+
+    private BlobHandle EncodeAttributeSignature(AttributeInstance attribute)
+    {
+        if (attribute.FixedArguments.Length == 0 && attribute.NamedArguments.Count == 0) return default;
+        return this.EncodeBlob(e =>
+        {
+            e.CustomAttributeSignature(out var fixedArgs, out var namedArguments);
+
+            foreach (var arg in attribute.FixedArguments)
+            {
+                this.EncodeAttributeValue(fixedArgs.AddArgument(), arg);
+            }
+
+            if (attribute.NamedArguments.Count > 0)
+            {
+                // TODO: Named arguments
+                throw new NotImplementedException();
+            }
+        });
+    }
+
+    private IEnumerable<TypeSymbol> ScalarConstantTypes => [
+        this.WellKnownTypes.SystemSByte,
+        this.WellKnownTypes.SystemInt16,
+        this.WellKnownTypes.SystemInt32,
+        this.WellKnownTypes.SystemInt64,
+
+        this.WellKnownTypes.SystemByte,
+        this.WellKnownTypes.SystemUInt16,
+        this.WellKnownTypes.SystemUInt32,
+        this.WellKnownTypes.SystemUInt64,
+
+        this.WellKnownTypes.SystemBoolean,
+        this.WellKnownTypes.SystemChar,
+
+        this.WellKnownTypes.SystemString];
+
+    private void EncodeAttributeValue(LiteralEncoder encoder, ConstantValue constant)
+    {
+        var type = constant.Type;
+
+        if (this.ScalarConstantTypes.Contains(type, SymbolEqualityComparer.Default))
+        {
+            encoder.Scalar().Constant(constant.Value);
+            return;
+        }
+
+        // TODO
+        throw new NotImplementedException();
+    }
 
     private StandaloneSignatureHandle EncodeLocals(
         ImmutableArray<AllocatedLocal> locals,

@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Tests.Semantics;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Syntax;
 
-public sealed class SyntaxHighlighterTests : SemanticTestsBase
+public sealed class SyntaxHighlighterTests
 {
     private const string sampleCode = """
         import System;
@@ -12,6 +12,7 @@ public sealed class SyntaxHighlighterTests : SemanticTestsBase
         import System.Collections.Generic;
 
         /// Hello doc comment
+        @ObsoleteAttribute("old method")
         func hashThem(x: int32, y: int32): int32 {
             var h: HashCode = default<HashCode>();
             h.Add(x);
@@ -51,6 +52,15 @@ public sealed class SyntaxHighlighterTests : SemanticTestsBase
         (";", SyntaxColoring.Punctuation),
 
         ("/// Hello doc comment", SyntaxColoring.DocumentationComment),
+
+        ("@", SyntaxColoring.Punctuation),
+        ("ObsoleteAttribute", SyntaxColoring.ReferenceTypeName),
+        ("(", SyntaxColoring.Parenthesis),
+        ("\"", SyntaxColoring.StringQuotes),
+        ("old method", SyntaxColoring.StringContent),
+        ("\"", SyntaxColoring.StringQuotes),
+        (")", SyntaxColoring.Parenthesis),
+
         ("func", SyntaxColoring.DeclarationKeyword),
         ("hashThem", SyntaxColoring.FunctionName),
         ("(", SyntaxColoring.Parenthesis),

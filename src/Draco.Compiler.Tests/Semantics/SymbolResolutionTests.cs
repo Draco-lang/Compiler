@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Reflection;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -12,18 +11,13 @@ using Binder = Draco.Compiler.Internal.Binding.Binder;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class SymbolResolutionTests : SemanticTestsBase
+public sealed class SymbolResolutionTests
 {
-    private static PropertyInfo BinderParentProperty { get; } = typeof(Binder)
-        .GetProperty("Parent", BindingFlags.NonPublic | BindingFlags.Instance)!;
-
     private static void AssertParentOf(Binder? parent, Binder? child)
     {
         Assert.NotNull(child);
         Assert.False(ReferenceEquals(parent, child));
-        // Since the Parent property is protected, we need to access it via reflection
-        var childParent = (Binder?)BinderParentProperty.GetValue(child);
-        Assert.True(ReferenceEquals(childParent, parent));
+        Assert.True(ReferenceEquals(child.Parent, parent));
     }
 
     [Fact]
@@ -82,16 +76,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var sym6 = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(x6));
 
         // Assert
-        AssertParentOf(GetDefiningScope(compilation, sym2), GetDefiningScope(compilation, sym3));
-        AssertParentOf(GetDefiningScope(compilation, sym1), GetDefiningScope(compilation, sym2));
-        AssertParentOf(GetDefiningScope(compilation, sym4), GetDefiningScope(compilation, sym5));
-        AssertParentOf(GetDefiningScope(compilation, sym4), GetDefiningScope(compilation, sym6));
-        AssertParentOf(GetDefiningScope(compilation, sym1), GetDefiningScope(compilation, sym4));
+        AssertParentOf(GetDefiningScope(sym2), GetDefiningScope(sym3));
+        AssertParentOf(GetDefiningScope(sym1), GetDefiningScope(sym2));
+        AssertParentOf(GetDefiningScope(sym4), GetDefiningScope(sym5));
+        AssertParentOf(GetDefiningScope(sym4), GetDefiningScope(sym6));
+        AssertParentOf(GetDefiningScope(sym1), GetDefiningScope(sym4));
 
-        AssertParentOf(GetDefiningScope(compilation, symn), GetDefiningScope(compilation, sym1));
+        AssertParentOf(GetDefiningScope(symn), GetDefiningScope(sym1));
 
-        AssertParentOf(GetDefiningScope(compilation, symFoo), GetDefiningScope(compilation, symn));
-        Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), GetDefiningScope(compilation, symn)));
+        AssertParentOf(GetDefiningScope(symFoo), GetDefiningScope(symn));
+        Assert.True(ReferenceEquals(compilation.GetBinder(symFoo), GetDefiningScope(symn)));
 
         Assert.Equal(6, diagnostics.Length);
         Assert.All(diagnostics, diag => Assert.Equal(TypeCheckingErrors.CouldNotInferType, diag.Template));
@@ -353,7 +347,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(x1SymDecl.IsError);
         Assert.False(x2SymDecl.IsError);
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -410,7 +404,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -443,7 +437,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(varSym.IsError);
         Assert.False(funcSym.IsError);
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -659,7 +653,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: BlockExpression(ImmutableArray.Create(ExpressionStatement(GotoExpression("break"))), LiteralExpression(false)),
-                        body: BlockExpression()))))));
+                        then: BlockExpression()))))));
 
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
@@ -689,7 +683,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: LiteralExpression(false),
-                        body: GotoExpression("break")))))));
+                        then: GotoExpression("break")))))));
 
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
@@ -719,7 +713,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: LiteralExpression(false),
-                        body: BlockExpression(ExpressionStatement(GotoExpression("break")))))))));
+                        then: BlockExpression(ExpressionStatement(GotoExpression("break")))))))));
 
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
@@ -750,7 +744,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: LiteralExpression(false),
-                        body: BlockExpression())),
+                        then: BlockExpression())),
                     ExpressionStatement(GotoExpression("break"))))));
 
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
@@ -788,11 +782,11 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: LiteralExpression(true),
-                        body: BlockExpression(
+                        then: BlockExpression(
                             ExpressionStatement(GotoExpression("continue")),
                             ExpressionStatement(WhileExpression(
                                 condition: LiteralExpression(true),
-                                body: BlockExpression(
+                                then: BlockExpression(
                                     ExpressionStatement(GotoExpression("break")),
                                     ExpressionStatement(GotoExpression("continue"))))),
                             ExpressionStatement(GotoExpression("break")))))))));
@@ -852,7 +846,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.True(localSymbol.Type.IsError);
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalExpression);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
     }
 
     [Fact]
@@ -872,7 +866,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -898,7 +892,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -929,7 +923,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.ImportNotAtTop);
+        AssertDiagnostics(diags, SymbolResolutionErrors.ImportNotAtTop);
     }
 
     [Fact]
@@ -962,7 +956,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.False(systemSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.ImportNotAtTop);
+        AssertDiagnostics(diags, SymbolResolutionErrors.ImportNotAtTop);
     }
 
     [Fact]
@@ -992,7 +986,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.NotNull(returnTypeSymbol);
         Assert.False(returnTypeSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.IllegalModuleType);
     }
 
     [Fact]
@@ -1024,7 +1018,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.NotNull(varTypeSymbol);
         Assert.False(varTypeSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.IllegalModuleType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.IllegalModuleType);
     }
 
     [Fact]
@@ -1058,11 +1052,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var mainModel = compilation.GetSemanticModel(main);
@@ -1105,11 +1096,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -1118,7 +1106,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1152,11 +1140,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -1198,11 +1183,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var fooCall = main.FindInChildren<MemberExpressionSyntax>(0);
@@ -1215,7 +1197,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         Assert.True(fooCallSymbol.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1241,11 +1223,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
            ToPath("Tests", "BarModule", "bar.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -1254,7 +1233,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1274,19 +1253,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(CallExpression(NameExpression("Foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 internal static void Foo() { }
             }
             """);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1294,7 +1270,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1312,19 +1288,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(CallExpression(MemberExpression(NameExpression("FooModule"), "Foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 internal static void Foo() { }
             }
             """);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1332,7 +1305,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1365,11 +1338,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
@@ -1417,11 +1387,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -1430,7 +1397,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1463,11 +1430,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var fooDecl = main.FindInChildren<FunctionDeclarationSyntax>(1);
@@ -1514,11 +1478,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     InlineFunctionBody(LiteralExpression(0))))));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var fooCall = main.FindInChildren<NameExpressionSyntax>(0);
@@ -1531,7 +1492,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         Assert.True(fooCallSymbol.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1561,11 +1522,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
            ToPath("Tests", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
@@ -1598,18 +1556,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             ToPath("NotRoot", "main.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var diags = compilation.Diagnostics;
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.FilePathOutsideOfRootPath);
+        AssertDiagnostics(diags, SymbolResolutionErrors.FilePathOutsideOfRootPath);
     }
 
     [Fact]
@@ -1654,11 +1609,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("WriteLine")))))));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var writeLineCall = main.FindInChildren<CallExpressionSyntax>(4).Function;
@@ -1671,7 +1623,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         Assert.True(writeLineCallSymbol.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1700,8 +1652,8 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.NotNull(returnTypeSymbol);
         Assert.True(returnTypeSymbol.IsError);
         Assert.Equal(2, diags.Length);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
-        AssertDiagnostic(diags, FlowAnalysisErrors.DoesNotReturn);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, FlowAnalysisErrors.DoesNotReturn);
     }
 
     [Fact]
@@ -1730,7 +1682,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.NotNull(paramTypeSymbol);
         Assert.True(paramTypeSymbol.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -1750,7 +1702,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public static int foo = 0;
             }
@@ -1760,18 +1712,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -1800,7 +1749,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public static int foo = 0;
             }
@@ -1810,12 +1759,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooNameRef = main.FindInChildren<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1850,7 +1796,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public int foo = 0;
             }
@@ -1860,18 +1806,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -1896,7 +1839,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public static readonly int foo = 0;
             }
@@ -1905,24 +1848,21 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -1941,7 +1881,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public const int foo = 0;
             }
@@ -1950,24 +1890,21 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<GlobalSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -1987,7 +1924,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public readonly int foo = 0;
             }
@@ -1996,24 +1933,21 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)).Type, "foo");
+        var fooSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
     }
 
     [Fact]
@@ -2033,7 +1967,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType { }
             """);
 
@@ -2041,12 +1975,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2060,7 +1991,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooTypeSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
     [Fact]
@@ -2080,19 +2011,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType { }
             """);
 
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2104,7 +2032,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
     [Fact]
@@ -2122,19 +2050,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule { }
             """);
 
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2146,7 +2071,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.Single(diags);
         Assert.False(fooModuleSym.IsError);
         Assert.Same(fooModuleSym, fooModuleDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -2164,7 +2089,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule { }
             """);
 
@@ -2172,12 +2097,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2191,7 +2113,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooModuleSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fooModuleSym, fooModuleDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -2211,7 +2133,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public static int foo { get; set; }
             }
@@ -2221,18 +2143,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -2261,7 +2180,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, NameExpression("foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public static int foo { get; set; }
             }
@@ -2271,12 +2190,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2311,7 +2227,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public int foo { get; set; }
             }
@@ -2321,18 +2237,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2359,7 +2272,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5)))))));
 
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public static int foo { get; }
             }
@@ -2368,24 +2281,21 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
     }
 
     [Fact]
@@ -2403,7 +2313,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public static int foo { set { } }
             }
@@ -2412,24 +2322,21 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
     }
 
     [Fact]
@@ -2449,7 +2356,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public int foo { get; }
             }
@@ -2458,24 +2365,21 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.CannotSetGetOnlyProperty);
     }
 
     [Fact]
@@ -2495,7 +2399,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public int foo { set { } }
             }
@@ -2505,18 +2409,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2524,7 +2425,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.CannotGetSetOnlyProperty);
     }
 
     [Fact]
@@ -2544,7 +2445,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), PlusAssign, LiteralExpression(2)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public int foo { get; set; }
             }
@@ -2553,17 +2454,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "foo");
 
         // Assert
@@ -2587,7 +2485,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), PlusAssign, LiteralExpression(2)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
                 public static int foo { get; set; }
             }
@@ -2596,17 +2494,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(fooModuleRef)), "foo");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooModule", "foo");
 
         // Assert
@@ -2634,7 +2529,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public int this[int index]
                 {
@@ -2648,18 +2543,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -2686,7 +2578,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public int this[int index] => index * 2;
             }
@@ -2695,12 +2587,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2710,7 +2599,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         Assert.True(fooSym.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]
@@ -2730,7 +2619,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public int this[int index] { set { } }
             }
@@ -2740,18 +2629,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -2759,7 +2645,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooSym.IsError);
         Assert.False(xSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
@@ -2781,7 +2667,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public Foo foo = new Foo();
             }
@@ -2798,19 +2684,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
-        var indexSym = GetMemberSymbol<PropertySymbol>(fooSym.Type, "Item");
+        var fooSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = AssertMember<PropertySymbol>(fooSym.Type, "Item");
         var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
 
         // Assert
@@ -2838,7 +2721,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public Foo foo = new Foo();
             }
@@ -2850,12 +2733,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2865,7 +2745,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         Assert.True(fooSym.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]
@@ -2885,7 +2765,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
                 public Foo foo = new Foo();
             }
@@ -2898,19 +2778,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fooSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
-        var indexSym = GetMemberSymbol<PropertySymbol>(fooSym.Type, "Item");
+        var fooSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "foo");
+        var indexSym = AssertMember<PropertySymbol>(fooSym.Type, "Item");
         var indexDecl = GetMetadataSymbol(compilation, null, "Foo", "Item");
 
         // Assert
@@ -2919,7 +2796,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(fooSym.IsError);
         Assert.False(indexSym.IsError);
         Assert.Same(indexSym, indexDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
@@ -2939,7 +2816,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType { }
             """);
 
@@ -2947,12 +2824,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2966,7 +2840,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         Assert.False(xSym.IsError);
         Assert.False(fooTypeSym.IsError);
         Assert.Same(fooTypeSym, fooTypeDecl);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoGettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoGettableIndexerInType);
     }
 
     [Fact]
@@ -2986,19 +2860,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType { }
             """);
 
         var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3008,7 +2879,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         Assert.True(fooSym.IsError);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NoSettableIndexerInType);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NoSettableIndexerInType);
     }
 
     [Fact]
@@ -3028,7 +2899,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), PlusAssign, LiteralExpression(2)))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType
             {
                 public int this[int index]
@@ -3042,17 +2913,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
+        var fooSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type, "Item");
         var fooDecl = GetMetadataSymbol(compilation, null, "FooType", "Item");
 
         // Assert
@@ -3074,7 +2942,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class ParentType
             {
                 public class FooType { }
@@ -3084,17 +2952,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = AssertMember<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3118,7 +2983,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(NameExpression("FooType"))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class ParentType{
                 public class FooType { }
             }
@@ -3127,12 +2992,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<TypeSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3159,7 +3021,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 InlineFunctionBody(
                     CallExpression(MemberExpression(NameExpression("ParentType"), "FooType"))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType
             {
                 public class FooType { }
@@ -3169,17 +3031,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = AssertMember<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3204,7 +3063,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class ParentType
             {
                 public class FooType
@@ -3217,17 +3076,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = AssertMember<TypeSymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3252,7 +3108,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType
             {
                 public class FooType
@@ -3265,17 +3121,14 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var fooTypeSym = GetMemberSymbol<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
+        var fooTypeSym = AssertMember<TypeSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(parentTypeRef)), "FooType");
         var fooTypeDecl = GetMetadataSymbol(compilation, null, "ParentType", "FooType");
 
         // Assert
@@ -3302,7 +3155,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public static class ParentType
             {
                 public class FooType
@@ -3316,12 +3169,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3355,7 +3205,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType
             {
                 public class FooType
@@ -3369,12 +3219,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3443,19 +3290,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType { }
             """);
 
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3487,7 +3331,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType { }
             public class FooType : ParentType { }
             """);
@@ -3495,12 +3339,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3544,20 +3385,16 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         baseStream.Position = 0;
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType : ParentType.BaseType { }
             """, aditionalReferences: [baseStream]);
 
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(baseRef)
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [baseRef, fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3590,7 +3427,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType<T> { }
             public class FooType : ParentType<int> { }
             """);
@@ -3598,12 +3435,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3641,7 +3475,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public interface ParentInterface { }
             public class FooType : ParentInterface { }
             """);
@@ -3649,12 +3483,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3688,7 +3519,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class FooType : System.ICloneable
             {
                 public object Clone() => new object();
@@ -3698,12 +3529,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3736,7 +3564,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public interface ParentInterface<T> { }
             public class FooType : ParentInterface<int> { }
             """);
@@ -3744,12 +3572,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3790,7 +3615,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("foo"), "Field")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType
             {
                 public int Field = 5;
@@ -3802,18 +3627,15 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
         var xSym = GetInternalSymbol<VariableSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var fieldSym = GetMemberSymbol<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.ImmediateBaseTypes[0], "Field");
+        var fieldSym = AssertMember<FieldSymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(fooTypeRef)).Type.ImmediateBaseTypes[0], "Field");
         var fieldDecl = GetMetadataSymbol(compilation, null, "ParentType", "Field");
 
         // Assert
@@ -3839,7 +3661,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class Base
             {
                 public virtual Base Clone() => this;
@@ -3854,12 +3676,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3891,7 +3710,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class Base
             {
                 public virtual Base Clone(int parameter) => this;
@@ -3906,12 +3725,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -3954,7 +3770,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         baseStream.Position = 0;
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class Derived : Base
             {
                 public override Derived Clone(int parameter) => this;
@@ -3964,13 +3780,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .Append(baseRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef, baseRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -4002,7 +3814,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class Base
             {
                 public virtual Base Clone => this;
@@ -4017,12 +3829,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -4054,7 +3863,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class Base
             {
                 public virtual Base Clone => this;
@@ -4069,12 +3878,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
         var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -4159,7 +3965,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
     [Fact]
@@ -4180,7 +3986,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                         CallExpression(NameExpression("Seq")),
                         BlockExpression()))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class Seq
             {
                 public TestEnumerator GetEnumerator() => default;
@@ -4193,12 +3999,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             """);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -4206,7 +4009,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
     }
 
     [Fact]
@@ -4227,7 +4030,7 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
                         CallExpression(NameExpression("Seq")),
                         BlockExpression()))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             public class Seq
             {
                 public TestEnumerator GetEnumerator() => default;
@@ -4242,12 +4045,9 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
             """);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -4255,6 +4055,6 @@ public sealed class SymbolResolutionTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.NotGettableProperty);
+        AssertDiagnostics(diags, SymbolResolutionErrors.NotGettableProperty);
     }
 }

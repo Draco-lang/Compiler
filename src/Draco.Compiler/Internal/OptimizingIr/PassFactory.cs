@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.OptimizingIr.Passes;
 
@@ -11,7 +12,7 @@ namespace Draco.Compiler.Internal.OptimizingIr;
 /// </summary>
 internal static class PassFactory
 {
-    private sealed class DelegatePass(PassFactory.AssemblyPassDelegate passDelegate) : IPass
+    private sealed class DelegatePass(AssemblyPassDelegate passDelegate) : IPass
     {
         public bool Apply(Assembly assembly) => passDelegate(assembly);
     }

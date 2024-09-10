@@ -55,7 +55,6 @@ internal class FunctionInstanceSymbol(
     public override string Name => this.GenericDefinition.Name;
     public override bool IsVirtual => this.GenericDefinition.IsVirtual;
     public override bool IsStatic => this.GenericDefinition.IsStatic;
-    public override bool ForceInline => this.GenericDefinition.ForceInline;
     public override BoundStatement? Body => this.GenericDefinition.Body;
     public override CodegenDelegate? Codegen => this.GenericDefinition.Codegen;
 

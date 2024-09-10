@@ -293,10 +293,14 @@ internal sealed partial class ConstraintSolver
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
                     // Best-effort shape approximation
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.ReportDiagnostic(diagnostics, diag => diag
-                        .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
-                        .WithFormatArgs(overload.FunctionName));
                     overload.CompletionSource.SetResult(errorSymbol);
+                    // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
+                    if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsError))
+                    {
+                        overload.ReportDiagnostic(diagnostics, diag => diag
+                            .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
+                            .WithFormatArgs(overload.FunctionName));
+                    }
                     return;
                 }
 
@@ -306,10 +310,14 @@ internal sealed partial class ConstraintSolver
                     // Best-effort shape approximation
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.ReportDiagnostic(diagnostics, diag => diag
-                        .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
-                        .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));
                     overload.CompletionSource.SetResult(errorSymbol);
+                    // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
+                    if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsError))
+                    {
+                        overload.ReportDiagnostic(diagnostics, diag => diag
+                            .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
+                            .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));
+                    }
                     return;
                 }
 

@@ -40,7 +40,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private volatile Compilation compilation;
 
     private readonly CompletionService completionService = CompletionService.CreateDefault();
-    private readonly SignatureService signatureService = new();
+    private readonly SignatureService signatureService = SignatureService.CreateDefault();
     private readonly CodeFixService codeFixService = CodeFixService.CreateDefault();
 
     public DracoLanguageServer(ILanguageClient client)
@@ -93,7 +93,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
             syntaxTrees: syntaxTrees,
 
             metadataReferences: designTimeBuild.References
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Select(r => MetadataReference.FromFile(r.FullName))
                 .ToImmutableArray(),
             rootModulePath: rootPath);
     }

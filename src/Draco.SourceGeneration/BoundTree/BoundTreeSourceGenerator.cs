@@ -16,7 +16,7 @@ public sealed class BoundTreeSourceGenerator : XmlSourceGenerator
     {
         var domainModel = Tree.FromXml((XmlTree)xmlModel);
 
-        var boundTreeCode = CodeGenerator.GenerateBoundTree(domainModel, cancellationToken);
+        var boundTreeCode = Template.Generate(domainModel);
 
         return
         [

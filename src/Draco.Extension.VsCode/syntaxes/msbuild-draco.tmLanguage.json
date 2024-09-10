@@ -1,0 +1,9 @@
+{
+  "name": "MSBuild-Draco",
+  "scopeName": "text.xml.msbuild-draco",
+  "patterns": [
+    {
+      "include": "text.xml"
+    }
+  ]
+}

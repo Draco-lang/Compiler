@@ -23,11 +23,27 @@ public abstract class MetadataReference
     public abstract XmlDocument? Documentation { get; }
 
     /// <summary>
+    /// Creates a metadata reference reading up the given file.
+    /// </summary>
+    /// <param name="path">The path to the file to read.</param>
+    /// <returns>The <see cref="MetadataReference"/> created from the file at <paramref name="path"/>.</returns>
+    public static MetadataReference FromFile(string path)
+    {
+        // NOTE: We could add a bool to turn off fetching the docs
+        var peStream = File.OpenRead(path);
+        // We assume the docs are under the same path, same name but with .xml extension
+        var docPath = Path.ChangeExtension(path, ".xml");
+        var docStream = File.Exists(docPath) ? File.OpenRead(docPath) : null;
+        return FromPeStream(peStream, docStream);
+    }
+
+    /// <summary>
     /// Creates a metadata reference from the given assembly.
     /// </summary>
     /// <param name="assembly">The assembly to create a metadata reader from.</param>
+    /// <param name="documentation">The XML documentation for the assembly.</param>
     /// <returns>The <see cref="MetadataReference"/> created from <paramref name="assembly"/>.</returns>
-    public static MetadataReference FromAssembly(Assembly assembly)
+    public static MetadataReference FromAssembly(Assembly assembly, XmlDocument? documentation = null)
     {
         unsafe
         {
@@ -37,7 +53,7 @@ public abstract class MetadataReference
             }
 
             var reader = new MetadataReader(blob, length);
-            return new MetadataReaderReference(reader);
+            return new MetadataReaderReference(reader, documentation);
         }
     }
 
@@ -45,29 +61,37 @@ public abstract class MetadataReference
     /// Creates a metadata reference from the given PE stream.
     /// </summary>
     /// <param name="peStream">The PE stream to create the metadata reference from.</param>
+    /// <param name="documentation">The XML documentation for the assembly.</param>
     /// <returns>The <see cref="MetadataReference"/> reading up from <paramref name="peStream"/>.</returns>
-    public static MetadataReference FromPeStream(Stream peStream)
+    public static MetadataReference FromPeStream(Stream peStream, XmlDocument? documentation = null)
     {
         var peReader = new PEReader(peStream);
         var metadataReader = peReader.GetMetadataReader();
-        return new MetadataReaderReference(metadataReader);
+        return new MetadataReaderReference(metadataReader, documentation);
     }
 
     /// <summary>
-    /// Adds xml documentation to this metadata reference.
+    /// Creates a metadata reference from the given PE stream.
     /// </summary>
-    /// <param name="xmlStream">The stream with the xml documentation.</param>
-    /// <returns>New metadata reference containing xml documentation.</returns>
-    public MetadataReference WithDocumentation(Stream xmlStream)
+    /// <param name="peStream">The PE stream to create the metadata reference from.</param>
+    /// <param name="xmlDocStream">The stream to read up XML documentation from for the assembly.</param>
+    /// <returns>The <see cref="MetadataReference"/> reading up from <paramref name="peStream"/>.</returns>
+    public static MetadataReference FromPeStream(Stream peStream, Stream? xmlDocStream)
     {
-        var doc = new XmlDocument();
-        doc.Load(xmlStream);
-        return new MetadataReaderReference(this.MetadataReader, doc);
+        var peReader = new PEReader(peStream);
+        var metadataReader = peReader.GetMetadataReader();
+        var docXml = null as XmlDocument;
+        if (xmlDocStream is not null)
+        {
+            docXml = new XmlDocument();
+            docXml.Load(xmlDocStream);
+        }
+        return new MetadataReaderReference(metadataReader, docXml);
     }
 
     private sealed class MetadataReaderReference(
         MetadataReader metadataReader,
-        XmlDocument? documentation = null) : MetadataReference
+        XmlDocument? documentation) : MetadataReference
     {
         public override MetadataReader MetadataReader { get; } = metadataReader;
         public override XmlDocument? Documentation { get; } = documentation;

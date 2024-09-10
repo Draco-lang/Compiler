@@ -18,5 +18,9 @@ internal sealed class ScriptFunctionSymbol(
         ((ScriptModuleSymbol)this.ContainingSymbol).ScriptBindings.FunctionBodies[this.DeclaringSyntax];
     public override Visibility Visibility => Visibility.Public;
 
-    public override void Bind(IBinderProvider binderProvider) => containingSymbol.Bind(binderProvider);
+    public override void Bind(IBinderProvider binderProvider)
+    {
+        this.BindAttributesIfNeeded(binderProvider);
+        containingSymbol.Bind(binderProvider);
+    }
 }

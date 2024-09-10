@@ -105,7 +105,8 @@ public static class SyntaxHighlighter
      or TokenKind.Comma
      or TokenKind.Colon
      or TokenKind.Semicolon
-     or TokenKind.Ellipsis => Fragment(token, SyntaxColoring.Punctuation),
+     or TokenKind.Ellipsis
+     or TokenKind.AtSign => Fragment(token, SyntaxColoring.Punctuation),
 
         TokenKind.KeywordIf
      or TokenKind.KeywordElse

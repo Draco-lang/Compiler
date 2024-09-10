@@ -4,6 +4,75 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://draco-lang.com/red-green-tree/syntax ../../../Draco.SourceGeneration/SyntaxTree/Syntax.xsd"
   Root="SyntaxNode">
+
+  <Token Kind="EndOfInput" Text="" Documentation="The end of the read source." />
+  <Token Kind="Unknown" Documentation="Any unknown character." />
+  <Token Kind="Identifier" Documentation="Non-keyword names." />
+  <Token Kind="LiteralInteger" Documentation="An integer literal." />
+  <Token Kind="LiteralFloat" Documentation="An integer literal." />
+  <Token Kind="LiteralCharacter" Documentation="A character literal." />
+  <Token Kind="LineStringStart" Documentation="The start of a single-line string literal." />
+  <Token Kind="LineStringEnd" Documentation="The end of a single-line string literal." />
+  <Token Kind="MultiLineStringStart" Documentation="The start of a multi-line string literal." />
+  <Token Kind="MultiLineStringEnd" Documentation="The end of a multi-line string literal." />
+  <Token Kind="StringContent" Documentation="A sequence of characters in a string-literal." />
+  <Token Kind="StringNewline" Documentation="A newline in multiline strings." />
+  <Token Kind="EscapeSequence" Documentation="An escape sequence in a string." />
+  <Token Kind="InterpolationStart" Documentation="The start of string interpolation." />
+  <Token Kind="InterpolationEnd" Text="}" Documentation="The end of string interpolation." />
+  <Token Kind="KeywordAnd" Text="and" Documentation="The keyword 'and'." />
+  <Token Kind="KeywordElse" Text="else" Documentation="The keyword 'else'." />
+  <Token Kind="KeywordFalse" Text="false" Value="false" Documentation="The keyword 'false'." />
+  <Token Kind="KeywordFor" Text="for" Documentation="The keyword 'for'." />
+  <Token Kind="KeywordFunc" Text="func" Documentation="The keyword 'func'." />
+  <Token Kind="KeywordGoto" Text="goto" Documentation="The keyword 'goto'." />
+  <Token Kind="KeywordIf" Text="if" Documentation="The keyword 'if'." />
+  <Token Kind="KeywordImport" Text="import" Documentation="The keyword 'import'." />
+  <Token Kind="KeywordIn" Text="in" Documentation="The keyword 'in'." />
+  <Token Kind="KeywordInternal" Text="internal" Documentation="The keyword 'internal'." />
+  <Token Kind="KeywordMod" Text="mod" Documentation="The keyword 'mod'." />
+  <Token Kind="KeywordModule" Text="module" Documentation="The keyword 'module'." />
+  <Token Kind="KeywordNot" Text="not" Documentation="The keyword 'not'." />
+  <Token Kind="KeywordOr" Text="or" Documentation="The keyword 'or'." />
+  <Token Kind="KeywordPublic" Text="public" Documentation="The keyword 'public'." />
+  <Token Kind="KeywordRem" Text="rem" Documentation="The keyword 'rem'." />
+  <Token Kind="KeywordReturn" Text="return" Documentation="The keyword 'return'." />
+  <Token Kind="KeywordTrue" Text="true" Value="true" Documentation="The keyword 'true'." />
+  <Token Kind="KeywordVal" Text="val" Documentation="The keyword 'val'." />
+  <Token Kind="KeywordVar" Text="var" Documentation="The keyword 'var'." />
+  <Token Kind="KeywordWhile" Text="while" Documentation="The keyword 'while'" />
+  <Token Kind="ParenOpen" Text="(" Documentation="'('." />
+  <Token Kind="ParenClose" Text=")" Documentation="')'." />
+  <Token Kind="CurlyOpen" Text="{" Documentation="'{'." />
+  <Token Kind="CurlyClose" Text="}" Documentation="'}'." />
+  <Token Kind="BracketOpen" Text="[" Documentation="'['." />
+  <Token Kind="BracketClose" Text="]" Documentation="']'." />
+  <Token Kind="Dot" Text="." Documentation="'.'." />
+  <Token Kind="Comma" Text="," Documentation="','." />
+  <Token Kind="Colon" Text=":" Documentation="':'." />
+  <Token Kind="Semicolon" Text=";" Documentation="';'." />
+  <Token Kind="Plus" Text="+" Documentation="'+'." />
+  <Token Kind="Minus" Text="-" Documentation="'-'." />
+  <Token Kind="Star" Text="*" Documentation="'*'." />
+  <Token Kind="Slash" Text="/" Documentation="'/'." />
+  <Token Kind="LessThan" Text="&lt;" Documentation="'&lt;'." />
+  <Token Kind="GreaterThan" Text="&gt;" Documentation="'>'." />
+  <Token Kind="LessEqual" Text="&lt;=" Documentation="'&lt;='." />
+  <Token Kind="GreaterEqual" Text="&gt;=" Documentation="'>='." />
+  <Token Kind="Equal" Text="==" Documentation="'=='." />
+  <Token Kind="NotEqual" Text="!=" Documentation="'!='." />
+  <Token Kind="Assign" Text="=" Documentation="'='." />
+  <Token Kind="PlusAssign" Text="+=" Documentation="'+='." />
+  <Token Kind="MinusAssign" Text="-=" Documentation="'-='." />
+  <Token Kind="StarAssign" Text="*=" Documentation="'*='." />
+  <Token Kind="SlashAssign" Text="/=" Documentation="'/='." />
+  <Token Kind="Ellipsis" Text="..." Documentation="'...'." />
+  <Token Kind="AtSign" Text="@" Documentation="'@'." />
+  <Token Kind="CMod" Text="%" Documentation="'%' (C-heritage)." />
+  <Token Kind="COr" Text="||" Documentation="'||' (C-heritage)." />
+  <Token Kind="CAnd" Text="&amp;&amp;" Documentation="'&amp;&amp;' (C-heritage)." />
+  <Token Kind="CNot" Text="!" Documentation="'!' (C-heritage)." />
+
   <PredefinedNode Name="SyntaxNode" />
   <PredefinedNode Name="SyntaxToken" />
   <PredefinedNode Name="SyntaxTrivia" />
@@ -92,6 +161,12 @@
       Unexpected input in declaration context.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The attributes of this declaration.
+      </Documentation>
+    </Field>
+
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
         The visibility modifier keyword of this declaration.
@@ -112,6 +187,21 @@
     <Documentation>
       A module declaration.
     </Documentation>
+
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The attributes of this declaration.
+      </Documentation>
+    </Field>
+
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        An unexpected visibility starting the module.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
 
     <Field Name="ModuleKeyword" Type="SyntaxToken">
       <Documentation>
@@ -156,6 +246,13 @@
     <Documentation>
       An import declaration.
     </Documentation>
+
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        Unexpected attributes starting the import.
+      </Documentation>
+    </Field>
+
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
         An unexpected visibility starting the import.
@@ -164,6 +261,7 @@
       <Token Kind="KeywordInternal" />
       <Token Kind="KeywordPublic" />
     </Field>
+
     <Field Name="ImportKeyword" Type="SyntaxToken">
       <Documentation>
         The 'import' keyword starting the delcaration.
@@ -238,6 +336,12 @@
       A function declaration.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The attributes of this function.
+      </Documentation>
+    </Field>
+
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
         The visibility modifier keyword possibly starting the declaration.
@@ -302,6 +406,11 @@
       A single parameter in a function parameter list.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The attributes of this parameter.
+      </Documentation>
+    </Field>
     <Field Name="Variadic" Type="SyntaxToken?">
       <Documentation>
         The ellipsis token, in case it's variadic.
@@ -405,6 +514,19 @@
       A label declaration.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The unexpected attributes starting the label.
+      </Documentation>
+    </Field>
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        An unexpected visibility starting the label.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
     <Field Name="Name" Type="SyntaxToken">
       <Documentation>
         The name of the declared label.
@@ -425,6 +547,12 @@
     <Documentation>
       A variable declaration.
     </Documentation>
+
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The attributes of this variable.
+      </Documentation>
+    </Field>
 
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
@@ -1046,6 +1174,7 @@
       <Token Kind="Plus" />
       <Token Kind="Minus" />
       <Token Kind="KeywordNot" />
+      <Token Kind="CNot" />
     </Field>
     <Field Name="Operand" Type="ExpressionSyntax">
       <Documentation>
@@ -1082,6 +1211,9 @@
       <Token Kind="KeywordRem" />
       <Token Kind="KeywordAnd" />
       <Token Kind="KeywordOr" />
+      <Token Kind="CMod"/>
+      <Token Kind="COr"/>
+      <Token Kind="CAnd"/>
     </Field>
     <Field Name="Right" Type="ExpressionSyntax">
       <Documentation>
@@ -1281,6 +1413,56 @@
       </Documentation>
 
       <Token Kind="Identifier" />
+    </Field>
+  </Node>
+
+  <Node Name="AttributeSyntax" Base="SyntaxNode">
+    <Documentation>
+      An attribute applied to a declaration.
+    </Documentation>
+
+    <Field Name="AtSign" Type="SyntaxToken">
+      <Documentation>
+        The @ token starting the attribute.
+      </Documentation>
+
+      <Token Kind="AtSign" />
+    </Field>
+    <Field Name="Type" Type="TypeSyntax">
+      <Documentation>
+        The reference to the attribute type.
+      </Documentation>
+    </Field>
+    <Field Name="Arguments" Type="ArgumentListSyntax?">
+      <Documentation>
+        The arguments passed to the attribute.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ArgumentListSyntax" Base="SyntaxNode">
+    <Documentation>
+      A list of arguments between parentheses.
+    </Documentation>
+
+    <Field Name="OpenParen" Type="SyntaxToken">
+      <Documentation>
+        The open parenthesis before the argument list.
+      </Documentation>
+
+      <Token Kind="ParenOpen" />
+    </Field>
+    <Field Name="ArgumentList" Type="SeparatedSyntaxList&lt;ExpressionSyntax&gt;">
+      <Documentation>
+        The argument list.
+      </Documentation>
+    </Field>
+    <Field Name="CloseParen" Type="SyntaxToken">
+      <Documentation>
+        The close parenthesis after the argument list.
+      </Documentation>
+
+      <Token Kind="ParenClose" />
     </Field>
   </Node>
 

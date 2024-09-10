@@ -75,7 +75,7 @@ public sealed class SyntaxTree
         // Parse a repl entry
         var node = parser.ParseScriptEntry();
         // Make it into a tree
-        return Create(node);
+        return Create(node, syntaxDiagnostics: syntaxDiagnostics);
     }
 
     /// <summary>

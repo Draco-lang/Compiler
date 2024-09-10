@@ -7,7 +7,6 @@ using Draco.Compiler.Api.CodeCompletion;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 using PrettyPrompt;
-using PrettyPrompt.Completion;
 using PrettyPrompt.Consoles;
 using PrettyPrompt.Documents;
 using PrettyPrompt.Highlighting;
@@ -67,27 +66,13 @@ internal sealed class ReplPromptCallbacks(
         var semanticModel = script.Compilation.GetSemanticModel(tree);
 
         var cursorPosition = tree.IndexToSyntaxPosition(caret);
-        var tokenAtCaret = tree.Root
-            .TraverseSubtreesAtCursorPosition(cursorPosition)
-            .OfType<SyntaxToken>()
-            .LastOrDefault();
 
-        var completionItems = this.completionService.GetCompletions(tree, semanticModel, caret);
+        var completionItems = this.completionService.GetCompletions(semanticModel, caret);
 
         var result = new List<CompletionItem>();
         foreach (var item in completionItems)
         {
             var replacementText = item.Edits[0].Text;
-
-            if (tokenAtCaret is not null && tokenAtCaret.Text.Length > 0)
-            {
-                // We can filter by prefix here
-                if (!replacementText.StartsWith(tokenAtCaret.Text, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-            }
-
             var coloring = CompletionKindToSyntaxColoring(item.Kind);
             var format = configuration.SyntaxColors.Get(coloring);
             var completion = new CompletionItem(
@@ -96,6 +81,20 @@ internal sealed class ReplPromptCallbacks(
             result.Add(completion);
         }
         return Task.FromResult<IReadOnlyList<CompletionItem>>(result);
+    }
+
+    protected override Task<bool> ShouldOpenCompletionWindowAsync(
+        string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
+    {
+        var script = this.MakeScript(text);
+        var tree = script.Compilation.SyntaxTrees.Single();
+        var semanticModel = script.Compilation.GetSemanticModel(tree);
+
+        var cursorPosition = tree.IndexToSyntaxPosition(caret);
+
+        var completionItems = this.completionService.GetCompletions(semanticModel, caret);
+
+        return Task.FromResult(completionItems.Any());
     }
 
     private Script<object?> MakeScript(string text) => Script.Create(

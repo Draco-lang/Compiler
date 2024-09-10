@@ -8,6 +8,7 @@ namespace Draco.Compiler.Internal.Symbols;
 internal abstract class AliasSymbol : Symbol, IMemberSymbol
 {
     public bool IsStatic => true;
+    public bool IsExplicitImplementation => false;
 
     /// <summary>
     /// The symbol being aliased.

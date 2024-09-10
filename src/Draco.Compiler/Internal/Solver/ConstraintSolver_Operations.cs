@@ -4,6 +4,7 @@ using System.Linq;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -17,7 +18,7 @@ internal sealed partial class ConstraintSolver
     public static void UnifyAsserted(TypeSymbol first, TypeSymbol second)
     {
         if (Unify(first, second)) return;
-        throw new System.InvalidOperationException($"could not unify {first} and {second}");
+        throw new InvalidOperationException($"could not unify {first} and {second}");
     }
 
     /// <summary>
@@ -103,7 +104,7 @@ internal sealed partial class ConstraintSolver
     public static void AssignAsserted(TypeSymbol targetType, TypeSymbol assignedType)
     {
         if (Assign(targetType, assignedType)) return;
-        throw new System.InvalidOperationException($"could not assign {assignedType} to {targetType}");
+        throw new InvalidOperationException($"could not assign {assignedType} to {targetType}");
     }
 
     private static bool Assign(TypeSymbol targetType, TypeSymbol assignedType)

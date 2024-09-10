@@ -5,10 +5,11 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class SemanticModelTests : SemanticTestsBase
+public sealed class SemanticModelTests
 {
     // Reported in https://github.com/Draco-lang/Compiler/issues/220
     [Fact]
@@ -37,7 +38,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        AssertDiagnostics(diags, TypeCheckingErrors.CouldNotInferType);
         Assert.True(xSym.Type.IsError);
     }
 
@@ -67,7 +68,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        AssertDiagnostics(diags, TypeCheckingErrors.CouldNotInferType);
         Assert.True(xSym.Type.IsError);
     }
 
@@ -99,7 +100,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        AssertDiagnostics(diags, TypeCheckingErrors.CouldNotInferType);
     }
 
     [Fact]
@@ -132,7 +133,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
+        AssertDiagnostics(diags, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
 
     [Fact]
@@ -366,7 +367,7 @@ public sealed class SemanticModelTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, SymbolResolutionErrors.MemberNotFound);
+        AssertDiagnostics(diags, SymbolResolutionErrors.MemberNotFound);
         Assert.NotNull(appendLineSymbol);
         Assert.NotNull(builderSymbol);
         Assert.False(builderSymbol.IsError);

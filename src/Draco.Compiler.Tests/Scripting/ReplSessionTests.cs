@@ -1,14 +1,10 @@
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
-using static Basic.Reference.Assemblies.Net80;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Scripting;
 
 public sealed class ReplSessionTests
 {
-    private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
-        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
-
     [InlineData("", null)]
     [InlineData("// hello", null)]
     [InlineData("1 + 2", 3)]
@@ -19,7 +15,7 @@ public sealed class ReplSessionTests
     [Theory]
     public void BasicExpressions(string input, object? output)
     {
-        var replSession = new ReplSession([.. BclReferences]);
+        var replSession = new ReplSession(BclReferences);
 
         var result = replSession.Evaluate(input);
 
@@ -28,10 +24,12 @@ public sealed class ReplSessionTests
     }
 
     [InlineData("func add(x: int32, y: int32) = x + y;")]
+    [InlineData("List()")]
+    [InlineData("System.Collections.Generic.List()")]
     [Theory]
     public void InvalidEntries(string input)
     {
-        var replSession = new ReplSession([.. BclReferences]);
+        var replSession = new ReplSession(BclReferences);
 
         var result = replSession.Evaluate(input);
 
@@ -92,7 +90,7 @@ public sealed class ReplSessionTests
 
     private static IEnumerable<ExecutionResult<object?>> ExecuteSequence(IEnumerable<string> inputs)
     {
-        var replSession = new ReplSession([.. BclReferences]);
+        var replSession = new ReplSession(BclReferences);
 
         var ms = new MemoryStream();
         var reader = new StreamReader(ms);

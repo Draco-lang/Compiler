@@ -273,7 +273,7 @@ public static partial class SyntaxFactory
             whenFalse: $"this.Green.{field.Name}.FullWidth")}")}";
 
     private static string TokenFactories(Tree tree) => ForEach(tree.Tokens, token => When(token.Text is not null, $$"""
-    public static SyntaxToken {{token.Name}} { get; } = MakeToken(
+    public static SyntaxToken {{token.Name}} { get; } = Token(
         TokenKind.{{token.Name}}
         {{NotNull(token.Value, value => $", {value}")}});
     """));
@@ -290,12 +290,51 @@ public static partial class SyntaxFactory
     /// <returns>
     /// The constructed <see cref="{{node.Name}}"/>.
     /// </returns>
-    public static {{node.Name}} {{RemoveSuffix(node.Name, "Syntax")}}(
+    public static {{node.Name}} {{FactoryName(node)}}(
         {{ForEach(node.Fields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}}) =>
         new Internal.Syntax.{{node.Name}}(
             {{ForEach(node.Fields, ", ", field => $"({InternalType(field.Type)}){CamelCase(field.Name)}{Nullable(field)}.Green")}}
         ).ToRedNode(null!, null, 0);
+
+    {{SimplifiedSyntaxFactory(tree, node)}}
     """));
+
+    private static string SimplifiedSyntaxFactory(Tree tree, Node node)
+    {
+        if (!node.Fields.Any(f => IsDetermined(tree, f))) return string.Empty;
+
+        var relevantFields = node.Fields
+            .Where(f => !IsDetermined(tree, f))
+            .ToList();
+        var allFieldValues = node.Fields
+            .Select(f =>
+            {
+                // Just parameter reference
+                if (!IsDetermined(tree, f)) return CamelCase(f.Name);
+                // Token construction
+                var kindName = f.TokenKinds[0];
+                var token = tree.GetTokenFromKind(kindName);
+                return $"Token(TokenKind.{kindName} {NotNull(token.Value, v => $", {v}")})";
+            })
+            .ToList();
+
+        return $$"""
+            /// <returns>
+            /// The constructed <see cref="{{node.Name}}"/>.
+            /// </returns>
+            {{ForEach(relevantFields, "\n", field => NotNull(field.Documentation, doc => $"""
+                /// <param name="{CamelCase(field.Name)}">
+                /// {field.Documentation}
+                /// </param>
+                """))}}
+            /// <returns>
+            /// The constructed <see cref="{{node.Name}}"/>.
+            /// </returns>
+            public static {{node.Name}} {{FactoryName(node)}}(
+                {{ForEach(relevantFields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}}) => {{FactoryName(node)}}(
+                {{ForEach(allFieldValues, ", ", f => f)}});
+            """;
+    }
 
     private static string Children(Tree tree, Node node) => When(!node.IsAbstract, $$"""
     public override IEnumerable<{{tree.Root.Name}}> Children
@@ -367,6 +406,7 @@ public static partial class SyntaxFactory
     private static string InternalType(string type) =>
         $"Internal.Syntax.{type.Replace("<", "<Internal.Syntax.")}";
 
+    private static string FactoryName(Node node) => RemoveSuffix(node.Name, "Syntax");
     private static string AbstractSealed(Node node) => When(node.IsAbstract, "abstract", "sealed");
     private static string ProtectedPublic(Node node) => When(node.IsAbstract, "protected", "public");
     private static string Base(Node node) => NotNull(node.Base, b => $": {b.Name}");

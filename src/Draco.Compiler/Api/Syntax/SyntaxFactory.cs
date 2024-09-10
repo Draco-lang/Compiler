@@ -62,13 +62,13 @@ public static partial class SyntaxFactory
     public static SyntaxToken Missing(TokenKind kind) =>
         Internal.Syntax.SyntaxToken.From(kind, string.Empty).ToRedNode(null!, null, 0);
 
-    public static SyntaxToken Name(string text) => MakeToken(TokenKind.Identifier, text);
-    public static SyntaxToken Integer(int value) => MakeToken(TokenKind.LiteralInteger, value.ToString(), value);
+    public static SyntaxToken Name(string text) => Token(TokenKind.Identifier, text);
+    public static SyntaxToken Integer(int value) => Token(TokenKind.LiteralInteger, value.ToString(), value);
     public static SyntaxToken? VisibilityToken(Visibility visibility) => visibility switch
     {
         Visibility.Private => null,
-        Visibility.Internal => MakeToken(TokenKind.KeywordInternal),
-        Visibility.Public => MakeToken(TokenKind.KeywordPublic),
+        Visibility.Internal => Token(TokenKind.KeywordInternal),
+        Visibility.Public => Token(TokenKind.KeywordPublic),
         _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
     };
 
@@ -245,8 +245,6 @@ public static partial class SyntaxFactory
     public static AttributeSyntax Attribute(TypeSyntax type, IEnumerable<ExpressionSyntax> args) =>
         Attribute(AtSign, type, ArgumentList(ParenOpen, SeparatedSyntaxList(Comma, args), ParenClose));
 
-    public static InlineFunctionBodySyntax InlineFunctionBody(ExpressionSyntax expr) => InlineFunctionBody(Assign, expr, Semicolon);
-
     public static BlockFunctionBodySyntax BlockFunctionBody(IEnumerable<StatementSyntax> stmts) => BlockFunctionBody(
         CurlyOpen,
         SyntaxList(stmts),
@@ -273,15 +271,6 @@ public static partial class SyntaxFactory
         ParenClose,
         then,
         @else is null ? null : ElseClause(KeywordElse, @else));
-
-    public static WhileExpressionSyntax WhileExpression(
-        ExpressionSyntax condition,
-        ExpressionSyntax body) => WhileExpression(
-        KeywordWhile,
-        ParenOpen,
-        condition,
-        ParenClose,
-        body);
 
     public static ForExpressionSyntax ForExpression(
         string iterator,
@@ -339,12 +328,10 @@ public static partial class SyntaxFactory
             SeparatedSyntaxList(Comma, typeParameters),
             GreaterThan);
 
-    public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, SeparatedSyntaxList<ExpressionSyntax> indices) =>
-        IndexExpression(indexed, BracketOpen, indices, BracketClose);
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) =>
         IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 
-    public static ReturnExpressionSyntax ReturnExpression(ExpressionSyntax? value = null) => ReturnExpression(KeywordReturn, value);
+    public static ReturnExpressionSyntax ReturnExpression() => ReturnExpression(null);
     public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(KeywordGoto, NameLabel(Name(label)));
 
     public static NameTypeSyntax NameType(string name) => NameType(Name(name));
@@ -355,19 +342,19 @@ public static partial class SyntaxFactory
         StringExpression(LineStringStart, SyntaxList(TextStringPart(value) as StringPartSyntax), LineStringEnd);
 
     public static TextStringPartSyntax TextStringPart(string value) =>
-        TextStringPart(MakeToken(TokenKind.StringContent, value, value));
+        TextStringPart(Token(TokenKind.StringContent, value, value));
 
     // TOKENS //////////////////////////////////////////////////////////////////
 
-    public static SyntaxToken LineStringStart { get; } = MakeToken(TokenKind.LineStringStart, "\"");
-    public static SyntaxToken LineStringEnd { get; } = MakeToken(TokenKind.LineStringEnd, "\"");
+    public static SyntaxToken LineStringStart { get; } = Token(TokenKind.LineStringStart, "\"");
+    public static SyntaxToken LineStringEnd { get; } = Token(TokenKind.LineStringEnd, "\"");
 
-    private static SyntaxToken MakeToken(TokenKind tokenKind) =>
+    private static SyntaxToken Token(TokenKind tokenKind) =>
         Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);
-    private static SyntaxToken MakeToken(TokenKind tokenKind, string text) =>
+    private static SyntaxToken Token(TokenKind tokenKind, string text) =>
         Internal.Syntax.SyntaxToken.From(tokenKind, text).ToRedNode(null!, null, 0);
-    private static SyntaxToken MakeToken(TokenKind tokenKind, string text, object? value) =>
+    private static SyntaxToken Token(TokenKind tokenKind, string text, object? value) =>
         Internal.Syntax.SyntaxToken.From(tokenKind, text, value).ToRedNode(null!, null, 0);
-    private static SyntaxToken MakeToken(TokenKind tokenKind, object? value) =>
+    private static SyntaxToken Token(TokenKind tokenKind, object? value) =>
         Internal.Syntax.SyntaxToken.From(tokenKind, value: value).ToRedNode(null!, null, 0);
 }

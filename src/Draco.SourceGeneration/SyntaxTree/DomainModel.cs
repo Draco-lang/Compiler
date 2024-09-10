@@ -90,6 +90,18 @@ public sealed class Tree(Node root, IList<Node> nodes, IList<Token> tokens)
         foreach (var predefined in tree.PredefinedNodes) AddNodeName(predefined.Name);
         foreach (var @abstract in tree.AbstractNodes) AddNodeName(@abstract.Name);
         foreach (var node in tree.Nodes) AddNodeName(node.Name);
+
+        foreach (var node in tree.Nodes)
+        {
+            foreach (var field in node.Fields)
+            {
+                foreach (var kind in field.Tokens)
+                {
+                    if (tokenKinds.Contains(kind.Kind)) continue;
+                    throw new InvalidOperationException($"token kind {kind.Kind} in field {field.Name} of node {node.Name} is not defined in the tree");
+                }
+            }
+        }
     }
 
     public Node Root { get; } = root;
@@ -97,6 +109,7 @@ public sealed class Tree(Node root, IList<Node> nodes, IList<Token> tokens)
     public IList<Token> Tokens { get; } = tokens;
 
     public bool HasTokenKind(string kind) => this.Tokens.Any(t => t.Name == kind);
+    public Token GetTokenFromKind(string kind) => this.Tokens.First(t => t.Name == kind);
 }
 
 public sealed class Token(string name, string? text, string? value, string documentation)

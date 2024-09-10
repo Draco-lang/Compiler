@@ -7,6 +7,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Quoting;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.DevHost;
@@ -27,6 +28,10 @@ internal class Program
         var referencesOption = new Option<FileInfo[]>(["-r", "--reference"], Array.Empty<FileInfo>, "Specifies additional assembly references to use when compiling");
         var filesArgument = new Argument<FileInfo[]>("source files", Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
         var rootModuleOption = new Option<DirectoryInfo?>(["-m", "--root-module"], () => null, "Specifies the root module folder of the compiled files");
+        var quoteModeOption = new Option<QuoteMode>(["-m", "--quote-mode"], () => QuoteMode.File, "Specifies the kind of syntactic element to quote");
+        var outputLanguageOption = new Option<OutputLanguage>(["-l", "--language"], () => OutputLanguage.CSharp, "Specifies the language to output the quoted code as");
+        var prettyPrintOption = new Option<bool>(["-p", "--pretty-print"], () => false, "Whether to append whitespace to the output code");
+        var staticImportOption = new Option<bool>(["-s", "--require-static-import"], () => false, "Whether to require the SyntaxFactory class to be imported statically in the output code");
 
         // Compile
 
@@ -88,6 +93,18 @@ internal class Program
         };
         formatCommand.SetHandler(FormatCommand, fileArgument, optionalOutputOption);
 
+        // Quoting
+
+        var quoteCommand = new Command("quote", "Generates a string of code in an output language which produces syntax nodes equivalent to the input code")
+        {
+            fileArgument,
+            quoteModeOption,
+            outputLanguageOption,
+            prettyPrintOption,
+            staticImportOption,
+        };
+        quoteCommand.SetHandler(QuoteCommand, fileArgument, quoteModeOption, outputLanguageOption, prettyPrintOption, staticImportOption);
+
         return new RootCommand("CLI for the Draco compiler")
         {
             compileCommand,
@@ -95,7 +112,8 @@ internal class Program
             irCommand,
             symbolsCommand,
             declarationsCommand,
-            formatCommand
+            formatCommand,
+            quoteCommand,
         };
     }
 
@@ -177,6 +195,13 @@ internal class Program
         var syntaxTree = GetSyntaxTrees(input).First();
         using var outputStream = OpenOutputOrStdout(output);
         new StreamWriter(outputStream).Write(syntaxTree.Format().ToString());
+    }
+
+    private static void QuoteCommand(FileInfo input, QuoteMode mode, OutputLanguage outputLanguage, bool prettyPrint, bool staticImport)
+    {
+        var sourceText = SourceText.FromFile(input.FullName);
+        var quotedText = SyntaxQuoter.Quote(sourceText, mode, outputLanguage, prettyPrint, staticImport);
+        Console.WriteLine(quotedText);
     }
 
     private static ImmutableArray<SyntaxTree> GetSyntaxTrees(params FileInfo[] input)

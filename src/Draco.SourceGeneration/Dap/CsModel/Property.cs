@@ -28,11 +28,7 @@ public sealed class Property : Declaration
     public object? Value { get; set; }
 
     /// <summary>
-    /// A discriminator string for the value.
+    /// True, if the property is required.
     /// </summary>
-    public string ValueDiscriminator => this.Value switch
-    {
-        string => "String",
-        _ => throw new ArgumentOutOfRangeException(),
-    };
+    public bool IsRequired => !this.OmitIfNull && this.Value is null;
 }

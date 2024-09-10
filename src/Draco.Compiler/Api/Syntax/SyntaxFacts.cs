@@ -6,73 +6,8 @@ namespace Draco.Compiler.Api.Syntax;
 /// <summary>
 /// Utilities for syntax.
 /// </summary>
-public static class SyntaxFacts
+public static partial class SyntaxFacts
 {
-    /// <summary>
-    /// Attempts to retrieve the textual representation of a <see cref="TokenKind"/>.
-    /// </summary>
-    /// <param name="tokenKind">The <see cref="TokenKind"/> to get the text of.</param>
-    /// <returns>The textual representation of <paramref name="tokenKind"/>, or null, if it doesn't have a
-    /// unique representation.</returns>
-    public static string? GetTokenText(TokenKind tokenKind) => tokenKind switch
-    {
-        TokenKind.EndOfInput => string.Empty,
-        TokenKind.InterpolationEnd => "}",
-        TokenKind.KeywordAnd => "and",
-        TokenKind.KeywordElse => "else",
-        TokenKind.KeywordFalse => "false",
-        TokenKind.KeywordFor => "for",
-        TokenKind.KeywordFunc => "func",
-        TokenKind.KeywordGoto => "goto",
-        TokenKind.KeywordIf => "if",
-        TokenKind.KeywordImport => "import",
-        TokenKind.KeywordIn => "in",
-        TokenKind.KeywordInternal => "internal",
-        TokenKind.KeywordMod => "mod",
-        TokenKind.KeywordModule => "module",
-        TokenKind.KeywordNot => "not",
-        TokenKind.KeywordOr => "or",
-        TokenKind.KeywordPublic => "public",
-        TokenKind.KeywordRem => "rem",
-        TokenKind.KeywordReturn => "return",
-        TokenKind.KeywordTrue => "true",
-        TokenKind.KeywordVal => "val",
-        TokenKind.KeywordVar => "var",
-        TokenKind.KeywordWhile => "while",
-        TokenKind.ParenOpen => "(",
-        TokenKind.ParenClose => ")",
-        TokenKind.CurlyOpen => "{",
-        TokenKind.CurlyClose => "}",
-        TokenKind.BracketOpen => "[",
-        TokenKind.BracketClose => "]",
-        TokenKind.Dot => ".",
-        TokenKind.Comma => ",",
-        TokenKind.Colon => ":",
-        TokenKind.Semicolon => ";",
-        TokenKind.Plus => "+",
-        TokenKind.Minus => "-",
-        TokenKind.Star => "*",
-        TokenKind.Slash => "/",
-        TokenKind.LessThan => "<",
-        TokenKind.GreaterThan => ">",
-        TokenKind.LessEqual => "<=",
-        TokenKind.GreaterEqual => ">=",
-        TokenKind.Equal => "==",
-        TokenKind.NotEqual => "!=",
-        TokenKind.Assign => "=",
-        TokenKind.PlusAssign => "+=",
-        TokenKind.MinusAssign => "-=",
-        TokenKind.StarAssign => "*=",
-        TokenKind.SlashAssign => "/=",
-        TokenKind.Ellipsis => "...",
-        TokenKind.AtSign => "@",
-        TokenKind.CMod => "%",
-        TokenKind.COr => "||",
-        TokenKind.CAnd => "&&",
-        TokenKind.CNot => "!",
-        _ => null,
-    };
-
     /// <summary>
     /// Attempts to retrieve a user-friendly name for a <see cref="TokenKind"/>.
     /// </summary>

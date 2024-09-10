@@ -15,28 +15,4 @@ internal static class EnumerableExtensions
         foreach (var item in items) result.Add(item);
         return result;
     }
-
-    public static T MaxBy<T, U>(this IEnumerable<T> items, Func<T, U> selector, Comparer<U>? comparer = null)
-    {
-        comparer ??= Comparer<U>.Default;
-
-        var enumerator = items.GetEnumerator();
-        if (!enumerator.MoveNext()) throw new InvalidOperationException("sequence was empty");
-
-        var maxElement = enumerator.Current;
-        var maxValue = selector(maxElement);
-
-        while (enumerator.MoveNext())
-        {
-            var element = enumerator.Current;
-            var value = selector(element);
-            if (comparer.Compare(maxValue, value) < 0)
-            {
-                maxElement = element;
-                maxValue = value;
-            }
-        }
-
-        return maxElement;
-    }
 }

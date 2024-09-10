@@ -9,11 +9,19 @@
 
   <xs:complexType name="TreeType">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="Token" type="TokenType" />
       <xs:element name="PredefinedNode" type="PredefinedNodeType" />
       <xs:element name="AbstractNode" type="AbstractNodeType" />
       <xs:element name="Node" type="NodeType" />
     </xs:choice>
     <xs:attribute name="Root" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="TokenType">
+    <xs:attribute name="Kind" type="xs:string" use="required" />
+    <xs:attribute name="Text" type="xs:string" use="optional" />
+    <xs:attribute name="Value" type="xs:string" use="optional" />
+    <xs:attribute name="Documentation" type="xs:string" use="required" />
   </xs:complexType>
 
   <xs:complexType name="PredefinedNodeType">
@@ -43,7 +51,7 @@
   <xs:complexType name="FieldType">
     <xs:sequence>
       <xs:element name="Documentation" type="xs:string" />
-      <xs:element name="Token" type="TokenType" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="Token" type="TokenKindType" minOccurs="0" maxOccurs="unbounded" />
     </xs:sequence>
     <xs:attribute name="Name" type="xs:string" use="required" />
     <xs:attribute name="Type" type="xs:string" use="required" />
@@ -51,7 +59,7 @@
     <xs:attribute name="Abstract" type="xs:boolean" use="optional" />
   </xs:complexType>
 
-  <xs:complexType name="TokenType">
+  <xs:complexType name="TokenKindType">
     <xs:attribute name="Kind" type="xs:string" use="required" />
   </xs:complexType>
 

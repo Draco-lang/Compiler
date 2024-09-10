@@ -148,7 +148,7 @@ public sealed class FlowAnalysisTests
             BlockFunctionBody(
                 ExpressionStatement(WhileExpression(
                     condition: LiteralExpression(false),
-                    body: ReturnExpression(LiteralExpression(0))))))));
+                    then: ReturnExpression(LiteralExpression(0))))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -418,7 +418,7 @@ public sealed class FlowAnalysisTests
                 DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
                 ExpressionStatement(WhileExpression(
                     condition: LiteralExpression(false),
-                    body: BlockExpression(
+                    then: BlockExpression(
                         ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))),
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 

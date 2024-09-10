@@ -66,4 +66,7 @@ public sealed class XmlField
 
     [XmlAttribute]
     public bool Override { get; set; }
+
+    [XmlAttribute]
+    public bool Shadow { get; set; }
 }

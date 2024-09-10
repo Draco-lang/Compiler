@@ -653,7 +653,7 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: BlockExpression(ImmutableArray.Create(ExpressionStatement(GotoExpression("break"))), LiteralExpression(false)),
-                        body: BlockExpression()))))));
+                        then: BlockExpression()))))));
 
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
@@ -683,7 +683,7 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: LiteralExpression(false),
-                        body: GotoExpression("break")))))));
+                        then: GotoExpression("break")))))));
 
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
@@ -713,7 +713,7 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: LiteralExpression(false),
-                        body: BlockExpression(ExpressionStatement(GotoExpression("break")))))))));
+                        then: BlockExpression(ExpressionStatement(GotoExpression("break")))))))));
 
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
 
@@ -744,7 +744,7 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: LiteralExpression(false),
-                        body: BlockExpression())),
+                        then: BlockExpression())),
                     ExpressionStatement(GotoExpression("break"))))));
 
         var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
@@ -782,11 +782,11 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     ExpressionStatement(WhileExpression(
                         condition: LiteralExpression(true),
-                        body: BlockExpression(
+                        then: BlockExpression(
                             ExpressionStatement(GotoExpression("continue")),
                             ExpressionStatement(WhileExpression(
                                 condition: LiteralExpression(true),
-                                body: BlockExpression(
+                                then: BlockExpression(
                                     ExpressionStatement(GotoExpression("break")),
                                     ExpressionStatement(GotoExpression("continue"))))),
                             ExpressionStatement(GotoExpression("break")))))))));

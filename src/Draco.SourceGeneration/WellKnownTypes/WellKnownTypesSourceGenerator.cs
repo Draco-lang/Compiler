@@ -15,7 +15,7 @@ public sealed class WellKnownTypesSourceGenerator : XmlSourceGenerator
     {
         var domainModel = WellKnownTypes.FromXml((XmlModel)xmlModel);
 
-        var wellKnownTypesCode = CodeGenerator.GenerateWellKnownTypes(domainModel, cancellationToken);
+        var wellKnownTypesCode = Template.Generate(domainModel);
 
         return
         [

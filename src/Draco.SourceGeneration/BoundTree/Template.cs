@@ -58,7 +58,7 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
 
         {{ProtectedPublic(node)}} {{node.Name}}(
             Api.Syntax.SyntaxNode? syntax
-            {{ForEach(node.Fields, field => $", {field.Type} {CamelCase(field.Name)}")}})
+            {{ForEach(node.Fields, field => $", {FieldParam(field)}")}})
             : base(syntax)
         {
             {{ForEach(node.Fields, field => $"this.{field.Name} = {CamelCase(field.Name)};")}}
@@ -88,8 +88,7 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
         """)}}
 
         {{When(!node.IsAbstract, $$"""
-            public {{node.Name}} Update(
-                {{ForEach(node.Fields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}})
+            public {{node.Name}} Update({{ForEach(node.Fields, ", ", FieldParam)}})
             {
                 {{When(node.Fields.Count > 0,
                     whenTrue: $$"""
@@ -121,12 +120,12 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
     {
         public static {{node.Name}} {{FactoryName(node)}}(
             Api.Syntax.SyntaxNode? syntax
-            {{ForEach(node.Fields, field => $", {field.Type} {CamelCase(field.Name)}")}}) => new {{node.Name}}(
+            {{ForEach(node.Fields, field => $", {FieldParam(field)}")}}) => new {{node.Name}}(
             syntax
             {{ForEach(node.Fields, field => $", {CamelCase(field.Name)}")}});
     
         public static {{node.Name}} {{FactoryName(node)}}(
-            {{ForEach(node.Fields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}}) => {{FactoryName(node)}}(
+            {{ForEach(node.Fields, ", ", FieldParam)}}) => {{FactoryName(node)}}(
             null
             {{ForEach(node.Fields, field => $", {CamelCase(field.Name)}")}});
     }
@@ -134,33 +133,34 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
 
     private static string VisitorFunctions(Tree tree, string returnType, string? returnValue) => ForEach(tree.Nodes, node => When(node.IsAbstract,
     whenTrue: $$"""
-    public {{returnType}} {{VisitorName(node)}}({{node.Name}} node)
-    {
-        {{When(returnValue is null,
-            whenTrue: "node.Accept(this);",
-            whenFalse: "return node.Accept(this);")}}
-    }
-    """,
+        public {{returnType}} {{VisitorName(node)}}({{node.Name}} node)
+        {
+            {{When(returnValue is not null, "return")}} node.Accept(this);
+        }
+        """,
     whenFalse: $$"""
-    public virtual {{returnType}} {{VisitorName(node)}}({{node.Name}} node)
-    {
-        {{ForEach(node.Fields, field => When(tree.HasNodeWithName(field.NonNullableType),
-            whenTrue: $"node.{field.Name}{Nullable(field)}.Accept(this);",
-            whenFalse: When(
-                field.IsArray && tree.HasNodeWithName(field.ElementType),
-                $"foreach (var element in node.{field.Name}) element.Accept(this);")))}}
-        {{NotNull(returnValue, v => $"return {v};")}}
-    }
-    """));
+        public virtual {{returnType}} {{VisitorName(node)}}({{node.Name}} node)
+        {
+            {{ForEach(node.Fields, field => Case(
+                (tree.HasNodeWithName(field.NonNullableType),
+                    $"node.{field.Name}{Nullable(field)}.Accept(this);"),
+                (field.IsArray && tree.HasNodeWithName(field.ElementType),
+                    $"foreach (var element in node.{field.Name}) element.Accept(this);")
+            ))}}
+            {{NotNull(returnValue, v => $"return {v};")}}
+        }
+        """));
 
     private static string RewriterFunctions(Tree tree) => ForEach(tree.Nodes, node => When(!node.IsAbstract, $$"""
     public override {{tree.Root.Name}} {{VisitorName(node)}}({{node.Name}} node)
     {
-        {{ForEach(node.Fields, field => When(tree.HasNodeWithName(field.NonNullableType),
-            whenTrue: $"var {CamelCase(field.Name)} = ({field.Type})node.{field.Name}{Nullable(field)}.Accept(this);",
-            whenFalse: When(field.IsArray && tree.HasNodeWithName(field.ElementType),
-                whenTrue: $"var {CamelCase(field.Name)} = this.VisitArray(node.{field.Name});",
-                whenFalse: $"var {CamelCase(field.Name)} = node.{field.Name};")))}}
+        {{ForEach(node.Fields, field => Case(
+            (tree.HasNodeWithName(field.NonNullableType),
+                $"var {CamelCase(field.Name)} = ({field.Type})node.{field.Name}{Nullable(field)}.Accept(this);"),
+            (field.IsArray && tree.HasNodeWithName(field.ElementType),
+                $"var {CamelCase(field.Name)} = this.VisitArray(node.{field.Name});"),
+            (true, $"var {CamelCase(field.Name)} = node.{field.Name};")))}}
+
         return node.Update({{ForEach(node.Fields, ", ", field => CamelCase(field.Name))}});
     }
     """));
@@ -176,6 +176,7 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
     private static string Field(Field field) => $$"""
         {{When(field.Shadow, "new")}} public {{When(field.Override, "override")}} {{field.Type}} {{field.Name}} { get; }
         """;
+    private static string FieldParam(Field field) => $"{field.Type} {CamelCase(field.Name)}";
 
     private static string VisitorName(Node node) => $"Visit{RemovePrefix(node.Name, "Bound")}";
     private static string FactoryName(Node node) => RemovePrefix(node.Name, "Bound");

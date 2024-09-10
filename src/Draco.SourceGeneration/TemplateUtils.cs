@@ -146,6 +146,14 @@ internal static class TemplateUtils
         condition ? whenTrue : whenFalse;
 
     /// <summary>
+    /// Selects the first truthy case result.
+    /// </summary>
+    /// <param name="cases">The tuples of conditions and results.</param>
+    /// <returns>The first truthy result or an empty string if none are truthy.</returns>
+    public static string Case(params (bool Condition, string Result)[] cases) =>
+        cases.FirstOrDefault(c => c.Condition).Result ?? string.Empty;
+
+    /// <summary>
     /// Loops over a range and applies the iteration function, concatenating the results.
     /// </summary>
     /// <param name="range">The range to loop over.</param>

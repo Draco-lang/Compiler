@@ -317,6 +317,16 @@ public static partial class SyntaxFactory
                 return $"Token(TokenKind.{kindName} {NotNull(token.Value, v => $", {v}")})";
             })
             .ToList();
+        var defaultValues = node.Fields
+            .Select(_ => null as string)
+            .ToList();
+        // While the next item is nullable, add default
+        for (var i = relevantFields.Count - 1; i >= 0; --i)
+        {
+            var field = relevantFields[i];
+            if (!field.IsNullable) break;
+            defaultValues[i] = "null";
+        }
 
         return $$"""
             /// <returns>
@@ -331,8 +341,9 @@ public static partial class SyntaxFactory
             /// The constructed <see cref="{{node.Name}}"/>.
             /// </returns>
             public static {{node.Name}} {{FactoryName(node)}}(
-                {{ForEach(relevantFields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}}) => {{FactoryName(node)}}(
-                {{ForEach(allFieldValues, ", ", f => f)}});
+                {{ForEach(relevantFields.Zip(defaultValues), ", ", field =>
+                    $"{field.Item1.Type} {CamelCase(field.Item1.Name)} {NotNull(field.Item2, v => $"= {v}")}")}}) =>
+                {{FactoryName(node)}}({{ForEach(allFieldValues, ", ", f => f)}});
             """;
     }
 
@@ -416,5 +427,5 @@ public static partial class SyntaxFactory
         !field.IsNullable
      && field.IsToken
      && field.TokenKinds.Count == 1
-     && tree.HasTokenKind(field.TokenKinds[0]);
+     && tree.GetTokenFromKind(field.TokenKinds[0]).Text is not null;
 }

@@ -108,23 +108,21 @@ public static partial class SyntaxFactory
     public static GenericParameterSyntax GenericParameter(string name) => GenericParameter(Name(name));
 
     public static CompilationUnitSyntax CompilationUnit(IEnumerable<DeclarationSyntax> decls) =>
-        CompilationUnit(SyntaxList(decls), EndOfInput);
+        CompilationUnit(SyntaxList(decls));
     public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
-        CompilationUnit(SyntaxList(decls), EndOfInput);
+        CompilationUnit(SyntaxList(decls));
 
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, IEnumerable<DeclarationSyntax> declarations) =>
-        ModuleDeclaration(SyntaxList<AttributeSyntax>(), null, KeywordModule, Name(name), CurlyOpen, SyntaxList(declarations), CurlyClose);
+        ModuleDeclaration(SyntaxList<AttributeSyntax>(), null, Name(name), SyntaxList(declarations));
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, params DeclarationSyntax[] declarations) =>
         ModuleDeclaration(name, declarations.AsEnumerable());
 
     public static ImportDeclarationSyntax ImportDeclaration(string root, params string[] path) => ImportDeclaration(
         SyntaxList<AttributeSyntax>(),
         null,
-        KeywordImport,
         path.Aggregate(
             RootImportPath(Name(root)) as ImportPathSyntax,
-            (path, member) => MemberImportPath(path, Dot, Name(member))),
-        Semicolon);
+            (path, member) => MemberImportPath(path, Dot, Name(member))));
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
@@ -191,13 +189,10 @@ public static partial class SyntaxFactory
         FunctionBodySyntax body) => FunctionDeclaration(
             SyntaxList(attributes),
             VisibilityToken(visibility),
-            KeywordFunc,
             Name(name),
-            generics is null ? null : GenericParameterList(LessThan, generics, GreaterThan),
-            ParenOpen,
+            generics is null ? null : GenericParameterList(generics),
             parameters,
-            ParenClose,
-            returnType is null ? null : TypeSpecifier(Colon, returnType),
+            returnType is null ? null : TypeSpecifier(returnType),
             body);
 
     public static VariableDeclarationSyntax VariableDeclaration(
@@ -233,57 +228,44 @@ public static partial class SyntaxFactory
         isMutable ? KeywordVar : KeywordVal,
         Name(name),
         type is null ? null : TypeSpecifier(Colon, type),
-        value is null ? null : ValueSpecifier(Assign, value),
-        Semicolon);
+        value is null ? null : ValueSpecifier(Assign, value));
 
     public static LabelDeclarationSyntax LabelDeclaration(string name) =>
-        LabelDeclaration(SyntaxList<AttributeSyntax>(), null, Name(name), Colon);
+        LabelDeclaration(SyntaxList<AttributeSyntax>(), null, Name(name));
 
     public static AttributeSyntax Attribute(TypeSyntax type, params ExpressionSyntax[] args) =>
         Attribute(type, args.AsEnumerable());
 
     public static AttributeSyntax Attribute(TypeSyntax type, IEnumerable<ExpressionSyntax> args) =>
-        Attribute(AtSign, type, ArgumentList(ParenOpen, SeparatedSyntaxList(Comma, args), ParenClose));
+        Attribute(type, ArgumentList(SeparatedSyntaxList(Comma, args)));
 
-    public static BlockFunctionBodySyntax BlockFunctionBody(IEnumerable<StatementSyntax> stmts) => BlockFunctionBody(
-        CurlyOpen,
-        SyntaxList(stmts),
-        CurlyClose);
+    public static BlockFunctionBodySyntax BlockFunctionBody(IEnumerable<StatementSyntax> stmts) => BlockFunctionBody(SyntaxList(stmts));
     public static BlockFunctionBodySyntax BlockFunctionBody(params StatementSyntax[] stmts) => BlockFunctionBody(stmts.AsEnumerable());
 
     public static ExpressionStatementSyntax ExpressionStatement(ExpressionSyntax expr) => ExpressionStatement(expr, null);
     public static BlockExpressionSyntax BlockExpression(
         IEnumerable<StatementSyntax> stmts,
         ExpressionSyntax? value = null) => BlockExpression(
-        CurlyOpen,
         SyntaxList(stmts),
-        value,
-        CurlyClose);
+        value);
     public static BlockExpressionSyntax BlockExpression(params StatementSyntax[] stmts) => BlockExpression(stmts.AsEnumerable());
 
     public static IfExpressionSyntax IfExpression(
         ExpressionSyntax condition,
         ExpressionSyntax then,
-        ExpressionSyntax? @else = null) => IfExpression(
-        KeywordIf,
-        ParenOpen,
+        ExpressionSyntax? @else) => IfExpression(
         condition,
-        ParenClose,
         then,
-        @else is null ? null : ElseClause(KeywordElse, @else));
+        @else is null ? null : ElseClause(@else));
 
     public static ForExpressionSyntax ForExpression(
         string iterator,
         TypeSyntax? elementType,
         ExpressionSyntax sequence,
         ExpressionSyntax body) => ForExpression(
-        KeywordFor,
-        ParenOpen,
         Name(iterator),
         elementType is null ? null : TypeSpecifier(Colon, elementType),
-        KeywordIn,
         sequence,
-        ParenClose,
         body);
 
     public static ForExpressionSyntax ForExpression(
@@ -299,40 +281,28 @@ public static partial class SyntaxFactory
         ExpressionSyntax called,
         IEnumerable<ExpressionSyntax> args) => CallExpression(
         called,
-        ParenOpen,
-        SeparatedSyntaxList(Comma, args),
-        ParenClose);
+        SeparatedSyntaxList(Comma, args));
     public static CallExpressionSyntax CallExpression(
         ExpressionSyntax called,
         params ExpressionSyntax[] args) => CallExpression(called, args.AsEnumerable());
 
     public static MemberExpressionSyntax MemberExpression(
         ExpressionSyntax accessed,
-        string member) => MemberExpression(accessed, Dot, Name(member));
+        string member) => MemberExpression(accessed, Name(member));
     public static MemberTypeSyntax MemberType(
         TypeSyntax accessed,
-        string member) => MemberType(accessed, Dot, Name(member));
+        string member) => MemberType(accessed, Name(member));
 
     public static GenericExpressionSyntax GenericExpression(
         ExpressionSyntax instantiated,
-        params TypeSyntax[] typeParameters) => GenericExpression(
-            instantiated,
-            LessThan,
-            SeparatedSyntaxList(Comma, typeParameters),
-            GreaterThan);
-    public static GenericTypeSyntax GenericType(
-        TypeSyntax instantiated,
-        params TypeSyntax[] typeParameters) => GenericType(
-            instantiated,
-            LessThan,
-            SeparatedSyntaxList(Comma, typeParameters),
-            GreaterThan);
+        params TypeSyntax[] typeParameters) => GenericExpression(instantiated, SeparatedSyntaxList(Comma, typeParameters));
+    public static GenericTypeSyntax GenericType(TypeSyntax instantiated, params TypeSyntax[] typeParameters) =>
+        GenericType(instantiated, SeparatedSyntaxList(Comma, typeParameters));
 
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) =>
         IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 
-    public static ReturnExpressionSyntax ReturnExpression() => ReturnExpression(null);
-    public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(KeywordGoto, NameLabel(Name(label)));
+    public static GotoExpressionSyntax GotoExpression(string label) => GotoExpression(NameLabel(Name(label)));
 
     public static NameTypeSyntax NameType(string name) => NameType(Name(name));
     public static NameExpressionSyntax NameExpression(string name) => NameExpression(Name(name));

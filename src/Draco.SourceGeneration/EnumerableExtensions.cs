@@ -16,27 +16,13 @@ internal static class EnumerableExtensions
         return result;
     }
 
-    public static T MaxBy<T, U>(this IEnumerable<T> items, Func<T, U> selector, Comparer<U>? comparer = null)
+    public static IEnumerable<(T, U)> Zip<T, U>(this IEnumerable<T> first, IEnumerable<U> second)
     {
-        comparer ??= Comparer<U>.Default;
-
-        var enumerator = items.GetEnumerator();
-        if (!enumerator.MoveNext()) throw new InvalidOperationException("sequence was empty");
-
-        var maxElement = enumerator.Current;
-        var maxValue = selector(maxElement);
-
-        while (enumerator.MoveNext())
+        using var firstEnumerator = first.GetEnumerator();
+        using var secondEnumerator = second.GetEnumerator();
+        while (firstEnumerator.MoveNext() && secondEnumerator.MoveNext())
         {
-            var element = enumerator.Current;
-            var value = selector(element);
-            if (comparer.Compare(maxValue, value) < 0)
-            {
-                maxElement = element;
-                maxValue = value;
-            }
+            yield return (firstEnumerator.Current, secondEnumerator.Current);
         }
-
-        return maxElement;
     }
 }

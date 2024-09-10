@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using static Draco.SourceGeneration.TemplateUtils;
 
 namespace Draco.SourceGeneration.SyntaxTree;
@@ -63,15 +65,15 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
             {{ForEach(node.Fields, field => When(!field.Abstract && field.IsToken, $$"""
                 if (
                     {{When(field.IsNullable, $"{CamelCase(field.Name)} is not null &&")}}
-                    {{CamelCase(field.Name)}} is not {{ForEach(field.TokenKinds, " and not ", kind => $"Api.Syntax.TokenKind.{kind}")}})
+                    {{CamelCase(field.Name)}}.Kind is not {{ForEach(field.TokenKinds, " and not ", kind => $"Api.Syntax.TokenKind.{kind}")}})
                 {
-                    throw new System.ArgumentException(
+                    throw new System.ArgumentOutOfRangeException(
                         nameof({{CamelCase(field.Name)}}),
                         "the token must be of kind {{ForEach(field.TokenKinds, " or ", k => k)}}");
                 }
             """))}}
 
-            {{ForEach(node.Fields, field => $"this.{field.Name} = {CamelCase(field.Name)};")}}
+            {{ForEach(node.Fields, field => When(!field.Abstract, $"this.{field.Name} = {CamelCase(field.Name)};"))}}
         }
 
         {{When(node.IsAbstract,
@@ -85,6 +87,57 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
                     new Api.Syntax.{node.Name}(tree, parent, fullPosition, this);
                 """)}}
 
+        {{When(!node.IsAbstract, $$"""
+            /// <summary>
+            /// Updates this <see cref="{{node.Name}}"/> with the new provided data.
+            /// The node is only reinstantiated, if the passed in data is different.
+            /// </summary>
+            {{ForEach(node.Fields, "\n", field => NotNull(field.Documentation, doc => $"""
+                /// <param name="{CamelCase(field.Name)}">
+                /// {field.Documentation}
+                /// </param>
+            """))}}
+            /// <returns>
+            /// The constructed <see cref="{{node.Name}}"/>, or this instance, if the passed in data is identical
+            /// to the old one.
+            /// </returns>
+            public {{node.Name}} Update({{ForEach(node.Fields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}})
+            {
+                if ({{ForEach(node.Fields, " && ", field => $"Equals(this.{field.Name}, {CamelCase(field.Name)})")}}) return this;
+                else return new {{node.Name}}({{ForEach(node.Fields, ", ", field => CamelCase(field.Name))}});
+            }
+
+            /// <summary>
+            /// Updates this <see cref="{{node.Name}}"/> with the new provided data.
+            /// The node is only reinstantiated, if the passed in data is different.
+            /// </summary>
+            /// <param name="children">The child nodes of this node.</param>
+            /// <returns>
+            /// The constructed <see cref="{{node.Name}}"/>, or this instance, if the passed in data is identical
+            /// to the old one.
+            /// </returns>
+            public {{node.Name}} Update(IEnumerable<SyntaxNode?> children)
+            {
+                var enumerator = children.GetEnumerator();
+                {{ForEach(node.Fields, field => $$"""
+                    if (!enumerator.MoveNext())
+                    {
+                        throw new System.ArgumentOutOfRangeException(
+                            nameof(children),
+                            "the sequence contains too few children for this node");
+                    }
+                    var {{CamelCase(field.Name)}} = ({{field.Type}})enumerator.Current!;
+                """)}}
+                if (enumerator.MoveNext())
+                {
+                    throw new System.ArgumentOutOfRangeException(
+                        nameof(children),
+                        "the sequence contains too many children for this node");
+                }
+                return this.Update({{ForEach(node.Fields, ", ", field => CamelCase(field.Name))}});
+            }
+        """)}}
+
         {{When(node.IsAbstract && node.Base is null,
             whenTrue: """
                 public abstract void Accept(SyntaxVisitor visitor);
@@ -96,8 +149,6 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
                 public override TResult Accept<TResult>(SyntaxVisitor<TResult> visitor) =>
                     visitor.{VisitorName(node)}(this);
                 """)}}
-
-        // TODO: Update functions
     }
     """);
 
@@ -115,6 +166,32 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
     }
     """);
 
+    private static string Visitors(IEnumerable<Node> nodes, string returnType, string? returnValue) => ForEach(nodes, node => $$"""
+    {{When(node.IsAbstract,
+        whenTrue: $$"""
+            public virtual {{returnType}} {{VisitorName(node)}}({{node.Name}} node)
+            {
+                {{When(returnValue is not null, "return ")}} node.Accept(this);
+            }
+            """,
+        whenFalse: $$"""
+            public virtual {{returnType}} {{VisitorName(node)}}({{node.Name}} node)
+            {
+                {{ForEach(node.Fields, field => $"node.{field.Name}{Nullable(field)}.Accept(this);")}}
+                {{NotNull(returnValue, v => $"return {v};")}}
+            }
+            """)}}
+    """);
+
+    private static string Rewriters(Tree tree) => ForEach(tree.Nodes, node => When(!node.IsAbstract, $$"""
+    public override {{tree.Root.Name}} {{VisitorName(node)}}({{node.Name}} node)
+    {
+        {{ForEach(node.Fields, field =>
+            $"var {CamelCase(field.Name)} = ({field.Type})node.{field.Name}{Nullable(field)}.Accept(this);")}}
+        return node.Update({{ForEach(node.Fields, ", ", field => CamelCase(field.Name))}});
+    }
+    """));
+
     private static string VisitorName(Node node) => $"Visit{RemoveSuffix(node.Name, "Syntax")}";
 
     private static string ClassHeader(Node node) =>
@@ -129,7 +206,8 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
         public {{When(field.Abstract, "abstract")}} {{When(field.Override, "override")}} {{field.Type}} {{field.Name}}
         """;
 
-    private static string AbstractSealed(Node node) => node.IsAbstract ? "abstract" : "sealed";
-    private static string ProtectedPublic(Node node) => node.IsAbstract ? "protected" : "public";
+    private static string AbstractSealed(Node node) => When(node.IsAbstract, "abstract", "sealed");
+    private static string ProtectedPublic(Node node) => When(node.IsAbstract, "protected", "public");
     private static string Base(Node node) => NotNull(node.Base, b => $": {b.Name}");
+    private static string Nullable(Field field) => When(field.IsNullable, "?");
 }

@@ -9,8 +9,6 @@ namespace Draco.SourceGeneration;
 
 internal static class CodeGenerator
 {
-    public static string GenerateGreenSyntaxTree(SyntaxTree.Tree tree, CancellationToken cancellationToken) =>
-        Render("GreenSyntaxTree.sbncs", tree, cancellationToken);
     public static string GenerateRedSyntaxTree(SyntaxTree.Tree tree, CancellationToken cancellationToken) =>
         Render("RedSyntaxTree.sbncs", tree, cancellationToken);
 

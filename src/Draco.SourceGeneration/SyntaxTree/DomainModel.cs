@@ -157,4 +157,6 @@ public sealed class Field(
     public bool IsNullable => this.Type.EndsWith("?");
     public string NonNullableType => this.IsNullable ? this.Type[..^1] : this.Type;
     public bool IsToken => this.NonNullableType == "SyntaxToken";
+    public bool IsSyntaxList => this.NonNullableType.StartsWith("SyntaxList");
+    public string ElementType => this.NonNullableType.Split('<', '>')[1];
 }

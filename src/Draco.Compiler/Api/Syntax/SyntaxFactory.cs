@@ -107,10 +107,8 @@ public static partial class SyntaxFactory
     public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(params GenericParameterSyntax[] parameters) =>
         SeparatedSyntaxList(Comma, parameters);
 
-    public static CompilationUnitSyntax CompilationUnit(IEnumerable<DeclarationSyntax> decls) =>
-        CompilationUnit(SyntaxList(decls));
     public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
-        CompilationUnit(SyntaxList(decls));
+        CompilationUnit(decls.AsEnumerable());
 
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, IEnumerable<DeclarationSyntax> declarations) =>
         ModuleDeclaration(SyntaxList<AttributeSyntax>(), null, name, SyntaxList(declarations));
@@ -239,14 +237,8 @@ public static partial class SyntaxFactory
     public static AttributeSyntax Attribute(TypeSyntax type, IEnumerable<ExpressionSyntax> args) =>
         Attribute(type, ArgumentList(SeparatedSyntaxList(Comma, args)));
 
-    public static BlockFunctionBodySyntax BlockFunctionBody(IEnumerable<StatementSyntax> stmts) => BlockFunctionBody(SyntaxList(stmts));
     public static BlockFunctionBodySyntax BlockFunctionBody(params StatementSyntax[] stmts) => BlockFunctionBody(stmts.AsEnumerable());
 
-    public static BlockExpressionSyntax BlockExpression(
-        IEnumerable<StatementSyntax> stmts,
-        ExpressionSyntax? value = null) => BlockExpression(
-        SyntaxList(stmts),
-        value);
     public static BlockExpressionSyntax BlockExpression(params StatementSyntax[] stmts) => BlockExpression(stmts.AsEnumerable());
 
     public static IfExpressionSyntax IfExpression(

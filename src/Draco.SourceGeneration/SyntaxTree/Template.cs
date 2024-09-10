@@ -503,6 +503,20 @@ public static partial class SyntaxFactory
             }
         }
 
+        if (field.IsSyntaxList)
+        {
+            // Syntax lists can get simplified to IEnumerable<T>s
+            var elementType = field.ElementType;
+            return new FieldFacade(
+                IsOriginal: false,
+                Documentation: field.Documentation,
+                ParameterName: CamelCase(field.Name),
+                Type: $"IEnumerable<{field.ElementType}>{Nullable(field)}",
+                ReferenceValue: field.IsNullable
+                    ? $"{CamelCase(field.Name)} is null ? null : SyntaxList({CamelCase(field.Name)})"
+                    : $"SyntaxList({CamelCase(field.Name)})");
+        }
+
         // Regular field
         return new FieldFacade(
             IsOriginal: true,

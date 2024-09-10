@@ -15,14 +15,4 @@ internal static class EnumerableExtensions
         foreach (var item in items) result.Add(item);
         return result;
     }
-
-    public static IEnumerable<(T, U)> Zip<T, U>(this IEnumerable<T> first, IEnumerable<U> second)
-    {
-        using var firstEnumerator = first.GetEnumerator();
-        using var secondEnumerator = second.GetEnumerator();
-        while (firstEnumerator.MoveNext() && secondEnumerator.MoveNext())
-        {
-            yield return (firstEnumerator.Current, secondEnumerator.Current);
-        }
-    }
 }

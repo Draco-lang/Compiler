@@ -171,7 +171,7 @@ public static partial class SyntaxFactory
             /// The node is only reinstantiated, if the passed in data is different.
             /// </summary>
             {{ForEach(node.Fields, "\n", field => NotNull(field.Documentation, doc => $"""
-                /// <param name="{CamelCase(field.Name)}">
+                /// <param name="{DocName(field)}">
                 /// {field.Documentation}
                 /// </param>
             """))}}
@@ -285,11 +285,11 @@ public static partial class SyntaxFactory
     /// <summary>
     /// Constructs a new <see cref="{{node.Name}}"/>.
     /// </summary>
-    {{ForEach(node.Fields, "\n", field => NotNull(field.Documentation, doc => $"""
-         /// <param name="{CamelCase(field.Name)}">
+    {{ForEach(node.Fields.Where(f => f.Documentation is not null), "\n", field => $"""
+         /// <param name="{DocName(field)}">
          /// {field.Documentation}
          /// </param>
-         """))}}
+         """)}}
     /// <returns>
     /// The constructed <see cref="{{node.Name}}"/>.
     /// </returns>
@@ -346,11 +346,11 @@ public static partial class SyntaxFactory
     /// <returns>
     /// The constructed <see cref="{{node.Name}}"/>.
     /// </returns>
-    {{ForEach(facadedFields, "\n", field => When(field.IsParameter, $"""
-        /// <param name="{field.ParameterName}">
+    {{ForEach(facadedFields.Where(f => f.IsParameter), "\n", field => $"""
+        /// <param name="{DocName(field)}">
         /// {field.Documentation}
         /// </param>
-        """))}}
+        """)}}
     /// <returns>
     /// The constructed <see cref="{{node.Name}}"/>.
     /// </returns>
@@ -434,6 +434,10 @@ public static partial class SyntaxFactory
     private static string ProtectedPublic(Node node) => When(node.IsAbstract, "protected", "public");
     private static string Base(Node node) => NotNull(node.Base, b => $": {b.Name}");
     private static string Nullable(Field field) => When(field.IsNullable, "?");
+    private static string DocName(Field field) => CamelCase(RemovePrefix(field.Name, "@"));
+    private static string DocName(FieldFacade field) => field.ParameterName is null
+        ? string.Empty
+        : RemovePrefix(field.ParameterName, "@");
 
     private readonly record struct FieldFacade(
         bool IsOriginal,

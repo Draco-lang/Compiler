@@ -134,7 +134,7 @@ namespace Draco.Compiler.Api.Syntax.Quoting;
 
 #nullable enable
 
-public sealed partial class SyntaxQuoter
+public static partial class SyntaxQuoter
 {
     private sealed partial class QuoteVisitor
     {

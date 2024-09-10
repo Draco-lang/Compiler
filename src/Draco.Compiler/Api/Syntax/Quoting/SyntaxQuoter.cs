@@ -49,15 +49,23 @@ public enum QuoteMode
 /// Produces quoted text from <see cref="SourceText"/>s or <see cref="SyntaxNode"/>s.
 /// </summary>
 /// <param name="outputLanguage">The target output language for the quoter.</param>
-/// <param name="quoteMode">The mode the quoter should operate in.</param>
-public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
+public static partial class SyntaxQuoter
 {
     /// <summary>
     /// Produces a string containing the factory method calls required to produce a string of source code.
     /// </summary>
     /// <param name="text">The <see cref="SourceText"/> to quote.</param>
+    /// <param name="mode">What kind of syntactic element to quote.</param>
+    /// <param name="outputLanguage">The language to output the quoted code as.</param>
+    /// <param name="prettyPrint">Whether to append whitespace to the output quote.</param>
+    /// <param name="requireStaticImport">Whether to require a static import of <see cref="SyntaxFactory"/> in the quoted code.</param>
     /// <returns>A string containing the quoted text.</returns>
-    public string Quote(SourceText text, QuoteMode mode)
+    public static string Quote(
+        SourceText text,
+        QuoteMode mode,
+        OutputLanguage outputLanguage,
+        bool prettyPrint,
+        bool requireStaticImport)
     {
         // Todo: probably factor out this duplicate code
         var diags = new SyntaxDiagnosticTable();
@@ -77,19 +85,30 @@ public sealed partial class SyntaxQuoter(OutputLanguage outputLanguage)
 
         var red = node.ToRedNode(null!, null, 0);
 
-        return this.Quote(red);
+        return Quote(red, outputLanguage, prettyPrint, requireStaticImport);
     }
 
     /// <summary>
     /// Produces a string containing the factory method calls required to produce a syntax node.
     /// </summary>
     /// <param name="node">The <see cref="SyntaxNode"/> to quote.</param>
+    /// <param name="outputLanguage">The language to output the quoted code as.</param>
+    /// <param name="prettyPrint">Whether to append whitespace to the output quote.</param>
+    /// <param name="requireStaticImport">Whether to require a static import of <see cref="SyntaxFactory"/> in the quoted code.</param>
     /// <returns>A string containing the quoted text.</returns>
-    public string Quote(SyntaxNode node)
+    public static string Quote(
+        SyntaxNode node,
+        OutputLanguage outputLanguage,
+        bool prettyPrint,
+        bool requireStaticImport)
     {
-        var visitor = new QuoteVisitor();
-        var expr = node.Accept(visitor);
-        throw new NotImplementedException();
+        var expr = node.Accept(new QuoteVisitor());
+
+        return outputLanguage switch
+        {
+            OutputLanguage.CSharp => CSharpQuoterTemplate.Generate(expr, prettyPrint, requireStaticImport),
+            _ => throw new ArgumentOutOfRangeException(nameof(outputLanguage))
+        };
     }
 
     private static QuoteExpression QuoteObjectLiteral(object? value) => value switch

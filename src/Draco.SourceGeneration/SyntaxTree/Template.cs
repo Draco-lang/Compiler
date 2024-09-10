@@ -400,6 +400,7 @@ public static partial class SyntaxFactory
     private static string Nullable(Field field) => When(field.IsNullable, "?");
 
     private readonly record struct FieldFacade(
+        bool IsOriginal,
         string? Documentation,
         string? ParameterName,
         string? Type,
@@ -419,7 +420,8 @@ public static partial class SyntaxFactory
         {
             var field = node.Fields[i];
 
-            var facade = Simplify(tree, field, ref anySimplified);
+            var facade = Simplify(tree, field);
+            anySimplified |= !facade.IsOriginal;
             // We can make it null-defaulted, if this field is nullable and any fields THAT ARE PARAMETERS ahead were nullable
             var canBeNulled = field.IsNullable
                            && result.All(f => !f.IsParameter || f.DefaultValue is not null);
@@ -431,10 +433,26 @@ public static partial class SyntaxFactory
 
             result.Insert(0, facade);
         }
+
+        if (result.Count > 0 && result.All(f => f.IsOriginal) && result[^1].DefaultValue is not null)
+        {
+            // Edge-case, where all fields are original, but the last one has a default value
+            // This will collide with the original factory method, so let's remove the last parameter
+            var lastParam = result[^1];
+            result.RemoveAt(result.Count - 1);
+            result.Add(new FieldFacade(
+                IsOriginal: false,
+                Documentation: null,
+                ParameterName: null,
+                Type: lastParam.Type,
+                ReferenceValue: "default"));
+            anySimplified = true;
+        }
+
         return result;
     }
 
-    private static FieldFacade Simplify(Tree tree, Field field, ref bool anySimplified)
+    private static FieldFacade Simplify(Tree tree, Field field)
     {
         if (!field.IsNullable
          && field.IsToken
@@ -443,8 +461,8 @@ public static partial class SyntaxFactory
         {
             // A trivially substitutable token, as it's not nullable (required) and there is a single token that can be substituted
             // with a well-known text
-            anySimplified = true;
             return new FieldFacade(
+                IsOriginal: false,
                 Documentation: null,
                 ParameterName: null,
                 Type: null,
@@ -457,8 +475,8 @@ public static partial class SyntaxFactory
             if (kind == "Identifier" && !field.IsNullable) // We assume identifiers are always required
             {
                 // We can simplify the identifier token to a string
-                anySimplified = true;
                 return new FieldFacade(
+                    IsOriginal: false,
                     Documentation: field.Documentation,
                     ParameterName: CamelCase(field.Name),
                     Type: "string",
@@ -468,6 +486,7 @@ public static partial class SyntaxFactory
 
         // Regular field
         return new FieldFacade(
+            IsOriginal: true,
             Documentation: field.Documentation,
             ParameterName: CamelCase(field.Name),
             Type: field.Type,

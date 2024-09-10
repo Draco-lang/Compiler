@@ -75,6 +75,11 @@ public abstract partial class SyntaxVisitor<TResult>
     {{Visitors(tree.Nodes, "TResult", "default!")}}
 }
 
+public static partial class SyntaxFactory
+{
+    {{SyntaxFactories(tree)}}
+}
+
 #nullable restore
 """);
 
@@ -219,34 +224,31 @@ public abstract partial class SyntaxVisitor<TResult>
 
         {{Accept(node)}}
     }
-
-    {{When(!node.IsAbstract, $$"""
-        public static partial class SyntaxFactory
-        {
-            /// <summary>
-            /// Constructs a new <see cref="{{node.Name}}"/>.
-            /// </summary>
-            {{ForEach(node.Fields, "\n", field => NotNull(field.Documentation, doc => $"""
-                /// <param name="{CamelCase(field.Name)}">
-                /// {field.Documentation}
-                /// </param>
-                """))}}
-            /// <returns>
-            /// The constructed <see cref="{{node.Name}}"/>.
-            /// </returns>
-            public static {{node.Name}} {{RemoveSuffix(node.Name, "Syntax")}}(
-                {{ForEach(node.Fields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}}) =>
-                new Internal.Syntax.{{node.Name}}(
-                    {{ForEach(node.Fields, ", ", field => $"({InternalType(field.Type)}){CamelCase(field.Name)}{Nullable(field)}.Green")}}
-                ).ToRedNode(null!, null, 0);
-        }
-        """)}}
     """;
 
     private static string AccumulateFullWidth(Node node, Field current) =>
         $"this.FullPosition {ForEach(node.Fields.TakeWhile(f => f != current), field => $" + {When(field.IsNullable,
             whenTrue: $"(this.Green.{field.Name}?.FullWidth ?? 0)",
             whenFalse: $"this.Green.{field.Name}.FullWidth")}")}";
+
+    private static string SyntaxFactories(Tree tree) => ForEach(tree.Nodes, node => When(!node.IsAbstract, $$"""
+    /// <summary>
+    /// Constructs a new <see cref="{{node.Name}}"/>.
+    /// </summary>
+    {{ForEach(node.Fields, "\n", field => NotNull(field.Documentation, doc => $"""
+            /// <param name="{CamelCase(field.Name)}">
+            /// {field.Documentation}
+            /// </param>
+            """))}}
+    /// <returns>
+    /// The constructed <see cref="{{node.Name}}"/>.
+    /// </returns>
+    public static {{node.Name}} {{RemoveSuffix(node.Name, "Syntax")}}(
+        {{ForEach(node.Fields, ", ", field => $"{field.Type} {CamelCase(field.Name)}")}}) =>
+        new Internal.Syntax.{{node.Name}}(
+            {{ForEach(node.Fields, ", ", field => $"({InternalType(field.Type)}){CamelCase(field.Name)}{Nullable(field)}.Green")}}
+        ).ToRedNode(null!, null, 0);
+    """));
 
     private static string Children(Tree tree, Node node) => When(!node.IsAbstract, $$"""
     public override IEnumerable<{{tree.Root.Name}}> Children

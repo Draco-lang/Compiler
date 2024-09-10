@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Xml.Linq;
 using Draco.SourceGeneration.BoundTree;
 using static Draco.SourceGeneration.TemplateUtils;
 
@@ -90,6 +92,7 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
 
     public static string GenerateRedTree(Tree tree) => FormatCSharp($$"""
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -304,24 +307,57 @@ public static partial class SyntaxFactory
         var facadedFields = Simplify(tree, node, out var anySimplified);
         if (!anySimplified) return string.Empty;
 
-        return $$"""
-            /// <returns>
-            /// The constructed <see cref="{{node.Name}}"/>.
-            /// </returns>
-            {{ForEach(facadedFields, "\n", field => When(field.IsParameter, $"""
-                /// <param name="{field.ParameterName}">
-                /// {field.Documentation}
-                /// </param>
-                """))}}
-            /// <returns>
-            /// The constructed <see cref="{{node.Name}}"/>.
-            /// </returns>
-            public static {{node.Name}} {{FactoryName(node)}}(
-                {{ForEach(facadedFields.Where(f => f.IsParameter), ", ", field =>
-                    $"{field.Type} {field.ParameterName} {NotNull(field.DefaultValue, v => $"= {v}")}")}}) =>
-                {{FactoryName(node)}}({{ForEach(facadedFields, ", ", field => field.ReferenceValue)}});
-            """;
+        var actualParameters = facadedFields
+            .Where(f => f.IsParameter)
+            .ToList();
+        if (actualParameters.Count > 0 && actualParameters[^1].Original?.IsSyntaxList == true)
+        {
+            // Special case, we could replace the last field with a params T[] overload
+            var lastParameter = actualParameters[^1];
+            var paramsField = new FieldFacade(
+                IsOriginal: false,
+                Original: lastParameter.Original,
+                Documentation: lastParameter.Documentation,
+                ParameterName: lastParameter.ParameterName,
+                Type: $"params {lastParameter.Original.ElementType}[]",
+                ReferenceValue: $"{lastParameter.ParameterName}.AsEnumerable()");
+            var otherFields = actualParameters
+                .Take(actualParameters.Count - 1)
+                .Select(f => f with
+                {
+                    ReferenceValue = f.ParameterName!,
+                })
+                .ToList();
+            // Replace the last parameter with the new one
+            var paramsFacadedFields = otherFields
+                .Append(paramsField)
+                .ToList();
+
+            return $"""
+                {SimplifiedSyntaxFactory(node, facadedFields)}
+                {SimplifiedSyntaxFactory(node, paramsFacadedFields)}
+                """;
+        }
+
+        return SimplifiedSyntaxFactory(node, facadedFields);
     }
+
+    private static string SimplifiedSyntaxFactory(Node node, IEnumerable<FieldFacade> facadedFields) => $$"""
+    /// <returns>
+    /// The constructed <see cref="{{node.Name}}"/>.
+    /// </returns>
+    {{ForEach(facadedFields, "\n", field => When(field.IsParameter, $"""
+        /// <param name="{field.ParameterName}">
+        /// {field.Documentation}
+        /// </param>
+        """))}}
+    /// <returns>
+    /// The constructed <see cref="{{node.Name}}"/>.
+    /// </returns>
+    public static {{node.Name}} {{FactoryName(node)}}({{ForEach(facadedFields.Where(f => f.IsParameter), ", ", field =>
+        $"{field.Type} {field.ParameterName} {NotNull(field.DefaultValue, v => $"= {v}")}")}}) =>
+        {{FactoryName(node)}}({{ForEach(facadedFields, ", ", field => field.ReferenceValue)}});
+    """;
 
     private static string Children(Tree tree, Node node) => When(!node.IsAbstract, $$"""
     public override IEnumerable<{{tree.Root.Name}}> Children
@@ -401,6 +437,7 @@ public static partial class SyntaxFactory
 
     private readonly record struct FieldFacade(
         bool IsOriginal,
+        Field Original,
         string? Documentation,
         string? ParameterName,
         string? Type,
@@ -410,7 +447,7 @@ public static partial class SyntaxFactory
         public bool IsParameter => this.ParameterName is not null;
     }
 
-    private static IEnumerable<FieldFacade> Simplify(Tree tree, Node node, out bool anySimplified)
+    private static IReadOnlyList<FieldFacade> Simplify(Tree tree, Node node, out bool anySimplified)
     {
         anySimplified = false;
         var result = new List<FieldFacade>();
@@ -442,6 +479,7 @@ public static partial class SyntaxFactory
             result.RemoveAt(result.Count - 1);
             result.Add(new FieldFacade(
                 IsOriginal: false,
+                Original: lastParam.Original,
                 Documentation: null,
                 ParameterName: null,
                 Type: lastParam.Type,
@@ -463,6 +501,7 @@ public static partial class SyntaxFactory
             // with a well-known text
             return new FieldFacade(
                 IsOriginal: false,
+                Original: field,
                 Documentation: null,
                 ParameterName: null,
                 Type: null,
@@ -477,6 +516,7 @@ public static partial class SyntaxFactory
                 // We can simplify the identifier token to a string
                 return new FieldFacade(
                     IsOriginal: false,
+                    Original: field,
                     Documentation: field.Documentation,
                     ParameterName: CamelCase(field.Name),
                     Type: "string",
@@ -494,6 +534,7 @@ public static partial class SyntaxFactory
                 // All token kinds have a well-known text (and no associated value), so we can simplify this to a token kind
                 return new FieldFacade(
                     IsOriginal: false,
+                    Original: field,
                     Documentation: field.Documentation,
                     ParameterName: CamelCase(field.Name),
                     Type: $"TokenKind{Nullable(field)}",
@@ -509,6 +550,7 @@ public static partial class SyntaxFactory
             var elementType = field.ElementType;
             return new FieldFacade(
                 IsOriginal: false,
+                Original: field,
                 Documentation: field.Documentation,
                 ParameterName: CamelCase(field.Name),
                 Type: $"IEnumerable<{field.ElementType}>{Nullable(field)}",
@@ -520,6 +562,7 @@ public static partial class SyntaxFactory
         // Regular field
         return new FieldFacade(
             IsOriginal: true,
+            Original: field,
             Documentation: field.Documentation,
             ParameterName: CamelCase(field.Name),
             Type: field.Type,

@@ -127,6 +127,22 @@ public static partial class SyntaxFactory
 #nullable restore
 """);
 
+    public static string GenerateQuoter(Tree tree) => FormatCSharp($$"""
+using System.Collections.Generic;
+
+namespace Draco.Compiler.Api.Syntax.Quoting;
+
+#nullable enable
+
+public sealed partial class SyntaxQuoter
+{
+    private sealed partial class QuoteVisitor
+    {
+        {{ForEach(tree.Nodes.Where(x => !x.IsAbstract), QuoterMethod)}}
+    }
+}
+""");
+
     private static string GreenNodeClass(Tree tree, Node node) => $$"""
     /// <summary>
     /// {{EscapeXml(node.Documentation)}}
@@ -371,7 +387,7 @@ public static partial class SyntaxFactory
             yield break;
         }
     }
-    
+
     """);
 
     private static string Accept(Node node) => When(node.IsAbstract && node.Base is null,
@@ -428,6 +444,15 @@ public static partial class SyntaxFactory
 
     private static string InternalType(string type) =>
         $"Internal.Syntax.{type.Replace("<", "<Internal.Syntax.")}";
+
+    private static string QuoterMethod(Node node) => $$"""
+public override QuoteExpression {{VisitorName(node)}}({{node.Name}} node) =>
+    new QuoteFunctionCall("{{FactoryName(node)}}", [
+        {{ForEach(node.Fields, field => $$"""
+            node.{{field.Name}}{{When(field.IsNullable, "?")}}.Accept(this){{When(field.IsNullable, " ?? new QuoteNull()")}},
+        """)}}
+    ]);
+""";
 
     private static string FactoryName(Node node) => RemoveSuffix(node.Name, "Syntax");
     private static string AbstractSealed(Node node) => When(node.IsAbstract, "abstract", "sealed");

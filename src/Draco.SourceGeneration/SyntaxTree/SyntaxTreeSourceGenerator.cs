@@ -18,6 +18,7 @@ public sealed class SyntaxTreeSourceGenerator : XmlSourceGenerator
         var tokenCode = Template.GenerateTokens(domainModel);
         var greenTreeCode = Template.GenerateGreenTree(domainModel);
         var redTreeCode = Template.GenerateRedTree(domainModel);
+        var quoterCode = Template.GenerateQuoter(domainModel);
 
         return
         [

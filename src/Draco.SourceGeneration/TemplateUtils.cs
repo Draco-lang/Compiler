@@ -82,6 +82,13 @@ internal static class TemplateUtils
         : name;
 
     /// <summary>
+    /// Wraps a string between quotes and escapes it to be a valid C# line-string literal.
+    /// </summary>
+    /// <param name="text">The text to wrap.</param>
+    /// <returns>The wrapped and escaped text.</returns>
+    public static string StringLiteral(string text) => $"\"{Unescape(text)}\"";
+
+    /// <summary>
     /// Unescapes a given text to be a valid C# line-string literal.
     /// </summary>
     /// <param name="text">The text to unescape.</param>

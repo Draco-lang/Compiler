@@ -301,39 +301,15 @@ public static partial class SyntaxFactory
 
     private static string SimplifiedSyntaxFactory(Tree tree, Node node)
     {
-        if (!node.Fields.Any(f => IsDetermined(tree, f))) return string.Empty;
-
-        var relevantFields = node.Fields
-            .Where(f => !IsDetermined(tree, f))
-            .ToList();
-        var allFieldValues = node.Fields
-            .Select(f =>
-            {
-                // Just parameter reference
-                if (!IsDetermined(tree, f)) return CamelCase(f.Name);
-                // Token construction
-                var kindName = f.TokenKinds[0];
-                var token = tree.GetTokenFromKind(kindName);
-                return $"Token(TokenKind.{kindName} {NotNull(token.Value, v => $", {v}")})";
-            })
-            .ToList();
-        var defaultValues = node.Fields
-            .Select(_ => null as string)
-            .ToList();
-        // While the next item is nullable, add default
-        for (var i = relevantFields.Count - 1; i >= 0; --i)
-        {
-            var field = relevantFields[i];
-            if (!field.IsNullable) break;
-            defaultValues[i] = "null";
-        }
+        var facadedFields = Simplify(tree, node, out var anySimplified);
+        if (!anySimplified) return string.Empty;
 
         return $$"""
             /// <returns>
             /// The constructed <see cref="{{node.Name}}"/>.
             /// </returns>
-            {{ForEach(relevantFields, "\n", field => NotNull(field.Documentation, doc => $"""
-                /// <param name="{CamelCase(field.Name)}">
+            {{ForEach(facadedFields, "\n", field => NotNull(field.Documentation, doc => $"""
+                /// <param name="{field.ParameterName}">
                 /// {field.Documentation}
                 /// </param>
                 """))}}
@@ -341,9 +317,9 @@ public static partial class SyntaxFactory
             /// The constructed <see cref="{{node.Name}}"/>.
             /// </returns>
             public static {{node.Name}} {{FactoryName(node)}}(
-                {{ForEach(relevantFields.Zip(defaultValues), ", ", field =>
-                    $"{field.Item1.Type} {CamelCase(field.Item1.Name)} {NotNull(field.Item2, v => $"= {v}")}")}}) =>
-                {{FactoryName(node)}}({{ForEach(allFieldValues, ", ", f => f)}});
+                {{ForEach(facadedFields.Where(f => f.Documentation is not null), ", ", field =>
+                    $"{field.Type} {field.ParameterName} {NotNull(field.DefaultValue, v => $"= {v}")}")}}) =>
+                {{FactoryName(node)}}({{ForEach(facadedFields, ", ", field => field.ReferenceValue)}});
             """;
     }
 
@@ -423,9 +399,75 @@ public static partial class SyntaxFactory
     private static string Base(Node node) => NotNull(node.Base, b => $": {b.Name}");
     private static string Nullable(Field field) => When(field.IsNullable, "?");
 
-    private static bool IsDetermined(Tree tree, Field field) =>
-        !field.IsNullable
-     && field.IsToken
-     && field.TokenKinds.Count == 1
-     && tree.GetTokenFromKind(field.TokenKinds[0]).Text is not null;
+    private readonly record struct FieldFacade(
+        string? Documentation,
+        string? ParameterName,
+        string? Type,
+        string ReferenceValue,
+        string? DefaultValue = null);
+
+    private static IEnumerable<FieldFacade> Simplify(Tree tree, Node node, out bool anySimplified)
+    {
+        anySimplified = false;
+        var result = new List<FieldFacade>();
+
+        // We go backwards to determine the default values
+        for (var i = node.Fields.Count - 1; i >= 0; --i)
+        {
+            var field = node.Fields[i];
+
+            var facade = Simplify(tree, field, ref anySimplified);
+            // We can make it null-defaulted, if this field is nullable and any fields ahead were nullable
+            var canBeNulled = field.IsNullable
+                           && (result.Count == 0 || result[0].DefaultValue is not null);
+            if (canBeNulled)
+            {
+                facade = facade with { DefaultValue = "null" };
+                anySimplified = true;
+            }
+
+            result.Insert(0, facade);
+        }
+        return result;
+    }
+
+    private static FieldFacade Simplify(Tree tree, Field field, ref bool anySimplified)
+    {
+        if (!field.IsNullable
+         && field.IsToken
+         && field.TokenKinds.Count == 1
+         && tree.GetTokenFromKind(field.TokenKinds[0]) is { Text: not null } tokenKind)
+        {
+            // A trivially substitutable token, as it's not nullable (required) and there is a single token that can be substituted
+            // with a well-known text
+            anySimplified = true;
+            return new FieldFacade(
+                Documentation: null,
+                ParameterName: null,
+                Type: null,
+                ReferenceValue: $"Token(TokenKind.{tokenKind.Name} {NotNull(tokenKind.Value, v => $", {v}")})");
+        }
+
+        if (field.IsToken && field.TokenKinds.Count == 1)
+        {
+            var kind = field.TokenKinds[0];
+            if (kind == "Identifier")
+            {
+                // We can simplify the identifier token to a string
+                anySimplified = true;
+                return new FieldFacade(
+                    Documentation: field.Documentation,
+                    ParameterName: CamelCase(field.Name),
+                    Type: "string",
+                    ReferenceValue: $"Identifier({CamelCase(field.Name)})");
+            }
+        }
+
+        // Regular field
+        return new FieldFacade(
+            Documentation: field.Documentation,
+            ParameterName: CamelCase(field.Name),
+            Type: field.Type,
+            ReferenceValue: CamelCase(field.Name));
+    }
 }

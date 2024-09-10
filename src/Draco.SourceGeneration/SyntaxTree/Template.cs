@@ -268,10 +268,10 @@ public static partial class SyntaxFactory
     /// Constructs a new <see cref="{{node.Name}}"/>.
     /// </summary>
     {{ForEach(node.Fields, "\n", field => NotNull(field.Documentation, doc => $"""
-            /// <param name="{CamelCase(field.Name)}">
-            /// {field.Documentation}
-            /// </param>
-            """))}}
+         /// <param name="{CamelCase(field.Name)}">
+         /// {field.Documentation}
+         /// </param>
+         """))}}
     /// <returns>
     /// The constructed <see cref="{{node.Name}}"/>.
     /// </returns>

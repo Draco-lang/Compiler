@@ -277,7 +277,6 @@ public static partial class SyntaxFactory
 
     private static SyntaxToken Token(TokenKind tokenKind) =>
         Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);
-    public static SyntaxToken MakeToken(TokenKind tokenKind, string text) =>
     private static SyntaxToken Token(TokenKind tokenKind, string text) =>
         Internal.Syntax.SyntaxToken.From(tokenKind, text).ToRedNode(null!, null, 0);
     private static SyntaxToken Token(TokenKind tokenKind, string text, object? value) =>

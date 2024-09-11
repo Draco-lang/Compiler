@@ -72,6 +72,7 @@ internal partial class Binder
         }
         else
         {
+            // TODO: Visibility?
             // Module or type member access
             var members = left.Members
                 .Where(m => m.Name == memberName)

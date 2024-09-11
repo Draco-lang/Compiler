@@ -53,6 +53,11 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
     public ImmutableArray<CallCandidate<FunctionSymbol>> Dominators =>
         CallScore.FindDominatorsBy(this.candidates, c => c.Score);
 
+    /// <summary>
+    /// The initial count of candidates.
+    /// </summary>
+    public int InitialCount { get; }
+
     public int Count => this.candidates.Count;
 
     private readonly List<CallCandidate<FunctionSymbol>> candidates;
@@ -63,6 +68,7 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
     {
         this.Arguments = arguments;
         this.candidates = candidates;
+        this.InitialCount = candidates.Count;
     }
 
     /// <summary>

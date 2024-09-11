@@ -327,7 +327,6 @@ internal sealed partial class ConstraintSolver
 
                 // Resolved fine, choose the symbol, which might generic-instantiate it
                 var chosen = this.GenericInstantiateIfNeeded(candidates.Single().Data);
-                // Check visibility
                 this.Context.CheckVisibility(overload.Locator, chosen, "overload", diagnostics);
                 // Inference
                 if (chosen.IsVariadic)

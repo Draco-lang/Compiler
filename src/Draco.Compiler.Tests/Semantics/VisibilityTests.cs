@@ -249,8 +249,8 @@ public sealed class VisibilityTests
         var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
         var diagnostics = compilation.Diagnostics;
 
-        var personTypeSymbol = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(declarationSyntax.Type!.Type));
-        var personCtorSymbol = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(declarationSyntax.Value!.Value));
+        var personTypeSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(declarationSyntax.Type!.Type));
+        var personCtorSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(declarationSyntax.Value!.Value));
 
         Assert.Equal(2, diagnostics.Length);
         AssertDiagnostics(diagnostics, SymbolResolutionErrors.InaccessibleSymbol);

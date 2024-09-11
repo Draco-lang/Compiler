@@ -232,6 +232,45 @@ internal abstract partial class Symbol
     public abstract TResult Accept<TResult>(SymbolVisitor<TResult> visitor);
 
     /// <summary>
+    /// Checks, if this symbol is visible from another symbol.
+    /// </summary>
+    /// <param name="from">The symbol from which visibility (access) is checked.</param>
+    /// <returns>True, if this symbol is visible from <paramref name="from"/> symbol.</returns>
+    public bool IsVisibleFrom(Symbol from)
+    {
+        var to = this;
+
+        // Unwrap generics
+        if (from.IsGenericInstance) from = from.GenericDefinition!;
+        if (to.IsGenericInstance) to = to.GenericDefinition!;
+
+        if (to.Visibility == Api.Semantics.Visibility.Private)
+        {
+            // This is a private symbol, only visible from the same or nested module
+            if (to.ContainingSymbol is null) return false;
+            return from.AncestorChain.Contains(to.ContainingSymbol, SymbolEqualityComparer.Default);
+        }
+
+        if (to.Visibility == Api.Semantics.Visibility.Internal)
+        {
+            // They HAVE TO be from the same assembly
+            // For that, we can check if the root module is the same
+            if (!SymbolEqualityComparer.Default.Equals(from.RootSymbol, to.RootSymbol)) return false;
+
+            // But other than that, the containing symbol has to be accessible
+            return to.ContainingSymbol?.IsVisibleFrom(from) ?? true;
+        }
+
+        if (to.Visibility == Api.Semantics.Visibility.Public)
+        {
+            // The containing symbol has to be accessible
+            return to.ContainingSymbol?.IsVisibleFrom(from) ?? true;
+        }
+
+        throw new InvalidOperationException("unknown visibility");
+    }
+
+    /// <summary>
     /// Converts the symbol-tree to a DOT graph for debugging purposes.
     /// </summary>
     /// <returns>The DOT graph of the symbol-tree.</returns>

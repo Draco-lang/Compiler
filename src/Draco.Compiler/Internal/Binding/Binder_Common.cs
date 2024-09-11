@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
@@ -28,5 +29,15 @@ internal partial class Binder
                     format: "return type declared to be {0}",
                     formatArgs: containingFunction.ReturnType,
                     location: returnTypeSyntax?.Location));
+    }
+
+    protected void CheckVisibility(SyntaxNode syntax, Symbol symbol, string kind, DiagnosticBag diagnostics)
+    {
+        if (symbol.IsVisibleFrom(this.ContainingSymbol)) return;
+
+        diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.InaccessibleSymbol,
+            location: syntax.Location,
+            formatArgs: [kind, symbol.Name]));
     }
 }

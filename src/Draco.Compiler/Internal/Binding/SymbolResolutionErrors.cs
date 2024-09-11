@@ -180,6 +180,6 @@ internal static class SymbolResolutionErrors
     public static readonly DiagnosticTemplate InaccessibleSymbol = DiagnosticTemplate.Create(
         title: "inaccessible symbol",
         severity: DiagnosticSeverity.Error,
-        format: "the symbol {0} is inaccessible due to its visibility",
+        format: "the {0} {1} is inaccessible due to its visibility",
         code: Code(19));
 }

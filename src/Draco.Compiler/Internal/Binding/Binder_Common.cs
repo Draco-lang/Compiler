@@ -33,6 +33,8 @@ internal partial class Binder
 
     protected void CheckVisibility(SyntaxNode syntax, Symbol symbol, string kind, DiagnosticBag diagnostics)
     {
+        // If the symbol is an error, don't propagate errors
+        if (symbol.IsError) return;
         if (symbol.IsVisibleFrom(this.ContainingSymbol)) return;
 
         diagnostics.Add(Diagnostic.Create(

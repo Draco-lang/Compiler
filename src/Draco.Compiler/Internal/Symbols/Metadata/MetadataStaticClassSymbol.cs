@@ -62,8 +62,6 @@ internal sealed class MetadataStaticClassSymbol(
             var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
             // Skip special name
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
-            // Skip non-public
-            if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
             // Turn into a symbol
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
@@ -77,8 +75,6 @@ internal sealed class MetadataStaticClassSymbol(
             var methodDef = this.MetadataReader.GetMethodDefinition(methodHandle);
             // Skip methods with special name
             if (methodDef.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
-            // Skip non-public methods
-            if (!methodDef.Attributes.HasFlag(MethodAttributes.Public)) continue;
             // Skip non-static methods
             // TODO: What's Invoke in System.Console?
             if (!methodDef.Attributes.HasFlag(MethodAttributes.Static)) continue;
@@ -94,8 +90,6 @@ internal sealed class MetadataStaticClassSymbol(
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
             // Skip fields with special name
             if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
-            // Skip non-public fields
-            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Skip non-static fields
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
             var fieldSym = new MetadataStaticFieldSymbol(
@@ -111,7 +105,7 @@ internal sealed class MetadataStaticClassSymbol(
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef);
-            if (propSym.IsStatic && propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
+            result.Add(propSym);
         }
 
         // Done

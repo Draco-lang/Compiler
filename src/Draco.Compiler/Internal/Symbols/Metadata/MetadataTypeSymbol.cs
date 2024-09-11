@@ -149,8 +149,6 @@ internal sealed class MetadataTypeSymbol(
             var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
             // Skip special name
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
-            // Skip non-public
-            if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
             // Turn into a symbol
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
@@ -168,8 +166,6 @@ internal sealed class MetadataTypeSymbol(
                 var name = this.MetadataReader.GetString(method.Name);
                 if (!name.StartsWith(CompilerConstants.OperatorPrefix)) continue;
             }
-            // Skip private
-            if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
             // Add it
             var methodSymbol = new MetadataMethodSymbol(
                 containingSymbol: this,
@@ -181,8 +177,6 @@ internal sealed class MetadataTypeSymbol(
         foreach (var fieldHandle in typeDefinition.GetFields())
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
-            // Skip non-public
-            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Add it
             var fieldSym = fieldDef.Attributes.HasFlag(FieldAttributes.Static)
                 ? new MetadataStaticFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef) as Symbol
@@ -197,7 +191,7 @@ internal sealed class MetadataTypeSymbol(
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef);
-            if (propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
+            result.Add(propSym);
         }
 
         // Add constructors separately

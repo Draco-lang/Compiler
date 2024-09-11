@@ -52,8 +52,6 @@ internal sealed class MetadataNamespaceSymbol(
             if (typeDef.IsNested) continue;
             // Skip types with special name
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
-            // Skip non-public types
-            if (!typeDef.Attributes.HasFlag(TypeAttributes.Public)) continue;
             // Turn into a symbol
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);

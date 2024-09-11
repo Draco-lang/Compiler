@@ -290,4 +290,24 @@ public sealed class CodeCompletionTests
             .Select(s => s.Documentation)
             .ToList();
     }
+
+    [Fact]
+    public void PrivateMembersAreNotSuggested()
+    {
+        var completions = GetCompletionWords("""
+            import System;
+
+            func main(){
+                Foo.|
+            }
+
+            module Foo {
+                func bar() {}
+                internal func baz() {}
+                public func qux() {}
+            }
+            """);
+
+        AssertCompletions(completions, "baz", "qux");
+    }
 }

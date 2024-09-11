@@ -246,7 +246,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     }
 
     public Symbol GetSymbolFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
-        assembly.Lookup(path).Single();
+        assembly.Lookup(path).Where(s => s is TypeSymbol or ModuleSymbol).Single();
 
     private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>
         compilation.MetadataAssemblies.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));

@@ -76,8 +76,8 @@ internal sealed class CompileTimeExecutor(Compilation compilation)
 
     private BoundExpression BindExpression(ExpressionSyntax syntax)
     {
-        var solver = new ConstraintSolver(syntax, "compile-time evaluation");
         var binder = compilation.GetBinder(syntax);
+        var solver = new ConstraintSolver(binder, "compile-time evaluation");
         var bindingTask = binder.BindExpression(syntax, solver, compilation.GlobalDiagnosticBag);
         solver.Solve(compilation.GlobalDiagnosticBag);
         return bindingTask.Result;

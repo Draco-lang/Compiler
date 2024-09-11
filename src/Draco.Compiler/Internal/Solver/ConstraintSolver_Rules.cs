@@ -89,7 +89,6 @@ internal sealed partial class ConstraintSolver
 
                 // Not a type variable, we can look into members
                 var membersWithName = accessed.Members
-                    // TODO: Visibility!!!
                     .Where(m => m.Name == member.MemberName)
                     .ToImmutableArray();
                 if (membersWithName.Length == 0)
@@ -110,6 +109,8 @@ internal sealed partial class ConstraintSolver
                 }
                 if (membersWithName.Length == 1)
                 {
+                    // Check visibility
+                    this.Context.CheckVisibility(member.Locator, membersWithName[0], "member", diagnostics);
                     // One member, we know what type the member type is
                     var memberType = ((ITypedSymbol)membersWithName[0]).Type;
                     // NOTE: There used to be an assignable constraint here
@@ -123,6 +124,7 @@ internal sealed partial class ConstraintSolver
                 {
                     // All must be functions, otherwise we have bigger problems
                     // TODO: Can this assertion fail? Like in a faulty module decl?
+                    // NOTE: Visibility will be checked by the overload constraint
                     Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
                     UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
                     var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
@@ -149,8 +151,8 @@ internal sealed partial class ConstraintSolver
                     return;
                 }
 
+                // NOTE: Visibility will be checked by the overload constraint
                 // Not a type variable, we can look into members
-                // TODO: Visibility!!!
                 var indexers = accessed.Members
                     .OfType<PropertySymbol>()
                     .Where(p => p.IsIndexer)
@@ -325,6 +327,8 @@ internal sealed partial class ConstraintSolver
 
                 // Resolved fine, choose the symbol, which might generic-instantiate it
                 var chosen = this.GenericInstantiateIfNeeded(candidates.Single().Data);
+                // Check visibility
+                this.Context.CheckVisibility(overload.Locator, chosen, "overload", diagnostics);
                 // Inference
                 if (chosen.IsVariadic)
                 {

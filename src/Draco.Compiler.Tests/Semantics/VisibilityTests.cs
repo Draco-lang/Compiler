@@ -211,8 +211,8 @@ public sealed class VisibilityTests
             """);
 
         var callSyntax = compilation.SyntaxTrees[0].FindInChildren<CallExpressionSyntax>();
-        var stringDeclarationSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(0);
-        var int32DeclarationSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(1);
+        var stringDeclarationSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(1);
+        var int32DeclarationSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(2);
 
         var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
         var diagnostics = compilation.Diagnostics;

@@ -32,7 +32,10 @@ internal partial class Binder
                     location: returnTypeSyntax?.Location));
     }
 
-    protected void CheckVisibility(SyntaxNode syntax, Symbol symbol, string kind, DiagnosticBag diagnostics)
+    internal void CheckVisibility(ConstraintLocator? locator, Symbol symbol, string kind, DiagnosticBag diagnostics) =>
+        this.CheckVisibility(locator?.GetReferencedSyntax(), symbol, kind, diagnostics);
+
+    internal void CheckVisibility(SyntaxNode? syntax, Symbol symbol, string kind, DiagnosticBag diagnostics)
     {
         // If the symbol is an error, don't propagate errors
         if (symbol.IsError) return;
@@ -42,7 +45,7 @@ internal partial class Binder
 
         diagnostics.Add(Diagnostic.Create(
             template: SymbolResolutionErrors.InaccessibleSymbol,
-            location: syntax.Location,
+            location: syntax?.Location,
             formatArgs: [kind, symbol.Name]));
     }
 }

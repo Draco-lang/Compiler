@@ -7,6 +7,7 @@ using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Syntax;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -35,6 +36,8 @@ internal partial class Binder
     {
         // If the symbol is an error, don't propagate errors
         if (symbol.IsError) return;
+        // Overloads are reported at resolution site
+        if (symbol is OverloadSymbol) return;
         if (symbol.IsVisibleFrom(this.ContainingSymbol)) return;
 
         diagnostics.Add(Diagnostic.Create(

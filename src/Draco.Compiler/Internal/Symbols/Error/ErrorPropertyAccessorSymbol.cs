@@ -7,5 +7,6 @@ internal sealed class ErrorPropertyAccessorSymbol(PropertySymbol property, int p
     : ErrorFunctionSymbol(parameterCount), IPropertyAccessorSymbol
 {
     public override bool IsStatic => true;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
     public PropertySymbol Property { get; } = property;
 }

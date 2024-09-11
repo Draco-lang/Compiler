@@ -1106,7 +1106,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.InaccessibleSymbol);
     }
 
     [Fact]
@@ -1197,7 +1197,7 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.Single(diags);
         Assert.True(fooCallSymbol.IsError);
-        AssertDiagnostics(diags, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diags, SymbolResolutionErrors.InaccessibleSymbol);
     }
 
     [Fact]

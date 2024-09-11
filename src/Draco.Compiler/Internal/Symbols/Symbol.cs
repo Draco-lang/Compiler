@@ -236,8 +236,10 @@ internal abstract partial class Symbol
     /// </summary>
     /// <param name="from">The symbol from which visibility (access) is checked.</param>
     /// <returns>True, if this symbol is visible from <paramref name="from"/> symbol.</returns>
-    public bool IsVisibleFrom(Symbol from)
+    public bool IsVisibleFrom(Symbol? from)
     {
+        if (from is null) return true;
+
         var to = this;
 
         // Unwrap generics

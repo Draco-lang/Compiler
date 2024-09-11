@@ -122,6 +122,11 @@ internal abstract partial class Symbol
     public virtual IEnumerable<Symbol> Members => [];
 
     /// <summary>
+    /// The members defined directly in this symbol.
+    /// </summary>
+    public virtual IEnumerable<Symbol> DefinedMembers => this.Members;
+
+    /// <summary>
     /// The static members within this symbol.
     /// </summary>
     public IEnumerable<Symbol> StaticMembers => this.Members.Where(x => x is IMemberSymbol mem && mem.IsStatic);

@@ -89,6 +89,7 @@ internal sealed partial class ConstraintSolver
 
                 // Not a type variable, we can look into members
                 var membersWithName = accessed.Members
+                    // TODO: Visibility!!!
                     .Where(m => m.Name == member.MemberName)
                     .ToImmutableArray();
                 if (membersWithName.Length == 0)
@@ -149,6 +150,7 @@ internal sealed partial class ConstraintSolver
                 }
 
                 // Not a type variable, we can look into members
+                // TODO: Visibility!!!
                 var indexers = accessed.Members
                     .OfType<PropertySymbol>()
                     .Where(p => p.IsIndexer)

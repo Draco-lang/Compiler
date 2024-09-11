@@ -211,8 +211,7 @@ internal sealed class TypeProvider(Compilation compilation)
         parts.Reverse();
 
         var assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)resolutionScope).GetAssemblyName();
-        var assembly = compilation.MetadataAssemblies.FirstOrDefault(x =>
-            AssemblyIsSufficient(assemblyName, x.AssemblyName));
+        var assembly = compilation.MetadataAssemblies.FirstOrDefault(x => AssemblyIsSufficient(assemblyName, x.AssemblyName));
         if (assembly is null)
         {
             // The assembly for some reason isn't included, report it

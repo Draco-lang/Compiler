@@ -38,6 +38,13 @@ internal abstract partial class Symbol
     }
 
     /// <summary>
+    /// Indicates, if this symbol translated to metadata would result in a .NET type.
+    /// 
+    /// In the .NET world, static classes are types too, but in Draco they are modules instead.
+    /// </summary>
+    public bool IsDotnetType => this is TypeSymbol or ModuleSymbol;
+
+    /// <summary>
     /// The root of this hierarchy.
     /// </summary>
     public Symbol? RootSymbol => this.AncestorChain.LastOrDefault();

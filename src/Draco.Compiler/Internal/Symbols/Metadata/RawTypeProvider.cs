@@ -114,7 +114,7 @@ internal sealed class RawTypeProvider(Compilation compilation)
     {
         var typeAncestor = genericContext.AncestorChain
             // Both types and modules are a type in .NET world
-            .Where(IsTypeSymbol)
+            .Where(s => s.IsDotnetType)
             .First();
 
         return typeAncestor.IsGenericDefinition
@@ -220,7 +220,7 @@ internal sealed class RawTypeProvider(Compilation compilation)
             var nestedGenericArgc = definition.GetGenericParameters().Count;
             return declaringSymbol
                 .DefinedMembers
-                .Where(IsTypeSymbol)
+                .Where(s => s.IsDotnetType)
                 .Where(t => t.Name == nestedName && t.GenericParameters.Length == nestedGenericArgc)
                 .Single();
         }
@@ -235,7 +235,7 @@ internal sealed class RawTypeProvider(Compilation compilation)
         var fullName = ConcatenateNamespaceAndName(@namespace, name);
         var path = fullName.Split('.').ToImmutableArray();
 
-        return this.WellKnownTypes.GetSymbolFromAssembly(assemblyName, path);
+        return this.WellKnownTypes.GetDotnetTypeFromAssembly(assemblyName, path);
     }
 
     private Symbol BuildTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
@@ -269,14 +269,11 @@ internal sealed class RawTypeProvider(Compilation compilation)
 
         return assembly.RootNamespace
             .Lookup(parts.ToImmutable())
-            .Where(IsTypeSymbol)
+            .Where(s => s.IsDotnetType)
             .Single();
     }
 
     // Utilities ///////////////////////////////////////////////////////////////
-
-    // In .NET world, static classes are types, but in Draco world they are modules
-    private static bool IsTypeSymbol(Symbol symbol) => symbol is TypeSymbol or ModuleSymbol;
 
     private static string ConcatenateNamespaceAndName(string? @namespace, string name) =>
         string.IsNullOrWhiteSpace(@namespace) ? name : $"{@namespace}.{name}";

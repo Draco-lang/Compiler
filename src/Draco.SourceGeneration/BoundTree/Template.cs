@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using static Draco.SourceGeneration.TemplateUtils;
 
 namespace Draco.SourceGeneration.BoundTree;

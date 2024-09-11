@@ -1,5 +1,3 @@
-using System;
-
 namespace Draco.SourceGeneration.Dap.CsModel;
 
 /// <summary>

@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -31,7 +32,12 @@ internal sealed class MetadataStaticClassSymbol(
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
     public override Symbol ContainingSymbol { get; } = containingSymbol;
 
-    public override Api.Semantics.Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Visibility Visibility => typeDefinition.Attributes switch
+    {
+        var attr when attr.HasFlag(TypeAttributes.Public)
+                   || attr.HasFlag(TypeAttributes.NestedPublic) => Visibility.Public,
+        _ => Visibility.Internal,
+    };
 
     public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;

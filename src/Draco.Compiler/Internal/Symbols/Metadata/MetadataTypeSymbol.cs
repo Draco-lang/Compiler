@@ -38,7 +38,7 @@ internal sealed class MetadataTypeSymbol(
 
     public override string MetadataName => this.MetadataReader.GetString(typeDefinition.Name);
 
-    public override Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Visibility.Public : Visibility.Internal;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);

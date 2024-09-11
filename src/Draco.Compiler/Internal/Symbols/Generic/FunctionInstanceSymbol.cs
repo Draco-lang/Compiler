@@ -57,6 +57,7 @@ internal class FunctionInstanceSymbol(
     public override bool IsStatic => this.GenericDefinition.IsStatic;
     public override BoundStatement? Body => this.GenericDefinition.Body;
     public override CodegenDelegate? Codegen => this.GenericDefinition.Codegen;
+    public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override FunctionSymbol GenericDefinition { get; } = genericDefinition;

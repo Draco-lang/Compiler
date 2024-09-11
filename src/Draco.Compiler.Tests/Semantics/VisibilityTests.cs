@@ -227,4 +227,35 @@ public sealed class VisibilityTests
         Assert.False(calledSymbol.IsError);
         Assert.Same(stringDeclarationSymbol, calledSymbol);
     }
+
+    [Fact]
+    public void AccessingInternalOfOtherAssemblyIsIllegal()
+    {
+        var csReference = CompileCSharpToMetadataReference("""
+            internal class Person
+            {
+            }
+            """);
+
+        var compilation = CreateCompilation("""
+            func main() {
+                val p: Person = Person();
+            }
+            """,
+            additionalReferences: [csReference]);
+
+        var declarationSyntax = compilation.SyntaxTrees[0].FindInChildren<VariableDeclarationSyntax>();
+
+        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var diagnostics = compilation.Diagnostics;
+
+        var personTypeSymbol = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(declarationSyntax.Type!.Type));
+        var personCtorSymbol = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(declarationSyntax.Value!.Value));
+
+        Assert.Equal(2, diagnostics.Length);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.InaccessibleSymbol);
+        // We resolve to the real symbol, so not an error
+        Assert.False(personTypeSymbol.IsError);
+        Assert.True(personCtorSymbol.IsError);
+    }
 }

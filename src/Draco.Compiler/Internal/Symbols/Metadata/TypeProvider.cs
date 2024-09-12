@@ -1,15 +1,6 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Metadata;
-using Draco.Compiler.Api;
-using Draco.Compiler.Api.Diagnostics;
-using Draco.Compiler.Internal.Binding;
-using Draco.Compiler.Internal.Symbols.Synthetized;
-using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

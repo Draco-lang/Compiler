@@ -128,7 +128,7 @@ public sealed partial class SemanticModel : IBinderProvider
         {
             foreach (var s in binder.DeclaredSymbols)
             {
-                if (binder.ContainingSymbol is not null && !s.IsVisibleFrom(binder.ContainingSymbol)) continue;
+                if (!s.IsVisibleFrom(binder.ContainingSymbol)) continue;
                 result.Add(s.ToApiSymbol());
             }
             binder = binder.Parent;

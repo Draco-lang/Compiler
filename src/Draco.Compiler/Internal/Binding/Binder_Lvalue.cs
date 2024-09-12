@@ -70,13 +70,13 @@ internal partial class Binder
                 : BinderFacts.IsValueSymbol;
 
             var members = container.StaticMembers
-                // TODO: Is this visibility check correct?
-                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
                 .Where(pred)
                 .ToImmutableArray();
 
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetValue(memberName, syntax, diagnostics);
+            this.CheckVisibility(syntax, symbol, "symbol", diagnostics);
+
             return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
         }
         else

@@ -350,6 +350,13 @@ public sealed partial class SemanticModel : IBinderProvider
         return [.. result];
     }
 
+    /// <summary>
+    /// Retrieves the symbol that <paramref name="syntax"/> is bound inside of.
+    /// </summary>
+    /// <param name="syntax">The syntax node to get the binding symbol of.</param>
+    /// <returns>The symbol that <paramref name="syntax"/> is bound inside of.</returns>
+    internal Symbol? GetBindingSymbol(SyntaxNode syntax) => this.GetBinder(syntax).ContainingSymbol;
+
     private IncrementalBinder GetBinder(SyntaxNode syntax)
     {
         var binder = this.compilation.GetBinder(syntax);

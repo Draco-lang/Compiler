@@ -15,7 +15,8 @@ internal sealed class ConstructorFunctionSymbol(FunctionSymbol ctorDefinition) :
     public override ImmutableArray<AttributeInstance> Attributes => this.ConstructorSymbol.Attributes;
     public override string Name => this.InstantiatedType.Name;
     public override bool IsSpecialName => true;
-    public override Api.Semantics.Visibility Visibility => ctorDefinition.Visibility;
+    public override Api.Semantics.Visibility Visibility =>
+        ctorDefinition.Visibility < this.ReturnType.Visibility ? ctorDefinition.Visibility : this.ReturnType.Visibility;
     public override SymbolDocumentation Documentation => ctorDefinition.Documentation;
     internal override string RawDocumentation => ctorDefinition.RawDocumentation;
 

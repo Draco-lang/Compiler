@@ -151,7 +151,6 @@ internal sealed partial class ConstraintSolver
                     return;
                 }
 
-                // NOTE: Visibility will be checked by the overload constraint
                 // Not a type variable, we can look into members
                 var indexers = accessed.Members
                     .OfType<PropertySymbol>()
@@ -174,6 +173,12 @@ internal sealed partial class ConstraintSolver
                         : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
                     indexer.CompletionSource.SetResult(errorSymbol);
                     return;
+                }
+
+                // If there is a single indexer, we check visibility
+                if (indexers.Length == 1)
+                {
+                    this.Context.CheckVisibility(indexer.Locator, indexers[0], "indexer", diagnostics);
                 }
 
                 if (indexer.IsGetter)
@@ -327,7 +332,11 @@ internal sealed partial class ConstraintSolver
 
                 // Resolved fine, choose the symbol, which might generic-instantiate it
                 var chosen = this.GenericInstantiateIfNeeded(candidates.Single().Data);
-                this.Context.CheckVisibility(overload.Locator, chosen, "overload", diagnostics);
+                if (overload.Candidates.InitialCount != 1)
+                {
+                    // We assume that if the initial candidate count was 1, we already checked visibility
+                    this.Context.CheckVisibility(overload.Locator, chosen, "overload", diagnostics);
+                }
                 // Inference
                 if (chosen.IsVariadic)
                 {

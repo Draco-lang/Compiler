@@ -256,6 +256,6 @@ public sealed class VisibilityTests
         AssertDiagnostics(diagnostics, SymbolResolutionErrors.InaccessibleSymbol);
         // We resolve to the real symbol, so not an error
         Assert.False(personTypeSymbol.IsError);
-        Assert.True(personCtorSymbol.IsError);
+        Assert.False(personCtorSymbol.IsError);
     }
 }

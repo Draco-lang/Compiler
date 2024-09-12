@@ -1,4 +1,4 @@
-using Draco.Compiler.Api.CodeCompletion;
+using Draco.Compiler.Api.Signature;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Tests.TestUtilities;
 

@@ -1,4 +1,5 @@
 using System.Linq;
+using Draco.Compiler.Api.Signature;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = Draco.Lsp.Model;
 
@@ -124,7 +125,7 @@ internal static class Translator
         _ => LspModels.CompletionItemKind.Text,
     };
 
-    public static LspModels.SignatureHelp? ToLsp(CompilerApi.CodeCompletion.SignatureItem? item) => item is null ? null : new()
+    public static LspModels.SignatureHelp? ToLsp(SignatureItem? item) => item is null ? null : new()
     {
         Signatures = item.Overloads.Select(x => ToLsp(x)).ToArray(),
         ActiveParameter = item.CurrentParameter is null ? null : (uint)item.CurrentOverload.Parameters.IndexOf(item.CurrentParameter),

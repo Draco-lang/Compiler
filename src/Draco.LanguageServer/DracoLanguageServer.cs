@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.CodeCompletion;
 using Draco.Compiler.Api.CodeFixes;
+using Draco.Compiler.Api.Signature;
 using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server;

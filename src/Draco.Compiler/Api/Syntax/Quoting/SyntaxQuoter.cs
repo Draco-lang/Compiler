@@ -126,24 +126,43 @@ public static partial class SyntaxQuoter
     {
         public override QuoteExpression VisitSyntaxToken(SyntaxToken node)
         {
-            var kindQuote = new QuoteTokenKind(node.Kind);
-            return (SyntaxFacts.GetTokenText(node.Kind), node.Value) switch
+            return (node.Kind, SyntaxFacts.GetTokenText(node.Kind), node.Value) switch
             {
+                // Identifiers, integers, floats, and character literals all have special factory methods.
+
+                (TokenKind.Identifier, _, _) => new QuoteFunctionCall("Identifier", [
+                    new QuoteString(node.Text!)
+                ]),
+
+                (TokenKind.LiteralInteger, _, var value) => new QuoteFunctionCall("Integer", [
+                    new QuoteInteger((int)value!)
+                ]),
+
+                (TokenKind.LiteralFloat, _, var value) => new QuoteFunctionCall("Float", [
+                    new QuoteFloat((float)value!)
+                ]),
+                (TokenKind.LiteralCharacter, _, var value) => new QuoteFunctionCall("Character", [
+                    new QuoteCharacter((char)value!)
+                ]),
+
+                // True and false have their respective values in the token, but we don't want that.
+                (TokenKind.KeywordTrue or TokenKind.KeywordFalse, _, _) => new QuoteProperty(node.Kind.ToString()),
+
                 // Token kind does not require any text nor a value
-                (not null, null) => new QuoteProperty(node.Kind.ToString()),
+                (_, not null, null) => new QuoteProperty(node.Kind.ToString()),
 
                 // Token kind requires text
-                (null, null) => new QuoteFunctionCall(node.Kind.ToString(), [
+                (_, null, null) => new QuoteFunctionCall(node.Kind.ToString(), [
                     new QuoteString(StringUtils.Unescape(node.Text))
                 ]),
 
                 // Token kind requires a value
-                (not null, not null) => new QuoteFunctionCall(node.Kind.ToString(), [
+                (_, not null, not null) => new QuoteFunctionCall(node.Kind.ToString(), [
                     QuoteObjectLiteral(node.Value)
                 ]),
 
                 // Token kind requires both text and a value
-                (null, not null) => new QuoteFunctionCall(node.Kind.ToString(), [
+                (_, null, not null) => new QuoteFunctionCall(node.Kind.ToString(), [
                     new QuoteString(StringUtils.Unescape(node.Text)),
                     QuoteObjectLiteral(node.Value)
                 ])

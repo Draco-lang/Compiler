@@ -51,6 +51,7 @@ internal sealed class CSharpQuoterTemplate(StringBuilder builder, bool prettyPri
             break;
 
         case QuoteTokenKind(var kind):
+            builder.Append("TokenKind.");
             builder.Append(kind.ToString());
             break;
 

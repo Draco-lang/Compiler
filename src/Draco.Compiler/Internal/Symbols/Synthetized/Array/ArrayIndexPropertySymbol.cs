@@ -16,6 +16,7 @@ internal sealed class ArrayIndexPropertySymbol : PropertySymbol
     public override bool IsIndexer => true;
     public override bool IsStatic => false;
     public override bool IsExplicitImplementation => false;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     public ArrayIndexPropertySymbol(ArrayTypeSymbol containingSymbol)
     {
@@ -39,6 +40,7 @@ internal sealed class ArrayIndexGetSymbol(
     public override TypeSymbol ReturnType => this.ContainingSymbol.ElementType;
     public override bool IsStatic => false;
     public override string Name => "Array_get";
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     public override ArrayTypeSymbol ContainingSymbol { get; } = containingSymbol;
     public PropertySymbol Property { get; } = propertySymbol;
@@ -65,6 +67,7 @@ internal sealed class ArrayIndexSetSymbol(
     public override TypeSymbol ReturnType => this.ContainingSymbol.ElementType;
     public override bool IsStatic => false;
     public override string Name => "Array_set";
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     public override ArrayTypeSymbol ContainingSymbol { get; } = containingSymbol;
     public PropertySymbol Property { get; } = propertySymbol;

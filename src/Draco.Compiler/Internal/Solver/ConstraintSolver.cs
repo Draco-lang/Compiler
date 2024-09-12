@@ -15,14 +15,16 @@ using IChrSolver = Draco.Chr.Solve.ISolver;
 namespace Draco.Compiler.Internal.Solver;
 
 /// <summary>
-/// Solves sets of <see cref="IConstraint"/>s for the type-system.
+/// Solves sets of constraints for the type-system.
 /// </summary>
-internal sealed partial class ConstraintSolver(SyntaxNode context, string contextName)
+internal sealed partial class ConstraintSolver(
+    Binder context,
+    string contextName)
 {
     /// <summary>
     /// The context being inferred.
     /// </summary>
-    public SyntaxNode Context { get; } = context;
+    public Binder Context { get; } = context;
 
     /// <summary>
     /// The user-friendly name of the context the solver is in.
@@ -104,7 +106,7 @@ internal sealed partial class ConstraintSolver(SyntaxNode context, string contex
         // Couldn't solve all constraints or infer all variables
         diagnostics.Add(Diagnostic.Create(
             template: TypeCheckingErrors.InferenceIncomplete,
-            location: this.Context.Location,
+            location: this.Context.DeclaringSyntax?.Location,
             formatArgs: this.ContextName));
 
         this.FailRemainingRules(solver);

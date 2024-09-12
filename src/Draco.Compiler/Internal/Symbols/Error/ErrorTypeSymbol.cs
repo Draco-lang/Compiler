@@ -9,6 +9,7 @@ namespace Draco.Compiler.Internal.Symbols.Error;
 internal sealed class ErrorTypeSymbol(string name) : TypeSymbol
 {
     public override bool IsError => true;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     /// <summary>
     /// The display name of the type.

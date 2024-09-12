@@ -126,8 +126,11 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.compilation.GetBinder(node);
         while (binder is not null)
         {
-            var symbols = binder.DeclaredSymbols.Select(x => x.ToApiSymbol());
-            foreach (var s in symbols) result.Add(s);
+            foreach (var s in binder.DeclaredSymbols)
+            {
+                if (binder.ContainingSymbol is not null && !s.IsVisibleFrom(binder.ContainingSymbol)) continue;
+                result.Add(s.ToApiSymbol());
+            }
             binder = binder.Parent;
         }
         return [.. result];
@@ -288,11 +291,19 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <param name="syntax">The expression that the type will be checked of.</param>
     /// <returns>The <see cref="ITypeSymbol"/> that <paramref name="syntax"/> will evaluate to,
     /// or null if it does not evaluate to a value with type.</returns>
-    public ITypeSymbol? TypeOf(ExpressionSyntax syntax)
+    public ITypeSymbol? TypeOf(ExpressionSyntax syntax) => this.TypeOfInternal(syntax)?.ToApiSymbol();
+
+    /// <summary>
+    /// Retrieves the type of the expression represented by <paramref name="syntax"/>.
+    /// </summary>
+    /// <param name="syntax">The expression that the type will be checked of.</param>
+    /// <returns>The <see cref="TypeSymbol"/> that <paramref name="syntax"/> will evaluate to,
+    /// or null if it does not evaluate to a value with type.</returns>
+    internal Internal.Symbols.TypeSymbol? TypeOfInternal(ExpressionSyntax syntax)
     {
         if (this.TryGetBoundNode(syntax, out var existing))
         {
-            return (existing as BoundExpression)?.Type?.ToApiSymbol();
+            return (existing as BoundExpression)?.Type;
         }
 
         // NOTE: Very similar logic to GetReferencedSymbol, maybe factor out?
@@ -305,7 +316,7 @@ public sealed partial class SemanticModel : IBinderProvider
 
         // Attempt to retrieve
         this.TryGetBoundNode(syntax, out var node);
-        return (node as BoundExpression)?.Type?.ToApiSymbol();
+        return (node as BoundExpression)?.Type;
     }
 
     private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node) =>
@@ -338,6 +349,13 @@ public sealed partial class SemanticModel : IBinderProvider
         }
         return [.. result];
     }
+
+    /// <summary>
+    /// Retrieves the symbol that <paramref name="syntax"/> is bound inside of.
+    /// </summary>
+    /// <param name="syntax">The syntax node to get the binding symbol of.</param>
+    /// <returns>The symbol that <paramref name="syntax"/> is bound inside of.</returns>
+    internal Symbol? GetBindingSymbol(SyntaxNode syntax) => this.GetBinder(syntax).ContainingSymbol;
 
     private IncrementalBinder GetBinder(SyntaxNode syntax)
     {

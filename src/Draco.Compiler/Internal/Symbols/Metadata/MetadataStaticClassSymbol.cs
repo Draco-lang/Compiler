@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 
@@ -31,7 +32,12 @@ internal sealed class MetadataStaticClassSymbol(
     public MetadataReader MetadataReader => this.Assembly.MetadataReader;
     public override Symbol ContainingSymbol { get; } = containingSymbol;
 
-    public override Api.Semantics.Visibility Visibility => typeDefinition.Attributes.HasFlag(TypeAttributes.Public) ? Api.Semantics.Visibility.Public : Api.Semantics.Visibility.Internal;
+    public override Visibility Visibility => typeDefinition.Attributes switch
+    {
+        var attr when attr.HasFlag(TypeAttributes.Public)
+                   || attr.HasFlag(TypeAttributes.NestedPublic) => Visibility.Public,
+        _ => Visibility.Internal,
+    };
 
     public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
@@ -56,8 +62,6 @@ internal sealed class MetadataStaticClassSymbol(
             var typeDef = this.MetadataReader.GetTypeDefinition(typeHandle);
             // Skip special name
             if (typeDef.Attributes.HasFlag(TypeAttributes.SpecialName)) continue;
-            // Skip non-public
-            if (!typeDef.Attributes.HasFlag(TypeAttributes.NestedPublic)) continue;
             // Turn into a symbol
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
@@ -71,8 +75,6 @@ internal sealed class MetadataStaticClassSymbol(
             var methodDef = this.MetadataReader.GetMethodDefinition(methodHandle);
             // Skip methods with special name
             if (methodDef.Attributes.HasFlag(MethodAttributes.SpecialName)) continue;
-            // Skip non-public methods
-            if (!methodDef.Attributes.HasFlag(MethodAttributes.Public)) continue;
             // Skip non-static methods
             // TODO: What's Invoke in System.Console?
             if (!methodDef.Attributes.HasFlag(MethodAttributes.Static)) continue;
@@ -88,8 +90,6 @@ internal sealed class MetadataStaticClassSymbol(
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
             // Skip fields with special name
             if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
-            // Skip non-public fields
-            if (!fieldDef.Attributes.HasFlag(FieldAttributes.Public)) continue;
             // Skip non-static fields
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
             var fieldSym = new MetadataStaticFieldSymbol(
@@ -105,7 +105,7 @@ internal sealed class MetadataStaticClassSymbol(
             var propSym = new MetadataPropertySymbol(
                 containingSymbol: this,
                 propertyDefinition: propDef);
-            if (propSym.IsStatic && propSym.Visibility == Api.Semantics.Visibility.Public) result.Add(propSym);
+            result.Add(propSym);
         }
 
         // Done

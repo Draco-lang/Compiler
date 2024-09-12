@@ -116,6 +116,7 @@ internal partial class Binder
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        this.CheckVisibility(syntax, symbol, "symbol", diagnostics);
         return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
@@ -609,12 +610,14 @@ internal partial class Binder
                 : BinderFacts.IsValueSymbol;
 
             var members = container.StaticMembers
-                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
+                .Where(m => m.Name == memberName)
                 .Where(pred)
                 .ToImmutableArray();
 
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetValue(memberName, syntax, diagnostics);
+            this.CheckVisibility(syntax, symbol, "member", diagnostics);
+
             return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
         }
         else

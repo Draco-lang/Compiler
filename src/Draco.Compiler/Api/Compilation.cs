@@ -235,7 +235,7 @@ public sealed class Compilation : IBinderProvider
         this.sourceModule = sourceModule;
         this.declarationTable = declarationTable;
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
-        this.TypeProvider = typeProvider ?? new TypeProvider(this);
+        this.TypeProvider = typeProvider ?? new TypeProvider(new RawTypeProvider(this));
         this.binderCache = binderCache ?? new BinderCache(this);
         this.ConstantEvaluator = new(this);
         this.CompileTimeExecutor = new(this);

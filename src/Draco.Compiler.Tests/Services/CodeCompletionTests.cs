@@ -272,4 +272,42 @@ public sealed class CodeCompletionTests
 
         AssertCompletions(completions, "WindowWidth", "LargestWindowWidth");
     }
+
+    [Fact]
+    public void CompletionsFromStaticClassDontExploreTheConstructor()
+    {
+        var completions = GetCompletions("""
+            import System.Environment;
+
+            func main() {
+                val x = l|
+            }
+            """);
+
+        // Explore the docs of each
+        var docs = completions
+            .SelectMany(d => d.Symbols)
+            .Select(s => s.Documentation)
+            .ToList();
+    }
+
+    [Fact]
+    public void PrivateMembersAreNotSuggested()
+    {
+        var completions = GetCompletionWords("""
+            import System;
+
+            func main(){
+                Foo.|
+            }
+
+            module Foo {
+                func bar() {}
+                internal func baz() {}
+                public func qux() {}
+            }
+            """);
+
+        AssertCompletions(completions, "baz", "qux");
+    }
 }

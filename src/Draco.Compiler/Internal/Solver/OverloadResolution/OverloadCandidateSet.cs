@@ -22,17 +22,23 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
         IEnumerable<Argument> arguments)
     {
         var argList = arguments.ToImmutableArray();
-        var remainingCandidates = candidates
+        var initialCandidates = candidates.ToImmutableArray();
+        var remainingCandidates = initialCandidates
             .Where(c => CallUtilities.MatchesParameterCount(c, argList.Length))
             .Select(CallCandidate.Create)
             .ToList();
-        return new(remainingCandidates, argList);
+        return new(initialCandidates, remainingCandidates, argList);
     }
 
     /// <summary>
     /// The arguments the candidates were called with.
     /// </summary>
     public ImmutableArray<Argument> Arguments { get; }
+
+    /// <summary>
+    /// The initial candidates the set was constructed with.
+    /// </summary>
+    public ImmutableArray<FunctionSymbol> InitialCandidates { get; }
 
     /// <summary>
     /// The remaining candidates.
@@ -58,9 +64,11 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
     private readonly List<CallCandidate<FunctionSymbol>> candidates;
 
     private OverloadCandidateSet(
+        ImmutableArray<FunctionSymbol> initialCandidates,
         List<CallCandidate<FunctionSymbol>> candidates,
         ImmutableArray<Argument> arguments)
     {
+        this.InitialCandidates = initialCandidates;
         this.Arguments = arguments;
         this.candidates = candidates;
     }

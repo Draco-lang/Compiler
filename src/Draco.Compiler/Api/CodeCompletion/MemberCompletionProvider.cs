@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Api.CodeCompletion;
 
@@ -28,29 +29,33 @@ public sealed class MemberCompletionProvider : CompletionProvider
         var span = token.Kind == TokenKind.Dot ? new SourceSpan(token.Span.End, 0) : token.Span;
         // If we can't get the accessed propery, we just return empty array
         if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return [];
+        // Ask for context to access from
+        var accessContext = semanticModel.GetBindingSymbol(token);
         var completions = symbols
             // NOTE: Not very robust, just like in the other place
             // Also, duplication
+            .Where(s => s.IsVisibleFrom(accessContext))
+            .Select(s => s.ToApiSymbol())
             .GroupBy(x => (x.GetType(), x.Name))
             .Select(x => GetCompletionItem(tree.SourceText, [.. x], contexts, span));
         return completions.OfType<CompletionItem>().ToImmutableArray();
     }
 
-    private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<ISymbol> result)
+    private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<Symbol> result)
     {
         var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
         result = [];
         if (TryDeconstructMemberAccess(expr, out var accessed))
         {
-            var referencedType = semanticModel.GetReferencedSymbol(accessed);
+            var referencedType = semanticModel.GetReferencedSymbolInternal(accessed);
             // NOTE: This is how we check for static access
-            if (referencedType is ITypeSymbol or IModuleSymbol)
+            if (referencedType?.IsDotnetType == true)
             {
                 result = referencedType.StaticMembers.ToImmutableArray();
                 return true;
             }
             if (accessed is not ExpressionSyntax accessedExpr) return false;
-            var symbol = semanticModel.TypeOf(accessedExpr);
+            var symbol = semanticModel.TypeOfInternal(accessedExpr);
             if (symbol is null) return false;
             result = symbol.InstanceMembers.ToImmutableArray();
             return true;

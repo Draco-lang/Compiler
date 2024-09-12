@@ -24,7 +24,7 @@ internal partial class Binder
     public virtual BoundStatement BindFunction(SourceFunctionSymbol function, DiagnosticBag diagnostics)
     {
         var functionName = function.DeclaringSyntax.Name.Text;
-        var constraints = new ConstraintSolver(function.DeclaringSyntax, $"function {functionName}");
+        var constraints = new ConstraintSolver(this, $"function {functionName}");
         var statementTask = this.BindStatement(function.DeclaringSyntax.Body, constraints, diagnostics);
         constraints.Solve(diagnostics);
         return statementTask.Result;
@@ -33,7 +33,7 @@ internal partial class Binder
     public virtual GlobalBinding BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
     {
         var globalName = global.DeclaringSyntax.Name.Text;
-        var constraints = new ConstraintSolver(global.DeclaringSyntax, $"global {globalName}");
+        var constraints = new ConstraintSolver(this, $"global {globalName}");
 
         var typeSyntax = global.DeclaringSyntax.Type;
         var valueSyntax = global.DeclaringSyntax.Value;
@@ -86,7 +86,7 @@ internal partial class Binder
         // Binding scripts is a little different, since they share the inference context,
         // meaning that a global can be inferred from a much later context
 
-        var solver = new ConstraintSolver(module.DeclaringSyntax, "script");
+        var solver = new ConstraintSolver(this, "script");
 
         var globalBindings = ImmutableDictionary.CreateBuilder<VariableDeclarationSyntax, GlobalBinding>();
         var functionBodies = ImmutableDictionary.CreateBuilder<FunctionDeclarationSyntax, BoundStatement>();
@@ -264,7 +264,7 @@ internal partial class Binder
         var namedArguments = ImmutableDictionary.CreateBuilder<string, ConstantValue>();
 
         // We need to resolve the proper overload for the constructor
-        var solver = new ConstraintSolver(syntax, "attribute");
+        var solver = new ConstraintSolver(this, "attribute");
 
         var attribCtors = attributeType.Constructors;
         var argTasks = syntax.Arguments?.ArgumentList.Values

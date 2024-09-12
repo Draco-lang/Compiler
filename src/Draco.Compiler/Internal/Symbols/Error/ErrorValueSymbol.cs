@@ -7,6 +7,7 @@ internal sealed class ErrorValueSymbol(string name) : Symbol, ITypedSymbol
 {
     public override bool IsError => true;
     public override Symbol? ContainingSymbol => null;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     public override string Name { get; } = name;
 

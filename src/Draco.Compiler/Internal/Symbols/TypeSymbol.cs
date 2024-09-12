@@ -101,11 +101,6 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     private ImmutableArray<TypeSymbol> baseTypes;
 
     /// <summary>
-    /// The members defined directly in this type doesn't include members from <see cref="ImmediateBaseTypes"/>.
-    /// </summary>
-    public virtual IEnumerable<Symbol> DefinedMembers => [];
-
-    /// <summary>
     /// The constructors defined directly in this type.
     /// </summary>
     public virtual IEnumerable<FunctionSymbol> Constructors => this.DefinedMembers

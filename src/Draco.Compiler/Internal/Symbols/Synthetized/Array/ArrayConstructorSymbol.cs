@@ -16,6 +16,8 @@ internal sealed class ArrayConstructorSymbol(ArrayTypeSymbol genericArrayType) :
         int n => $"Array{n}D",
     };
 
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
+
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => [this.ElementType];
 
     public override ImmutableArray<ParameterSymbol> Parameters =>

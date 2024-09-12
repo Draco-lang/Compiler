@@ -60,6 +60,7 @@ internal sealed class TypeInstanceSymbol(
     public override bool IsAttributeType => this.GenericDefinition.IsAttributeType;
     public override bool IsSealed => this.GenericDefinition.IsSealed;
     public override string Name => this.GenericDefinition.Name;
+    public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
 

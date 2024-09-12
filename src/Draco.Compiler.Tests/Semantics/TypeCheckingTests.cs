@@ -714,7 +714,7 @@ public sealed class TypeCheckingTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, SymbolResolutionErrors.InaccessibleSymbol);
     }
 
     [Fact]

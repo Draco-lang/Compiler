@@ -26,6 +26,7 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
     public int Rank { get; }
 
     public override bool IsArrayType => true;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     public override Compilation DeclaringCompilation { get; }
 

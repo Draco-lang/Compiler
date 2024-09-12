@@ -239,6 +239,15 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     public MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
         assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
 
+    public Symbol GetDotnetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)
+    {
+        var assembly = this.GetAssemblyWithAssemblyName(name);
+        return this.GetDotnetTypeFromAssembly(assembly, path);
+    }
+
+    public Symbol GetDotnetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
+        assembly.Lookup(path).Where(s => s.IsDotnetType).Single();
+
     private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>
         compilation.MetadataAssemblies.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
 

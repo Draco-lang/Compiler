@@ -66,6 +66,13 @@ internal sealed class CSharpQuoterTemplate(StringBuilder builder, bool prettyPri
             builder.Append(value ? "true" : "false");
             break;
 
+        case QuoteCharacter(var value):
+            builder.Append('\'');
+            // Need this for escape characters.
+            builder.Append(StringUtils.Unescape(value.ToString()));
+            builder.Append('\'');
+            break;
+
         case QuoteString(var value):
             builder.Append('"');
             builder.Append(StringUtils.Unescape(value));

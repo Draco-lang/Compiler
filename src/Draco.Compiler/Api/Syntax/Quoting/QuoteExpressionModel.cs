@@ -67,6 +67,12 @@ internal sealed record QuoteFloat(float Value) : QuoteExpression;
 internal sealed record QuoteBoolean(bool Value) : QuoteExpression;
 
 /// <summary>
+/// A character quote expression.
+/// </summary>
+/// <param name="Value">The character value.</param>
+internal sealed record QuoteCharacter(char Value) : QuoteExpression;
+
+/// <summary>
 /// A string quote expression.
 /// </summary>
 /// <param name="Value">The string value.</param>

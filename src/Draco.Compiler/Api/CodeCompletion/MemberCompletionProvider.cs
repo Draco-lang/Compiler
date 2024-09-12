@@ -43,9 +43,6 @@ public sealed class MemberCompletionProvider : CompletionProvider
 
     private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<Symbol> result)
     {
-        // TODO: We disregard visibility here, looking up members we should not
-        // Let's introduce some logic that can help us asking for the visible symbols from a given context
-
         var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
         result = [];
         if (TryDeconstructMemberAccess(expr, out var accessed))

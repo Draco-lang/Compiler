@@ -58,8 +58,12 @@ internal partial class Binder
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
-    private Symbol BindNameType(NameTypeSyntax syntax, DiagnosticBag diagnostics) =>
-        this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
+    private Symbol BindNameType(NameTypeSyntax syntax, DiagnosticBag diagnostics)
+    {
+        var symbol = this.LookupTypeSymbol(syntax.Name.Text, syntax, diagnostics);
+        this.CheckVisibility(syntax, symbol, "symbol", diagnostics);
+        return symbol;
+    }
 
     private Symbol BindMemberType(MemberTypeSyntax syntax, DiagnosticBag diagnostics)
     {
@@ -72,7 +76,6 @@ internal partial class Binder
         }
         else
         {
-            // TODO: Visibility?
             // Module or type member access
             var members = left.Members
                 .Where(m => m.Name == memberName)
@@ -81,6 +84,7 @@ internal partial class Binder
             // Reuse logic from LookupResult
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetType(memberName, syntax, diagnostics);
+            this.CheckVisibility(syntax, symbol, "symbol", diagnostics);
             return symbol;
         }
     }

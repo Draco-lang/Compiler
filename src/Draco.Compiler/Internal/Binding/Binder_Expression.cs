@@ -116,6 +116,7 @@ internal partial class Binder
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        this.CheckVisibility(syntax, symbol, "symbol", diagnostics);
         return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 

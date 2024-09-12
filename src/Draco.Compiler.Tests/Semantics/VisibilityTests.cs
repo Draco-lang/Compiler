@@ -155,13 +155,13 @@ public sealed class VisibilityTests
         var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
         var diagnostics = compilation.Diagnostics;
 
-        var accessedSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(memberSyntax));
+        var accessedSymbol = GetInternalSymbol<FieldSymbol>(semanticModel.GetReferencedSymbol(memberSyntax));
 
         Assert.Single(diagnostics);
         AssertDiagnostics(diagnostics, SymbolResolutionErrors.InaccessibleSymbol);
         // We resolve to the real symbol, so not an error
         Assert.False(accessedSymbol.IsError);
-        Assert.Same(accessedSymbol, compilation.WellKnownTypes.SystemInt32);
+        Assert.Same(accessedSymbol.Type, compilation.WellKnownTypes.SystemInt32);
     }
 
     [Fact]

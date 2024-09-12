@@ -70,6 +70,7 @@ internal partial class Binder
                 : BinderFacts.IsValueSymbol;
 
             var members = container.StaticMembers
+                .Where(m => m.Name == memberName)
                 .Where(pred)
                 .ToImmutableArray();
 

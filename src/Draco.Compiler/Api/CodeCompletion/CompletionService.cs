@@ -84,7 +84,7 @@ public sealed class CompletionService
             _ => node.Parent switch
             {
                 // Special case, we are in a script
-                NameExpressionSyntax expr when expr.Parent is ScriptEntrySyntax =>
+                NameExpressionSyntax { Parent: ScriptEntrySyntax } =>
                     CompletionContext.Declaration | CompletionContext.Expression,
                 // Type expression
                 NameTypeSyntax => CompletionContext.Type,
@@ -105,9 +105,8 @@ public sealed class CompletionService
                 // Global scope
                 null => CompletionContext.Declaration,
                 // Start of statement inside function
-                _ when node.Parent?.Parent is ExpressionStatementSyntax exprStmt => exprStmt.Children.Count() == 2
-                    ? CompletionContext.Expression | CompletionContext.Declaration
-                    : CompletionContext.Expression,
+                _ when node.Parent?.Parent is ExpressionStatementSyntax =>
+                    CompletionContext.Expression | CompletionContext.Declaration,
                 _ => CompletionContext.Expression,
             },
         };

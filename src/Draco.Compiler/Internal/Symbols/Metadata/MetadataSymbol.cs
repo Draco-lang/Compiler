@@ -161,14 +161,14 @@ internal static class MetadataSymbol
 
     private static FunctionSymbol? GetFunctionFromDefinition(MethodDefinitionHandle methodDef, IMetadataSymbol symbol)
     {
+        // NOTE: This potentially loads functions multiple times, which isn't great...
         var assembly = symbol.Assembly;
         var metadataReader = assembly.MetadataReader;
         var provider = assembly.DeclaringCompilation.TypeProvider;
         var definition = metadataReader.GetMethodDefinition(methodDef);
-        var name = metadataReader.GetString(definition.Name);
         var containingType = provider.GetTypeFromDefinition(metadataReader, definition.GetDeclaringType(), 0);
-        var signature = definition.DecodeSignature(provider, containingType);
-        return GetFunctionWithSignature(containingType, name, signature);
+        var function = new MetadataMethodSymbol(containingType, definition);
+        return function;
     }
 
     private static FunctionSymbol? GetFunctionFromReference(MemberReferenceHandle methodRef, IMetadataSymbol symbol)
@@ -179,7 +179,9 @@ internal static class MetadataSymbol
         var reference = metadataReader.GetMemberReference(methodRef);
         var name = metadataReader.GetString(reference.Name);
         var containingType = GetTypeFromHandle(reference.Parent, symbol);
-        var signature = reference.DecodeMethodSignature(provider, containingType);
+        // We construct a pseudo-symbol for signature decoding
+        var pseudoSymbol = new MetadataFunctionSignatureSymbol(containingType);
+        var signature = reference.DecodeMethodSignature(provider, pseudoSymbol);
         return GetFunctionWithSignature(containingType, name, signature);
     }
 

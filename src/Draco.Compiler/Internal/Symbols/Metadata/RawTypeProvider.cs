@@ -124,6 +124,12 @@ internal sealed class RawTypeProvider(Compilation compilation)
 
     public Symbol GetGenericMethodParameter(Symbol genericContext, int index)
     {
+        // Special case
+        if (genericContext is MetadataFunctionSignatureSymbol pseudoSignature)
+        {
+            return pseudoSignature.GetGenericArgument(index);
+        }
+
         var methodAncestor = genericContext.AncestorChain
             .OfType<FunctionSymbol>()
             .First();

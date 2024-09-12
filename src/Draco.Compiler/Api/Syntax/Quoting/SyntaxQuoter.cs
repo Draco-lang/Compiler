@@ -130,9 +130,7 @@ public static partial class SyntaxQuoter
             {
                 // Identifiers, integers, floats, and character literals all have special factory methods.
 
-                (TokenKind.Identifier, _, _) => new QuoteFunctionCall("Identifier", [
-                    new QuoteString(node.Text!)
-                ]),
+                (TokenKind.Identifier, _, _) => new QuoteString(node.Text!),
 
                 (TokenKind.LiteralInteger, _, var value) => new QuoteFunctionCall("Integer", [
                     new QuoteInteger((int)value!)
@@ -173,10 +171,7 @@ public static partial class SyntaxQuoter
             throw new NotSupportedException("Quoter does currently not support quoting syntax trivia.");
 
         public override QuoteExpression VisitSyntaxList<TNode>(SyntaxList<TNode> node) =>
-            new QuoteFunctionCall(
-                "SyntaxList",
-                [typeof(TNode).FullName!], // Todo: hack
-                [new QuoteList(node.Select(n => n.Accept(this)).ToImmutableArray())]);
+            new QuoteList(node.Select(n => n.Accept(this)).ToImmutableArray());
 
         public override QuoteExpression VisitSeparatedSyntaxList<TNode>(SeparatedSyntaxList<TNode> node) =>
             new QuoteFunctionCall(

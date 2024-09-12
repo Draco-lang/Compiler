@@ -138,7 +138,7 @@ public static partial class SyntaxQuoter
 {
     private sealed partial class QuoteVisitor
     {
-        {{ForEach(tree.Nodes.Where(x => !x.IsAbstract), QuoterMethod)}}
+        {{ForEach(tree.Nodes.Where(x => !x.IsAbstract), node => QuoterMethod(node, tree))}}
     }
 }
 """);
@@ -445,13 +445,34 @@ public static partial class SyntaxQuoter
     private static string InternalType(string type) =>
         $"Internal.Syntax.{type.Replace("<", "<Internal.Syntax.")}";
 
-    private static string QuoterMethod(Node node) => $$"""
+    private static string QuoterMethod(Node node, Tree tree) => $$"""
 public override QuoteExpression {{VisitorName(node)}}({{node.Name}} node) =>
     new QuoteFunctionCall("{{FactoryName(node)}}", [
         {{ForEach(node.Fields, field => $$"""
-            node.{{field.Name}}{{When(field.IsNullable, "?")}}.Accept(this){{When(field.IsNullable, " ?? new QuoteNull()")}},
+            {{When(!FieldCanBeOmitted(field, tree), $$"""
+                {{QuoterMethodField(field, tree)}},
+            """)}}
         """)}}
     ]);
+""";
+
+    private static string QuoterMethodField(Field field, Tree tree) => $$"""
+{{When(field.IsNullable, $$"""
+    {{When(FieldCanBeTokenKind(field, tree), $$"""
+        node.{{field.Name}} is not null ? new QuoteTokenKind(node.{{field.Name}}.Kind) : new QuoteNull()
+        """,
+    $$"""
+        node.{{field.Name}}?.Accept(this) ?? new QuoteNull()
+        """)}}
+    """,
+$$"""
+    {{When(FieldCanBeTokenKind(field, tree), $$"""
+        new QuoteTokenKind(node.{{field.Name}}.Kind)
+        """,
+    $$"""
+        node.{{field.Name}}.Accept(this)
+        """)}}
+    """)}}
 """;
 
     private static string FactoryName(Node node) => RemoveSuffix(node.Name, "Syntax");
@@ -463,6 +484,18 @@ public override QuoteExpression {{VisitorName(node)}}({{node.Name}} node) =>
     private static string DocName(FieldFacade field) => field.ParameterName is null
         ? string.Empty
         : RemovePrefix(field.ParameterName, "@");
+    private static bool FieldCanBeOmitted(Field field, Tree tree) =>
+        field.IsToken &&
+        field.TokenKinds is [var kind] &&
+        tree.Tokens
+            .First(token => token.Name == kind)
+            .Text is not null;
+    private static bool FieldCanBeTokenKind(Field field, Tree tree) =>
+        field.IsToken &&
+        field.TokenKinds.All(kind =>
+            tree.Tokens
+                .First(token => token.Name == kind)
+                .Text is not null);
 
     private readonly record struct FieldFacade(
         bool IsOriginal,

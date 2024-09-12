@@ -103,6 +103,16 @@ internal sealed class CSharpQuoterTemplate(StringBuilder builder, bool prettyPri
             builder.Append('>');
         }
 
+        // Place function calls with a single simple expression as its argument on a single line.
+        if (call.Arguments is [var singleArg] && IsSimple(singleArg))
+        {
+            builder.Append('(');
+            this.AppendExpr(singleArg);
+            builder.Append(')');
+
+            return;
+        }
+
         builder.Append('(');
         this.indentLevel += 1;
         for (var i = 0; i < args.Length; i++)
@@ -152,4 +162,19 @@ internal sealed class CSharpQuoterTemplate(StringBuilder builder, bool prettyPri
     {
         if (prettyPrint) builder.Append(Environment.NewLine);
     }
+
+    /// <summary>
+    /// Checks whether an expression is "simple" and can be placed on the same line as a function call when passed as an argument.
+    /// </summary>
+    /// <param name="expr">The expression to check.</param>
+    /// <returns>Whether the expression is simple.</returns>
+    private static bool IsSimple(QuoteExpression expr) => expr
+        is QuoteProperty
+        or QuoteNull
+        or QuoteTokenKind
+        or QuoteInteger
+        or QuoteFloat
+        or QuoteBoolean
+        or QuoteCharacter
+        or QuoteString;
 }

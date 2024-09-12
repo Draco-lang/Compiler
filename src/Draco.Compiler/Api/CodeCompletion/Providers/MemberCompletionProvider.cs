@@ -5,7 +5,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.CodeCompletion.Providers;
 
 /// <summary>
 /// Provides completions for member access.

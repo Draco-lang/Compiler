@@ -3,7 +3,7 @@ using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.CodeCompletion.Providers;
 
 /// <summary>
 /// Provides keyword completions.

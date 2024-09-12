@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Semantics;
 
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.CodeCompletion.Providers;
 
 /// <summary>
 /// Provides completions for certain applicable contexts.

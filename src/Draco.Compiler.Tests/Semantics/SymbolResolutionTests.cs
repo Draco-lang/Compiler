@@ -1196,7 +1196,7 @@ public sealed class SymbolResolutionTests
 
         // Assert
         Assert.Single(diags);
-        Assert.True(fooCallSymbol.IsError);
+        Assert.False(fooCallSymbol.IsError);
         AssertDiagnostics(diags, SymbolResolutionErrors.InaccessibleSymbol);
     }
 

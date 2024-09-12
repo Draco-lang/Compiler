@@ -3,7 +3,7 @@ using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.CodeCompletion.Providers;
 
 /// <summary>
 /// Provides completion for expressions excluding member access.
@@ -23,7 +23,7 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
         var cursor = tree.IndexToSyntaxPosition(cursorIndex);
         var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
         if (syntax is null) return [];
-        var symbols = semanticModel.GetAllDefinedSymbols(syntax);
+        var symbols = semanticModel.GetAllAccessibleSymbols(syntax);
         var span = (syntax as SyntaxToken)?.Span ?? new(cursorIndex, 0);
         var completions = symbols
             // NOTE: Grouping by GetType is very error-prone, maybe we need a symbol "kind"

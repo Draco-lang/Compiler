@@ -14,6 +14,19 @@ namespace Draco.Compiler.DevHost;
 
 internal class Program
 {
+    private enum CliQuoteMode
+    {
+        file,
+        decl,
+        stmt,
+        expr,
+    }
+
+    private enum CliOutputLanguage
+    {
+        cs,
+    }
+
     private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
         .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
 
@@ -28,8 +41,8 @@ internal class Program
         var referencesOption = new Option<FileInfo[]>(["-r", "--reference"], Array.Empty<FileInfo>, "Specifies additional assembly references to use when compiling");
         var filesArgument = new Argument<FileInfo[]>("source files", Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
         var rootModuleOption = new Option<DirectoryInfo?>(["-m", "--root-module"], () => null, "Specifies the root module folder of the compiled files");
-        var quoteModeOption = new Option<QuoteMode>(["-m", "--quote-mode"], () => QuoteMode.File, "Specifies the kind of syntactic element to quote");
-        var outputLanguageOption = new Option<OutputLanguage>(["-l", "--language"], () => OutputLanguage.CSharp, "Specifies the language to output the quoted code as");
+        var quoteModeOption = new Option<CliQuoteMode>(["-m", "--quote-mode"], () => CliQuoteMode.file, "Specifies the kind of syntactic element to quote");
+        var outputLanguageOption = new Option<CliOutputLanguage>(["-l", "--language"], () => CliOutputLanguage.cs, "Specifies the language to output the quoted code as");
         var prettyPrintOption = new Option<bool>(["-p", "--pretty-print"], () => false, "Whether to append whitespace to the output code");
         var staticImportOption = new Option<bool>(["-s", "--require-static-import"], () => false, "Whether to require the SyntaxFactory class to be imported statically in the output code");
 
@@ -197,10 +210,31 @@ internal class Program
         new StreamWriter(outputStream).Write(syntaxTree.Format().ToString());
     }
 
-    private static void QuoteCommand(FileInfo input, QuoteMode mode, OutputLanguage outputLanguage, bool prettyPrint, bool staticImport)
+    private static void QuoteCommand(
+        FileInfo input,
+        CliQuoteMode mode,
+        CliOutputLanguage outputLanguage,
+        bool prettyPrint,
+        bool staticImport)
     {
         var sourceText = SourceText.FromFile(input.FullName);
-        var quotedText = SyntaxQuoter.Quote(sourceText, mode, outputLanguage, prettyPrint, staticImport);
+        var quotedText = SyntaxQuoter.Quote(
+            sourceText,
+            mode switch
+            {
+                CliQuoteMode.file => QuoteMode.File,
+                CliQuoteMode.decl => QuoteMode.Declaration,
+                CliQuoteMode.stmt => QuoteMode.Statement,
+                CliQuoteMode.expr => QuoteMode.Expression,
+                _ => throw new ArgumentOutOfRangeException(nameof(mode))
+            },
+            outputLanguage switch
+            {
+                CliOutputLanguage.cs => OutputLanguage.CSharp,
+                _ => throw new ArgumentOutOfRangeException(nameof(outputLanguage))
+            },
+            prettyPrint,
+            staticImport);
         Console.WriteLine(quotedText);
     }
 

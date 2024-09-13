@@ -40,7 +40,8 @@ public sealed class MemberCompletionProvider : CompletionProvider
 
         // Ask for context to access from, so we can filter by visibility
         var accessContext = semanticModel.GetBindingSymbol(token);
-        var completions = symbols
+        // Construct
+        return symbols
             .Where(s => s.IsVisibleFrom(accessContext))
             .Select(s => s.ToApiSymbol())
             .Select(s => CompletionItem.Simple(span, s))

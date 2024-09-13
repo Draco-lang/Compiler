@@ -10,31 +10,31 @@ namespace Draco.Compiler.Api.CodeCompletion.Providers;
 /// </summary>
 public sealed class KeywordCompletionProvider : CompletionProvider
 {
-    private static ImmutableArray<CompletionItem> GetDeclarationKeywords(SourceText source, SourceSpan span) =>
+    private static ImmutableArray<CompletionItem> GetDeclarationKeywords(SourceSpan span) =>
     [
-        CompletionItem.Create(source, "import", span, CompletionKind.DeclarationKeyword),
-        CompletionItem.Create(source, "var", span, CompletionKind.DeclarationKeyword),
-        CompletionItem.Create(source, "val", span, CompletionKind.DeclarationKeyword),
-        CompletionItem.Create(source, "func", span, CompletionKind.DeclarationKeyword),
-        CompletionItem.Create(source, "module", span, CompletionKind.DeclarationKeyword),
+        CompletionItem.Simple(span, "import", CompletionKind.DeclarationKeyword),
+        CompletionItem.Simple(span, "var", CompletionKind.DeclarationKeyword),
+        CompletionItem.Simple(span, "val", CompletionKind.DeclarationKeyword),
+        CompletionItem.Simple(span, "func", CompletionKind.DeclarationKeyword),
+        CompletionItem.Simple(span, "module", CompletionKind.DeclarationKeyword),
 
-        CompletionItem.Create(source, "internal", span, CompletionKind.VisibilityKeyword),
-        CompletionItem.Create(source, "public", span, CompletionKind.VisibilityKeyword),
+        CompletionItem.Simple(span, "internal", CompletionKind.VisibilityKeyword),
+        CompletionItem.Simple(span, "public", CompletionKind.VisibilityKeyword),
     ];
 
-    private static ImmutableArray<CompletionItem> GetExpressionKeywords(SourceText source, SourceSpan span) =>
+    private static ImmutableArray<CompletionItem> GetExpressionKeywords(SourceSpan span) =>
     [
-        CompletionItem.Create(source, "if", span, CompletionKind.ControlFlowKeyword),
-        CompletionItem.Create(source, "while", span, CompletionKind.ControlFlowKeyword),
-        CompletionItem.Create(source, "for", span, CompletionKind.ControlFlowKeyword),
-        CompletionItem.Create(source, "return", span, CompletionKind.ControlFlowKeyword),
-        CompletionItem.Create(source, "goto", span, CompletionKind.ControlFlowKeyword),
+        CompletionItem.Simple(span, "if", CompletionKind.ControlFlowKeyword),
+        CompletionItem.Simple(span, "while", CompletionKind.ControlFlowKeyword),
+        CompletionItem.Simple(span, "for", CompletionKind.ControlFlowKeyword),
+        CompletionItem.Simple(span, "return", CompletionKind.ControlFlowKeyword),
+        CompletionItem.Simple(span, "goto", CompletionKind.ControlFlowKeyword),
 
-        CompletionItem.Create(source, "and", span, CompletionKind.Operator),
-        CompletionItem.Create(source, "or", span, CompletionKind.Operator),
-        CompletionItem.Create(source, "not", span, CompletionKind.Operator),
-        CompletionItem.Create(source, "mod", span, CompletionKind.Operator),
-        CompletionItem.Create(source, "rem", span, CompletionKind.Operator),
+        CompletionItem.Simple(span, "and", CompletionKind.Operator),
+        CompletionItem.Simple(span, "or", CompletionKind.Operator),
+        CompletionItem.Simple(span, "not", CompletionKind.Operator),
+        CompletionItem.Simple(span, "mod", CompletionKind.Operator),
+        CompletionItem.Simple(span, "rem", CompletionKind.Operator),
     ];
 
     public override bool IsApplicableIn(CompletionContext context)
@@ -44,16 +44,12 @@ public sealed class KeywordCompletionProvider : CompletionProvider
     }
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(
-        SemanticModel semanticModel, int cursorIndex, CompletionContext contexts)
+        SemanticModel semanticModel, int cursorIndex, SyntaxNode? nodeAtCursor, CompletionContext contexts)
     {
-        var tree = semanticModel.Tree;
-        var cursor = tree.IndexToSyntaxPosition(cursorIndex);
-        var syntax = tree.Root.TraverseSubtreesAtCursorPosition(cursor).LastOrDefault();
-        if (syntax is null) return [];
-        var span = (syntax as SyntaxToken)?.Span ?? new(cursorIndex, 0);
+        if (nodeAtCursor is not SyntaxToken token) return [];
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(GetExpressionKeywords(tree.SourceText, span));
-        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(GetDeclarationKeywords(tree.SourceText, span));
+        if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(GetExpressionKeywords(token.Span));
+        if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(GetDeclarationKeywords(token.Span));
         return result.ToImmutable();
     }
 }

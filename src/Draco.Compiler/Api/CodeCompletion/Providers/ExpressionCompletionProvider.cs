@@ -41,7 +41,6 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
         SymbolKind.Type or SymbolKind.TypeParameter => context.HasFlag(CompletionContext.Expression)
                                                     || context.HasFlag(CompletionContext.Type),
 
-
         SymbolKind.Function
      or SymbolKind.Global
      or SymbolKind.Local

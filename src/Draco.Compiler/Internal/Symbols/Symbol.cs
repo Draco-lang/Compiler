@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
@@ -182,6 +183,11 @@ internal abstract partial class Symbol
     /// The attributes attached to this symbol.
     /// </summary>
     public virtual ImmutableArray<AttributeInstance> Attributes => [];
+
+    /// <summary>
+    /// The kind of this symbol.
+    /// </summary>
+    public abstract SymbolKind Kind { get; }
 
     /// <summary>
     /// Checks if this symbol can be shadowed by <paramref name="other"/> symbol.

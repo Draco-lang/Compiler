@@ -188,6 +188,19 @@ public interface IAliasSymbol : ISymbol, IMemberSymbol
     /// The symbol this alias substitutes.
     /// </summary>
     public ISymbol Substitution { get; }
+
+    /// <summary>
+    /// The fully resolved symbol this alias substitutes, meaning all alias chains are resolved.
+    /// </summary>
+    public ISymbol FullResolution
+    {
+        get
+        {
+            ISymbol current = this;
+            while (current is IAliasSymbol alias) current = alias.Substitution;
+            return current;
+        }
+    }
 }
 
 /// <summary>

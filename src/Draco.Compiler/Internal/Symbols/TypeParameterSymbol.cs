@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -8,6 +9,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract class TypeParameterSymbol : TypeSymbol
 {
+    public override SymbolKind Kind => SymbolKind.TypeParameter;
+
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         base.GenericInstantiate(containingSymbol, arguments);
     public override TypeSymbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) => context.TryGetValue(this, out var type)

@@ -9,6 +9,7 @@ internal abstract class AliasSymbol : Symbol, IMemberSymbol
 {
     public bool IsStatic => true;
     public bool IsExplicitImplementation => false;
+    public override SymbolKind Kind => SymbolKind.Alias;
 
     /// <summary>
     /// The symbol being aliased.

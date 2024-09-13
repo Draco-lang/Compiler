@@ -35,7 +35,7 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
     }
 
     private static CompletionItem? GetCompletionItem(
-        SourceText source, ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SourceSpan span)
+        SourceText source, ISymbol symbols, CompletionContext currentContexts, SourceSpan span)
     {
         var sym = symbols.First();
         // NOTE: We should have something for this in the API

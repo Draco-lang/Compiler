@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.CodeCompletion;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Tests.TestUtilities;
 
@@ -229,8 +230,9 @@ public sealed class CodeCompletionTests
         Assert.Equal(expected.Count, completions.Length);
         foreach (var completion in completions)
         {
-            Assert.True(expected.TryGetValue(completion.DisplayText, out var type));
-            // Assert.Equal(type, completion.Symbols.Length);
+            Assert.True(expected.TryGetValue(completion.DisplayText, out var expectedCount));
+            var gotCount = completion.Symbol is IFunctionGroupSymbol fg ? fg.Functions.Length : 1;
+            Assert.Equal(expectedCount, gotCount);
         }
     }
 
@@ -284,13 +286,9 @@ public sealed class CodeCompletionTests
             }
             """);
 
-        // Explore the docs of each
-        /*
         var docs = completions
-            .SelectMany(d => d.Symbols)
-            .Select(s => s.Documentation)
+            .Select(d => d.Symbol?.Documentation)
             .ToList();
-        */
     }
 
     [Fact]

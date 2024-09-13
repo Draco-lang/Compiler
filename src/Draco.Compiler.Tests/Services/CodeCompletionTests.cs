@@ -26,7 +26,7 @@ public sealed class CodeCompletionTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var completionService = CompletionService.CreateDefault();
+        var completionService = CompletionService.CreateDefault(CompletionFilter.ContainsFilter(StringComparison.Ordinal));
         return completionService.GetCompletions(semanticModel, cursorIndex);
     }
 
@@ -44,7 +44,7 @@ public sealed class CodeCompletionTests
             }
             """);
 
-        AssertCompletions(completions, "global", "Single");
+        AssertCompletions(completions, "global");
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public sealed class CodeCompletionTests
             }
             """);
 
-        AssertCompletions(completions, "local");
+        AssertCompletions(completions, "local", "float32", "float64");
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class CodeCompletionTests
             val x = gl|
             """);
 
-        AssertCompletions(completions, "global", "Single");
+        AssertCompletions(completions, "global");
     }
 
     [Fact]

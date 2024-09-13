@@ -26,6 +26,11 @@ internal sealed class SymbolCollectionBuilder
         return builder.EnumerateResult();
     }
 
+    /// <summary>
+    /// True, if special names are allowed.
+    /// </summary>
+    public bool AllowSpecialName { get; init; }
+
     private readonly HashSet<Symbol> nonFunctionSymbols = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, HashSet<FunctionSymbol>> functionSymbols = [];
 
@@ -61,6 +66,8 @@ internal sealed class SymbolCollectionBuilder
     /// <param name="symbol">The symbol to add.</param>
     public void Add(Symbol symbol)
     {
+        if (!this.AllowSpecialName && symbol.IsSpecialName) return;
+
         if (symbol is FunctionSymbol functionSymbol)
         {
             this.GetFunctionSet(functionSymbol.Name).Add(functionSymbol);

@@ -232,7 +232,7 @@ internal abstract partial class Symbol
     /// Converts this symbol into an API symbol.
     /// </summary>
     /// <returns>The equivalent API symbol.</returns>
-    public abstract Api.Semantics.ISymbol ToApiSymbol();
+    public abstract ISymbol ToApiSymbol();
 
     public abstract void Accept(SymbolVisitor visitor);
     public abstract TResult Accept<TResult>(SymbolVisitor<TResult> visitor);
@@ -244,22 +244,24 @@ internal abstract partial class Symbol
     /// <returns>True, if this symbol is visible from <paramref name="from"/> symbol.</returns>
     public bool IsVisibleFrom(Symbol? from)
     {
-        if (from is null) return true;
-
         var to = this;
 
         // Unwrap generics
-        if (from.IsGenericInstance) from = from.GenericDefinition!;
+        if (from?.IsGenericInstance == true) from = from.GenericDefinition!;
         if (to.IsGenericInstance) to = to.GenericDefinition!;
 
-        if (to.Visibility == Api.Semantics.Visibility.Private)
+        if (ReferenceEquals(from, to)) return true;
+
+        if (from is null) return true;
+
+        if (to.Visibility == Visibility.Private)
         {
             // This is a private symbol, only visible from the same or nested module
             if (to.ContainingSymbol is null) return false;
             return from.AncestorChain.Contains(to.ContainingSymbol, SymbolEqualityComparer.Default);
         }
 
-        if (to.Visibility == Api.Semantics.Visibility.Internal)
+        if (to.Visibility == Visibility.Internal)
         {
             // They HAVE TO be from the same assembly
             // For that, we can check if the root module is the same
@@ -269,7 +271,7 @@ internal abstract partial class Symbol
             return to.ContainingSymbol?.IsVisibleFrom(from) ?? true;
         }
 
-        if (to.Visibility == Api.Semantics.Visibility.Public)
+        if (to.Visibility == Visibility.Public)
         {
             // The containing symbol has to be accessible
             return to.ContainingSymbol?.IsVisibleFrom(from) ?? true;

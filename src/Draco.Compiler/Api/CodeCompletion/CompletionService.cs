@@ -25,6 +25,7 @@ public sealed class CompletionService
         return service;
     }
 
+    private readonly ICompletionFilter filter = CompletionFilter.ContainsFilter;
     private readonly List<CompletionProvider> providers = [];
 
     /// <summary>

@@ -9,6 +9,11 @@ namespace Draco.Compiler.Api.CodeCompletion;
 public static class CompletionFilter
 {
     /// <summary>
+    /// A filter that accepts all completion items that contain the text under the cursor.
+    /// </summary>
+    public static ICompletionFilter ContainsFilter { get; } = NameFilter((text, item) => item.FilterText.Contains(text));
+
+    /// <summary>
     /// Constructs a completion filter from a delegate.
     /// </summary>
     /// <param name="filter">The filter function.</param>

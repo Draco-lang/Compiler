@@ -4,7 +4,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 
-namespace Draco.Compiler.Api.CodeFixes;
+namespace Draco.Compiler.Api.Services.CodeFixes;
 
 /// <summary>
 /// Provides <see cref="CodeFix"/>es for import issues.

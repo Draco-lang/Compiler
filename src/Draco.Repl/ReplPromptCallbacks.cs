@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api.CodeCompletion;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
 using PrettyPrompt;

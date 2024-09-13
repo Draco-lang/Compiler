@@ -3,7 +3,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 
-namespace Draco.Compiler.Api.CodeCompletion.Providers;
+namespace Draco.Compiler.Api.Services.CodeCompletion.Providers;
 
 /// <summary>
 /// Provides completions for certain applicable contexts.

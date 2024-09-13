@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Draco.Compiler.Api.CodeCompletion.Providers;
 using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Services.CodeCompletion.Providers;
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.Services.CodeCompletion;
 
 /// <summary>
 /// Manages <see cref="CompletionProvider"/>s and allows to get <see cref="CompletionItem"/>s correctly based on context.

@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Immutable;
-using System.Reflection.Emit;
-using System.Reflection.Metadata;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.Services.CodeCompletion;
 
 /// <summary>
 /// A single completion suggestion.

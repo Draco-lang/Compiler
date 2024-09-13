@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Semantics;
 
-namespace Draco.Compiler.Api.Signature;
+namespace Draco.Compiler.Api.Services.Signature;
 
 /// <summary>
 /// Represents a signature information.

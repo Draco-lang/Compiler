@@ -1,7 +1,7 @@
 using System;
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.Services.CodeCompletion;
 
 /// <summary>
 /// Utility for construction completion filters.

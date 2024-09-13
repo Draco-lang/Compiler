@@ -1,5 +1,4 @@
 using System.Linq;
-using Draco.Compiler.Api.Signature;
 using CompilerApi = Draco.Compiler.Api;
 using LspModels = Draco.Lsp.Model;
 

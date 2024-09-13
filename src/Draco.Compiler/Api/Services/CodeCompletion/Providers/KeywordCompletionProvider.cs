@@ -1,9 +1,8 @@
 using System.Collections.Immutable;
-using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Api.CodeCompletion.Providers;
+namespace Draco.Compiler.Api.Services.CodeCompletion.Providers;
 
 /// <summary>
 /// Provides keyword completions.

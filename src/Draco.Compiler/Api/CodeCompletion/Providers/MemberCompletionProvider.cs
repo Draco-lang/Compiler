@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -23,99 +25,58 @@ public sealed class MemberCompletionProvider : CompletionProvider
     public override ImmutableArray<CompletionItem> GetCompletionItems(
         SemanticModel semanticModel, int cursorIndex, SyntaxNode? nodeAtCursor, CompletionContext contexts)
     {
-        var tree = semanticModel.Tree;
-        var cursor = tree.IndexToSyntaxPosition(cursorIndex);
-        var nodesAtCursor = tree.Root.TraverseSubtreesAtCursorPosition(cursor);
-        if (nodesAtCursor.LastOrDefault() is not SyntaxToken token) return [];
+        if (nodeAtCursor is not SyntaxToken token) return [];
+
+        // If it's just the dot and there's no identifier after it, we don't want to replace the dot itself
+        var span = token.Kind == TokenKind.Dot ? SourceSpan.Empty(token.Span.End) : token.Span;
         var expr = token.Parent;
-        var span = token.Kind == TokenKind.Dot ? new SourceSpan(token.Span.End, 0) : token.Span;
-        // If we can't get the accessed propery, we just return empty array
-        if (!TryGetMemberAccess(tree, cursor, semanticModel, out var symbols)) return [];
-        // Ask for context to access from
+
+        // Retrieve all the members referenced by node
+        var symbols = GetMemberSymbols(semanticModel, expr);
+
+        // TODO: Maybe this filter should be an API-level thing?
+        // Maybe members would not be exposed from ISymbol and we'd need to do GetMembers(context) instead?
+        // Maybe that's not good either because then we can't see private stuff when we want to?
+
+        // Ask for context to access from, so we can filter by visibility
         var accessContext = semanticModel.GetBindingSymbol(token);
         var completions = symbols
-            // NOTE: Not very robust, just like in the other place
-            // Also, duplication
             .Where(s => s.IsVisibleFrom(accessContext))
             .Select(s => s.ToApiSymbol())
-            .GroupBy(x => (x.GetType(), x.Name))
-            .Select(x => GetCompletionItem(tree.SourceText, [.. x], contexts, span));
-        return completions.OfType<CompletionItem>().ToImmutableArray();
+            .Select(s => CompletionItem.Simple(span, s))
+            .ToImmutableArray();
     }
 
-    private static bool TryGetMemberAccess(SyntaxTree tree, SyntaxPosition cursor, SemanticModel semanticModel, out ImmutableArray<Symbol> result)
+    private static IEnumerable<Symbol> GetMemberSymbols(SemanticModel semanticModel, SyntaxNode? node)
     {
-        var expr = tree.Root.TraverseSubtreesAtCursorPosition(cursor).Last().Parent;
-        result = [];
-        if (TryDeconstructMemberAccess(expr, out var accessed))
-        {
-            var referencedType = semanticModel.GetReferencedSymbolInternal(accessed);
-            // NOTE: This is how we check for static access
-            if (referencedType?.IsDotnetType == true)
-            {
-                result = referencedType.StaticMembers.ToImmutableArray();
-                return true;
-            }
-            if (accessed is not ExpressionSyntax accessedExpr) return false;
-            var symbol = semanticModel.TypeOfInternal(accessedExpr);
-            if (symbol is null) return false;
-            result = symbol.InstanceMembers.ToImmutableArray();
-            return true;
-        }
-        return false;
+        if (!TryDeconstructMemberAccess(node, out var receiverSyntax)) return [];
+
+        var referencedType = semanticModel.GetReferencedSymbolInternal(receiverSyntax);
+        // NOTE: This is how we check for static access
+        if (referencedType?.IsDotnetType == true) return referencedType.StaticMembers;
+
+        // Otherwise this is an instance access
+        if (receiverSyntax is not ExpressionSyntax accessedExpr) return [];
+        var receiverType = semanticModel.TypeOfInternal(accessedExpr);
+        return receiverType?.InstanceMembers ?? [];
     }
 
-    public static bool TryDeconstructMemberAccess(SyntaxNode? node, [MaybeNullWhen(false)] out SyntaxNode accessed)
+    public static bool TryDeconstructMemberAccess(SyntaxNode? node, [MaybeNullWhen(false)] out SyntaxNode receiverSyntax)
     {
         switch (node)
         {
         case MemberExpressionSyntax expr:
-            accessed = expr.Accessed;
+            receiverSyntax = expr.Accessed;
             return true;
         case MemberTypeSyntax type:
-            accessed = type.Accessed;
+            receiverSyntax = type.Accessed;
             return true;
         case MemberImportPathSyntax import:
-            accessed = import.Accessed;
+            receiverSyntax = import.Accessed;
             return true;
         default:
-            accessed = null;
+            receiverSyntax = null;
             return false;
         }
     }
-
-    private static CompletionItem? GetCompletionItem(
-        SourceText source, ImmutableArray<ISymbol> symbols, CompletionContext currentContexts, SourceSpan span) => symbols.First() switch
-        {
-            ITypeSymbol t when currentContexts.HasFlag(CompletionContext.Type)
-                            || currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(
-                    source,
-                    t.Name,
-                    span,
-                    symbols,
-                    t.IsValueType ? CompletionKind.ValueTypeName : CompletionKind.ReferenceTypeName),
-
-            IModuleSymbol when currentContexts.HasFlag(CompletionContext.Type)
-                            || currentContexts.HasFlag(CompletionContext.Expression)
-                            || currentContexts.HasFlag(CompletionContext.Import) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.ModuleName),
-
-            IParameterSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.ParameterName),
-
-            IVariableSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.VariableName),
-
-            IPropertySymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.PropertyName),
-
-            IFieldSymbol when currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.FieldName),
-
-            IFunctionSymbol fun when !fun.IsSpecialName && currentContexts.HasFlag(CompletionContext.Expression) =>
-                CompletionItem.Create(source, symbols.First().Name, span, symbols, CompletionKind.FunctionName),
-
-            _ => null,
-        };
 }

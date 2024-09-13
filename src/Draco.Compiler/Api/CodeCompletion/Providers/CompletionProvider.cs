@@ -26,4 +26,32 @@ public abstract class CompletionProvider
     /// <returns>The <see cref="CompletionItem"/>s this <see cref="CompletionProvider"/> proivded.</returns>
     public abstract ImmutableArray<CompletionItem> GetCompletionItems(
         SemanticModel semanticModel, int cursorIndex, SyntaxNode? nodeAtCursor, CompletionContext contexts);
+
+    /// <summary>
+    /// Checks, if a given <paramref name="symbol"/> is appropriate for the given <paramref name="context"/>.
+    /// </summary>
+    /// <param name="symbol">The <see cref="ISymbol"/> to check.</param>
+    /// <param name="context">The <see cref="CompletionContext"/> to check against.</param>
+    /// <returns>True, if the <paramref name="symbol"/> is appropriate for the given <paramref name="context"/>, otherwise false.</returns>
+    protected static bool IsAppropriateForContext(ISymbol symbol, CompletionContext context) => symbol.Kind switch
+    {
+        SymbolKind.Module => context.HasFlag(CompletionContext.Expression)
+                          || context.HasFlag(CompletionContext.Type)
+                          || context.HasFlag(CompletionContext.Import),
+
+        SymbolKind.Label => context.HasFlag(CompletionContext.Declaration),
+
+        SymbolKind.Type or SymbolKind.TypeParameter => context.HasFlag(CompletionContext.Expression)
+                                                    || context.HasFlag(CompletionContext.Type),
+
+        SymbolKind.Function
+     or SymbolKind.Global
+     or SymbolKind.Local
+     or SymbolKind.Parameter
+     or SymbolKind.Field => context.HasFlag(CompletionContext.Expression),
+
+        SymbolKind.Alias => IsAppropriateForContext(((IAliasSymbol)symbol).FullResolution, context),
+
+        _ => true,
+    };
 }

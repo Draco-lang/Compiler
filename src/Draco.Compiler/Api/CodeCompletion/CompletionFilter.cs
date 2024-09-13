@@ -25,6 +25,14 @@ public static class CompletionFilter
     public static ICompletionFilter AcceptNullToken(Func<SyntaxToken, CompletionItem, bool> filter) =>
         Create((token, item) => token is null || filter(token, item));
 
+    /// <summary>
+    /// Constructs a completion filter that looks at text-like tokens and filters based on the provided function.
+    /// </summary>
+    /// <param name="filter">The filter function.</param>
+    /// <returns>The created completion filter.</returns>
+    public static ICompletionFilter NameFilter(Func<string, CompletionItem, bool> filter) => AcceptNullToken((token, item) =>
+        (token.Kind != TokenKind.Identifier && !SyntaxFacts.IsKeyword(token.Kind)) || filter(token.Text, item));
+
     private sealed class DelegateCompletionFilter(Func<SyntaxToken?, CompletionItem, bool> filter) : ICompletionFilter
     {
         public bool ShouldKeep(SyntaxToken? underCursor, CompletionItem item) => filter(underCursor, item);

@@ -29,6 +29,22 @@ internal abstract partial class Binder(Compilation compilation, Binder? parent)
     internal Binder? Parent { get; } = parent;
 
     /// <summary>
+    /// The ancestor chain of this binder, starting from this binder and going up to the root binder.
+    /// </summary>
+    internal IEnumerable<Binder> AncestorChain
+    {
+        get
+        {
+            var current = this;
+            while (current is not null)
+            {
+                yield return current;
+                current = current.Parent;
+            }
+        }
+    }
+
+    /// <summary>
     /// The syntax that constructed this binder.
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => this.Parent?.DeclaringSyntax;

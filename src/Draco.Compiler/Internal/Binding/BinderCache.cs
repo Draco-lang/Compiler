@@ -145,12 +145,7 @@ internal sealed class BinderCache(Compilation compilation)
     /// </summary>
     /// <param name="binder">The binder to unwrap.</param>
     /// <returns>The binder that was wrapped in imports.</returns>
-    private static Binder UnwrapFromImportBinder(Binder binder)
-    {
-        while (binder is ImportBinder)
-        {
-            binder = binder.Parent ?? throw new InvalidOperationException();
-        }
-        return binder;
-    }
+    private static Binder UnwrapFromImportBinder(Binder binder) => binder.AncestorChain
+        .SkipWhile(b => b is ImportBinder)
+        .First();
 }

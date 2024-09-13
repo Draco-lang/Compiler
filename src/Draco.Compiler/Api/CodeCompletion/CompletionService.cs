@@ -10,7 +10,7 @@ namespace Draco.Compiler.Api.CodeCompletion;
 /// <summary>
 /// Manages <see cref="CompletionProvider"/>s and allows to get <see cref="CompletionItem"/>s correctly based on context.
 /// </summary>
-public sealed class CompletionService
+public sealed class CompletionService(ICompletionFilter filter)
 {
     /// <summary>
     /// Creates a new <see cref="CompletionService"/> with the default <see cref="CompletionProvider"/>s.
@@ -26,13 +26,7 @@ public sealed class CompletionService
         return service;
     }
 
-    private readonly ICompletionFilter completionFilter;
     private readonly List<CompletionProvider> providers = [];
-
-    public CompletionService(ICompletionFilter filter)
-    {
-        this.completionFilter = filter;
-    }
 
     /// <summary>
     /// Adds <see cref="CompletionProvider"/> this service can use.
@@ -63,7 +57,7 @@ public sealed class CompletionService
             if (!provider.IsApplicableIn(currentContext)) continue;
 
             var completionItems = provider.GetCompletionItems(semanticModel, cursorIndex, currentContext);
-            result.AddRange(completionItems.Where(i => this.completionFilter.ShouldKeep(deepestNodeAtCursor, i)));
+            result.AddRange(completionItems.Where(i => filter.ShouldKeep(deepestNodeAtCursor, i)));
         }
         return result.ToImmutable();
     }

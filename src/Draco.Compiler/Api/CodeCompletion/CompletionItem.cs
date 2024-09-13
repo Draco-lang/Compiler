@@ -82,6 +82,7 @@ public sealed class CompletionItem
         SymbolKind.Local => CompletionKind.VariableName,
         SymbolKind.Parameter => CompletionKind.ParameterName,
         SymbolKind.Function => CompletionKind.FunctionName,
+        SymbolKind.FunctionGroup => CompletionKind.FunctionName,
         SymbolKind.Type => ((ITypeSymbol)symbol).IsValueType ? CompletionKind.ValueTypeName : CompletionKind.ReferenceTypeName,
         SymbolKind.TypeParameter => CompletionKind.TypeParameterName,
         SymbolKind.Alias => ToCompletionKind(((IAliasSymbol)symbol).FullResolution),

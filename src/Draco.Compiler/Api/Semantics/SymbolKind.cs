@@ -12,6 +12,7 @@ public enum SymbolKind
     Local,
     Parameter,
     Function,
+    FunctionGroup,
     Type,
     TypeParameter,
     Alias,

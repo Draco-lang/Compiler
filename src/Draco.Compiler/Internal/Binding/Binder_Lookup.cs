@@ -209,7 +209,7 @@ internal partial class Binder
     private static IEnumerable<FunctionSymbol> GetFunctionsImpl(Symbol symbol) => symbol switch
     {
         FunctionSymbol f => new[] { f },
-        OverloadSymbol o => o.Functions,
+        FunctionGroupSymbol o => o.Functions,
         _ => [],
     };
 }

@@ -127,7 +127,7 @@ internal sealed partial class ConstraintSolver
                     // NOTE: Visibility will be checked by the overload constraint
                     Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
                     UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
-                    var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
+                    var overload = new FunctionGroupSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
                     member.CompletionSource.SetResult(overload);
                 }
             })

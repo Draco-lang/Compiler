@@ -179,6 +179,17 @@ public interface IFunctionSymbol : ISymbol, ITypedSymbol, IMemberSymbol
 }
 
 /// <summary>
+/// Represents a function group.
+/// </summary>
+public interface IFunctionGroupSymbol : ISymbol
+{
+    /// <summary>
+    /// The functions in this group.
+    /// </summary>
+    public ImmutableArray<IFunctionSymbol> Functions { get; }
+}
+
+/// <summary>
 /// Represents a type symbol.
 /// </summary>
 public interface ITypeSymbol : ISymbol, IMemberSymbol
@@ -316,6 +327,14 @@ internal sealed class FunctionSymbol(Internal.Symbols.FunctionSymbol function)
     public bool IsStatic => this.Symbol.IsStatic;
 
     public ImmutableArray<IParameterSymbol> Parameters => this.Symbol.Parameters
+        .Select(s => s.ToApiSymbol())
+        .ToImmutableArray();
+}
+
+internal sealed class FunctionGroupSymbol(Internal.Symbols.Synthetized.FunctionGroupSymbol group)
+    : SymbolBase<Internal.Symbols.Synthetized.FunctionGroupSymbol>(group), IFunctionGroupSymbol
+{
+    public ImmutableArray<IFunctionSymbol> Functions => this.Symbol.Functions
         .Select(s => s.ToApiSymbol())
         .ToImmutableArray();
 }

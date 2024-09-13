@@ -101,7 +101,7 @@ internal sealed class LookupResult
                 var functions = this.Symbols
                     .Cast<FunctionSymbol>()
                     .ToImmutableArray();
-                return new OverloadSymbol(functions);
+                return new FunctionGroupSymbol(functions);
             }
             else
             {

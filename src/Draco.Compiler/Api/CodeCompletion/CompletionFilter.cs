@@ -13,7 +13,8 @@ public static class CompletionFilter
     /// </summary>
     /// <param name="filter">The filter function.</param>
     /// <returns>The created completion filter.</returns>
-    public static ICompletionFilter Create(Func<SyntaxToken?, CompletionItem, bool> filter) => new DelegateCompletionFilter(filter);
+    public static ICompletionFilter Create(Func<SyntaxToken?, CompletionItem, bool> filter) =>
+        new DelegateCompletionFilter(filter);
 
     /// <summary>
     /// Constructs a completion filter that accepts all completion items when the token under the cursor is null.

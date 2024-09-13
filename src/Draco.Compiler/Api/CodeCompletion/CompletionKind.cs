@@ -15,7 +15,9 @@ public enum CompletionKind
     FunctionName,
     PropertyName,
     FieldName,
+    LabelName,
 
+    TypeParameterName,
     ReferenceTypeName,
     ValueTypeName,
 

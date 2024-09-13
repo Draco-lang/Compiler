@@ -23,6 +23,16 @@ public interface ISymbol : IEquatable<ISymbol>
     public string Name { get; }
 
     /// <summary>
+    /// The full name of the symbol.
+    /// </summary>
+    public string FullName { get; }
+
+    /// <summary>
+    /// The kind of symbol.
+    /// </summary>
+    public SymbolKind Kind { get; }
+
+    /// <summary>
     /// True, if this symbol represents an error.
     /// </summary>
     public bool IsError { get; }
@@ -224,6 +234,8 @@ internal abstract class SymbolBase(Symbol symbol) : ISymbol
     public Symbol Symbol { get; } = symbol;
 
     public string Name => this.Symbol.Name;
+    public string FullName => this.Symbol.FullName;
+    public SymbolKind Kind => this.Symbol.Kind;
     public bool IsError => this.Symbol.IsError;
     public bool IsSpecialName => this.Symbol.IsSpecialName;
     public Location? Definition => this.Symbol.DeclaringSyntax?.Location;

@@ -24,7 +24,30 @@ public sealed class ExpressionCompletionProvider : CompletionProvider
         var span = (nodeAtCursor as SyntaxToken)?.Span ?? SourceSpan.Empty(cursorIndex);
         var symbols = semanticModel.GetAllAccessibleSymbols(nodeAtCursor);
         return symbols
+            .Select(s => s is IAliasSymbol alias ? alias.FullResolution : s)
+            .Where(s => IsAppropriateForContext(s.Kind, contexts))
             .Select(s => CompletionItem.Simple(span, s))
             .ToImmutableArray();
     }
+
+    private static bool IsAppropriateForContext(SymbolKind kind, CompletionContext context) => kind switch
+    {
+        SymbolKind.Module => context.HasFlag(CompletionContext.Expression)
+                          || context.HasFlag(CompletionContext.Type)
+                          || context.HasFlag(CompletionContext.Import),
+
+        SymbolKind.Label => context.HasFlag(CompletionContext.Declaration),
+
+        SymbolKind.Type or SymbolKind.TypeParameter => context.HasFlag(CompletionContext.Expression)
+                                                    || context.HasFlag(CompletionContext.Type),
+
+
+        SymbolKind.Function
+     or SymbolKind.Global
+     or SymbolKind.Local
+     or SymbolKind.Parameter
+     or SymbolKind.Field => context.HasFlag(CompletionContext.Expression),
+
+        _ => true,
+    };
 }

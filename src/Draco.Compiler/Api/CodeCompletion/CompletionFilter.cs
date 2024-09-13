@@ -22,7 +22,7 @@ public static class CompletionFilter
     /// <param name="filter">The filter to use when the token is not null.</param>
     /// <returns>The created completion filter.</returns>
     public static ICompletionFilter AcceptNullToken(Func<SyntaxToken, CompletionItem, bool> filter) =>
-        Create((token, item) => token is null ? true : filter(token, item));
+        Create((token, item) => token is null || filter(token, item));
 
     private sealed class DelegateCompletionFilter(Func<SyntaxToken?, CompletionItem, bool> filter) : ICompletionFilter
     {

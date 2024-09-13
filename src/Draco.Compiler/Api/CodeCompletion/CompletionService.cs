@@ -56,7 +56,7 @@ public sealed class CompletionService(ICompletionFilter filter)
         {
             if (!provider.IsApplicableIn(currentContext)) continue;
 
-            var completionItems = provider.GetCompletionItems(semanticModel, deepestNodeAtCursor, currentContext);
+            var completionItems = provider.GetCompletionItems(semanticModel, cursorIndex, deepestNodeAtCursor, currentContext);
             result.AddRange(completionItems.Where(i => filter.ShouldKeep(deepestNodeAtCursor, i)));
         }
         return result.ToImmutable();

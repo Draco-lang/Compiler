@@ -20,9 +20,19 @@ public abstract class CompletionProvider
     /// Gets all <see cref="CompletionItem"/>s from this <see cref="CompletionProvider"/>.
     /// </summary>
     /// <param name="semanticModel">The <see cref="SemanticModel"/> for the context.</param>
+    /// <param name="cursorIndex">The index of the cursor in the tree.</param>
     /// <param name="nodeAtCursor">The <see cref="SyntaxNode"/> at the cursor position.</param>
     /// <param name="contexts">The current <see cref="CompletionContext"/>s.</param>
     /// <returns>The <see cref="CompletionItem"/>s this <see cref="CompletionProvider"/> proivded.</returns>
     public abstract ImmutableArray<CompletionItem> GetCompletionItems(
-        SemanticModel semanticModel, SyntaxNode? nodeAtCursor, CompletionContext contexts);
+        SemanticModel semanticModel, int cursorIndex, SyntaxNode? nodeAtCursor, CompletionContext contexts);
+
+    /// <summary>
+    /// Translates a node to a <see cref="SourceSpan"/>, if it's a token. Otherwise constructs as 0-length span at the cursor.
+    /// </summary>
+    /// <param name="cursorIndex">The index of the cursor in the tree.</param>
+    /// <param name="node">The <see cref="SyntaxNode"/> to translate to a <see cref="SourceSpan"/>.</param>
+    /// <returns>The <see cref="SourceSpan"/> of the <paramref name="node"/> or a 0-length span at the cursor.</returns>
+    protected static SourceSpan TokenSpan(int cursorIndex, SyntaxNode? node) =>
+        (node as SyntaxToken)?.Span ?? new(cursorIndex, 0);
 }

@@ -47,7 +47,7 @@ public sealed class KeywordCompletionProvider : CompletionProvider
     public override ImmutableArray<CompletionItem> GetCompletionItems(
         SemanticModel semanticModel, int cursorIndex, SyntaxNode? nodeAtCursor, CompletionContext contexts)
     {
-        var span = (nodeAtCursor as SyntaxToken)?.Span ?? new(cursorIndex, 0);
+        var span = (nodeAtCursor as SyntaxToken)?.Span ?? SourceSpan.Empty(cursorIndex);
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
         if (contexts.HasFlag(CompletionContext.Expression)) result.AddRange(GetExpressionKeywords(span));
         if (contexts.HasFlag(CompletionContext.Declaration)) result.AddRange(GetDeclarationKeywords(span));

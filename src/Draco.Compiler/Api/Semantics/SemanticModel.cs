@@ -120,10 +120,10 @@ public sealed partial class SemanticModel : IBinderProvider
     /// </summary>
     /// <param name="node">The <see cref="SyntaxNode"/> from which to start looking for declared symbols.</param>
     /// <returns>All the <see cref="ISymbol"/>s accesible from the <paramref name="node"/>.</returns>
-    public ImmutableArray<ISymbol> GetAllAccessibleSymbols(SyntaxNode node)
+    public ImmutableArray<ISymbol> GetAllAccessibleSymbols(SyntaxNode? node)
     {
         var result = new HashSet<ISymbol>();
-        var binder = this.compilation.GetBinder(node);
+        var binder = this.compilation.GetBinder(node ?? this.Tree.Root);
         while (binder is not null)
         {
             foreach (var s in binder.DeclaredSymbols)

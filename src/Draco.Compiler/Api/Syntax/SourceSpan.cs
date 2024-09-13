@@ -8,6 +8,13 @@ namespace Draco.Compiler.Api.Syntax;
 public readonly record struct SourceSpan(int Start, int Length)
 {
     /// <summary>
+    /// Constructs an empty span at the given start index.
+    /// </summary>
+    /// <param name="start">The start index of the span.</param>
+    /// <returns>The created empty span.</returns>
+    public static SourceSpan Empty(int start = 0) => new(start, 0);
+
+    /// <summary>
     /// The end index of the text (exclusive).
     /// </summary>
     public int End => this.Start + this.Length;

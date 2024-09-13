@@ -15,7 +15,9 @@ public sealed class MemberCompletionProvider : CompletionProvider
     public override bool IsApplicableIn(CompletionContext context)
     {
         if (!context.HasFlag(CompletionContext.Member)) return false;
-        return context.HasFlag(CompletionContext.Expression) || context.HasFlag(CompletionContext.Type) || context.HasFlag(CompletionContext.Import);
+        return context.HasFlag(CompletionContext.Expression)
+            || context.HasFlag(CompletionContext.Type)
+            || context.HasFlag(CompletionContext.Import);
     }
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(

@@ -13,7 +13,7 @@ internal sealed partial class DracoLanguageServer : ICodeAction
     {
         DocumentSelector = this.DocumentSelector,
         CodeActionKinds = [CodeActionKind.QuickFix],
-        ResolveProvider = false
+        ResolveProvider = false,
     };
 
     public Task<IList<OneOf<Command, CodeAction>>?> CodeActionAsync(CodeActionParams param, CancellationToken cancellationToken)

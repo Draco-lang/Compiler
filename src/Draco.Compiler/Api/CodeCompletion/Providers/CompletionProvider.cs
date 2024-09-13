@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.CodeCompletion.Providers;
 
@@ -18,10 +19,10 @@ public abstract class CompletionProvider
     /// <summary>
     /// Gets all <see cref="CompletionItem"/>s from this <see cref="CompletionProvider"/>.
     /// </summary>
-    /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
-    /// <param name="cursorIndex">Position of cursor in the <paramref name="tree"/> as an index.</param>
-    /// <param name="contexts">Flag enum of current contexts.</param>
-    /// <returns>All the <see cref="CompletionItem"/>s this <see cref="CompletionProvider"/> created.</returns>
+    /// <param name="semanticModel">The <see cref="SemanticModel"/> for the context.</param>
+    /// <param name="nodeAtCursor">The <see cref="SyntaxNode"/> at the cursor position.</param>
+    /// <param name="contexts">The current <see cref="CompletionContext"/>s.</param>
+    /// <returns>The <see cref="CompletionItem"/>s this <see cref="CompletionProvider"/> proivded.</returns>
     public abstract ImmutableArray<CompletionItem> GetCompletionItems(
-        SemanticModel semanticModel, int cursorIndex, CompletionContext contexts);
+        SemanticModel semanticModel, SyntaxNode? nodeAtCursor, CompletionContext contexts);
 }

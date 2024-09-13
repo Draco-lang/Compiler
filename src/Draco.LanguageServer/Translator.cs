@@ -70,7 +70,7 @@ internal static class Translator
 
     public static LspModels.CompletionItem ToLsp(
         CompilerApi.Syntax.SourceText sourceText,
-        CompilerApi.CodeCompletion.CompletionItem item)
+        CompilerApi.Services.CodeCompletion.CompletionItem item)
     {
         var textEdit = ToLsp(sourceText, item.Edits[0]);
         var additionalEdits = item.Edits
@@ -99,32 +99,32 @@ internal static class Translator
         };
     }
 
-    public static LspModels.CompletionItemKind ToLsp(CompilerApi.CodeCompletion.CompletionKind kind) => kind switch
+    public static LspModels.CompletionItemKind ToLsp(CompilerApi.Services.CodeCompletion.CompletionKind kind) => kind switch
     {
-        CompilerApi.CodeCompletion.CompletionKind.ControlFlowKeyword
-     or CompilerApi.CodeCompletion.CompletionKind.DeclarationKeyword
-     or CompilerApi.CodeCompletion.CompletionKind.VisibilityKeyword => LspModels.CompletionItemKind.Keyword,
+        CompilerApi.Services.CodeCompletion.CompletionKind.ControlFlowKeyword
+     or CompilerApi.Services.CodeCompletion.CompletionKind.DeclarationKeyword
+     or CompilerApi.Services.CodeCompletion.CompletionKind.VisibilityKeyword => LspModels.CompletionItemKind.Keyword,
 
-        CompilerApi.CodeCompletion.CompletionKind.VariableName
-     or CompilerApi.CodeCompletion.CompletionKind.ParameterName => LspModels.CompletionItemKind.Variable,
+        CompilerApi.Services.CodeCompletion.CompletionKind.VariableName
+     or CompilerApi.Services.CodeCompletion.CompletionKind.ParameterName => LspModels.CompletionItemKind.Variable,
 
-        CompilerApi.CodeCompletion.CompletionKind.ModuleName => LspModels.CompletionItemKind.Module,
+        CompilerApi.Services.CodeCompletion.CompletionKind.ModuleName => LspModels.CompletionItemKind.Module,
 
-        CompilerApi.CodeCompletion.CompletionKind.FunctionName => LspModels.CompletionItemKind.Method,
+        CompilerApi.Services.CodeCompletion.CompletionKind.FunctionName => LspModels.CompletionItemKind.Method,
 
-        CompilerApi.CodeCompletion.CompletionKind.PropertyName => LspModels.CompletionItemKind.Property,
+        CompilerApi.Services.CodeCompletion.CompletionKind.PropertyName => LspModels.CompletionItemKind.Property,
 
-        CompilerApi.CodeCompletion.CompletionKind.FieldName => LspModels.CompletionItemKind.Field,
+        CompilerApi.Services.CodeCompletion.CompletionKind.FieldName => LspModels.CompletionItemKind.Field,
 
-        CompilerApi.CodeCompletion.CompletionKind.ReferenceTypeName => LspModels.CompletionItemKind.Class,
-        CompilerApi.CodeCompletion.CompletionKind.ValueTypeName => LspModels.CompletionItemKind.Struct,
+        CompilerApi.Services.CodeCompletion.CompletionKind.ReferenceTypeName => LspModels.CompletionItemKind.Class,
+        CompilerApi.Services.CodeCompletion.CompletionKind.ValueTypeName => LspModels.CompletionItemKind.Struct,
 
-        CompilerApi.CodeCompletion.CompletionKind.Operator => LspModels.CompletionItemKind.Operator,
+        CompilerApi.Services.CodeCompletion.CompletionKind.Operator => LspModels.CompletionItemKind.Operator,
 
         _ => LspModels.CompletionItemKind.Text,
     };
 
-    public static LspModels.SignatureHelp? ToLsp(SignatureItem? item) => item is null ? null : new()
+    public static LspModels.SignatureHelp? ToLsp(CompilerApi.Services.Signature.SignatureItem? item) => item is null ? null : new()
     {
         Signatures = item.Overloads.Select(x => ToLsp(x)).ToArray(),
         ActiveParameter = item.CurrentParameter is null ? null : (uint)item.CurrentOverload.Parameters.IndexOf(item.CurrentParameter),

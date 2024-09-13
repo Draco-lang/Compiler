@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Services.CodeCompletion;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Tests.TestUtilities;
 

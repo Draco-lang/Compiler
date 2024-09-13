@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Scripting;
+using Draco.Compiler.Api.Services.CodeCompletion;
 using Draco.Compiler.Api.Syntax;
 using PrettyPrompt;
 using PrettyPrompt.Consoles;

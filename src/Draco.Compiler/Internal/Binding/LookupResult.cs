@@ -52,6 +52,9 @@ internal sealed class LookupResult
     /// <returns>True, if <paramref name="symbol"/> fits into the set and can be added.</returns>
     public bool Add(Symbol symbol)
     {
+        // Unwrap
+        if (symbol is AliasSymbol alias) symbol = alias.FullResolution;
+
         if (this.IsFunctionGroup)
         {
             // Only add functions
@@ -71,11 +74,6 @@ internal sealed class LookupResult
         else
         {
             // Can be anything
-            while (symbol is AliasSymbol alias)
-            {
-                // Unwrap alias
-                symbol = alias.Substitution;
-            }
             this.symbols.Add(symbol);
             return true;
         }

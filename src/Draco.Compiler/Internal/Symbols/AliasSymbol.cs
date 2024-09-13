@@ -16,6 +16,19 @@ internal abstract class AliasSymbol : Symbol, IMemberSymbol
     /// </summary>
     public abstract Symbol Substitution { get; }
 
+    /// <summary>
+    /// Retrieves the full resolution of the alias.
+    /// </summary>
+    public Symbol FullResolution
+    {
+        get
+        {
+            var symbol = this.Substitution;
+            while (symbol is AliasSymbol alias) symbol = alias.Substitution;
+            return symbol;
+        }
+    }
+
     public override void Accept(SymbolVisitor visitor) => visitor.VisitAlias(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitAlias(this);
     public override ISymbol ToApiSymbol() => new Api.Semantics.AliasSymbol(this);

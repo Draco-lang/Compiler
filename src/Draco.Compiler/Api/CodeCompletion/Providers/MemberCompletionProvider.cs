@@ -31,18 +31,15 @@ public sealed class MemberCompletionProvider : CompletionProvider
         var span = token.Kind == TokenKind.Dot ? SourceSpan.Empty(token.Span.End) : token.Span;
         var expr = token.Parent;
 
-        // Retrieve all the members referenced by node
-        var symbols = SymbolCollectionBuilder.ToCollection(GetMemberSymbols(semanticModel, expr));
-
-        // TODO: Maybe this filter should be an API-level thing?
-        // Maybe members would not be exposed from ISymbol and we'd need to do GetMembers(context) instead?
-        // Maybe that's not good either because then we can't see private stuff when we want to?
-
         // Ask for context to access from, so we can filter by visibility
         var accessContext = semanticModel.GetBindingSymbol(token);
+
+        // Retrieve all the members referenced by node that are visible from accessContext
+        var symbols = SymbolCollectionBuilder.ToCollection(
+            GetMemberSymbols(semanticModel, expr).Where(s => s.IsVisibleFrom(accessContext)));
+
         // Construct
         return symbols
-            .Where(s => s.IsVisibleFrom(accessContext))
             .Select(s => s.ToApiSymbol())
             .Select(s => CompletionItem.Simple(span, s))
             .ToImmutableArray();

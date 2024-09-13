@@ -23,12 +23,18 @@ public sealed class CompletionItem
     public static CompletionItem Simple(SourceSpan toReplace, ISymbol symbol, bool fuallyQualify = false)
     {
         var replacementText = fuallyQualify ? symbol.FullName : symbol.Name;
+        var detailsText = symbol switch
+        {
+            IFunctionGroupSymbol g => $"{g.Functions.Length} overloads",
+            _ => null,
+        };
         return new(
             edits: [new(toReplace, replacementText)],
             symbol: symbol,
             displayText: replacementText,
             filterText: replacementText,
             sortText: $"{symbol.Kind}_{symbol.Name}",
+            detailsText: detailsText,
             kind: ToCompletionKind(symbol));
     }
 
@@ -71,6 +77,7 @@ public sealed class CompletionItem
             displayText: displayText ?? edit.Text,
             filterText: filterText ?? edit.Text,
             sortText: sortText ?? $"{kind}_{edit.Text}",
+            detailsText: null,
             kind: kind);
 
     private static CompletionKind ToCompletionKind(ISymbol symbol) => symbol.Kind switch
@@ -116,6 +123,11 @@ public sealed class CompletionItem
     public string SortText { get; }
 
     /// <summary>
+    /// The details text to display in the completion list, if any.
+    /// </summary>
+    public string? DetailsText { get; }
+
+    /// <summary>
     /// The kind of completion.
     /// </summary>
     public CompletionKind Kind { get; }
@@ -131,6 +143,7 @@ public sealed class CompletionItem
         string displayText,
         string filterText,
         string sortText,
+        string? detailsText,
         CompletionKind kind)
     {
         this.Edits = edits;
@@ -138,6 +151,7 @@ public sealed class CompletionItem
         this.DisplayText = displayText;
         this.FilterText = filterText;
         this.SortText = sortText;
+        this.DetailsText = detailsText;
         this.Kind = kind;
     }
 }

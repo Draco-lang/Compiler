@@ -124,11 +124,19 @@ internal sealed class SymbolEqualityComparer : IEqualityComparer<Symbol>, IEqual
 
     public int GetHashCode([DisallowNull] Symbol obj) => obj switch
     {
-        // TODO: Handle things like generic instances, metadata types, ...
         TypeSymbol t => this.GetHashCode(t),
-        FunctionSymbol f => RuntimeHelpers.GetHashCode(f),
-        _ => throw new ArgumentOutOfRangeException(nameof(obj)),
+        _ when obj.IsGenericInstance => GetGenericInstanceHashCode(obj),
+        _ => RuntimeHelpers.GetHashCode(obj),
     };
+
+    private static int GetGenericInstanceHashCode(Symbol obj)
+    {
+        // Combine the hash code of the generic definition with the hash codes of the arguments
+        var hash = default(HashCode);
+        hash.Add(obj.GenericDefinition);
+        foreach (var arg in obj.GenericArguments) hash.Add(arg);
+        return hash.ToHashCode();
+    }
 
     public int GetHashCode([DisallowNull] TypeSymbol obj)
     {

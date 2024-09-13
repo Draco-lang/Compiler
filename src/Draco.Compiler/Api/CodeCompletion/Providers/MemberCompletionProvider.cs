@@ -32,7 +32,7 @@ public sealed class MemberCompletionProvider : CompletionProvider
         var expr = token.Parent;
 
         // Retrieve all the members referenced by node
-        var symbols = GetMemberSymbols(semanticModel, expr);
+        var symbols = SymbolCollectionBuilder.ToCollection(GetMemberSymbols(semanticModel, expr));
 
         // TODO: Maybe this filter should be an API-level thing?
         // Maybe members would not be exposed from ISymbol and we'd need to do GetMembers(context) instead?

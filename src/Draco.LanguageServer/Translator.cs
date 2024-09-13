@@ -79,23 +79,15 @@ internal static class Translator
             .Select(s => ToLsp(sourceText, s))
             .ToList();
 
-#if false
-        var detail = string.Empty;
-        if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
-        {
-            detail = item.Symbols.Length == 1 ? typed.Type.ToString() : $"{item.Symbols.Length} overloads";
-        }
-
         LspModels.MarkupContent? documentation = null;
-        if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation))
+        if (!string.IsNullOrWhiteSpace(item.Symbol?.Documentation))
         {
             documentation = new LspModels.MarkupContent()
             {
                 Kind = LspModels.MarkupKind.Markdown,
-                Value = item.Symbols.First().Documentation,
+                Value = item.Symbol.Documentation,
             };
         }
-#endif
 
         return new LspModels.CompletionItem()
         {
@@ -103,8 +95,8 @@ internal static class Translator
             Kind = ToLsp(item.Kind),
             TextEdit = new(textEdit),
             AdditionalTextEdits = additionalEdits,
-            //Detail = detail,
-            //Documentation = documentation is not null ? new(documentation) : default,
+            Detail = item.DetailsText,
+            Documentation = documentation is not null ? new(documentation) : default,
         };
     }
 

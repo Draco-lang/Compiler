@@ -14,6 +14,18 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal sealed class SymbolCollectionBuilder
 {
+    /// <summary>
+    /// Converts a sequence of symbols to a collection sequence.
+    /// </summary>
+    /// <param name="symbols">The symbols to convert.</param>
+    /// <returns>The converted symbols.</returns>
+    public static IEnumerable<Symbol> ToCollection(IEnumerable<Symbol> symbols)
+    {
+        var builder = new SymbolCollectionBuilder();
+        foreach (var symbol in symbols) builder.Add(symbol);
+        return builder.EnumerateResult();
+    }
+
     private readonly HashSet<Symbol> nonFunctionSymbols = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, HashSet<FunctionSymbol>> functionSymbols = [];
 
@@ -21,24 +33,26 @@ internal sealed class SymbolCollectionBuilder
     /// Builds the collection of symbols.
     /// </summary>
     /// <returns>The collection of symbols.</returns>
-    public ImmutableArray<Symbol> Build()
+    public ImmutableArray<Symbol> Build() => [.. this.EnumerateResult()];
+
+    /// <summary>
+    /// Enumerates the result.
+    /// </summary>
+    /// <returns>The result enumerable.</returns>
+    public IEnumerable<Symbol> EnumerateResult()
     {
-        var builder = ImmutableArray.CreateBuilder<Symbol>(this.nonFunctionSymbols.Count + this.functionSymbols.Count);
-        builder.AddRange(this.nonFunctionSymbols);
+        foreach (var symbol in this.nonFunctionSymbols) yield return symbol;
         foreach (var set in this.functionSymbols.Values)
         {
             if (set.Count == 1)
             {
-                // Singletons don't need to be grouped
-                builder.Add(set.First());
+                yield return set.First();
             }
             else
             {
-                // Wrap the set
-                builder.Add(new FunctionGroupSymbol([.. set]));
+                yield return new FunctionGroupSymbol([.. set]);
             }
         }
-        return builder.ToImmutable();
     }
 
     /// <summary>

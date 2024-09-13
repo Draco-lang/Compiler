@@ -71,7 +71,7 @@ internal sealed class LookupResult
         else
         {
             // Can be anything
-            if (symbol is AliasSymbol alias)
+            while (symbol is AliasSymbol alias)
             {
                 // Unwrap alias
                 symbol = alias.Substitution;

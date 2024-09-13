@@ -47,24 +47,16 @@ public sealed class CompletionService
         var result = ImmutableArray.CreateBuilder<CompletionItem>();
         var currentContext = this.GetCurrentContexts(tree, cursorIndex);
 
-        // Look, if we are under an identifier token that can filter completions
+        // Look for a filter node
         var cursorPosition = tree.IndexToSyntaxPosition(cursorIndex);
-        var idAtCursor = tree.TraverseSubtreesAtCursorPosition(cursorPosition)
-            .OfType<SyntaxToken>()
-            .Where(x => x.Kind == TokenKind.Identifier || SyntaxFacts.IsKeyword(x.Kind))
-            .LastOrDefault();
+        var deepestNodeAtCursor = tree.TraverseSubtreesAtCursorPosition(cursorPosition).LastOrDefault();
 
         foreach (var provider in this.providers)
         {
             if (!provider.IsApplicableIn(currentContext)) continue;
 
             var completionItems = provider.GetCompletionItems(semanticModel, cursorIndex, currentContext);
-            if (idAtCursor is not null)
-            {
-                // Filter by the identifier at the cursor
-                completionItems = this.FilterResultsByPrefixToken(idAtCursor, completionItems);
-            }
-            result.AddRange(completionItems);
+            result.AddRange(completionItems.Where(i => this.filter.ShouldKeep(deepestNodeAtCursor, i)));
         }
         return result.ToImmutable();
     }

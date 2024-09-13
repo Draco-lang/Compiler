@@ -50,13 +50,14 @@ public sealed class CompletionService
     {
         var tree = semanticModel.Tree;
 
-        var result = ImmutableArray.CreateBuilder<CompletionItem>();
-        var currentContext = this.GetCurrentContexts(tree, cursorIndex);
-
         // Look for a filter node
         var cursorPosition = tree.IndexToSyntaxPosition(cursorIndex);
         var deepestNodeAtCursor = tree.TraverseSubtreesAtCursorPosition(cursorPosition).LastOrDefault();
 
+        // Get the current context
+        var currentContext = GetCurrentContexts(deepestNodeAtCursor);
+
+        var result = ImmutableArray.CreateBuilder<CompletionItem>();
         foreach (var provider in this.providers)
         {
             if (!provider.IsApplicableIn(currentContext)) continue;
@@ -68,47 +69,42 @@ public sealed class CompletionService
     }
 
     /// <summary>
-    /// Gets current context based on location of <paramref name="cursorIndex"/> in the <paramref name="syntaxTree"/>.
+    /// Gets current context based on the node at the cursor.
     /// </summary>
-    /// <param name="syntaxTree">The <see cref="SyntaxTree"/> in which to find contexts.</param>
-    /// <param name="cursorIndex">The location in the <paramref name="syntaxTree"/>.</param>
+    /// <param name="nodeAtCursor">The syntax node at the cursor.</param>
     /// <returns>Flag enum of the currently valid <see cref="CompletionContext"/>s.</returns>
-    private CompletionContext GetCurrentContexts(SyntaxTree syntaxTree, int cursorIndex)
+    private static CompletionContext GetCurrentContexts(SyntaxNode? nodeAtCursor) => nodeAtCursor switch
     {
-        var cursor = syntaxTree.IndexToSyntaxPosition(cursorIndex);
-        var node = syntaxTree.Root.TraverseSubtreesAtCursorPosition(cursor).Last();
-        return node switch
+        null => CompletionContext.Declaration,
+        InlineFunctionBodySyntax => CompletionContext.Expression,
+        BlockFunctionBodySyntax => CompletionContext.Declaration | CompletionContext.Expression,
+        _ => nodeAtCursor.Parent switch
         {
-            InlineFunctionBodySyntax => CompletionContext.Expression,
-            BlockFunctionBodySyntax => CompletionContext.Declaration | CompletionContext.Expression,
-            _ => node.Parent switch
-            {
-                // Special case, we are in a script
-                NameExpressionSyntax { Parent: ScriptEntrySyntax } =>
-                    CompletionContext.Declaration | CompletionContext.Expression,
-                // Type expression
-                NameTypeSyntax => CompletionContext.Type,
-                // Parameter name declaration
-                ParameterSyntax => CompletionContext.None,
-                // Global declaration
-                UnexpectedDeclarationSyntax => CompletionContext.Declaration,
-                // Declaring identifier
-                DeclarationSyntax => CompletionContext.None,
-                // Member access
-                MemberExpressionSyntax => CompletionContext.Expression | CompletionContext.Member,
-                // Member type access
-                MemberTypeSyntax => CompletionContext.Type | CompletionContext.Member,
-                // Import member
-                MemberImportPathSyntax => CompletionContext.Import | CompletionContext.Member,
-                // Import start
-                RootImportPathSyntax => CompletionContext.Import,
-                // Global scope
-                null => CompletionContext.Declaration,
-                // Start of statement inside function
-                _ when node.Parent?.Parent is ExpressionStatementSyntax =>
-                    CompletionContext.Expression | CompletionContext.Declaration,
-                _ => CompletionContext.Expression,
-            },
-        };
-    }
+            // Special case, we are in a script
+            NameExpressionSyntax { Parent: ScriptEntrySyntax } =>
+                CompletionContext.Declaration | CompletionContext.Expression,
+            // Type expression
+            NameTypeSyntax => CompletionContext.Type,
+            // Parameter name declaration
+            ParameterSyntax => CompletionContext.None,
+            // Global declaration
+            UnexpectedDeclarationSyntax => CompletionContext.Declaration,
+            // Declaring identifier
+            DeclarationSyntax => CompletionContext.None,
+            // Member access
+            MemberExpressionSyntax => CompletionContext.Expression | CompletionContext.Member,
+            // Member type access
+            MemberTypeSyntax => CompletionContext.Type | CompletionContext.Member,
+            // Import member
+            MemberImportPathSyntax => CompletionContext.Import | CompletionContext.Member,
+            // Import start
+            RootImportPathSyntax => CompletionContext.Import,
+            // Global scope
+            null => CompletionContext.Declaration,
+            // Start of statement inside function
+            _ when nodeAtCursor.Parent?.Parent is ExpressionStatementSyntax =>
+                CompletionContext.Expression | CompletionContext.Declaration,
+            _ => CompletionContext.Expression,
+        },
+    };
 }

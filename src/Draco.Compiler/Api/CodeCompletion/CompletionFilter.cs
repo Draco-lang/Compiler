@@ -9,11 +9,6 @@ namespace Draco.Compiler.Api.CodeCompletion;
 public static class CompletionFilter
 {
     /// <summary>
-    /// A filter that accepts all completion items that contain the text under the cursor.
-    /// </summary>
-    public static ICompletionFilter ContainsFilter { get; } = NameFilter((text, item) => item.FilterText.Contains(text));
-
-    /// <summary>
     /// Constructs a completion filter from a delegate.
     /// </summary>
     /// <param name="filter">The filter function.</param>
@@ -38,6 +33,15 @@ public static class CompletionFilter
     public static ICompletionFilter NameFilter(Func<string, CompletionItem, bool> filter) => AcceptNull((node, item) =>
         (node is not SyntaxToken token || (token.Kind != TokenKind.Identifier && !SyntaxFacts.IsKeyword(token.Kind)))
         || filter(token.Text, item));
+
+    /// <summary>
+    /// Constructs a completion filter that checks if the completion item's filter text contains the text of
+    /// the token under the cursor.
+    /// </summary>
+    /// <param name="comparison">The comparison to use.</param>
+    /// <returns>The created completion filter.</returns>
+    public static ICompletionFilter ContainsFilter(StringComparison comparison = StringComparison.OrdinalIgnoreCase) =>
+        NameFilter((text, item) => item.FilterText.Contains(text, comparison));
 
     private sealed class DelegateCompletionFilter(Func<SyntaxNode?, CompletionItem, bool> filter) : ICompletionFilter
     {

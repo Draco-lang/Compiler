@@ -19,7 +19,7 @@ public sealed class CompletionService(ICompletionFilter filter)
     /// <returns>A new <see cref="CompletionService"/> with default providers.</returns>
     public static CompletionService CreateDefault(ICompletionFilter? filter = null)
     {
-        var service = new CompletionService(filter ?? CompletionFilter.ContainsFilter);
+        var service = new CompletionService(filter ?? CompletionFilter.ContainsFilter());
         service.AddProvider(new KeywordCompletionProvider());
         service.AddProvider(new ExpressionCompletionProvider());
         service.AddProvider(new MemberCompletionProvider());

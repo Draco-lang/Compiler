@@ -35,8 +35,9 @@ public sealed class MemberCompletionProvider : CompletionProvider
         var accessContext = semanticModel.GetBindingSymbol(token);
 
         // Retrieve all the members referenced by node that are visible from accessContext
-        var symbols = SymbolCollectionBuilder.ToCollection(
-            GetMemberSymbols(semanticModel, expr).Where(s => s.IsVisibleFrom(accessContext)));
+        var symbols = SymbolCollectionBuilder.ToCollection(GetMemberSymbols(semanticModel, expr)
+            .Where(s => IsAppropriateForContext(s, contexts))
+            .Where(s => s.IsVisibleFrom(accessContext)));
 
         // Construct
         return symbols

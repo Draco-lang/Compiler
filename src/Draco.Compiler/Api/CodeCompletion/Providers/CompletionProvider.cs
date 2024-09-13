@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Api.CodeCompletion.Providers;
 
@@ -33,7 +34,16 @@ public abstract class CompletionProvider
     /// <param name="symbol">The <see cref="ISymbol"/> to check.</param>
     /// <param name="context">The <see cref="CompletionContext"/> to check against.</param>
     /// <returns>True, if the <paramref name="symbol"/> is appropriate for the given <paramref name="context"/>, otherwise false.</returns>
-    protected static bool IsAppropriateForContext(ISymbol symbol, CompletionContext context) => symbol.Kind switch
+    protected static bool IsAppropriateForContext(ISymbol symbol, CompletionContext context) =>
+        IsAppropriateForContext(((SymbolBase)symbol).Symbol, context);
+
+    /// <summary>
+    /// Checks, if a given <paramref name="symbol"/> is appropriate for the given <paramref name="context"/>.
+    /// </summary>
+    /// <param name="symbol">The <see cref="Symbol"/> to check.</param>
+    /// <param name="context">The <see cref="CompletionContext"/> to check against.</param>
+    /// <returns>True, if the <paramref name="symbol"/> is appropriate for the given <paramref name="context"/>, otherwise false.</returns>
+    private protected static bool IsAppropriateForContext(Symbol symbol, CompletionContext context) => symbol.Kind switch
     {
         SymbolKind.Module => context.HasFlag(CompletionContext.Expression)
                           || context.HasFlag(CompletionContext.Type)
@@ -51,7 +61,7 @@ public abstract class CompletionProvider
      or SymbolKind.Parameter
      or SymbolKind.Field => context.HasFlag(CompletionContext.Expression),
 
-        SymbolKind.Alias => IsAppropriateForContext(((IAliasSymbol)symbol).FullResolution, context),
+        SymbolKind.Alias => IsAppropriateForContext(((Internal.Symbols.AliasSymbol)symbol).FullResolution, context),
 
         _ => true,
     };

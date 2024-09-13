@@ -57,8 +57,14 @@ public sealed class CompletionService(ICompletionFilter filter)
             if (!provider.IsApplicableIn(currentContext)) continue;
 
             var completionItems = provider.GetCompletionItems(semanticModel, cursorIndex, deepestNodeAtCursor, currentContext);
+            // Only add items that pass the filter
             result.AddRange(completionItems.Where(i => filter.ShouldKeep(deepestNodeAtCursor, i)));
         }
+
+        // Sort results
+        result.Sort((a, b) => a.SortText.CompareTo(b.SortText));
+
+        // Done
         return result.ToImmutable();
     }
 

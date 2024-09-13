@@ -21,7 +21,7 @@ public sealed class MemberCompletionProvider : CompletionProvider
     }
 
     public override ImmutableArray<CompletionItem> GetCompletionItems(
-        SemanticModel semanticModel, int cursorIndex, CompletionContext contexts)
+        SemanticModel semanticModel, int cursorIndex, SyntaxNode? nodeAtCursor, CompletionContext contexts)
     {
         var tree = semanticModel.Tree;
         var cursor = tree.IndexToSyntaxPosition(cursorIndex);

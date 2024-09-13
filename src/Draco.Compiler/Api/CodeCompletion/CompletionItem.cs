@@ -65,8 +65,13 @@ public sealed class CompletionItem
         CompletionKind kind,
         string? displayText = null,
         string? filterText = null,
-        string? sortText = null) =>
-        new([edit], null, displayText ?? edit.Text, filterText ?? edit.Text, sortText ?? edit.Text, kind);
+        string? sortText = null) => new(
+            edits: [edit],
+            symbol: null,
+            displayText: displayText ?? edit.Text,
+            filterText: filterText ?? edit.Text,
+            sortText: sortText ?? $"{kind}_{edit.Text}",
+            kind: kind);
 
     private static CompletionKind ToCompletionKind(ISymbol symbol) => symbol.Kind switch
     {

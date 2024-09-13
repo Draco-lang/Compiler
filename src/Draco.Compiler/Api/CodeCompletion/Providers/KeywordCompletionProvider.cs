@@ -25,6 +25,7 @@ public sealed class KeywordCompletionProvider : CompletionProvider
     private static ImmutableArray<CompletionItem> GetExpressionKeywords(SourceSpan span) =>
     [
         CompletionItem.Simple(span, "if", CompletionKind.ControlFlowKeyword),
+        CompletionItem.Simple(span, "else", CompletionKind.ControlFlowKeyword),
         CompletionItem.Simple(span, "while", CompletionKind.ControlFlowKeyword),
         CompletionItem.Simple(span, "for", CompletionKind.ControlFlowKeyword),
         CompletionItem.Simple(span, "return", CompletionKind.ControlFlowKeyword),

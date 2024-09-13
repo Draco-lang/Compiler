@@ -35,7 +35,7 @@ internal sealed class SymbolCollectionBuilder
             else
             {
                 // Wrap the set
-                builder.Add(new FunctionGroupSymbol(set.ToImmutableArray()));
+                builder.Add(new FunctionGroupSymbol([.. set]));
             }
         }
         return builder.ToImmutable();

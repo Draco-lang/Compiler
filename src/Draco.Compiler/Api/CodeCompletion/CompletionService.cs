@@ -15,18 +15,24 @@ public sealed class CompletionService
     /// <summary>
     /// Creates a new <see cref="CompletionService"/> with the default <see cref="CompletionProvider"/>s.
     /// </summary>
+    /// <param name="filter">The completion filter to use.</param>
     /// <returns>A new <see cref="CompletionService"/> with default providers.</returns>
-    public static CompletionService CreateDefault()
+    public static CompletionService CreateDefault(ICompletionFilter? filter)
     {
-        var service = new CompletionService();
+        var service = new CompletionService(filter ?? CompletionFilter.ContainsFilter);
         service.AddProvider(new KeywordCompletionProvider());
         service.AddProvider(new ExpressionCompletionProvider());
         service.AddProvider(new MemberCompletionProvider());
         return service;
     }
 
-    private readonly ICompletionFilter filter = CompletionFilter.ContainsFilter;
+    private readonly ICompletionFilter completionFilter;
     private readonly List<CompletionProvider> providers = [];
+
+    public CompletionService(ICompletionFilter filter)
+    {
+        this.completionFilter = filter;
+    }
 
     /// <summary>
     /// Adds <see cref="CompletionProvider"/> this service can use.
@@ -56,7 +62,7 @@ public sealed class CompletionService
             if (!provider.IsApplicableIn(currentContext)) continue;
 
             var completionItems = provider.GetCompletionItems(semanticModel, cursorIndex, currentContext);
-            result.AddRange(completionItems.Where(i => this.filter.ShouldKeep(deepestNodeAtCursor, i)));
+            result.AddRange(completionItems.Where(i => this.completionFilter.ShouldKeep(deepestNodeAtCursor, i)));
         }
         return result.ToImmutable();
     }

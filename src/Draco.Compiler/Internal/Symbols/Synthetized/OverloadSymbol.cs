@@ -14,8 +14,8 @@ internal sealed class OverloadSymbol : Symbol
     public ImmutableArray<FunctionSymbol> Functions { get; }
 
     public override Symbol? ContainingSymbol => throw new System.NotSupportedException();
-
     public override string Name => this.Functions[0].Name;
+    public override SymbolKind Kind => SymbolKind.Function;
 
     public OverloadSymbol(ImmutableArray<FunctionSymbol> functions)
     {

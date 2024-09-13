@@ -69,11 +69,17 @@ internal static class Translator
         Character = (uint)position.Column,
     };
 
-    public static LspModels.CompletionItem ToLsp(CompilerApi.CodeCompletion.CompletionItem item)
+    public static LspModels.CompletionItem ToLsp(
+        CompilerApi.Syntax.SourceText sourceText,
+        CompilerApi.CodeCompletion.CompletionItem item)
     {
-        var textEdit = ToLsp(item.Edits[0]);
-        var additionalEdits = item.Edits.Skip(1).Select(ToLsp).ToList();
+        var textEdit = ToLsp(sourceText, item.Edits[0]);
+        var additionalEdits = item.Edits
+            .Skip(1)
+            .Select(s => ToLsp(sourceText, s))
+            .ToList();
 
+#if false
         var detail = string.Empty;
         if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
         {
@@ -89,14 +95,16 @@ internal static class Translator
                 Value = item.Symbols.First().Documentation,
             };
         }
+#endif
+
         return new LspModels.CompletionItem()
         {
             Label = item.DisplayText,
             Kind = ToLsp(item.Kind),
             TextEdit = new(textEdit),
             AdditionalTextEdits = additionalEdits,
-            Detail = detail,
-            Documentation = documentation is not null ? new(documentation) : default,
+            //Detail = detail,
+            //Documentation = documentation is not null ? new(documentation) : default,
         };
     }
 
@@ -154,9 +162,11 @@ internal static class Translator
         };
     }
 
-    public static LspModels.ITextEdit ToLsp(CompilerApi.Syntax.TextEdit edit) => new LspModels.TextEdit()
-    {
-        NewText = edit.Text,
-        Range = ToLsp(edit.Range),
-    };
+    public static LspModels.ITextEdit ToLsp(
+        CompilerApi.Syntax.SourceText sourceText,
+        CompilerApi.Syntax.TextEdit edit) => new LspModels.TextEdit()
+        {
+            NewText = edit.Text,
+            Range = ToLsp(sourceText.SourceSpanToSyntaxRange(edit.Span)),
+        };
 }

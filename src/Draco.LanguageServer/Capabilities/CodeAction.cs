@@ -31,6 +31,10 @@ internal sealed partial class DracoLanguageServer : ICodeAction
 
         foreach (var fix in fixes)
         {
+            var translatedEdits = fix.Edits
+                .Select(e => Translator.ToLsp(syntaxTree.SourceText, e))
+                .ToList();
+
             actions.Add(new CodeAction()
             {
                 Title = fix.DisplayText,
@@ -38,9 +42,9 @@ internal sealed partial class DracoLanguageServer : ICodeAction
                 Kind = CodeActionKind.QuickFix,
                 Edit = new WorkspaceEdit()
                 {
-                    Changes = new Dictionary<DocumentUri, IList<Lsp.Model.ITextEdit>>()
+                    Changes = new Dictionary<DocumentUri, IList<ITextEdit>>()
                     {
-                        { param.TextDocument.Uri, fix.Edits.Select(x => Translator.ToLsp(x)).ToList() }
+                        { param.TextDocument.Uri, translatedEdits }
                     }
                 }
             });

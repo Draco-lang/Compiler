@@ -17,7 +17,7 @@ public sealed class CompletionService(ICompletionFilter filter)
     /// </summary>
     /// <param name="filter">The completion filter to use.</param>
     /// <returns>A new <see cref="CompletionService"/> with default providers.</returns>
-    public static CompletionService CreateDefault(ICompletionFilter? filter)
+    public static CompletionService CreateDefault(ICompletionFilter? filter = null)
     {
         var service = new CompletionService(filter ?? CompletionFilter.ContainsFilter);
         service.AddProvider(new KeywordCompletionProvider());

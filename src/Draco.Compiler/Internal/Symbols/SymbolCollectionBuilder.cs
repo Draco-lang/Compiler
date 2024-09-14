@@ -15,10 +15,19 @@ internal sealed class SymbolCollectionBuilder
     /// Converts a sequence of symbols to a collection sequence.
     /// </summary>
     /// <param name="symbols">The symbols to convert.</param>
+    /// <param name="allowSpecialName">True, if special names are allowed.</param>
+    /// <param name="visibleFrom">The symbol to check visibility from, if any.</param>
     /// <returns>The converted symbols.</returns>
-    public static IEnumerable<Symbol> ToCollection(IEnumerable<Symbol> symbols)
+    public static IEnumerable<Symbol> ToCollection(
+        IEnumerable<Symbol> symbols,
+        bool allowSpecialName = false,
+        Symbol? visibleFrom = null)
     {
-        var builder = new SymbolCollectionBuilder();
+        var builder = new SymbolCollectionBuilder()
+        {
+            AllowSpecialName = allowSpecialName,
+            VisibleFrom = visibleFrom,
+        };
         foreach (var symbol in symbols) builder.Add(symbol);
         return builder.EnumerateResult();
     }
@@ -27,6 +36,11 @@ internal sealed class SymbolCollectionBuilder
     /// True, if special names are allowed.
     /// </summary>
     public bool AllowSpecialName { get; init; }
+
+    /// <summary>
+    /// The symbol to check visibility from, if any.
+    /// </summary>
+    public Symbol? VisibleFrom { get; init; }
 
     private readonly HashSet<Symbol> nonFunctionSymbols = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, HashSet<FunctionSymbol>> functionSymbols = [];
@@ -64,6 +78,7 @@ internal sealed class SymbolCollectionBuilder
     public void Add(Symbol symbol)
     {
         if (!this.AllowSpecialName && symbol.IsSpecialName) return;
+        if (this.VisibleFrom is not null && !symbol.IsVisibleFrom(this.VisibleFrom)) return;
 
         if (symbol is FunctionSymbol functionSymbol)
         {
@@ -73,6 +88,15 @@ internal sealed class SymbolCollectionBuilder
         {
             this.nonFunctionSymbols.Add(symbol);
         }
+    }
+
+    /// <summary>
+    /// Adds a range of symbols to the collection.
+    /// </summary>
+    /// <param name="symbols">The symbols to add.</param>
+    public void AddRange(IEnumerable<Symbol> symbols)
+    {
+        foreach (var symbol in symbols) this.Add(symbol);
     }
 
     private HashSet<FunctionSymbol> GetFunctionSet(string name)

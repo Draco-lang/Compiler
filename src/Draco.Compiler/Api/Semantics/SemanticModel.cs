@@ -122,15 +122,11 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <returns>All the <see cref="ISymbol"/>s accesible from the <paramref name="node"/>.</returns>
     public ImmutableArray<ISymbol> GetAllAccessibleSymbols(SyntaxNode? node)
     {
-        var result = new SymbolCollectionBuilder();
         var startBinder = this.compilation.GetBinder(node ?? this.Tree.Root);
+        var result = new SymbolCollectionBuilder() { VisibleFrom = startBinder.ContainingSymbol };
         foreach (var binder in startBinder.AncestorChain)
         {
-            foreach (var s in binder.DeclaredSymbols)
-            {
-                if (!s.IsVisibleFrom(binder.ContainingSymbol)) continue;
-                result.Add(s);
-            }
+            result.AddRange(binder.DeclaredSymbols);
         }
         return result
             .EnumerateResult()

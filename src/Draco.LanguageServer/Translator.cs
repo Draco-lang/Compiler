@@ -126,9 +126,11 @@ internal static class Translator
 
     public static LspModels.SignatureHelp? ToLsp(CompilerApi.Services.Signature.SignatureItem? item) => item is null ? null : new()
     {
-        Signatures = item.Overloads.Select(x => ToLsp(x)).ToArray(),
-        ActiveParameter = item.CurrentParameter is null ? null : (uint)item.CurrentOverload.Parameters.IndexOf(item.CurrentParameter),
-        ActiveSignature = (uint)item.Overloads.IndexOf(item.CurrentOverload),
+        Signatures = item.Overloads.Select(ToLsp).ToArray(),
+        ActiveSignature = (uint)item.Overloads.IndexOf(item.BestMatch),
+        ActiveParameter = item.CurrentParameter is null
+            ? null
+            : (uint)item.BestMatch.Parameters.IndexOf(item.CurrentParameter),
     };
 
     public static LspModels.SignatureInformation ToLsp(CompilerApi.Semantics.IFunctionSymbol item)

@@ -45,7 +45,10 @@ public sealed class SignatureService
         var currentParameter = this.GetCurrentParameter(currentOverload, callSyntax, cursorIndex);
 
         return new SignatureItem(
-            overloads.Select(s => s.ToApiSymbol()).ToImmutableArray(),
+            overloads
+                .OrderBy(s => s.Parameters.Length)
+                .Select(s => s.ToApiSymbol())
+                .ToImmutableArray(),
             currentOverload.ToApiSymbol(),
             currentParameter?.ToApiSymbol());
     }
@@ -69,6 +72,34 @@ public sealed class SignatureService
         CallExpressionSyntax callSyntax,
         int cursorIndex)
     {
+        // Find the argument index from the cursor
+        var maybeArgument = this.GetArgumentSyntax(callSyntax, cursorIndex);
+        if (maybeArgument is null) return null;
 
+        var (argumentSyntax, argumentIndex) = maybeArgument.Value;
+
+        // If the index is in bounds, return the parameter
+        if (argumentIndex < function.Parameters.Length) return function.Parameters[argumentIndex];
+
+        // If the function has a variadic parameter, return that
+        if (function.IsVariadic) return function.Parameters[^1];
+
+        // Over-indexed
+        return null;
+    }
+
+    private (SyntaxNode Syntax, int Index)? GetArgumentSyntax(CallExpressionSyntax callSyntax, int cursorIndex)
+    {
+        var lastArgumentFound = null as SyntaxNode;
+        var isSeparator = false;
+        var index = 0;
+        foreach (var element in callSyntax.ArgumentList)
+        {
+            if (element.Position > cursorIndex) break;
+            if (!isSeparator) lastArgumentFound = element;
+            if (isSeparator) ++index;
+            isSeparator = !isSeparator;
+        }
+        return lastArgumentFound is null ? null : (lastArgumentFound, index);
     }
 }

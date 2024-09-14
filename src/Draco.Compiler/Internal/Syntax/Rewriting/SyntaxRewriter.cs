@@ -5,6 +5,8 @@ namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
 internal abstract partial class SyntaxRewriter
 {
+    public override SyntaxNode VisitSyntaxToken(SyntaxToken node) => node;
+
     public override SyntaxList<TNode> VisitSyntaxList<TNode>(SyntaxList<TNode> node)
     {
         var rewritten = this.RewriteArray(node.Nodes);

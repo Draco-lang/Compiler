@@ -7,6 +7,7 @@ using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal.Binding;
+using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 
 namespace Draco.Compiler.Api.Services.CodeFixes;
 
@@ -63,40 +64,55 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
         var tree = importSyntax.Tree;
         if (tree.Root is not CompilationUnitSyntax compilationUnit) return null;
 
-        return MoveToTop(importSyntax, compilationUnit.Declarations, declaration => declaration);
-    }
-
-    private static SyntaxTree? TopOfScope(ImportDeclarationSyntax importSyntax)
-    {
-        // Search for the first block that contains the import
-        var ancestorStatements = FindScopeAncestor(importSyntax);
-        if (ancestorStatements is null) return null;
-
-        return MoveToTop(importSyntax, ancestorStatements, statement => (statement as DeclarationStatementSyntax)?.Declaration);
-    }
-
-    private static SyntaxTree? MoveToTop<TNode>(
-        ImportDeclarationSyntax importSyntax,
-        SyntaxList<TNode> syntaxList,
-        Func<TNode, DeclarationSyntax?> getDeclaration)
-        where TNode : SyntaxNode
-    {
-        var tree = importSyntax.Tree;
+        var toRemove = importSyntax as SyntaxNode;
+        if (importSyntax.Parent is DeclarationStatementSyntax parentSyntax) toRemove = parentSyntax;
 
         // We need to navigate to the end of the imports
-        var lastImportOnTop = syntaxList
-            .TakeWhile(node => getDeclaration(node) is ImportDeclarationSyntax)
+        var lastImportOnTop = compilationUnit.Declarations
+            .TakeWhile(node => node is ImportDeclarationSyntax)
             .LastOrDefault();
+
+        // First off, we need to remove the import from its current location
+        tree = tree.Remove(toRemove);
 
         if (lastImportOnTop is null)
         {
             // We insert before the first declaration
-            return tree.InsertBefore(importSyntax, syntaxList[0]);
+            return tree.InsertBefore(importSyntax, compilationUnit.Declarations[0]);
         }
         else
         {
             // Insert after the last import
             return tree.InsertAfter(importSyntax, lastImportOnTop);
+        }
+    }
+
+    private static SyntaxTree? TopOfScope(ImportDeclarationSyntax importSyntax)
+    {
+        var tree = importSyntax.Tree;
+        if (importSyntax.Parent is not DeclarationStatementSyntax parentSyntax) return null;
+
+        // Search for the first block that contains the import
+        var ancestorStatements = FindScopeAncestor(importSyntax);
+        if (ancestorStatements is null) return null;
+
+        // We need to navigate to the end of the imports
+        var lastImportOnTop = ancestorStatements
+            .TakeWhile(node => node is DeclarationStatementSyntax { Declaration: ImportDeclarationSyntax })
+            .LastOrDefault();
+
+        // First off, we need to remove the import from its current location
+        tree = tree.Remove(parentSyntax);
+
+        if (lastImportOnTop is null)
+        {
+            // We insert before the first declaration
+            return tree.InsertBefore(parentSyntax, ancestorStatements[0]);
+        }
+        else
+        {
+            // Insert after the last import
+            return tree.InsertAfter(parentSyntax, lastImportOnTop);
         }
     }
 

@@ -42,6 +42,11 @@ internal sealed class SymbolCollectionBuilder
     /// </summary>
     public Symbol? VisibleFrom { get; init; }
 
+    /// <summary>
+    /// The number of symbols in the collection.
+    /// </summary>
+    public int Count => this.nonFunctionSymbols.Count + this.functionSymbols.Values.Sum(s => s.Count);
+
     private readonly HashSet<Symbol> nonFunctionSymbols = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, HashSet<FunctionSymbol>> functionSymbols = [];
 

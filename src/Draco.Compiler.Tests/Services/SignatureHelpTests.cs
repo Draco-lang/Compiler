@@ -33,7 +33,7 @@ public sealed class SignatureHelpTests
         Assert.NotNull(signatures.CurrentParameter);
         Assert.Single(signatures.Overloads);
         Assert.Single(signatures.Overloads[0].Parameters);
-        Assert.True(signatures.CurrentOverload.Equals(signatures.Overloads[0]));
+        Assert.True(signatures.BestMatch.Equals(signatures.Overloads[0]));
         Assert.True(signatures.CurrentParameter.Equals(signatures.Overloads[0].Parameters[0]));
     }
 

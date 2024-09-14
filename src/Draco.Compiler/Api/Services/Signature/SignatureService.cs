@@ -28,37 +28,40 @@ public sealed class SignatureService
         var cursor = tree.IndexToSyntaxPosition(cursorIndex);
 
         // Check if this is a call expression
-        var call = tree.Root
+        var callSyntax = tree.Root
             .TraverseSubtreesAtCursorPosition(cursor)
             .OfType<CallExpressionSyntax>()
             .LastOrDefault();
-        if (call is null) return null;
+        if (callSyntax is null) return null;
 
         // Get all overloads
-        var symbols = semanticModel
-            .GetReferencedOverloads(call.Function)
-            .OrderBy(x => x.Parameters.Length)
-            .ToImmutableArray();
-        if (symbols.Length == 0) return null;
+        var overloads = semanticModel.GetReferencedOverloadsInternal(callSyntax.Function);
+        if (overloads.Length == 0) return null;
 
-        // Figure out which param should be active
-        var paramCount = call.ArgumentList.Values.Count();
-        var separatorCount = call.ArgumentList.Separators.Count();
-        var activeParam = separatorCount == paramCount - 1 ? paramCount - 1 : paramCount;
+        // Figure out the best match
+        var currentOverload = this.FindBestMatch(overloads, callSyntax);
 
-        // Select the best overload to show as default in the signature
-        // TODO: Improve this, this is really primitive
-        var currentOverload = symbols.FirstOrDefault(x => x.Parameters.Length == paramCount && (separatorCount == paramCount - 1 || paramCount == 0));
-        currentOverload ??= symbols.FirstOrDefault(x => x.Parameters.Length > paramCount);
-        currentOverload ??= symbols.First();
-        IParameterSymbol? currentParameter = null;
-        if (currentOverload.Parameters.Length != 0)
-        {
-            currentParameter = currentOverload.Parameters.Length > activeParam
-                ? currentOverload.Parameters[activeParam]
-                : currentOverload.Parameters[^1];
-        }
-        // Return all the overloads
-        return new SignatureItem(symbols, currentOverload, currentParameter);
+        // Get the current parameter
+        var currentParameter = this.GetCurrentParameter(currentOverload, callSyntax, cursorIndex);
+
+        return new SignatureItem(
+            overloads.Select(s => s.ToApiSymbol()).ToImmutableArray(),
+            currentOverload.ToApiSymbol(),
+            currentParameter?.ToApiSymbol());
+    }
+
+    private Internal.Symbols.FunctionSymbol FindBestMatch(
+        ImmutableArray<Internal.Symbols.FunctionSymbol> functions,
+        CallExpressionSyntax callSyntax)
+    {
+
+    }
+
+    private Internal.Symbols.ParameterSymbol? GetCurrentParameter(
+        Internal.Symbols.FunctionSymbol function,
+        CallExpressionSyntax callSyntax,
+        int cursorIndex)
+    {
+
     }
 }

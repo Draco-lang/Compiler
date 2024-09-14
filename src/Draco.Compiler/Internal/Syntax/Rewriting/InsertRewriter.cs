@@ -1,46 +1,56 @@
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
-internal sealed class InsertRewriter(
-    SyntaxNode toInsert, SyntaxNode insertInto, int position) : SyntaxRewriter
+/// <summary>
+/// A syntax rewriter that inserts a node before another node.
+/// </summary>
+internal sealed class InsertRewriter : SyntaxRewriter
 {
-    public override SyntaxNode VisitCompilationUnit(CompilationUnitSyntax node)
+    /// <summary>
+    /// Inserts a node before another node.
+    /// </summary>
+    /// <param name="root">The root node to rewrite.</param>
+    /// <param name="toInsert">The node to insert.</param>
+    /// <param name="target">The node to insert before.</param>
+    /// <returns>The rewritten root node.</returns>
+    public static SyntaxNode InsertBefore(SyntaxNode root, SyntaxNode toInsert, SyntaxNode target) =>
+        root.Accept(new InsertRewriter(toInsert, target, before: true));
+
+    /// <summary>
+    /// Inserts a node after another node.
+    /// </summary>
+    /// <param name="root">The root node to rewrite.</param>
+    /// <param name="toInsert">The node to insert.</param>
+    /// <param name="target">The node to insert after.</param>
+    /// <returns>The rewritten root node.</returns>
+    public static SyntaxNode InsertAfter(SyntaxNode root, SyntaxNode toInsert, SyntaxNode target) =>
+        root.Accept(new InsertRewriter(toInsert, target, before: false));
+
+    private readonly SyntaxNode toInsert;
+    private readonly SyntaxNode target;
+    private readonly bool before;
+
+    private InsertRewriter(SyntaxNode toInsert, SyntaxNode target, bool before)
     {
-        if (insertInto == node && toInsert is DeclarationSyntax decl)
-        {
-            return new CompilationUnitSyntax(this.InsertIntoSyntaxList(node.Declarations, decl), node.End);
-        }
-        return base.VisitCompilationUnit(node);
+        this.toInsert = toInsert;
+        this.target = target;
+        this.before = before;
     }
 
-    public override SyntaxNode VisitBlockFunctionBody(BlockFunctionBodySyntax node)
+    protected override ImmutableArray<TNode>? RewriteArray<TNode>(ImmutableArray<TNode> array)
     {
-        if (insertInto == node && toInsert is StatementSyntax stmt)
-        {
-            return new BlockFunctionBodySyntax(node.OpenBrace, this.InsertIntoSyntaxList(node.Statements, stmt), node.CloseBrace);
-        }
-        return base.VisitBlockFunctionBody(node);
-    }
+        // If wrong type, just rewrite as usual
+        if (this.target is not TNode targetOfType) return base.RewriteArray(array);
 
-    public override SyntaxNode VisitBlockExpression(BlockExpressionSyntax node)
-    {
-        if (insertInto == node && toInsert is StatementSyntax stmt)
-        {
-            return new BlockExpressionSyntax(node.OpenBrace, this.InsertIntoSyntaxList(node.Statements, stmt), node.Value, node.CloseBrace);
-        }
-        return base.VisitBlockExpression(node);
-    }
+        // There is a possibility the target is in this array
+        var targetIndex = array.IndexOf(targetOfType);
 
-    private SyntaxList<T> InsertIntoSyntaxList<T>(SyntaxList<T> original, T insertion)
-        where T : SyntaxNode
-    {
-        var list = original.ToList();
-        list.Insert(position, insertion);
-        var builder = SyntaxList.CreateBuilder<T>();
-        builder.AddRange(list);
-        return builder.ToSyntaxList();
-    }
+        // If the target is not in the array, just rewrite as usual
+        if (targetIndex == -1) return base.RewriteArray(array);
 
-    public override SyntaxNode VisitSyntaxToken(SyntaxToken node) => node;
+        // The target is in the array, insert the node
+        return array.Insert(targetIndex + (this.before ? 0 : 1), (TNode)(SyntaxNode)this.toInsert);
+    }
 }

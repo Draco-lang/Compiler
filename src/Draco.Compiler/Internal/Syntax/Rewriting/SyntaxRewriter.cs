@@ -19,7 +19,7 @@ internal abstract partial class SyntaxRewriter
         return new(rewritten.Value);
     }
 
-    private ImmutableArray<TNode>? RewriteArray<TNode>(ImmutableArray<TNode> array)
+    protected virtual ImmutableArray<TNode>? RewriteArray<TNode>(ImmutableArray<TNode> array)
         where TNode : SyntaxNode
     {
         // Lazy construction, only create the builder when absolutely needed

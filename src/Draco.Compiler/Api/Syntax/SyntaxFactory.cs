@@ -64,6 +64,8 @@ public static partial class SyntaxFactory
 
     public static SyntaxToken Identifier(string text) => Token(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => Token(TokenKind.LiteralInteger, value.ToString(), value);
+    public static SyntaxToken Float(float value) => Token(TokenKind.LiteralFloat, value.ToString(), value);
+    public static SyntaxToken Character(char value) => Token(TokenKind.LiteralCharacter, value.ToString(), value);
 
     public static TokenKind? Visibility(Visibility visibility) => visibility switch
     {
@@ -81,6 +83,16 @@ public static partial class SyntaxFactory
             green: Syntax.SyntaxList<TNode>.MakeGreen(elements.Select(n => n.Green)));
     public static SyntaxList<TNode> SyntaxList<TNode>(params TNode[] elements)
         where TNode : SyntaxNode => SyntaxList(elements.AsEnumerable());
+
+    public static SeparatedSyntaxList<TNode> SeparatedSyntaxList<TNode>(IEnumerable<SyntaxToken> separators, IEnumerable<TNode> elements)
+        where TNode : SyntaxNode => new(
+            tree: null!,
+            parent: null,
+            fullPosition: 0,
+            green: Syntax.SeparatedSyntaxList<TNode>.MakeGreen(
+                Internal.Syntax.SeparatedSyntaxList.CreateInterleavedSequence(
+                    separators.Select(x => x.Green),
+                    elements.Select(x => x.Green))));
 
     public static SeparatedSyntaxList<TNode> SeparatedSyntaxList<TNode>(SyntaxToken separator, IEnumerable<TNode> elements)
         where TNode : SyntaxNode => new(

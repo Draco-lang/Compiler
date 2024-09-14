@@ -19,6 +19,34 @@ internal static class SeparatedSyntaxList
     /// <returns>The created builder.</returns>
     public static SeparatedSyntaxList<TNode>.Builder CreateBuilder<TNode>()
         where TNode : SyntaxNode => new();
+
+    /// <summary>
+    /// Creates an <see cref="IEnumerable{T}"/> of syntax ndoes by interleaving a sequence of values with a sequence of separators.
+    /// </summary>
+    /// <typeparam name="TNode">The node type.</typeparam>
+    /// <param name="separators">The separator tokens.</param>
+    /// <param name="values">The value nodes. Has to be equal to or one more than the length of <paramref name="separators"/>.</param>
+    /// <returns>The constructed interleaved sequence.</returns>
+    public static IEnumerable<SyntaxNode> CreateInterleavedSequence(IEnumerable<SyntaxToken> separators, IEnumerable<SyntaxNode> values)
+    {
+        using var valuesEnum = values.GetEnumerator();
+        using var separatorsEnum = separators.GetEnumerator();
+
+        while (valuesEnum.MoveNext())
+        {
+            yield return valuesEnum.Current;
+
+            if (!separatorsEnum.MoveNext())
+            {
+                if (valuesEnum.MoveNext()) throw new ArgumentException("Found more elements than separators.", nameof(values));
+                yield break;
+            }
+
+            yield return separatorsEnum.Current;
+        }
+
+        if (separatorsEnum.MoveNext()) throw new ArgumentException("Found more separators than elements.", nameof(separators));
+    }
 }
 
 /// <summary>

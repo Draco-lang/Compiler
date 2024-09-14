@@ -4,9 +4,25 @@ using Draco.Compiler.Api.Semantics;
 namespace Draco.Compiler.Api.Services.Signature;
 
 /// <summary>
-/// Represents a signature information.
+/// Represents signature information about a set of overloads.
 /// </summary>
-/// <param name="Overloads">List of all function overloads this <see cref="SignatureItem"/> represents.</param>
-/// <param name="CurrentOverload">The function overload that should be currently active based on parameter information.</param>
-/// <param name="CurrentParameter">The function parameter that should be currently active based on parameter information.</param>
-public sealed record class SignatureItem(ImmutableArray<IFunctionSymbol> Overloads, IFunctionSymbol CurrentOverload, IParameterSymbol? CurrentParameter);
+public sealed class SignatureItem(
+    ImmutableArray<IFunctionSymbol> overloads,
+    IFunctionSymbol bestMatch,
+    IParameterSymbol? currentParameter)
+{
+    /// <summary>
+    /// The function overloads that the signature is trying to resolve.
+    /// </summary>
+    public ImmutableArray<IFunctionSymbol> Overloads { get; } = overloads;
+
+    /// <summary>
+    /// The currently best matching overload based on the parameters.
+    /// </summary>
+    public IFunctionSymbol BestMatch { get; } = bestMatch;
+
+    /// <summary>
+    /// The currently active parameter.
+    /// </summary>
+    public IParameterSymbol? CurrentParameter { get; } = currentParameter;
+}

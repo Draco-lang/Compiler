@@ -4,6 +4,7 @@ using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Services.CodeCompletion.Providers;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 
 namespace Draco.Compiler.Api.Services.CodeCompletion;
 
@@ -45,8 +46,8 @@ public sealed class CompletionService(ICompletionFilter filter)
         var tree = semanticModel.Tree;
 
         // Look for a filter node
-        var cursorPosition = tree.IndexToSyntaxPosition(cursorIndex);
-        var deepestNodeAtCursor = tree.TraverseSubtreesAtCursorPosition(cursorPosition).LastOrDefault();
+        var cursorPosition = tree.SourceText.IndexToSyntaxPosition(cursorIndex);
+        var deepestNodeAtCursor = tree.Root.TraverseAtCursorPosition(cursorPosition).LastOrDefault();
 
         // Get the current context
         var currentContext = GetCurrentContexts(deepestNodeAtCursor);

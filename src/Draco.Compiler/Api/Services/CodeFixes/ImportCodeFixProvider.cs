@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal.Binding;
 
 namespace Draco.Compiler.Api.Services.CodeFixes;
@@ -16,7 +17,7 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
     public override ImmutableArray<CodeFix> GetCodeFixes(Diagnostic diagnostic, SyntaxTree tree, SourceSpan span)
     {
         // Checks if in the diagnostics is any diag this provider can fix, meaning it has the correct template and if it is in the range of this codefix
-        if (tree.TraverseSubtreesIntersectingSpan(span).LastOrDefault(x => x is ImportDeclarationSyntax) is ImportDeclarationSyntax import
+        if (tree.Root.TraverseIntersectingSpan(span).LastOrDefault(x => x is ImportDeclarationSyntax) is ImportDeclarationSyntax import
             && diagnostic.Location.Span!.Value.Intersects(span))
         {
             return
@@ -30,7 +31,7 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
 
     private ImmutableArray<TextEdit> TopOfScope(SyntaxTree tree, SourceSpan span)
     {
-        var import = tree.TraverseSubtreesIntersectingSpan(span).LastOrDefault(x => x is ImportDeclarationSyntax);
+        var import = tree.Root.TraverseIntersectingSpan(span).LastOrDefault(x => x is ImportDeclarationSyntax);
         if (import is null) return [];
         var newTree = import.Parent is DeclarationStatementSyntax
             ? tree.Reorder(import.Parent, 0)
@@ -40,7 +41,7 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
 
     private ImmutableArray<TextEdit> TopOfFile(SyntaxTree tree, SourceSpan span)
     {
-        var import = tree.TraverseSubtreesIntersectingSpan(span).LastOrDefault(x => x is ImportDeclarationSyntax);
+        var import = tree.Root.TraverseIntersectingSpan(span).LastOrDefault(x => x is ImportDeclarationSyntax);
         if (import is null) return [];
         var newTree = import.Parent is DeclarationStatementSyntax
             ? tree.Remove(import.Parent)

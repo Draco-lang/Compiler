@@ -77,4 +77,33 @@ public static class SyntaxNodeTraversalExtensions
         found:;
         }
     }
+
+    /// <summary>
+    /// Enumerates a subtree, yielding all descendant nodes intersecting the given span.
+    /// </summary>
+    /// <param name="root">The root of the subtree.</param>
+    /// <param name="span">The span to check for intersection with the nodes.</param>
+    /// <returns>All subtrees in intersecting <paramref name="span"/> in parent-child order.</returns>
+    public static IEnumerable<SyntaxNode> TraverseIntersectingSpan(this SyntaxNode root, SourceSpan span)
+    {
+        if (span.Contains(root.Span))
+        {
+            yield return root;
+            foreach (var child in root.PreOrderTraverse())
+            {
+                yield return child;
+            }
+        }
+        else if (span.Intersects(root.Span))
+        {
+            yield return root;
+            foreach (var child in root.Children)
+            {
+                foreach (var node in child.TraverseIntersectingSpan(span))
+                {
+                    yield return node;
+                }
+            }
+        }
+    }
 }

@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
@@ -59,8 +60,8 @@ public sealed partial class SemanticModel : IBinderProvider
     private ImmutableArray<Diagnostic> GetDiagnostics(SourceSpan? span = null)
     {
         var syntaxNodes = span is null
-            ? this.Tree.PreOrderTraverse()
-            : this.Tree.TraverseSubtreesIntersectingSpan(span.Value);
+            ? this.Tree.Root.PreOrderTraverse()
+            : this.Tree.Root.TraverseIntersectingSpan(span.Value);
 
         var addedImportBinders = new HashSet<ImportBinder>();
 

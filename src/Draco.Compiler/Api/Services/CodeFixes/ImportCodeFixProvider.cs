@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal.Binding;
@@ -14,7 +15,7 @@ public sealed class ImportCodeFixProvider : CodeFixProvider
 {
     public override ImmutableArray<string> DiagnosticCodes { get; } = [SymbolResolutionErrors.ImportNotAtTop.Code];
 
-    public override ImmutableArray<CodeFix> GetCodeFixes(Diagnostic diagnostic, SyntaxTree tree, SourceSpan span)
+    public override ImmutableArray<CodeFix> GetCodeFixes(Diagnostic diagnostic, SemanticModel semanticModel, SourceSpan span)
     {
         // Checks if in the diagnostics is any diag this provider can fix, meaning it has the correct template and if it is in the range of this codefix
         if (tree.Root.TraverseIntersectingSpan(span).LastOrDefault(x => x is ImportDeclarationSyntax) is ImportDeclarationSyntax import

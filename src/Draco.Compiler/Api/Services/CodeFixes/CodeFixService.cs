@@ -33,18 +33,17 @@ public sealed class CodeFixService
     /// <summary>
     /// Gets <see cref="CodeFix"/>es from all registered <see cref="CodeFixProvider"/>s.
     /// </summary>
-    /// <param name="tree">The <see cref="SyntaxTree"/> for which this service will create codefixes.</param>
-    /// <param name="semanticModel">The <see cref="SemanticModel"/> for this <paramref name="tree"/>.</param>
+    /// <param name="semanticModel">The <see cref="SemanticModel"/> for which the code fixes should be generated.</param>
     /// <param name="span">The <see cref="SourceSpan"/> to get the fixes for.</param>
     /// <returns><see cref="CodeFix"/>es from all registered <see cref="CodeFixProvider"/>s within <paramref name="span"/>.</returns>
-    public ImmutableArray<CodeFix> GetCodeFixes(SyntaxTree tree, SemanticModel semanticModel, SourceSpan span)
+    public ImmutableArray<CodeFix> GetCodeFixes(SemanticModel semanticModel, SourceSpan span)
     {
         var result = ImmutableArray.CreateBuilder<CodeFix>();
         foreach (var provider in this.providers)
         {
             foreach (var diagnostic in semanticModel.Diagnostics.IntersectBy(provider.DiagnosticCodes, x => x.Code))
             {
-                result.AddRange(provider.GetCodeFixes(diagnostic, tree, span));
+                result.AddRange(provider.GetCodeFixes(diagnostic, semanticModel, span));
             }
         }
         return result.ToImmutable();

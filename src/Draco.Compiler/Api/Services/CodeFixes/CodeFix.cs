@@ -4,8 +4,17 @@ using Draco.Compiler.Api.Syntax;
 namespace Draco.Compiler.Api.Services.CodeFixes;
 
 /// <summary>
-/// Represents a possible codefix.
+/// Represents a proposed codefix.
 /// </summary>
-/// <param name="DisplayText">The user-friendly description of this <see cref="CodeFix"/>.</param>
-/// <param name="Edits">The <see cref="TextEdit"/>s this <see cref="CodeFix"/> will do, if aplied.</param>
-public sealed record class CodeFix(string DisplayText, ImmutableArray<TextEdit> Edits);
+public sealed class CodeFix(string displayText, ImmutableArray<TextEdit> edits)
+{
+    /// <summary>
+    /// The user-friendly description of this <see cref="CodeFix"/>.
+    /// </summary>
+    public string DisplayText { get; } = displayText;
+
+    /// <summary>
+    /// The <see cref="TextEdit"/>s this <see cref="CodeFix"/> will perform.
+    /// </summary>
+    public ImmutableArray<TextEdit> Edits { get; } = edits;
+}

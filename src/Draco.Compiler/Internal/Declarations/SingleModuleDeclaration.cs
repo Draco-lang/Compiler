@@ -44,6 +44,7 @@ internal sealed class SingleModuleDeclaration(string name, SplitPath path, Conta
         // Since we allow for imports in local scopes too, this is the most sensible choice
         ImportDeclarationSyntax => null,
         VariableDeclarationSyntax var => new GlobalDeclaration(var),
+        FieldDeclarationSyntax field => new TODO(field),
         FunctionDeclarationSyntax func => new FunctionDeclaration(func),
         ClassDeclarationSyntax @class => new ClassDeclaration(@class),
         ModuleDeclarationSyntax module => new SingleModuleDeclaration(module.Name.Text, this.Path.Append(module.Name.Text), module),

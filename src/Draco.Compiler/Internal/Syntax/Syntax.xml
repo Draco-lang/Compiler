@@ -534,6 +534,11 @@
       <Token Kind="KeywordPublic" />
     </Field>
 
+    <Field Name="StaticKeyword" Type="SyntaxToken?">
+      <Documentation>The optional static keyword that mark this variable as static.</Documentation>
+      <Token Kind="KeywordStatic"/>
+    </Field>
+
     <Field Name="Keyword" Type="SyntaxToken">
       <Documentation>
         The keyword introducing the variable, either 'var' or 'val'.
@@ -541,6 +546,53 @@
 
       <Token Kind="KeywordVar" />
       <Token Kind="KeywordVal" />
+    </Field>
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared variable.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+    <Field Name="Type" Type="TypeSpecifierSyntax?">
+      <Documentation>
+        The type of the declared variable.
+      </Documentation>
+    </Field>
+    <Field Name="Value" Type="ValueSpecifierSyntax?">
+      <Documentation>
+        The initializer value for the variable.
+      </Documentation>
+    </Field>
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon closing the variable declaration.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <Node Name="FieldDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A field declaration.
+    </Documentation>
+
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        The visibility modifier keyword possibly starting the declaration.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
+
+    <Field Name="Keyword" Type="SyntaxToken">
+      <Documentation>
+        The keyword introducing the field: 'field'.
+      </Documentation>
+
+      <Token Kind="KeywordField" />
     </Field>
     <Field Name="Name" Type="SyntaxToken">
       <Documentation>

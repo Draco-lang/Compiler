@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Security.Principal;
 
 namespace Draco.Compiler.Api.Syntax;
 
@@ -34,6 +35,7 @@ public static class SyntaxFacts
         TokenKind.KeywordNot => "not",
         TokenKind.KeywordOr => "or",
         TokenKind.KeywordPublic => "public",
+        TokenKind.KeywordStatic => "static",
         TokenKind.KeywordRem => "rem",
         TokenKind.KeywordReturn => "return",
         TokenKind.KeywordTrue => "true",

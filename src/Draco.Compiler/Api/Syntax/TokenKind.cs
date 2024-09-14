@@ -161,6 +161,11 @@ public enum TokenKind
     KeywordPublic,
 
     /// <summary>
+    /// The keyword 'static'.
+    /// </summary>
+    KeywordStatic,
+
+    /// <summary>
     /// The keyword 'rem'.
     /// </summary>
     KeywordRem,

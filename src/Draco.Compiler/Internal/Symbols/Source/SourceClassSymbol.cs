@@ -70,7 +70,7 @@ internal sealed class SourceClassSymbol(
 
     private ImmutableArray<IMemberSymbol> BindMembers(IBinderProvider binder)
     {
-        if(this.DeclaringSyntax.Body is EmptyClassBodySyntax) return [];
+        if (this.DeclaringSyntax.Body is EmptyClassBodySyntax) return [];
 
         var bodyClass = this.DeclaringSyntax.Body as BlockClassBodySyntax;
         Debug.Assert(bodyClass is not null);
@@ -78,7 +78,7 @@ internal sealed class SourceClassSymbol(
         var members = ImmutableArray.CreateBuilder<IMemberSymbol>(declarationsSyntaxes.Count);
         foreach (var declarationSyntax in declarationsSyntaxes)
         {
-            var member = this.BindDeclaration(declarationSyntax);
+            var member = this.BindDeclaration(binder, declarationSyntax);
             members.Add(member);
         }
 
@@ -88,8 +88,8 @@ internal sealed class SourceClassSymbol(
     {
         switch (declarationSyntax)
         {
-            case FunctionDeclarationSyntax functionSyntax:
-                
+        case FunctionDeclarationSyntax functionSyntax:
+            return new SourceFunctionSymbol(this, functionSyntax);
         }
     }
 

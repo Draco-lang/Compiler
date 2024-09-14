@@ -173,6 +173,7 @@ internal sealed class LocalBinder : Binder
         FunctionDeclarationSyntax function => new SourceFunctionSymbol(this.ContainingSymbol, function),
         ParameterSyntax parameter => new SourceParameterSymbol(this.ContainingSymbol, parameter),
         VariableDeclarationSyntax variable => new SourceLocalSymbol(this.ContainingSymbol, new TypeVariable(localCount), variable),
+        FieldDeclarationSyntax field => new SourceFieldSymbol(this.ContainingSymbol, field),
         LabelDeclarationSyntax label => new SourceLabelSymbol(this.ContainingSymbol, label),
         _ => null,
     };

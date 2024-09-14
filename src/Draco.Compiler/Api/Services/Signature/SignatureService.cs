@@ -54,7 +54,14 @@ public sealed class SignatureService
         ImmutableArray<Internal.Symbols.FunctionSymbol> functions,
         CallExpressionSyntax callSyntax)
     {
-
+        var argumentCount = callSyntax.ArgumentList.Values.Count();
+        // TODO: Something fancier
+        // Exact argument count match
+        return functions.Where(f => f.Parameters.Length == argumentCount).FirstOrDefault()
+            // Something with more arguments
+            ?? functions.Where(f => f.Parameters.Length > argumentCount).FirstOrDefault()
+            // First
+            ?? functions.First();
     }
 
     private Internal.Symbols.ParameterSymbol? GetCurrentParameter(

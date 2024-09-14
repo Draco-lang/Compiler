@@ -25,7 +25,7 @@ internal sealed partial class DracoLanguageServer : ICodeAction
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var range = Translator.ToCompiler(param.Range);
-        var span = syntaxTree.SyntaxRangeToSourceSpan(range);
+        var span = syntaxTree.SourceText.SyntaxRangeToSourceSpan(range);
         var fixes = this.codeFixService.GetCodeFixes(syntaxTree, semanticModel, span);
         var actions = new List<OneOf<Command, CodeAction>>();
 

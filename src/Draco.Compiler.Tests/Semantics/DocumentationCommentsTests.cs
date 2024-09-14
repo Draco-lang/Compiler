@@ -67,7 +67,7 @@ public sealed class DocumentationCommentsTests
             null,
             BlockFunctionBody()), docComment)));
 
-        var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var funcDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -99,7 +99,7 @@ public sealed class DocumentationCommentsTests
             LiteralExpression(0)),
             docComment)));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -135,7 +135,7 @@ public sealed class DocumentationCommentsTests
                 DeclarationStatement(LabelDeclaration("myLabel")),
                 docComment)))));
 
-        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
+        var labelDecl = tree.GetNode<LabelDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -178,7 +178,7 @@ public sealed class DocumentationCommentsTests
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("documentedModule"), "Foo")))))));
 
-        var moduleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var moduleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -214,7 +214,7 @@ public sealed class DocumentationCommentsTests
             public class TestClass { }
             """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -255,7 +255,7 @@ public sealed class DocumentationCommentsTests
             }
             """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -298,7 +298,7 @@ public sealed class DocumentationCommentsTests
             }
             """, xmlDocStream: xmlStream);
 
-        var @class = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var @class = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -339,7 +339,7 @@ public sealed class DocumentationCommentsTests
             }
             """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -383,7 +383,7 @@ public sealed class DocumentationCommentsTests
             }
             """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -425,7 +425,7 @@ public sealed class DocumentationCommentsTests
             }
             """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -467,7 +467,7 @@ public sealed class DocumentationCommentsTests
             }
             """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -513,7 +513,7 @@ public sealed class DocumentationCommentsTests
             }
             """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<CallExpressionSyntax>(0);
+        var call = tree.GetNode<CallExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -570,7 +570,7 @@ public sealed class DocumentationCommentsTests
             }
             """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -645,7 +645,7 @@ public sealed class DocumentationCommentsTests
                 null,
                 BlockFunctionBody()), originalDocs)));
 
-        var testMethodDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var testMethodDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);

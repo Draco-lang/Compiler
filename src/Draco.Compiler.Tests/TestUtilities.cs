@@ -6,6 +6,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Symbols;
 using Microsoft.CodeAnalysis.CSharp;
@@ -64,6 +65,16 @@ internal static class TestUtilities
             Assert.DoesNotContain(expectedDiag, gotDiagnosticTemplates);
         }
     }
+
+    #region Syntax utilities
+
+    public static TNode GetNode<TNode>(this SyntaxTree tree, int index = 0) =>
+        tree.Root.PreOrderTraverse().OfType<TNode>().ElementAt(index);
+
+    public static TNode GetNode<TNode>(this SyntaxTree tree, Func<TNode, bool> predicate) =>
+        tree.Root.PreOrderTraverse().OfType<TNode>().First(predicate);
+
+    #endregion
 
     #region Semantic utilities
 

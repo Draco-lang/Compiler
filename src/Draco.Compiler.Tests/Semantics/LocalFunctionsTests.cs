@@ -29,8 +29,8 @@ public sealed class LocalFunctionsTests
                 null,
                 BlockFunctionBody()))))));
 
-        var x1Decl = tree.FindInChildren<ParameterSyntax>(0);
-        var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
+        var x1Decl = tree.GetNode<ParameterSyntax>(0);
+        var x2Decl = tree.GetNode<ParameterSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -205,11 +205,11 @@ public sealed class LocalFunctionsTests
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("foo"), StringExpression("Hello")))))));
 
-        var fooInt32Decl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooStringDecl = tree.FindInChildren<FunctionDeclarationSyntax>(2);
+        var fooInt32Decl = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooStringDecl = tree.GetNode<FunctionDeclarationSyntax>(2);
 
-        var fooInt32Call = tree.FindInChildren<CallExpressionSyntax>(0);
-        var fooStringCall = tree.FindInChildren<CallExpressionSyntax>(1);
+        var fooInt32Call = tree.GetNode<CallExpressionSyntax>(0);
+        var fooStringCall = tree.GetNode<CallExpressionSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);

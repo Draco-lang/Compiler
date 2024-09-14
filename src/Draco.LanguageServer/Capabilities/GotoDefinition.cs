@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 
@@ -25,8 +26,8 @@ internal sealed partial class DracoLanguageServer : IGotoDefinition
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var cursorPosition = Translator.ToCompiler(param.Position);
 
-        var referencedSymbol = syntaxTree
-            .TraverseSubtreesAtPosition(cursorPosition)
+        var referencedSymbol = syntaxTree.Root
+            .TraverseAtPosition(cursorPosition)
             .Select(semanticModel.GetReferencedSymbol)
             .LastOrDefault(symbol => symbol is not null);
 

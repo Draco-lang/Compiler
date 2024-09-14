@@ -7,6 +7,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.DevHost;

@@ -27,7 +27,7 @@ public sealed class SemanticModelTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x"))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -57,7 +57,7 @@ public sealed class SemanticModelTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x"))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -87,7 +87,7 @@ public sealed class SemanticModelTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x"))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -120,7 +120,7 @@ public sealed class SemanticModelTests
                 DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
                 DeclarationStatement(VariableDeclaration("y", value: NameExpression("x")))))));
 
-        var mainDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var mainDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -153,8 +153,8 @@ public sealed class SemanticModelTests
                 DeclarationStatement(ImportDeclaration("System")),
                 ExpressionStatement(CallExpression(MemberExpression(NameExpression("Console"), "WriteLine")))))));
 
-        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
-        var consoleSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+        var memberExprSyntax = tree.GetNode<MemberExpressionSyntax>(0);
+        var consoleSyntax = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -190,9 +190,9 @@ public sealed class SemanticModelTests
                         MemberExpression(NameExpression("System"), "Console"),
                         "WriteLine")))))));
 
-        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
-        var memberSubexprSyntax = tree.FindInChildren<MemberExpressionSyntax>(1);
-        var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+        var memberExprSyntax = tree.GetNode<MemberExpressionSyntax>(0);
+        var memberSubexprSyntax = tree.GetNode<MemberExpressionSyntax>(1);
+        var systemSyntax = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -231,9 +231,9 @@ public sealed class SemanticModelTests
                         MemberExpression(NameExpression("System"), "Text"),
                         "StringBuilder"))))));
 
-        var memberTypeSyntax = tree.FindInChildren<MemberTypeSyntax>(0);
-        var memberSubtypeSyntax = tree.FindInChildren<MemberTypeSyntax>(1);
-        var systemSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+        var memberTypeSyntax = tree.GetNode<MemberTypeSyntax>(0);
+        var memberSubtypeSyntax = tree.GetNode<MemberTypeSyntax>(1);
+        var systemSyntax = tree.GetNode<NameTypeSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -273,9 +273,9 @@ public sealed class SemanticModelTests
                         Dot,
                         Missing(TokenKind.Identifier))))))));
 
-        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
-        var memberSubexprSyntax = tree.FindInChildren<MemberExpressionSyntax>(1);
-        var systemSyntax = tree.FindInChildren<NameExpressionSyntax>(0);
+        var memberExprSyntax = tree.GetNode<MemberExpressionSyntax>(0);
+        var memberSubexprSyntax = tree.GetNode<MemberExpressionSyntax>(1);
+        var systemSyntax = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -315,8 +315,8 @@ public sealed class SemanticModelTests
                 DeclarationStatement(VariableDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
                 ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "AppendLine")))))));
 
-        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
-        var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
+        var memberExprSyntax = tree.GetNode<MemberExpressionSyntax>(0);
+        var builderNameSyntax = tree.GetNode<NameExpressionSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -353,8 +353,8 @@ public sealed class SemanticModelTests
                 DeclarationStatement(VariableDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
                 ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "Ap")))))));
 
-        var memberExprSyntax = tree.FindInChildren<MemberExpressionSyntax>(0);
-        var builderNameSyntax = tree.FindInChildren<NameExpressionSyntax>(1);
+        var memberExprSyntax = tree.GetNode<MemberExpressionSyntax>(0);
+        var builderNameSyntax = tree.GetNode<NameExpressionSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -383,9 +383,9 @@ public sealed class SemanticModelTests
         var tree = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Generic")));
 
-        var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
-        var systemCollectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(1);
-        var systemCollectionsGenericSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
+        var systemSyntax = tree.GetNode<RootImportPathSyntax>(0);
+        var systemCollectionsSyntax = tree.GetNode<MemberImportPathSyntax>(1);
+        var systemCollectionsGenericSyntax = tree.GetNode<MemberImportPathSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -421,9 +421,9 @@ public sealed class SemanticModelTests
             BlockFunctionBody(
                 DeclarationStatement(ImportDeclaration("System", "Collections", "Generic"))))));
 
-        var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
-        var systemCollectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(1);
-        var systemCollectionsGenericSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
+        var systemSyntax = tree.GetNode<RootImportPathSyntax>(0);
+        var systemCollectionsSyntax = tree.GetNode<MemberImportPathSyntax>(1);
+        var systemCollectionsGenericSyntax = tree.GetNode<MemberImportPathSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -453,10 +453,10 @@ public sealed class SemanticModelTests
         var tree = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Nonexisting", "Foo")));
 
-        var systemSyntax = tree.FindInChildren<RootImportPathSyntax>(0);
-        var collectionsSyntax = tree.FindInChildren<MemberImportPathSyntax>(2);
-        var nonexistingSyntax = tree.FindInChildren<MemberImportPathSyntax>(1);
-        var fooSyntax = tree.FindInChildren<MemberImportPathSyntax>(0);
+        var systemSyntax = tree.GetNode<RootImportPathSyntax>(0);
+        var collectionsSyntax = tree.GetNode<MemberImportPathSyntax>(2);
+        var nonexistingSyntax = tree.GetNode<MemberImportPathSyntax>(1);
+        var fooSyntax = tree.GetNode<MemberImportPathSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);

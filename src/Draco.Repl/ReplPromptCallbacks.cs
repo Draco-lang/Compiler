@@ -65,7 +65,7 @@ internal sealed class ReplPromptCallbacks(
         var tree = script.Compilation.SyntaxTrees.Single();
         var semanticModel = script.Compilation.GetSemanticModel(tree);
 
-        var cursorPosition = tree.IndexToSyntaxPosition(caret);
+        var cursorPosition = tree.SourceText.IndexToSyntaxPosition(caret);
 
         var completionItems = this.completionService.GetCompletions(semanticModel, caret);
 
@@ -90,7 +90,7 @@ internal sealed class ReplPromptCallbacks(
         var tree = script.Compilation.SyntaxTrees.Single();
         var semanticModel = script.Compilation.GetSemanticModel(tree);
 
-        var cursorPosition = tree.IndexToSyntaxPosition(caret);
+        var cursorPosition = tree.SourceText.IndexToSyntaxPosition(caret);
 
         var completionItems = this.completionService.GetCompletions(semanticModel, caret);
 

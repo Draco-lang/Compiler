@@ -106,4 +106,22 @@ public static class SyntaxNodeTraversalExtensions
             }
         }
     }
+
+    /// <summary>
+    /// Enumerates a subtree, yielding all descendant nodes containing the given position.
+    /// </summary>
+    /// <param name="root">The root of the subtree.</param>
+    /// <param name="position">The position that has to be contained.</param>
+    /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
+    public static IEnumerable<SyntaxNode> TraverseAtPosition(this SyntaxNode root, SyntaxPosition position) =>
+        root.TraverseAtIndex(root.Tree.SourceText.SyntaxPositionToIndex(position));
+
+    /// <summary>
+    /// Enumerates a subtree, yielding all descendant nodes intersecting the given range.
+    /// </summary>
+    /// <param name="root">The root of the subtree.</param>
+    /// <param name="range">The range to check for intersection with the nodes.</param>
+    /// <returns>All subtrees in intersecting <paramref name="range"/> in parent-child order.</returns>
+    public static IEnumerable<SyntaxNode> TraverseIntersectingRange(this SyntaxNode root, SyntaxRange range) =>
+        root.TraverseIntersectingSpan(root.Tree.SourceText.SyntaxRangeToSourceSpan(range));
 }

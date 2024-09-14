@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Syntax;
+using Draco.Compiler.Internal.Syntax.Rewriting;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api.Syntax;

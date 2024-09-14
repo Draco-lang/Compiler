@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Draco.Compiler.Internal.Syntax;
+namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
 internal abstract partial class SyntaxRewriter
 {

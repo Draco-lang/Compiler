@@ -37,10 +37,10 @@ public sealed class SignatureService
         // Get all overloads
         var symbols = semanticModel
             .GetReferencedOverloads(call.Function)
-            .Cast<IFunctionSymbol>()
             .OrderBy(x => x.Parameters.Length)
             .ToImmutableArray();
         if (symbols.Length == 0) return null;
+
         // Figure out which param should be active
         var paramCount = call.ArgumentList.Values.Count();
         var separatorCount = call.ArgumentList.Separators.Count();

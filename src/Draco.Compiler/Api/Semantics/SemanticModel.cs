@@ -322,25 +322,71 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <param name="syntax">The tree that is asked for the referenced overloads.</param>
     /// <returns>The referenced overloads by <paramref name="syntax"/>, or empty array
     /// if it does not reference any.</returns>
-    public ImmutableArray<ISymbol> GetReferencedOverloads(ExpressionSyntax syntax)
+    public ImmutableArray<IFunctionSymbol> GetReferencedOverloads(ExpressionSyntax syntax) => this
+        .GetReferencedOverloadsInternal(syntax)
+        .Select(s => s.ToApiSymbol())
+        .ToImmutableArray();
+
+    /// <summary>
+    /// Retrieves the function overloads referenced by <paramref name="syntax"/>.
+    /// </summary>
+    /// <param name="syntax">The tree that is asked for the referenced overloads.</param>
+    /// <returns>The referenced overloads by <paramref name="syntax"/>, or empty array
+    /// if it does not reference any.</returns>
+    internal ImmutableArray<Internal.Symbols.FunctionSymbol> GetReferencedOverloadsInternal(ExpressionSyntax syntax)
     {
+        var startBinder = this.compilation.GetBinder(syntax);
+        var result = new SymbolCollectionBuilder() { VisibleFrom = startBinder.ContainingSymbol };
+
+        // NOTE: Duplication with MemberCompletionProvider
         if (syntax is MemberExpressionSyntax member)
         {
-            var symbol = this.TypeOf(member.Accessed) ?? this.GetReferencedSymbol(member.Accessed);
-            if (symbol is null) return [];
-            else return symbol.Members.Where(x => x is FunctionSymbol && x.Name == member.Member.Text).ToImmutableArray();
+            var receiverSymbol = this.GetReferencedSymbolInternal(member.Accessed);
+            // NOTE: This is how we check for static access
+            if (receiverSymbol?.IsDotnetType == true)
+            {
+                result.AddRange(receiverSymbol.StaticMembers.Where(m => m.Name == member.Member.Text));
+            }
+            else
+            {
+                // Assume instance access
+                var receiverType = this.TypeOfInternal(member.Accessed);
+                if (receiverType is not null)
+                {
+                    result.AddRange(receiverType.InstanceMembers.Where(m => m.Name == member.Member.Text));
+                }
+            }
         }
-        // We look up syntax based on the symbol in context
-        var result = new HashSet<ISymbol>();
-        var startBinder = this.compilation.GetBinder(syntax);
-        foreach (var binder in startBinder.AncestorChain)
+        else
         {
-            var symbols = binder.DeclaredSymbols
-                .Select(x => x.ToApiSymbol())
-                .Where(x => x is FunctionSymbol && x.Name == syntax.ToString());
-            foreach (var s in symbols) result.Add(s);
+            // We look up syntax based on the symbol in context
+            foreach (var binder in startBinder.AncestorChain)
+            {
+                var symbols = binder.DeclaredSymbols
+                    .Where(x => x is Internal.Symbols.FunctionSymbol
+                             && x.Name == syntax.ToString());
+                result.AddRange(symbols);
+            }
         }
-        return [.. result];
+
+        if (result.Count == 1)
+        {
+            // Just a single method added
+            var function = result
+                .EnumerateResult()
+                .Cast<Internal.Symbols.FunctionSymbol>()
+                .Single();
+            return [function];
+        }
+        else
+        {
+            // It's a set of overloads grouped under a single name
+            var group = result
+                .EnumerateResult()
+                .Cast<Internal.Symbols.Synthetized.FunctionGroupSymbol>()
+                .Single();
+            return group.Functions;
+        }
     }
 
     /// <summary>

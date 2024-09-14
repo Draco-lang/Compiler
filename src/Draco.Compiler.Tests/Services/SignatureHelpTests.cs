@@ -33,7 +33,7 @@ public sealed class SignatureHelpTests
         Assert.NotNull(signatures.CurrentParameter);
         Assert.Single(signatures.Overloads);
         Assert.Single(signatures.Overloads[0].Parameters);
-        Assert.True(signatures.CurrentOverload.Equals(signatures.Overloads[0]));
+        Assert.True(signatures.BestMatch.Equals(signatures.Overloads[0]));
         Assert.True(signatures.CurrentParameter.Equals(signatures.Overloads[0].Parameters[0]));
     }
 
@@ -78,5 +78,57 @@ public sealed class SignatureHelpTests
 
         Assert.NotNull(signatures);
         Assert.Equal(6, signatures.Overloads.Length);
+    }
+
+    [Theory]
+    [InlineData("foo(|12, \"asd\", true)", 0)]
+    [InlineData("foo(12|, \"asd\", true)", 0)]
+    [InlineData("foo(12,| \"asd\", true)", 1)]
+    [InlineData("foo(12, \"asd\"|, true)", 1)]
+    [InlineData("foo(12, \"asd\",| true)", 2)]
+    [InlineData("foo(12, \"asd\", true|)", 2)]
+    public void TestSignatureHelpCursorPosition(string call, int paramIndex)
+    {
+        var signatures = GetSignatureHelp($$"""
+            func main() {
+                var builder = {{call}};
+            }
+
+            func foo(x: int32, y: string, z: bool) {}
+            """);
+
+        Assert.NotNull(signatures);
+        Assert.Single(signatures.Overloads);
+        var overload = signatures.Overloads[0];
+        Assert.Equal(overload, signatures.BestMatch);
+        Assert.Equal(overload.Parameters[paramIndex], signatures.CurrentParameter);
+    }
+
+    [Theory]
+    [InlineData("foo(|12, \"asd\", true)", 0)]
+    [InlineData("foo(12|, \"asd\", true)", 0)]
+    [InlineData("foo(12,| \"asd\", true)", 1)]
+    [InlineData("foo(12, \"asd\"|, true)", 1)]
+    [InlineData("foo(12, \"asd\",| true)", 2)]
+    [InlineData("foo(12, \"asd\", true|)", 2)]
+    [InlineData("foo(12, \"asd\", true|, false, false)", 2)]
+    [InlineData("foo(12, \"asd\", true, false|, false)", 2)]
+    [InlineData("foo(12, \"asd\", true, false, |false)", 2)]
+    [InlineData("foo(12, \"asd\", true, false, false|)", 2)]
+    public void TestSignatureHelpVariadicCursorPosition(string call, int paramIndex)
+    {
+        var signatures = GetSignatureHelp($$"""
+            func main() {
+                var builder = {{call}};
+            }
+
+            func foo(x: int32, y: string, ...z: Array<bool>) {}
+            """);
+
+        Assert.NotNull(signatures);
+        Assert.Single(signatures.Overloads);
+        var overload = signatures.Overloads[0];
+        Assert.Equal(overload, signatures.BestMatch);
+        Assert.Equal(overload.Parameters[paramIndex], signatures.CurrentParameter);
     }
 }

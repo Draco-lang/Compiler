@@ -28,37 +28,78 @@ public sealed class SignatureService
         var cursor = tree.IndexToSyntaxPosition(cursorIndex);
 
         // Check if this is a call expression
-        var call = tree.Root
+        var callSyntax = tree.Root
             .TraverseSubtreesAtCursorPosition(cursor)
             .OfType<CallExpressionSyntax>()
             .LastOrDefault();
-        if (call is null) return null;
+        if (callSyntax is null) return null;
 
         // Get all overloads
-        var symbols = semanticModel
-            .GetReferencedOverloads(call.Function)
-            .Cast<IFunctionSymbol>()
-            .OrderBy(x => x.Parameters.Length)
-            .ToImmutableArray();
-        if (symbols.Length == 0) return null;
-        // Figure out which param should be active
-        var paramCount = call.ArgumentList.Values.Count();
-        var separatorCount = call.ArgumentList.Separators.Count();
-        var activeParam = separatorCount == paramCount - 1 ? paramCount - 1 : paramCount;
+        var overloads = semanticModel.GetReferencedOverloadsInternal(callSyntax.Function);
+        if (overloads.Length == 0) return null;
 
-        // Select the best overload to show as default in the signature
-        // TODO: Improve this, this is really primitive
-        var currentOverload = symbols.FirstOrDefault(x => x.Parameters.Length == paramCount && (separatorCount == paramCount - 1 || paramCount == 0));
-        currentOverload ??= symbols.FirstOrDefault(x => x.Parameters.Length > paramCount);
-        currentOverload ??= symbols.First();
-        IParameterSymbol? currentParameter = null;
-        if (currentOverload.Parameters.Length != 0)
+        // Figure out the best match
+        var currentOverload = this.FindBestMatch(overloads, callSyntax);
+
+        // Get the current parameter
+        var currentParameter = this.GetCurrentParameter(currentOverload, callSyntax, cursorIndex);
+
+        return new SignatureItem(
+            overloads
+                .OrderBy(s => s.Parameters.Length)
+                .Select(s => s.ToApiSymbol())
+                .ToImmutableArray(),
+            currentOverload.ToApiSymbol(),
+            currentParameter?.ToApiSymbol());
+    }
+
+    private Internal.Symbols.FunctionSymbol FindBestMatch(
+        ImmutableArray<Internal.Symbols.FunctionSymbol> functions,
+        CallExpressionSyntax callSyntax)
+    {
+        var argumentCount = callSyntax.ArgumentList.Values.Count();
+        // TODO: Something fancier
+        // Exact argument count match
+        return functions.Where(f => f.Parameters.Length == argumentCount).FirstOrDefault()
+            // Something with more arguments
+            ?? functions.Where(f => f.Parameters.Length > argumentCount).FirstOrDefault()
+            // First
+            ?? functions.First();
+    }
+
+    private Internal.Symbols.ParameterSymbol? GetCurrentParameter(
+        Internal.Symbols.FunctionSymbol function,
+        CallExpressionSyntax callSyntax,
+        int cursorIndex)
+    {
+        // Find the argument index from the cursor
+        var maybeArgument = this.GetArgumentSyntax(callSyntax, cursorIndex);
+        if (maybeArgument is null) return null;
+
+        var (argumentSyntax, argumentIndex) = maybeArgument.Value;
+
+        // If the index is in bounds, return the parameter
+        if (argumentIndex < function.Parameters.Length) return function.Parameters[argumentIndex];
+
+        // If the function has a variadic parameter, return that
+        if (function.IsVariadic) return function.Parameters[^1];
+
+        // Over-indexed
+        return null;
+    }
+
+    private (SyntaxNode Syntax, int Index)? GetArgumentSyntax(CallExpressionSyntax callSyntax, int cursorIndex)
+    {
+        var lastArgumentFound = null as SyntaxNode;
+        var isSeparator = false;
+        var index = 0;
+        foreach (var element in callSyntax.ArgumentList)
         {
-            currentParameter = currentOverload.Parameters.Length > activeParam
-                ? currentOverload.Parameters[activeParam]
-                : currentOverload.Parameters[^1];
+            if (isSeparator && cursorIndex < element.Span.End) break;
+            if (!isSeparator) lastArgumentFound = element;
+            if (isSeparator) ++index;
+            isSeparator = !isSeparator;
         }
-        // Return all the overloads
-        return new SignatureItem(symbols, currentOverload, currentParameter);
+        return lastArgumentFound is null ? null : (lastArgumentFound, index);
     }
 }

@@ -7,6 +7,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class LocalSymbol : VariableSymbol
 {
+    public override SymbolKind Kind => SymbolKind.Local;
+
     public override ISymbol ToApiSymbol() => new Api.Semantics.LocalSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitLocal(this);

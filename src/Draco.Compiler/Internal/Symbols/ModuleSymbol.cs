@@ -13,6 +13,7 @@ internal abstract partial class ModuleSymbol : Symbol, IMemberSymbol
     public override Visibility Visibility => this.Members.Any(x => x.Visibility == Visibility.Public)
         ? Visibility.Public
         : Visibility.Internal;
+    public override SymbolKind Kind => SymbolKind.Module;
 
     public bool IsStatic => true;
     public bool IsExplicitImplementation => false;

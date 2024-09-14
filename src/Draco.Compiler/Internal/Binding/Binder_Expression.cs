@@ -632,7 +632,7 @@ internal partial class Binder
                 return new BoundReferenceErrorExpression(syntax, member);
             case FunctionSymbol func:
                 return await this.WrapFunctions(syntax, receiver, [func], constraints, diagnostics);
-            case OverloadSymbol overload:
+            case FunctionGroupSymbol overload:
                 return await this.WrapFunctions(syntax, receiver, overload.Functions, constraints, diagnostics);
             case FieldSymbol field:
                 return new BoundFieldExpression(syntax, receiver, field);
@@ -771,7 +771,7 @@ internal partial class Binder
             return new BoundPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
             return await this.WrapFunctions(syntax, null, [func], constraints, diagnostics);
-        case OverloadSymbol overload:
+        case FunctionGroupSymbol overload:
             return await this.WrapFunctions(syntax, null, overload.Functions, constraints, diagnostics);
         default:
             throw new InvalidOperationException();

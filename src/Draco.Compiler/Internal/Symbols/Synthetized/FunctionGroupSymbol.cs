@@ -4,9 +4,9 @@ using Draco.Compiler.Api.Semantics;
 namespace Draco.Compiler.Internal.Symbols.Synthetized;
 
 /// <summary>
-/// Not a true symbol, represents function overloads.
+/// Not a true symbol, represents a set of function overloads.
 /// </summary>
-internal sealed class OverloadSymbol : Symbol
+internal sealed class FunctionGroupSymbol : Symbol
 {
     /// <summary>
     /// The candidate functions in the overload set.
@@ -14,10 +14,10 @@ internal sealed class OverloadSymbol : Symbol
     public ImmutableArray<FunctionSymbol> Functions { get; }
 
     public override Symbol? ContainingSymbol => throw new System.NotSupportedException();
-
     public override string Name => this.Functions[0].Name;
+    public override SymbolKind Kind => SymbolKind.FunctionGroup;
 
-    public OverloadSymbol(ImmutableArray<FunctionSymbol> functions)
+    public FunctionGroupSymbol(ImmutableArray<FunctionSymbol> functions)
     {
         if (functions.Length == 0)
         {
@@ -26,7 +26,8 @@ internal sealed class OverloadSymbol : Symbol
         this.Functions = functions;
     }
 
-    public override ISymbol ToApiSymbol() => throw new System.NotSupportedException();
+    public override ISymbol ToApiSymbol() => new Api.Semantics.FunctionGroupSymbol(this);
+
     public override void Accept(SymbolVisitor visitor) => throw new System.NotSupportedException();
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => throw new System.NotSupportedException();
 }

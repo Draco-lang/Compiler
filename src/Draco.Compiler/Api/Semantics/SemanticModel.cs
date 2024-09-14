@@ -120,20 +120,18 @@ public sealed partial class SemanticModel : IBinderProvider
     /// </summary>
     /// <param name="node">The <see cref="SyntaxNode"/> from which to start looking for declared symbols.</param>
     /// <returns>All the <see cref="ISymbol"/>s accesible from the <paramref name="node"/>.</returns>
-    public ImmutableArray<ISymbol> GetAllDefinedSymbols(SyntaxNode node)
+    public ImmutableArray<ISymbol> GetAllAccessibleSymbols(SyntaxNode? node)
     {
-        var result = new HashSet<ISymbol>();
-        var binder = this.compilation.GetBinder(node);
-        while (binder is not null)
+        var startBinder = this.compilation.GetBinder(node ?? this.Tree.Root);
+        var result = new SymbolCollectionBuilder() { VisibleFrom = startBinder.ContainingSymbol };
+        foreach (var binder in startBinder.AncestorChain)
         {
-            foreach (var s in binder.DeclaredSymbols)
-            {
-                if (binder.ContainingSymbol is not null && !s.IsVisibleFrom(binder.ContainingSymbol)) continue;
-                result.Add(s.ToApiSymbol());
-            }
-            binder = binder.Parent;
+            result.AddRange(binder.DeclaredSymbols);
         }
-        return [.. result];
+        return result
+            .EnumerateResult()
+            .Select(s => s.ToApiSymbol())
+            .ToImmutableArray();
     }
 
     /// <summary>
@@ -275,15 +273,11 @@ public sealed partial class SemanticModel : IBinderProvider
         return symbol;
     }
 
-    private ImportBinder GetImportBinder(SyntaxNode syntax)
-    {
-        var binder = this.compilation.GetBinder(syntax);
-        while (true)
-        {
-            if (binder is ImportBinder importBinder) return importBinder;
-            binder = binder.Parent!;
-        }
-    }
+    private ImportBinder GetImportBinder(SyntaxNode syntax) => this.compilation
+        .GetBinder(syntax)
+        .AncestorChain
+        .OfType<ImportBinder>()
+        .First();
 
     /// <summary>
     /// Retrieves the type of the expression represented by <paramref name="syntax"/>.
@@ -337,15 +331,14 @@ public sealed partial class SemanticModel : IBinderProvider
             else return symbol.Members.Where(x => x is FunctionSymbol && x.Name == member.Member.Text).ToImmutableArray();
         }
         // We look up syntax based on the symbol in context
-        var binder = this.compilation.GetBinder(syntax);
         var result = new HashSet<ISymbol>();
-        while (binder is not null)
+        var startBinder = this.compilation.GetBinder(syntax);
+        foreach (var binder in startBinder.AncestorChain)
         {
             var symbols = binder.DeclaredSymbols
                 .Select(x => x.ToApiSymbol())
                 .Where(x => x is FunctionSymbol && x.Name == syntax.ToString());
             foreach (var s in symbols) result.Add(s);
-            binder = binder.Parent;
         }
         return [.. result];
     }

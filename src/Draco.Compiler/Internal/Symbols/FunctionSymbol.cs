@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using System.Threading;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.OptimizingIr.Codegen;
@@ -111,8 +112,8 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     // NOTE: We override for covariant return type
     public override FunctionSymbol? GenericDefinition => null;
-
     public override IEnumerable<Symbol> Members => this.Parameters;
+    public override SymbolKind Kind => SymbolKind.Function;
 
     public TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;

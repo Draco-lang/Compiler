@@ -23,6 +23,16 @@ public interface ISymbol : IEquatable<ISymbol>
     public string Name { get; }
 
     /// <summary>
+    /// The full name of the symbol.
+    /// </summary>
+    public string FullName { get; }
+
+    /// <summary>
+    /// The kind of symbol.
+    /// </summary>
+    public SymbolKind Kind { get; }
+
+    /// <summary>
     /// True, if this symbol represents an error.
     /// </summary>
     public bool IsError { get; }
@@ -169,6 +179,17 @@ public interface IFunctionSymbol : ISymbol, ITypedSymbol, IMemberSymbol
 }
 
 /// <summary>
+/// Represents a function group.
+/// </summary>
+public interface IFunctionGroupSymbol : ISymbol
+{
+    /// <summary>
+    /// The functions in this group.
+    /// </summary>
+    public ImmutableArray<IFunctionSymbol> Functions { get; }
+}
+
+/// <summary>
 /// Represents a type symbol.
 /// </summary>
 public interface ITypeSymbol : ISymbol, IMemberSymbol
@@ -188,6 +209,11 @@ public interface IAliasSymbol : ISymbol, IMemberSymbol
     /// The symbol this alias substitutes.
     /// </summary>
     public ISymbol Substitution { get; }
+
+    /// <summary>
+    /// The fully resolved symbol this alias substitutes, meaning all alias chains are resolved.
+    /// </summary>
+    public ISymbol FullResolution { get; }
 }
 
 /// <summary>
@@ -211,6 +237,8 @@ internal abstract class SymbolBase(Symbol symbol) : ISymbol
     public Symbol Symbol { get; } = symbol;
 
     public string Name => this.Symbol.Name;
+    public string FullName => this.Symbol.FullName;
+    public SymbolKind Kind => this.Symbol.Kind;
     public bool IsError => this.Symbol.IsError;
     public bool IsSpecialName => this.Symbol.IsSpecialName;
     public Location? Definition => this.Symbol.DeclaringSyntax?.Location;
@@ -295,6 +323,14 @@ internal sealed class FunctionSymbol(Internal.Symbols.FunctionSymbol function)
         .ToImmutableArray();
 }
 
+internal sealed class FunctionGroupSymbol(Internal.Symbols.Synthetized.FunctionGroupSymbol group)
+    : SymbolBase<Internal.Symbols.Synthetized.FunctionGroupSymbol>(group), IFunctionGroupSymbol
+{
+    public ImmutableArray<IFunctionSymbol> Functions => this.Symbol.Functions
+        .Select(s => s.ToApiSymbol())
+        .ToImmutableArray();
+}
+
 internal sealed class LabelSymbol(Internal.Symbols.LabelSymbol label)
     : SymbolBase<Internal.Symbols.LabelSymbol>(label), ILabelSymbol
 {
@@ -313,6 +349,7 @@ internal sealed class AliasSymbol(Internal.Symbols.AliasSymbol type)
     public bool IsStatic => this.Symbol.IsStatic;
 
     public ISymbol Substitution => this.Symbol.Substitution.ToApiSymbol();
+    public ISymbol FullResolution => this.Symbol.FullResolution.ToApiSymbol();
 }
 
 internal sealed class TypeParameterSymbol(Internal.Symbols.TypeParameterSymbol type)

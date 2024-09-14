@@ -1,4 +1,4 @@
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.Services.CodeCompletion;
 
 /// <summary>
 /// Categories for <see cref="CompletionItem"/>s that can be used to categorize the completions.
@@ -15,7 +15,9 @@ public enum CompletionKind
     FunctionName,
     PropertyName,
     FieldName,
+    LabelName,
 
+    TypeParameterName,
     ReferenceTypeName,
     ValueTypeName,
 

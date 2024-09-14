@@ -55,7 +55,7 @@ internal sealed class SourceFunctionSymbol(
         // If this is the same instance, do nothing
         if (ReferenceEquals(overloads, this)) return;
         // Should not happen, but if not overload set, do nothing
-        if (overloads is not OverloadSymbol overloadSymbol) return;
+        if (overloads is not FunctionGroupSymbol overloadSymbol) return;
         // Check for same parameter types
         foreach (var func in overloadSymbol.Functions)
         {

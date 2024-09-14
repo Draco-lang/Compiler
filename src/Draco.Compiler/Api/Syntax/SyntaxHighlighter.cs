@@ -159,7 +159,7 @@ public static class SyntaxHighlighter
             if (referenced is not null)
             {
                 // NOTE: Do we want to simplify this in the API?
-                while (referenced is IAliasSymbol alias) referenced = alias.Substitution;
+                if (referenced is IAliasSymbol alias) referenced = alias.FullResolution;
                 var color = referenced switch
                 {
                     IModuleSymbol => SyntaxColoring.ModuleName,

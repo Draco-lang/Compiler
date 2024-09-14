@@ -40,7 +40,7 @@ internal partial class Binder
         // If the symbol is an error, don't propagate errors
         if (symbol.IsError) return;
         // Overloads are reported at resolution site
-        if (symbol is OverloadSymbol) return;
+        if (symbol is FunctionGroupSymbol) return;
         if (symbol.IsVisibleFrom(this.ContainingSymbol)) return;
 
         diagnostics.Add(Diagnostic.Create(

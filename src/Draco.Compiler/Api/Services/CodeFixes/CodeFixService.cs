@@ -4,7 +4,7 @@ using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Api.CodeFixes;
+namespace Draco.Compiler.Api.Services.CodeFixes;
 
 /// <summary>
 /// Allows to get <see cref="CodeFix"/>es from multiple <see cref="CodeFixProvider"/>s.

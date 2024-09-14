@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 
-namespace Draco.Compiler.Api.CodeFixes;
+namespace Draco.Compiler.Api.Services.CodeFixes;
 
 /// <summary>
 /// Represents a possible codefix.

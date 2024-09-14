@@ -14,6 +14,7 @@ internal abstract partial class GlobalSymbol : VariableSymbol, IMemberSymbol
 
     // NOTE: Override for covariant return type
     public override GlobalSymbol? GenericDefinition => null;
+    public override SymbolKind Kind => SymbolKind.Global;
 
     /// <summary>
     /// True, if this global is a literal, meaning its value is known at compile-time and has to be inlined.

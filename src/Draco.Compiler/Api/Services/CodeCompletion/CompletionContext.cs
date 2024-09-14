@@ -1,6 +1,6 @@
 using System;
 
-namespace Draco.Compiler.Api.CodeCompletion;
+namespace Draco.Compiler.Api.Services.CodeCompletion;
 
 /// <summary>
 /// Represents a code context of a completion. For example, if the completion is part of expression/module import/...

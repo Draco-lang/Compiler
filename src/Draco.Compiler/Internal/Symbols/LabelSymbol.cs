@@ -7,6 +7,8 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract partial class LabelSymbol : Symbol
 {
+    public override SymbolKind Kind => SymbolKind.Label;
+
     public override ISymbol ToApiSymbol() => new Api.Semantics.LabelSymbol(this);
 
     public override void Accept(SymbolVisitor visitor) => visitor.VisitLabel(this);

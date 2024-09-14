@@ -14,6 +14,7 @@ internal abstract class FieldSymbol : VariableSymbol, IMemberSymbol
 
     // NOTE: Override for covariant return type
     public override FieldSymbol? GenericDefinition => null;
+    public override SymbolKind Kind => SymbolKind.Field;
 
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (FieldSymbol)base.GenericInstantiate(containingSymbol, arguments);

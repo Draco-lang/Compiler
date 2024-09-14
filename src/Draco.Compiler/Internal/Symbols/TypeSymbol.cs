@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Utilities;
 
@@ -127,6 +128,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 
     public bool IsStatic => true;
     public bool IsExplicitImplementation => false;
+    public override SymbolKind Kind => SymbolKind.Type;
 
     /// <summary>
     /// The invokable function, if this is a delegate type.

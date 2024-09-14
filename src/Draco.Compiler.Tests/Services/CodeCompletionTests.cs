@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
-using Draco.Compiler.Api.CodeCompletion;
+using Draco.Compiler.Api.Semantics;
+using Draco.Compiler.Api.Services.CodeCompletion;
 using Draco.Compiler.Api.Syntax;
 using static Draco.Compiler.Tests.TestUtilities;
 
@@ -25,7 +26,7 @@ public sealed class CodeCompletionTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var completionService = CompletionService.CreateDefault();
+        var completionService = CompletionService.CreateDefault(CompletionFilter.ContainsFilter(StringComparison.Ordinal));
         return completionService.GetCompletions(semanticModel, cursorIndex);
     }
 
@@ -43,7 +44,7 @@ public sealed class CodeCompletionTests
             }
             """);
 
-        AssertCompletions(completions, "global", "Single");
+        AssertCompletions(completions, "global");
     }
 
     [Fact]
@@ -56,7 +57,7 @@ public sealed class CodeCompletionTests
             }
             """);
 
-        AssertCompletions(completions, "local");
+        AssertCompletions(completions, "local", "float32", "float64");
     }
 
     [Fact]
@@ -81,7 +82,7 @@ public sealed class CodeCompletionTests
             val x = gl|
             """);
 
-        AssertCompletions(completions, "global", "Single");
+        AssertCompletions(completions, "global");
     }
 
     [Fact]
@@ -229,8 +230,9 @@ public sealed class CodeCompletionTests
         Assert.Equal(expected.Count, completions.Length);
         foreach (var completion in completions)
         {
-            Assert.True(expected.TryGetValue(completion.DisplayText, out var type));
-            Assert.Equal(type, completion.Symbols.Length);
+            Assert.True(expected.TryGetValue(completion.DisplayText, out var expectedCount));
+            var gotCount = completion.Symbol is IFunctionGroupSymbol fg ? fg.Functions.Length : 1;
+            Assert.Equal(expectedCount, gotCount);
         }
     }
 
@@ -284,10 +286,8 @@ public sealed class CodeCompletionTests
             }
             """);
 
-        // Explore the docs of each
         var docs = completions
-            .SelectMany(d => d.Symbols)
-            .Select(s => s.Documentation)
+            .Select(d => d.Symbol?.Documentation)
             .ToList();
     }
 

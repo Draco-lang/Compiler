@@ -7,4 +7,5 @@ internal sealed class SynthetizedAliasSymbol(string name, Symbol substitution) :
 {
     public override string Name { get; } = name;
     public override Symbol Substitution { get; } = substitution;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 }

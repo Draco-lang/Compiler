@@ -12,6 +12,7 @@ internal sealed class ErrorMemberSymbol : Symbol, ITypedSymbol, IMemberSymbol
 
     public override bool IsError => true;
     public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
+    public override Api.Semantics.SymbolKind Kind => Api.Semantics.SymbolKind.Field;
 
     public TypeSymbol Type => WellKnownTypes.ErrorType;
 

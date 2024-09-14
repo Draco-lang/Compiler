@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -101,128 +102,6 @@ public abstract class SyntaxNode : IEquatable<SyntaxNode>
     public static bool operator !=(SyntaxNode? left, SyntaxNode? right) => !Equals(left, right);
 
     public override string ToString() => this.Green.ToCodeWithoutSurroundingTrivia();
-
-    /// <summary>
-    /// Preorder traverses the subtree with this node being the root.
-    /// </summary>
-    /// <returns>The enumerator that performs a preorder traversal.</returns>
-    public IEnumerable<SyntaxNode> PreOrderTraverse()
-    {
-        yield return this;
-        foreach (var child in this.Children)
-        {
-            foreach (var e in child.PreOrderTraverse()) yield return e;
-        }
-    }
-
-    /// <summary>
-    /// Searches for a child node of type <typeparamref name="TNode"/>.
-    /// </summary>
-    /// <typeparam name="TNode">The type of child to search for.</typeparam>
-    /// <param name="index">The index of the child to search for.</param>
-    /// <returns>The <paramref name="index"/>th child of type <typeparamref name="TNode"/>.</returns>
-    public TNode FindInChildren<TNode>(int index = 0)
-        where TNode : SyntaxNode => this
-        .PreOrderTraverse()
-        .OfType<TNode>()
-        .ElementAt(index);
-
-    /// <summary>
-    /// Enumerates this subtree, yielding all descendant nodes containing the given index.
-    /// </summary>
-    /// <param name="index">The 0-based index that has to be contained.</param>
-    /// <returns>All subtree nodes containing <paramref name="index"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesAtIndex(int index)
-    {
-        var root = this;
-        while (true)
-        {
-            yield return root;
-            foreach (var child in root.Children)
-            {
-                if (child.Span.Contains(index))
-                {
-                    root = child;
-                    goto found;
-                }
-            }
-            // No child found that contains position.
-            break;
-        found:;
-        }
-    }
-
-    /// <summary>
-    /// Enumerates this subtree, yielding all descendant nodes that are involved with a cursor position.
-    /// This differs from <see cref="TraverseSubtreesAtPosition(SyntaxPosition)"/> in a sense, because a
-    /// cursor cares about things immediately before or after it.
-    /// </summary>
-    /// <param name="position">The position of the cursor.</param>
-    /// <returns>All subtrees involved with <paramref name="position"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesAtCursorPosition(SyntaxPosition position)
-    {
-        var root = this;
-        while (true)
-        {
-            yield return root;
-            foreach (var child in root.Children)
-            {
-                // NOTE: This allows touching at the end
-                if (child.Range.Start <= position && position <= child.Range.End)
-                {
-                    root = child;
-                    goto found;
-                }
-            }
-            // No child found that is involved with position.
-            break;
-        found:;
-        }
-    }
-
-    /// <summary>
-    /// Enumerates this subtree, yielding all descendant nodes intersecting the given range.
-    /// </summary>
-    /// <param name="span">The span to check for intersection with the nodes.</param>
-    /// <returns>All subtrees in intersecting <paramref name="span"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingSpan(SourceSpan span)
-    {
-        if (span.Contains(this.Span))
-        {
-            yield return this;
-            foreach (var child in this.PreOrderTraverse())
-            {
-                yield return child;
-            }
-        }
-        else if (span.Intersects(this.Span))
-        {
-            yield return this;
-            foreach (var child in this.Children)
-            {
-                foreach (var node in child.TraverseSubtreesIntersectingSpan(span))
-                {
-                    yield return node;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Enumerates this subtree, yielding all descendant nodes containing the given position.
-    /// </summary>
-    /// <param name="position">The position that has to be contained.</param>
-    /// <returns>All subtrees containing <paramref name="position"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesAtPosition(SyntaxPosition position) =>
-        this.TraverseSubtreesAtIndex(this.Tree.SyntaxPositionToIndex(position));
-
-    /// <summary>
-    /// Enumerates this subtree, yielding all descendant nodes intersecting the given range.
-    /// </summary>
-    /// <param name="range">The range to check for intersection with the nodes.</param>
-    /// <returns>All subtrees in intersecting <paramref name="range"/> in parent-child order.</returns>
-    public IEnumerable<SyntaxNode> TraverseSubtreesIntersectingRange(SyntaxRange range) =>
-        this.TraverseSubtreesIntersectingSpan(this.Tree.SyntaxRangeToSourceSpan(range));
 
     public abstract void Accept(SyntaxVisitor visitor);
     public abstract TResult Accept<TResult>(SyntaxVisitor<TResult> visitor);

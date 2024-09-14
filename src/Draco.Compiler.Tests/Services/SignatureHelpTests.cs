@@ -103,4 +103,32 @@ public sealed class SignatureHelpTests
         Assert.Equal(overload, signatures.BestMatch);
         Assert.Equal(overload.Parameters[paramIndex], signatures.CurrentParameter);
     }
+
+    [Theory]
+    [InlineData("foo(|12, \"asd\", true)", 0)]
+    [InlineData("foo(12|, \"asd\", true)", 0)]
+    [InlineData("foo(12,| \"asd\", true)", 1)]
+    [InlineData("foo(12, \"asd\"|, true)", 1)]
+    [InlineData("foo(12, \"asd\",| true)", 2)]
+    [InlineData("foo(12, \"asd\", true|)", 2)]
+    [InlineData("foo(12, \"asd\", true|, false, false)", 2)]
+    [InlineData("foo(12, \"asd\", true, false|, false)", 2)]
+    [InlineData("foo(12, \"asd\", true, false, |false)", 2)]
+    [InlineData("foo(12, \"asd\", true, false, false|)", 2)]
+    public void TestSignatureHelpVariadicCursorPosition(string call, int paramIndex)
+    {
+        var signatures = GetSignatureHelp($$"""
+            func main() {
+                var builder = {{call}};
+            }
+
+            func foo(x: int32, y: string, ...z: Array<bool>) {}
+            """);
+
+        Assert.NotNull(signatures);
+        Assert.Single(signatures.Overloads);
+        var overload = signatures.Overloads[0];
+        Assert.Equal(overload, signatures.BestMatch);
+        Assert.Equal(overload.Parameters[paramIndex], signatures.CurrentParameter);
+    }
 }

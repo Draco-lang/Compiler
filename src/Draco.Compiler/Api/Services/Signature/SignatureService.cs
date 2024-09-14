@@ -95,7 +95,7 @@ public sealed class SignatureService
         var index = 0;
         foreach (var element in callSyntax.ArgumentList)
         {
-            if (element.Position > cursorIndex) break;
+            if (isSeparator && cursorIndex < element.Span.End) break;
             if (!isSeparator) lastArgumentFound = element;
             if (isSeparator) ++index;
             isSeparator = !isSeparator;

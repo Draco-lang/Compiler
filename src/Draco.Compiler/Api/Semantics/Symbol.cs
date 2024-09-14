@@ -213,15 +213,7 @@ public interface IAliasSymbol : ISymbol, IMemberSymbol
     /// <summary>
     /// The fully resolved symbol this alias substitutes, meaning all alias chains are resolved.
     /// </summary>
-    public ISymbol FullResolution
-    {
-        get
-        {
-            ISymbol current = this;
-            while (current is IAliasSymbol alias) current = alias.Substitution;
-            return current;
-        }
-    }
+    public ISymbol FullResolution { get; }
 }
 
 /// <summary>
@@ -357,6 +349,7 @@ internal sealed class AliasSymbol(Internal.Symbols.AliasSymbol type)
     public bool IsStatic => this.Symbol.IsStatic;
 
     public ISymbol Substitution => this.Symbol.Substitution.ToApiSymbol();
+    public ISymbol FullResolution => this.Symbol.FullResolution.ToApiSymbol();
 }
 
 internal sealed class TypeParameterSymbol(Internal.Symbols.TypeParameterSymbol type)

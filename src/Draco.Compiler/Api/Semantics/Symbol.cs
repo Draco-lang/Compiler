@@ -249,6 +249,7 @@ internal abstract class SymbolBase(Symbol symbol) : ISymbol
     public ISymbol? GenericDefinition => this.Symbol.GenericDefinition?.ToApiSymbol();
     public IEnumerable<ITypeSymbol> GenericArguments => this.Symbol.GenericArguments.Select(a => a.ToApiSymbol());
 
+    public override bool Equals(object? obj) => this.Equals(obj as ISymbol);
     public bool Equals(ISymbol? other) => other is SymbolBase o
                                        && ReferenceEquals(this.Symbol, o.Symbol);
 

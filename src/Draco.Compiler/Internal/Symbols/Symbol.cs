@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
@@ -35,6 +37,13 @@ internal abstract partial class Symbol
             for (var result = this; result is not null; result = result.ContainingSymbol) yield return result;
         }
     }
+
+    /// <summary>
+    /// Indicates, if this symbol translated to metadata would result in a .NET type.
+    /// 
+    /// In the .NET world, static classes are types too, but in Draco they are modules instead.
+    /// </summary>
+    public bool IsDotnetType => this is TypeSymbol or ModuleSymbol;
 
     /// <summary>
     /// The root of this hierarchy.
@@ -121,6 +130,11 @@ internal abstract partial class Symbol
     public virtual IEnumerable<Symbol> Members => [];
 
     /// <summary>
+    /// The members defined directly in this symbol.
+    /// </summary>
+    public virtual IEnumerable<Symbol> DefinedMembers => this.Members;
+
+    /// <summary>
     /// The static members within this symbol.
     /// </summary>
     public IEnumerable<Symbol> StaticMembers => this.Members.Where(x => x is IMemberSymbol mem && mem.IsStatic);
@@ -150,14 +164,6 @@ internal abstract partial class Symbol
     /// </summary>
     public virtual SyntaxNode? DeclaringSyntax => null;
 
-    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
-    {
-        null => Api.Semantics.Visibility.Private,
-        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
-        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
-        _ => throw new System.InvalidOperationException($"illegal visibility modifier token {kind}"),
-    };
-
     /// <summary>
     /// The generic definition of this symbol, in case this is a generic instance.
     /// </summary>
@@ -172,6 +178,16 @@ internal abstract partial class Symbol
     /// The generic arguments that this symbol was instantiated with.
     /// </summary>
     public virtual ImmutableArray<TypeSymbol> GenericArguments => [];
+
+    /// <summary>
+    /// The attributes attached to this symbol.
+    /// </summary>
+    public virtual ImmutableArray<AttributeInstance> Attributes => [];
+
+    /// <summary>
+    /// The kind of this symbol.
+    /// </summary>
+    public abstract SymbolKind Kind { get; }
 
     /// <summary>
     /// Checks if this symbol can be shadowed by <paramref name="other"/> symbol.
@@ -191,7 +207,7 @@ internal abstract partial class Symbol
     {
         if (this.GenericParameters.Length != arguments.Length)
         {
-            throw new System.ArgumentException(
+            throw new ArgumentException(
                 $"the number of generic parameters ({this.GenericParameters.Length}) does not match the passed in number of arguments ({arguments.Length})",
                 nameof(arguments));
         }
@@ -210,16 +226,59 @@ internal abstract partial class Symbol
     /// <param name="context">The generic context.</param>
     /// <returns>This symbol with all type parameters replaced according to <paramref name="context"/>.</returns>
     public virtual Symbol GenericInstantiate(Symbol? containingSymbol, GenericContext context) =>
-        throw new System.NotSupportedException();
+        throw new NotSupportedException();
 
     /// <summary>
     /// Converts this symbol into an API symbol.
     /// </summary>
     /// <returns>The equivalent API symbol.</returns>
-    public abstract Api.Semantics.ISymbol ToApiSymbol();
+    public abstract ISymbol ToApiSymbol();
 
     public abstract void Accept(SymbolVisitor visitor);
     public abstract TResult Accept<TResult>(SymbolVisitor<TResult> visitor);
+
+    /// <summary>
+    /// Checks, if this symbol is visible from another symbol.
+    /// </summary>
+    /// <param name="from">The symbol from which visibility (access) is checked.</param>
+    /// <returns>True, if this symbol is visible from <paramref name="from"/> symbol.</returns>
+    public bool IsVisibleFrom(Symbol? from)
+    {
+        var to = this;
+
+        // Unwrap generics
+        if (from?.IsGenericInstance == true) from = from.GenericDefinition!;
+        if (to.IsGenericInstance) to = to.GenericDefinition!;
+
+        if (ReferenceEquals(from, to)) return true;
+
+        if (from is null) return true;
+
+        if (to.Visibility == Visibility.Private)
+        {
+            // This is a private symbol, only visible from the same or nested module
+            if (to.ContainingSymbol is null) return false;
+            return from.AncestorChain.Contains(to.ContainingSymbol, SymbolEqualityComparer.Default);
+        }
+
+        if (to.Visibility == Visibility.Internal)
+        {
+            // They HAVE TO be from the same assembly
+            // For that, we can check if the root module is the same
+            if (!SymbolEqualityComparer.Default.Equals(from.RootSymbol, to.RootSymbol)) return false;
+
+            // But other than that, the containing symbol has to be accessible
+            return to.ContainingSymbol?.IsVisibleFrom(from) ?? true;
+        }
+
+        if (to.Visibility == Visibility.Public)
+        {
+            // The containing symbol has to be accessible
+            return to.ContainingSymbol?.IsVisibleFrom(from) ?? true;
+        }
+
+        throw new InvalidOperationException("unknown visibility");
+    }
 
     /// <summary>
     /// Converts the symbol-tree to a DOT graph for debugging purposes.
@@ -262,4 +321,12 @@ internal abstract partial class Symbol
         if (this.IsGenericInstance) return $"<{string.Join(", ", this.GenericArguments)}>";
         return string.Empty;
     }
+
+    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
+    {
+        null => Api.Semantics.Visibility.Private,
+        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
+        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
+        _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
+    };
 }

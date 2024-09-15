@@ -15,7 +15,7 @@ internal sealed class MemorySourceText(Uri? path, ReadOnlyMemory<char> content) 
 
     private List<int>? lineStarts;
 
-    internal override Api.Syntax.SyntaxPosition IndexToSyntaxPosition(int index)
+    public override Api.Syntax.SyntaxPosition IndexToSyntaxPosition(int index)
     {
         var lineStarts = LazyInitializer.EnsureInitialized(ref this.lineStarts, this.BuildLineStarts);
         var lineIndex = lineStarts.BinarySearch(index);
@@ -26,7 +26,7 @@ internal sealed class MemorySourceText(Uri? path, ReadOnlyMemory<char> content) 
         return new(Line: lineIndex, Column: index - lineStarts[lineIndex]);
     }
 
-    internal override int SyntaxPositionToIndex(Api.Syntax.SyntaxPosition position)
+    public override int SyntaxPositionToIndex(Api.Syntax.SyntaxPosition position)
     {
         var lineStarts = LazyInitializer.EnsureInitialized(ref this.lineStarts, this.BuildLineStarts);
 

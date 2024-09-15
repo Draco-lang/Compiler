@@ -29,8 +29,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.SourceGeneration", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Lsp", "Draco.Lsp\Draco.Lsp.csproj", "{D8F2B284-5687-4E06-90C2-793C313E0FCE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Fuzzer", "Draco.Compiler.Fuzzer\Draco.Compiler.Fuzzer.csproj", "{4B1D20EB-F2DF-4724-87E6-9839C67049FC}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Debugger", "Draco.Debugger\Draco.Debugger.csproj", "{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Debugger.Tui", "Draco.Debugger.Tui\Draco.Debugger.Tui.csproj", "{887C5E8B-45AE-43BE-889F-5401D0CC76CC}"
@@ -47,11 +45,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Debugger.Tests", "Dra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Chr", "Draco.Chr\Draco.Chr.csproj", "{E8DF7730-54AE-45F1-9D36-809B444A5F7A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Chr.Tests", "Draco.Chr.Tests\Draco.Chr.Tests.csproj", "{88839EDB-4B29-4A96-A7C7-D9904EA9C988}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Chr.Tests", "Draco.Chr.Tests\Draco.Chr.Tests.csproj", "{88839EDB-4B29-4A96-A7C7-D9904EA9C988}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.DevHost", "Draco.Compiler.DevHost\Draco.Compiler.DevHost.csproj", "{B209F6B3-9B49-4269-824A-1EEC35B39C92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.ProjectSystem", "Draco.ProjectSystem\Draco.ProjectSystem.csproj", "{5A813218-38B9-4B7D-A352-47978EBB0554}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.ProjectSystem", "Draco.ProjectSystem\Draco.ProjectSystem.csproj", "{5A813218-38B9-4B7D-A352-47978EBB0554}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Repl", "Draco.Repl\Draco.Repl.csproj", "{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -120,12 +120,6 @@ Global
 		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8F2B284-5687-4E06-90C2-793C313E0FCE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
-		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Nuget|Any CPU.Build.0 = Debug|Any CPU
-		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4B1D20EB-F2DF-4724-87E6-9839C67049FC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD342BE6-BCE4-4F5E-933A-DC6F4E2BFD50}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
@@ -192,6 +186,12 @@ Global
 		{5A813218-38B9-4B7D-A352-47978EBB0554}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{5A813218-38B9-4B7D-A352-47978EBB0554}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A813218-38B9-4B7D-A352-47978EBB0554}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,25 +1,40 @@
-using System.Linq;
+using System.Collections.Immutable;
 
 namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
-internal sealed class RemoveRewriter(SyntaxNode toRemove) : SyntaxRewriter
+/// <summary>
+/// A syntax rewriter that removes a node from the syntax tree.
+/// </summary>
+internal sealed class RemoveRewriter : SyntaxRewriter
 {
-    public override SyntaxList<TNode> VisitSyntaxList<TNode>(SyntaxList<TNode> node)
+    /// <summary>
+    /// Removes a node from the syntax tree.
+    /// </summary>
+    /// <param name="root">The root node to rewrite.</param>
+    /// <param name="toRemove">The node to remove.</param>
+    /// <returns>The rewritten root node.</returns>
+    public static SyntaxNode Remove(SyntaxNode root, SyntaxNode toRemove) =>
+        root.Accept(new RemoveRewriter(toRemove));
+
+    private readonly SyntaxNode toRemove;
+
+    private RemoveRewriter(SyntaxNode toRemove)
     {
-        for (var i = 0; i < node.Count; i++)
-        {
-            if (node[i] == toRemove)
-            {
-                var list = node.ToList();
-                list.RemoveAt(i);
-                var builder = SyntaxList.CreateBuilder<TNode>();
-                builder.AddRange(list);
-                node = builder.ToSyntaxList();
-                return node;
-            }
-        }
-        return base.VisitSyntaxList(node);
+        this.toRemove = toRemove;
     }
 
-    public override SyntaxNode VisitSyntaxToken(SyntaxToken node) => node;
+    protected override ImmutableArray<TNode>? RewriteArray<TNode>(ImmutableArray<TNode> array)
+    {
+        // If wrong type, just rewrite as usual
+        if (this.toRemove is not TNode toRemoveOfType) return base.RewriteArray(array);
+
+        // There is a possibility the target is in this array
+        var toRemoveIndex = array.IndexOf(toRemoveOfType);
+
+        // If the target is not in the array, just rewrite as usual
+        if (toRemoveIndex == -1) return base.RewriteArray(array);
+
+        // The target is in the array, remove the node
+        return array.RemoveAt(toRemoveIndex);
+    }
 }

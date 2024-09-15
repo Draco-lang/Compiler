@@ -6,12 +6,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Api.Semantics;
 
@@ -38,8 +40,8 @@ public sealed partial class SemanticModel : IBinderProvider
     private readonly Compilation compilation;
 
     // Filled out by incremental binding
-    private readonly ConcurrentDictionary<SourceFunctionSymbol, BoundStatement> boundFunctions = new();
-    private readonly ConcurrentDictionary<SourceGlobalSymbol, (Internal.Symbols.TypeSymbol Type, BoundExpression? Value)> boundGlobals = new();
+    private readonly ConcurrentDictionary<SyntaxFunctionSymbol, BoundStatement> boundFunctions = new();
+    private readonly ConcurrentDictionary<SyntaxGlobalSymbol, GlobalBinding> boundGlobals = new();
     private readonly ConcurrentDictionary<SyntaxNode, BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 
@@ -58,8 +60,8 @@ public sealed partial class SemanticModel : IBinderProvider
     private ImmutableArray<Diagnostic> GetDiagnostics(SourceSpan? span = null)
     {
         var syntaxNodes = span is null
-            ? this.Tree.PreOrderTraverse()
-            : this.Tree.TraverseSubtreesIntersectingSpan(span.Value);
+            ? this.Tree.Root.PreOrderTraverse()
+            : this.Tree.Root.TraverseIntersectingSpan(span.Value);
 
         var addedImportBinders = new HashSet<ImportBinder>();
 
@@ -80,18 +82,19 @@ public sealed partial class SemanticModel : IBinderProvider
             {
             case CompilationUnitSyntax:
             case FunctionDeclarationSyntax:
+            case ScriptEntrySyntax:
             {
                 containingSymbol?.Bind(this);
                 break;
             }
             // NOTE: Only globals need binding
-            case VariableDeclarationSyntax when containingSymbol is SourceModuleSymbol containingModule:
+            case VariableDeclarationSyntax varDecl:
             {
                 // We need to search for this global
-                var globalSymbol = containingModule.Members
-                    .OfType<SourceGlobalSymbol>()
-                    .Single(s => s.DeclaringSyntax == syntaxNode);
-                globalSymbol.Bind(this);
+                var globalSymbol = binder.ContainingSymbol?.Members
+                    .OfType<SyntaxGlobalSymbol>()
+                    .FirstOrDefault(s => s.Name == varDecl.Name.Text);
+                globalSymbol?.Bind(this);
                 break;
             }
             case ImportDeclarationSyntax:
@@ -118,17 +121,18 @@ public sealed partial class SemanticModel : IBinderProvider
     /// </summary>
     /// <param name="node">The <see cref="SyntaxNode"/> from which to start looking for declared symbols.</param>
     /// <returns>All the <see cref="ISymbol"/>s accesible from the <paramref name="node"/>.</returns>
-    public ImmutableArray<ISymbol> GetAllDefinedSymbols(SyntaxNode node)
+    public ImmutableArray<ISymbol> GetAllAccessibleSymbols(SyntaxNode? node)
     {
-        var result = new HashSet<ISymbol>();
-        var binder = this.compilation.GetBinder(node);
-        while (binder is not null)
+        var startBinder = this.compilation.GetBinder(node ?? this.Tree.Root);
+        var result = new SymbolCollectionBuilder() { VisibleFrom = startBinder.ContainingSymbol };
+        foreach (var binder in startBinder.AncestorChain)
         {
-            var symbols = binder.DeclaredSymbols.Select(x => x.ToApiSymbol());
-            foreach (var s in symbols) result.Add(s);
-            binder = binder.Parent;
+            result.AddRange(binder.DeclaredSymbols);
         }
-        return [.. result];
+        return result
+            .EnumerateResult()
+            .Select(s => s.ToApiSymbol())
+            .ToImmutableArray();
     }
 
     /// <summary>
@@ -137,9 +141,13 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <param name="syntax">The tree that is asked for the defined <see cref="ISymbol"/>.</param>
     /// <returns>The defined <see cref="ISymbol"/> by <paramref name="syntax"/>, or null if it does not
     /// declared any.</returns>
-    public ISymbol? GetDeclaredSymbol(SyntaxNode syntax)
+    public ISymbol? GetDeclaredSymbol(SyntaxNode syntax) => this
+        .GetDeclaredSymbolInternal(syntax)
+        ?.ToApiSymbol();
+
+    internal Symbol? GetDeclaredSymbolInternal(SyntaxNode syntax)
     {
-        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing;
 
         // Get enclosing context
         var binder = this.GetBinder(syntax);
@@ -147,17 +155,17 @@ public sealed partial class SemanticModel : IBinderProvider
 
         switch (containingSymbol)
         {
-        case SourceFunctionSymbol func:
+        case SyntaxFunctionSymbol func:
         {
             // This is just the function itself
-            if (func.DeclaringSyntax == syntax) return containingSymbol.ToApiSymbol();
+            if (func.DeclaringSyntax == syntax) return containingSymbol;
 
             // Could be a generic parameter
             if (syntax is GenericParameterSyntax genericParam)
             {
                 var paramSymbol = containingSymbol.GenericParameters
                     .FirstOrDefault(p => p.DeclaringSyntax == syntax);
-                return paramSymbol?.ToApiSymbol();
+                return paramSymbol;
             }
 
             // Bind the function contents
@@ -166,17 +174,17 @@ public sealed partial class SemanticModel : IBinderProvider
             // Look up inside the binder
             var symbol = binder.DeclaredSymbols
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
-            return symbol?.ToApiSymbol();
+            return symbol;
         }
         case SourceModuleSymbol module:
         {
             // The module itself
-            if (module.DeclaringSyntaxes.Contains(syntax)) return containingSymbol.ToApiSymbol();
+            if (module.DeclaringSyntaxes.Contains(syntax)) return containingSymbol;
 
             // Just search for the corresponding syntax
             var symbol = module.Members
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
-            return symbol?.ToApiSymbol();
+            return symbol;
         }
         default:
             return null;
@@ -189,8 +197,18 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <param name="syntax">The tree that is asked for the referenced <see cref="ISymbol"/>.</param>
     /// <returns>The referenced <see cref="ISymbol"/> by <paramref name="syntax"/>, or null
     /// if it does not reference any.</returns>
-    public ISymbol? GetReferencedSymbol(SyntaxNode syntax)
+    public ISymbol? GetReferencedSymbol(SyntaxNode syntax) => this
+        .GetReferencedSymbolInternal(syntax)
+        ?.ToApiSymbol();
+
+    internal Symbol? GetReferencedSymbolInternal(SyntaxNode syntax)
     {
+        // If it's a token, we assume it's wrapped in a more sensible syntax node
+        if (syntax is SyntaxToken token && token.Parent is not null)
+        {
+            return this.GetReferencedSymbolInternal(token.Parent);
+        }
+
         if (syntax is ImportPathSyntax)
         {
             // Imports are special, we need to search in the binder
@@ -211,48 +229,56 @@ public sealed partial class SemanticModel : IBinderProvider
                 .SingleOrDefault();
             // Not found in path
             if (pathSymbol is null) return null;
-            return pathSymbol.ToApiSymbol();
+            return pathSymbol;
         }
 
-        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing.ToApiSymbol();
+        if (this.symbolMap.TryGetValue(syntax, out var existing)) return existing;
 
         // Get enclosing context
         var binder = this.GetBinder(syntax);
         var containingSymbol = binder.ContainingSymbol;
 
-        switch (containingSymbol)
+        // Source containers need to get bound
+        if (containingSymbol is ISourceSymbol sourceSymbol)
         {
-        case SourceFunctionSymbol func:
-        {
-            // Bind the function contents
-            func.Bind(this);
-            break;
-        }
-        case SourceModuleSymbol module:
-        {
-            // Bind top-level members
-            foreach (var member in module.Members.OfType<ISourceSymbol>())
-            {
-                member.Bind(this);
-            }
-            break;
-        }
+            sourceSymbol.Bind(this);
+            foreach (var nested in containingSymbol.Members.OfType<ISourceSymbol>()) nested.Bind(this);
         }
 
         // Attempt to retrieve
         this.symbolMap.TryGetValue(syntax, out var symbol);
-        return symbol?.ToApiSymbol();
+
+        if (symbol is null)
+        {
+            // Apply some fallback strategies
+
+            // Resolve calls to a function
+            if (syntax is NameExpressionSyntax name)
+            {
+                // If it's a method of a call, we want the method referenced by the call instead
+                var called = syntax;
+
+                if (name.Parent is GenericExpressionSyntax generic && generic.Instantiated.Equals(called))
+                {
+                    called = generic;
+                }
+
+                if (called.Parent is CallExpressionSyntax call && call.Function.Equals(called))
+                {
+                    // This is a call, we want the function
+                    return this.GetReferencedSymbolInternal(call);
+                }
+            }
+        }
+
+        return symbol;
     }
 
-    private ImportBinder GetImportBinder(SyntaxNode syntax)
-    {
-        var binder = this.compilation.GetBinder(syntax);
-        while (true)
-        {
-            if (binder is ImportBinder importBinder) return importBinder;
-            binder = binder.Parent!;
-        }
-    }
+    private ImportBinder GetImportBinder(SyntaxNode syntax) => this.compilation
+        .GetBinder(syntax)
+        .AncestorChain
+        .OfType<ImportBinder>()
+        .First();
 
     /// <summary>
     /// Retrieves the type of the expression represented by <paramref name="syntax"/>.
@@ -260,11 +286,19 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <param name="syntax">The expression that the type will be checked of.</param>
     /// <returns>The <see cref="ITypeSymbol"/> that <paramref name="syntax"/> will evaluate to,
     /// or null if it does not evaluate to a value with type.</returns>
-    public ITypeSymbol? TypeOf(ExpressionSyntax syntax)
+    public ITypeSymbol? TypeOf(ExpressionSyntax syntax) => this.TypeOfInternal(syntax)?.ToApiSymbol();
+
+    /// <summary>
+    /// Retrieves the type of the expression represented by <paramref name="syntax"/>.
+    /// </summary>
+    /// <param name="syntax">The expression that the type will be checked of.</param>
+    /// <returns>The <see cref="TypeSymbol"/> that <paramref name="syntax"/> will evaluate to,
+    /// or null if it does not evaluate to a value with type.</returns>
+    internal Internal.Symbols.TypeSymbol? TypeOfInternal(ExpressionSyntax syntax)
     {
         if (this.TryGetBoundNode(syntax, out var existing))
         {
-            return (existing as BoundExpression)?.Type?.ToApiSymbol();
+            return (existing as BoundExpression)?.Type;
         }
 
         // NOTE: Very similar logic to GetReferencedSymbol, maybe factor out?
@@ -272,28 +306,12 @@ public sealed partial class SemanticModel : IBinderProvider
         var binder = this.GetBinder(syntax);
         var containingSymbol = binder.ContainingSymbol;
 
-        switch (containingSymbol)
-        {
-        case SourceFunctionSymbol func:
-        {
-            // Bind the function contents
-            func.Bind(this);
-            break;
-        }
-        case SourceModuleSymbol module:
-        {
-            // Bind top-level members
-            foreach (var member in module.Members.OfType<ISourceSymbol>())
-            {
-                member.Bind(this);
-            }
-            break;
-        }
-        }
+        // Source containers need to get bound
+        if (containingSymbol is ISourceSymbol sourceSymbol) sourceSymbol.Bind(this);
 
         // Attempt to retrieve
         this.TryGetBoundNode(syntax, out var node);
-        return (node as BoundExpression)?.Type?.ToApiSymbol();
+        return (node as BoundExpression)?.Type;
     }
 
     private bool TryGetBoundNode(SyntaxNode syntax, [MaybeNullWhen(false)] out BoundNode node) =>
@@ -305,27 +323,79 @@ public sealed partial class SemanticModel : IBinderProvider
     /// <param name="syntax">The tree that is asked for the referenced overloads.</param>
     /// <returns>The referenced overloads by <paramref name="syntax"/>, or empty array
     /// if it does not reference any.</returns>
-    public ImmutableArray<ISymbol> GetReferencedOverloads(ExpressionSyntax syntax)
+    public ImmutableArray<IFunctionSymbol> GetReferencedOverloads(ExpressionSyntax syntax) => this
+        .GetReferencedOverloadsInternal(syntax)
+        .Select(s => s.ToApiSymbol())
+        .ToImmutableArray();
+
+    /// <summary>
+    /// Retrieves the function overloads referenced by <paramref name="syntax"/>.
+    /// </summary>
+    /// <param name="syntax">The tree that is asked for the referenced overloads.</param>
+    /// <returns>The referenced overloads by <paramref name="syntax"/>, or empty array
+    /// if it does not reference any.</returns>
+    internal ImmutableArray<Internal.Symbols.FunctionSymbol> GetReferencedOverloadsInternal(ExpressionSyntax syntax)
     {
+        var startBinder = this.compilation.GetBinder(syntax);
+        var result = new SymbolCollectionBuilder() { VisibleFrom = startBinder.ContainingSymbol };
+
+        // NOTE: Duplication with MemberCompletionProvider
         if (syntax is MemberExpressionSyntax member)
         {
-            var symbol = this.TypeOf(member.Accessed) ?? this.GetReferencedSymbol(member.Accessed);
-            if (symbol is null) return [];
-            else return symbol.Members.Where(x => x is FunctionSymbol && x.Name == member.Member.Text).ToImmutableArray();
+            var receiverSymbol = this.GetReferencedSymbolInternal(member.Accessed);
+            // NOTE: This is how we check for static access
+            if (receiverSymbol?.IsDotnetType == true)
+            {
+                result.AddRange(receiverSymbol.StaticMembers.Where(m => m.Name == member.Member.Text));
+            }
+            else
+            {
+                // Assume instance access
+                var receiverType = this.TypeOfInternal(member.Accessed);
+                if (receiverType is not null)
+                {
+                    result.AddRange(receiverType.InstanceMembers.Where(m => m.Name == member.Member.Text));
+                }
+            }
         }
-        // We look up syntax based on the symbol in context
-        var binder = this.compilation.GetBinder(syntax);
-        var result = new HashSet<ISymbol>();
-        while (binder is not null)
+        else
         {
-            var symbols = binder.DeclaredSymbols
-                .Select(x => x.ToApiSymbol())
-                .Where(x => x is FunctionSymbol && x.Name == syntax.ToString());
-            foreach (var s in symbols) result.Add(s);
-            binder = binder.Parent;
+            // We look up syntax based on the symbol in context
+            foreach (var binder in startBinder.AncestorChain)
+            {
+                var symbols = binder.DeclaredSymbols
+                    .Where(x => x is Internal.Symbols.FunctionSymbol
+                             && x.Name == syntax.ToString());
+                result.AddRange(symbols);
+            }
         }
-        return [.. result];
+
+        if (result.Count == 1)
+        {
+            // Just a single method added
+            var function = result
+                .EnumerateResult()
+                .Cast<Internal.Symbols.FunctionSymbol>()
+                .Single();
+            return [function];
+        }
+        else
+        {
+            // It's a set of overloads grouped under a single name
+            var group = result
+                .EnumerateResult()
+                .Cast<Internal.Symbols.Synthetized.FunctionGroupSymbol>()
+                .Single();
+            return group.Functions;
+        }
     }
+
+    /// <summary>
+    /// Retrieves the symbol that <paramref name="syntax"/> is bound inside of.
+    /// </summary>
+    /// <param name="syntax">The syntax node to get the binding symbol of.</param>
+    /// <returns>The symbol that <paramref name="syntax"/> is bound inside of.</returns>
+    internal Symbol? GetBindingSymbol(SyntaxNode syntax) => this.GetBinder(syntax).ContainingSymbol;
 
     private IncrementalBinder GetBinder(SyntaxNode syntax)
     {

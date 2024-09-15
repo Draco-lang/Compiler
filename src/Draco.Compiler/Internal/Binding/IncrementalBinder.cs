@@ -54,17 +54,19 @@ public sealed partial class SemanticModel
                 key: function,
                 valueFactory: _ => base.BindFunction(function, diagnostics));
 
-        public override (Internal.Symbols.TypeSymbol Type, BoundExpression? Value) BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics) =>
+        public override GlobalBinding BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics) =>
             semanticModel.boundGlobals.GetOrAdd(
                 key: global,
                 valueFactory: _ => base.BindGlobal(global, diagnostics));
+
+        // TODO: Do we want to override BindScript?
 
         // Memoizing overrides /////////////////////////////////////////////////
 
         protected override BindingTask<BoundStatement> BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.MemoizeBinding(syntax, constraints, () => base.BindStatement(syntax, constraints, diagnostics));
 
-        protected override BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
+        internal override BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
             this.MemoizeBinding(syntax, constraints, () => base.BindExpression(syntax, constraints, diagnostics));
 
         protected override BindingTask<BoundLvalue> BindLvalue(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) =>
@@ -77,7 +79,7 @@ public sealed partial class SemanticModel
             this.BindSymbol(syntax, () => base.BindType(syntax, diagnostics));
 
         // TODO: Hack
-        internal override void BindSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.Symbol symbol) =>
+        internal override void BindSyntaxToSymbol(SyntaxNode syntax, Symbol symbol) =>
             semanticModel.symbolMap[syntax] = symbol;
 
         internal override void BindTypeSyntaxToSymbol(SyntaxNode syntax, Internal.Symbols.TypeSymbol type)

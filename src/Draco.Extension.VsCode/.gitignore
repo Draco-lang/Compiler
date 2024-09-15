@@ -2,5 +2,5 @@ node_modules
 out
 dist
 # We copy it from the original source
-syntaxes
+syntaxes/draco.tmLanguage.json
 *.vsix

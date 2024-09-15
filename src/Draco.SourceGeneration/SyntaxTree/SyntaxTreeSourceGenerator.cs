@@ -15,13 +15,17 @@ public sealed class SyntaxTreeSourceGenerator : XmlSourceGenerator
     {
         var domainModel = Tree.FromXml((XmlTree)xmlModel);
 
-        var greenTreeCode = CodeGenerator.GenerateGreenSyntaxTree(domainModel, cancellationToken);
-        var redTreeCode = CodeGenerator.GenerateRedSyntaxTree(domainModel, cancellationToken);
+        var tokenCode = Template.GenerateTokens(domainModel);
+        var greenTreeCode = Template.GenerateGreenTree(domainModel);
+        var redTreeCode = Template.GenerateRedTree(domainModel);
+        var rewritersCode = Template.GenerateRewriters(domainModel);
 
         return
         [
+            new("Tokens.Generated.cs", tokenCode),
             new("GreenSyntaxTree.Generated.cs", greenTreeCode),
             new("RedSyntaxTree.Generated.cs", redTreeCode),
+            new("SyntaxTree.Rewriters.Generated.cs", rewritersCode),
         ];
     }
 }

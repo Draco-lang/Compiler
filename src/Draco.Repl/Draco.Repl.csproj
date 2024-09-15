@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+
+    <!-- Dotnet tool -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dracorepl</ToolCommandName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Basic.Reference.Assemblies.Net80" Version="1.4.5" />
+    <PackageReference Include="PrettyPrompt" Version="4.1.1" />
+  </ItemGroup>
+
+</Project>

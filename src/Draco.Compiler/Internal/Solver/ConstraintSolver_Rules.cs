@@ -109,6 +109,8 @@ internal sealed partial class ConstraintSolver
                 }
                 if (membersWithName.Length == 1)
                 {
+                    // Check visibility
+                    this.Context.CheckVisibility(member.Locator, membersWithName[0], "member", diagnostics);
                     // One member, we know what type the member type is
                     var memberType = ((ITypedSymbol)membersWithName[0]).Type;
                     // NOTE: There used to be an assignable constraint here
@@ -122,9 +124,10 @@ internal sealed partial class ConstraintSolver
                 {
                     // All must be functions, otherwise we have bigger problems
                     // TODO: Can this assertion fail? Like in a faulty module decl?
+                    // NOTE: Visibility will be checked by the overload constraint
                     Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
                     UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
-                    var overload = new OverloadSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
+                    var overload = new FunctionGroupSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
                     member.CompletionSource.SetResult(overload);
                 }
             })
@@ -170,6 +173,13 @@ internal sealed partial class ConstraintSolver
                         : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
                     indexer.CompletionSource.SetResult(errorSymbol);
                     return;
+                }
+
+                // If there is a single indexer, we check visibility
+                // This is because in this case overload resolution will skip hecking visibility
+                if (indexers.Length == 1)
+                {
+                    this.Context.CheckVisibility(indexer.Locator, indexers[0], "indexer", diagnostics);
                 }
 
                 if (indexer.IsGetter)
@@ -293,10 +303,14 @@ internal sealed partial class ConstraintSolver
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
                     // Best-effort shape approximation
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.ReportDiagnostic(diagnostics, diag => diag
-                        .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
-                        .WithFormatArgs(overload.FunctionName));
                     overload.CompletionSource.SetResult(errorSymbol);
+                    // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
+                    if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsTypeVariable && !a.Type.Substitution.IsError))
+                    {
+                        overload.ReportDiagnostic(diagnostics, diag => diag
+                            .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
+                            .WithFormatArgs(overload.FunctionName));
+                    }
                     return;
                 }
 
@@ -306,15 +320,24 @@ internal sealed partial class ConstraintSolver
                     // Best-effort shape approximation
                     UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.ReportDiagnostic(diagnostics, diag => diag
-                        .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
-                        .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));
                     overload.CompletionSource.SetResult(errorSymbol);
+                    // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
+                    if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsError))
+                    {
+                        overload.ReportDiagnostic(diagnostics, diag => diag
+                            .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
+                            .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));
+                    }
                     return;
                 }
 
                 // Resolved fine, choose the symbol, which might generic-instantiate it
                 var chosen = this.GenericInstantiateIfNeeded(candidates.Single().Data);
+                if (overload.Candidates.InitialCandidates.Length != 1)
+                {
+                    // We assume that if the initial candidate count was 1, we already checked visibility
+                    this.Context.CheckVisibility(overload.Locator, chosen, "overload", diagnostics);
+                }
                 // Inference
                 if (chosen.IsVariadic)
                 {

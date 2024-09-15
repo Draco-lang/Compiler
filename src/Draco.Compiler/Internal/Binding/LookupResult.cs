@@ -25,7 +25,7 @@ internal sealed class LookupResult
     /// <summary>
     /// True, if the lookup should continue.
     /// </summary>
-    public bool ShouldContinue => !this.FoundAny || this.IsOverloadSet;
+    public bool ShouldContinue => !this.FoundAny || this.IsFunctionGroup;
 
     /// <summary>
     /// True, if symbols have been found during the lookup.
@@ -35,7 +35,7 @@ internal sealed class LookupResult
     /// <summary>
     /// True, if this result is collecting function overloads.
     /// </summary>
-    public bool IsOverloadSet =>
+    public bool IsFunctionGroup =>
            this.Symbols.Count > 0
         && this.Symbols.First() is FunctionSymbol;
 
@@ -52,7 +52,10 @@ internal sealed class LookupResult
     /// <returns>True, if <paramref name="symbol"/> fits into the set and can be added.</returns>
     public bool Add(Symbol symbol)
     {
-        if (this.IsOverloadSet)
+        // Unwrap
+        if (symbol is AliasSymbol alias) symbol = alias.FullResolution;
+
+        if (this.IsFunctionGroup)
         {
             // Only add functions
             if (symbol is not FunctionSymbol) return false;
@@ -71,11 +74,6 @@ internal sealed class LookupResult
         else
         {
             // Can be anything
-            if (symbol is TypeAliasSymbol typeAlias)
-            {
-                // Unwrap type alias
-                symbol = typeAlias.Substitution;
-            }
             this.symbols.Add(symbol);
             return true;
         }
@@ -96,12 +94,12 @@ internal sealed class LookupResult
         if (this.Symbols.Count > 1)
         {
             // Multiple symbols, potential overloading
-            if (this.IsOverloadSet)
+            if (this.IsFunctionGroup)
             {
                 var functions = this.Symbols
                     .Cast<FunctionSymbol>()
                     .ToImmutableArray();
-                return new OverloadSymbol(functions);
+                return new FunctionGroupSymbol(functions);
             }
             else
             {
@@ -155,7 +153,7 @@ internal sealed class LookupResult
 
     private void FilterByGenericArgumentCount(SyntaxNode? syntax)
     {
-        if (this.IsOverloadSet || this.Symbols.Count <= 1) return;
+        if (this.IsFunctionGroup || this.Symbols.Count <= 1) return;
 
         var genericArgs = GetGenericArguments(syntax);
         if (genericArgs is null) return;
@@ -177,7 +175,7 @@ internal sealed class LookupResult
 
     private bool ReportAmbiguousReferenceError(string name, SyntaxNode? syntax, DiagnosticBag diagnostics)
     {
-        if (this.IsOverloadSet || this.Symbols.Count <= 1) return false;
+        if (this.IsFunctionGroup || this.Symbols.Count <= 1) return false;
 
         // Multiple found, report error
         diagnostics.Add(Diagnostic.Create(

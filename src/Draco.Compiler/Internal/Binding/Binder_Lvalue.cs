@@ -8,7 +8,6 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -71,12 +70,14 @@ internal partial class Binder
                 : BinderFacts.IsValueSymbol;
 
             var members = container.StaticMembers
-                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
+                .Where(m => m.Name == memberName)
                 .Where(pred)
                 .ToImmutableArray();
 
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetValue(memberName, syntax, diagnostics);
+            this.CheckVisibility(syntax, symbol, "symbol", diagnostics);
+
             return this.SymbolToLvalue(syntax, symbol, constraints, diagnostics);
         }
         else
@@ -153,8 +154,7 @@ internal partial class Binder
         var receiver = await receiverTask;
         var indexer = await indexerTask;
 
-        var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
-        if (arrayIndexProperty is not null)
+        if (receiver.TypeRequired.IsArrayType)
         {
             return new BoundArrayAccessLvalue(
                 syntax,

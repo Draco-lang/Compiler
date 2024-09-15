@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Utilities;
 
@@ -30,6 +32,36 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// True, if this type is a delegate type.
     /// </summary>
     public virtual bool IsDelegateType => false;
+
+    /// <summary>
+    /// True, if this type is an enum type.
+    /// </summary>
+    public virtual bool IsEnumType => false;
+
+    /// <summary>
+    /// The underlying type of this enum type, in case this is an enum type.
+    /// </summary>
+    public TypeSymbol? EnumUnderlyingType
+    {
+        get
+        {
+            if (!this.IsEnumType) return null;
+            return this.DefinedMembers
+                .OfType<FieldSymbol>()
+                .FirstOrDefault(f => f.Name == CompilerConstants.EnumTagField)
+                ?.Type;
+        }
+    }
+
+    /// <summary>
+    /// True. if this is a native .NET array type.
+    /// </summary>
+    public virtual bool IsArrayType => false;
+
+    /// <summary>
+    /// True, if this type is an attribute type derived from <see cref="Attribute"/>.
+    /// </summary>
+    public virtual bool IsAttributeType => false;
 
     /// <summary>
     /// True, if this type is an interface.
@@ -70,14 +102,9 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     private ImmutableArray<TypeSymbol> baseTypes;
 
     /// <summary>
-    /// The members defined directly in this type doesn't include members from <see cref="ImmediateBaseTypes"/>.
-    /// </summary>
-    public virtual IEnumerable<Symbol> DefinedMembers => [];
-
-    /// <summary>
     /// The constructors defined directly in this type.
     /// </summary>
-    public IEnumerable<FunctionSymbol> Constructors => this.DefinedMembers
+    public virtual IEnumerable<FunctionSymbol> Constructors => this.DefinedMembers
         .OfType<FunctionSymbol>()
         .Where(f => f.IsConstructor);
 
@@ -100,6 +127,8 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public override TypeSymbol? GenericDefinition => null;
 
     public bool IsStatic => true;
+    public bool IsExplicitImplementation => false;
+    public override SymbolKind Kind => SymbolKind.Type;
 
     /// <summary>
     /// The invokable function, if this is a delegate type.
@@ -124,6 +153,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
         where T : Symbol, IOverridableSymbol => this.BaseTypes
         .SelectMany(x => x.DefinedMembers)
         .OfType<T>()
+        .Except([@override])
         .FirstOrDefault(x => x.CanBeOverriddenBy(@override));
 
     private ImmutableArray<Symbol> BuildMembers()

@@ -11,9 +11,28 @@ using Draco.Compiler.Internal.Diagnostics;
 namespace Draco.Compiler.Internal.Syntax;
 
 /// <summary>
+/// The different parser modes.
+/// </summary>
+internal enum ParserMode
+{
+    /// <summary>
+    /// The default parsing mode.
+    /// </summary>
+    None,
+
+    /// <summary>
+    /// A mode that bails out as early as possible for expression parsing when a newline is encountered.
+    /// </summary>
+    Repl,
+}
+
+/// <summary>
 /// Parses a sequence of <see cref="SyntaxToken"/>s into a <see cref="SyntaxNode"/>.
 /// </summary>
-internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable diagnostics)
+internal sealed class Parser(
+    ITokenSource tokenSource,
+    SyntaxDiagnosticTable diagnostics,
+    ParserMode parserMode = ParserMode.None)
 {
     /// <summary>
     /// The different declaration contexts.
@@ -92,11 +111,14 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <returns>An <see cref="ExpressionParserDelegate"/> that recognizes <paramref name="operators"/> as prefix operators.</returns>
     private ExpressionParserDelegate Prefix(params TokenKind[] operators) => level =>
     {
-        var opKind = this.Peek();
+        var opKind = this.PeekKind();
         if (operators.Contains(opKind))
         {
             // There is such operator on this level
             var op = this.Advance();
+
+            this.CheckHeritageToken(op, "operator");
+
             var subexpr = this.ParseExpression(level);
             return new UnaryExpressionSyntax(op, subexpr);
         }
@@ -117,11 +139,14 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     {
         // We unroll left-associativity into a loop
         var result = this.ParseExpression(level + 1);
-        while (true)
+        while (!this.CanBailOut(result))
         {
-            var opKind = this.Peek();
+            var opKind = this.PeekKind();
             if (!operators.Contains(opKind)) break;
             var op = this.Advance();
+
+            this.CheckHeritageToken(op, "operator");
+
             var right = this.ParseExpression(level + 1);
             result = new BinaryExpressionSyntax(result, op, right);
         }
@@ -138,8 +163,9 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     {
         // Right-associativity is simply right-recursion
         var result = this.ParseExpression(level + 1);
-        var opKind = this.Peek();
-        if (operators.Contains(this.Peek()))
+        if (this.CanBailOut(result)) return result;
+        var opKind = this.PeekKind();
+        if (operators.Contains(opKind))
         {
             var op = this.Advance();
             var right = this.ParseExpression(level);
@@ -186,6 +212,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         TokenKind.KeywordGoto,
         TokenKind.KeywordIf,
         TokenKind.KeywordNot,
+        TokenKind.CNot,
         TokenKind.KeywordReturn,
         TokenKind.KeywordTrue,
         TokenKind.KeywordWhile,
@@ -197,16 +224,6 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         TokenKind.Minus,
         TokenKind.Star,
     ];
-
-    /// <summary>
-    /// Checks, if the current token kind and the potentially following tokens form a declaration.
-    /// </summary>
-    /// <param name="kind">The current token kind.</param>
-    /// <returns>True, if <paramref name="kind"/> in the current state can form the start of a declaration.</returns>
-    private bool IsDeclarationStarter(TokenKind kind) =>
-           declarationStarters.Contains(kind)
-        // Label
-        || kind == TokenKind.Identifier && this.Peek(1) == TokenKind.Colon;
 
     /// <summary>
     /// Checks if the token kind is visibility modifier.
@@ -223,15 +240,108 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     private static bool IsExpressionStarter(TokenKind kind) => expressionStarters.Contains(kind);
 
     /// <summary>
+    /// Checks, if there is a declaration starting at the given offset.
+    /// </summary>
+    /// <param name="context">The current context.</param>
+    /// <param name="offset">The offset to check for.</param>
+    /// <returns>True, if there is a declaration starting at the given offset, otherwise false.</returns>
+    private bool IsDeclarationStarter(DeclarationContext context, int offset = 0)
+    {
+        var peek = this.Peek(offset);
+        if (declarationStarters.Contains(peek.Kind)) return true;
+        // Attribute
+        if (peek.Kind == TokenKind.AtSign) return true;
+        // Visibility modifier
+        if (IsVisibilityModifier(peek.Kind)) return true;
+        // Label
+        if (context == DeclarationContext.Local
+         && peek.Kind == TokenKind.Identifier
+         && !this.CanBailOut(peek)
+         && this.PeekKind(offset + 1) == TokenKind.Colon)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Parses a <see cref="CompilationUnitSyntax"/> until the end of input.
     /// </summary>
     /// <returns>The parsed <see cref="CompilationUnitSyntax"/>.</returns>
     public CompilationUnitSyntax ParseCompilationUnit()
     {
         var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
-        while (this.Peek() != TokenKind.EndOfInput) decls.Add(this.ParseDeclaration());
+        while (this.PeekKind() != TokenKind.EndOfInput) decls.Add(this.ParseDeclaration());
         var end = this.Expect(TokenKind.EndOfInput);
         return new(decls.ToSyntaxList(), end);
+    }
+
+    /// <summary>
+    /// Parses a script entry.
+    /// </summary>
+    /// <returns>The parsed <see cref="ScriptEntrySyntax"/>.</returns>
+    public ScriptEntrySyntax ParseScriptEntry()
+    {
+        var statements = SyntaxList.CreateBuilder<StatementSyntax>();
+        var value = null as ExpressionSyntax;
+
+        while (this.PeekKind() != TokenKind.EndOfInput)
+        {
+            var element = this.ParseReplEntryElement();
+            if (element is StatementSyntax stmt)
+            {
+                statements.Add(stmt);
+            }
+            else if (element is DeclarationSyntax decl)
+            {
+                statements.Add(new DeclarationStatementSyntax(decl));
+            }
+            else if (element is ExpressionSyntax expr)
+            {
+                value = expr;
+                break;
+            }
+            else
+            {
+                throw new InvalidOperationException("illegal script entry parsed");
+            }
+        }
+
+        var end = this.Expect(TokenKind.EndOfInput);
+        return new ScriptEntrySyntax(statements.ToSyntaxList(), value, end);
+    }
+
+    private SyntaxNode ParseReplEntryElement()
+    {
+        var visibility = this.ParseVisibilityModifier();
+        if (visibility is not null)
+        {
+            // Must be a declaration
+            return this.ParseDeclaration();
+        }
+
+        if (this.IsDeclarationStarter(DeclarationContext.Local))
+        {
+            // Must be a declaration
+            return this.ParseDeclaration();
+        }
+
+        // Either an expression or a statement
+        // We can start by parsing an expression
+        var expr = this.ParseExpression();
+
+        // If there is a newline in the last token of the expression, we can assume it's an expression
+        if (this.CanBailOut(expr)) return expr;
+
+        // We can peek for a semicolon
+        if (this.Matches(TokenKind.Semicolon, out var semicolon))
+        {
+            // It's a statement
+            return new ExpressionStatementSyntax(expr, semicolon);
+        }
+
+        // It's an expression
+        return expr;
     }
 
     /// <summary>
@@ -249,11 +359,12 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
     private DeclarationSyntax ParseDeclaration(DeclarationContext context)
     {
+        var attributes = this.ParseAttributeList();
         var visibility = this.ParseVisibilityModifier();
-        switch (this.Peek())
+        switch (this.PeekKind())
         {
         case TokenKind.KeywordImport:
-            return this.ParseImportDeclaration(visibility);
+            return this.ParseImportDeclaration(attributes, visibility);
 
         case TokenKind.KeywordValue:
         {
@@ -265,33 +376,68 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             return this.ParseClassDeclaration(visibility: visibility, valueType: null);
 
         case TokenKind.KeywordFunc:
-            return this.ParseFunctionDeclaration(visibility);
+            return this.ParseFunctionDeclaration(attributes, visibility, context);
 
         case TokenKind.KeywordModule:
-            return this.ParseModuleDeclaration(context);
+            return this.ParseModuleDeclaration(attributes, visibility, context);
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration(visibility);
+            return this.ParseVariableDeclaration(attributes, visibility, context);
 
-        case TokenKind.Identifier when this.Peek(1) == TokenKind.Colon:
-            return this.ParseLabelDeclaration(context);
+        case TokenKind.Identifier when this.PeekKind(1) == TokenKind.Colon:
+            return this.ParseLabelDeclaration(attributes, visibility, context);
 
         default:
         {
             var input = this.Synchronize(t => t switch
             {
-                _ when this.IsDeclarationStarter(t) => false,
-                _ when IsVisibilityModifier(t) => false,
+                _ when this.IsDeclarationStarter(context) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "declaration");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
-            var node = new UnexpectedDeclarationSyntax(visibility, input);
-            this.AddDiagnostic(node, diag);
+            var node = new UnexpectedDeclarationSyntax(attributes, visibility, input);
+            this.AddDiagnostic(node, info);
             return node;
         }
         }
+    }
+
+    /// <summary>
+    /// Parses a list of attributes.
+    /// </summary>
+    /// <returns>The parsed <see cref="SyntaxList{AttributeSyntax}"/>.</returns>
+    private SyntaxList<AttributeSyntax>? ParseAttributeList()
+    {
+        if (this.PeekKind() != TokenKind.AtSign) return null;
+
+        var result = SyntaxList.CreateBuilder<AttributeSyntax>();
+        while (this.PeekKind() == TokenKind.AtSign)
+        {
+            result.Add(this.ParseAttribute());
+        }
+        return result.ToSyntaxList();
+    }
+
+    /// <summary>
+    /// Parses a single attribute.
+    /// </summary>
+    /// <returns>The parsed <see cref="AttributeSyntax"/>.</returns>
+    private AttributeSyntax ParseAttribute()
+    {
+        var atSign = this.Expect(TokenKind.AtSign);
+        var type = this.ParseType();
+        var args = null as ArgumentListSyntax;
+        if (this.Matches(TokenKind.ParenOpen, out var openParen))
+        {
+            var argList = this.ParseSeparatedSyntaxList(
+                elementParser: this.ParseExpression,
+                separatorKind: TokenKind.Comma,
+                stopKind: TokenKind.ParenClose);
+            var closeParen = this.Expect(TokenKind.ParenClose);
+            args = new ArgumentListSyntax(openParen, argList, closeParen);
+        }
+        return new AttributeSyntax(atSign, type, args);
     }
 
     /// <summary>
@@ -300,10 +446,10 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <returns>The parsed <see cref="StatementSyntax"/>.</returns>
     internal StatementSyntax ParseStatement(bool allowDecl)
     {
-        switch (this.Peek())
+        switch (this.PeekKind())
         {
         // Declarations
-        case TokenKind t when allowDecl && this.IsDeclarationStarter(t):
+        case TokenKind when allowDecl && this.IsDeclarationStarter(DeclarationContext.Local):
         {
             var decl = this.ParseDeclaration(DeclarationContext.Local);
             return new DeclarationStatementSyntax(decl);
@@ -333,15 +479,22 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <summary>
     /// Parses an <see cref="ImportDeclarationSyntax"/>.
     /// </summary>
+    /// <param name="attributes">The attributes on the import.</param>
+    /// <param name="visibility">The visibility modifier on the import.</param>
     /// <returns>The parsed <see cref="ImportDeclarationSyntax"/>.</returns>
-    private ImportDeclarationSyntax ParseImportDeclaration(SyntaxToken? modifier)
+    private ImportDeclarationSyntax ParseImportDeclaration(SyntaxList<AttributeSyntax>? attributes, SyntaxToken? visibility)
     {
-        // There shouldn't be a modifier on import.
-        if (modifier is not null)
+        // There should not be attributes on import
+        if (attributes is not null)
         {
-            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifierBeforeImport, formatArgs: "declaration");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: modifier.Width);
-            this.AddDiagnostic(modifier, diag);
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedAttributeList, formatArgs: "import");
+            this.AddDiagnostic(attributes, info);
+        }
+        // There shouldn't be a modifier on import
+        if (visibility is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "declaration");
+            this.AddDiagnostic(visibility, info);
         }
         // Import keyword
         var importKeyword = this.Expect(TokenKind.KeywordImport);
@@ -349,7 +502,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var path = this.ParseImportPath();
         // Ending semicolon
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new ImportDeclarationSyntax(modifier, importKeyword, path, semicolon);
+        return new ImportDeclarationSyntax(attributes, visibility, importKeyword, path, semicolon);
     }
 
     /// <summary>
@@ -449,16 +602,33 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <summary>
     /// Parses a <see cref="VariableDeclarationSyntax"/>.
     /// </summary>
+    /// <param name="attributes">The attributes on the import.</param>
+    /// <param name="visibility">The visibility modifier on the import.</param>
+    /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
-    private VariableDeclarationSyntax ParseVariableDeclaration(SyntaxToken? visibility)
+    private VariableDeclarationSyntax ParseVariableDeclaration(
+        SyntaxList<AttributeSyntax>? attributes,
+        SyntaxToken? visibility,
+        DeclarationContext context)
     {
+        if (context == DeclarationContext.Local && attributes is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedAttributeList, formatArgs: "variable declaration");
+            this.AddDiagnostic(attributes, info);
+        }
+        if (context == DeclarationContext.Local && visibility is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "variable declaration");
+            this.AddDiagnostic(visibility, info);
+        }
+
         // NOTE: We will always call this function by checking the leading keyword
         var keyword = this.Advance();
         Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);
         var identifier = this.Expect(TokenKind.Identifier);
         // We don't necessarily have type specifier
         TypeSpecifierSyntax? type = null;
-        if (this.Peek() == TokenKind.Colon) type = this.ParseTypeSpecifier();
+        if (this.PeekKind() == TokenKind.Colon) type = this.ParseTypeSpecifier();
         // We don't necessarily have value assigned to the variable
         ValueSpecifierSyntax? assignment = null;
         if (this.Matches(TokenKind.Assign, out var assign))
@@ -468,22 +638,34 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         }
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(visibility, keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(attributes, visibility, keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
     /// Parses a function declaration.
     /// </summary>
+    /// <param name="attributes">The attributes on the function.</param>
+    /// <param name="visibility">The visibility modifier on the function.</param>
+    /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="FunctionDeclarationSyntax"/>.</returns>
-    private FunctionDeclarationSyntax ParseFunctionDeclaration(SyntaxToken? visibility)
+    private FunctionDeclarationSyntax ParseFunctionDeclaration(
+        SyntaxList<AttributeSyntax>? attributes,
+        SyntaxToken? visibility,
+        DeclarationContext context)
     {
+        if (context == DeclarationContext.Local && visibility is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "function declaration");
+            this.AddDiagnostic(visibility, info);
+        }
+
         // Func keyword and name of the function
         var funcKeyword = this.Expect(TokenKind.KeywordFunc);
         var name = this.Expect(TokenKind.Identifier);
 
         // Optional generics
         var generics = null as GenericParameterListSyntax;
-        if (this.Peek() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
+        if (this.PeekKind() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
 
         // Parameters
         var openParen = this.Expect(TokenKind.ParenOpen);
@@ -495,11 +677,12 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
 
         // We don't necessarily have type specifier
         TypeSpecifierSyntax? returnType = null;
-        if (this.Peek() == TokenKind.Colon) returnType = this.ParseTypeSpecifier();
+        if (this.PeekKind() == TokenKind.Colon) returnType = this.ParseTypeSpecifier();
 
         var body = this.ParseFunctionBody();
 
         return new FunctionDeclarationSyntax(
+            attributes,
             visibility,
             funcKeyword,
             name,
@@ -514,10 +697,21 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <summary>
     /// Parses a module declaration.
     /// </summary>
+    /// <param name="attributes">The attributes on the module.</param>
+    /// <param name="visibility">The visibility modifier on the module.</param>
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
-    private DeclarationSyntax ParseModuleDeclaration(DeclarationContext context)
+    private DeclarationSyntax ParseModuleDeclaration(
+        SyntaxList<AttributeSyntax>? attributes,
+        SyntaxToken? visibility,
+        DeclarationContext context)
     {
+        if (visibility is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "module");
+            this.AddDiagnostic(visibility, info);
+        }
+
         // Module keyword and name of the module
         var moduleKeyword = this.Expect(TokenKind.KeywordModule);
         var name = this.Expect(TokenKind.Identifier);
@@ -526,7 +720,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
         while (true)
         {
-            switch (this.Peek())
+            switch (this.PeekKind())
             {
             case TokenKind.EndOfInput:
             case TokenKind.CurlyClose:
@@ -541,6 +735,8 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var closeCurly = this.Expect(TokenKind.CurlyClose);
 
         var result = new ModuleDeclarationSyntax(
+            attributes,
+            visibility,
             moduleKeyword,
             name,
             openCurly,
@@ -551,11 +747,11 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         {
             // Create diagnostic
             var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "module");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
-            result = new UnexpectedDeclarationSyntax(null, SyntaxList.Create(result as SyntaxNode));
+            // NOTE: Attributes and visibility are already attached to the module
+            result = new UnexpectedDeclarationSyntax(null, null, SyntaxList.Create(result as SyntaxNode));
             // Add diagnostic
-            this.AddDiagnostic(result, diag);
+            this.AddDiagnostic(result, info);
         }
         return result;
     }
@@ -563,22 +759,38 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <summary>
     /// Parses a label declaration.
     /// </summary>
+    /// <param name="attributes">The attributes on the module.</param>
+    /// <param name="visibility">The visibility modifier on the module.</param>
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="DeclarationSyntax"/>.</returns>
-    private DeclarationSyntax ParseLabelDeclaration(DeclarationContext context)
+    private DeclarationSyntax ParseLabelDeclaration(
+        SyntaxList<AttributeSyntax>? attributes,
+        SyntaxToken? visibility,
+        DeclarationContext context)
     {
+        if (attributes is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedAttributeList, formatArgs: "label");
+            this.AddDiagnostic(attributes, info);
+        }
+        if (visibility is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedVisibilityModifier, formatArgs: "label");
+            this.AddDiagnostic(visibility, info);
+        }
+
         var labelName = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
-        var result = new LabelDeclarationSyntax(labelName, colon) as DeclarationSyntax;
+        var result = new LabelDeclarationSyntax(attributes, visibility, labelName, colon) as DeclarationSyntax;
         if (context != DeclarationContext.Local)
         {
             // Create diagnostic
             var info = DiagnosticInfo.Create(SyntaxErrors.IllegalElementInContext, formatArgs: "label");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: result.Width);
             // Wrap up the result in an error node
-            result = new UnexpectedDeclarationSyntax(null, SyntaxList.Create(result as SyntaxNode));
+            // NOTE: Attributes and visibility are already attached to the label
+            result = new UnexpectedDeclarationSyntax(null, null, SyntaxList.Create(result as SyntaxNode));
             // Add diagnostic
-            this.AddDiagnostic(result, diag);
+            this.AddDiagnostic(result, info);
         }
         return result;
     }
@@ -589,11 +801,12 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <returns>The parsed <see cref="ParameterSyntax"/>.</returns>
     private ParameterSyntax ParseParameter()
     {
+        var attributes = this.ParseAttributeList();
         this.Matches(TokenKind.Ellipsis, out var variadic);
         var name = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
-        return new(variadic, name, colon, type);
+        return new(attributes, variadic, name, colon, type);
     }
 
     /// <summary>
@@ -633,7 +846,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             var semicolon = this.Expect(TokenKind.Semicolon);
             return new InlineFunctionBodySyntax(assign, expr, semicolon);
         }
-        else if (this.Peek() == TokenKind.CurlyOpen)
+        else if (this.PeekKind() == TokenKind.CurlyOpen)
         {
             var block = this.ParseBlock(ControlFlowContext.Stmt);
             return new BlockFunctionBodySyntax(
@@ -645,17 +858,15 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         {
             // NOTE: I'm not sure what's the best strategy here
             // Maybe if we get to a '=' or '{' we could actually try to re-parse and prepend with the bogus input
-            var input = this.Synchronize(t => t switch
+            var input = this.Synchronize(t => t.Kind switch
             {
                 TokenKind.Semicolon or TokenKind.CurlyClose => false,
-                // NOTE: We don't consider label here
-                _ when declarationStarters.Contains(t) => false,
+                _ when this.IsDeclarationStarter(DeclarationContext.Global) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "function body");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedFunctionBodySyntax(input);
-            this.AddDiagnostic(node, diag);
+            this.AddDiagnostic(node, info);
             return node;
         }
     }
@@ -686,7 +897,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var result = this.ParseAtomType();
         while (true)
         {
-            var peek = this.Peek();
+            var peek = this.PeekKind();
             if (peek == TokenKind.Dot)
             {
                 // Member access
@@ -725,19 +936,18 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         }
         else
         {
-            var input = this.Synchronize(t => t switch
+            var input = this.Synchronize(t => t.Kind switch
             {
                 TokenKind.Semicolon or TokenKind.Comma
-                or TokenKind.ParenClose or TokenKind.BracketClose
-                or TokenKind.CurlyClose or TokenKind.InterpolationEnd
-                or TokenKind.Assign => false,
-                _ when IsExpressionStarter(t) => false,
+             or TokenKind.ParenClose or TokenKind.BracketClose
+             or TokenKind.CurlyClose or TokenKind.InterpolationEnd
+             or TokenKind.Assign => false,
+                _ when IsExpressionStarter(t.Kind) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "type");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedTypeSyntax(input);
-            this.AddDiagnostic(node, diag);
+            this.AddDiagnostic(node, info);
             return node;
         }
     }
@@ -749,7 +959,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <returns>The parsed <see cref="ExpressionSyntax"/>.</returns>
     private ExpressionSyntax ParseControlFlowExpression(ControlFlowContext ctx)
     {
-        var peekKind = this.Peek();
+        var peekKind = this.PeekKind();
         Debug.Assert(peekKind is TokenKind.CurlyOpen
                               or TokenKind.KeywordIf
                               or TokenKind.KeywordWhile
@@ -809,14 +1019,14 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         ExpressionSyntax? value = null;
         while (true)
         {
-            switch (this.Peek())
+            switch (this.PeekKind())
             {
             case TokenKind.EndOfInput:
             case TokenKind.CurlyClose:
                 // On a close curly or out of input, we can immediately exit
                 goto end_of_block;
 
-            case TokenKind t when this.IsDeclarationStarter(t):
+            case TokenKind when this.IsDeclarationStarter(DeclarationContext.Local):
             {
                 var decl = this.ParseDeclaration(DeclarationContext.Local);
                 stmts.Add(new DeclarationStatementSyntax(decl));
@@ -829,7 +1039,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             case TokenKind.KeywordFor:
             {
                 var expr = this.ParseControlFlowExpression(ctx);
-                if (ctx == ControlFlowContext.Expr && this.Peek() == TokenKind.CurlyClose)
+                if (ctx == ControlFlowContext.Expr && this.PeekKind() == TokenKind.CurlyClose)
                 {
                     // Treat as expression
                     value = expr;
@@ -842,11 +1052,11 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
 
             default:
             {
-                if (IsExpressionStarter(this.Peek()))
+                if (IsExpressionStarter(this.PeekKind()))
                 {
                     // Some expression
                     var expr = this.ParseExpression();
-                    if (ctx == ControlFlowContext.Stmt || this.Peek() != TokenKind.CurlyClose)
+                    if (ctx == ControlFlowContext.Stmt || this.PeekKind() != TokenKind.CurlyClose)
                     {
                         // Likely just a statement, can continue
                         var semicolon = this.Expect(TokenKind.Semicolon);
@@ -862,17 +1072,16 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
                 else
                 {
                     // Error, synchronize
-                    var input = this.Synchronize(kind => kind switch
+                    var input = this.Synchronize(t => t.Kind switch
                     {
                         TokenKind.CurlyClose => false,
-                        _ when this.IsDeclarationStarter(kind) => false,
-                        _ when IsExpressionStarter(kind) => false,
+                        _ when this.IsDeclarationStarter(DeclarationContext.Local) => false,
+                        _ when IsExpressionStarter(t.Kind) => false,
                         _ => true,
                     });
                     var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "statement");
-                    var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
                     var errNode = new UnexpectedStatementSyntax(input);
-                    this.AddDiagnostic(errNode, diag);
+                    this.AddDiagnostic(errNode, info);
                     stmts.Add(errNode);
                 }
                 break;
@@ -934,7 +1143,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var openParen = this.Expect(TokenKind.ParenOpen);
         var iterator = this.Expect(TokenKind.Identifier);
         TypeSpecifierSyntax? elementType = null;
-        if (this.Peek() == TokenKind.Colon) elementType = this.ParseTypeSpecifier();
+        if (this.PeekKind() == TokenKind.Colon) elementType = this.ParseTypeSpecifier();
         var inKeyword = this.Expect(TokenKind.KeywordIn);
         var sequence = this.ParseExpression();
         var closeParen = this.Expect(TokenKind.ParenClose);
@@ -963,17 +1172,17 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             TokenKind.PlusAssign, TokenKind.MinusAssign,
             TokenKind.StarAssign, TokenKind.SlashAssign)(level),
         // Then binary or
-        2 => this.BinaryLeft(TokenKind.KeywordOr)(level),
+        2 => this.BinaryLeft(TokenKind.KeywordOr, TokenKind.COr)(level),
         // Then binary and
-        3 => this.BinaryLeft(TokenKind.KeywordAnd)(level),
+        3 => this.BinaryLeft(TokenKind.KeywordAnd, TokenKind.CAnd)(level),
         // Then unary not
-        4 => this.Prefix(TokenKind.KeywordNot)(level),
+        4 => this.Prefix(TokenKind.KeywordNot, TokenKind.CNot)(level),
         // Then relational operators
         5 => this.ParseRelationalLevelExpression(level),
         // Then binary +, -
         6 => this.BinaryLeft(TokenKind.Plus, TokenKind.Minus)(level),
         // Then binary *, /, mod, rem
-        7 => this.BinaryLeft(TokenKind.Star, TokenKind.Slash, TokenKind.KeywordMod, TokenKind.KeywordRem)(level),
+        7 => this.BinaryLeft(TokenKind.Star, TokenKind.Slash, TokenKind.KeywordMod, TokenKind.CMod, TokenKind.KeywordRem)(level),
         // Then prefix unary + and -
         8 => this.Prefix(TokenKind.Plus, TokenKind.Minus)(level),
         // Then comes call, indexing and member access
@@ -987,13 +1196,13 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
 
     private ExpressionSyntax ParsePseudoStatementLevelExpression(int level)
     {
-        switch (this.Peek())
+        switch (this.PeekKind())
         {
         case TokenKind.KeywordReturn:
         {
             var returnKeyword = this.Advance();
             ExpressionSyntax? value = null;
-            if (IsExpressionStarter(this.Peek())) value = this.ParseExpression();
+            if (IsExpressionStarter(this.PeekKind())) value = this.ParseExpression();
             return new ReturnExpressionSyntax(returnKeyword, value);
         }
         case TokenKind.KeywordGoto:
@@ -1010,14 +1219,17 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     private ExpressionSyntax ParseRelationalLevelExpression(int level)
     {
         var left = this.ParseExpression(level + 1);
+        if (this.CanBailOut(left)) return left;
+
         var comparisons = SyntaxList.CreateBuilder<ComparisonElementSyntax>();
         while (true)
         {
-            var opKind = this.Peek();
+            var opKind = this.PeekKind();
             if (!SyntaxFacts.IsRelationalOperator(opKind)) break;
             var op = this.Advance();
             var right = this.ParseExpression(level + 1);
             comparisons.Add(new(op, right));
+            if (this.CanBailOut(right)) break;
         }
         return comparisons.Count == 0
             ? left
@@ -1027,9 +1239,9 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     private ExpressionSyntax ParseCallLevelExpression(int level)
     {
         var result = this.ParseExpression(level + 1);
-        while (true)
+        while (!this.CanBailOut(result))
         {
-            var peek = this.Peek();
+            var peek = this.PeekKind();
             if (peek == TokenKind.ParenOpen)
             {
                 var openParen = this.Expect(TokenKind.ParenOpen);
@@ -1078,7 +1290,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
 
     private ExpressionSyntax ParseAtomExpression(int level)
     {
-        switch (this.Peek())
+        switch (this.PeekKind())
         {
         case TokenKind.LiteralInteger:
         case TokenKind.LiteralFloat:
@@ -1116,18 +1328,17 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             return this.ParseControlFlowExpression(ControlFlowContext.Expr);
         default:
         {
-            var input = this.Synchronize(t => t switch
+            var input = this.Synchronize(t => t.Kind switch
             {
                 TokenKind.Semicolon or TokenKind.Comma
-                or TokenKind.ParenClose or TokenKind.BracketClose
-                or TokenKind.CurlyClose or TokenKind.InterpolationEnd => false,
+             or TokenKind.ParenClose or TokenKind.BracketClose
+             or TokenKind.CurlyClose or TokenKind.InterpolationEnd => false,
                 var kind when IsExpressionStarter(kind) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "expression");
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var node = new UnexpectedExpressionSyntax(input);
-            this.AddDiagnostic(node, diag);
+            this.AddDiagnostic(node, info);
             return node;
         }
         }
@@ -1143,8 +1354,8 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var content = SyntaxList.CreateBuilder<StringPartSyntax>();
         while (true)
         {
-            var peek = this.Peek();
-            if (peek == TokenKind.StringContent)
+            var peek = this.PeekKind();
+            if (peek == TokenKind.StringContent || peek == TokenKind.EscapeSequence)
             {
                 var part = this.Advance();
                 content.Add(new TextStringPartSyntax(part));
@@ -1178,21 +1389,20 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         if (!openQuote.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline))
         {
             // Possible stray tokens inline
-            var input = this.Synchronize(t => t switch
+            var input = this.Synchronize(t => t.Kind switch
             {
                 TokenKind.MultiLineStringEnd or TokenKind.StringNewline => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.ExtraTokensInlineWithOpenQuotesOfMultiLineString);
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: input.FullWidth);
             var unexpected = new UnexpectedStringPartSyntax(input);
-            this.AddDiagnostic(unexpected, diag);
+            this.AddDiagnostic(unexpected, info);
             content.Add(unexpected);
         }
         while (true)
         {
-            var peek = this.Peek();
-            if (peek == TokenKind.StringContent || peek == TokenKind.StringNewline)
+            var peek = this.PeekKind();
+            if (peek == TokenKind.StringContent || peek == TokenKind.StringNewline || peek == TokenKind.EscapeSequence)
             {
                 var part = this.Advance();
                 content.Add(new TextStringPartSyntax(part));
@@ -1267,8 +1477,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         {
             // Error, the closing quotes are not on a newline
             var info = DiagnosticInfo.Create(SyntaxErrors.ClosingQuotesOfMultiLineStringNotOnNewLine);
-            var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: closeQuote.FullWidth);
-            this.AddDiagnostic(closeQuote, diag);
+            this.AddDiagnostic(closeQuote, info);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
     }
@@ -1303,13 +1512,13 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <returns>The result of the disambiguation.</returns>
     private LessThanDisambiguation DisambiguateLessThan(ref int offset)
     {
-        Debug.Assert(this.Peek(offset) == TokenKind.LessThan);
+        Debug.Assert(this.PeekKind(offset) == TokenKind.LessThan);
 
         // Skip '<'
         ++offset;
         while (true)
         {
-            var peek = this.Peek(offset);
+            var peek = this.PeekKind(offset);
 
             switch (peek)
             {
@@ -1322,9 +1531,14 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             }
             case TokenKind.Identifier:
             {
+                // Special case, we are in REPL mode
+                // and are past an identifier
+                // If we can bail, do so to avoid overpeeking
+                if (this.CanBailOut(this.Peek(offset))) return LessThanDisambiguation.Operator;
+
                 ++offset;
                 // We can have a nested generic here
-                if (this.Peek(offset) == TokenKind.LessThan)
+                if (this.PeekKind(offset) == TokenKind.LessThan)
                 {
                     // Judge this list then
                     var judgement = this.DisambiguateLessThan(ref offset);
@@ -1338,7 +1552,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
             {
                 // We could not decide, we peek one ahead to determine
                 ++offset;
-                var next = this.Peek(offset);
+                var next = this.PeekKind(offset);
                 return next switch
                 {
                     TokenKind.ParenOpen => LessThanDisambiguation.Generics,
@@ -1373,7 +1587,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         while (true)
         {
             // Stop token met, don't go further
-            if (this.Peek() == stopKind) break;
+            if (this.PeekKind() == stopKind) break;
             // Parse an element
             var element = elementParser();
             elements.Add(element);
@@ -1385,7 +1599,26 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         return elements.ToSeparatedSyntaxList();
     }
 
-    private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.Peek()) ? this.Advance() : null;
+    private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.PeekKind()) ? this.Advance() : null;
+
+    private bool CanBailOut(SyntaxNode node)
+    {
+        if (parserMode != ParserMode.Repl) return false;
+        return node.LastToken?.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline) == true;
+    }
+
+    /// <summary>
+    /// Checks a <see cref="SyntaxToken"/> for whether it is a heritage token and reports an error in case it is.
+    /// </summary>
+    /// <param name="token">The token to check.</param>
+    /// <param name="syntaxKind">The text which is displayed in the reported diagnostic indicating what kind of syntactic element the heritage token is.</param>
+    private void CheckHeritageToken(SyntaxToken token, string syntaxKind)
+    {
+        if (SyntaxFacts.GetHeritageReplacement(token.Kind) is not { } replacementKind) return;
+
+        var info = DiagnosticInfo.Create(SyntaxErrors.CHeritageToken, SyntaxFacts.GetUserFriendlyName(token.Kind), syntaxKind, SyntaxFacts.GetUserFriendlyName(replacementKind));
+        this.AddDiagnostic(token, info);
+    }
 
     // Token-level operators
 
@@ -1395,14 +1628,14 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// </summary>
     /// <param name="keepGoing">The predicate that dictates if the consumption should keep going.</param>
     /// <returns>The consumed list of <see cref="SyntaxToken"/>s as <see cref="SyntaxNode"/>s.</returns>
-    private SyntaxList<SyntaxNode> Synchronize(Func<TokenKind, bool> keepGoing)
+    private SyntaxList<SyntaxNode> Synchronize(Func<SyntaxToken, bool> keepGoing)
     {
         // NOTE: A possible improvement could be to track opening and closing token pairs optionally
         var input = SyntaxList.CreateBuilder<SyntaxNode>();
         while (true)
         {
             var peek = this.Peek();
-            if (peek == TokenKind.EndOfInput) break;
+            if (peek.Kind == TokenKind.EndOfInput) break;
             if (!keepGoing(peek)) break;
             input.Add(this.Advance());
         }
@@ -1439,7 +1672,7 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     /// <returns>True, if the upcoming token is of kind <paramref name="kind"/>.</returns>
     private bool Matches(TokenKind kind, [MaybeNullWhen(false)] out SyntaxToken token)
     {
-        if (this.Peek() == kind)
+        if (this.PeekKind() == kind)
         {
             token = this.Advance();
             return true;
@@ -1452,13 +1685,18 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
     }
 
     /// <summary>
-    /// Peeks ahead the kind of a token in the token source.
+    /// Peeks ahead a token in the token source.
     /// </summary>
     /// <param name="offset">The amount to peek ahead.</param>
-    /// <returns>The <see cref="TokenKind"/> of the <see cref="SyntaxToken"/> that is <paramref name="offset"/>
-    /// ahead.</returns>
-    private TokenKind Peek(int offset = 0) =>
-        tokenSource.Peek(offset).Kind;
+    /// <returns>The <see cref="SyntaxToken"/> that is <paramref name="offset"/> ahead.</returns>
+    private SyntaxToken Peek(int offset = 0) => tokenSource.Peek(offset);
+
+    /// <summary>
+    /// Peeks ahead for the kind of the token in the token source.
+    /// </summary>
+    /// <param name="offset">The amount to peek ahead.</param>
+    /// <returns>The <see cref="TokenKind"/> of the token that is <paramref name="offset"/> ahead.</returns>
+    private TokenKind PeekKind(int offset = 0) => this.Peek(offset).Kind;
 
     /// <summary>
     /// Advances the parser in the token source with one token.
@@ -1469,6 +1707,12 @@ internal sealed class Parser(ITokenSource tokenSource, SyntaxDiagnosticTable dia
         var token = tokenSource.Peek();
         tokenSource.Advance();
         return token;
+    }
+
+    private void AddDiagnostic(SyntaxNode node, DiagnosticInfo info)
+    {
+        var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: node.Width);
+        this.AddDiagnostic(node, diag);
     }
 
     private void AddDiagnostic(SyntaxNode node, SyntaxDiagnosticInfo diagnostic) =>

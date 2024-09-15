@@ -66,6 +66,12 @@ public sealed class ParserTests
            t.Kind == type
         && this.diagnostics.Get(t).Any(d => d.Info.Severity == Api.Diagnostics.DiagnosticSeverity.Error)
     );
+    private void InvalidT(TokenKind type, params Api.Diagnostics.DiagnosticTemplate[] diagnostics) => this.N<SyntaxToken>(t =>
+           t.Kind == type
+        && this.diagnostics.Get(t)
+            .Select(x => x.Info.Template)
+            .ToHashSet()
+            .IsSupersetOf(diagnostics));
 
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {
@@ -111,6 +117,14 @@ public sealed class ParserTests
         this.N<TextStringPartSyntax>();
         {
             this.TValue(TokenKind.StringContent, content);
+        }
+    }
+
+    private void StringEscape(string content)
+    {
+        this.N<TextStringPartSyntax>();
+        {
+            this.TValue(TokenKind.EscapeSequence, content);
         }
     }
 
@@ -332,7 +346,12 @@ public sealed class ParserTests
         {
             this.T(TokenKind.LineStringStart);
             this.N<SyntaxList<StringPartSyntax>>();
-            this.StringContent("Hello, \nWorld! 👽");
+            {
+                this.StringContent("Hello, ");
+                this.StringEscape("\n");
+                this.StringContent("World! ");
+                this.StringEscape("👽");
+            }
             this.T(TokenKind.LineStringEnd);
         }
     }
@@ -483,17 +502,22 @@ public sealed class ParserTests
     public void TestVariableDeclarationStatementStartingWithVisibilityModifier()
     {
         this.ParseStatement("internal var x = 0;");
-        this.N<ExpressionStatementSyntax>();
+        this.N<DeclarationStatementSyntax>();
         {
-            this.N<UnexpectedExpressionSyntax>();
+            this.N<VariableDeclarationSyntax>();
             {
-                this.N<SyntaxList<SyntaxNode>>();
+                this.InvalidT(TokenKind.KeywordInternal, SyntaxErrors.UnexpectedVisibilityModifier);
+                this.T(TokenKind.KeywordVar);
+                this.T(TokenKind.Identifier, "x");
+                this.N<ValueSpecifierSyntax>();
                 {
-                    this.T(TokenKind.KeywordInternal);
-                    this.T(TokenKind.KeywordVar);
-                    // NOTE: It is cut off at the first expression starter, which is the identifier, the rest of the code would be in next statement
-                    this.MissingT(TokenKind.Semicolon);
+                    this.T(TokenKind.Assign);
+                    this.N<LiteralExpressionSyntax>();
+                    {
+                        this.T(TokenKind.LiteralInteger);
+                    }
                 }
+                this.T(TokenKind.Semicolon);
             }
         }
     }
@@ -1414,6 +1438,27 @@ public sealed class ParserTests
     }
 
     [Fact]
+    public void TestHeritageOperatorMod()
+    {
+        this.ParseExpression("""
+            3 % 2
+            """);
+
+        this.N<BinaryExpressionSyntax>();
+        {
+            this.N<LiteralExpressionSyntax>();
+            {
+                this.T(TokenKind.LiteralInteger, "3");
+            }
+            this.InvalidT(TokenKind.CMod, SyntaxErrors.CHeritageToken);
+            this.N<LiteralExpressionSyntax>();
+            {
+                this.T(TokenKind.LiteralInteger, "2");
+            }
+        }
+    }
+
+    [Fact]
     public void TestOperatorAndOrNot()
     {
         this.ParseExpression("""
@@ -1438,6 +1483,39 @@ public sealed class ParserTests
             this.N<UnaryExpressionSyntax>();
             {
                 this.T(TokenKind.KeywordNot);
+                this.N<LiteralExpressionSyntax>();
+                {
+                    this.T(TokenKind.KeywordFalse);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void TestHeritageOperatorAndOrNot()
+    {
+        this.ParseExpression("""
+            true && false || !false
+            """);
+
+        this.N<BinaryExpressionSyntax>();
+        {
+            this.N<BinaryExpressionSyntax>();
+            {
+                this.N<LiteralExpressionSyntax>();
+                {
+                    this.T(TokenKind.KeywordTrue);
+                }
+                this.InvalidT(TokenKind.CAnd, SyntaxErrors.CHeritageToken);
+                this.N<LiteralExpressionSyntax>();
+                {
+                    this.T(TokenKind.KeywordFalse);
+                }
+            }
+            this.InvalidT(TokenKind.COr, SyntaxErrors.CHeritageToken);
+            this.N<UnaryExpressionSyntax>();
+            {
+                this.InvalidT(TokenKind.CNot, SyntaxErrors.CHeritageToken);
                 this.N<LiteralExpressionSyntax>();
                 {
                     this.T(TokenKind.KeywordFalse);
@@ -1854,6 +1932,136 @@ public sealed class ParserTests
             this.T(TokenKind.KeywordClass);
             this.T(TokenKind.Identifier, "Foo");
             this.N<BlockClassBodySyntax>();
+        }
+    }
+
+    [Fact]
+    public void TestFunctionAndParameterWithAttribute()
+    {
+        this.ParseDeclaration("""
+            @Attr1("this is a function")
+            func foo(@Attr2("this is a parameter") x: int32) {}
+            """);
+
+        this.N<FunctionDeclarationSyntax>();
+        {
+            this.N<SyntaxList<AttributeSyntax>>();
+            this.N<AttributeSyntax>();
+            {
+                this.T(TokenKind.AtSign);
+                this.N<NameTypeSyntax>();
+                {
+                    this.T(TokenKind.Identifier, "Attr1");
+                }
+                this.N<ArgumentListSyntax>();
+                {
+                    this.T(TokenKind.ParenOpen);
+                    this.N<SeparatedSyntaxList<ExpressionSyntax>>();
+                    {
+                        this.N<StringExpressionSyntax>();
+                        {
+                            this.T(TokenKind.LineStringStart, "\"");
+                            this.N<SyntaxList<StringPartSyntax>>();
+                            {
+                                this.N<TextStringPartSyntax>();
+                                this.T(TokenKind.StringContent, "this is a function");
+                            }
+                            this.T(TokenKind.LineStringEnd, "\"");
+                        }
+                    }
+                    this.T(TokenKind.ParenClose);
+                }
+            }
+            this.T(TokenKind.KeywordFunc);
+            this.T(TokenKind.Identifier, "foo");
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
+            {
+                this.N<ParameterSyntax>();
+                {
+                    this.N<SyntaxList<AttributeSyntax>>();
+                    this.N<AttributeSyntax>();
+                    {
+                        this.T(TokenKind.AtSign);
+                        this.N<NameTypeSyntax>();
+                        {
+                            this.T(TokenKind.Identifier, "Attr2");
+                        }
+                        this.N<ArgumentListSyntax>();
+                        {
+                            this.T(TokenKind.ParenOpen);
+                            this.N<SeparatedSyntaxList<ExpressionSyntax>>();
+                            {
+                                this.N<StringExpressionSyntax>();
+                                {
+                                    this.T(TokenKind.LineStringStart, "\"");
+                                    this.N<SyntaxList<StringPartSyntax>>();
+                                    {
+                                        this.N<TextStringPartSyntax>();
+                                        this.T(TokenKind.StringContent, "this is a parameter");
+                                    }
+                                    this.T(TokenKind.LineStringEnd, "\"");
+                                }
+                            }
+                            this.T(TokenKind.ParenClose);
+                        }
+                    }
+                    this.T(TokenKind.Identifier, "x");
+                    this.T(TokenKind.Colon);
+                    this.N<NameTypeSyntax>();
+                    {
+                        this.T(TokenKind.Identifier, "int32");
+                    }
+                }
+            }
+            this.T(TokenKind.ParenClose);
+            this.N<BlockFunctionBodySyntax>();
+            {
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
+                this.T(TokenKind.CurlyClose);
+            }
+        }
+    }
+
+    [Fact]
+    public void TestLocalFunctionMustNotHaveVisibilityModifier()
+    {
+        this.ParseDeclaration("""
+            func foo() {
+                public func bar() {}
+            }
+            """);
+
+        this.N<FunctionDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordFunc);
+            this.T(TokenKind.Identifier, "foo");
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
+            this.T(TokenKind.ParenClose);
+            this.N<BlockFunctionBodySyntax>();
+            {
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
+                this.N<DeclarationStatementSyntax>();
+                this.N<FunctionDeclarationSyntax>();
+                {
+                    this.InvalidT(TokenKind.KeywordPublic, SyntaxErrors.UnexpectedVisibilityModifier);
+                    this.T(TokenKind.KeywordFunc);
+                    this.T(TokenKind.Identifier, "bar");
+                    this.T(TokenKind.ParenOpen);
+                    this.N<SeparatedSyntaxList<ParameterSyntax>>();
+                    this.T(TokenKind.ParenClose);
+                    this.N<BlockFunctionBodySyntax>();
+                    {
+                        this.T(TokenKind.CurlyOpen);
+                        this.N<SyntaxList<StatementSyntax>>();
+                        this.T(TokenKind.CurlyClose);
+                    }
+                }
+                this.T(TokenKind.CurlyClose);
+            }
         }
     }
 }

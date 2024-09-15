@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Draco.Dap.Adapter;
 using Draco.Dap.Model;
 using Draco.Debugger;
+using Draco.Debugger.Events;
 
 namespace Draco.DebugAdapter;
 

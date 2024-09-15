@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
@@ -12,9 +13,12 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Codegen;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
+using Draco.Compiler.Internal.Evaluation;
 using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Codegen;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 using ModuleSymbol = Draco.Compiler.Internal.Symbols.ModuleSymbol;
 
@@ -38,10 +42,16 @@ public readonly record struct EmitResult(
 public sealed class Compilation : IBinderProvider
 {
     /// <summary>
+    /// An empty compilation.
+    /// </summary>
+    public static Compilation Empty { get; } = Create(syntaxTrees: []);
+
+    /// <summary>
     /// Constructs a <see cref="Compilation"/>.
     /// </summary>
     /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
     /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
+    /// <param name="flags">Special compiler flags.</param>
     /// <param name="rootModulePath">The path of the root module.</param>
     /// <param name="outputPath">The output path.</param>
     /// <param name="assemblyName">The output assembly name.</param>
@@ -49,14 +59,45 @@ public sealed class Compilation : IBinderProvider
     public static Compilation Create(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences = null,
+        CompilationFlags flags = CompilationFlags.None,
         string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null) => new(
+        flags: flags,
         syntaxTrees: syntaxTrees,
         metadataReferences: metadataReferences,
         rootModulePath: rootModulePath,
         outputPath: outputPath,
         assemblyName: assemblyName);
+
+    /// <summary>
+    /// Constructs a <see cref="Compilation"/>.
+    /// </summary>
+    /// <param name="syntaxTrees">The <see cref="SyntaxTree"/>s to compile.</param>
+    /// <param name="flags">Special compiler flags.</param>
+    /// <param name="globalImports">The global imports for the compilation.</param>
+    /// <param name="metadataReferences">The <see cref="MetadataReference"/>s the compiler references.</param>
+    /// <param name="rootModulePath">The path of the root module.</param>
+    /// <param name="outputPath">The output path.</param>
+    /// <param name="assemblyName">The output assembly name.</param>
+    /// <returns>The constructed <see cref="Compilation"/>.</returns>
+    internal static Compilation Create(
+        ImmutableArray<SyntaxTree> syntaxTrees,
+        CompilationFlags flags,
+        GlobalImports globalImports,
+        ImmutableArray<MetadataReference>? metadataReferences = null,
+        string? rootModulePath = null,
+        string? outputPath = null,
+        string? assemblyName = null,
+        IReadOnlyDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies = null) => new(
+        syntaxTrees: syntaxTrees,
+        metadataReferences: metadataReferences,
+        flags: flags,
+        globalImports: globalImports,
+        rootModulePath: rootModulePath,
+        outputPath: outputPath,
+        assemblyName: assemblyName,
+        metadataAssemblies: metadataAssemblies);
 
     /// <summary>
     /// All <see cref="Diagnostic"/> messages in the <see cref="Compilation"/>.
@@ -66,6 +107,11 @@ public sealed class Compilation : IBinderProvider
         .SelectMany(model => model.Diagnostics)
         .Concat(this.GlobalDiagnosticBag)
         .ToImmutableArray();
+
+    /// <summary>
+    /// Special settings flags.
+    /// </summary>
+    public CompilationFlags Flags { get; }
 
     /// <summary>
     /// The trees that are being compiled.
@@ -92,6 +138,21 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     public string AssemblyName { get; }
 
+    /// <summary>
+    /// Global imports for the compilation.
+    /// </summary>
+    public GlobalImports GlobalImports { get; }
+
+    /// <summary>
+    /// The metadata assemblies this compilation references.
+    /// </summary>
+    internal IEnumerable<MetadataAssemblySymbol> MetadataAssemblies => this
+        .MetadataReferences
+        .Select(this.GetMetadataAssembly);
+
+    // TODO: Ugly API, anything nicer?
+    internal IReadOnlyDictionary<MetadataReference, MetadataAssemblySymbol> MetadataAssembliesDict => this.metadataAssemblies;
+
     // TODO: Currently this does NOT include the sources, which might make merging same package names
     // invalid between metadata and source. For now we don't care.
     /// <summary>
@@ -100,13 +161,6 @@ public sealed class Compilation : IBinderProvider
     internal ModuleSymbol RootModule =>
         LazyInitializer.EnsureInitialized(ref this.rootModule, this.BuildRootModule);
     private ModuleSymbol? rootModule;
-
-    /// <summary>
-    /// The metadata assemblies this compilation references.
-    /// </summary>
-    internal ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> MetadataAssemblies =>
-        LazyInitializer.EnsureInitialized(ref this.metadataAssemblies, this.BuildMetadataAssemblies);
-    private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies;
 
     /// <summary>
     /// The top-level source module symbol of the compilation.
@@ -138,36 +192,53 @@ public sealed class Compilation : IBinderProvider
     /// </summary>
     internal TypeProvider TypeProvider { get; }
 
+    /// <summary>
+    /// The constant evaluator used for constant folding.
+    /// </summary>
+    internal ConstantEvaluator ConstantEvaluator { get; }
+
+    /// <summary>
+    /// A compile-time executor engine.
+    /// </summary>
+    internal CompileTimeExecutor CompileTimeExecutor { get; }
+
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
+    private readonly ConcurrentDictionary<MetadataReference, MetadataAssemblySymbol> metadataAssemblies = [];
 
     // Main ctor with all state
     private Compilation(
         ImmutableArray<SyntaxTree> syntaxTrees,
         ImmutableArray<MetadataReference>? metadataReferences,
+        CompilationFlags flags = CompilationFlags.None,
+        GlobalImports? globalImports = null,
         string? rootModulePath = null,
         string? outputPath = null,
         string? assemblyName = null,
         ModuleSymbol? rootModule = null,
-        ImmutableDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies = null,
+        IReadOnlyDictionary<MetadataReference, MetadataAssemblySymbol>? metadataAssemblies = null,
         ModuleSymbol? sourceModule = null,
         DeclarationTable? declarationTable = null,
         WellKnownTypes? wellKnownTypes = null,
         TypeProvider? typeProvider = null,
         BinderCache? binderCache = null)
     {
+        this.Flags = flags;
         this.SyntaxTrees = syntaxTrees;
         this.MetadataReferences = metadataReferences ?? [];
         this.RootModulePath = Path.TrimEndingDirectorySeparator(rootModulePath ?? string.Empty);
         this.OutputPath = outputPath ?? ".";
+        this.GlobalImports = globalImports ?? default;
         this.AssemblyName = assemblyName ?? "output";
         this.rootModule = rootModule;
-        this.metadataAssemblies = metadataAssemblies;
+        this.metadataAssemblies = new(metadataAssemblies?.AsEnumerable() ?? []);
         this.sourceModule = sourceModule;
         this.declarationTable = declarationTable;
         this.WellKnownTypes = wellKnownTypes ?? new WellKnownTypes(this);
-        this.TypeProvider = typeProvider ?? new TypeProvider(this);
+        this.TypeProvider = typeProvider ?? new TypeProvider(new RawTypeProvider(this));
         this.binderCache = binderCache ?? new BinderCache(this);
+        this.ConstantEvaluator = new(this);
+        this.CompileTimeExecutor = new(this);
     }
 
     /// <summary>
@@ -329,17 +400,34 @@ public sealed class Compilation : IBinderProvider
     Binder IBinderProvider.GetBinder(SyntaxNode syntax) => this.GetBinder(syntax);
     Binder IBinderProvider.GetBinder(Symbol symbol) => this.GetBinder(symbol);
 
-    private DeclarationTable BuildDeclarationTable() => DeclarationTable.From(this.SyntaxTrees, this);
-    private ModuleSymbol BuildSourceModule() => new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
-    private ImmutableDictionary<MetadataReference, MetadataAssemblySymbol> BuildMetadataAssemblies() => this.MetadataReferences
-        .ToImmutableDictionary(
-            r => r,
-            r => new MetadataAssemblySymbol(this, r.MetadataReader, r.Documentation));
+    private MetadataAssemblySymbol GetMetadataAssembly(MetadataReference metadataReference) =>
+        this.metadataAssemblies.GetOrAdd(metadataReference, _ => this.BuildMetadataAssembly(metadataReference));
+
+    private DeclarationTable BuildDeclarationTable() => new(this);
+
+    private ModuleSymbol BuildSourceModule()
+    {
+        if (this.Flags.HasFlag(CompilationFlags.ScriptingMode))
+        {
+            // NOTE: We might want some checks in the constructor?
+            var syntax = (ScriptEntrySyntax)this.SyntaxTrees.Single().Root;
+            return new ScriptModuleSymbol(this, null, syntax);
+        }
+        // Regular source module
+        return new SourceModuleSymbol(this, null, this.DeclarationTable.MergedRoot);
+    }
+
     private ModuleSymbol BuildRootModule() => new MergedModuleSymbol(
         containingSymbol: null,
         name: string.Empty,
-        modules: this.MetadataAssemblies.Values
+        modules: this
+            .MetadataAssemblies
             .Cast<ModuleSymbol>()
             .Append(this.SourceModule)
             .ToImmutableArray());
+    private MetadataAssemblySymbol BuildMetadataAssembly(MetadataReference metadataReference) =>
+        // NOTE: In case the dict is carried on into another compilation,
+        // the metadata compilation will have an outdated ref to the compilation
+        // I don't know if this will cause any problems in the future
+        new(this, metadataReference.MetadataReader, metadataReference.Documentation);
 }

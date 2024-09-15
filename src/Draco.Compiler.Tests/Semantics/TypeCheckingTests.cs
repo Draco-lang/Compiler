@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
@@ -8,7 +6,7 @@ using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class TypeCheckingTests : SemanticTestsBase
+public sealed class TypeCheckingTests
 {
     [Fact]
     public void LocalVariableExplicitlyTyped()
@@ -25,7 +23,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -53,7 +51,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x", value: LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -81,7 +79,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x", NameType("int32")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -111,7 +109,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("x")),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -139,7 +137,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x"))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -150,7 +148,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        AssertDiagnostics(diags, TypeCheckingErrors.CouldNotInferType);
         Assert.True(xSym.Type.IsError);
     }
 
@@ -172,7 +170,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     NameType("int32"),
                     StringExpression("Hello")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -183,7 +181,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
         Assert.False(xSym.Type.IsError);
     }
 
@@ -206,7 +204,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0))),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, StringExpression("Hello")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -218,7 +216,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.True(xSym.Type.IsError);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -230,7 +228,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration("x", NameType("int32"), LiteralExpression(0))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -252,7 +250,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration("x", value: LiteralExpression(0))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -274,7 +272,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration("x", NameType("int32"))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -296,7 +294,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration("x")));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -307,7 +305,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CouldNotInferType);
+        AssertDiagnostics(diags, TypeCheckingErrors.CouldNotInferType);
         Assert.True(xSym.Type.IsError);
     }
 
@@ -323,7 +321,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 NameType("int32"),
                 StringExpression("Hello"))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -334,7 +332,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
         Assert.False(xSym.Type.IsError);
     }
 
@@ -360,7 +358,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -382,7 +380,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -431,7 +429,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -480,7 +478,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -510,7 +508,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoCommonType);
     }
 
     // TODO: Unspecified if we want this
@@ -537,12 +535,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 InlineFunctionBody(CallExpr(NameExpression("foo")))));
 
         // Act
-        var compilation = Compilation.Create(ImmutableArray.Create(tree));
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
-        var fooDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
-        var barDecl = tree.FindInChildren<ParseNode.Decl.Func>(1);
+        var fooDecl = tree.GetNode<ParseNode.Decl.Func>(0);
+        var barDecl = tree.GetNode<ParseNode.Decl.Func>(1);
         var fooSymbol = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbol(fooDecl));
         var barSymbol = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbol(barDecl));
 
@@ -573,8 +571,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     DeclarationStatement(VariableDeclaration("x", value: IfExpression(LiteralExpression(true), LiteralExpression(0), ReturnExpression()))),
                     DeclarationStatement(VariableDeclaration("y", value: IfExpression(LiteralExpression(true), LiteralExpression(0), GotoExpression("start"))))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var yDecl = tree.GetNode<VariableDeclarationSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -608,7 +606,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         "x",
                         value: BinaryExpression(LiteralExpression(1), Plus, StringExpression("Hello"))))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -620,7 +618,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Equal(WellKnownTypes.ErrorType, xSym.Type);
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]
@@ -659,11 +657,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -672,7 +667,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]
@@ -709,11 +704,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
            ToPath("Tests", "FooModule", "foo.draco"));
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main, foo],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray(),
             rootModulePath: ToPath("Tests"));
 
         var semanticModel = compilation.GetSemanticModel(main);
@@ -722,7 +714,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, SymbolResolutionErrors.InaccessibleSymbol);
     }
 
     [Fact]
@@ -756,10 +748,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true)))))));
 
-        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooBoolDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooInt32RefSyntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
-        var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
+        var fooInt32DeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooBoolDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var fooInt32RefSyntax = tree.GetNode<CallExpressionSyntax>(0).Function;
+        var fooBoolRefSyntax = tree.GetNode<CallExpressionSyntax>(1).Function;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -803,10 +795,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true)))))));
 
-        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooBoolDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooInt32RefSyntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
-        var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
+        var fooInt32DeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooBoolDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var fooInt32RefSyntax = tree.GetNode<CallExpressionSyntax>(0).Function;
+        var fooBoolRefSyntax = tree.GetNode<CallExpressionSyntax>(1).Function;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -857,10 +849,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true)))))));
 
-        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooBoolDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooInt32RefSyntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
-        var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
+        var fooInt32DeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooBoolDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var fooInt32RefSyntax = tree.GetNode<CallExpressionSyntax>(0).Function;
+        var fooBoolRefSyntax = tree.GetNode<CallExpressionSyntax>(1).Function;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -874,7 +866,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
         Assert.NotSame(fooInt32DeclSym, fooBoolDeclSym);
         Assert.Same(fooInt32DeclSym, fooInt32RefSym);
         Assert.NotSame(fooBoolDeclSym, fooBoolRefSym);
@@ -909,7 +901,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Equal(2, diags.Length);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalOverloadDefinition);
     }
 
     [Fact]
@@ -941,7 +933,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Equal(2, diags.Length);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalOverloadDefinition);
     }
 
     [Fact]
@@ -972,7 +964,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.IllegalOverloadDefinition);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalOverloadDefinition);
     }
 
     [Fact]
@@ -1019,13 +1011,13 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                             ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                             ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true))))))))));
 
-        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooBoolInFooDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooBoolInMainDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(3);
-        var fooInt32Ref1Syntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
-        var fooBoolInFooRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
-        var fooInt32Ref2Syntax = tree.FindInChildren<CallExpressionSyntax>(2).Function;
-        var fooBoolInMainRefSyntax = tree.FindInChildren<CallExpressionSyntax>(3).Function;
+        var fooInt32DeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooBoolInFooDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var fooBoolInMainDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(3);
+        var fooInt32Ref1Syntax = tree.GetNode<CallExpressionSyntax>(0).Function;
+        var fooBoolInFooRefSyntax = tree.GetNode<CallExpressionSyntax>(1).Function;
+        var fooInt32Ref2Syntax = tree.GetNode<CallExpressionSyntax>(2).Function;
+        var fooBoolInMainRefSyntax = tree.GetNode<CallExpressionSyntax>(3).Function;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1066,15 +1058,15 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 DeclarationStatement(ImportDeclaration("System")),
                 DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("String"), "Empty")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var consoleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var consoleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var stringEmptySym = GetMemberSymbol<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
+        var stringEmptySym = AssertMember<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1099,15 +1091,15 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 DeclarationStatement(ImportDeclaration("System")),
                 DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("Console"), "WindowWidth")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var consoleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var consoleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var windowWidthSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "WindowWidth");
+        var windowWidthSym = AssertMember<PropertySymbol>(GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "WindowWidth");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1134,15 +1126,15 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 DeclarationStatement(VariableDeclaration("list", null, CallExpression(GenericExpression(NameExpression("List"), NameType("int32"))))),
                 DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("list"), LiteralExpression(0))))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
-        var listRef = tree.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(1);
+        var listRef = tree.GetNode<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var indexSym = GetMemberSymbol<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(listRef)).Type, "Item");
+        var indexSym = AssertMember<PropertySymbol>(GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(listRef)).Type, "Item");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1176,7 +1168,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.CallNonFunction);
+        AssertDiagnostics(diags, TypeCheckingErrors.CallNonFunction);
     }
 
     [Fact]
@@ -1222,12 +1214,12 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                             GenericExpression(NameExpression("identity"), NameType("int32")),
                             StringExpression("foo"))))))));
 
-        var identitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var firstCallSyntax = tree.FindInChildren<CallExpressionSyntax>(0);
+        var identitySyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var firstCallSyntax = tree.GetNode<CallExpressionSyntax>(0);
 
-        var aSyntax = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var bSyntax = tree.FindInChildren<VariableDeclarationSyntax>(1);
-        var cSyntax = tree.FindInChildren<VariableDeclarationSyntax>(2);
+        var aSyntax = tree.GetNode<VariableDeclarationSyntax>(0);
+        var bSyntax = tree.GetNode<VariableDeclarationSyntax>(1);
+        var cSyntax = tree.GetNode<VariableDeclarationSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1245,7 +1237,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         // Assert
         Assert.Single(diags);
         // NOTE: This might not be the best error...
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
 
         Assert.True(identitySym.IsGenericDefinition);
         Assert.True(firstCalledSym.IsGenericInstance);
@@ -1296,7 +1288,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoGenericFunctionWithParamCount);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoGenericFunctionWithParamCount);
     }
 
     [Fact]
@@ -1325,7 +1317,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NotGenericConstruct);
+        AssertDiagnostics(diags, TypeCheckingErrors.NotGenericConstruct);
     }
 
     [Fact]
@@ -1349,7 +1341,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.GenericTypeParamCountMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.GenericTypeParamCountMismatch);
     }
 
     [Fact]
@@ -1379,8 +1371,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         null,
                         CallExpression(NameExpression("identity"), LiteralExpression(0))))))));
 
-        var callSyntax = tree.FindInChildren<CallExpressionSyntax>();
-        var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
+        var callSyntax = tree.GetNode<CallExpressionSyntax>();
+        var varSyntax = tree.GetNode<VariableDeclarationSyntax>();
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1422,8 +1414,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         MemberExpression(NameExpression("s"), "Push"),
                         LiteralExpression(0)))))));
 
-        var callSyntax = tree.FindInChildren<CallExpressionSyntax>();
-        var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
+        var callSyntax = tree.GetNode<CallExpressionSyntax>();
+        var varSyntax = tree.GetNode<VariableDeclarationSyntax>();
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1462,8 +1454,8 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("s", null, CallExpression(NameExpression("Stack"))))))));
 
-        var callSyntax = tree.FindInChildren<CallExpressionSyntax>();
-        var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
+        var callSyntax = tree.GetNode<CallExpressionSyntax>();
+        var varSyntax = tree.GetNode<VariableDeclarationSyntax>();
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1473,7 +1465,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.InferenceIncomplete);
+        AssertDiagnostics(diags, TypeCheckingErrors.InferenceIncomplete);
     }
 
     [Fact]
@@ -1512,11 +1504,11 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("identity"), LiteralExpression(true)))))));
 
-        var genericIdentitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var int32IdentitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
-        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
-        var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
+        var genericIdentitySyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var int32IdentitySyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.GetNode<CallExpressionSyntax>(0);
+        var call2Syntax = tree.GetNode<CallExpressionSyntax>(1);
+        var call3Syntax = tree.GetNode<CallExpressionSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1578,7 +1570,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.AmbiguousOverloadedCall);
+        AssertDiagnostics(diags, TypeCheckingErrors.AmbiguousOverloadedCall);
     }
 
     [Fact]
@@ -1627,11 +1619,11 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         NameExpression("bar"),
                         StringExpression("Hi")))))));
 
-        var nonVariadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var variadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
-        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
-        var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
+        var nonVariadicFuncSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var variadicFuncSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.GetNode<CallExpressionSyntax>(0);
+        var call2Syntax = tree.GetNode<CallExpressionSyntax>(1);
+        var call3Syntax = tree.GetNode<CallExpressionSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1696,10 +1688,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                         LiteralExpression(5),
                         LiteralExpression(9)))))));
 
-        var nonVariadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var variadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
-        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
+        var nonVariadicFuncSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var variadicFuncSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.GetNode<CallExpressionSyntax>(0);
+        var call2Syntax = tree.GetNode<CallExpressionSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1758,7 +1750,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -1798,7 +1790,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoCommonType);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoCommonType);
     }
 
     [Fact]
@@ -1819,7 +1811,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", NameType("Object"), CallExpression(NameExpression("Random"))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -1852,7 +1844,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", NameType("String"), CallExpression(NameExpression("Object"))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -1864,7 +1856,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
         Assert.Equal(compilation.WellKnownTypes.SystemString, xSym.Type);
     }
 
@@ -1938,7 +1930,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
     }
 
     [Fact]
@@ -1973,10 +1965,10 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 null,
                 BlockFunctionBody())));
 
-        var randomCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
-        var objectCallSyntax = main.FindInChildren<CallExpressionSyntax>(2);
-        var randomDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(2);
-        var objectDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(1);
+        var randomCallSyntax = main.GetNode<CallExpressionSyntax>(0);
+        var objectCallSyntax = main.GetNode<CallExpressionSyntax>(2);
+        var randomDeclSyntax = main.GetNode<FunctionDeclarationSyntax>(2);
+        var objectDeclSyntax = main.GetNode<FunctionDeclarationSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -2028,7 +2020,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 null,
                 BlockFunctionBody())));
 
-        var barCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
+        var barCallSyntax = main.GetNode<CallExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -2071,7 +2063,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                             CallExpression(NameExpression("Random")),
                             CallExpression(NameExpression("Object")))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -2119,9 +2111,9 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 ExpressionStatement(BinaryExpression(NameExpression("a"), Assign, NameExpression("b"))),
                 ExpressionStatement(BinaryExpression(NameExpression("b"), Assign, NameExpression("tmp")))))));
 
-        var aDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var bDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var tmpDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(2);
+        var aDeclSyntax = main.GetNode<VariableDeclarationSyntax>(0);
+        var bDeclSyntax = main.GetNode<VariableDeclarationSyntax>(1);
+        var tmpDeclSyntax = main.GetNode<VariableDeclarationSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -2176,7 +2168,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostic(diags, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -2194,22 +2186,19 @@ public sealed class TypeCheckingTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
-        var fooRef = CompileCSharpToMetadataRef("""
+        var fooRef = CompileCSharpToMetadataReference("""
             using System;
             public static class FooModule{
                 public static Random foo;
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [main],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(fooRef)
-                .ToImmutableArray());
+            additionalReferences: [fooRef]);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -2277,7 +2266,7 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         var compilation = CreateCompilation(main);
 
         var semanticModel = compilation.GetSemanticModel(main);
-        var aDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var aDecl = main.GetNode<VariableDeclarationSyntax>(0);
         var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDecl));
 
         var diags = semanticModel.Diagnostics;
@@ -2286,5 +2275,107 @@ public sealed class TypeCheckingTests : SemanticTestsBase
         Assert.Empty(diags);
         var intArray = compilation.WellKnownTypes.InstantiateArray(compilation.WellKnownTypes.SystemInt32);
         Assert.True(SymbolEqualityComparer.Default.Equals(intArray, aSym.Type));
+    }
+
+    [Fact]
+    public void ArrayIndexResultHasTheRightType()
+    {
+        // func main() {
+        //     val a = Array<int32>(3);
+        //     val x = a[0];
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(GenericExpression(NameExpression("Array"), NameType("int32")), LiteralExpression(3)))),
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "x",
+                    null,
+                    IndexExpression(NameExpression("a"), LiteralExpression(0))))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.Equal(compilation.WellKnownTypes.SystemInt32, xSym.Type);
+    }
+
+    [Fact]
+    public void ArrayIteratorVariableCorrectlyInferredInForLoop()
+    {
+        // func main() {
+        //     val a = Array<int32>(3);
+        //     for (x in a) { }
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(ImmutableVariableDeclaration(
+                    "a",
+                    null,
+                    CallExpression(GenericExpression(NameExpression("Array"), NameType("int32")), LiteralExpression(3)))),
+                ExpressionStatement(ForExpression(
+                    "x",
+                    NameExpression("a"),
+                    BlockExpression()))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+
+        var diags = semanticModel.Diagnostics;
+        var xDecl = main.GetNode<ForExpressionSyntax>().Iterator;
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(xSym.IsError);
+        Assert.Equal(compilation.WellKnownTypes.SystemInt32, xSym.Type);
+    }
+
+    [Fact]
+    public void ErrorExpressionsDoNotCascadeErrorsInOverloading()
+    {
+        // import System.Numerics;
+        //
+        // func foo(): Vector3 = Vector3() + Vector3();
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Numerics"),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                NameType("Vector3"),
+                InlineFunctionBody(BinaryExpression(
+                    CallExpression(NameExpression("Vector3")),
+                    Plus,
+                    CallExpression(NameExpression("Vector3")))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
+
+        Assert.True(diags.All(d => !d.ToString().Contains("operator", StringComparison.OrdinalIgnoreCase)));
     }
 }

@@ -21,6 +21,7 @@ repository:
     - include: '#comments'
     - include: '#visibility-keywords'
     - include: '#import-declaration'
+    - include: '#attribute-declaration'
     - include: '#variable-declaration'
     - include: '#function-declaration'
   visibility-keywords:
@@ -36,6 +37,17 @@ repository:
     - match: ([[:alpha:]_][[:alnum:]_]*)
       captures:
         '1': { name: entity.name.type.namespace.draco }
+  attribute-declaration:
+    # Attributes are in the form of @AttributeName with an optional argument list after in parens
+    # After the @ you can put spaces
+    begin: \@\s*([[:alpha:]_][[:alnum:]_]*)
+    beginCaptures:
+      '1': { name: entity.name.type.attribute.draco }
+    end: (?=\))
+    patterns:
+    - include: '#expressions'
+    - include: '#type-specifiers'
+    - include: '#comments'
   variable-declaration:
     # Keyword, name
     begin: \b(var|val)\b\s*\b([[:alpha:]_][[:alnum:]_]*)\b

@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized;
+using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -43,7 +43,7 @@ internal static class BinderFacts
         or FunctionSymbol
         or ModuleSymbol
         or TypeSymbol
-        or TypeAliasSymbol;
+        or AliasSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a type-context.
@@ -53,7 +53,7 @@ internal static class BinderFacts
     public static bool IsTypeSymbol(Symbol symbol) => symbol
         is TypeSymbol
         or ModuleSymbol
-        or TypeAliasSymbol;
+        or AliasSymbol;
 
     /// <summary>
     /// Checks, if a given symbol can be referenced in a label-context.
@@ -69,7 +69,7 @@ internal static class BinderFacts
     /// <param name="symbol">The symbol to check.</param>
     /// <returns>True, if <paramref name="symbol"/> can be referenced in a non-type value context.</returns>
     public static bool IsNonTypeValueSymbol(Symbol symbol) => symbol
-           is not (TypeSymbol or TypeAliasSymbol)
+           is not TypeSymbol
         && IsValueSymbol(symbol);
 
     /// <summary>
@@ -117,6 +117,7 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="node"/> defines its own scope.</returns>
     public static bool DefinesScope(SyntaxNode node) => node
         is CompilationUnitSyntax
+        or ScriptEntrySyntax
         or FunctionDeclarationSyntax
         or ModuleDeclarationSyntax
         or FunctionBodySyntax

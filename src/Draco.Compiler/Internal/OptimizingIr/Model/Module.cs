@@ -15,7 +15,8 @@ internal sealed class Module : IModule
 
     public string Name => this.Symbol.Name;
 
-    public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
+    public IDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
+    IReadOnlyDictionary<ModuleSymbol, IModule> IModule.Submodules => this.submodules;
 
     public IReadOnlySet<GlobalSymbol> Globals => this.globals;
 
@@ -23,6 +24,7 @@ internal sealed class Module : IModule
     IProcedure IModule.GlobalInitializer => this.GlobalInitializer;
 
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
+    IReadOnlyDictionary<FunctionSymbol, IProcedure> IModule.Procedures => this.procedures;
 
     public Assembly Assembly { get; }
     IAssembly IModule.Assembly => this.Assembly;

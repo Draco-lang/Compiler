@@ -68,53 +68,69 @@ internal static class Translator
         Character = (uint)position.Column,
     };
 
-    public static LspModels.CompletionItem ToLsp(CompilerApi.CodeCompletion.CompletionItem item)
+    public static LspModels.CompletionItem ToLsp(
+        CompilerApi.Syntax.SourceText sourceText,
+        CompilerApi.Services.CodeCompletion.CompletionItem item)
     {
-        var textEdit = ToLsp(item.Edits[0]);
-        var additionalEdits = item.Edits.Skip(1).Select(ToLsp).ToList();
-
-        var detail = string.Empty;
-        if (item.Symbols.FirstOrDefault() is CompilerApi.Semantics.ITypedSymbol typed)
-        {
-            detail = item.Symbols.Length == 1 ? typed.Type.ToString() : $"{item.Symbols.Length} overloads";
-        }
+        var textEdit = ToLsp(sourceText, item.Edits[0]);
+        var additionalEdits = item.Edits
+            .Skip(1)
+            .Select(s => ToLsp(sourceText, s))
+            .ToList();
 
         LspModels.MarkupContent? documentation = null;
-        if (!string.IsNullOrEmpty(item.Symbols.FirstOrDefault()?.Documentation))
+        if (!string.IsNullOrWhiteSpace(item.Symbol?.Documentation))
         {
             documentation = new LspModels.MarkupContent()
             {
                 Kind = LspModels.MarkupKind.Markdown,
-                Value = item.Symbols.First().Documentation,
+                Value = item.Symbol.Documentation,
             };
         }
+
         return new LspModels.CompletionItem()
         {
             Label = item.DisplayText,
             Kind = ToLsp(item.Kind),
             TextEdit = new(textEdit),
             AdditionalTextEdits = additionalEdits,
-            Detail = detail,
+            Detail = item.DetailsText,
             Documentation = documentation is not null ? new(documentation) : default,
         };
     }
 
-    public static LspModels.CompletionItemKind ToLsp(CompilerApi.CodeCompletion.CompletionKind kind) => kind switch
+    public static LspModels.CompletionItemKind ToLsp(CompilerApi.Services.CodeCompletion.CompletionKind kind) => kind switch
     {
-        CompilerApi.CodeCompletion.CompletionKind.Variable => LspModels.CompletionItemKind.Variable,
-        CompilerApi.CodeCompletion.CompletionKind.Function => LspModels.CompletionItemKind.Function,
-        CompilerApi.CodeCompletion.CompletionKind.Keyword => LspModels.CompletionItemKind.Keyword,
-        CompilerApi.CodeCompletion.CompletionKind.Class => LspModels.CompletionItemKind.Class,
-        CompilerApi.CodeCompletion.CompletionKind.Module => LspModels.CompletionItemKind.Module,
-        CompilerApi.CodeCompletion.CompletionKind.Property => LspModels.CompletionItemKind.Property,
-        _ => throw new System.ArgumentOutOfRangeException(nameof(kind)),
+        CompilerApi.Services.CodeCompletion.CompletionKind.ControlFlowKeyword
+     or CompilerApi.Services.CodeCompletion.CompletionKind.DeclarationKeyword
+     or CompilerApi.Services.CodeCompletion.CompletionKind.VisibilityKeyword => LspModels.CompletionItemKind.Keyword,
+
+        CompilerApi.Services.CodeCompletion.CompletionKind.VariableName
+     or CompilerApi.Services.CodeCompletion.CompletionKind.ParameterName => LspModels.CompletionItemKind.Variable,
+
+        CompilerApi.Services.CodeCompletion.CompletionKind.ModuleName => LspModels.CompletionItemKind.Module,
+
+        CompilerApi.Services.CodeCompletion.CompletionKind.FunctionName => LspModels.CompletionItemKind.Method,
+
+        CompilerApi.Services.CodeCompletion.CompletionKind.PropertyName => LspModels.CompletionItemKind.Property,
+
+        CompilerApi.Services.CodeCompletion.CompletionKind.FieldName => LspModels.CompletionItemKind.Field,
+
+        CompilerApi.Services.CodeCompletion.CompletionKind.ReferenceTypeName => LspModels.CompletionItemKind.Class,
+        CompilerApi.Services.CodeCompletion.CompletionKind.ValueTypeName => LspModels.CompletionItemKind.Struct,
+
+        CompilerApi.Services.CodeCompletion.CompletionKind.Operator => LspModels.CompletionItemKind.Operator,
+
+        _ => LspModels.CompletionItemKind.Text,
     };
 
-    public static LspModels.SignatureHelp? ToLsp(CompilerApi.CodeCompletion.SignatureItem? item) => item is null ? null : new()
+    public static LspModels.SignatureHelp? ToLsp(CompilerApi.Services.Signature.SignatureItem? item) => item is null ? null : new()
     {
-        Signatures = item.Overloads.Select(x => ToLsp(x)).ToArray(),
-        ActiveParameter = item.CurrentParameter is null ? null : (uint)item.CurrentOverload.Parameters.IndexOf(item.CurrentParameter),
-        ActiveSignature = (uint)item.Overloads.IndexOf(item.CurrentOverload),
+        Signatures = item.Overloads.Select(ToLsp).ToArray(),
+        ActiveSignature = (uint)item.Overloads.IndexOf(item.BestMatch),
+        ActiveParameter = item.CurrentParameter is null
+            ? null
+            : (uint)item.BestMatch.Parameters.IndexOf(item.CurrentParameter),
     };
 
     public static LspModels.SignatureInformation ToLsp(CompilerApi.Semantics.IFunctionSymbol item)
@@ -139,9 +155,11 @@ internal static class Translator
         };
     }
 
-    public static LspModels.ITextEdit ToLsp(CompilerApi.TextEdit edit) => new LspModels.TextEdit()
-    {
-        NewText = edit.Text,
-        Range = ToLsp(edit.Range),
-    };
+    public static LspModels.ITextEdit ToLsp(
+        CompilerApi.Syntax.SourceText sourceText,
+        CompilerApi.Syntax.TextEdit edit) => new LspModels.TextEdit()
+        {
+            NewText = edit.Text,
+            Range = ToLsp(sourceText.SourceSpanToSyntaxRange(edit.Span)),
+        };
 }

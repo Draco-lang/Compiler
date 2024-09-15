@@ -14,6 +14,7 @@ internal class ErrorFunctionSymbol : FunctionSymbol
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => [];
     public override ImmutableArray<ParameterSymbol> Parameters { get; }
     public override TypeSymbol ReturnType => WellKnownTypes.ErrorType;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     public override bool IsError => true;
 

@@ -1,27 +1,24 @@
 using System.Numerics;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
 [Collection(nameof(NoParallelizationCollectionDefinition))]
-public sealed class BclUsageTests : EndToEndTestsBase
+public sealed class BclUsageTests
 {
     [Fact]
     public void HelloWorld()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
 
-            public func main() {
+            func main() {
                 WriteLine("Hello, World!");
             }
             """);
 
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal($"Hello, World!{Environment.NewLine}", stringWriter.ToString(), ignoreLineEndingDifferences: true);
     }
@@ -29,20 +26,16 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void Interpolation()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
 
-            public func main() {
+            func main() {
                 Write("\{1} + \{2} = \{1 + 2}");
             }
             """);
 
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("1 + 2 = 3", stringWriter.ToString());
     }
@@ -50,11 +43,11 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void BasicStringBuilding()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
             import System.Text;
 
-            public func main() {
+            func main() {
                 var sb = StringBuilder();
                 sb.Append("Hello, ");
                 sb.Append(123);
@@ -65,11 +58,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("Hello, 123True - and bye!", stringWriter.ToString());
     }
@@ -77,13 +66,13 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void FullyQualifiedNames()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
             import System.Text;
 
             func make_builder(): System.Text.StringBuilder = StringBuilder();
 
-            public func main() {
+            func main() {
                 var sb = make_builder();
                 var myName = "Draco";
                 sb.Append("Hello \{myName}!");
@@ -92,11 +81,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("Hello Draco!", stringWriter.ToString());
     }
@@ -104,11 +89,11 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void StackUsageWithExplicitGenerics()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
             import System.Collections.Generic;
 
-            public func main() {
+            func main() {
                 val s = Stack<int32>();
                 s.Push(1);
                 s.Push(2);
@@ -120,11 +105,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("321", stringWriter.ToString());
     }
@@ -132,11 +113,11 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void StackUsageWithImplicitGenerics()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
             import System.Collections.Generic;
 
-            public func main() {
+            func main() {
                 val s = Stack();
                 s.Push(1);
                 s.Push(2);
@@ -148,11 +129,7 @@ public sealed class BclUsageTests : EndToEndTestsBase
             """);
 
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("321", stringWriter.ToString());
     }
@@ -160,35 +137,30 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void SystemTupleConstruction()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Tuple;
 
-            public func main() {
+            func main() {
                 val t = Create(1, "hello");
             }
             """);
 
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: null);
+        _ = Invoke<object?>(assembly: assembly);
     }
 
     [Fact]
     public void FullyQualifiedSystemTupleConstruction()
     {
-        var assembly = Compile("""
-            public func make(x: int32, y: int32): System.Tuple<int32, int32> =
+        var assembly = CompileToAssembly("""
+            func make(x: int32, y: int32): System.Tuple<int32, int32> =
                 System.Tuple(x, y);
             """);
 
         var t = Invoke<Tuple<int, int>>(
             assembly: assembly,
             methodName: "make",
-            args: [2, 3],
-            stdin: null,
-            stdout: null);
+            args: [2, 3]);
+
         Assert.Equal(2, t.Item1);
         Assert.Equal(3, t.Item2);
     }
@@ -196,11 +168,11 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void ListUsageWithPropertyAndIndexer()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
             import System.Collections.Generic;
             
-            public func main() {
+            func main() {
                 var list = List();
                 list.Add(0);
                 list.Add(1);
@@ -213,12 +185,9 @@ public sealed class BclUsageTests : EndToEndTestsBase
                 }
             }
             """);
+
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("024", stringWriter.ToString());
     }
@@ -226,20 +195,17 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void NonGenericProperty()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Collections;
             import System.Console;
 
-            public func main() {
+            func main() {
                 Write(ArrayList().Count);
             }
             """);
+
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("0", stringWriter.ToString());
     }
@@ -247,11 +213,11 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void EnumeratingRange()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
             import System.Linq.Enumerable;
 
-            public func main() {
+            func main() {
                 val enumerable = Range(0, 10);
                 val enumerator = enumerable.GetEnumerator();
                 while(enumerator.MoveNext())
@@ -260,12 +226,9 @@ public sealed class BclUsageTests : EndToEndTestsBase
                 }
             }
             """);
+
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("0123456789", stringWriter.ToString());
     }
@@ -273,11 +236,11 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void EnumeratingList()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Console;
             import System.Collections.Generic;
 
-            public func main() {
+            func main() {
                 val list = List();
                 list.Add(2);
                 list.Add(3);
@@ -289,12 +252,9 @@ public sealed class BclUsageTests : EndToEndTestsBase
                 }
             }
             """);
+
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(
-            assembly: assembly,
-            methodName: "main",
-            stdin: null,
-            stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal("235", stringWriter.ToString());
     }
@@ -302,13 +262,14 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void StringifyInt()
     {
-        var assembly = Compile("""
-            public func stringify(n: int32): string = n.ToString();
+        var assembly = CompileToAssembly("""
+            func stringify(n: int32): string = n.ToString();
             """);
+
         var result = Invoke<string>(
             assembly: assembly,
             methodName: "stringify",
-            args: 123);
+            args: [123]);
 
         Assert.Equal("123", result);
     }
@@ -316,13 +277,14 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void ParseInt()
     {
-        var assembly = Compile("""
-            public func parse(n: string): int32 = int32.Parse(n);
+        var assembly = CompileToAssembly("""
+            func parse(n: string): int32 = int32.Parse(n);
             """);
+
         var result = Invoke<int>(
             assembly: assembly,
             methodName: "parse",
-            args: "123");
+            args: ["123"]);
 
         Assert.Equal(123, result);
     }
@@ -330,17 +292,16 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void StringSplitting()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System;
 
-            public func foo(): string {
+            func foo(): string {
                 val parts = "1, 2, 3".Split(",", StringSplitOptions.TrimEntries);
                 return string.Join(";", parts);
             }
             """);
-        var result = Invoke<string>(
-            assembly: assembly,
-            methodName: "foo");
+
+        var result = Invoke<string>(assembly: assembly, methodName: "foo");
 
         Assert.Equal("1;2;3", result);
     }
@@ -348,15 +309,16 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void ForLoopSumming()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Collections.Generic;
 
-            public func sum(ns: IEnumerable<int32>): int32 {
+            func sum(ns: IEnumerable<int32>): int32 {
                 var s = 0;
                 for (n in ns) s += n;
                 return s;
             }
             """);
+
         var result = Invoke<int>(
             assembly: assembly,
             methodName: "sum",
@@ -368,20 +330,20 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void ForLoopPrinting()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Collections.Generic;
             import System.Console;
 
-            public func log(ns: IEnumerable<int32>) {
+            func log(ns: IEnumerable<int32>) {
                 for (n in ns) Write(n);
             }
             """);
+
         var stringWriter = new StringWriter();
         _ = Invoke<object?>(
             assembly: assembly,
             methodName: "log",
             args: [new[] { 1, 1, 2, 3, 5, 8, 13 }],
-            stdin: null,
             stdout: stringWriter);
 
         Assert.Equal("11235813", stringWriter.ToString());
@@ -390,12 +352,18 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void StringEqualsOperator()
     {
-        var assembly = Compile("""
-            public func streq(s1: string, s2: string): bool = s1 == s2;
+        var assembly = CompileToAssembly("""
+            func streq(s1: string, s2: string): bool = s1 == s2;
             """);
 
-        var case1 = Invoke<bool>(assembly: assembly, methodName: "streq", "asd", "def");
-        var case2 = Invoke<bool>(assembly: assembly, methodName: "streq", "asd", "asd");
+        var case1 = Invoke<bool>(
+            assembly: assembly,
+            methodName: "streq",
+            args: ["asd", "def"]);
+        var case2 = Invoke<bool>(
+            assembly: assembly,
+            methodName: "streq",
+            args: ["asd", "asd"]);
 
         Assert.False(case1);
         Assert.True(case2);
@@ -404,8 +372,8 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void StringAddOperator()
     {
-        var assembly = Compile("""
-            public func mangle(s1: string, s2: string): string {
+        var assembly = CompileToAssembly("""
+            func mangle(s1: string, s2: string): string {
                 var result = "";
                 result += s1 + s2;
                 result += s2 + s1;
@@ -413,7 +381,10 @@ public sealed class BclUsageTests : EndToEndTestsBase
             }
             """);
 
-        var result = Invoke<string>(assembly: assembly, methodName: "mangle", "asd", "def");
+        var result = Invoke<string>(
+            assembly: assembly,
+            methodName: "mangle",
+            args: ["asd", "def"]);
 
         Assert.Equal("asddefdefasd", result);
     }
@@ -421,13 +392,16 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void NumericsVectorNegation()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Numerics;
 
-            public func neg(a: Vector2): Vector2 = -a;
+            func neg(a: Vector2): Vector2 = -a;
             """);
 
-        var result = Invoke<Vector2>(assembly: assembly, methodName: "neg", new Vector2(1, 2));
+        var result = Invoke<Vector2>(
+            assembly: assembly,
+            methodName: "neg",
+            args: [new Vector2(1, 2)]);
 
         Assert.Equal(new Vector2(-1, -2), result);
     }
@@ -435,13 +409,16 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void NumericsVectorAddition()
     {
-        var assembly = Compile("""
+        var assembly = CompileToAssembly("""
             import System.Numerics;
 
-            public func addthem(a: Vector2, b: Vector2): Vector2 = a + b;
+            func addthem(a: Vector2, b: Vector2): Vector2 = a + b;
             """);
 
-        var result = Invoke<Vector2>(assembly: assembly, methodName: "addthem", new Vector2(1, 2), new Vector2(6, 3));
+        var result = Invoke<Vector2>(
+            assembly: assembly,
+            methodName: "addthem",
+            args: [new Vector2(1, 2), new Vector2(6, 3)]);
 
         Assert.Equal(new Vector2(7, 5), result);
     }
@@ -449,11 +426,14 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void NumericsVectorAdditionWithoutImportingNamespace()
     {
-        var assembly = Compile("""
-            public func addthem(a: System.Numerics.Vector2, b: System.Numerics.Vector2): System.Numerics.Vector2 = a + b;
+        var assembly = CompileToAssembly("""
+            func addthem(a: System.Numerics.Vector2, b: System.Numerics.Vector2): System.Numerics.Vector2 = a + b;
             """);
 
-        var result = Invoke<Vector2>(assembly: assembly, methodName: "addthem", new Vector2(1, 2), new Vector2(6, 3));
+        var result = Invoke<Vector2>(
+            assembly: assembly,
+            methodName: "addthem",
+            args: [new Vector2(1, 2), new Vector2(6, 3)]);
 
         Assert.Equal(new Vector2(7, 5), result);
     }
@@ -461,12 +441,43 @@ public sealed class BclUsageTests : EndToEndTestsBase
     [Fact]
     public void NumericsVectorNegationWithoutImportingNamespace()
     {
-        var assembly = Compile("""
-            public func neg(a: System.Numerics.Vector2): System.Numerics.Vector2 = -a;
+        var assembly = CompileToAssembly("""
+            func neg(a: System.Numerics.Vector2): System.Numerics.Vector2 = -a;
             """);
 
-        var result = Invoke<Vector2>(assembly: assembly, methodName: "neg", new Vector2(1, 2));
+        var result = Invoke<Vector2>(
+            assembly: assembly,
+            methodName: "neg",
+            args: [new Vector2(1, 2)]);
 
         Assert.Equal(new Vector2(-1, -2), result);
+    }
+
+    [Fact]
+    public void AccessingConstants()
+    {
+        var assembly = CompileToAssembly("""
+            import System.Math;
+
+            func get_pi(): float64 = PI;
+            """);
+
+        var result = Invoke<double>(assembly: assembly, methodName: "get_pi");
+
+        Assert.Equal(Math.PI, result);
+    }
+
+    [Fact]
+    public void ChainedValueTypeMemberAccess()
+    {
+        var assembly = CompileToAssembly("""
+            import System;
+
+            func get_datetime_str(): string = DateTime.Now.TimeOfDay.ToString();
+            """);
+
+        var result = Invoke<string>(assembly: assembly, methodName: "get_datetime_str");
+
+        Assert.NotNull(result);
     }
 }

@@ -13,4 +13,5 @@ internal sealed class PropertyAccessorInstanceSymbol(
     : FunctionInstanceSymbol(containingSymbol, genericDefinition, context), IPropertyAccessorSymbol
 {
     public PropertySymbol Property { get; } = property;
+    public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
 }

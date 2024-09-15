@@ -6,8 +6,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api;
-using Draco.Compiler.Api.CodeCompletion;
-using Draco.Compiler.Api.CodeFixes;
+using Draco.Compiler.Api.Services.CodeCompletion;
+using Draco.Compiler.Api.Services.CodeFixes;
+using Draco.Compiler.Api.Services.Signature;
 using Draco.Compiler.Api.Syntax;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server;
@@ -39,9 +40,9 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
     private Uri rootUri;
     private volatile Compilation compilation;
 
-    private readonly CompletionService completionService;
-    private readonly SignatureService signatureService;
-    private readonly CodeFixService codeFixService;
+    private readonly CompletionService completionService = CompletionService.CreateDefault();
+    private readonly SignatureService signatureService = SignatureService.CreateDefault();
+    private readonly CodeFixService codeFixService = CodeFixService.CreateDefault();
 
     public DracoLanguageServer(ILanguageClient client)
     {
@@ -53,16 +54,6 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         this.compilation = Compilation.Create(
             syntaxTrees: [],
             metadataReferences: []);
-
-        this.completionService = new CompletionService();
-        this.completionService.AddProvider(new KeywordCompletionProvider());
-        this.completionService.AddProvider(new ExpressionCompletionProvider());
-        this.completionService.AddProvider(new MemberCompletionProvider());
-
-        this.signatureService = new SignatureService();
-
-        this.codeFixService = new CodeFixService();
-        this.codeFixService.AddProvider(new ImportCodeFixProvider());
     }
 
     private async Task CreateCompilation()
@@ -83,13 +74,16 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
         }
 
         var project = projects[0];
-        var designTimeBuild = project.BuildDesignTime();
+        var buildResult = project.BuildDesignTime();
 
-        if (!designTimeBuild.Succeeded)
+        if (!buildResult.Success)
         {
-            await this.client.LogMessageAsync(MessageType.Error, designTimeBuild.BuildLog);
+            await this.client.LogMessageAsync(MessageType.Error, buildResult.Log);
             await this.client.ShowMessageAsync(MessageType.Error, "Design-time build failed! See logs for details.");
+            return;
         }
+
+        var designTimeBuild = buildResult.Value;
 
         var syntaxTrees = Directory
             .GetFiles(rootPath, "*.draco", SearchOption.AllDirectories)
@@ -100,7 +94,7 @@ internal sealed partial class DracoLanguageServer : ILanguageServer
             syntaxTrees: syntaxTrees,
 
             metadataReferences: designTimeBuild.References
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Select(r => MetadataReference.FromFile(r.FullName))
                 .ToImmutableArray(),
             rootModulePath: rootPath);
     }

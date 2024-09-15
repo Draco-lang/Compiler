@@ -1,4 +1,5 @@
 using System;
+using Draco.Debugger.Events;
 
 namespace Draco.Debugger;
 

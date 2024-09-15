@@ -13,7 +13,7 @@ internal sealed partial class DracoLanguageServer : ICodeAction
     {
         DocumentSelector = this.DocumentSelector,
         CodeActionKinds = [CodeActionKind.QuickFix],
-        ResolveProvider = false
+        ResolveProvider = false,
     };
 
     public Task<IList<OneOf<Command, CodeAction>>?> CodeActionAsync(CodeActionParams param, CancellationToken cancellationToken)
@@ -24,11 +24,17 @@ internal sealed partial class DracoLanguageServer : ICodeAction
         if (syntaxTree is null) return Task.FromResult(null as IList<OneOf<Command, CodeAction>>);
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
-        var fixes = this.codeFixService.GetCodeFixes(syntaxTree, semanticModel, Translator.ToCompiler(param.Range));
+        var range = Translator.ToCompiler(param.Range);
+        var span = syntaxTree.SourceText.SyntaxRangeToSourceSpan(range);
+        var fixes = this.codeFixService.GetCodeFixes(semanticModel, span);
         var actions = new List<OneOf<Command, CodeAction>>();
 
         foreach (var fix in fixes)
         {
+            var translatedEdits = fix.Edits
+                .Select(e => Translator.ToLsp(syntaxTree.SourceText, e))
+                .ToList();
+
             actions.Add(new CodeAction()
             {
                 Title = fix.DisplayText,
@@ -36,9 +42,9 @@ internal sealed partial class DracoLanguageServer : ICodeAction
                 Kind = CodeActionKind.QuickFix,
                 Edit = new WorkspaceEdit()
                 {
-                    Changes = new Dictionary<DocumentUri, IList<Lsp.Model.ITextEdit>>()
+                    Changes = new Dictionary<DocumentUri, IList<ITextEdit>>()
                     {
-                        { param.TextDocument.Uri, fix.Edits.Select(x => Translator.ToLsp(x)).ToList() }
+                        { param.TextDocument.Uri, translatedEdits }
                     }
                 }
             });

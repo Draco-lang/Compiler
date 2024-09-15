@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Instructions;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Constant = Draco.Compiler.Internal.OptimizingIr.Model.Constant;
@@ -19,9 +20,6 @@ namespace Draco.Compiler.Internal.Codegen;
 /// </summary>
 internal sealed class CilCodegen
 {
-    // NOTE: We might want to expose this as a setting later for debugging
-    private const bool stackify = true;
-
     /// <summary>
     /// The instruction encoder.
     /// </summary>
@@ -121,7 +119,7 @@ internal sealed class CilCodegen
     private void EncodeBasicBlock(IBasicBlock basicBlock)
     {
         this.InstructionEncoder.MarkLabel(this.GetLabel(basicBlock));
-        var instructions = stackify
+        var instructions = this.metadataCodegen.Stackify
             ? this.stackifier.Stackify(basicBlock)
             : basicBlock.Instructions;
         foreach (var instr in instructions) this.EncodeInstruction(instr);
@@ -145,7 +143,7 @@ internal sealed class CilCodegen
 
         switch (instruction)
         {
-        case OptimizingIr.Model.SequencePoint sp:
+        case OptimizingIr.Instructions.SequencePoint sp:
         {
             this.PdbCodegen?.AddSequencePoint(this.InstructionEncoder, sp);
             break;
@@ -357,26 +355,13 @@ internal sealed class CilCodegen
         }
         case CallInstruction call:
         {
-            // Arguments
+            // Optional receiver and arguments
             foreach (var arg in RemainingOperands()) this.EncodePush(arg);
             // Call
-            this.InstructionEncoder.OpCode(ILOpCode.Call);
+            this.InstructionEncoder.OpCode(call.Procedure.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
             this.EncodeToken(call.Procedure);
             // Store result
             this.StoreRegister(call.Target);
-            break;
-        }
-        case MemberCallInstruction mcall:
-        {
-            // Receiver
-            this.EncodePush(NextOperand());
-            // Arguments
-            foreach (var arg in RemainingOperands()) this.EncodePush(arg);
-            // Call
-            this.InstructionEncoder.OpCode(mcall.Procedure.IsVirtual ? ILOpCode.Callvirt : ILOpCode.Call);
-            this.EncodeToken(mcall.Procedure);
-            // Store result
-            this.StoreRegister(mcall.Target);
             break;
         }
         case NewObjectInstruction newObj:
@@ -476,9 +461,43 @@ internal sealed class CilCodegen
         case Constant c:
             switch (c.Value)
             {
+            // Unsigned integers
+            case byte b:
+                this.InstructionEncoder.LoadConstantI4(b);
+                break;
+            case ushort s:
+                this.InstructionEncoder.LoadConstantI4(s);
+                break;
+            case uint i:
+                this.InstructionEncoder.LoadConstantI4(unchecked((int)i));
+                break;
+            case ulong l:
+                this.InstructionEncoder.LoadConstantI8(unchecked((long)l));
+                break;
+
+            // Signed integers
+            case sbyte b:
+                this.InstructionEncoder.LoadConstantI4(b);
+                break;
+            case short s:
+                this.InstructionEncoder.LoadConstantI4(s);
+                break;
             case int i:
                 this.InstructionEncoder.LoadConstantI4(i);
                 break;
+            case long l:
+                this.InstructionEncoder.LoadConstantI8(l);
+                break;
+
+            // Floating point
+            case float f:
+                this.InstructionEncoder.LoadConstantR4(f);
+                break;
+            case double d:
+                this.InstructionEncoder.LoadConstantR8(d);
+                break;
+
+            // Others
             case bool b:
                 this.InstructionEncoder.LoadConstantI4(b ? 1 : 0);
                 break;
@@ -489,6 +508,7 @@ internal sealed class CilCodegen
                 var stringHandle = this.GetStringLiteralHandle(s);
                 this.InstructionEncoder.LoadString(stringHandle);
                 break;
+
             default:
                 throw new NotImplementedException();
             }

@@ -15,8 +15,8 @@ internal sealed class GlobalInstanceSymbol(
     private TypeSymbol? type;
 
     public override string Name => this.GenericDefinition.Name;
-
     public override bool IsMutable => this.GenericDefinition.IsMutable;
+    public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override GlobalSymbol GenericDefinition { get; } = genericDefinition;

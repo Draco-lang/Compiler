@@ -3,10 +3,11 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class LocalFunctionsTests : SemanticTestsBase
+public sealed class LocalFunctionsTests
 {
     [Fact]
     public void ParameterRedefinitionError()
@@ -28,8 +29,8 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
                 null,
                 BlockFunctionBody()))))));
 
-        var x1Decl = tree.FindInChildren<ParameterSyntax>(0);
-        var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
+        var x1Decl = tree.GetNode<ParameterSyntax>(0);
+        var x2Decl = tree.GetNode<ParameterSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -43,7 +44,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
         Assert.False(x1SymDecl.IsError);
         Assert.False(x2SymDecl.IsError);
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, SymbolResolutionErrors.IllegalShadowing);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.IllegalShadowing);
     }
 
     [Fact]
@@ -74,7 +75,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, SymbolResolutionErrors.UndefinedReference);
+        AssertDiagnostics(diagnostics, SymbolResolutionErrors.UndefinedReference);
     }
 
     [Fact]
@@ -108,7 +109,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, TypeCheckingErrors.TypeMismatch);
+        AssertDiagnostics(diagnostics, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]
@@ -136,7 +137,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, FlowAnalysisErrors.DoesNotReturn);
+        AssertDiagnostics(diagnostics, FlowAnalysisErrors.DoesNotReturn);
     }
 
     [Fact]
@@ -169,7 +170,7 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
 
         // Assert
         Assert.Single(diagnostics);
-        AssertDiagnostic(diagnostics, FlowAnalysisErrors.VariableUsedBeforeInit);
+        AssertDiagnostics(diagnostics, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
 
     [Fact]
@@ -204,11 +205,11 @@ public sealed class LocalFunctionsTests : SemanticTestsBase
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("foo"), StringExpression("Hello")))))));
 
-        var fooInt32Decl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooStringDecl = tree.FindInChildren<FunctionDeclarationSyntax>(2);
+        var fooInt32Decl = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooStringDecl = tree.GetNode<FunctionDeclarationSyntax>(2);
 
-        var fooInt32Call = tree.FindInChildren<CallExpressionSyntax>(0);
-        var fooStringCall = tree.FindInChildren<CallExpressionSyntax>(1);
+        var fooInt32Call = tree.GetNode<CallExpressionSyntax>(0);
+        var fooStringCall = tree.GetNode<CallExpressionSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);

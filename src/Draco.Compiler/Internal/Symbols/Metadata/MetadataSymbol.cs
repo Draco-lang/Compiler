@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
-using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
@@ -19,6 +19,12 @@ internal static class MetadataSymbol
     public static readonly TypeAttributes StaticClassAttributes =
         TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.Class;
 
+    /// <summary>
+    /// Turns the given type definition into a symbol.
+    /// </summary>
+    /// <param name="containingSymbol">The containing symbol.</param>
+    /// <param name="typeDefinition">The type definition to turn into a symbol.</param>
+    /// <returns>The symbol representing the type definition, contained in <paramref name="containingSymbol"/>.</returns>
     public static Symbol ToSymbol(Symbol containingSymbol, TypeDefinition typeDefinition)
     {
         if (typeDefinition.Attributes.HasFlag(StaticClassAttributes))
@@ -33,64 +39,26 @@ internal static class MetadataSymbol
         }
     }
 
-    public static IEnumerable<Symbol> GetAdditionalSymbols(
-        Symbol typeSymbol,
-        TypeDefinition typeDefinition,
-        MetadataReader metadataReader)
+    // TODO: This isn't dependent on metadata types anymore, we could move it out
+    /// <summary>
+    /// Retrieves additional symbols for the given <paramref name="typeSymbol"/>.
+    /// </summary>
+    /// <param name="symbol">The symbol to get additional symbols for.</param>
+    /// <returns>The additional symbols for the given <paramref name="symbol"/>.</returns>
+    public static IEnumerable<Symbol> GetAdditionalSymbols(Symbol symbol)
     {
-        // Constructors
-        if (!typeDefinition.Attributes.HasFlag(TypeAttributes.Abstract))
-        {
-            // Look for the constructors
-            foreach (var methodHandle in typeDefinition.GetMethods())
-            {
-                var method = metadataReader.GetMethodDefinition(methodHandle);
-
-                // Skip private
-                if (method.Attributes.HasFlag(MethodAttributes.Private)) continue;
-
-                // Match name
-                var methodName = metadataReader.GetString(method.Name);
-                if (methodName != ".ctor") continue;
-
-                // This is a public constructor, synthetize a function overload
-                var ctor = new MetadataMethodSymbol(typeSymbol, method);
-                var ctorFunction = new ConstructorFunctionSymbol(ctor);
-                yield return ctorFunction;
-            }
-        }
+        if (symbol is not TypeSymbol typeSymbol) return [];
+        if (typeSymbol.IsAbstract) return [];
+        // For other types we provide constructor functions
+        return typeSymbol.Constructors.Select(ctor => new ConstructorFunctionSymbol(ctor));
     }
 
-    public static string? GetDefaultMemberAttributeName(TypeDefinition typeDefinition, Compilation compilation, MetadataReader reader)
-    {
-        foreach (var attributeHandle in typeDefinition.GetCustomAttributes())
-        {
-            var attribute = reader.GetCustomAttribute(attributeHandle);
-            var typeProvider = compilation.TypeProvider;
-            switch (attribute.Constructor.Kind)
-            {
-            case HandleKind.MethodDefinition:
-                var method = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
-                var methodType = reader.GetTypeDefinition(method.GetDeclaringType());
-                if (reader.GetString(methodType.Name) == "DefaultMemberAttribute")
-                {
-                    return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
-                }
-                break;
-            case HandleKind.MemberReference:
-                var member = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
-                var memberType = reader.GetTypeReference((TypeReferenceHandle)member.Parent);
-                if (reader.GetString(memberType.Name) == "DefaultMemberAttribute")
-                {
-                    return attribute.DecodeValue(typeProvider).FixedArguments[0].Value?.ToString();
-                }
-                break;
-            default: throw new InvalidOperationException();
-            };
-        }
-        return null;
-    }
-
+    /// <summary>
+    /// Decodes the given constant.
+    /// </summary>
+    /// <param name="constant">The constant to decode.</param>
+    /// <param name="metadataReader">The metadata reader to use.</param>
+    /// <returns>The decoded constant.</returns>
     public static object? DecodeConstant(Constant constant, MetadataReader metadataReader)
     {
         var blob = metadataReader.GetBlobBytes(constant.Value);
@@ -121,73 +89,129 @@ internal static class MetadataSymbol
     }
 
     /// <summary>
-    /// Gets the documentation XML as text for the given <paramref name="symbol"/>.
+    /// Decodes the given attribute list.
     /// </summary>
-    /// <param name="symbol">The <see cref="Symbol"/> to get documentation for.</param>
-    /// <returns>The documentation, or empty string, if no documentation was found.</returns>
-    public static string GetDocumentation(Symbol symbol)
+    /// <param name="handleCollection">The handle collection to decode.</param>
+    /// <param name="symbol">The contextual metadata symbol.</param>
+    /// <returns>The decoded attribute list.</returns>
+    public static ImmutableArray<AttributeInstance> DecodeAttributeList(
+        CustomAttributeHandleCollection handleCollection,
+        IMetadataSymbol symbol) => handleCollection
+        .Select(handle => DecodeAttribute(handle, symbol))
+        .ToImmutableArray();
+
+    /// <summary>
+    /// Decodes an attribute from the given handle.
+    /// </summary>
+    /// <param name="handle">The handle to decode the attribute from.</param>
+    /// <param name="symbol">The contextual metadata symbol.</param>
+    /// <returns>The decoded attribute instance.</returns>
+    public static AttributeInstance DecodeAttribute(CustomAttributeHandle handle, IMetadataSymbol symbol)
     {
-        var assembly = symbol.AncestorChain.OfType<MetadataAssemblySymbol>().FirstOrDefault();
-        if (assembly is null) return string.Empty;
-        var documentationName = GetPrefixedDocumentationName(symbol);
-        var root = assembly.AssemblyDocumentation?.DocumentElement;
-        var xml = root?.SelectSingleNode($"//member[@name='{documentationName}']")?.InnerXml ?? string.Empty;
-        return string.Join(Environment.NewLine, xml.ReplaceLineEndings("\n").Split('\n').Select(x => x.TrimStart()));
+        var assembly = symbol.Assembly;
+        var metadataReader = assembly.MetadataReader;
+        var typeProvider = assembly.DeclaringCompilation.TypeProvider;
+
+        var attribute = metadataReader.GetCustomAttribute(handle);
+
+        var constructor = GetFunctionFromHandle(attribute.Constructor, symbol)
+                       ?? throw new InvalidOperationException("attribute constructor not found");
+
+        var arguments = attribute.DecodeValue(typeProvider);
+        var fixedArgs = arguments.FixedArguments
+            .Select(a => new ConstantValue(a.Type, a.Value))
+            .ToImmutableArray();
+        var namedArgs = arguments.NamedArguments
+            .ToImmutableDictionary(a => a.Name ?? string.Empty, a => new ConstantValue(a.Type, a.Value));
+
+        return new AttributeInstance(constructor, fixedArgs, namedArgs);
     }
 
     /// <summary>
-    /// Gets the full name of a <paramref name="symbol"/> used to retrieve documentation from metadata.
+    /// Retrieves the type from the given handle.
     /// </summary>
-    /// <param name="symbol">The symbol to get documentation name of.</param>
-    /// <returns>The documentation name, or empty string, if <paramref name="symbol"/> is null.</returns>
-    public static string GetDocumentationName(Symbol? symbol) => symbol switch
+    /// <param name="handle">The handle to get the type from.</param>
+    /// <param name="symbol">The contextual metadata symbol.</param>
+    /// <returns>The type symbol from the given handle.</returns>
+    public static TypeSymbol GetTypeFromHandle(EntityHandle handle, IMetadataSymbol symbol)
     {
-        FunctionSymbol function => GetFunctionDocumentationName(function),
-        TypeParameterSymbol typeParam => GetTypeParameterDocumentationName(typeParam),
-        null => string.Empty,
-        _ => symbol.MetadataFullName,
-    };
-
-    /// <summary>
-    /// The documentation name of <paramref name="symbol"/> with prepended documentation prefix, documentation prefix specifies the type of symbol the documentation name represents.
-    /// For example <see cref="TypeSymbol"/> has the prefix "T:".
-    /// </summary>
-    /// <param name="symbol">The symbol to get prefixed documentation name of.</param>
-    /// <returns>The prefixed documentation name, or empty string, if <paramref name="symbol"/> is null.</returns>
-    public static string GetPrefixedDocumentationName(Symbol? symbol) =>
-        $"{GetDocumentationPrefix(symbol)}{GetDocumentationName(symbol)}";
-
-    private static string GetDocumentationPrefix(Symbol? symbol) => symbol switch
-    {
-        TypeSymbol => "T:",
-        ModuleSymbol => "T:",
-        FunctionSymbol => "M:",
-        PropertySymbol => "P:",
-        FieldSymbol => "F:",
-        _ => string.Empty,
-    };
-
-    private static string GetFunctionDocumentationName(FunctionSymbol function)
-    {
-        var parametersJoined = function.Parameters.Length == 0
-            ? string.Empty
-            : $"({string.Join(",", function.Parameters.Select(x => GetDocumentationName(x.Type)))})";
-
-        var generics = function.GenericParameters.Length == 0
-            ? string.Empty
-            : $"``{function.GenericParameters.Length}";
-        return $"{function.MetadataFullName}{generics}{parametersJoined}";
-    }
-
-    private static string GetTypeParameterDocumentationName(TypeParameterSymbol typeParameter)
-    {
-        var index = typeParameter.ContainingSymbol?.GenericParameters.IndexOf(typeParameter);
-        if (index is null || index.Value == -1) return typeParameter.MetadataFullName;
-        return typeParameter.ContainingSymbol switch
+        var typeProvider = symbol.Assembly.DeclaringCompilation.TypeProvider;
+        var metadataReader = symbol.Assembly.MetadataReader;
+        return handle.Kind switch
         {
-            TypeSymbol => $"`{index.Value}",
-            FunctionSymbol => $"``{index.Value}",
-            _ => typeParameter.MetadataFullName,
+            HandleKind.TypeDefinition => typeProvider.GetTypeFromDefinition(metadataReader, (TypeDefinitionHandle)handle, 0),
+            HandleKind.TypeReference => typeProvider.GetTypeFromReference(metadataReader, (TypeReferenceHandle)handle, 0),
+            HandleKind.TypeSpecification => typeProvider.GetTypeFromSpecification(metadataReader, (Symbol)symbol, (TypeSpecificationHandle)handle, 0),
+            _ => throw new InvalidOperationException(),
         };
+    }
+
+    /// <summary>
+    /// Retrieves a function from the given handle.
+    /// </summary>
+    /// <param name="handle">The handle to get the function from.</param>
+    /// <param name="symbol">The contextual metadata symbol.</param>
+    /// <returns>The function symbol from the given handle.</returns>
+    public static FunctionSymbol? GetFunctionFromHandle(EntityHandle handle, IMetadataSymbol symbol) => handle.Kind switch
+    {
+        HandleKind.MethodDefinition => GetFunctionFromDefinition((MethodDefinitionHandle)handle, symbol),
+        HandleKind.MemberReference => GetFunctionFromReference((MemberReferenceHandle)handle, symbol),
+        _ => throw new InvalidOperationException(),
+    };
+
+    private static FunctionSymbol? GetFunctionFromDefinition(MethodDefinitionHandle methodDef, IMetadataSymbol symbol)
+    {
+        // NOTE: This potentially loads functions multiple times, which isn't great...
+        var assembly = symbol.Assembly;
+        var metadataReader = assembly.MetadataReader;
+        var provider = assembly.DeclaringCompilation.TypeProvider;
+        var definition = metadataReader.GetMethodDefinition(methodDef);
+        var containingType = provider.GetTypeFromDefinition(metadataReader, definition.GetDeclaringType(), 0);
+        var function = new MetadataMethodSymbol(containingType, definition);
+        return function;
+    }
+
+    private static FunctionSymbol? GetFunctionFromReference(MemberReferenceHandle methodRef, IMetadataSymbol symbol)
+    {
+        var assembly = symbol.Assembly;
+        var metadataReader = assembly.MetadataReader;
+        var provider = assembly.DeclaringCompilation.TypeProvider;
+        var reference = metadataReader.GetMemberReference(methodRef);
+        var name = metadataReader.GetString(reference.Name);
+        var containingType = GetTypeFromHandle(reference.Parent, symbol);
+        // We construct a pseudo-symbol for signature decoding
+        var pseudoSymbol = new MetadataFunctionSignatureSymbol(containingType);
+        var signature = reference.DecodeMethodSignature(provider, pseudoSymbol);
+        return GetFunctionWithSignature(containingType, name, signature);
+    }
+
+    private static FunctionSymbol? GetFunctionWithSignature(
+        TypeSymbol containingType,
+        string name,
+        MethodSignature<TypeSymbol> signature)
+    {
+        var functions = containingType.DefinedMembers
+            .OfType<FunctionSymbol>()
+            .Concat(containingType.DefinedPropertyAccessors);
+        foreach (var function in functions)
+        {
+            if (function.Name != name) continue;
+            if (SignaturesMatch(function, signature)) return function;
+        }
+        return null;
+    }
+
+    private static bool SignaturesMatch(FunctionSymbol function, MethodSignature<TypeSymbol> signature)
+    {
+        if (function.Parameters.Length != signature.ParameterTypes.Length) return false;
+        if (function.GenericParameters.Length != signature.GenericParameterCount) return false;
+        for (var i = 0; i < function.Parameters.Length; i++)
+        {
+            if (!SymbolEqualityComparer.Default.Equals(function.Parameters[i].Type, signature.ParameterTypes[i]))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }

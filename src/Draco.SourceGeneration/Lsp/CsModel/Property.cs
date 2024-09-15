@@ -1,5 +1,3 @@
-using System;
-
 namespace Draco.SourceGeneration.Lsp.CsModel;
 
 /// <summary>
@@ -28,11 +26,9 @@ public sealed class Property : Declaration
     public object? Value { get; set; }
 
     /// <summary>
-    /// A discriminator string for the value.
+    /// Checks, if the property is required.
     /// </summary>
-    public string ValueDiscriminator => this.Value switch
-    {
-        string => "String",
-        _ => throw new ArgumentOutOfRangeException(),
-    };
+    /// <param name="settable">True if the property is settable.</param>
+    /// <returns>True if the property is required.</returns>
+    public bool IsRequired(bool settable) => !this.OmitIfNull && this.Value is null && settable;
 }

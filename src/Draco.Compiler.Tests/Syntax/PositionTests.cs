@@ -22,8 +22,8 @@ public sealed class PositionTests
             }
             """");
 
-        var aDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var bDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var aDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var bDecl = tree.GetNode<VariableDeclarationSyntax>(1);
 
         Assert.Equal(new Range(
             Start: new(Line: 1, Column: 0),

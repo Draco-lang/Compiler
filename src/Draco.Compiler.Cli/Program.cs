@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.CommandLine;
 using System.CommandLine.Parsing;
@@ -8,6 +9,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 
 namespace Draco.Compiler.Cli;
 
@@ -111,7 +113,7 @@ internal class Program
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
             metadataReferences: references
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Select(r => MetadataReference.FromFile(r.FullName))
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName,
             outputPath: path,
@@ -132,13 +134,13 @@ internal class Program
         var compilation = Compilation.Create(
             syntaxTrees: syntaxTrees,
             metadataReferences: references
-                .Select(r => MetadataReference.FromPeStream(r.OpenRead()))
+                .Select(r => MetadataReference.FromFile(r.FullName))
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName);
-        var execResult = ScriptingEngine.Execute(compilation);
+        var execResult = Script.ExecuteAsProgram(compilation);
         if (!EmitDiagnostics(execResult, msbuildDiags))
         {
-            Console.WriteLine($"Result: {execResult.Result}");
+            Console.WriteLine($"Result: {execResult.Value}");
         }
     }
 
@@ -196,32 +198,23 @@ internal class Program
     private static bool EmitDiagnostics(EmitResult result, bool msbuildDiags)
     {
         if (result.Success) return false;
-        foreach (var diag in result.Diagnostics)
-        {
-            Console.Error.WriteLine(msbuildDiags ? MakeMsbuildDiag(diag) : diag.ToString());
-        }
+        WriteDiagnostics(result.Diagnostics, msbuildDiags);
         return true;
     }
 
     private static bool EmitDiagnostics<T>(ExecutionResult<T> result, bool msbuildDiags)
     {
         if (result.Success) return false;
-        foreach (var diag in result.Diagnostics)
-        {
-            Console.Error.WriteLine(msbuildDiags ? MakeMsbuildDiag(diag) : diag.ToString());
-        }
+        WriteDiagnostics(result.Diagnostics, msbuildDiags);
         return true;
     }
 
-    private static string MakeMsbuildDiag(Diagnostic original)
+    private static void WriteDiagnostics(IEnumerable<Diagnostic> diagnostics, bool msbuildDiags)
     {
-        var file = string.Empty;
-        if (!original.Location.IsNone && original.Location.SourceText.Path is not null)
+        foreach (var diag in diagnostics)
         {
-            var range = original.Location.Range!.Value;
-            file = $"{original.Location.SourceText.Path.OriginalString}({range.Start.Line + 1},{range.Start.Column + 1},{range.End.Line + 1},{range.End.Column + 1})";
+            Console.Error.WriteLine(msbuildDiags ? diag.ToMsbuildString() : diag.ToString());
         }
-        return $"{file} : {original.Severity.ToString().ToLower()} {original.Template.Code} : {original.Message}";
     }
 
     private static (string Path, string Name) ExtractOutputPathAndName(FileInfo outputInfo)

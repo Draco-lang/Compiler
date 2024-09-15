@@ -164,4 +164,22 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "the member {0} must be a gettable property",
         code: Code(17));
+
+    /// <summary>
+    /// The referenced assembly can not be found.
+    /// </summary>
+    public static readonly DiagnosticTemplate CanNotResolveReferencedAssembly = DiagnosticTemplate.Create(
+        title: "can not resolve referenced assembly",
+        severity: DiagnosticSeverity.Error,
+        format: "the referenced assembly {0} can not be resolved",
+        code: Code(18));
+
+    /// <summary>
+    /// The symbol is inaccessible due to its visibility.
+    /// </summary>
+    public static readonly DiagnosticTemplate InaccessibleSymbol = DiagnosticTemplate.Create(
+        title: "inaccessible symbol",
+        severity: DiagnosticSeverity.Error,
+        format: "the {0} {1} is inaccessible due to its visibility",
+        code: Code(19));
 }

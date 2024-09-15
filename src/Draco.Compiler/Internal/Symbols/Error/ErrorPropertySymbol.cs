@@ -13,8 +13,10 @@ internal class ErrorPropertySymbol : PropertySymbol
 
     public override bool IsError => true;
     public override bool IsStatic => true;
+    public override bool IsExplicitImplementation => false;
     public override bool IsIndexer => false;
     public override TypeSymbol Type => WellKnownTypes.ErrorType;
+    public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Public;
 
     protected virtual int ParameterCount => 0;
 

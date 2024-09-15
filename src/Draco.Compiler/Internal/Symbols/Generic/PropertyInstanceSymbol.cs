@@ -21,10 +21,10 @@ internal sealed class PropertyInstanceSymbol(
     private FunctionSymbol? setter;
 
     public override string Name => this.GenericDefinition.Name;
-
     public override bool IsIndexer => this.GenericDefinition.IsIndexer;
-
     public override bool IsStatic => this.GenericDefinition.IsStatic;
+    public override bool IsExplicitImplementation => this.GenericDefinition.IsExplicitImplementation;
+    public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override PropertySymbol GenericDefinition { get; } = genericDefinition;

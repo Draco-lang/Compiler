@@ -1,7 +1,5 @@
-using System.Collections.Immutable;
-using Draco.Compiler.Api;
-using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Declarations;
+using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
@@ -201,14 +199,9 @@ public sealed class Issue139Tests
     [Theory]
     public void DoesNotCrash(string source)
     {
-        var syntaxTree = SyntaxTree.Parse(source);
-        var compilation = Compilation.Create(
-            syntaxTrees: [syntaxTree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
-        _ = compilation.Diagnostics.ToList();
-        compilation.Emit(peStream: new MemoryStream());
+        var peStream = new MemoryStream();
+        var compilation = CreateCompilation(source);
+        _ = compilation.Emit(peStream);
     }
 
     [Fact]

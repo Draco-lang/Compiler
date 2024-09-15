@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 
@@ -31,7 +32,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
 
         var range = Translator.ToCompiler(param.Range);
         var inlayHints = new List<InlayHint>();
-        foreach (var node in syntaxTree.TraverseSubtreesIntersectingRange(range))
+        foreach (var node in syntaxTree.Root.TraverseIntersectingRange(range))
         {
             switch (node)
             {
@@ -54,7 +55,7 @@ internal sealed partial class DracoLanguageServer : IInlayHint
                 });
                 break;
             }
-            case ForExpressionSyntax @for when config.ParameterNames:
+            case ForExpressionSyntax @for when config.VariableTypes:
             {
                 if (@for.ElementType is not null) continue;
 

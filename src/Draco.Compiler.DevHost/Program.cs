@@ -7,6 +7,7 @@ using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Scripting;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.DevHost;
@@ -130,10 +131,10 @@ internal class Program
                 .Concat(BclReferences)
                 .ToImmutableArray(),
             rootModulePath: rootModule?.FullName);
-        var execResult = ScriptingEngine.Execute(compilation);
+        var execResult = Script.ExecuteAsProgram(compilation);
         if (!EmitDiagnostics(execResult))
         {
-            Console.WriteLine($"Result: {execResult.Result}");
+            Console.WriteLine($"Result: {execResult.Value}");
         }
     }
 

@@ -1,4 +1,5 @@
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 
 namespace Draco.Compiler.Tests.Syntax;
 

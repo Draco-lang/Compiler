@@ -6,7 +6,7 @@
 
 $ErrorActionPreference = "Stop"
 Push-Location $PSScriptRoot
-dotnet pack ../src/Draco.DebugAdapter --output .
+dotnet pack ../src/Draco.DebugAdapter --configuration Debug --output .
 if ((dotnet tool list --global) -match "Draco.DebugAdapter") {
     dotnet tool uninstall --global Draco.DebugAdapter
 }

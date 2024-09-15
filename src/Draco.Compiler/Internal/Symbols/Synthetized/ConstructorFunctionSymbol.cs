@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
@@ -11,9 +12,12 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized;
 /// </summary>
 internal sealed class ConstructorFunctionSymbol(FunctionSymbol ctorDefinition) : FunctionSymbol
 {
+    public override ImmutableArray<AttributeInstance> Attributes => this.ConstructorSymbol.Attributes;
     public override string Name => this.InstantiatedType.Name;
-    public override bool IsSpecialName => true;
-    public override Api.Semantics.Visibility Visibility => ctorDefinition.Visibility;
+    public override Api.Semantics.Visibility Visibility =>
+        ctorDefinition.Visibility < this.ReturnType.Visibility ? ctorDefinition.Visibility : this.ReturnType.Visibility;
+    public override SymbolDocumentation Documentation => ctorDefinition.Documentation;
+    internal override string RawDocumentation => ctorDefinition.RawDocumentation;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);

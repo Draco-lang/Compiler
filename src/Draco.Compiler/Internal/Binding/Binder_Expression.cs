@@ -25,7 +25,7 @@ internal partial class Binder
     /// <param name="constraints">The constraints that has been collected during the binding process.</param>
     /// <param name="diagnostics">The diagnostics produced during the process.</param>
     /// <returns>The untyped expression for <paramref name="syntax"/>.</returns>
-    protected virtual BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
+    internal virtual BindingTask<BoundExpression> BindExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
         UnexpectedExpressionSyntax => FromResult(new BoundUnexpectedExpression(syntax)),
@@ -116,6 +116,7 @@ internal partial class Binder
         var symbol = BinderFacts.SyntaxMustNotReferenceTypes(syntax)
             ? this.LookupNonTypeValueSymbol(syntax.Name.Text, syntax, diagnostics)
             : this.LookupValueSymbol(syntax.Name.Text, syntax, diagnostics);
+        this.CheckVisibility(syntax, symbol, "symbol", diagnostics);
         return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
     }
 
@@ -443,7 +444,7 @@ internal partial class Binder
                 return new BoundAssignmentExpression(syntax, null, left, await rightTask);
             }
         }
-        else if (syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr)
+        else if (syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.KeywordOr or TokenKind.CAnd or TokenKind.COr)
         {
             var leftTask = this.BindExpression(syntax.Left, constraints, diagnostics);
             var rightTask = this.BindExpression(syntax.Right, constraints, diagnostics);
@@ -458,7 +459,7 @@ internal partial class Binder
                 rightTask.GetResultType(syntax.Left, constraints, diagnostics),
                 syntax.Right);
 
-            return syntax.Operator.Kind == TokenKind.KeywordAnd
+            return syntax.Operator.Kind is TokenKind.KeywordAnd or TokenKind.CAnd
                 ? new BoundAndExpression(syntax, await leftTask, await rightTask)
                 : new BoundOrExpression(syntax, await leftTask, await rightTask);
         }
@@ -609,12 +610,14 @@ internal partial class Binder
                 : BinderFacts.IsValueSymbol;
 
             var members = container.StaticMembers
-                .Where(m => m.Name == memberName && m.Visibility != Api.Semantics.Visibility.Private)
+                .Where(m => m.Name == memberName)
                 .Where(pred)
                 .ToImmutableArray();
 
             var result = LookupResult.FromResultSet(members);
             var symbol = result.GetValue(memberName, syntax, diagnostics);
+            this.CheckVisibility(syntax, symbol, "member", diagnostics);
+
             return await this.StaticSymbolToExpression(syntax, symbol, constraints, diagnostics);
         }
         else
@@ -628,22 +631,14 @@ internal partial class Binder
             case Symbol when member.IsError:
                 return new BoundReferenceErrorExpression(syntax, member);
             case FunctionSymbol func:
-                return await this.WrapFunctions(syntax, receiver, [func]);
-            case OverloadSymbol overload:
-                return await this.WrapFunctions(syntax, receiver, overload.Functions);
+                return await this.WrapFunctions(syntax, receiver, [func], constraints, diagnostics);
+            case FunctionGroupSymbol overload:
+                return await this.WrapFunctions(syntax, receiver, overload.Functions, constraints, diagnostics);
             case FieldSymbol field:
                 return new BoundFieldExpression(syntax, receiver, field);
             case PropertySymbol prop:
-                // It could be array length
-                if (prop.GenericDefinition is ArrayLengthPropertySymbol)
-                {
-                    return new BoundArrayLengthExpression(syntax, receiver);
-                }
-                else
-                {
-                    var getter = GetGetterSymbol(syntax, prop, diagnostics);
-                    return new BoundPropertyGetExpression(syntax, receiver, getter);
-                }
+                var getter = GetGetterSymbol(syntax, prop, diagnostics);
+                return new BoundPropertyGetExpression(syntax, receiver, getter);
             default:
                 // TODO
                 throw new NotImplementedException();
@@ -672,8 +667,7 @@ internal partial class Binder
         var receiver = await receiverTask;
         var indexer = await indexerTask;
 
-        var arrayIndexProperty = (indexer.GenericDefinition as IPropertyAccessorSymbol)?.Property as ArrayIndexPropertySymbol;
-        if (arrayIndexProperty is not null)
+        if (receiver.TypeRequired.IsArrayType)
         {
             // Array getter
             return new BoundArrayAccessExpression(syntax, receiver, await BindingTask.WhenAll(argsTask));
@@ -776,9 +770,9 @@ internal partial class Binder
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);
         case FunctionSymbol func:
-            return await this.WrapFunctions(syntax, null, [func]);
-        case OverloadSymbol overload:
-            return await this.WrapFunctions(syntax, null, overload.Functions);
+            return await this.WrapFunctions(syntax, null, [func], constraints, diagnostics);
+        case FunctionGroupSymbol overload:
+            return await this.WrapFunctions(syntax, null, overload.Functions, constraints, diagnostics);
         default:
             throw new InvalidOperationException();
         }
@@ -787,7 +781,9 @@ internal partial class Binder
     private BindingTask<BoundExpression> WrapFunctions(
         SyntaxNode syntax,
         BoundExpression? receiver,
-        ImmutableArray<FunctionSymbol> functions)
+        ImmutableArray<FunctionSymbol> functions,
+        ConstraintSolver constraints,
+        DiagnosticBag diagnostics)
     {
         if (IsMethodOfCallExpression(syntax))
         {
@@ -814,8 +810,13 @@ internal partial class Binder
             }
             else
             {
-                // TODO
-                throw new NotImplementedException();
+                // TODO: We should construct some constraints to resolve which one
+                // For now we report an error to not crash tools
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.IllegalExpression,
+                    location: syntax.Location));
+                return BindingTask.FromResult<BoundExpression>(
+                    new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType));
             }
         }
     }

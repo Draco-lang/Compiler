@@ -25,7 +25,11 @@ internal sealed partial class DracoLanguageServer : ICodeCompletion
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var cursorPosition = Translator.ToCompiler(param.Position);
-        var completionItems = this.completionService.GetCompletions(syntaxTree, semanticModel, cursorPosition);
-        return Task.FromResult<IList<CompletionItem>>(completionItems.Select(Translator.ToLsp).ToList());
+        var cursorIndex = syntaxTree.SourceText.SyntaxPositionToIndex(cursorPosition);
+        var completionItems = this.completionService.GetCompletions(semanticModel, cursorIndex);
+        var translatedCompletionItems = completionItems
+            .Select(i => Translator.ToLsp(syntaxTree.SourceText, i))
+            .ToList();
+        return Task.FromResult<IList<CompletionItem>>(translatedCompletionItems);
     }
 }

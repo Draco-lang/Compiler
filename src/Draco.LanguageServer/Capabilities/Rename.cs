@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Lsp.Model;
 using Draco.Lsp.Server.Language;
 
@@ -33,8 +34,8 @@ internal partial class DracoLanguageServer : IRename
         var cursorRange = cursorPosition.Column == 0
             ? new SyntaxRange(cursorPosition, 1)
             : new SyntaxRange(new SyntaxPosition(Line: cursorPosition.Line, Column: cursorPosition.Column - 1), 1);
-        var referencedSymbol = syntaxTree
-            .TraverseSubtreesIntersectingRange(cursorRange)
+        var referencedSymbol = syntaxTree.Root
+            .TraverseIntersectingRange(cursorRange)
             .Select(symbol => semanticModel.GetReferencedSymbol(symbol) ?? semanticModel.GetDeclaredSymbol(symbol))
             .LastOrDefault(symbol => symbol is not null);
         if (referencedSymbol is null) return Task.FromResult<WorkspaceEdit?>(null);
@@ -82,7 +83,7 @@ internal partial class DracoLanguageServer : IRename
         }
     }
 
-    private static TextEdit RenameNode(SyntaxNode original, string name) => original switch
+    private static Lsp.Model.TextEdit RenameNode(SyntaxNode original, string name) => original switch
     {
         ParameterSyntax p => RenameToken(p.Name, name),
         GenericParameterSyntax g => RenameToken(g.Name, name),
@@ -102,7 +103,7 @@ internal partial class DracoLanguageServer : IRename
         _ => throw new ArgumentOutOfRangeException(nameof(original)),
     };
 
-    private static TextEdit RenameToken(SyntaxToken token, string name) => new()
+    private static Lsp.Model.TextEdit RenameToken(SyntaxToken token, string name) => new()
     {
         Range = Translator.ToLsp(token.Range),
         NewText = name,

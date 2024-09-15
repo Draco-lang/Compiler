@@ -109,7 +109,7 @@ internal sealed record class ReferenceDocumentationElement : DocumentationElemen
     {
         ParameterSymbol => new XElement("paramref", new XAttribute("name", this.DisplayText)),
         TypeParameterSymbol => new XElement("typeparamref", new XAttribute("name", this.DisplayText)),
-        _ => new XElement("see", new XAttribute("cref", MetadataSymbol.GetPrefixedDocumentationName(this.ReferencedSymbol))),
+        _ => new XElement("see", new XAttribute("cref", MetadataDocumentation.GetPrefixedDocumentationName(this.ReferencedSymbol))),
     };
 }
 

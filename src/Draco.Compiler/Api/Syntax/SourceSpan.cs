@@ -8,9 +8,30 @@ namespace Draco.Compiler.Api.Syntax;
 public readonly record struct SourceSpan(int Start, int Length)
 {
     /// <summary>
+    /// Constructs an empty span at the given start index.
+    /// </summary>
+    /// <param name="start">The start index of the span.</param>
+    /// <returns>The created empty span.</returns>
+    public static SourceSpan Empty(int start = 0) => new(start, 0);
+
+    /// <summary>
     /// The end index of the text (exclusive).
     /// </summary>
     public int End => this.Start + this.Length;
+
+    /// <summary>
+    /// Transforms this span to be relative to the given start index.
+    /// </summary>
+    /// <param name="start">The start index to make this span relative to.</param>
+    /// <returns>A new span that is relative to <paramref name="start"/>.</returns>
+    public SourceSpan RelativeTo(int start) => this.OffsetBy(-start);
+
+    /// <summary>
+    /// Transforms this span to be offset by the given amount.
+    /// </summary>
+    /// <param name="offset">The amount to offset this span by.</param>
+    /// <returns>A new span that is offset by <paramref name="offset"/>.</returns>
+    public SourceSpan OffsetBy(int offset) => new(this.Start + offset, this.Length);
 
     /// <summary>
     /// Checks if this span contains the given index.

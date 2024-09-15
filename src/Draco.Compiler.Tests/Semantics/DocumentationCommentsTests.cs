@@ -1,8 +1,6 @@
-using System.Collections.Immutable;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
@@ -10,7 +8,7 @@ using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.Semantics;
 
-public sealed class DocumentationCommentsTests : SemanticTestsBase
+public sealed class DocumentationCommentsTests
 {
     private static string CreateXmlDocComment(string originalXml)
     {
@@ -69,7 +67,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             null,
             BlockFunctionBody()), docComment)));
 
-        var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var funcDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -101,7 +99,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
             LiteralExpression(0)),
             docComment)));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -137,7 +135,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 DeclarationStatement(LabelDeclaration("myLabel")),
                 docComment)))));
 
-        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
+        var labelDecl = tree.GetNode<LabelDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -180,7 +178,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("documentedModule"), "Foo")))))));
 
-        var moduleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var moduleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -211,20 +209,17 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             /// {{docs}}
             public class TestClass { }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
@@ -252,27 +247,24 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             public class TestClass
             {
                 /// {{docs}}
                 public class NestedTestClass { }
             }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var nestedTypeSym = GetMemberSymbol<TypeSymbol>(typeSym, "NestedTestClass");
+        var nestedTypeSym = AssertMember<TypeSymbol>(typeSym, "NestedTestClass");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -297,24 +289,21 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             /// {{docs}}
             public static class TestClass
             {
                 // Just so i can use it in draco
                 public static int foo = 0;
             }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var @class = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var @class = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<ModuleSymbol>(semanticModel.GetReferencedSymbol(@class));
@@ -342,27 +331,24 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             public class TestClass
             {
                 /// {{docs}}
                 public void TestMethod(int arg1, string arg2) { }
             }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+        var methodSym = AssertMember<FunctionSymbol>(typeSym, "TestMethod");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -387,7 +373,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             using System;
 
             public class TestClass
@@ -395,21 +381,18 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{docs}}
                 public void TestMethod() { }
             }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+        var methodSym = AssertMember<FunctionSymbol>(typeSym, "TestMethod");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -434,27 +417,24 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             public class TestClass
             {
                 /// {{docs}}
                 public int TestField = 5;
             }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var fieldSym = GetMemberSymbol<FieldSymbol>(typeSym, "TestField");
+        var fieldSym = AssertMember<FieldSymbol>(typeSym, "TestField");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -479,27 +459,24 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             public class TestClass
             {
                 /// {{docs}}
                 public int TestProperty { get; }
             }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var propertySym = GetMemberSymbol<PropertySymbol>(typeSym, "TestProperty");
+        var propertySym = AssertMember<PropertySymbol>(typeSym, "TestProperty");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -525,7 +502,7 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             using System;
 
             /// {{classDocs}}
@@ -534,21 +511,18 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 /// {{methodDocs}}
                 public void TestMethod<U>(T arg1, T arg2, U arg3) { }
             }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<CallExpressionSyntax>(0);
+        var call = tree.GetNode<CallExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+        var methodSym = AssertMember<FunctionSymbol>(typeSym, "TestMethod");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -587,28 +561,25 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
 
         var xmlStream = new MemoryStream();
 
-        var testRef = CompileCSharpToMetadataRef($$"""
+        var testRef = CompileCSharpToMetadataReference($$"""
             namespace TestNamespace;
             public class TestClass
             {
                 {{CreateXmlDocComment(originalDocs)}}
                 public int TestMethod<T>(int arg1, int arg2) => arg1 + arg2; 
             }
-            """, xmlStream: xmlStream).WithDocumentation(xmlStream);
+            """, xmlDocStream: xmlStream);
 
-        var call = tree.FindInChildren<NameExpressionSyntax>(0);
+        var call = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
+        var compilation = CreateCompilation(
             syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .Append(testRef)
-                .ToImmutableArray());
+            additionalReferences: [testRef]);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var typeSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(call)).ReturnType;
-        var methodSym = GetMemberSymbol<FunctionSymbol>(typeSym, "TestMethod");
+        var methodSym = AssertMember<FunctionSymbol>(typeSym, "TestMethod");
 
         var xmlGeneratedDocs = """
             <summary>Documentation for TestMethod, which is in <see cref="T:TestNamespace.TestClass" />, random generic link <see cref="T:System.Collections.Generic.List`1" /></summary>
@@ -674,14 +645,10 @@ public sealed class DocumentationCommentsTests : SemanticTestsBase
                 null,
                 BlockFunctionBody()), originalDocs)));
 
-        var testMethodDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var testMethodDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
 
         // Act
-        var compilation = Compilation.Create(
-            syntaxTrees: [tree],
-            metadataReferences: Basic.Reference.Assemblies.Net80.ReferenceInfos.All
-                .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-                .ToImmutableArray());
+        var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var methodSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(testMethodDecl));

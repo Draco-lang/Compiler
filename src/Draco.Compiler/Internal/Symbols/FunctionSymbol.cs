@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using System.Threading;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
-using Draco.Compiler.Internal.OptimizingIr;
+using Draco.Compiler.Internal.OptimizingIr.Codegen;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols.Generic;
 
@@ -23,7 +24,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// <param name="operands">The compiled operand references.</param>
     /// <returns>The operand that holds the result of the operation.</returns>
     public delegate IOperand CodegenDelegate(
-        FunctionBodyCodegen codegen,
+        LocalCodegen codegen,
         TypeSymbol targetType,
         ImmutableArray<IOperand> operands);
 
@@ -36,7 +37,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     {
         TokenKind.Plus => "op_UnaryPlus",
         TokenKind.Minus => "op_UnaryNegation",
-        TokenKind.KeywordNot => "op_LogicalNot",
+        TokenKind.KeywordNot or TokenKind.CNot => "op_LogicalNot",
         _ => throw new System.ArgumentOutOfRangeException(nameof(token)),
     };
 
@@ -54,7 +55,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         // NOTE: This is actually remainder
         TokenKind.KeywordRem => "op_Modulus",
         // TODO: Consider for interop
-        TokenKind.KeywordMod => "op_DracoModulo",
+        TokenKind.KeywordMod or TokenKind.CMod => "op_DracoModulo",
         _ => throw new System.ArgumentOutOfRangeException(nameof(token)),
     };
 
@@ -93,6 +94,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     public abstract TypeSymbol ReturnType { get; }
 
     public virtual bool IsStatic => true;
+    public virtual bool IsExplicitImplementation => false;
 
     /// <summary>
     /// If true, this is a virtual function.
@@ -109,18 +111,17 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// </summary>
     public virtual bool IsConstructor => false;
 
+    /// <summary>
+    /// True, if this is a nested function.
+    /// </summary>
+    public bool IsNested => this.ContainingSymbol is FunctionSymbol;
+
     public override bool IsSpecialName => this.IsConstructor;
 
     // NOTE: We override for covariant return type
     public override FunctionSymbol? GenericDefinition => null;
-
-    public override Api.Semantics.Visibility Visibility => this.DeclaringSyntax switch
-    {
-        FunctionDeclarationSyntax funcDecl => GetVisibilityFromTokenKind(funcDecl.VisibilityModifier?.Kind),
-        _ => Api.Semantics.Visibility.Internal,
-    };
-
     public override IEnumerable<Symbol> Members => this.Parameters;
+    public override SymbolKind Kind => SymbolKind.Function;
 
     public TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
@@ -140,9 +141,13 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     public virtual CodegenDelegate? Codegen => null;
 
     /// <summary>
-    /// True, if this function must be inlined.
+    /// Retrieves the nested name of this function, which prepends the containing function names.
     /// </summary>
-    public virtual bool ForceInline => false;
+    public string NestedName => this.ContainingSymbol switch
+    {
+        FunctionSymbol f => $"{f.NestedName}.{this.Name}",
+        _ => this.Name,
+    };
 
     public override string ToString()
     {

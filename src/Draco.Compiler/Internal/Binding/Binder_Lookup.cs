@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
@@ -83,14 +82,16 @@ internal partial class Binder
         var currentReference = reference;
 
         // Iterate over the binder chain
-        // NOTE: The order of setting the reference and parent is CORRECT here
-        // In the parent scope, the child syntax will play the referencing role
-        for (var scope = this; scope is not null; currentReference = scope.DeclaringSyntax, scope = scope.Parent)
+        foreach (var scope in this.AncestorChain)
         {
             if (!lookupResult.ShouldContinue) break;
 
             // Look up in the current scope
             scope.LookupLocal(lookupResult, name, ref flags, allowSymbol, currentReference);
+
+            // NOTE: The order of setting the reference and parent is CORRECT here
+            // In the parent scope, the child syntax will play the referencing role
+            currentReference = scope.DeclaringSyntax;
         }
 
         return lookupResult;
@@ -210,7 +211,7 @@ internal partial class Binder
     private static IEnumerable<FunctionSymbol> GetFunctionsImpl(Symbol symbol) => symbol switch
     {
         FunctionSymbol f => new[] { f },
-        OverloadSymbol o => o.Functions,
+        FunctionGroupSymbol o => o.Functions,
         _ => [],
     };
 }

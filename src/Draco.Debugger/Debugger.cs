@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Threading.Tasks;
 using ClrDebug;
+using Draco.Debugger.Breakpoints;
 using Draco.Debugger.IO;
 
 namespace Draco.Debugger;

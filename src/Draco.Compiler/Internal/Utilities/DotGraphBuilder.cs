@@ -37,7 +37,7 @@ internal sealed class DotGraphBuilder<TVertex>
     {
         private readonly VertexInfo info;
 
-        internal VertexBuilder(DotGraphBuilder<TVertex>.VertexInfo info)
+        internal VertexBuilder(VertexInfo info)
         {
             this.info = info;
         }
@@ -60,7 +60,7 @@ internal sealed class DotGraphBuilder<TVertex>
     {
         private readonly EdgeInfo info;
 
-        internal EdgeBuilder(DotGraphBuilder<TVertex>.EdgeInfo info)
+        internal EdgeBuilder(EdgeInfo info)
         {
             this.info = info;
         }

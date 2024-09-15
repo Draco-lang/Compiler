@@ -8,7 +8,7 @@ namespace Draco.Compiler.Api.Diagnostics;
 internal sealed class SourceLocation(SourceText sourceText, SourceSpan span) : Location
 {
     public override SourceText SourceText { get; } = sourceText;
-    public override SyntaxRange? Range { get; } = sourceText.SourceSpanToSyntaxRange(span);
+    public override SourceSpan? Span => span;
 
     public SourceLocation(SyntaxTree syntaxTree, SourceSpan span)
         : this(syntaxTree.SourceText, span)

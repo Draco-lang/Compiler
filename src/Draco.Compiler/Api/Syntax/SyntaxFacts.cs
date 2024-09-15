@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Security.Principal;
 
@@ -6,72 +7,8 @@ namespace Draco.Compiler.Api.Syntax;
 /// <summary>
 /// Utilities for syntax.
 /// </summary>
-public static class SyntaxFacts
+public static partial class SyntaxFacts
 {
-    /// <summary>
-    /// Attempts to retrieve the textual representation of a <see cref="TokenKind"/>.
-    /// </summary>
-    /// <param name="tokenKind">The <see cref="TokenKind"/> to get the text of.</param>
-    /// <returns>The textual representation of <paramref name="tokenKind"/>, or null, if it doesn't have a
-    /// unique representation.</returns>
-    public static string? GetTokenText(TokenKind tokenKind) => tokenKind switch
-    {
-        TokenKind.EndOfInput => string.Empty,
-        TokenKind.InterpolationEnd => "}",
-        TokenKind.KeywordAnd => "and",
-        TokenKind.KeywordClass => "class",
-        TokenKind.KeywordElse => "else",
-        TokenKind.KeywordFalse => "false",
-        TokenKind.KeywordField => "field",
-        TokenKind.KeywordFor => "for",
-        TokenKind.KeywordFunc => "func",
-        TokenKind.KeywordGoto => "goto",
-        TokenKind.KeywordIf => "if",
-        TokenKind.KeywordImport => "import",
-        TokenKind.KeywordIn => "in",
-        TokenKind.KeywordInternal => "internal",
-        TokenKind.KeywordMod => "mod",
-        TokenKind.KeywordModule => "module",
-        TokenKind.KeywordNot => "not",
-        TokenKind.KeywordOr => "or",
-        TokenKind.KeywordPublic => "public",
-        TokenKind.KeywordStatic => "static",
-        TokenKind.KeywordRem => "rem",
-        TokenKind.KeywordReturn => "return",
-        TokenKind.KeywordTrue => "true",
-        TokenKind.KeywordVal => "val",
-        TokenKind.KeywordValue => "value",
-        TokenKind.KeywordVar => "var",
-        TokenKind.KeywordWhile => "while",
-        TokenKind.ParenOpen => "(",
-        TokenKind.ParenClose => ")",
-        TokenKind.CurlyOpen => "{",
-        TokenKind.CurlyClose => "}",
-        TokenKind.BracketOpen => "[",
-        TokenKind.BracketClose => "]",
-        TokenKind.Dot => ".",
-        TokenKind.Comma => ",",
-        TokenKind.Colon => ":",
-        TokenKind.Semicolon => ";",
-        TokenKind.Plus => "+",
-        TokenKind.Minus => "-",
-        TokenKind.Star => "*",
-        TokenKind.Slash => "/",
-        TokenKind.LessThan => "<",
-        TokenKind.GreaterThan => ">",
-        TokenKind.LessEqual => "<=",
-        TokenKind.GreaterEqual => ">=",
-        TokenKind.Equal => "==",
-        TokenKind.NotEqual => "!=",
-        TokenKind.Assign => "=",
-        TokenKind.PlusAssign => "+=",
-        TokenKind.MinusAssign => "-=",
-        TokenKind.StarAssign => "*=",
-        TokenKind.SlashAssign => "/=",
-        TokenKind.Ellipsis => "...",
-        _ => null,
-    };
-
     /// <summary>
     /// Attempts to retrieve a user-friendly name for a <see cref="TokenKind"/>.
     /// </summary>
@@ -143,6 +80,20 @@ public static class SyntaxFacts
         tokenKind.ToString().StartsWith("Keyword");
 
     /// <summary>
+    /// Returns the replacement token for a given C-heritage token.
+    /// </summary>
+    /// <param name="tokenKind">The <see cref="TokenKind"/> of the heritage token.</param>
+    /// <returns>The syntactically valid token which replaces the <paramref name="tokenKind"/> heritage token, or null if <paramref name="tokenKind"/> is not a heritage token.</returns>
+    public static TokenKind? GetHeritageReplacement(TokenKind tokenKind) => tokenKind switch
+    {
+        TokenKind.CMod => TokenKind.KeywordMod,
+        TokenKind.COr => TokenKind.KeywordOr,
+        TokenKind.CAnd => TokenKind.KeywordAnd,
+        TokenKind.CNot => TokenKind.KeywordNot,
+        _ => null
+    };
+
+    /// <summary>
     /// Computes the cutoff sequence that is removed from each line of a multiline string.
     /// </summary>
     /// <param name="str">The string syntax to compute the cutoff for.</param>
@@ -165,5 +116,81 @@ public static class SyntaxFacts
         // The first trivia was newline, the second must be spaces
         Debug.Assert(str.CloseQuotes.LeadingTrivia[1].Kind == TriviaKind.Whitespace);
         return str.CloseQuotes.LeadingTrivia[1].Text;
+    }
+
+    /// <summary>
+    /// Extracts the import path from an <see cref="ImportPathSyntax"/> as a string.
+    /// </summary>
+    /// <param name="path">The path to extract.</param>
+    /// <returns>The string representation of <paramref name="path"/>.</returns>
+    public static string ImportPathToString(ImportPathSyntax path) => path switch
+    {
+        RootImportPathSyntax root => root.Name.Text,
+        MemberImportPathSyntax member => $"{ImportPathToString(member.Accessed)}.{member.Member.Text}",
+        _ => throw new ArgumentOutOfRangeException(nameof(path)),
+    };
+
+    /// <summary>
+    /// Checks, if the given node is a complete entry.
+    /// </summary>
+    /// <param name="node">The node to check.</param>
+    /// <returns>True, if <paramref name="node"/> is a complete entry, false otherwise.</returns>
+    public static bool IsCompleteEntry(SyntaxNode? node)
+    {
+        static bool IsMissing(SyntaxNode? node) => node switch
+        {
+            SyntaxToken t => t.Kind != TokenKind.EndOfInput && t.Text.Length == 0,
+            UnexpectedDeclarationSyntax d => d.Nodes.Count == 0,
+            UnexpectedFunctionBodySyntax b => b.Nodes.Count == 0,
+            UnexpectedTypeSyntax t => t.Nodes.Count == 0,
+            UnexpectedStatementSyntax s => s.Nodes.Count == 0,
+            UnexpectedExpressionSyntax e => e.Nodes.Count == 0,
+            UnexpectedStringPartSyntax p => p.Nodes.Count == 0,
+            _ => false,
+        };
+
+        if (node is null) return true;
+        return node switch
+        {
+            _ when IsMissing(node) => false,
+            CompilationUnitSyntax cu => !IsMissing(cu.Declarations[^1]),
+            GenericParameterListSyntax gpl => !IsMissing(gpl.CloseBracket),
+            ModuleDeclarationSyntax md => !IsMissing(md.CloseBrace),
+            ImportDeclarationSyntax id => !IsMissing(id.Semicolon),
+            FunctionDeclarationSyntax fd => IsCompleteEntry(fd.Body),
+            ParameterSyntax p => IsCompleteEntry(p.Type),
+            BlockFunctionBodySyntax bfb => !IsMissing(bfb.CloseBrace),
+            InlineFunctionBodySyntax ifb => !IsMissing(ifb.Semicolon),
+            LabelDeclarationSyntax ld => !IsMissing(ld.Colon),
+            VariableDeclarationSyntax vd => !IsMissing(vd.Semicolon),
+            NameTypeSyntax nt => !IsMissing(nt.Name),
+            MemberTypeSyntax mt => !IsMissing(mt.Member),
+            GenericTypeSyntax gt => !IsMissing(gt.CloseBracket),
+            DeclarationStatementSyntax ds => IsCompleteEntry(ds.Declaration),
+            ExpressionStatementSyntax es => IsCompleteEntry(es.Expression) && !IsMissing(es.Semicolon),
+            StatementExpressionSyntax se => IsCompleteEntry(se.Statement),
+            BlockExpressionSyntax be => !IsMissing(be.CloseBrace),
+            IfExpressionSyntax ie => IsCompleteEntry(ie.Then) && IsCompleteEntry(ie.Else),
+            WhileExpressionSyntax we => IsCompleteEntry(we.Then),
+            ForExpressionSyntax fe => IsCompleteEntry(fe.Then),
+            GotoExpressionSyntax ge => IsCompleteEntry(ge.Target),
+            ReturnExpressionSyntax re => IsCompleteEntry(re.Value),
+            LiteralExpressionSyntax le => !IsMissing(le.Literal),
+            CallExpressionSyntax ce => !IsMissing(ce.CloseParen),
+            IndexExpressionSyntax ie => !IsMissing(ie.CloseBracket),
+            GenericExpressionSyntax ge => !IsMissing(ge.CloseBracket),
+            NameExpressionSyntax ne => !IsMissing(ne.Name),
+            MemberExpressionSyntax me => !IsMissing(me.Member),
+            UnaryExpressionSyntax ue => IsCompleteEntry(ue.Operand),
+            BinaryExpressionSyntax be => IsCompleteEntry(be.Right),
+            RelationalExpressionSyntax re => IsCompleteEntry(re.Comparisons[^1].Right),
+            GroupingExpressionSyntax ge => !IsMissing(ge.CloseParen),
+            StringExpressionSyntax se => !IsMissing(se.CloseQuotes),
+            NameLabelSyntax nl => !IsMissing(nl.Name),
+            ScriptEntrySyntax se => se.Value is null
+                ? se.Statements.Count == 0 || IsCompleteEntry(se.Statements[^1])
+                : IsCompleteEntry(se.Value),
+            _ => true,
+        };
     }
 }

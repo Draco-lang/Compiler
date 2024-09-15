@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Text;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Api.Diagnostics;
 
@@ -100,6 +101,16 @@ public sealed partial class Diagnostic
         this.RelatedInformation = relatedInformation;
     }
 
+    /// <summary>
+    /// Transforms this diagnostic to have relative positioning to a given syntax node.
+    /// </summary>
+    /// <param name="syntax">The syntax node to be relative to.</param>
+    /// <returns>The transformed diagnostic.</returns>
+    internal Diagnostic RelativeTo(SyntaxNode syntax) => this
+        .ToBuilder()
+        .WithLocation(new RelativeLocation(syntax, this.Location))
+        .Build();
+
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -114,5 +125,20 @@ public sealed partial class Diagnostic
         if (!this.Location.IsNone) sb.Append(' ').Append(this.Location);
         sb.Append(": ").Append(this.Message);
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Converts this diagnostic to the MSBuild error format.
+    /// </summary>
+    /// <returns>The MSBuild error format of this diagnostic.</returns>
+    public string ToMsbuildString()
+    {
+        var file = string.Empty;
+        if (!this.Location.IsNone && this.Location.SourceText.Path is not null)
+        {
+            var range = this.Location.Range!.Value;
+            file = $"{this.Location.SourceText.Path.OriginalString}({range.Start.Line + 1},{range.Start.Column + 1},{range.End.Line + 1},{range.End.Column + 1})";
+        }
+        return $"{file} : {this.Severity.ToString().ToLower()} {this.Template.Code} : {this.Message}";
     }
 }

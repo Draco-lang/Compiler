@@ -10,6 +10,15 @@ public readonly record struct SyntaxRange(SyntaxPosition Start, SyntaxPosition E
     public static readonly SyntaxRange Empty = default;
 
     /// <summary>
+    /// Computes the relative range relative to a starting point.
+    /// </summary>
+    /// <param name="start">The starting point.</param>
+    /// <returns>The range relative to <paramref name="start"/>.</returns>
+    public SyntaxRange RelativeTo(SyntaxPosition start) => new(
+        Start: this.Start.RelativeTo(start),
+        End: this.End.RelativeTo(start));
+
+    /// <summary>
     /// Constructs a range from a starting position and length.
     /// </summary>
     /// <param name="start">The inclusive start of the range.</param>

@@ -51,7 +51,7 @@ if (!(Test-Path $nugetConfigPath)) {
     <configuration>
       <packageSources>
         <clear />
-        <add key="draco" value=".\Toolchain" />
+        <add key="draco" value="./Toolchain" />
         <add key="nuget" value="https://api.nuget.org/v3/index.json" />
       </packageSources>
       <config>

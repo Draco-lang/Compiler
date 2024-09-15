@@ -43,6 +43,6 @@ jobs:
         dotnet restore ./src
         dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
         dotnet test ./src --no-build --filter 'FullyQualifiedName!~Draco.Examples.Tests'
-        cd ./src/Draco.Examples
+        cd ./src/Draco.Examples.Tests
         dotnet test --no-build
         cd ../..

@@ -5,6 +5,8 @@
 #>
 
 $ErrorActionPreference = "Stop"
+Push-Location $PSScriptRoot
+
 # Check if a path argument was passed in
 if ($args.Length -eq 0) {
     Write-Error "Please specify a path argument"
@@ -35,8 +37,7 @@ $templateProjectPath = Get-ChildItem -Path $toolchainPath -Filter "*Draco.Projec
 try { dotnet new uninstall Draco.ProjectTemplates --verbosity quiet } catch { }
 dotnet new install --force $templateProjectPath
 
-# We save the current location and go to the specified path
-Push-Location
+# Go to the specified path
 Set-Location $path
 
 # Create a test project in Draco if one doesn't exist yet
@@ -63,5 +64,4 @@ if (!(Test-Path $nugetConfigPath)) {
     Write-Host "Successfully created NuGet.config."
 }
 
-# Restore old location
 Pop-Location

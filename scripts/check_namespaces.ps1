@@ -3,6 +3,9 @@
     Checks, which source files don't have their namespaces aligned with their file paths.
 #>
 
+$ErrorActionPreference = "Stop"
+Push-Location $PSScriptRoot
+
 # We collect all our projects
 # NOTE: We exclude bin folders, as BDN generates projects there we don't care about
 $projects = Get-ChildItem '../src' -Recurse -Include *.csproj | ? { $_.FullName -inotmatch '\\bin\\|\\obj\\' }
@@ -36,3 +39,5 @@ foreach ($project in $projects) {
         }
     }
 }
+
+Pop-Location

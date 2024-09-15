@@ -55,7 +55,7 @@ if (!(Test-Path $nugetConfigPath)) {
         <add key="nuget" value="https://api.nuget.org/v3/index.json" />
       </packageSources>
       <config>
-        <add key="globalPackagesFolder" value="Toolchain\GlobalPackages" />
+        <add key="globalPackagesFolder" value="Toolchain/GlobalPackages" />
       </config>
     </configuration>'
 

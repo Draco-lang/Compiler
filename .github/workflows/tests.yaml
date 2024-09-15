@@ -39,7 +39,7 @@ jobs:
     - name: Build and test
       shell: pwsh
       run: |
-        ./scripts/install-toolchain.ps1 ../examples
+        ./scripts/install_toolchain.ps1 ../examples
         dotnet restore ./src
         dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
         dotnet test ./src --no-build

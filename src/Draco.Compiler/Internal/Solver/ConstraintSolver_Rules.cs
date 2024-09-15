@@ -305,7 +305,7 @@ internal sealed partial class ConstraintSolver
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
                     overload.CompletionSource.SetResult(errorSymbol);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
-                    if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsError))
+                    if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsTypeVariable && !a.Type.Substitution.IsError))
                     {
                         overload.ReportDiagnostic(diagnostics, diag => diag
                             .WithTemplate(TypeCheckingErrors.NoMatchingOverload)

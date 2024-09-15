@@ -75,14 +75,6 @@ internal abstract partial class SyntaxVisitor<TResult>
     {{Visitors(tree.Nodes, "TResult", "default!")}}
 }
 
-/// <summary>
-/// A base class for rewriting <see cref="{{tree.Root.Name}}"/>.
-/// </summary>
-internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}}>
-{
-    {{Rewriters(tree)}}
-}
-
 #nullable restore
 """);
 
@@ -118,6 +110,25 @@ public abstract partial class SyntaxVisitor<TResult>
 public static partial class SyntaxFactory
 {
     {{SyntaxFactories(tree)}}
+}
+
+#nullable restore
+""");
+
+    public static string GenerateRewriters(Tree tree) => FormatCSharp($$"""
+using System.Collections.Generic;
+using Draco.Compiler.Internal.Syntax;
+    
+namespace Draco.Compiler.Internal.Syntax.Rewriting;
+    
+#nullable enable
+
+/// <summary>
+/// A base class for rewriting <see cref="{{tree.Root.Name}}"/>.
+/// </summary>
+internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}}>
+{
+    {{Rewriters(tree)}}
 }
 
 #nullable restore

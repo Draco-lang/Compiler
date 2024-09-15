@@ -52,14 +52,14 @@ public sealed class SymbolResolutionTests
                     ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration("x5")))),
                     ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration("x6"))))))))));
 
-        var foo = tree.FindInChildren<FunctionDeclarationSyntax>();
-        var n = tree.FindInChildren<ParameterSyntax>();
-        var x1 = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var x2 = tree.FindInChildren<VariableDeclarationSyntax>(1);
-        var x3 = tree.FindInChildren<VariableDeclarationSyntax>(2);
-        var x4 = tree.FindInChildren<VariableDeclarationSyntax>(3);
-        var x5 = tree.FindInChildren<VariableDeclarationSyntax>(4);
-        var x6 = tree.FindInChildren<VariableDeclarationSyntax>(5);
+        var foo = tree.GetNode<FunctionDeclarationSyntax>();
+        var n = tree.GetNode<ParameterSyntax>();
+        var x1 = tree.GetNode<VariableDeclarationSyntax>(0);
+        var x2 = tree.GetNode<VariableDeclarationSyntax>(1);
+        var x3 = tree.GetNode<VariableDeclarationSyntax>(2);
+        var x4 = tree.GetNode<VariableDeclarationSyntax>(3);
+        var x5 = tree.GetNode<VariableDeclarationSyntax>(4);
+        var x6 = tree.GetNode<VariableDeclarationSyntax>(5);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -112,14 +112,14 @@ public sealed class SymbolResolutionTests
                 DeclarationStatement(VariableDeclaration("x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1)))),
                 DeclarationStatement(VariableDeclaration("x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1))))))));
 
-        var x0 = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var x1 = tree.FindInChildren<VariableDeclarationSyntax>(1);
-        var x2 = tree.FindInChildren<VariableDeclarationSyntax>(2);
-        var x3 = tree.FindInChildren<VariableDeclarationSyntax>(3);
+        var x0 = tree.GetNode<VariableDeclarationSyntax>(0);
+        var x1 = tree.GetNode<VariableDeclarationSyntax>(1);
+        var x2 = tree.GetNode<VariableDeclarationSyntax>(2);
+        var x3 = tree.GetNode<VariableDeclarationSyntax>(3);
 
-        var x0ref = tree.FindInChildren<NameExpressionSyntax>(0);
-        var x1ref = tree.FindInChildren<NameExpressionSyntax>(1);
-        var x2ref = tree.FindInChildren<NameExpressionSyntax>(2);
+        var x0ref = tree.GetNode<NameExpressionSyntax>(0);
+        var x1ref = tree.GetNode<NameExpressionSyntax>(1);
+        var x2ref = tree.GetNode<NameExpressionSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -169,13 +169,13 @@ public sealed class SymbolResolutionTests
                 null,
                 InlineFunctionBody(CallExpression(NameExpression("foo"))))));
 
-        var barDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooDecl = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var bazDecl = tree.FindInChildren<FunctionDeclarationSyntax>(2);
+        var barDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooDecl = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var bazDecl = tree.GetNode<FunctionDeclarationSyntax>(2);
 
-        var call1 = tree.FindInChildren<CallExpressionSyntax>(0);
-        var call2 = tree.FindInChildren<CallExpressionSyntax>(1);
-        var call3 = tree.FindInChildren<CallExpressionSyntax>(2);
+        var call1 = tree.GetNode<CallExpressionSyntax>(0);
+        var call2 = tree.GetNode<CallExpressionSyntax>(1);
+        var call3 = tree.GetNode<CallExpressionSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -217,12 +217,12 @@ public sealed class SymbolResolutionTests
                 DeclarationStatement(VariableDeclaration("y", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("z")))),
                 DeclarationStatement(VariableDeclaration("z"))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
-        var zDecl = tree.FindInChildren<VariableDeclarationSyntax>(2);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var yDecl = tree.GetNode<VariableDeclarationSyntax>(1);
+        var zDecl = tree.GetNode<VariableDeclarationSyntax>(2);
 
-        var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
-        var zRef = tree.FindInChildren<NameExpressionSyntax>(1);
+        var xRef = tree.GetNode<NameExpressionSyntax>(0);
+        var zRef = tree.GetNode<NameExpressionSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -274,19 +274,19 @@ public sealed class SymbolResolutionTests
                     DeclarationStatement(VariableDeclaration("w")))),
                 DeclarationStatement(VariableDeclaration("k", value: NameExpression("w")))))));
 
-        var x1Decl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var y1Decl = tree.FindInChildren<VariableDeclarationSyntax>(1);
-        var z1Decl = tree.FindInChildren<VariableDeclarationSyntax>(2);
-        var x2Decl = tree.FindInChildren<VariableDeclarationSyntax>(3);
-        var k1Decl = tree.FindInChildren<VariableDeclarationSyntax>(4);
-        var w1Decl = tree.FindInChildren<VariableDeclarationSyntax>(5);
-        var k2Decl = tree.FindInChildren<VariableDeclarationSyntax>(6);
+        var x1Decl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var y1Decl = tree.GetNode<VariableDeclarationSyntax>(1);
+        var z1Decl = tree.GetNode<VariableDeclarationSyntax>(2);
+        var x2Decl = tree.GetNode<VariableDeclarationSyntax>(3);
+        var k1Decl = tree.GetNode<VariableDeclarationSyntax>(4);
+        var w1Decl = tree.GetNode<VariableDeclarationSyntax>(5);
+        var k2Decl = tree.GetNode<VariableDeclarationSyntax>(6);
 
-        var x1Ref1 = tree.FindInChildren<NameExpressionSyntax>(0);
-        var y1Ref1 = tree.FindInChildren<NameExpressionSyntax>(1);
-        var x2Ref1 = tree.FindInChildren<NameExpressionSyntax>(2);
-        var wRefErr1 = tree.FindInChildren<NameExpressionSyntax>(3);
-        var wRefErr2 = tree.FindInChildren<NameExpressionSyntax>(4);
+        var x1Ref1 = tree.GetNode<NameExpressionSyntax>(0);
+        var y1Ref1 = tree.GetNode<NameExpressionSyntax>(1);
+        var x2Ref1 = tree.GetNode<NameExpressionSyntax>(2);
+        var wRefErr1 = tree.GetNode<NameExpressionSyntax>(3);
+        var wRefErr2 = tree.GetNode<NameExpressionSyntax>(4);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -332,8 +332,8 @@ public sealed class SymbolResolutionTests
             null,
             BlockFunctionBody())));
 
-        var x1Decl = tree.FindInChildren<ParameterSyntax>(0);
-        var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
+        var x1Decl = tree.GetNode<ParameterSyntax>(0);
+        var x2Decl = tree.GetNode<ParameterSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -367,9 +367,9 @@ public sealed class SymbolResolutionTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
 
-        var x1Decl = tree.FindInChildren<ParameterSyntax>(0);
-        var x2Decl = tree.FindInChildren<ParameterSyntax>(1);
-        var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
+        var x1Decl = tree.GetNode<ParameterSyntax>(0);
+        var x2Decl = tree.GetNode<ParameterSyntax>(1);
+        var xRef = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -422,8 +422,8 @@ public sealed class SymbolResolutionTests
                 NameType("int32"),
                 InlineFunctionBody(NameExpression("b")))));
 
-        var varDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var funcDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
+        var varDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var funcDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -458,8 +458,8 @@ public sealed class SymbolResolutionTests
                     DeclarationStatement(VariableDeclaration("y", value: NameExpression("x"))))),
             VariableDeclaration("x")));
 
-        var localVarDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var globalVarDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var localVarDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var globalVarDecl = tree.GetNode<VariableDeclarationSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -494,8 +494,8 @@ public sealed class SymbolResolutionTests
                         then: BlockExpression(DeclarationStatement(LabelDeclaration("lbl"))))),
                     ExpressionStatement(GotoExpression("lbl"))))));
 
-        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
-        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
+        var labelDecl = tree.GetNode<LabelDeclarationSyntax>(0);
+        var labelRef = tree.GetNode<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -536,8 +536,8 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     ExpressionStatement(GotoExpression("lbl"))))));
 
-        var labelDecl = tree.FindInChildren<LabelDeclarationSyntax>(0);
-        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
+        var labelDecl = tree.GetNode<LabelDeclarationSyntax>(0);
+        var labelRef = tree.GetNode<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -563,8 +563,8 @@ public sealed class SymbolResolutionTests
             VariableDeclaration("x", null, LiteralExpression(0)),
             VariableDeclaration("y", null, NameExpression("x"))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var xRef = tree.FindInChildren<NameExpressionSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var xRef = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -595,8 +595,8 @@ public sealed class SymbolResolutionTests
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0)))));
 
-        var fooDecl = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooRef = tree.FindInChildren<NameExpressionSyntax>(0);
+        var fooDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooRef = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -625,7 +625,7 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     ExpressionStatement(GotoExpression("non_existing"))))));
 
-        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
+        var labelRef = tree.GetNode<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -655,7 +655,7 @@ public sealed class SymbolResolutionTests
                         condition: BlockExpression(ImmutableArray.Create(ExpressionStatement(GotoExpression("break"))), LiteralExpression(false)),
                         then: BlockExpression()))))));
 
-        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
+        var labelRef = tree.GetNode<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -685,7 +685,7 @@ public sealed class SymbolResolutionTests
                         condition: LiteralExpression(false),
                         then: GotoExpression("break")))))));
 
-        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
+        var labelRef = tree.GetNode<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -715,7 +715,7 @@ public sealed class SymbolResolutionTests
                         condition: LiteralExpression(false),
                         then: BlockExpression(ExpressionStatement(GotoExpression("break")))))))));
 
-        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
+        var labelRef = tree.GetNode<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -747,7 +747,7 @@ public sealed class SymbolResolutionTests
                         then: BlockExpression())),
                     ExpressionStatement(GotoExpression("break"))))));
 
-        var labelRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
+        var labelRef = tree.GetNode<GotoExpressionSyntax>(0).Target;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -791,10 +791,10 @@ public sealed class SymbolResolutionTests
                                     ExpressionStatement(GotoExpression("continue"))))),
                             ExpressionStatement(GotoExpression("break")))))))));
 
-        var outerContinueRef = tree.FindInChildren<GotoExpressionSyntax>(0).Target;
-        var innerBreakRef = tree.FindInChildren<GotoExpressionSyntax>(1).Target;
-        var innerContinueRef = tree.FindInChildren<GotoExpressionSyntax>(2).Target;
-        var outerBreakRef = tree.FindInChildren<GotoExpressionSyntax>(3).Target;
+        var outerContinueRef = tree.GetNode<GotoExpressionSyntax>(0).Target;
+        var innerBreakRef = tree.GetNode<GotoExpressionSyntax>(1).Target;
+        var innerContinueRef = tree.GetNode<GotoExpressionSyntax>(2).Target;
+        var outerBreakRef = tree.GetNode<GotoExpressionSyntax>(3).Target;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -830,8 +830,8 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("a", null, NameExpression("System")))))));
 
-        var varDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var moduleRef = tree.FindInChildren<NameExpressionSyntax>(0);
+        var varDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var moduleRef = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -910,7 +910,7 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody()),
             ImportDeclaration("System")));
 
-        var importPath = tree.FindInChildren<ImportPathSyntax>(0);
+        var importPath = tree.GetNode<ImportPathSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -943,7 +943,7 @@ public sealed class SymbolResolutionTests
                 DeclarationStatement(VariableDeclaration("x", null, LiteralExpression(0))),
                 DeclarationStatement(ImportDeclaration("System"))))));
 
-        var importPath = tree.FindInChildren<ImportPathSyntax>(0);
+        var importPath = tree.GetNode<ImportPathSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -972,7 +972,7 @@ public sealed class SymbolResolutionTests
             InlineFunctionBody(
                 LiteralExpression(0)))));
 
-        var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+        var returnTypeSyntax = tree.GetNode<NameTypeSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1004,7 +1004,7 @@ public sealed class SymbolResolutionTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x", NameType("System"), LiteralExpression(0)))))));
 
-        var varTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+        var varTypeSyntax = tree.GetNode<NameTypeSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1048,8 +1048,8 @@ public sealed class SymbolResolutionTests
                 InlineFunctionBody(LiteralExpression(0)))),
            ToPath("Tests", "FooModule", "foo.draco"));
 
-        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+        var fooDecl = foo.GetNode<FunctionDeclarationSyntax>(0);
+        var fooCall = main.GetNode<CallExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -1136,8 +1136,8 @@ public sealed class SymbolResolutionTests
                     NameType("int32"),
                     InlineFunctionBody(LiteralExpression(0))))));
 
-        var fooDecl = main.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+        var fooDecl = main.GetNode<FunctionDeclarationSyntax>(1);
+        var fooCall = main.GetNode<CallExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -1187,7 +1187,7 @@ public sealed class SymbolResolutionTests
             syntaxTrees: [main],
             rootModulePath: ToPath("Tests"));
 
-        var fooCall = main.FindInChildren<MemberExpressionSyntax>(0);
+        var fooCall = main.GetNode<MemberExpressionSyntax>(0);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1342,8 +1342,8 @@ public sealed class SymbolResolutionTests
             syntaxTrees: [main, foo],
             rootModulePath: ToPath("Tests"));
 
-        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+        var fooDecl = foo.GetNode<FunctionDeclarationSyntax>(0);
+        var fooCall = main.GetNode<CallExpressionSyntax>(0);
 
         var mainModel = compilation.GetSemanticModel(main);
         var fooModel = compilation.GetSemanticModel(foo);
@@ -1434,8 +1434,8 @@ public sealed class SymbolResolutionTests
             syntaxTrees: [main],
             rootModulePath: ToPath("Tests"));
 
-        var fooDecl = main.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+        var fooDecl = main.GetNode<FunctionDeclarationSyntax>(1);
+        var fooCall = main.GetNode<CallExpressionSyntax>(0);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1482,7 +1482,7 @@ public sealed class SymbolResolutionTests
             syntaxTrees: [main],
             rootModulePath: ToPath("Tests"));
 
-        var fooCall = main.FindInChildren<NameExpressionSyntax>(0);
+        var fooCall = main.GetNode<NameExpressionSyntax>(0);
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1526,8 +1526,8 @@ public sealed class SymbolResolutionTests
             syntaxTrees: [main, foo],
             rootModulePath: ToPath("Tests"));
 
-        var fooDecl = foo.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooCall = main.FindInChildren<CallExpressionSyntax>(0);
+        var fooDecl = foo.GetNode<FunctionDeclarationSyntax>(0);
+        var fooCall = main.GetNode<CallExpressionSyntax>(0);
 
         var mainModel = compilation.GetSemanticModel(main);
         var fooModel = compilation.GetSemanticModel(foo);
@@ -1613,7 +1613,7 @@ public sealed class SymbolResolutionTests
             syntaxTrees: [main],
             rootModulePath: ToPath("Tests"));
 
-        var writeLineCall = main.FindInChildren<CallExpressionSyntax>(4).Function;
+        var writeLineCall = main.GetNode<CallExpressionSyntax>(4).Function;
 
         var semanticModel = compilation.GetSemanticModel(main);
 
@@ -1638,7 +1638,7 @@ public sealed class SymbolResolutionTests
             NameType("unknown"),
             BlockFunctionBody())));
 
-        var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+        var returnTypeSyntax = tree.GetNode<NameTypeSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1668,7 +1668,7 @@ public sealed class SymbolResolutionTests
             null,
             BlockFunctionBody())));
 
-        var paramTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
+        var paramTypeSyntax = tree.GetNode<NameTypeSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1708,8 +1708,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -1755,8 +1755,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooNameRef = main.FindInChildren<NameExpressionSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
+        var fooNameRef = main.GetNode<NameExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -1802,8 +1802,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -1845,7 +1845,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -1887,7 +1887,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -1930,7 +1930,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -1971,8 +1971,8 @@ public sealed class SymbolResolutionTests
             public class FooType { }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2015,7 +2015,7 @@ public sealed class SymbolResolutionTests
             public class FooType { }
             """);
 
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2054,7 +2054,7 @@ public sealed class SymbolResolutionTests
             public static class FooModule { }
             """);
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2093,8 +2093,8 @@ public sealed class SymbolResolutionTests
             public static class FooModule { }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2139,8 +2139,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2186,8 +2186,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
+        var fooAssignRef = main.GetNode<BinaryExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -2233,8 +2233,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2278,7 +2278,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2319,7 +2319,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2362,7 +2362,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2405,8 +2405,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2451,7 +2451,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2491,7 +2491,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooModuleRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var fooModuleRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2539,8 +2539,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2584,7 +2584,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+        var fooAssignRef = main.GetNode<BinaryExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -2625,8 +2625,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2680,8 +2680,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2730,7 +2730,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+        var fooAssignRef = main.GetNode<BinaryExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -2774,8 +2774,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2820,8 +2820,8 @@ public sealed class SymbolResolutionTests
             public class FooType { }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2864,7 +2864,7 @@ public sealed class SymbolResolutionTests
             public class FooType { }
             """);
 
-        var fooAssignRef = main.FindInChildren<BinaryExpressionSyntax>(0);
+        var fooAssignRef = main.GetNode<BinaryExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -2910,7 +2910,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooTypeRef = main.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+        var fooTypeRef = main.GetNode<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2949,7 +2949,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var parentTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -2989,7 +2989,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooTypeRef = main.FindInChildren<TypeSyntax>(0);
+        var fooTypeRef = main.GetNode<TypeSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -3028,7 +3028,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var parentTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -3073,7 +3073,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+        var parentTypeRef = main.GetNode<MemberExpressionSyntax>(1).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -3118,7 +3118,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var parentTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+        var parentTypeRef = main.GetNode<MemberExpressionSyntax>(1).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -3165,8 +3165,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(1).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -3215,8 +3215,8 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(1).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(1).Accessed;
 
         // Act
         var compilation = CreateCompilation(
@@ -3250,10 +3250,10 @@ public sealed class SymbolResolutionTests
             NameType("T"),
             InlineFunctionBody(NameExpression("x")))));
 
-        var functionSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var genericTypeSyntax = tree.FindInChildren<GenericParameterSyntax>(0);
-        var paramTypeSyntax = tree.FindInChildren<NameTypeSyntax>(0);
-        var returnTypeSyntax = tree.FindInChildren<NameTypeSyntax>(1);
+        var functionSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var genericTypeSyntax = tree.GetNode<GenericParameterSyntax>(0);
+        var paramTypeSyntax = tree.GetNode<NameTypeSyntax>(0);
+        var returnTypeSyntax = tree.GetNode<NameTypeSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -3294,7 +3294,7 @@ public sealed class SymbolResolutionTests
             public class FooType { }
             """);
 
-        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooTypeRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3336,7 +3336,7 @@ public sealed class SymbolResolutionTests
             public class FooType : ParentType { }
             """);
 
-        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooTypeRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3389,7 +3389,7 @@ public sealed class SymbolResolutionTests
             public class FooType : ParentType.BaseType { }
             """, aditionalReferences: [baseStream]);
 
-        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooTypeRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3432,7 +3432,7 @@ public sealed class SymbolResolutionTests
             public class FooType : ParentType<int> { }
             """);
 
-        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooTypeRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3480,7 +3480,7 @@ public sealed class SymbolResolutionTests
             public class FooType : ParentInterface { }
             """);
 
-        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooTypeRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3526,7 +3526,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooTypeRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3569,7 +3569,7 @@ public sealed class SymbolResolutionTests
             public class FooType : ParentInterface<int> { }
             """);
 
-        var fooTypeRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var fooTypeRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3623,8 +3623,8 @@ public sealed class SymbolResolutionTests
             public class FooType : ParentType { }
             """);
 
-        var fooTypeRef = main.FindInChildren<MemberExpressionSyntax>(0).Accessed;
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var fooTypeRef = main.GetNode<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -3673,7 +3673,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var derivedRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3722,7 +3722,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var derivedRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3777,7 +3777,7 @@ public sealed class SymbolResolutionTests
             }
             """, aditionalReferences: [baseStream]);
 
-        var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var derivedRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3826,7 +3826,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var derivedRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3875,7 +3875,7 @@ public sealed class SymbolResolutionTests
             }
             """);
 
-        var derivedRef = main.FindInChildren<CallExpressionSyntax>(0).Function;
+        var derivedRef = main.GetNode<CallExpressionSyntax>(0).Function;
 
         // Act
         var compilation = CreateCompilation(
@@ -3924,8 +3924,8 @@ public sealed class SymbolResolutionTests
                 BlockFunctionBody(
                     ExpressionStatement(CallExpression(MemberExpression(NameExpression("Foo"), "bar")))))));
 
-        var moduleDeclSyntax = tree.FindInChildren<ModuleDeclarationSyntax>(0);
-        var moduleRefSyntax = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var moduleDeclSyntax = tree.GetNode<ModuleDeclarationSyntax>(0);
+        var moduleRefSyntax = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(tree);

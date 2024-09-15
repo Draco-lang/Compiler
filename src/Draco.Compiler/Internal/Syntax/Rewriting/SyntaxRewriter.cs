@@ -1,10 +1,12 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Draco.Compiler.Internal.Syntax;
+namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
 internal abstract partial class SyntaxRewriter
 {
+    public override SyntaxNode VisitSyntaxToken(SyntaxToken node) => node;
+
     public override SyntaxList<TNode> VisitSyntaxList<TNode>(SyntaxList<TNode> node)
     {
         var rewritten = this.RewriteArray(node.Nodes);
@@ -19,7 +21,7 @@ internal abstract partial class SyntaxRewriter
         return new(rewritten.Value);
     }
 
-    private ImmutableArray<TNode>? RewriteArray<TNode>(ImmutableArray<TNode> array)
+    protected virtual ImmutableArray<TNode>? RewriteArray<TNode>(ImmutableArray<TNode> array)
         where TNode : SyntaxNode
     {
         // Lazy construction, only create the builder when absolutely needed

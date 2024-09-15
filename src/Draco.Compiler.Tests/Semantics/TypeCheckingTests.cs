@@ -23,7 +23,7 @@ public sealed class TypeCheckingTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -51,7 +51,7 @@ public sealed class TypeCheckingTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x", value: LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -79,7 +79,7 @@ public sealed class TypeCheckingTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x", NameType("int32")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -109,7 +109,7 @@ public sealed class TypeCheckingTests
                 DeclarationStatement(VariableDeclaration("x")),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -137,7 +137,7 @@ public sealed class TypeCheckingTests
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration("x"))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -170,7 +170,7 @@ public sealed class TypeCheckingTests
                     NameType("int32"),
                     StringExpression("Hello")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -204,7 +204,7 @@ public sealed class TypeCheckingTests
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0))),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, StringExpression("Hello")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -228,7 +228,7 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration("x", NameType("int32"), LiteralExpression(0))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -250,7 +250,7 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration("x", value: LiteralExpression(0))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -272,7 +272,7 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration("x", NameType("int32"))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -294,7 +294,7 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration("x")));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -321,7 +321,7 @@ public sealed class TypeCheckingTests
                 NameType("int32"),
                 StringExpression("Hello"))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -539,8 +539,8 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var diags = semanticModel.Diagnostics;
-        var fooDecl = tree.FindInChildren<ParseNode.Decl.Func>(0);
-        var barDecl = tree.FindInChildren<ParseNode.Decl.Func>(1);
+        var fooDecl = tree.GetNode<ParseNode.Decl.Func>(0);
+        var barDecl = tree.GetNode<ParseNode.Decl.Func>(1);
         var fooSymbol = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbol(fooDecl));
         var barSymbol = GetInternalSymbol<IInternalSymbol.IFunction>(semanticModel.GetDefinedSymbol(barDecl));
 
@@ -571,8 +571,8 @@ public sealed class TypeCheckingTests
                     DeclarationStatement(VariableDeclaration("x", value: IfExpression(LiteralExpression(true), LiteralExpression(0), ReturnExpression()))),
                     DeclarationStatement(VariableDeclaration("y", value: IfExpression(LiteralExpression(true), LiteralExpression(0), GotoExpression("start"))))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var yDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var yDecl = tree.GetNode<VariableDeclarationSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -606,7 +606,7 @@ public sealed class TypeCheckingTests
                         "x",
                         value: BinaryExpression(LiteralExpression(1), Plus, StringExpression("Hello"))))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -748,10 +748,10 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true)))))));
 
-        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooBoolDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooInt32RefSyntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
-        var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
+        var fooInt32DeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooBoolDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var fooInt32RefSyntax = tree.GetNode<CallExpressionSyntax>(0).Function;
+        var fooBoolRefSyntax = tree.GetNode<CallExpressionSyntax>(1).Function;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -795,10 +795,10 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true)))))));
 
-        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooBoolDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooInt32RefSyntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
-        var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
+        var fooInt32DeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooBoolDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var fooInt32RefSyntax = tree.GetNode<CallExpressionSyntax>(0).Function;
+        var fooBoolRefSyntax = tree.GetNode<CallExpressionSyntax>(1).Function;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -849,10 +849,10 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true)))))));
 
-        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooBoolDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooInt32RefSyntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
-        var fooBoolRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
+        var fooInt32DeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooBoolDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var fooInt32RefSyntax = tree.GetNode<CallExpressionSyntax>(0).Function;
+        var fooBoolRefSyntax = tree.GetNode<CallExpressionSyntax>(1).Function;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1011,13 +1011,13 @@ public sealed class TypeCheckingTests
                             ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
                             ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(true))))))))));
 
-        var fooInt32DeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var fooBoolInFooDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var fooBoolInMainDeclSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(3);
-        var fooInt32Ref1Syntax = tree.FindInChildren<CallExpressionSyntax>(0).Function;
-        var fooBoolInFooRefSyntax = tree.FindInChildren<CallExpressionSyntax>(1).Function;
-        var fooInt32Ref2Syntax = tree.FindInChildren<CallExpressionSyntax>(2).Function;
-        var fooBoolInMainRefSyntax = tree.FindInChildren<CallExpressionSyntax>(3).Function;
+        var fooInt32DeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var fooBoolInFooDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var fooBoolInMainDeclSyntax = tree.GetNode<FunctionDeclarationSyntax>(3);
+        var fooInt32Ref1Syntax = tree.GetNode<CallExpressionSyntax>(0).Function;
+        var fooBoolInFooRefSyntax = tree.GetNode<CallExpressionSyntax>(1).Function;
+        var fooInt32Ref2Syntax = tree.GetNode<CallExpressionSyntax>(2).Function;
+        var fooBoolInMainRefSyntax = tree.GetNode<CallExpressionSyntax>(3).Function;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1058,8 +1058,8 @@ public sealed class TypeCheckingTests
                 DeclarationStatement(ImportDeclaration("System")),
                 DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("String"), "Empty")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var consoleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var consoleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1091,8 +1091,8 @@ public sealed class TypeCheckingTests
                 DeclarationStatement(ImportDeclaration("System")),
                 DeclarationStatement(VariableDeclaration("x", null, MemberExpression(NameExpression("Console"), "WindowWidth")))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var consoleRef = tree.FindInChildren<MemberExpressionSyntax>(0).Accessed;
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
+        var consoleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1126,8 +1126,8 @@ public sealed class TypeCheckingTests
                 DeclarationStatement(VariableDeclaration("list", null, CallExpression(GenericExpression(NameExpression("List"), NameType("int32"))))),
                 DeclarationStatement(VariableDeclaration("x", null, IndexExpression(NameExpression("list"), LiteralExpression(0))))))));
 
-        var xDecl = tree.FindInChildren<VariableDeclarationSyntax>(1);
-        var listRef = tree.FindInChildren<IndexExpressionSyntax>(0).Indexed;
+        var xDecl = tree.GetNode<VariableDeclarationSyntax>(1);
+        var listRef = tree.GetNode<IndexExpressionSyntax>(0).Indexed;
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1214,12 +1214,12 @@ public sealed class TypeCheckingTests
                             GenericExpression(NameExpression("identity"), NameType("int32")),
                             StringExpression("foo"))))))));
 
-        var identitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var firstCallSyntax = tree.FindInChildren<CallExpressionSyntax>(0);
+        var identitySyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var firstCallSyntax = tree.GetNode<CallExpressionSyntax>(0);
 
-        var aSyntax = tree.FindInChildren<VariableDeclarationSyntax>(0);
-        var bSyntax = tree.FindInChildren<VariableDeclarationSyntax>(1);
-        var cSyntax = tree.FindInChildren<VariableDeclarationSyntax>(2);
+        var aSyntax = tree.GetNode<VariableDeclarationSyntax>(0);
+        var bSyntax = tree.GetNode<VariableDeclarationSyntax>(1);
+        var cSyntax = tree.GetNode<VariableDeclarationSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1371,8 +1371,8 @@ public sealed class TypeCheckingTests
                         null,
                         CallExpression(NameExpression("identity"), LiteralExpression(0))))))));
 
-        var callSyntax = tree.FindInChildren<CallExpressionSyntax>();
-        var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
+        var callSyntax = tree.GetNode<CallExpressionSyntax>();
+        var varSyntax = tree.GetNode<VariableDeclarationSyntax>();
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1414,8 +1414,8 @@ public sealed class TypeCheckingTests
                         MemberExpression(NameExpression("s"), "Push"),
                         LiteralExpression(0)))))));
 
-        var callSyntax = tree.FindInChildren<CallExpressionSyntax>();
-        var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
+        var callSyntax = tree.GetNode<CallExpressionSyntax>();
+        var varSyntax = tree.GetNode<VariableDeclarationSyntax>();
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1454,8 +1454,8 @@ public sealed class TypeCheckingTests
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("s", null, CallExpression(NameExpression("Stack"))))))));
 
-        var callSyntax = tree.FindInChildren<CallExpressionSyntax>();
-        var varSyntax = tree.FindInChildren<VariableDeclarationSyntax>();
+        var callSyntax = tree.GetNode<CallExpressionSyntax>();
+        var varSyntax = tree.GetNode<VariableDeclarationSyntax>();
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1504,11 +1504,11 @@ public sealed class TypeCheckingTests
                         LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("identity"), LiteralExpression(true)))))));
 
-        var genericIdentitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var int32IdentitySyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
-        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
-        var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
+        var genericIdentitySyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var int32IdentitySyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.GetNode<CallExpressionSyntax>(0);
+        var call2Syntax = tree.GetNode<CallExpressionSyntax>(1);
+        var call3Syntax = tree.GetNode<CallExpressionSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1619,11 +1619,11 @@ public sealed class TypeCheckingTests
                         NameExpression("bar"),
                         StringExpression("Hi")))))));
 
-        var nonVariadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var variadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
-        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
-        var call3Syntax = tree.FindInChildren<CallExpressionSyntax>(2);
+        var nonVariadicFuncSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var variadicFuncSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.GetNode<CallExpressionSyntax>(0);
+        var call2Syntax = tree.GetNode<CallExpressionSyntax>(1);
+        var call3Syntax = tree.GetNode<CallExpressionSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1688,10 +1688,10 @@ public sealed class TypeCheckingTests
                         LiteralExpression(5),
                         LiteralExpression(9)))))));
 
-        var nonVariadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(0);
-        var variadicFuncSyntax = tree.FindInChildren<FunctionDeclarationSyntax>(1);
-        var call1Syntax = tree.FindInChildren<CallExpressionSyntax>(0);
-        var call2Syntax = tree.FindInChildren<CallExpressionSyntax>(1);
+        var nonVariadicFuncSyntax = tree.GetNode<FunctionDeclarationSyntax>(0);
+        var variadicFuncSyntax = tree.GetNode<FunctionDeclarationSyntax>(1);
+        var call1Syntax = tree.GetNode<CallExpressionSyntax>(0);
+        var call2Syntax = tree.GetNode<CallExpressionSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -1811,7 +1811,7 @@ public sealed class TypeCheckingTests
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", NameType("Object"), CallExpression(NameExpression("Random"))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -1844,7 +1844,7 @@ public sealed class TypeCheckingTests
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration("x", NameType("String"), CallExpression(NameExpression("Object"))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -1965,10 +1965,10 @@ public sealed class TypeCheckingTests
                 null,
                 BlockFunctionBody())));
 
-        var randomCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
-        var objectCallSyntax = main.FindInChildren<CallExpressionSyntax>(2);
-        var randomDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(2);
-        var objectDeclSyntax = main.FindInChildren<FunctionDeclarationSyntax>(1);
+        var randomCallSyntax = main.GetNode<CallExpressionSyntax>(0);
+        var objectCallSyntax = main.GetNode<CallExpressionSyntax>(2);
+        var randomDeclSyntax = main.GetNode<FunctionDeclarationSyntax>(2);
+        var objectDeclSyntax = main.GetNode<FunctionDeclarationSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -2020,7 +2020,7 @@ public sealed class TypeCheckingTests
                 null,
                 BlockFunctionBody())));
 
-        var barCallSyntax = main.FindInChildren<CallExpressionSyntax>(0);
+        var barCallSyntax = main.GetNode<CallExpressionSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -2063,7 +2063,7 @@ public sealed class TypeCheckingTests
                             CallExpression(NameExpression("Random")),
                             CallExpression(NameExpression("Object")))))))));
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -2111,9 +2111,9 @@ public sealed class TypeCheckingTests
                 ExpressionStatement(BinaryExpression(NameExpression("a"), Assign, NameExpression("b"))),
                 ExpressionStatement(BinaryExpression(NameExpression("b"), Assign, NameExpression("tmp")))))));
 
-        var aDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(0);
-        var bDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(1);
-        var tmpDeclSyntax = main.FindInChildren<VariableDeclarationSyntax>(2);
+        var aDeclSyntax = main.GetNode<VariableDeclarationSyntax>(0);
+        var bDeclSyntax = main.GetNode<VariableDeclarationSyntax>(1);
+        var tmpDeclSyntax = main.GetNode<VariableDeclarationSyntax>(2);
 
         // Act
         var compilation = CreateCompilation(main);
@@ -2193,7 +2193,7 @@ public sealed class TypeCheckingTests
             }
             """);
 
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
         // Act
         var compilation = CreateCompilation(
@@ -2266,7 +2266,7 @@ public sealed class TypeCheckingTests
         var compilation = CreateCompilation(main);
 
         var semanticModel = compilation.GetSemanticModel(main);
-        var aDecl = main.FindInChildren<VariableDeclarationSyntax>(0);
+        var aDecl = main.GetNode<VariableDeclarationSyntax>(0);
         var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDecl));
 
         var diags = semanticModel.Diagnostics;
@@ -2304,7 +2304,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xDecl = main.FindInChildren<VariableDeclarationSyntax>(1);
+        var xDecl = main.GetNode<VariableDeclarationSyntax>(1);
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
@@ -2340,7 +2340,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xDecl = main.FindInChildren<ForExpressionSyntax>().Iterator;
+        var xDecl = main.GetNode<ForExpressionSyntax>().Iterator;
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert

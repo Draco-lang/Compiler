@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Api.Syntax.Extensions;
 
 namespace Draco.Compiler.Api.Services.Signature;
 
@@ -25,11 +26,11 @@ public sealed class SignatureService
     public SignatureItem? GetSignature(SemanticModel semanticModel, int cursorIndex)
     {
         var tree = semanticModel.Tree;
-        var cursor = tree.IndexToSyntaxPosition(cursorIndex);
+        var cursor = tree.SourceText.IndexToSyntaxPosition(cursorIndex);
 
         // Check if this is a call expression
         var callSyntax = tree.Root
-            .TraverseSubtreesAtCursorPosition(cursor)
+            .TraverseAtCursorPosition(cursor)
             .OfType<CallExpressionSyntax>()
             .LastOrDefault();
         if (callSyntax is null) return null;

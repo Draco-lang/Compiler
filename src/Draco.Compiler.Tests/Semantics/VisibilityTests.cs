@@ -18,10 +18,12 @@ public sealed class VisibilityTests
             }
             """);
 
-        var fooSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(0);
-        var barSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(1);
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var fooSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(0);
+        var barSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(1);
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         var fooSymbol = GetInternalSymbol<Symbol>(semanticModel.GetDeclaredSymbol(fooSyntax));
         var barSymbol = GetInternalSymbol<Symbol>(semanticModel.GetDeclaredSymbol(barSyntax));
@@ -41,10 +43,12 @@ public sealed class VisibilityTests
             }
             """);
 
-        var fooSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(0);
-        var barSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(1);
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var fooSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(0);
+        var barSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(1);
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         var fooSymbol = GetInternalSymbol<Symbol>(semanticModel.GetDeclaredSymbol(fooSyntax));
         var barSymbol = GetInternalSymbol<Symbol>(semanticModel.GetDeclaredSymbol(barSyntax));
@@ -66,10 +70,12 @@ public sealed class VisibilityTests
             }
             """);
 
-        var fooSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(0);
-        var barSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(1);
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var fooSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(0);
+        var barSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(1);
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         var fooSymbol = GetInternalSymbol<Symbol>(semanticModel.GetDeclaredSymbol(fooSyntax));
         var barSymbol = GetInternalSymbol<Symbol>(semanticModel.GetDeclaredSymbol(barSyntax));
@@ -91,10 +97,12 @@ public sealed class VisibilityTests
             }
             """);
 
-        var fooSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(0);
-        var barSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(1);
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var fooSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(0);
+        var barSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(1);
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         var fooSymbol = GetInternalSymbol<Symbol>(semanticModel.GetDeclaredSymbol(fooSyntax));
         var barSymbol = GetInternalSymbol<Symbol>(semanticModel.GetDeclaredSymbol(barSyntax));
@@ -116,10 +124,12 @@ public sealed class VisibilityTests
             }
             """);
 
-        var callSyntax = compilation.SyntaxTrees[0].FindInChildren<CallExpressionSyntax>();
-        var declarationSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(1);
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var callSyntax = syntaxTree.GetNode<CallExpressionSyntax>();
+        var declarationSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(1);
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var diagnostics = compilation.Diagnostics;
 
         var calledSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(callSyntax));
@@ -150,9 +160,11 @@ public sealed class VisibilityTests
             """,
             additionalReferences: [csReference]);
 
-        var memberSyntax = compilation.SyntaxTrees[0].FindInChildren<MemberExpressionSyntax>();
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var memberSyntax = syntaxTree.GetNode<MemberExpressionSyntax>();
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var diagnostics = compilation.Diagnostics;
 
         var accessedSymbol = GetInternalSymbol<FieldSymbol>(semanticModel.GetReferencedSymbol(memberSyntax));
@@ -182,9 +194,11 @@ public sealed class VisibilityTests
             """,
             additionalReferences: [csReference]);
 
-        var indexSyntax = compilation.SyntaxTrees[0].FindInChildren<IndexExpressionSyntax>();
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var indexSyntax = syntaxTree.GetNode<IndexExpressionSyntax>();
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var diagnostics = compilation.Diagnostics;
 
         var indexSymbol = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(indexSyntax));
@@ -210,11 +224,13 @@ public sealed class VisibilityTests
             }
             """);
 
-        var callSyntax = compilation.SyntaxTrees[0].FindInChildren<CallExpressionSyntax>();
-        var stringDeclarationSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(1);
-        var int32DeclarationSyntax = compilation.SyntaxTrees[0].FindInChildren<FunctionDeclarationSyntax>(2);
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var callSyntax = syntaxTree.GetNode<CallExpressionSyntax>();
+        var stringDeclarationSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(1);
+        var int32DeclarationSyntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(2);
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var diagnostics = compilation.Diagnostics;
 
         var calledSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(callSyntax));
@@ -244,9 +260,11 @@ public sealed class VisibilityTests
             """,
             additionalReferences: [csReference]);
 
-        var declarationSyntax = compilation.SyntaxTrees[0].FindInChildren<VariableDeclarationSyntax>();
+        var syntaxTree = compilation.SyntaxTrees[0];
 
-        var semanticModel = compilation.GetSemanticModel(compilation.SyntaxTrees[0]);
+        var declarationSyntax = syntaxTree.GetNode<VariableDeclarationSyntax>();
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
         var diagnostics = compilation.Diagnostics;
 
         var personTypeSymbol = GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(declarationSyntax.Type!.Type));

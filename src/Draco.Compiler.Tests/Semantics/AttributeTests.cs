@@ -56,11 +56,11 @@ public sealed class AttributeTests
         var compilation = CreateCompilation(syntax, additionalReferences: [csReference]);
         var semanticModel = compilation.GetSemanticModel(syntax);
 
-        var varDeclSyntax = syntax.FindInChildren<VariableDeclarationSyntax>();
+        var varDeclSyntax = syntax.GetNode<VariableDeclarationSyntax>();
         var varDeclSymbol = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(varDeclSyntax));
         var someClassSymbol = varDeclSymbol.Type;
 
-        var callSyntax = syntax.FindInChildren<CallExpressionSyntax>();
+        var callSyntax = syntax.GetNode<CallExpressionSyntax>();
         var callSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(callSyntax));
 
         var obsoleteAttrSymbol = compilation.RootModule
@@ -139,10 +139,10 @@ public sealed class AttributeTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var obsoleteAttrSyntax = tree.FindInChildren<AttributeSyntax>();
+        var obsoleteAttrSyntax = tree.GetNode<AttributeSyntax>();
         var obsoleteAttrSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(obsoleteAttrSyntax));
 
-        var allowNullAttrSyntax = tree.FindInChildren<AttributeSyntax>(1);
+        var allowNullAttrSyntax = tree.GetNode<AttributeSyntax>(1);
         var allowNullAttrSymbol = GetInternalSymbol<FunctionSymbol>(semanticModel.GetReferencedSymbol(allowNullAttrSyntax));
 
         // The attribute syntax references the constructor

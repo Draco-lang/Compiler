@@ -73,7 +73,7 @@ public sealed class OverloadingTests
     private static FunctionSymbol GetDeclaredFunctionSymbol(Compilation compilation, int index)
     {
         var syntaxTree = compilation.SyntaxTrees.Single();
-        var syntax = syntaxTree.FindInChildren<FunctionDeclarationSyntax>(index);
+        var syntax = syntaxTree.GetNode<FunctionDeclarationSyntax>(index);
         Debug.Assert(syntax is not null);
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
@@ -86,7 +86,7 @@ public sealed class OverloadingTests
     private static FunctionSymbol GetCalledFunctionSymbol(Compilation compilation)
     {
         var syntaxTree = compilation.SyntaxTrees.Single();
-        var syntax = syntaxTree.FindInChildren<CallExpressionSyntax>();
+        var syntax = syntaxTree.GetNode<CallExpressionSyntax>();
         Debug.Assert(syntax is not null);
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);

@@ -50,7 +50,8 @@ internal readonly struct OverloadCandidateSet : IReadOnlyCollection<CallCandidat
     /// This can mean that there is only one candidate left, no candidates are left, or even
     /// that the remaining candidates are well defined, meaning ambiguity.
     /// </summary>
-    public bool IsWellDefined => this.Count <= 1 || this.candidates.All(c => c.IsWellDefined);
+    public bool IsWellDefined => this.Count <= 1
+                              || this.candidates.All(c => c.IsWellDefined);
 
     /// <summary>
     /// Returns the dominating - best matching - candidates.

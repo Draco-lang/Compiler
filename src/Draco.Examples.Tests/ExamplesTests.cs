@@ -67,6 +67,9 @@ public sealed class ExamplesTests
 
         // Configure verifier
         var settings = new VerifySettings();
+        // TODO: Temporary log
+        Console.WriteLine("DIR FOR EXAMPLES");
+        Console.WriteLine(Path.Combine("../../", Path.GetDirectoryName(verifiedFile) ?? string.Empty));
         settings.UseDirectory(Path.Combine("../../", Path.GetDirectoryName(verifiedFile) ?? string.Empty));
         settings.UseFileName("expected");
 

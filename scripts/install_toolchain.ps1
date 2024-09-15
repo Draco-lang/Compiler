@@ -19,13 +19,13 @@ if (!(Test-Path $path)) {
 
 $toolchainPath = Join-Path -Path $path -ChildPath "Toolchain"
 
-# Create the toolchain directory if it doesn't exist
-if (!(Test-Path $toolchainPath)) {
-    New-Item -ItemType Directory -Path $toolchainPath
+# Remove previous toolchain, if it exists
+if (Test-Path $toolchainPath) {
+    Remove-Item -Path $toolchainPath -Recurse -ErrorAction SilentlyContinue
 }
 
-# Remove previous toolchain
-Remove-Item -Path $toolchainPath -Recurse -ErrorAction SilentlyContinue
+# Create the toolchain directory
+New-Item -ItemType Directory -Path $toolchainPath
 
 # Install the new toolchain in its place
 dotnet pack ../src/Draco.sln --output $toolchainPath

@@ -29,17 +29,13 @@ public sealed class ExamplesTests
     [MemberData(nameof(TestData))]
     public void RunExample(string projectFile, string verifiedFile)
     {
-        // Navigate to the project directory
-        var projectDirectory = Path.GetDirectoryName(projectFile);
-        Directory.SetCurrentDirectory(projectDirectory!);
-
-        // Invoke 'dotnet run'
+        // Invoke 'dotnet run' on the project
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = "run",
+                ArgumentList = { "run", "--project", projectFile },
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

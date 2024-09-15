@@ -19,6 +19,11 @@ if (!(Test-Path $path)) {
 
 $toolchainPath = Join-Path -Path $path -ChildPath "Toolchain"
 
+# Create the toolchain directory if it doesn't exist
+if (!(Test-Path $toolchainPath)) {
+    New-Item -ItemType Directory -Path $toolchainPath
+}
+
 # Remove previous toolchain
 Remove-Item -Path $toolchainPath -Recurse -ErrorAction SilentlyContinue
 

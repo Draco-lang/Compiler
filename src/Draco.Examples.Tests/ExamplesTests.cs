@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Text;
+using DiffEngine;
 
 namespace Draco.Examples.Tests;
 
@@ -25,9 +27,14 @@ public sealed class ExamplesTests
         }
     }
 
+    public ExamplesTests()
+    {
+        DiffTools.UseOrder(DiffTool.VisualStudioCode, DiffTool.VisualStudio, DiffTool.Rider);
+    }
+
     [Theory]
     [MemberData(nameof(TestData))]
-    public void RunExample(string projectFile, string verifiedFile)
+    public async Task RunExample(string projectFile, string verifiedFile)
     {
         // Invoke 'dotnet run' on the project
         var process = new Process
@@ -44,14 +51,26 @@ public sealed class ExamplesTests
         };
         process.Start();
 
+        var standardOutput = new StringBuilder();
+        while (!process.StandardOutput.EndOfStream)
+        {
+            var line = process.StandardOutput.ReadLine();
+            standardOutput.AppendLine(line);
+        }
+        var gotOutput = standardOutput.ToString();
+
         // Wait for the process to exit
         process.WaitForExit();
 
         // Verify that the process exited successfully
         Assert.Equal(0, process.ExitCode);
 
+        // Configure verifier
+        var settings = new VerifySettings();
+        settings.UseDirectory(Path.Combine("../../", Path.GetDirectoryName(verifiedFile) ?? string.Empty));
+        settings.UseFileName("expected");
+
         // Compare output to the verified file
-        var output = process.StandardOutput.ReadToEnd();
-        Verify(output, sourceFile: verifiedFile);
+        await Verify(gotOutput, settings);
     }
 }

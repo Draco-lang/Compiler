@@ -42,4 +42,7 @@ jobs:
         ./scripts/install_toolchain.ps1 ./examples
         dotnet restore ./src
         dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
-        dotnet test ./src --no-build
+        dotnet test ./src --no-build --filter 'FullyQualifiedName!~Draco.Examples.Tests'
+        cd ./src/Draco.Examples
+        dotnet test --no-build
+        cd ../..

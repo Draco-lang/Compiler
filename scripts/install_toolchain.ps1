@@ -37,6 +37,7 @@ try { dotnet new uninstall Draco.ProjectTemplates --verbosity quiet } catch { }
 dotnet new install --force $templateProjectPath
 
 # Go to the specified path
+Push-Location
 Set-Location $path
 
 # Create a test project in Draco if one doesn't exist yet
@@ -62,3 +63,5 @@ if (!(Test-Path $nugetConfigPath)) {
     Out-File -FilePath $nugetConfigPath -InputObject $nugetConfig -Encoding utf8
     Write-Host "Successfully created NuGet.config."
 }
+
+Pop-Location

@@ -5,7 +5,6 @@
 #>
 
 $ErrorActionPreference = "Stop"
-Push-Location $PSScriptRoot
 
 # Check if a path argument was passed in
 if ($args.Length -eq 0) {
@@ -30,7 +29,7 @@ if (Test-Path $toolchainPath) {
 New-Item -ItemType Directory -Path $toolchainPath
 
 # Install the new toolchain in its place
-dotnet pack ../src/Draco.sln --output $toolchainPath
+dotnet pack $PSScriptRoot/../src/Draco.sln --output $toolchainPath
 
 # Install the project templates
 $templateProjectPath = Get-ChildItem -Path $toolchainPath -Filter "*Draco.ProjectTemplates.*.nupkg*" | ForEach-Object { $_.FullName }
@@ -63,5 +62,3 @@ if (!(Test-Path $nugetConfigPath)) {
     Out-File -FilePath $nugetConfigPath -InputObject $nugetConfig -Encoding utf8
     Write-Host "Successfully created NuGet.config."
 }
-
-Pop-Location

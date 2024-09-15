@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal.Syntax;
-using Draco.Compiler.Internal.Syntax.Formatting;
-using Draco.Compiler.Internal.Syntax.Rewriting;
 
 namespace Draco.Compiler.Api.Syntax;
 

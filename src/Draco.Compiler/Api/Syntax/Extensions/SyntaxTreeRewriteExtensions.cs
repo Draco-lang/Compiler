@@ -1,6 +1,6 @@
+using System.Collections.Immutable;
 using Draco.Compiler.Internal.Syntax.Formatting;
 using Draco.Compiler.Internal.Syntax.Rewriting;
-using System.Collections.Immutable;
 
 namespace Draco.Compiler.Api.Syntax.Extensions;
 

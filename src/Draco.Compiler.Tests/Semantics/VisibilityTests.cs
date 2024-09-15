@@ -1,5 +1,4 @@
 using Draco.Compiler.Api.Syntax;
-using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
 using static Draco.Compiler.Tests.TestUtilities;

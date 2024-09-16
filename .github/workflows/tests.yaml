@@ -37,7 +37,12 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Build and test
+      shell: pwsh
       run: |
+        ./scripts/install_toolchain.ps1 ./examples
         dotnet restore ./src
         dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore
-        dotnet test ./src --no-build
+        dotnet test ./src --no-build --filter 'FullyQualifiedName!~Draco.Examples.Tests'
+        cd ./src/Draco.Examples.Tests
+        dotnet test --no-build
+        cd ../..

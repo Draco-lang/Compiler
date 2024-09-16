@@ -53,6 +53,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.ProjectSystem", "Drac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Repl", "Draco.Repl\Draco.Repl.csproj", "{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Examples.Tests", "Draco.Examples.Tests\Draco.Examples.Tests.csproj", "{60626A9E-F82C-4A88-A6EF-43947B746EA3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -192,6 +194,12 @@ Global
 		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C0ED09B0-D26C-4CC7-8F76-E2167F7B3FD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60626A9E-F82C-4A88-A6EF-43947B746EA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60626A9E-F82C-4A88-A6EF-43947B746EA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60626A9E-F82C-4A88-A6EF-43947B746EA3}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{60626A9E-F82C-4A88-A6EF-43947B746EA3}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{60626A9E-F82C-4A88-A6EF-43947B746EA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60626A9E-F82C-4A88-A6EF-43947B746EA3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,8 +3,10 @@
     Runs all examples in the examples directory.
 #>
 
+$ErrorActionPreference = "Stop"
+Push-Location $PSScriptRoot
+
 # Save location and go to the examples directory
-Push-Location
 Set-Location "../examples"
 
 # Find each subdirectory with a .dracoproj file
@@ -26,5 +28,4 @@ foreach ($directory in $directories) {
     Pop-Location
 }
 
-# Restore directory
 Pop-Location

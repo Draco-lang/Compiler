@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
@@ -20,6 +21,9 @@ internal sealed class SourceClassSymbol(
 {
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.BindGenericParametersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<TypeParameterSymbol> genericParameters;
+
+    public override IEnumerable<Symbol> DefinedMembers => this.BindMembersIfNeeded(this.DeclaringCompilation!);
+    private ImmutableArray<Symbol> definedMembers;
 
     public SourceClassSymbol(Symbol containingSymbol, ClassDeclaration declaration) : this(containingSymbol, declaration.Syntax)
     {
@@ -65,31 +69,34 @@ internal sealed class SourceClassSymbol(
         return genericParams.ToImmutable();
     }
 
-    private ImmutableArray<object> BindMembersIfNeeded(IBinderProvider binderProvider) =>
-        InterlockedUtils.InitializeDefault(ref this.members, () => this.BindMembers(binderProvider));
+    private ImmutableArray<Symbol> BindMembersIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeDefault(ref this.definedMembers, () => this.BindMembers(binderProvider));
 
-    private ImmutableArray<IMemberSymbol> BindMembers(IBinderProvider binder)
+    private ImmutableArray<Symbol> BindMembers(IBinderProvider binder)
     {
         if (this.DeclaringSyntax.Body is EmptyClassBodySyntax) return [];
 
         var bodyClass = this.DeclaringSyntax.Body as BlockClassBodySyntax;
         Debug.Assert(bodyClass is not null);
         var declarationsSyntaxes = bodyClass.Declarations.ToList();
-        var members = ImmutableArray.CreateBuilder<IMemberSymbol>(declarationsSyntaxes.Count);
+        var members = ImmutableArray.CreateBuilder<Symbol>(declarationsSyntaxes.Count);
         foreach (var declarationSyntax in declarationsSyntaxes)
         {
             var member = this.BindDeclaration(binder, declarationSyntax);
             members.Add(member);
         }
-
+        return members.ToImmutable();
     }
 
-    private IMemberSymbol BindDeclaration(IBinderProvider binder, DeclarationSyntax declarationSyntax)
+    private Symbol BindDeclaration(IBinderProvider binder, DeclarationSyntax declarationSyntax)
     {
         switch (declarationSyntax)
         {
         case FunctionDeclarationSyntax functionSyntax:
             return new SourceFunctionSymbol(this, functionSyntax);
+        case FieldDeclarationSyntax fieldSyntax:
+            return new SourceFieldSymbol(this, fieldSyntax);
+
         }
     }
 

@@ -28,6 +28,8 @@ internal class SourcePropertySymbol(VariableDeclarationSyntax syntax) : Property
 
     public override bool IsStatic { get; } = syntax.StaticKeyword is not null;
 
+    public override bool IsExplicitImplementation => throw new NotImplementedException();
+
     private FunctionSymbol? BindGetterIfNeeded(Compilation compilation) =>
         InterlockedUtils.InitializeMaybeNull(ref this.getter, () => this.BindGetter(compilation));
 
@@ -47,4 +49,6 @@ internal class SourcePropertySymbol(VariableDeclarationSyntax syntax) : Property
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindTypeToTypeSymbol(this.DeclaringSyntax.Type.Type, binderProvider.DiagnosticBag);
     }
+
+    public void Bind(IBinderProvider binderProvider) => throw new NotImplementedException();
 }

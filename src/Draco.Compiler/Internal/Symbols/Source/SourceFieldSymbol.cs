@@ -1,25 +1,20 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
-internal class SourceFieldSymbol(FunctionSymbol containingSymbol, FieldDeclarationSyntax field) : FieldSymbol, ISourceSymbol
+internal class SourceFieldSymbol(TypeSymbol containingSymbol, FieldDeclarationSyntax field) : FieldSymbol, ISourceSymbol
 {
-    public override Symbol? ContainingSymbol => containingSymbol;
+    public override TypeSymbol ContainingSymbol => containingSymbol;
 
     public override TypeSymbol Type => this.BindTypeIfNeeded(this.DeclaringCompilation!);
 
     public override Api.Semantics.Visibility Visibility =>
-        GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier);
+        GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier?.Kind);
 
-    private TypeSymbol BindTypeIfNeeded(Compilation declaringCompilation) =>
-        LazyInitializer.EnsureInitialized(ref this.type, () => this.BindType(declaringCompilation));
+    private TypeSymbol BindTypeIfNeeded(IBinderProvider binder) =>
+        LazyInitializer.EnsureInitialized(ref this.type, () => this.BindType(binder));
 
     private TypeSymbol? type;
 
@@ -34,4 +29,7 @@ internal class SourceFieldSymbol(FunctionSymbol containingSymbol, FieldDeclarati
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindTypeToTypeSymbol(this.DeclaringSyntax.Type.Type, binderProvider.DiagnosticBag);
     }
+
+    public void Bind(IBinderProvider binder) =>
+        this.BindTypeIfNeeded(binder);
 }

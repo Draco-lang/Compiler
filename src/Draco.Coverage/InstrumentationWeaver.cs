@@ -110,7 +110,7 @@ internal sealed class InstrumentationWeaver
         }
         else if (instruction.Operand is Instruction[] targetInstructions)
         {
-            for (var i = 0; i < targetInstructions.Length; i++)
+            for (var i = 0; i < targetInstructions.Length; ++i)
             {
                 if (jumpTargetPatches.TryGetValue(targetInstructions[i].Offset, out var newTarget))
                 {

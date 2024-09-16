@@ -15,7 +15,8 @@ internal class SourceFieldSymbol(FunctionSymbol containingSymbol, FieldDeclarati
 
     public override TypeSymbol Type => this.BindTypeIfNeeded(this.DeclaringCompilation!);
 
-    public override Api.Semantics.Visibility Visibility => this.DeclaringSyntax.Value
+    public override Api.Semantics.Visibility Visibility =>
+        GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier);
 
     private TypeSymbol BindTypeIfNeeded(Compilation declaringCompilation) =>
         LazyInitializer.EnsureInitialized(ref this.type, () => this.BindType(declaringCompilation));

@@ -35,6 +35,10 @@
   <Token Kind="KeywordNot" Text="not" Documentation="The keyword 'not'." />
   <Token Kind="KeywordOr" Text="or" Documentation="The keyword 'or'." />
   <Token Kind="KeywordPublic" Text="public" Documentation="The keyword 'public'." />
+  <Token Kind="KeywordStatic" Text="static" Documentation="The keyword 'static'."/>
+  <Token Kind="KeywordField" Text="field" Documentation="The keyword 'field'."/>
+  <Token Kind="KeywordValue" Text="value" Documentation="The keyword 'value'."/>
+  <Token Kind="KeywordClass" Text="class" Documentation="The keyword 'class'."/>
   <Token Kind="KeywordRem" Text="rem" Documentation="The keyword 'rem'." />
   <Token Kind="KeywordReturn" Text="return" Documentation="The keyword 'return'." />
   <Token Kind="KeywordTrue" Text="true" Value="true" Documentation="The keyword 'true'." />

@@ -38,6 +38,8 @@ internal sealed class InstrumentationWeaver
     {
         if (method.IsAbstract || method.IsPInvokeImpl || method.IsRuntime || !method.HasBody) return;
 
+        method.Body.SimplifyMacros();
+
         var jumpTargetPatches = new Dictionary<int, Instruction>();
         var ilProcessor = method.Body.GetILProcessor();
 

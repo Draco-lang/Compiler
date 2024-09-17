@@ -15,14 +15,16 @@ internal static class CoverageCollectorTemplate
 {
     public readonly struct SequencePoint
     {
+        public readonly string FileName;
         public readonly int Offset;
         public readonly int StartLine;
         public readonly int StartColumn;
         public readonly int EndLine;
         public readonly int EndColumn;
 
-        public SequencePoint(int offset, int startLine, int startColumn, int endLine, int endColumn)
+        public SequencePoint(string fileName, int offset, int startLine, int startColumn, int endLine, int endColumn)
         {
+            this.FileName = fileName;
             this.Offset = offset;
             this.StartLine = startLine;
             this.StartColumn = startColumn;
@@ -31,41 +33,15 @@ internal static class CoverageCollectorTemplate
         }
     }
 
-    public sealed class FileCoverage
-    {
-        public readonly string FileName;
-        public readonly int[] Hits;
-        public readonly ImmutableArray<SequencePoint> SequencePoints;
-
-        public FileCoverage(string fileName, ImmutableArray<SequencePoint> sequencePoints)
-        {
-            this.FileName = fileName;
-            this.Hits = new int[sequencePoints.Length];
-            this.SequencePoints = sequencePoints;
-        }
-
-        public void RecordHit(int index) => Interlocked.Increment(ref this.Hits[index]);
-
-        public void Clear() => Array.Clear(this.Hits, 0, this.Hits.Length);
-    }
-
-    public static readonly Dictionary<string, FileCoverage> FileCoverages;
+    public static readonly int[] Hits = null!;
+    public static readonly ImmutableArray<SequencePoint> SequencePoints;
 
     static CoverageCollectorTemplate()
     {
-        FileCoverages = new();
-
-        // The weaver will need to add a coverage entry for each file here with all of the sequence points
+        // The weaver will need to instantiate hits and fill in the sequence points array
     }
 
-    public static void RecordHit(string fileName, int index)
-    {
-        if (!FileCoverages.TryGetValue(fileName, out var fileCoverage)) return;
-        fileCoverage.RecordHit(index);
-    }
+    public static void RecordHit(string fileName, int index) => Interlocked.Increment(ref Hits[index]);
 
-    public static void Clear()
-    {
-        foreach (var fileCoverage in FileCoverages.Values) fileCoverage.Clear();
-    }
+    public static void Clear() => Array.Clear(Hits, 0, Hits.Length);
 }

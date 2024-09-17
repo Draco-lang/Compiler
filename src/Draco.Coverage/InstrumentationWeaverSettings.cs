@@ -13,10 +13,18 @@ public sealed class InstrumentationWeaverSettings
     /// <summary>
     /// True, if the weaver should check for the ExcludeCoverage attribute.
     /// </summary>
-    public bool CheckForExcludeCoverageAttribute { get; init; } = true;
+    public bool CheckForExcludeCoverageAttribute { get; }
 
     /// <summary>
     /// True, if the weaver should check for the CompilerGenerated attribute.
     /// </summary>
-    public bool CheckForCompilerGeneratedAttribute { get; init; } = true;
+    public bool CheckForCompilerGeneratedAttribute { get; }
+
+    public InstrumentationWeaverSettings(
+        bool checkForExcludeCoverageAttribute = true,
+        bool checkForCompilerGeneratedAttribute = true)
+    {
+        this.CheckForExcludeCoverageAttribute = checkForExcludeCoverageAttribute;
+        this.CheckForCompilerGeneratedAttribute = checkForCompilerGeneratedAttribute;
+    }
 }

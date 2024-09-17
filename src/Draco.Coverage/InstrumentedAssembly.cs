@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Loader;
 
 namespace Draco.Coverage;
 
@@ -38,16 +37,25 @@ public sealed class InstrumentedAssembly : IDisposable
     /// <summary>
     /// The weaved assembly.
     /// </summary>
-    public Assembly WeavedAssembly =>
-        this.weavedAssembly ??= this.assemblyLoadContext!.LoadFromStream(this.weavedAssemblyStream!);
+    public Assembly WeavedAssembly
+    {
+        get
+        {
+            if (this.weavedAssembly is not null) return this.weavedAssembly;
 
-    private readonly AssemblyLoadContext? assemblyLoadContext;
+            using var ms = new MemoryStream();
+            this.weavedAssemblyStream!.CopyTo(ms);
+            ms.Position = 0;
+            this.weavedAssembly = Assembly.Load(ms.ToArray());
+            return this.weavedAssembly;
+        }
+    }
+
     private readonly Stream? weavedAssemblyStream;
     private Assembly? weavedAssembly;
 
     private InstrumentedAssembly(Stream weavedAssemblyStream)
     {
-        this.assemblyLoadContext = new AssemblyLoadContext("Draco.Coverage.LoadContext", isCollectible: true);
         this.weavedAssemblyStream = weavedAssemblyStream;
     }
 
@@ -110,7 +118,6 @@ public sealed class InstrumentedAssembly : IDisposable
     public void Dispose()
     {
         this.weavedAssembly = null;
-        this.assemblyLoadContext?.Unload();
         this.weavedAssemblyStream?.Dispose();
     }
 

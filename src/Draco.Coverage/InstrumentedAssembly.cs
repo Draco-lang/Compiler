@@ -48,20 +48,40 @@ public sealed class InstrumentedAssembly : IDisposable
     /// <returns>The coverage result.</returns>
     public CoverageResult Instrument(Action<Assembly> action)
     {
+        // First we clear the hits
+        this.ClearCoverageData();
+
+        // Then run instrumented code
+        action(this.WeavedAssembly);
+
+        // Finally, return coverage data
+        return this.GetCoverageResult();
+    }
+
+    /// <summary>
+    /// Clears the coverage data of the instrumented assembly.
+    /// </summary>
+    public void ClearCoverageData()
+    {
+        var assembly = this.WeavedAssembly;
+        var coverageCollectorType = NotNullOrNotWeaved(assembly.GetType(typeof(CoverageCollector).FullName!));
+        var clearMethod = NotNullOrNotWeaved(coverageCollectorType.GetMethod("Clear"));
+
+        clearMethod.Invoke(null, null);
+    }
+
+    /// <summary>
+    /// Reads the coverage data of the instrumented assembly.
+    /// </summary>
+    /// <returns>The coverage result.</returns>
+    public CoverageResult GetCoverageResult()
+    {
         var assembly = this.WeavedAssembly;
 
         var coverageCollectorType = NotNullOrNotWeaved(assembly.GetType(typeof(CoverageCollector).FullName!));
-        var clearMethod = NotNullOrNotWeaved(coverageCollectorType.GetMethod("Clear"));
         var hitsField = NotNullOrNotWeaved(coverageCollectorType.GetField("Hits"));
         var sequencePointsField = NotNullOrNotWeaved(coverageCollectorType.GetField("SequencePoints"));
 
-        // First we clear the hits
-        clearMethod.Invoke(null, null);
-
-        // Then run instrumented code
-        action(assembly);
-
-        // Finally, return coverage data
         var hits = (int[])hitsField.GetValue(null)!;
         var sequencePointObjs = (Array)sequencePointsField.GetValue(null)!;
         return ToCoverageResult(hits, sequencePointObjs);

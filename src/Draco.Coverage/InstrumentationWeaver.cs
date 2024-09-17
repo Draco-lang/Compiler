@@ -38,7 +38,7 @@ internal sealed class InstrumentationWeaver
 
     private readonly InstrumentationWeaverSettings settings;
     private readonly ModuleDefinition weavedModule;
-    private readonly List<SequencePoint> recordedSequencePoints = [];
+    private readonly List<Mono.Cecil.Cil.SequencePoint> recordedSequencePoints = [];
     private MethodDefinition? recordHitMethod;
     private MethodDefinition? collectorInitializerMethod;
 
@@ -261,7 +261,7 @@ internal sealed class InstrumentationWeaver
         method.Body.OptimizeMacros();
     }
 
-    private Instruction? WeaveInstruction(ILProcessor ilProcessor, SequencePoint sequencePoint)
+    private Instruction? WeaveInstruction(ILProcessor ilProcessor, Mono.Cecil.Cil.SequencePoint sequencePoint)
     {
         if (sequencePoint.IsHidden) return null;
 
@@ -273,7 +273,7 @@ internal sealed class InstrumentationWeaver
         return this.AddInstrumentationCode(ilProcessor, instruction, sequencePoint);
     }
 
-    private Instruction AddInstrumentationCode(ILProcessor ilProcessor, Instruction before, SequencePoint sequencePoint)
+    private Instruction AddInstrumentationCode(ILProcessor ilProcessor, Instruction before, Mono.Cecil.Cil.SequencePoint sequencePoint)
     {
         var sequencePointIndex = this.recordedSequencePoints.Count;
         // Record the sequence point, so it can later be injected into the collector

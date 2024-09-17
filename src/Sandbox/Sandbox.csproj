@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Draco.Coverage.MSBuild\Draco.Coverage.MSBuild.csproj" />
+    <PackageReference Include="Draco.Coverage.MSBuild" Version="1.0.0" />
     <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" InstrumentCoverage="True" />
   </ItemGroup>
 

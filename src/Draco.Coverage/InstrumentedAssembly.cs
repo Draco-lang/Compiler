@@ -1,13 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Draco.Coverage;
 
@@ -89,7 +85,7 @@ public sealed class InstrumentedAssembly : IDisposable
 
     private static CoverageResult ToCoverageResult(int[] hits, Array sequencePointObjs)
     {
-        if (sequencePointObjs.Length == 0) return new CoverageResult([]);
+        if (sequencePointObjs.Length == 0) return CoverageResult.Empty;
 
         var objType = sequencePointObjs.GetValue(0)!.GetType();
         var objFields = objType.GetFields();

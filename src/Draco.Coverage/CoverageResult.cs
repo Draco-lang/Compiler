@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Draco.Coverage;
 
@@ -12,6 +7,11 @@ namespace Draco.Coverage;
 /// </summary>
 public sealed class CoverageResult(ImmutableArray<CoverageEntry> entires)
 {
+    /// <summary>
+    /// An empty coverage result.
+    /// </summary>
+    public static CoverageResult Empty { get; } = new([]);
+
     /// <summary>
     /// The coverage entries.
     /// </summary>

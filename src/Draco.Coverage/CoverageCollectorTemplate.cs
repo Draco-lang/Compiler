@@ -45,6 +45,8 @@ internal static class CoverageCollectorTemplate
         }
 
         public void RecordHit(int index) => Interlocked.Increment(ref this.Hits[index]);
+
+        public void Clear() => Array.Clear(this.Hits, 0, this.Hits.Length);
     }
 
     public static readonly Dictionary<string, FileCoverage> FileCoverages;
@@ -60,5 +62,10 @@ internal static class CoverageCollectorTemplate
     {
         if (!FileCoverages.TryGetValue(fileName, out var fileCoverage)) return;
         fileCoverage.RecordHit(index);
+    }
+
+    public static void Clear()
+    {
+        foreach (var fileCoverage in FileCoverages.Values) fileCoverage.Clear();
     }
 }

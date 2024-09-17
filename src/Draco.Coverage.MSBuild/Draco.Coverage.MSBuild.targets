@@ -3,9 +3,21 @@
     <Target Name="CoverageWeave" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences">
         <Error Condition="'$(UsingMicrosoftNETSdk)' != 'true'" Text="Draco.Coverage.MSBuild only works with SDK-style projects" />
 
-        <CoverageWeaveTask>
-            <!-- TODO -->
-        </CoverageWeaveTask>
+        <!-- Get the project with Weave=True -->
+        <ItemGroup>
+            <ProjectReferenceWithWeave Include="@(ProjectReference)" Condition="'%(ProjectReference.Weave)' == 'True'" />
+        </ItemGroup>
+
+        <!-- Weave the project -->
+        <CoverageWeaveTask
+            InputPath="%(ProjectReferenceWithWeave.Identity)"
+            OutputPath="%(ProjectReferenceWithWeave.RootDir)%(ProjectReferenceWithWeave.Directory)%(ProjectReferenceWithWeave.Filename).weaved%(ProjectReferenceWithWeave.Extension)"/>
+
+        <!-- Replace the original project reference with the weaved one -->
+        <ItemGroup>
+            <ProjectReference Remove="@(ProjectReferenceWithWeave)" />
+            <ProjectReference Include="%(ProjectReferenceWithWeave.RootDir)%(ProjectReferenceWithWeave.Directory)%(ProjectReferenceWithWeave.Filename).weaved%(ProjectReferenceWithWeave.Extension)" />
+        </ItemGroup>
     </Target>
     
 </Project>

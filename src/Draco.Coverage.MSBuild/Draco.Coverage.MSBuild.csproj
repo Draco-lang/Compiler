@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="$(MSBuildProjectName).props" Pack="true" PackagePath="build"/>
+    <Content Include="$(MSBuildProjectName).targets" Pack="true" PackagePath="build"/>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Draco.Coverage\Draco.Coverage.csproj" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.0.0" PrivateAssets="All" />
   </ItemGroup>

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -16,19 +18,28 @@ internal sealed class InstrumentationWeaver
     /// </summary>
     /// <param name="assemblyLocation">The location of the assembly to weave.</param>
     /// <param name="targetLocation">The location to save the weaved assembly.</param>
-    public static void WeaveInstrumentationCode(string assemblyLocation, string targetLocation)
+    public static void WeaveInstrumentationCode(
+        string assemblyLocation,
+        string targetLocation,
+        InstrumentationWeaverSettings? settings = null)
     {
+        settings ??= InstrumentationWeaverSettings.Default;
+
         var readerParameters = new ReaderParameters { ReadSymbols = true };
         using var assemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyLocation, readerParameters);
-        var weaver = new InstrumentationWeaver(assemblyDefinition.MainModule);
+
+        var weaver = new InstrumentationWeaver(assemblyDefinition.MainModule, settings);
         weaver.WeaveModule();
+
         assemblyDefinition.Write(targetLocation);
     }
 
+    private readonly InstrumentationWeaverSettings settings;
     private readonly ModuleDefinition weavedModule;
 
-    private InstrumentationWeaver(ModuleDefinition weavedModule)
+    private InstrumentationWeaver(ModuleDefinition weavedModule, InstrumentationWeaverSettings settings)
     {
+        this.settings = settings;
         this.weavedModule = weavedModule;
     }
 
@@ -39,12 +50,14 @@ internal sealed class InstrumentationWeaver
 
     private void WeaveType(TypeDefinition type)
     {
+        if (this.SkipType(type)) return;
         foreach (var method in type.Methods) this.WeaveMethod(method);
     }
 
     private void WeaveMethod(MethodDefinition method)
     {
         if (method.IsAbstract || method.IsPInvokeImpl || method.IsRuntime || !method.HasBody) return;
+        if (this.SkipMethod(method)) return;
 
         method.Body.SimplifyMacros();
 
@@ -129,4 +142,18 @@ internal sealed class InstrumentationWeaver
             }
         }
     }
+
+    private bool SkipType(TypeDefinition type) => this.ShouldExcludeByAttributes(type.CustomAttributes);
+
+    private bool SkipMethod(MethodDefinition method) => this.ShouldExcludeByAttributes(method.CustomAttributes);
+
+    private bool ShouldExcludeByAttributes(IEnumerable<CustomAttribute> attributes) =>
+           this.settings.CheckForExcludeCoverageAttribute && attributes.Any(IsExcludeCoverageAttribute)
+        || this.settings.CheckForCompilerGeneratedAttribute && attributes.Any(IsCompilerGeneratedAttribute);
+
+    private static bool IsExcludeCoverageAttribute(CustomAttribute attribute) =>
+        attribute.AttributeType.FullName == typeof(ExcludeFromCodeCoverageAttribute).FullName;
+
+    private static bool IsCompilerGeneratedAttribute(CustomAttribute attribute) =>
+        attribute.AttributeType.FullName == typeof(CompilerGeneratedAttribute).FullName;
 }

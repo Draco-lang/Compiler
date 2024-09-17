@@ -11,8 +11,17 @@ using System.Threading.Tasks;
 
 namespace Draco.Coverage;
 
+/// <summary>
+/// Represents an instrumented assembly, that weaves in instrumentation code.
+/// </summary>
 public sealed class InstrumentedAssembly : IDisposable
 {
+    /// <summary>
+    /// Creates an instrumented assembly from the given assembly path.
+    /// </summary>
+    /// <param name="assemblyPath">The path to the assembly.</param>
+    /// <param name="settings">The settings for the instrumentation weaver.</param>
+    /// <returns>The instrumented assembly.</returns>
     public static InstrumentedAssembly Create(string assemblyPath, InstrumentationWeaverSettings? settings = null)
     {
         var tmpLocation = Path.ChangeExtension(Path.GetTempFileName(), ".dll");

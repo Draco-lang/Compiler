@@ -494,7 +494,7 @@ public sealed class SemanticModelTests
             [FunctionDeclaration("bar", ParameterList(), null, BlockFunctionBody())]
         )));
         var compilation = CreateCompilation(tree);
-        var classDecl = tree.FindInChildren<ClassDeclarationSyntax>(0);
+        var classDecl = tree.GetNode<ClassDeclarationSyntax>(0);
         Assert.NotNull(classDecl);
 
         // Act

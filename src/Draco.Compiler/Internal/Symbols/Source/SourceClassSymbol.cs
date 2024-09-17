@@ -96,7 +96,8 @@ internal sealed class SourceClassSymbol(
             return new SourceFunctionSymbol(this, functionSyntax);
         case FieldDeclarationSyntax fieldSyntax:
             return new SourceFieldSymbol(this, fieldSyntax);
-
+        default:
+            throw new NotImplementedException(); // TODO implement this
         }
     }
 

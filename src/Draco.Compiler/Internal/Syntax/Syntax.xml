@@ -35,7 +35,7 @@
   <Token Kind="KeywordNot" Text="not" Documentation="The keyword 'not'." />
   <Token Kind="KeywordOr" Text="or" Documentation="The keyword 'or'." />
   <Token Kind="KeywordPublic" Text="public" Documentation="The keyword 'public'." />
-  <Token Kind="KeywordStatic" Text="static" Documentation="The keyword 'static'."/>
+  <Token Kind="KeywordGlobal" Text="global" Documentation="The keyword 'global'."/>
   <Token Kind="KeywordField" Text="field" Documentation="The keyword 'field'."/>
   <Token Kind="KeywordValue" Text="value" Documentation="The keyword 'value'."/>
   <Token Kind="KeywordClass" Text="class" Documentation="The keyword 'class'."/>
@@ -666,9 +666,9 @@
       <Token Kind="KeywordPublic" />
     </Field>
 
-    <Field Name="StaticKeyword" Type="SyntaxToken?">
-      <Documentation>The optional static keyword that mark this variable as static.</Documentation>
-      <Token Kind="KeywordStatic"/>
+    <Field Name="GlobalKeyword" Type="SyntaxToken?">
+      <Documentation>The optional global keyword that mark this variable as global.</Documentation>
+      <Token Kind="KeywordGlobal"/>
     </Field>
 
     <Field Name="Keyword" Type="SyntaxToken">

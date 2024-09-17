@@ -103,15 +103,9 @@ public static partial class SyntaxFactory
         Parameter(SyntaxList<AttributeSyntax>(), Ellipsis, Identifier(name), Colon, type);
 
     public static GenericParameterListSyntax GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
-        GenericParameterList(OpenBracket, SeparatedSyntaxList(Comma, parameters), CloseBracket);
+        GenericParameterList(SeparatedSyntaxList(Comma, parameters));
     public static GenericParameterListSyntax GenericParameterList(params GenericParameterSyntax[] parameters) =>
-        GenericParameterList(OpenBracket, SeparatedSyntaxList(Comma, parameters), CloseBracket);
-    public static GenericParameterSyntax GenericParameter(string name) => GenericParameter(Name(name));
-
-    public static CompilationUnitSyntax CompilationUnit(IEnumerable<DeclarationSyntax> decls) =>
-        CompilationUnit(SyntaxList(decls), EndOfInput);
-    public static CompilationUnitSyntax CompilationUnit(params DeclarationSyntax[] decls) =>
-        CompilationUnit(SyntaxList(decls), EndOfInput);
+        GenericParameterList(SeparatedSyntaxList(Comma, parameters));
 
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, IEnumerable<DeclarationSyntax> declarations) =>
         ModuleDeclaration([], null, name, declarations);
@@ -164,47 +158,45 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
-            attributes,
-            Visibility(visibility),
-            Func,
-            Name(name),
-            generics,
-            OpenParen,
-            parameters,
-            CloseParen,
-            returnType is null ? null : TypeSpecifier(Colon, returnType),
-            body);
+        attributes,
+        Visibility(visibility),
+        name,
+        generics,
+        parameters,
+        returnType is null ? null : TypeSpecifier(returnType),
+        body);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(null, true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(null, null, true, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         Visibility visibility,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), null, true, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(null, false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(null, null, false, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         Visibility visibility,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), null, false, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         TokenKind? visibility,
+        TokenKind? global,
         bool isMutable,
         string name,
-        TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(
+        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(
         [],
         visibility,
+        global,
         isMutable ? TokenKind.KeywordVar : TokenKind.KeywordVal,
         name,
         type is null ? null : TypeSpecifier(type),
@@ -259,12 +251,10 @@ public static partial class SyntaxFactory
         IEnumerable<DeclarationSyntax> members) => ClassDeclaration(
             null,
             null,
-            Class,
-            Name(name),
+            name,
             generics,
-            BlockClassBody(OpenBrace, SyntaxList(members), CloseBrace)
+            BlockClassBody(members)
     );
-
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) =>
         IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 
@@ -273,7 +263,7 @@ public static partial class SyntaxFactory
     public static LiteralExpressionSyntax LiteralExpression(int value) => LiteralExpression(Integer(value));
     public static LiteralExpressionSyntax LiteralExpression(bool value) => LiteralExpression(value ? KeywordTrue : KeywordFalse);
     public static StringExpressionSyntax StringExpression(string value) =>
-        StringExpression(LineStringStart, [TextStringPart(value)], LineStringEnd);
+        StringExpression(LineStringStart, SyntaxList(TextStringPart(value)), LineStringEnd);
 
     public static TextStringPartSyntax TextStringPart(string value) =>
         TextStringPart(Token(TokenKind.StringContent, value, value));

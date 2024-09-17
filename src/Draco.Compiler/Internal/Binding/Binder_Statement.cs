@@ -33,7 +33,6 @@ internal partial class Binder
         InlineFunctionBodySyntax body => this.BindInlineFunctionBody(body, constraints, diagnostics),
         LabelDeclarationSyntax label => this.BindLabelStatement(label, constraints, diagnostics),
         VariableDeclarationSyntax decl => this.BindVariableDeclaration(decl, constraints, diagnostics),
-        FieldDeclarationSyntax field => this.BindFieldDeclaration(field, constraints, diagnostics),
         _ => throw new System.ArgumentOutOfRangeException(nameof(syntax)),
     };
 

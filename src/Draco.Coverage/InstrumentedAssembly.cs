@@ -20,12 +20,15 @@ public sealed class InstrumentedAssembly : IDisposable
         return new(tmpLocation);
     }
 
+    /// <summary>
+    /// The weaved assembly.
+    /// </summary>
+    public Assembly WeavedAssembly =>
+        this.loadedAssembly ??= this.assemblyLoadContext.LoadFromAssemblyPath(this.weavedAssemblyLocation);
+
     private readonly AssemblyLoadContext assemblyLoadContext;
     private readonly string weavedAssemblyLocation;
     private Assembly? loadedAssembly;
-
-    private Assembly LoadedAssembly =>
-        this.loadedAssembly ??= this.assemblyLoadContext.LoadFromAssemblyPath(this.weavedAssemblyLocation);
 
     private InstrumentedAssembly(string weavedAssemblyLocation)
     {
@@ -40,7 +43,7 @@ public sealed class InstrumentedAssembly : IDisposable
     /// <returns>The coverage result.</returns>
     public CoverageResult Instrument(Action<Assembly> action)
     {
-        var assembly = this.LoadedAssembly;
+        var assembly = this.WeavedAssembly;
 
         var coverageCollectorType = NotNullOrNotWeaved(assembly.GetType(typeof(CoverageCollector).FullName!));
         var clearMethod = NotNullOrNotWeaved(coverageCollectorType.GetMethod("Clear"));

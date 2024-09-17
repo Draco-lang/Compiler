@@ -6,15 +6,23 @@ using Mono.Cecil.Rocks;
 
 namespace Draco.Coverage;
 
+/// <summary>
+/// Weaves in the instrumentation code into an assembly.
+/// </summary>
 internal sealed class InstrumentationWeaver
 {
-    public static void WeaveInstrumentationCode(string assemblyLocation)
+    /// <summary>
+    /// Weaves the instrumentation code into the specified assembly.
+    /// </summary>
+    /// <param name="assemblyLocation">The location of the assembly to weave.</param>
+    /// <param name="targetLocation">The location to save the weaved assembly.</param>
+    public static void WeaveInstrumentationCode(string assemblyLocation, string targetLocation)
     {
         var readerParameters = new ReaderParameters { ReadSymbols = true };
         using var assemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyLocation, readerParameters);
         var weaver = new InstrumentationWeaver(assemblyDefinition.MainModule);
         weaver.WeaveModule();
-        assemblyDefinition.Write(assemblyLocation);
+        assemblyDefinition.Write(targetLocation);
     }
 
     private readonly ModuleDefinition weavedModule;

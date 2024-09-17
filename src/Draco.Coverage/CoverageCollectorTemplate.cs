@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -11,6 +12,7 @@ namespace Draco.Coverage;
 /// <summary>
 /// A template for a coverage collector that gets weaved into the target assembly.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class CoverageCollectorTemplate
 {
     public readonly struct SequencePoint

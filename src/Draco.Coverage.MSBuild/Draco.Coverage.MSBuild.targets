@@ -1,0 +1,11 @@
+<Project>
+
+    <Target Name="CoverageWeave" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences">
+        <Error Condition="'$(UsingMicrosoftNETSdk)' != 'true'" Text="Draco.Coverage.MSBuild only works with SDK-style projects" />
+
+        <CoverageWeaveTask>
+            <!-- TODO -->
+        </CoverageWeaveTask>
+    </Target>
+    
+</Project>

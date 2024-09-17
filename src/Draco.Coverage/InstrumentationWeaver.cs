@@ -295,7 +295,7 @@ internal sealed class InstrumentationWeaver
         this.PatchJumpTarget(exceptionHandler.TryEnd, jumpTargetPatches);
         this.PatchJumpTarget(exceptionHandler.HandlerStart, jumpTargetPatches);
         this.PatchJumpTarget(exceptionHandler.HandlerEnd, jumpTargetPatches);
-        this.PatchJumpTarget(exceptionHandler.FilterStart, jumpTargetPatches);
+        if (exceptionHandler.FilterStart is not null) this.PatchJumpTarget(exceptionHandler.FilterStart, jumpTargetPatches);
     }
 
     private void PatchJumpTarget(Instruction instruction, IReadOnlyDictionary<int, Instruction> jumpTargetPatches)

@@ -1,11 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Draco.Coverage;
 
@@ -13,7 +8,7 @@ namespace Draco.Coverage;
 /// A template for a coverage collector that gets weaved into the target assembly.
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal static class CoverageCollectorTemplate
+internal static class CoverageCollector
 {
     public readonly struct SequencePoint
     {
@@ -38,7 +33,7 @@ internal static class CoverageCollectorTemplate
     public static readonly int[] Hits = null!;
     public static readonly SequencePoint[] SequencePoints = null!;
 
-    static CoverageCollectorTemplate()
+    static CoverageCollector()
     {
         // The weaver will need to instantiate hits and fill in the sequence points array
     }

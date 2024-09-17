@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -58,16 +57,16 @@ internal sealed class InstrumentationWeaver
 
     private void InjectCoverageCollector()
     {
-        using var templateAssembly = AssemblyDefinition.ReadAssembly(typeof(CoverageCollectorTemplate).Assembly.Location);
+        using var templateAssembly = AssemblyDefinition.ReadAssembly(typeof(CoverageCollector).Assembly.Location);
 
         // Collector class
 
-        var collectorTemplate = templateAssembly.MainModule.GetType(typeof(CoverageCollectorTemplate).FullName);
-        var collectorType = CloneType(collectorTemplate, nameOverride: "CoverageCollector");
+        var collectorTemplate = templateAssembly.MainModule.GetType(typeof(CoverageCollector).FullName);
+        var collectorType = CloneType(collectorTemplate);
 
         // SequencePoint struct
 
-        var sequencePointTemplate = collectorTemplate.NestedTypes.First(t => t.Name == nameof(CoverageCollectorTemplate.SequencePoint));
+        var sequencePointTemplate = collectorTemplate.NestedTypes.First(t => t.Name == nameof(CoverageCollector.SequencePoint));
         var sequencePointType = CloneType(sequencePointTemplate);
 
         foreach (var fieldTemplate in sequencePointTemplate.Fields)
@@ -95,7 +94,7 @@ internal sealed class InstrumentationWeaver
 
         foreach (var fieldTemplate in collectorTemplate.Fields)
         {
-            if (fieldTemplate.Name == nameof(CoverageCollectorTemplate.SequencePoints))
+            if (fieldTemplate.Name == nameof(CoverageCollector.SequencePoints))
             {
                 // We need to reference the sequence point type defined in the collector
                 collectorType.Fields.Add(new FieldDefinition(
@@ -133,7 +132,7 @@ internal sealed class InstrumentationWeaver
                 ilProcessor.Append(CloneInstruction(instruction, collectorType));
             }
 
-            if (methodTemplate.Name == nameof(CoverageCollectorTemplate.RecordHit))
+            if (methodTemplate.Name == nameof(CoverageCollector.RecordHit))
             {
                 this.recordHitMethod = method;
             }
@@ -144,9 +143,9 @@ internal sealed class InstrumentationWeaver
         collectorType.NestedTypes.Add(sequencePointType);
         this.weavedModule.Types.Add(collectorType);
 
-        TypeDefinition CloneType(TypeDefinition typeDefinition, string? nameOverride = null) => new(
+        TypeDefinition CloneType(TypeDefinition typeDefinition) => new(
             @namespace: typeDefinition.Namespace,
-            name: nameOverride ?? typeDefinition.Name,
+            name: typeDefinition.Name,
             attributes: typeDefinition.Attributes,
             baseType: this.weavedModule.ImportReference(typeDefinition.BaseType));
 
@@ -191,13 +190,13 @@ internal sealed class InstrumentationWeaver
         var ilProcessor = this.collectorInitializerMethod.Body.GetILProcessor();
 
         // Hits = new int[sequencePoints.Length];
-        var hitsField = collectorType.Fields.First(f => f.Name == nameof(CoverageCollectorTemplate.Hits));
+        var hitsField = collectorType.Fields.First(f => f.Name == nameof(CoverageCollector.Hits));
         ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, this.recordedSequencePoints.Count));
         ilProcessor.Append(Instruction.Create(OpCodes.Newarr, this.weavedModule.ImportReference(typeof(int))));
         ilProcessor.Append(Instruction.Create(OpCodes.Stsfld, hitsField));
 
         // SequencePoints = new SequencePoint[sequencePoints.Length];
-        var sequencePointsField = collectorType.Fields.First(f => f.Name == nameof(CoverageCollectorTemplate.SequencePoints));
+        var sequencePointsField = collectorType.Fields.First(f => f.Name == nameof(CoverageCollector.SequencePoints));
         var sequencePointType = sequencePointsField.FieldType.GetElementType();
         var sequencePointCtor = ((TypeDefinition)sequencePointType).GetConstructors().First(c => c.Parameters.Count > 0);
         ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, this.recordedSequencePoints.Count));

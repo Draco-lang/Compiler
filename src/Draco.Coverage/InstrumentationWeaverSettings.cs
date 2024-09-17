@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Draco.Coverage;
 
 /// <summary>
 /// Settings for the instrumentation weaver.
 /// </summary>
-internal sealed class InstrumentationWeaverSettings
+public sealed class InstrumentationWeaverSettings
 {
     /// <summary>
     /// The default settings.

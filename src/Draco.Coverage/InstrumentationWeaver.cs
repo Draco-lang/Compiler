@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -18,22 +19,22 @@ internal sealed class InstrumentationWeaver
     /// <summary>
     /// Weaves the instrumentation code into the specified assembly.
     /// </summary>
-    /// <param name="assemblyLocation">The location of the assembly to weave.</param>
-    /// <param name="targetLocation">The location to save the weaved assembly.</param>
+    /// <param name="sourceStream">The stream to read the assembly from that should be weaved.</param>
+    /// <param name="targetStream">The stream to write the weaved assembly.</param>
     public static void WeaveInstrumentationCode(
-        string assemblyLocation,
-        string targetLocation,
+        Stream sourceStream,
+        Stream targetStream,
         InstrumentationWeaverSettings? settings = null)
     {
         settings ??= InstrumentationWeaverSettings.Default;
 
         var readerParameters = new ReaderParameters { ReadSymbols = true };
-        using var assemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyLocation, readerParameters);
+        using var assemblyDefinition = AssemblyDefinition.ReadAssembly(sourceStream, readerParameters);
 
         var weaver = new InstrumentationWeaver(assemblyDefinition.MainModule, settings);
         weaver.WeaveModule();
 
-        assemblyDefinition.Write(targetLocation);
+        assemblyDefinition.Write(targetStream);
     }
 
     private readonly InstrumentationWeaverSettings settings;

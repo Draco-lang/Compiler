@@ -13,32 +13,47 @@ namespace Draco.Coverage;
 public sealed class InstrumentedAssembly : IDisposable
 {
     /// <summary>
-    /// Creates an instrumented assembly from the given assembly path.
+    /// Weaves instrumentation code into the given assembly.
     /// </summary>
-    /// <param name="assemblyPath">The path to the assembly.</param>
-    /// <param name="settings">The settings for the instrumentation weaver.</param>
+    /// <param name="sourceStream">The stream containing the assembly to weave.</param>
+    /// <param name="targetStream">The stream to write the weaved assembly to.</param>
+    /// <param name="settings">The settings for the weaver.</param>
+    public static void Weave(Stream sourceStream, Stream targetStream, InstrumentationWeaverSettings? settings = null) =>
+        InstrumentationWeaver.WeaveInstrumentationCode(sourceStream, targetStream, settings);
+
+    /// <summary>
+    /// Creates an instrumented assembly from an already weaved assembly.
+    /// </summary>
+    /// <param name="assembly">The weaved assembly.</param>
     /// <returns>The instrumented assembly.</returns>
-    public static InstrumentedAssembly Create(string assemblyPath, InstrumentationWeaverSettings? settings = null)
-    {
-        var tmpLocation = Path.ChangeExtension(Path.GetTempFileName(), ".dll");
-        InstrumentationWeaver.WeaveInstrumentationCode(assemblyPath, tmpLocation, settings);
-        return new(tmpLocation);
-    }
+    public static InstrumentedAssembly FromWeavedAssembly(Assembly assembly) => new(assembly);
+
+    /// <summary>
+    /// Creates an instrumented assembly from a stream containing an unweaved assembly.
+    /// </summary>
+    /// <param name="sourceStream">The stream containing the unweaved assembly.</param>
+    /// <returns>The instrumented assembly.</returns>
+    public static InstrumentedAssembly Create(Stream sourceStream) => new(sourceStream);
 
     /// <summary>
     /// The weaved assembly.
     /// </summary>
     public Assembly WeavedAssembly =>
-        this.loadedAssembly ??= this.assemblyLoadContext.LoadFromAssemblyPath(this.weavedAssemblyLocation);
+        this.weavedAssembly ??= this.assemblyLoadContext!.LoadFromStream(this.weavedAssemblyStream!);
 
-    private readonly AssemblyLoadContext assemblyLoadContext;
-    private readonly string weavedAssemblyLocation;
-    private Assembly? loadedAssembly;
+    private readonly AssemblyLoadContext? assemblyLoadContext;
+    private readonly Stream? weavedAssemblyStream;
+    private Assembly? weavedAssembly;
 
-    private InstrumentedAssembly(string weavedAssemblyLocation)
+    private InstrumentedAssembly(Stream weavedAssemblyStream)
     {
         this.assemblyLoadContext = new AssemblyLoadContext("Draco.Coverage.LoadContext", isCollectible: true);
-        this.weavedAssemblyLocation = weavedAssemblyLocation;
+        this.weavedAssemblyStream = weavedAssemblyStream;
+    }
+
+    private InstrumentedAssembly(Assembly weavedAssembly)
+    {
+        this.weavedAssembly = weavedAssembly;
     }
 
     /// <summary>
@@ -94,9 +109,9 @@ public sealed class InstrumentedAssembly : IDisposable
 
     public void Dispose()
     {
-        this.loadedAssembly = null;
-        this.assemblyLoadContext.Unload();
-        File.Delete(this.weavedAssemblyLocation);
+        this.weavedAssembly = null;
+        this.assemblyLoadContext?.Unload();
+        this.weavedAssemblyStream?.Dispose();
     }
 
     private static T NotNullOrNotWeaved<T>(T? value)

@@ -41,7 +41,7 @@ internal static class CoverageCollectorTemplate
         // The weaver will need to instantiate hits and fill in the sequence points array
     }
 
-    public static void RecordHit(string fileName, int index) => Interlocked.Increment(ref Hits[index]);
+    public static void RecordHit(int index) => Interlocked.Increment(ref Hits[index]);
 
     public static void Clear() => Array.Clear(Hits, 0, Hits.Length);
 }

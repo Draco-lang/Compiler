@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -36,6 +39,9 @@ internal sealed class InstrumentationWeaver
 
     private readonly InstrumentationWeaverSettings settings;
     private readonly ModuleDefinition weavedModule;
+    private readonly List<SequencePoint> recordedSequencePoints = [];
+    private MethodDefinition? recordHitMethod;
+    private MethodDefinition? collectorInitializerMethod;
 
     private InstrumentationWeaver(ModuleDefinition weavedModule, InstrumentationWeaverSettings settings)
     {
@@ -45,7 +51,176 @@ internal sealed class InstrumentationWeaver
 
     private void WeaveModule()
     {
+        this.InjectCoverageCollector();
         foreach (var type in this.weavedModule.GetTypes()) this.WeaveType(type);
+        this.InjectCoverageCollectorInitializer();
+    }
+
+    private void InjectCoverageCollector()
+    {
+        using var templateAssembly = AssemblyDefinition.ReadAssembly(typeof(CoverageCollectorTemplate).Assembly.Location);
+
+        // Collector class
+
+        var collectorTemplate = templateAssembly.MainModule.GetType(typeof(CoverageCollectorTemplate).FullName);
+        var collectorType = CloneType(collectorTemplate, nameOverride: "CoverageCollector");
+
+        // SequencePoint struct
+
+        var sequencePointTemplate = collectorTemplate.NestedTypes.First(t => t.Name == nameof(CoverageCollectorTemplate.SequencePoint));
+        var sequencePointType = CloneType(sequencePointTemplate);
+
+        foreach (var fieldTemplate in sequencePointTemplate.Fields)
+        {
+            sequencePointType.Fields.Add(CloneField(fieldTemplate));
+        }
+
+        foreach (var ctorTemplate in sequencePointTemplate.GetConstructors())
+        {
+            var ctor = CloneMethod(ctorTemplate);
+            foreach (var parameterTemplate in ctorTemplate.Parameters)
+            {
+                ctor.Parameters.Add(CloneParameter(parameterTemplate));
+            }
+            sequencePointType.Methods.Add(ctor);
+
+            var ilProcessor = ctor.Body.GetILProcessor();
+            foreach (var instruction in ctorTemplate.Body.Instructions)
+            {
+                ilProcessor.Append(CloneInstruction(instruction, sequencePointType));
+            }
+        }
+
+        // Collector fields
+
+        foreach (var fieldTemplate in collectorTemplate.Fields)
+        {
+            if (fieldTemplate.Name == nameof(CoverageCollectorTemplate.SequencePoints))
+            {
+                // We need to reference the sequence point type defined in the collector
+                collectorType.Fields.Add(new FieldDefinition(
+                    name: fieldTemplate.Name,
+                    attributes: fieldTemplate.Attributes,
+                    fieldType: sequencePointType.MakeArrayType()));
+            }
+            else
+            {
+                collectorType.Fields.Add(CloneField(fieldTemplate));
+            }
+        }
+
+        // Collector methods
+
+        foreach (var methodTemplate in collectorTemplate.Methods)
+        {
+            var method = CloneMethod(methodTemplate);
+            foreach (var parameterTemplate in methodTemplate.Parameters)
+            {
+                method.Parameters.Add(CloneParameter(parameterTemplate));
+            }
+            collectorType.Methods.Add(method);
+
+            if (method.Name == ".cctor")
+            {
+                // This will be written at the end of weaving
+                this.collectorInitializerMethod = method;
+                continue;
+            }
+
+            var ilProcessor = method.Body.GetILProcessor();
+            foreach (var instruction in methodTemplate.Body.Instructions)
+            {
+                ilProcessor.Append(CloneInstruction(instruction, collectorType));
+            }
+
+            if (methodTemplate.Name == nameof(CoverageCollectorTemplate.RecordHit))
+            {
+                this.recordHitMethod = method;
+            }
+        }
+
+        // Add them to the module and nest sequence point in collector
+
+        collectorType.NestedTypes.Add(sequencePointType);
+        this.weavedModule.Types.Add(collectorType);
+
+        TypeDefinition CloneType(TypeDefinition typeDefinition, string? nameOverride = null) => new(
+            @namespace: typeDefinition.Namespace,
+            name: nameOverride ?? typeDefinition.Name,
+            attributes: typeDefinition.Attributes,
+            baseType: this.weavedModule.ImportReference(typeDefinition.BaseType));
+
+        FieldDefinition CloneField(FieldDefinition fieldDefinition) => new(
+            name: fieldDefinition.Name,
+            attributes: fieldDefinition.Attributes,
+            fieldType: this.weavedModule.ImportReference(fieldDefinition.FieldType));
+
+        ParameterDefinition CloneParameter(ParameterDefinition parameterDefinition) => new(
+            name: parameterDefinition.Name,
+            attributes: parameterDefinition.Attributes,
+            parameterType: this.weavedModule.ImportReference(parameterDefinition.ParameterType));
+
+        MethodDefinition CloneMethod(MethodDefinition methodDefinition) => new(
+            name: methodDefinition.Name,
+            attributes: methodDefinition.Attributes,
+            returnType: this.weavedModule.ImportReference(methodDefinition.ReturnType));
+
+        Instruction CloneInstruction(Instruction instruction, TypeDefinition typeDefinition)
+        {
+            if (instruction.Operand is FieldDefinition fieldDefinition)
+            {
+                return Instruction.Create(instruction.OpCode, typeDefinition.Fields.First(f => f.Name == fieldDefinition.Name));
+            }
+            if (instruction.Operand is TypeReference typeReference)
+            {
+                return Instruction.Create(instruction.OpCode, this.weavedModule.ImportReference(typeReference));
+            }
+            if (instruction.Operand is MethodReference methodReference)
+            {
+                return Instruction.Create(instruction.OpCode, this.weavedModule.ImportReference(methodReference));
+            }
+            return instruction;
+        }
+    }
+
+    private void InjectCoverageCollectorInitializer()
+    {
+        if (this.collectorInitializerMethod is null) throw new InvalidOperationException("collector initializer method was not declared");
+
+        var collectorType = this.collectorInitializerMethod.DeclaringType;
+        var ilProcessor = this.collectorInitializerMethod.Body.GetILProcessor();
+
+        // Hits = new int[sequencePoints.Length];
+        var hitsField = collectorType.Fields.First(f => f.Name == nameof(CoverageCollectorTemplate.Hits));
+        ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, this.recordedSequencePoints.Count));
+        ilProcessor.Append(Instruction.Create(OpCodes.Newarr, this.weavedModule.ImportReference(typeof(int))));
+        ilProcessor.Append(Instruction.Create(OpCodes.Stsfld, hitsField));
+
+        // SequencePoints = new SequencePoint[sequencePoints.Length];
+        var sequencePointsField = collectorType.Fields.First(f => f.Name == nameof(CoverageCollectorTemplate.SequencePoints));
+        var sequencePointType = sequencePointsField.FieldType.GetElementType();
+        var sequencePointCtor = ((TypeDefinition)sequencePointType).GetConstructors().First(c => c.Parameters.Count > 0);
+        ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, this.recordedSequencePoints.Count));
+        ilProcessor.Append(Instruction.Create(OpCodes.Newarr, sequencePointType));
+        ilProcessor.Append(Instruction.Create(OpCodes.Stsfld, sequencePointsField));
+        for (var i = 0; i < this.recordedSequencePoints.Count; ++i)
+        {
+            // SequencePoints[i] = new SequencePoint(...);
+            var sequencePoint = this.recordedSequencePoints[i];
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldsfld, sequencePointsField));
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, i));
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldstr, sequencePoint.Document.Url));
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, sequencePoint.Offset));
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, sequencePoint.StartLine));
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, sequencePoint.StartColumn));
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, sequencePoint.EndLine));
+            ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, sequencePoint.EndColumn));
+            ilProcessor.Append(Instruction.Create(OpCodes.Newobj, sequencePointCtor));
+            ilProcessor.Append(Instruction.Create(OpCodes.Stelem_Any, sequencePointType));
+        }
+
+        // return
+        ilProcessor.Append(Instruction.Create(OpCodes.Ret));
     }
 
     private void WeaveType(TypeDefinition type)
@@ -101,13 +276,14 @@ internal sealed class InstrumentationWeaver
 
     private Instruction AddInstrumentationCode(ILProcessor ilProcessor, Instruction before, SequencePoint sequencePoint)
     {
-        // For now we just write a message to the console
-        var message = $"Sequence point at {sequencePoint.Document.Url}:{sequencePoint.StartLine}";
-        var writeLineMethod = this.weavedModule.ImportReference(typeof(System.Console).GetMethod("WriteLine", [typeof(string)]));
+        var sequencePointIndex = this.recordedSequencePoints.Count;
+        // Record the sequence point, so it can later be injected into the collector
+        this.recordedSequencePoints.Add(sequencePoint);
+        // Call record hit
         var instructions = new[]
         {
-            Instruction.Create(OpCodes.Ldstr, message),
-            Instruction.Create(OpCodes.Call, writeLineMethod),
+            Instruction.Create(OpCodes.Ldc_I4, sequencePointIndex),
+            Instruction.Create(OpCodes.Call, this.recordHitMethod),
         };
         foreach (var instruction in instructions) ilProcessor.InsertBefore(before, instruction);
         return instructions[0];

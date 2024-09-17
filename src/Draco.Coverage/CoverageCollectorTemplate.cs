@@ -36,7 +36,7 @@ internal static class CoverageCollectorTemplate
     }
 
     public static readonly int[] Hits = null!;
-    public static readonly ImmutableArray<SequencePoint> SequencePoints;
+    public static readonly SequencePoint[] SequencePoints = null!;
 
     static CoverageCollectorTemplate()
     {

@@ -5,7 +5,7 @@
 
         <!-- Get the project with Weave=True -->
         <ItemGroup>
-            <ProjectReferenceWithWeave Include="@(ProjectReference)" Condition="'%(ProjectReference.Weave)' == 'True'" />
+            <ProjectReferenceWithWeave Include="@(ProjectReference)" Condition="'%(ProjectReference.InstrumentCoverage)' == 'True'" />
         </ItemGroup>
 
         <!-- Weave the project -->

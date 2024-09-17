@@ -14,6 +14,8 @@ public sealed class CoverageWeaveTask : Task
 
     public override bool Execute()
     {
+        throw new System.Exception("CALLED");
+
         using var readerStream = File.OpenRead(this.InputPath);
         using var writerStream = File.OpenWrite(this.OutputPath);
         InstrumentedAssembly.Weave(readerStream, writerStream);

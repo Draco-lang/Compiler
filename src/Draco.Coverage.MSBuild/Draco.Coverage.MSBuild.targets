@@ -1,15 +1,17 @@
 <Project>
 
-    <Target Name="CoverageWeave" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences">
+    <Target Name="CoverageWeave" AfterTargets="Build">
         <Error Condition="'$(UsingMicrosoftNETSdk)' != 'true'" Text="Draco.Coverage.MSBuild only works with SDK-style projects" />
 
         <ItemGroup>
-            <ProjectReferenceWithWeave Include="@(ProjectReference)" Condition="'%(ProjectReference.InstrumentCoverage)' == 'True'" />
+            <ReferencesWithWeave
+                Include="@(ReferenceCopyLocalPaths)"
+                Condition="'%(ReferenceCopyLocalPaths.InstrumentCoverage)' == 'True'" />
         </ItemGroup>
 
         <CoverageWeaveTask
-            InputPath="@(ProjectReferenceWithWeave->'$(OutDir)%(Filename).dll')"
-            OutputPath="@(ProjectReferenceWithWeave->'$(OutDir)%(Filename).weaved.dll')" />
+            InputPath="@(ReferencesWithWeave->'$(OutDir)%(Filename).dll')"
+            OutputPath="@(ReferencesWithWeave->'$(OutDir)%(Filename).weaved.dll')" />
     </Target>
     
 </Project>

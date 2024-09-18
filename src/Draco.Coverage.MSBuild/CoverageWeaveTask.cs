@@ -14,9 +14,6 @@ public sealed class CoverageWeaveTask : Task
 
     public override bool Execute()
     {
-        File.AppendAllText("C:/TMP/tasklog.txt", $"InputPath: {this.InputPath}\n");
-        File.AppendAllText("C:/TMP/tasklog.txt", $"OutputPath: {this.OutputPath}\n");
-
         using var readerStream = File.OpenRead(this.InputPath);
         using var writerStream = File.OpenWrite(this.OutputPath);
         InstrumentedAssembly.Weave(readerStream, writerStream);

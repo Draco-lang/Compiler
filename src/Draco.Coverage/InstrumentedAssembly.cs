@@ -47,6 +47,7 @@ public sealed class InstrumentedAssembly : IDisposable
             this.weavedAssemblyStream!.CopyTo(ms);
             ms.Position = 0;
             this.weavedAssembly = Assembly.Load(ms.ToArray());
+            CheckForWeaved(this.weavedAssembly);
             return this.weavedAssembly;
         }
     }
@@ -61,6 +62,7 @@ public sealed class InstrumentedAssembly : IDisposable
 
     private InstrumentedAssembly(Assembly weavedAssembly)
     {
+        CheckForWeaved(weavedAssembly);
         this.weavedAssembly = weavedAssembly;
     }
 
@@ -120,6 +122,9 @@ public sealed class InstrumentedAssembly : IDisposable
         this.weavedAssembly = null;
         this.weavedAssemblyStream?.Dispose();
     }
+
+    private static void CheckForWeaved(Assembly assembly) =>
+        NotNullOrNotWeaved(assembly.GetType(typeof(CoverageCollector).FullName!));
 
     private static T NotNullOrNotWeaved<T>(T? value)
         where T : class =>

@@ -10,8 +10,8 @@
         </ItemGroup>
 
         <CoverageWeaveTask
-            InputPath="@(ReferencesWithWeave->'$(OutDir)%(Filename).dll')"
-            OutputPath="@(ReferencesWithWeave->'$(OutDir)%(Filename).weaved.dll')" />
+            InputPath="@(ReferencesWithWeave->'$(OutDir)%(Filename)%(Extension)')"
+            OutputPath="@(ReferencesWithWeave->'$(OutDir)%(Filename)%(Extension)')" />
     </Target>
     
 </Project>

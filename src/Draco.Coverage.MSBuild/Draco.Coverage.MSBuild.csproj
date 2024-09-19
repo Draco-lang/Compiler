@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Draco.Coverage\Draco.Coverage.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Draco.Coverage\Draco.Coverage.csproj" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.0.0" PrivateAssets="All" ExcludeAssets="Runtime" />
   </ItemGroup>
 
@@ -34,7 +34,7 @@
 
   <Target Name="AddBuildDependencyFileToBuiltProjectOutputGroupOutput"
           BeforeTargets="BuiltProjectOutputGroup"
-    Condition=" '$(GenerateDependencyFile)' == 'true'">
+          Condition=" '$(GenerateDependencyFile)' == 'true'">
     <ItemGroup>
       <BuiltProjectOutputGroupOutput Include="$(ProjectDepsFilePath)"
                                      TargetPath="$(ProjectDepsFileName)"

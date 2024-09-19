@@ -9,6 +9,9 @@ on:
       deploy-repl:
         type: boolean
         description: Deploy components of the REPL (Compiler, Repl)
+      deploy-coverage-tool:
+        type: boolean
+        description: Deploy the coverage tool (Coverage, Coverage.MSBuild)
       deploy-langserver:
         type: boolean
         description: Deploy the language server (Compiler, LanguageServer, Lsp)
@@ -63,6 +66,7 @@ jobs:
         
         $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
         $replProjects = "Compiler", "Repl"
+        $coverageToolProjects = "Coverage", "Coverage.MSBuild"
         $langserverProjects = "Compiler", "LanguageServer", "Lsp", "JsonRpc"
         $debugadapterProjects = "DebugAdapter", "Dap", "JsonRpc"
         
@@ -70,6 +74,7 @@ jobs:
 
         if ($${{ github.event.inputs.deploy-sdk }}) { $projects += $sdkProjects; }
         if ($${{ github.event.inputs.deploy-repl }}) { $projects += $replProjects; }
+        if ($${{ github.event.inputs.deploy-coverage-tool }}) { $projects += $coverageToolProjects; }
         if ($${{ github.event.inputs.deploy-langserver }}) { $projects += $langserverProjects; }
         if ($${{ github.event.inputs.deploy-debugadapter }}) { $projects += $debugadapterProjects; }
 

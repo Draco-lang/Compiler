@@ -186,6 +186,15 @@ public sealed partial class SemanticModel : IBinderProvider
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
             return symbol;
         }
+        case SourceClassSymbol classSymbol:
+        {
+            if (classSymbol.DeclaringSyntax == syntax) return containingSymbol;
+
+            var symbol = classSymbol.Members
+                .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
+
+            return symbol;
+        }
         default:
             return null;
         }

@@ -18,6 +18,28 @@ internal sealed class InstrumentationWeaver
     /// <summary>
     /// Weaves the instrumentation code into the specified assembly.
     /// </summary>
+    /// <param name="sourcePath">The path to the assembly that should be weaved.</param>
+    /// <param name="targetPath">The path to write the weaved assembly to.</param>
+    /// <param name="settings">The settings for the weaver.</param>
+    public static void WeaveInstrumentationCode(
+        string sourcePath,
+        string targetPath,
+        InstrumentationWeaverSettings? settings = null)
+    {
+        var readerParameters = new ReaderParameters { ReadSymbols = true };
+        using var targetStream = new MemoryStream();
+        // NOTE: We don't fall-back to the stream-based method here, because Cecil needs the path of the assembly to read the symbols
+        using (var assemblyDefinition = AssemblyDefinition.ReadAssembly(sourcePath, readerParameters))
+        {
+            WeaveInstrumentationCode(assemblyDefinition, targetStream, settings);
+        }
+
+        File.WriteAllBytes(targetPath, targetStream.ToArray());
+    }
+
+    /// <summary>
+    /// Weaves the instrumentation code into the specified assembly.
+    /// </summary>
     /// <param name="sourceStream">The stream to read the assembly from that should be weaved.</param>
     /// <param name="targetStream">The stream to write the weaved assembly.</param>
     public static void WeaveInstrumentationCode(
@@ -25,10 +47,18 @@ internal sealed class InstrumentationWeaver
         Stream targetStream,
         InstrumentationWeaverSettings? settings = null)
     {
-        settings ??= InstrumentationWeaverSettings.Default;
-
         var readerParameters = new ReaderParameters { ReadSymbols = true };
         using var assemblyDefinition = AssemblyDefinition.ReadAssembly(sourceStream, readerParameters);
+
+        WeaveInstrumentationCode(assemblyDefinition, targetStream, settings);
+    }
+
+    private static void WeaveInstrumentationCode(
+        AssemblyDefinition assemblyDefinition,
+        Stream targetStream,
+        InstrumentationWeaverSettings? settings = null)
+    {
+        settings ??= InstrumentationWeaverSettings.Default;
 
         var weaver = new InstrumentationWeaver(assemblyDefinition.MainModule, settings);
         weaver.WeaveModule();

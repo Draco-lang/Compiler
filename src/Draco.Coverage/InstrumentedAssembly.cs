@@ -14,6 +14,15 @@ public sealed class InstrumentedAssembly : IDisposable
     /// <summary>
     /// Weaves instrumentation code into the given assembly.
     /// </summary>
+    /// <param name="sourcePath">The path to the assembly to weave.</param>
+    /// <param name="targetPath">The path to write the weaved assembly to.</param>
+    /// <param name="settings">The settings for the weaver.</param>
+    public static void Weave(string sourcePath, string targetPath, InstrumentationWeaverSettings? settings = null) =>
+        InstrumentationWeaver.WeaveInstrumentationCode(sourcePath, targetPath, settings);
+
+    /// <summary>
+    /// Weaves instrumentation code into the given assembly.
+    /// </summary>
     /// <param name="sourceStream">The stream containing the assembly to weave.</param>
     /// <param name="targetStream">The stream to write the weaved assembly to.</param>
     /// <param name="settings">The settings for the weaver.</param>

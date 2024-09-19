@@ -31,23 +31,7 @@ public sealed class CoverageWeaveTask : Task
         return true;
     }
 
-    private void Weave(string inputPath, string outputPath)
-    {
-        if (inputPath != outputPath)
-        {
-            using var readerStream = File.OpenRead(inputPath);
-            using var writerStream = File.OpenWrite(outputPath);
-            InstrumentedAssembly.Weave(readerStream, writerStream);
-        }
-        else
-        {
-            // We use memory streams to avoid locking the file
-            using var readerStream = new MemoryStream(File.ReadAllBytes(inputPath));
-            using var writerStream = new MemoryStream();
-            InstrumentedAssembly.Weave(readerStream, writerStream);
-            File.WriteAllBytes(outputPath, writerStream.ToArray());
-        }
-    }
+    private void Weave(string inputPath, string outputPath) => InstrumentedAssembly.Weave(inputPath, outputPath);
 
     // MSBuild passes in the path to all binaries copied, concatenated with a semocilon
     // We need to split them and filter for .dll files

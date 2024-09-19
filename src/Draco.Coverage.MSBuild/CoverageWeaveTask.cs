@@ -8,10 +8,8 @@ namespace Draco.Coverage.MSBuild;
 
 public sealed class CoverageWeaveTask : Task
 {
-    [Required]
     public string InputPath { get; set; }
 
-    [Required]
     public string OutputPath { get; set; }
 
     public override bool Execute()

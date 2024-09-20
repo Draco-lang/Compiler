@@ -13,6 +13,11 @@ public sealed class CoverageWeaveTask : Task
 
     public override bool Execute()
     {
+        if (string.IsNullOrWhiteSpace(this.InputPath) && string.IsNullOrWhiteSpace(this.OutputPath))
+        {
+            return true;
+        }
+
         var inputPaths = ProcessPath(this.InputPath);
         var outputPaths = ProcessPath(this.OutputPath);
         if (inputPaths.Length != outputPaths.Length)

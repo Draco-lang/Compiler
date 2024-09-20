@@ -7,6 +7,10 @@ namespace Draco.Fuzzing;
 /// </summary>
 public readonly struct FaultResult
 {
+    public static readonly FaultResult Ok = new(timeoutReached: null, thrownException: null);
+    public static FaultResult Timeout(TimeSpan timeout) => new(timeout, thrownException: null);
+    public static FaultResult Exception(Exception exception) => new(timeoutReached: null, exception);
+
     /// <summary>
     /// True, if the target is considered as faulted.
     /// </summary>

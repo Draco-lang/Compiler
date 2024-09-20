@@ -320,11 +320,19 @@ internal sealed class InstrumentationWeaver
 
     private void PatchExceptionHandler(ExceptionHandler exceptionHandler, IReadOnlyDictionary<int, Instruction> jumpTargetPatches)
     {
-        this.PatchJumpTarget(exceptionHandler.TryStart, jumpTargetPatches);
-        this.PatchJumpTarget(exceptionHandler.TryEnd, jumpTargetPatches);
-        this.PatchJumpTarget(exceptionHandler.HandlerStart, jumpTargetPatches);
-        this.PatchJumpTarget(exceptionHandler.HandlerEnd, jumpTargetPatches);
-        if (exceptionHandler.FilterStart is not null) this.PatchJumpTarget(exceptionHandler.FilterStart, jumpTargetPatches);
+        exceptionHandler.TryStart = GetPatchedJumpTarget(exceptionHandler.TryStart);
+        exceptionHandler.TryEnd = GetPatchedJumpTarget(exceptionHandler.TryEnd);
+        exceptionHandler.HandlerStart = GetPatchedJumpTarget(exceptionHandler.HandlerStart);
+        exceptionHandler.HandlerEnd = GetPatchedJumpTarget(exceptionHandler.HandlerEnd);
+        exceptionHandler.FilterStart = GetPatchedJumpTarget(exceptionHandler.FilterStart);
+
+        Instruction? GetPatchedJumpTarget(Instruction? instruction)
+        {
+            if (instruction is null) return null;
+            return jumpTargetPatches.TryGetValue(instruction.Offset, out var newTarget)
+                ? newTarget
+                : instruction;
+        }
     }
 
     private void PatchJumpTarget(Instruction instruction, IReadOnlyDictionary<int, Instruction> jumpTargetPatches)

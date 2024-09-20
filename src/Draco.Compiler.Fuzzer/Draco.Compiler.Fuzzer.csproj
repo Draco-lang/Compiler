@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" InstrumentCoverage="True" />
+    <ProjectReference Include="..\Draco.Fuzzing\Draco.Fuzzing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Draco.Coverage.MSBuild" Version="0.1.3-pre" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net80" Version="1.4.5" />
+  </ItemGroup>
+
+</Project>

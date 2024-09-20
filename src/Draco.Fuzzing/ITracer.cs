@@ -1,4 +1,5 @@
 using System;
+using Draco.Coverage;
 
 namespace Draco.Fuzzing;
 
@@ -13,8 +14,9 @@ public interface ITracer<TInput>
     /// </summary>
     /// <param name="input">The original input.</param>
     /// <param name="minimizedInput">The minimized input.</param>
+    /// <param name="coverage">The coverage of the minimized input.</param>
     /// <param name="elapsed">The time it took to minimize the input.</param>
-    public void EndOfMinimization(TInput input, TInput minimizedInput, TimeSpan elapsed);
+    public void EndOfMinimization(TInput input, TInput minimizedInput, CoverageResult coverage, TimeSpan elapsed);
 
     /// <summary>
     /// Called when mutation of an input finishes.

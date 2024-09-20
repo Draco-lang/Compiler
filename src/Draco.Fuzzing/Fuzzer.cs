@@ -17,7 +17,10 @@ namespace Draco.Fuzzing;
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
 public sealed class Fuzzer<TInput, TCoverage>
 {
-    private readonly record struct ExecutionResult(FaultResult FaultResult, TCoverage Coverage);
+    private readonly record struct ExecutionResult(
+        FaultResult FaultResult,
+        CoverageResult UncompressedCoverage,
+        TCoverage CompressedCoverage);
 
     /// <summary>
     /// The target to fuzz.
@@ -86,7 +89,7 @@ public sealed class Fuzzer<TInput, TCoverage>
             // Minimize the input
             var (minimalInput, executionResult) = this.Minimize(input);
             var endOfMinimization = this.stopwatch.Elapsed;
-            this.Tracer.EndOfMinimization(input, minimalInput, endOfMinimization - start);
+            this.Tracer.EndOfMinimization(input, minimalInput, executionResult.UncompressedCoverage, endOfMinimization - start);
             // Test for fault
             if (executionResult.FaultResult.IsFaulted)
             {
@@ -96,7 +99,7 @@ public sealed class Fuzzer<TInput, TCoverage>
             }
             // Mutate the input
             var mutationsFound = 0;
-            foreach (var mutated in this.Mutate(minimalInput, executionResult.Coverage))
+            foreach (var mutated in this.Mutate(minimalInput, executionResult.CompressedCoverage))
             {
                 this.Enqueue(mutated);
                 ++mutationsFound;
@@ -135,7 +138,7 @@ public sealed class Fuzzer<TInput, TCoverage>
         foreach (var mutatedInput in this.InputMutator.Mutate(input))
         {
             var executionResult = this.ExecuteTarget(mutatedInput);
-            if (this.IsConsideredInteresting(executionResult.Coverage))
+            if (this.IsConsideredInteresting(executionResult.CompressedCoverage))
             {
                 yield return mutatedInput;
             }
@@ -148,7 +151,7 @@ public sealed class Fuzzer<TInput, TCoverage>
         var faultResult = this.FaultDetector.Execute(() => this.TargetExecutor.Execute(input, this.InstrumentedAssembly));
         var coverage = this.InstrumentedAssembly.GetCoverageResult();
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
-        return new(faultResult, compressedCoverage);
+        return new(faultResult, coverage, compressedCoverage);
     }
 
     // NOTE: For now we just check if the compressed coverage is new in a set
@@ -156,7 +159,7 @@ public sealed class Fuzzer<TInput, TCoverage>
 
     private static bool AreEqualExecutions(ExecutionResult a, ExecutionResult b) =>
            AreEqualFaults(a.FaultResult, b.FaultResult)
-        && Equals(a.Coverage, b.Coverage);
+        && Equals(a.CompressedCoverage, b.CompressedCoverage);
 
     private static bool AreEqualFaults(FaultResult a, FaultResult b) =>
            a.ThrownException?.GetType() == b.ThrownException?.GetType()

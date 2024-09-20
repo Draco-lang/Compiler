@@ -49,6 +49,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     public required IFaultDetector FaultDetector { get; init; }
 
     private readonly Queue<TInput> inputQueue = new();
+    private readonly HashSet<TCoverage> discoveredCoverages = new();
 
     /// <summary>
     /// Enqueues the given input.
@@ -73,11 +74,22 @@ public sealed class Fuzzer<TInput, TCoverage>
     {
         while (!cancellationToken.IsCancellationRequested && this.inputQueue.TryDequeue(out var input))
         {
-            // TODO
+            // Minimize the input
+            var (minimalInput, executionResult) = this.Minimize(input);
+            // Test for fault
+            if (executionResult.FaultResult.IsFaulted)
+            {
+                // TODO: Report
+            }
+            // Mutate the input
+            foreach (var mutated in this.Mutate(minimalInput, executionResult.Coverage))
+            {
+                this.Enqueue(mutated);
+            }
         }
     }
 
-    private TInput Minimize(TInput input)
+    private (TInput Input, ExecutionResult Result) Minimize(TInput input)
     {
         // Compute the reference result
         var referenceResult = this.ExecuteTarget(input);
@@ -98,7 +110,19 @@ public sealed class Fuzzer<TInput, TCoverage>
         found:;
         }
         // Return whatever we could minimize
-        return input;
+        return (input, referenceResult);
+    }
+
+    private IEnumerable<TInput> Mutate(TInput input, TCoverage referenceCoverage)
+    {
+        foreach (var mutatedInput in this.InputMutator.Mutate(input))
+        {
+            var executionResult = this.ExecuteTarget(mutatedInput);
+            if (this.IsConsideredInteresting(executionResult.Coverage))
+            {
+                yield return mutatedInput;
+            }
+        }
     }
 
     private ExecutionResult ExecuteTarget(TInput input)
@@ -109,6 +133,9 @@ public sealed class Fuzzer<TInput, TCoverage>
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         return new(faultResult, compressedCoverage);
     }
+
+    // NOTE: For now we just check if the compressed coverage is new in a set
+    private bool IsConsideredInteresting(TCoverage coverage) => this.discoveredCoverages.Add(coverage);
 
     private static bool AreEqualExecutions(ExecutionResult a, ExecutionResult b) =>
            AreEqualFaults(a.FaultResult, b.FaultResult)

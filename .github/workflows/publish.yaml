@@ -5,13 +5,13 @@ on:
     inputs:
       deploy-sdk:
         type: boolean
-        description: Deploy components of the SDK (Compiler, Toolset, Sdk, ProjectTemplates)
+        description: Deploy components of the SDK (Compiler, Chr, Toolset, Sdk, ProjectTemplates)
       deploy-repl:
         type: boolean
-        description: Deploy components of the REPL (Compiler, Repl)
+        description: Deploy components of the REPL (Compiler, Chr, Repl)
       deploy-langserver:
         type: boolean
-        description: Deploy the language server (Compiler, LanguageServer, Lsp)
+        description: Deploy the language server (Compiler, Chr, LanguageServer, Lsp)
       deploy-debugadapter:
         type: boolean
         description: Deploy the debug adapter (DebugAdapter, Dap)
@@ -60,9 +60,9 @@ jobs:
     - name: Package .NET portion
       run: |
         cd src
-        $sdkProjects = "Compiler", "Compiler.Toolset", "Sdk", "ProjectTemplates"
-        $replProjects = "Compiler", "Repl"
-        $langserverProjects = "Compiler", "LanguageServer", "Lsp", "JsonRpc"
+        $sdkProjects = "Compiler", "Compiler.Chr", "Compiler.Toolset", "Sdk", "ProjectTemplates"
+        $replProjects = "Compiler", "Compiler.Chr", "Repl"
+        $langserverProjects = "Compiler", "Compiler.Chr", "LanguageServer", "Lsp", "JsonRpc"
         $debugadapterProjects = "DebugAdapter", "Dap", "JsonRpc"
         $projects = @()
 

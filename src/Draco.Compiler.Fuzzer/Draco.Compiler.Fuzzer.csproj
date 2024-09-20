@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" InstrumentCoverage="True" />
+    <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
     <ProjectReference Include="..\Draco.Fuzzing\Draco.Fuzzing.csproj" />
   </ItemGroup>
 

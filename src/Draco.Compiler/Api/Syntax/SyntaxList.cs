@@ -41,7 +41,7 @@ public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
                 var prevWidth = this.GreenList
                     .Take(index)
                     .Sum(g => g.FullWidth);
-                return this.GreenList[index].ToRedNode(this.Tree, this.Parent, this.FullPosition + prevWidth);
+                return this.GreenList[index].ToRedNode(this.Tree, this, this.FullPosition + prevWidth);
             });
             return (TNode)existing;
         }

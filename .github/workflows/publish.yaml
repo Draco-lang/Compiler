@@ -60,9 +60,9 @@ jobs:
     - name: Package .NET portion
       run: |
         cd src
-        $sdkProjects = "Compiler", "Compiler.Chr", "Compiler.Toolset", "Sdk", "ProjectTemplates"
-        $replProjects = "Compiler", "Compiler.Chr", "Repl"
-        $langserverProjects = "Compiler", "Compiler.Chr", "LanguageServer", "Lsp", "JsonRpc"
+        $sdkProjects = "Compiler", "Chr", "Compiler.Toolset", "Sdk", "ProjectTemplates"
+        $replProjects = "Compiler", "Chr", "Repl"
+        $langserverProjects = "Compiler", "Chr", "LanguageServer", "Lsp", "JsonRpc"
         $debugadapterProjects = "DebugAdapter", "Dap", "JsonRpc"
         $projects = @()
 

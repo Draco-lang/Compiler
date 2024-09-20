@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using Draco.Coverage;
 
@@ -48,8 +49,14 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// </summary>
     public required IFaultDetector FaultDetector { get; init; }
 
+    /// <summary>
+    /// The tracer to use.
+    /// </summary>
+    public required ITracer<TInput> Tracer { get; init; }
+
     private readonly Queue<TInput> inputQueue = new();
     private readonly HashSet<TCoverage> discoveredCoverages = new();
+    private readonly Stopwatch stopwatch = new();
 
     /// <summary>
     /// Enqueues the given input.
@@ -72,20 +79,30 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="cancellationToken">The cancellation token to cancel the fuzzing process.</param>
     public void Fuzz(CancellationToken cancellationToken)
     {
+        this.stopwatch.Start();
         while (!cancellationToken.IsCancellationRequested && this.inputQueue.TryDequeue(out var input))
         {
+            var start = this.stopwatch.Elapsed;
             // Minimize the input
             var (minimalInput, executionResult) = this.Minimize(input);
+            var endOfMinimization = this.stopwatch.Elapsed;
+            this.Tracer.EndOfMinimization(input, minimalInput, endOfMinimization - start);
             // Test for fault
             if (executionResult.FaultResult.IsFaulted)
             {
-                // TODO: Report
+                this.Tracer.InputFaulted(minimalInput, executionResult.FaultResult);
+                // NOTE: Should we not skip mutating this input?
+                continue;
             }
             // Mutate the input
+            var mutationsFound = 0;
             foreach (var mutated in this.Mutate(minimalInput, executionResult.Coverage))
             {
                 this.Enqueue(mutated);
+                ++mutationsFound;
             }
+            var endOfMutations = this.stopwatch.Elapsed;
+            this.Tracer.EndOfMutations(minimalInput, mutationsFound, endOfMutations - endOfMinimization);
         }
     }
 

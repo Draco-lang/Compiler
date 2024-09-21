@@ -59,6 +59,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Fuzzing", "Draco.Fuzz
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Compiler.Fuzzer", "Draco.Compiler.Fuzzer\Draco.Compiler.Fuzzer.csproj", "{AE8C3DFE-D3AA-4967-9914-89FCD649C9AF}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage", "Draco.Coverage\Draco.Coverage.csproj", "{2497B426-9005-4290-A7BB-ED40E7E56218}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage.Toolset", "Draco.Coverage.Toolset\Draco.Coverage.Toolset.csproj", "{C819FDF2-ABC9-4083-979D-6C898B5E7D2F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage.Cli", "Draco.Coverage.Cli\Draco.Coverage.Cli.csproj", "{DC5CD488-4DFC-4B18-831A-4CBD45AE4B5E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Coverage.Tasks", "Draco.Coverage.Tasks\Draco.Coverage.Tasks.csproj", "{332431F9-6E09-429F-8459-2D157BE030A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -216,6 +224,30 @@ Global
 		{AE8C3DFE-D3AA-4967-9914-89FCD649C9AF}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{AE8C3DFE-D3AA-4967-9914-89FCD649C9AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE8C3DFE-D3AA-4967-9914-89FCD649C9AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2497B426-9005-4290-A7BB-ED40E7E56218}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2497B426-9005-4290-A7BB-ED40E7E56218}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2497B426-9005-4290-A7BB-ED40E7E56218}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{2497B426-9005-4290-A7BB-ED40E7E56218}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{2497B426-9005-4290-A7BB-ED40E7E56218}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2497B426-9005-4290-A7BB-ED40E7E56218}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C819FDF2-ABC9-4083-979D-6C898B5E7D2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C819FDF2-ABC9-4083-979D-6C898B5E7D2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C819FDF2-ABC9-4083-979D-6C898B5E7D2F}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{C819FDF2-ABC9-4083-979D-6C898B5E7D2F}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{C819FDF2-ABC9-4083-979D-6C898B5E7D2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C819FDF2-ABC9-4083-979D-6C898B5E7D2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC5CD488-4DFC-4B18-831A-4CBD45AE4B5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC5CD488-4DFC-4B18-831A-4CBD45AE4B5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC5CD488-4DFC-4B18-831A-4CBD45AE4B5E}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC5CD488-4DFC-4B18-831A-4CBD45AE4B5E}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{DC5CD488-4DFC-4B18-831A-4CBD45AE4B5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC5CD488-4DFC-4B18-831A-4CBD45AE4B5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{332431F9-6E09-429F-8459-2D157BE030A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{332431F9-6E09-429F-8459-2D157BE030A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{332431F9-6E09-429F-8459-2D157BE030A0}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{332431F9-6E09-429F-8459-2D157BE030A0}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{332431F9-6E09-429F-8459-2D157BE030A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{332431F9-6E09-429F-8459-2D157BE030A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

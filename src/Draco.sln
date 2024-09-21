@@ -55,9 +55,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Repl", "Draco.Repl\Dr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Examples.Tests", "Draco.Examples.Tests\Draco.Examples.Tests.csproj", "{60626A9E-F82C-4A88-A6EF-43947B746EA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Fuzzing", "Draco.Fuzzing\Draco.Fuzzing.csproj", "{27A586F1-43EA-41BD-B7D3-6C38EDB41077}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Fuzzing", "Draco.Fuzzing\Draco.Fuzzing.csproj", "{27A586F1-43EA-41BD-B7D3-6C38EDB41077}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Compiler.Fuzzer", "Draco.Compiler.Fuzzer\Draco.Compiler.Fuzzer.csproj", "{AE8C3DFE-D3AA-4967-9914-89FCD649C9AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Compiler.Fuzzer", "Draco.Compiler.Fuzzer\Draco.Compiler.Fuzzer.csproj", "{AE8C3DFE-D3AA-4967-9914-89FCD649C9AF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage", "Draco.Coverage\Draco.Coverage.csproj", "{2497B426-9005-4290-A7BB-ED40E7E56218}"
 EndProject
@@ -65,7 +65,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage.Toolset", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage.Cli", "Draco.Coverage.Cli\Draco.Coverage.Cli.csproj", "{DC5CD488-4DFC-4B18-831A-4CBD45AE4B5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Coverage.Tasks", "Draco.Coverage.Tasks\Draco.Coverage.Tasks.csproj", "{332431F9-6E09-429F-8459-2D157BE030A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage.Tasks", "Draco.Coverage.Tasks\Draco.Coverage.Tasks.csproj", "{332431F9-6E09-429F-8459-2D157BE030A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

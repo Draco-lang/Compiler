@@ -99,6 +99,11 @@ internal sealed class InstrumentationWeaver
         var sequencePointTemplate = collectorTemplate.NestedTypes.First(t => t.Name == nameof(CoverageCollector.SequencePoint));
         var sequencePointType = CloneType(sequencePointTemplate);
 
+        foreach (var customAttrib in sequencePointTemplate.CustomAttributes)
+        {
+            sequencePointType.CustomAttributes.Add(CloneCustomAttribute(customAttrib));
+        }
+
         foreach (var fieldTemplate in sequencePointTemplate.Fields)
         {
             sequencePointType.Fields.Add(CloneField(fieldTemplate));
@@ -118,6 +123,13 @@ internal sealed class InstrumentationWeaver
             {
                 ilProcessor.Append(CloneInstruction(instruction, sequencePointType));
             }
+        }
+
+        // Collector custom attributes
+
+        foreach (var customAttrib in collectorTemplate.CustomAttributes)
+        {
+            collectorType.CustomAttributes.Add(CloneCustomAttribute(customAttrib));
         }
 
         // Collector fields
@@ -172,6 +184,10 @@ internal sealed class InstrumentationWeaver
 
         collectorType.NestedTypes.Add(sequencePointType);
         this.weavedModule.Types.Add(collectorType);
+
+        CustomAttribute CloneCustomAttribute(CustomAttribute customAttribute) => new(
+            this.weavedModule.ImportReference(customAttribute.Constructor),
+            customAttribute.GetBlob());
 
         TypeDefinition CloneType(TypeDefinition typeDefinition) => new(
             @namespace: typeDefinition.Namespace,

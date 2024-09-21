@@ -10,6 +10,7 @@ namespace Draco.Coverage;
 [ExcludeFromCodeCoverage]
 internal static class CoverageCollector
 {
+    [ExcludeFromCodeCoverage]
     public readonly struct SequencePoint
     {
         public readonly string FileName;

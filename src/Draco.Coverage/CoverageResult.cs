@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Immutable;
 
 namespace Draco.Coverage;
@@ -5,7 +6,7 @@ namespace Draco.Coverage;
 /// <summary>
 /// The result of a coverage run.
 /// </summary>
-public sealed class CoverageResult(ImmutableArray<CoverageEntry> entries)
+public readonly struct CoverageResult(ImmutableArray<int> hits)
 {
     /// <summary>
     /// An empty coverage result.
@@ -13,7 +14,7 @@ public sealed class CoverageResult(ImmutableArray<CoverageEntry> entries)
     public static CoverageResult Empty { get; } = new([]);
 
     /// <summary>
-    /// The coverage entries.
+    /// The hit counts of each sequence point.
     /// </summary>
-    public ImmutableArray<CoverageEntry> Entries { get; } = entries;
+    public ImmutableArray<int> Hits { get; } = hits;
 }

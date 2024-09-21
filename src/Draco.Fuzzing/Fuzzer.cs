@@ -16,12 +16,18 @@ namespace Draco.Fuzzing;
 /// </summary>
 /// <typeparam name="TInput">The type of the input data.</typeparam>
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
-public sealed class Fuzzer<TInput, TCoverage>
+/// <param name="seed">The seed to use for the random number generator.</param>
+public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
 {
     private readonly record struct ExecutionResult(
         FaultResult FaultResult,
         CoverageResult UncompressedCoverage,
         TCoverage CompressedCoverage);
+
+    /// <summary>
+    /// A shared random number generator.
+    /// </summary>
+    public Random Random { get; } = seed is null ? new() : new(seed.Value);
 
     /// <summary>
     /// The target to fuzz.
@@ -126,7 +132,7 @@ public sealed class Fuzzer<TInput, TCoverage>
         // While we find a minimization step, we continue to minimize
         while (true)
         {
-            foreach (var minimized in this.InputMinimizer.Minimize(input))
+            foreach (var minimized in this.InputMinimizer.Minimize(this.Random, input))
             {
                 var minimizedResult = this.ExecuteTarget(minimized);
                 if (AreEqualExecutions(referenceResult, minimizedResult))
@@ -145,7 +151,7 @@ public sealed class Fuzzer<TInput, TCoverage>
 
     private IEnumerable<TInput> Mutate(TInput input, TCoverage referenceCoverage)
     {
-        foreach (var mutatedInput in this.InputMutator.Mutate(input))
+        foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, input))
         {
             var executionResult = this.ExecuteTarget(mutatedInput);
             if (this.IsConsideredInteresting(executionResult.CompressedCoverage))

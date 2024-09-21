@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api.Syntax.Extensions;
@@ -7,7 +8,7 @@ namespace Draco.Compiler.Fuzzer;
 
 internal sealed class SyntaxTreeInputMinimizer : IInputMinimizer<SyntaxTree>
 {
-    public IEnumerable<SyntaxTree> Minimize(SyntaxTree input)
+    public IEnumerable<SyntaxTree> Minimize(Random random, SyntaxTree input)
     {
         // We try to throw away nodes one by one
         foreach (var node in input.Root.PreOrderTraverse())

@@ -33,21 +33,23 @@ public static class FaultDetector
     {
         public FaultResult Execute(Action action)
         {
-            try
+            var exception = null as Exception;
+            var evt = new ManualResetEvent(false);
+            ThreadPool.QueueUserWorkItem(_ =>
             {
-                var evt = new ManualResetEvent(false);
-                ThreadPool.QueueUserWorkItem(_ =>
+                try
                 {
                     action();
-                    evt.Set();
-                });
-                if (!evt.WaitOne(1000)) return FaultResult.Timeout(timeout);
-                return FaultResult.Ok;
-            }
-            catch (Exception ex)
-            {
-                return FaultResult.Exception(ex);
-            }
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+                evt.Set();
+            });
+            if (!evt.WaitOne(1000)) return FaultResult.Timeout(timeout);
+            if (exception is not null) return FaultResult.Exception(exception);
+            return FaultResult.Ok;
         }
     }
 }

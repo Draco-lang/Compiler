@@ -30,7 +30,7 @@ internal static class Program
         var fuzzer = new Fuzzer<SyntaxTree, int>
         {
             InstrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly),
-            CoverageCompressor = CoverageCompressor.NaiveHash,
+            CoverageCompressor = CoverageCompressor.SimdHash,
             FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.Default(TimeSpan.FromSeconds(5))),
             TargetExecutor = TargetExecutor.Create((SyntaxTree tree) => RunCompilation(tree)),
             InputMinimizer = new SyntaxTreeInputMinimizer(),

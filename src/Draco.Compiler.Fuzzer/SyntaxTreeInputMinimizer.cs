@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Fuzzing;
@@ -10,11 +11,18 @@ internal sealed class SyntaxTreeInputMinimizer : IInputMinimizer<SyntaxTree>
 {
     public IEnumerable<SyntaxTree> Minimize(Random random, SyntaxTree input)
     {
-        // We try to throw away nodes one by one
-        foreach (var node in input.Root.PreOrderTraverse())
+        // Get the nodes that can be thrown away
+        var targets = input.Root
+            .PreOrderTraverse()
+            .Where(CanBeThrownAway)
+            .ToList();
+        if (targets.Count == 0) yield break;
+
+        // Just try 5 random samples
+        for (var i = 0; i < 5; i++)
         {
-            if (!CanBeThrownAway(node)) continue;
-            yield return input.Remove(node);
+            var target = targets[random.Next(targets.Count)];
+            yield return input.Remove(target);
         }
     }
 

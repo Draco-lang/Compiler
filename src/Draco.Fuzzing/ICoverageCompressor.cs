@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Draco.Coverage;
 
 namespace Draco.Fuzzing;
@@ -36,10 +38,23 @@ public static class CoverageCompressor
     /// </summary>
     public static ICoverageCompressor<int> NaiveHash { get; } = Create(result =>
     {
-        // NOTE: Naive, slow implementation, we might need to come back to vectorize this
-        // We create a bitarray of the 0 and nonzero hit positions then hash combine them
         var hash = default(HashCode);
         foreach (var h in result.Hits) hash.Add(h != 0);
+        return hash.ToHashCode();
+    });
+
+    /// <summary>
+    /// A SIMD-optimized hash-based coverage compressor.
+    /// </summary>
+    public static ICoverageCompressor<int> SimdHash { get; } = Create(result =>
+    {
+        var hits = GC.AllocateUninitializedArray<int>(result.Hits.Length);
+        result.Hits.CopyTo(hits);
+        SimdUtilities.InPlaceEqualityCompareToZero(hits);
+        // Get a byte span from hits
+        var span = MemoryMarshal.AsBytes<int>(hits);
+        var hash = default(HashCode);
+        hash.AddBytes(span);
         return hash.ToHashCode();
     });
 

@@ -47,7 +47,7 @@ public static class FaultDetector
                 }
                 evt.Set();
             });
-            if (!evt.WaitOne(1000)) return FaultResult.Timeout(timeout);
+            if (!evt.WaitOne(timeout)) return FaultResult.Timeout(timeout);
             if (exception is not null) return FaultResult.Exception(exception);
             return FaultResult.Ok;
         }

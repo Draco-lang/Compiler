@@ -10,16 +10,28 @@ namespace Draco.Compiler.Fuzzer;
 
 internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 {
-    private sealed class InputQueueItem(SyntaxTree input, int index) : IEquatable<InputQueueItem>
+    private sealed class InputQueueItem(SyntaxTree input, int index)
     {
         public SyntaxTree Input { get; } = input;
         public int Index { get; } = index;
 
         public override string ToString() => $"Input {this.Index}";
+    }
 
-        public bool Equals(InputQueueItem? other) => ReferenceEquals(this.Input, other?.Input);
-        public override bool Equals(object? obj) => this.Equals(obj as InputQueueItem);
-        public override int GetHashCode() => this.Input.GetHashCode();
+    private sealed class FaultItem(SyntaxTree input, FaultResult fault)
+    {
+        public SyntaxTree Input { get; } = input;
+        public FaultResult Fault { get; } = fault;
+
+        public override string ToString()
+        {
+            if (this.Fault.ThrownException is not null)
+            {
+                return $"{this.Fault.ThrownException.GetType().Name}: {this.Fault.ThrownException.Message}";
+            }
+            if (this.Fault.TimeoutReached is not null) return "Timeout";
+            return "Unknown";
+        }
     }
 
     // Coverage info
@@ -43,7 +55,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     // Faults
     private readonly ListView faultListView;
-    private readonly List<InputQueueItem> faultList = [];
+    private readonly List<FaultItem> faultList = [];
     private readonly TextView selectedFaultItemTextView;
 
     public TuiTracer()
@@ -191,7 +203,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         };
         this.faultListView.SelectedItemChanged += e =>
         {
-            var selectedItem = e.Value as InputQueueItem;
+            var selectedItem = e.Value as FaultItem;
             this.selectedFaultItemTextView.Text = selectedItem?.Input.ToString();
         };
         var faultFrame = new FrameView("Faults")
@@ -246,7 +258,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     public void InputFaulted(SyntaxTree input, FaultResult fault)
     {
-        this.faultList.Add(new(input, this.faultList.Count));
+        this.faultList.Add(new(input, fault));
     }
 
     private static double CoverageToPercentage(CoverageResult coverage) =>

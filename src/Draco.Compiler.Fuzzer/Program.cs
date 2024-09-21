@@ -35,6 +35,7 @@ internal static class Program
 
         fuzzer.Enqueue(SyntaxTree.Parse("""
             func main() {}
+            func foo() {}
             """));
 
         fuzzer.Fuzz(CancellationToken.None);

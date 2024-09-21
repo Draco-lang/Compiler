@@ -107,6 +107,7 @@ public static class InputMutator
             if (maxRemoveAmount == 0) continue;
 
             var removeAmount = random.Next(1, maxRemoveAmount);
+            if (insertStart > input.Count - removeAmount) continue;
 
             var inputClone = new List<TElement>(input);
             var removed = inputClone.GetRange(removeStart, removeAmount);

@@ -48,6 +48,12 @@ internal static class Program
 
         var fuzzerTask = Task.Run(() => fuzzer.Fuzz(CancellationToken.None));
 
+        Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(500), loop =>
+        {
+            Application.Refresh();
+            return true;
+        });
+
         Application.Run(Application.Top);
         await fuzzerTask;
         Application.Shutdown();

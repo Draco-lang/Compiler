@@ -23,28 +23,31 @@ public interface ICoverageCompressor<TCoverage>
 public static class CoverageCompressor
 {
     /// <summary>
-    /// A hash-based coverage compressor.
+    /// Creates a coverage compressor from the given function.
     /// </summary>
-    public static ICoverageCompressor<int> Hash => HashCoverageCompressor.Instance;
+    /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
+    /// <param name="func">The function to compress the coverage.</param>
+    /// <returns>The coverage compressor.</returns>
+    public static ICoverageCompressor<TCoverage> Create<TCoverage>(Func<CoverageResult, TCoverage> func) =>
+        new DelegateCompressor<TCoverage>(func);
 
-    private sealed class HashCoverageCompressor : ICoverageCompressor<int>
+    /// <summary>
+    /// A naive hash-based coverage compressor.
+    /// </summary>
+    public static ICoverageCompressor<int> NaiveHash { get; } = Create(result =>
     {
-        public static HashCoverageCompressor Instance { get; } = new();
-
-        private HashCoverageCompressor()
+        // NOTE: Naive, slow implementation, we might need to come back to vectorize this
+        // We create a bitarray of the 0 and nonzero hit positions then hash combine them
+        var hash = default(HashCode);
+        foreach (var entry in result.Entries)
         {
+            hash.Add(entry.Hits != 0);
         }
+        return hash.ToHashCode();
+    });
 
-        public int Compress(CoverageResult result)
-        {
-            // NOTE: Naive, slow implementation, we might need to come back to vectorize this
-            // We create a bitarray of the 0 and nonzero hit positions then hash combine them
-            var hash = default(HashCode);
-            foreach (var entry in result.Entries)
-            {
-                hash.Add(entry.Hits != 0);
-            }
-            return hash.ToHashCode();
-        }
+    private sealed class DelegateCompressor<TCoverage>(Func<CoverageResult, TCoverage> func) : ICoverageCompressor<TCoverage>
+    {
+        public TCoverage Compress(CoverageResult result) => func(result);
     }
 }

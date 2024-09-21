@@ -5,7 +5,7 @@ namespace Draco.Coverage;
 /// <summary>
 /// The result of a coverage run.
 /// </summary>
-public sealed class CoverageResult(ImmutableArray<CoverageEntry> entires)
+public sealed class CoverageResult(ImmutableArray<CoverageEntry> entries)
 {
     /// <summary>
     /// An empty coverage result.
@@ -15,5 +15,5 @@ public sealed class CoverageResult(ImmutableArray<CoverageEntry> entires)
     /// <summary>
     /// The coverage entries.
     /// </summary>
-    public ImmutableArray<CoverageEntry> Entires { get; } = entires;
+    public ImmutableArray<CoverageEntry> Entries { get; } = entries;
 }

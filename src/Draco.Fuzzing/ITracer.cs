@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Draco.Coverage;
 
 namespace Draco.Fuzzing;
@@ -9,6 +10,20 @@ namespace Draco.Fuzzing;
 /// <typeparam name="TInput">The type of the input data.</typeparam>
 public interface ITracer<TInput>
 {
+    /// <summary>
+    /// Called when inputs were enqueued into the fuzzer.
+    /// </summary>
+    /// <param name="inputs">The inputs that were enqueued.</param>
+    /// <param name="inputQueue">The current input queue.</param>
+    public void InputsEnqueued(IEnumerable<TInput> inputs, IReadOnlyCollection<TInput> inputQueue);
+
+    /// <summary>
+    /// Called when an input was dequeued from the fuzzer.
+    /// </summary>
+    /// <param name="input">The input that was dequeued.</param>
+    /// <param name="inputQueue">The current input queue.</param>
+    public void InputDequeued(TInput input, IReadOnlyCollection<TInput> inputQueue);
+
     /// <summary>
     /// Called when the minimization of an input finishes.
     /// </summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
@@ -9,6 +10,18 @@ namespace Draco.Compiler.Fuzzer;
 
 internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 {
+    private sealed class InputQueueItem(SyntaxTree input, int index) : IEquatable<InputQueueItem>
+    {
+        public SyntaxTree Input { get; } = input;
+        public int Index { get; } = index;
+
+        public override string ToString() => $"Input {this.Index}";
+
+        public bool Equals(InputQueueItem? other) => ReferenceEquals(this.Input, other?.Input);
+        public override bool Equals(object? obj) => this.Equals(obj as InputQueueItem);
+        public override int GetHashCode() => this.Input.GetHashCode();
+    }
+
     // Coverage info
     private readonly ProgressBar currentCoverageProgressBar;
     private readonly Label currentCoveragePercentLabel;
@@ -20,6 +33,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     // Current input
     private readonly TextView currentInputTextView;
     private readonly TextView minimizedInputTextView;
+
+    // Input queue
+    private readonly ListView inputQueueListView;
+    private readonly List<InputQueueItem> inputQueueList = [];
+    private readonly FrameView inputQueueFrame;
+    private int inputQueueItemCounter = 0;
 
     public TuiTracer()
     {
@@ -112,15 +131,51 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             X = 0,
             Y = Pos.Bottom(coverageFrame),
             Width = Dim.Fill(),
-            Height = Dim.Fill(),
+            Height = Dim.Percent(50),
         };
         inputFrame.Add(currentInputFrame, minimizedInputFrame);
 
+        // Input queue
+        this.inputQueueListView = new()
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Percent(50),
+            Height = Dim.Fill(),
+        };
+        this.inputQueueListView.SetSource(this.inputQueueList);
+        this.inputQueueFrame = new FrameView("Input Queue")
+        {
+            X = 0,
+            Y = Pos.Bottom(inputFrame),
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+        };
+        this.inputQueueFrame.Add(this.inputQueueListView);
+
         this.Add(
             coverageFrame,
-            inputFrame);
+            inputFrame,
+            this.inputQueueFrame);
 
         Application.Top.Add(this);
+    }
+
+    public void InputsEnqueued(IEnumerable<SyntaxTree> inputs, IReadOnlyCollection<SyntaxTree> inputQueue)
+    {
+        foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
+
+        this.inputQueueFrame.Title = $"Input Queue (Size: {this.inputQueueList.Count})";
+
+        Application.Refresh();
+    }
+
+    public void InputDequeued(SyntaxTree input, IReadOnlyCollection<SyntaxTree> inputQueue)
+    {
+        var itemIndex = this.inputQueueList.FindIndex(item => item.Input == input);
+        if (itemIndex >= 0) this.inputQueueList.RemoveAt(itemIndex);
+
+        Application.Refresh();
     }
 
     public void EndOfMinimization(SyntaxTree input, SyntaxTree minimizedInput, CoverageResult coverage, TimeSpan elapsed)

@@ -72,7 +72,11 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     /// Enqueues the given input.
     /// </summary>
     /// <param name="input">The input to enqueue.</param>
-    public void Enqueue(TInput input) => this.inputQueue.Enqueue(input);
+    public void Enqueue(TInput input)
+    {
+        this.inputQueue.Enqueue(input);
+        this.Tracer.InputsEnqueued([input], this.inputQueue);
+    }
 
     /// <summary>
     /// Enqueues the given inputs.
@@ -81,6 +85,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     public void EnqueueRange(IEnumerable<TInput> inputs)
     {
         foreach (var input in inputs) this.inputQueue.Enqueue(input);
+        this.Tracer.InputsEnqueued(inputs, this.inputQueue);
     }
 
     /// <summary>
@@ -93,6 +98,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
         this.stopwatch.Start();
         while (!cancellationToken.IsCancellationRequested && this.inputQueue.TryDequeue(out var input))
         {
+            this.Tracer.InputDequeued(input, this.inputQueue);
             var start = this.stopwatch.Elapsed;
             // Minimize the input
             var (minimalInput, executionResult) = this.Minimize(input);
@@ -105,9 +111,11 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
                 // NOTE: Should we not skip mutating this input?
                 continue;
             }
+            // Register as uninteresting
+            this.discoveredCoverages.Add(executionResult.CompressedCoverage);
             // Mutate the input
             var mutationsFound = 0;
-            foreach (var mutated in this.Mutate(minimalInput, executionResult.CompressedCoverage))
+            foreach (var mutated in this.Mutate(minimalInput))
             {
                 this.Enqueue(mutated);
                 ++mutationsFound;
@@ -149,7 +157,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
         return (input, referenceResult);
     }
 
-    private IEnumerable<TInput> Mutate(TInput input, TCoverage referenceCoverage)
+    private IEnumerable<TInput> Mutate(TInput input)
     {
         foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, input))
         {

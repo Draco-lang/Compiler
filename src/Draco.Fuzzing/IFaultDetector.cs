@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Draco.Fuzzing;
@@ -34,15 +35,14 @@ public static class FaultDetector
         {
             try
             {
-                var task = Task.Run(action);
-                if (task.Wait(timeout))
+                var evt = new ManualResetEvent(false);
+                ThreadPool.QueueUserWorkItem(_ =>
                 {
-                    return FaultResult.Ok;
-                }
-                else
-                {
-                    return FaultResult.Timeout(timeout);
-                }
+                    action();
+                    evt.Set();
+                });
+                if (!evt.WaitOne(1000)) return FaultResult.Timeout(timeout);
+                return FaultResult.Ok;
             }
             catch (Exception ex)
             {

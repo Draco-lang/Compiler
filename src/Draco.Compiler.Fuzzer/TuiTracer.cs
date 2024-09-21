@@ -45,12 +45,15 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     // Current input
     private readonly TextView currentInputTextView;
     private readonly TextView minimizedInputTextView;
+    private readonly FrameView inputFrameView;
+
+    private int minimizedInputCounter = 0;
 
     // Input queue
     private readonly ListView inputQueueListView;
     private readonly List<InputQueueItem> inputQueueList = [];
     private readonly TextView selectedInputQueueItemTextView;
-    private readonly FrameView inputQueueFrame;
+    private readonly FrameView inputQueueFrameView;
     private int inputQueueItemCounter = 0;
 
     // Faults
@@ -98,14 +101,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             X = Pos.Right(this.bestCoverageProgressBar) + 1,
             Y = 2,
         };
-        var coverageFrame = new FrameView("Coverage")
+        var coverageFrameView = new FrameView("Coverage")
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Sized(5),
         };
-        coverageFrame.Add(
+        coverageFrameView.Add(
             currentCoverageLabel, this.currentCoverageProgressBar, this.currentCoveragePercentLabel,
             bestCoverageLabel, this.bestCoverageProgressBar, this.bestCoveragePercentLabel);
 
@@ -118,14 +121,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
             ReadOnly = true,
         };
-        var currentInputFrame = new FrameView("Current")
+        var currentInputFrameView = new FrameView("Current")
         {
             X = 0,
             Y = 0,
             Width = Dim.Percent(50),
             Height = Dim.Fill(),
         };
-        currentInputFrame.Add(this.currentInputTextView);
+        currentInputFrameView.Add(this.currentInputTextView);
 
         this.minimizedInputTextView = new()
         {
@@ -135,23 +138,23 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
             ReadOnly = true,
         };
-        var minimizedInputFrame = new FrameView("Minimized")
+        var minimizedInputFrameView = new FrameView("Minimized")
         {
-            X = Pos.Right(currentInputFrame),
+            X = Pos.Right(currentInputFrameView),
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
         };
-        minimizedInputFrame.Add(this.minimizedInputTextView);
+        minimizedInputFrameView.Add(this.minimizedInputTextView);
 
-        var inputFrame = new FrameView("Input")
+        this.inputFrameView = new FrameView("Input")
         {
             X = 0,
-            Y = Pos.Bottom(coverageFrame),
+            Y = Pos.Bottom(coverageFrameView),
             Width = Dim.Fill(),
             Height = Dim.Percent(50),
         };
-        inputFrame.Add(currentInputFrame, minimizedInputFrame);
+        this.inputFrameView.Add(currentInputFrameView, minimizedInputFrameView);
 
         // Input queue
         this.inputQueueListView = new()
@@ -175,14 +178,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             var selectedItem = e.Value as InputQueueItem;
             this.selectedInputQueueItemTextView.Text = selectedItem?.Input.ToString();
         };
-        this.inputQueueFrame = new FrameView("Input Queue")
+        this.inputQueueFrameView = new FrameView("Input Queue")
         {
             X = 0,
-            Y = Pos.Bottom(inputFrame),
+            Y = Pos.Bottom(this.inputFrameView),
             Width = Dim.Percent(50),
             Height = Dim.Fill(),
         };
-        this.inputQueueFrame.Add(this.inputQueueListView, this.selectedInputQueueItemTextView);
+        this.inputQueueFrameView.Add(this.inputQueueListView, this.selectedInputQueueItemTextView);
 
         // Faults
         this.faultListView = new()
@@ -206,20 +209,20 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             var selectedItem = e.Value as FaultItem;
             this.selectedFaultItemTextView.Text = selectedItem?.Input.ToString();
         };
-        var faultFrame = new FrameView("Faults")
+        var faultFrameView = new FrameView("Faults")
         {
-            X = Pos.Right(this.inputQueueFrame),
-            Y = Pos.Bottom(inputFrame),
+            X = Pos.Right(this.inputQueueFrameView),
+            Y = Pos.Bottom(this.inputFrameView),
             Width = Dim.Fill(),
             Height = Dim.Fill(),
         };
-        faultFrame.Add(this.faultListView, this.selectedFaultItemTextView);
+        faultFrameView.Add(this.faultListView, this.selectedFaultItemTextView);
 
         this.Add(
-            coverageFrame,
-            inputFrame,
-            this.inputQueueFrame,
-            faultFrame);
+            coverageFrameView,
+            this.inputFrameView,
+            this.inputQueueFrameView,
+            faultFrameView);
 
         Application.Top.Add(this);
     }
@@ -228,7 +231,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     {
         foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
 
-        this.inputQueueFrame.Title = $"Input Queue (Size: {this.inputQueueList.Count})";
+        this.inputQueueFrameView.Title = $"Input Queue (Size: {this.inputQueueList.Count})";
     }
 
     public void InputDequeued(SyntaxTree input, IReadOnlyCollection<SyntaxTree> inputQueue)
@@ -250,6 +253,9 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         this.currentInputTextView.Text = input.ToString();
         this.minimizedInputTextView.Text = minimizedInput.ToString();
+
+        ++this.minimizedInputCounter;
+        this.inputFrameView.Title = $"Input (Tested: {this.minimizedInputCounter})";
     }
 
     public void EndOfMutations(SyntaxTree input, int mutationsFound, TimeSpan elapsed)

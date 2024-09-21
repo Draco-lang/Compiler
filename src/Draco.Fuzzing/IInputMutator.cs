@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Draco.Fuzzing;
 
@@ -37,9 +38,16 @@ public static class InputMutator
     /// </summary>
     /// <typeparam name="TElement">The type of the elements in the sequence.</typeparam>
     /// <returns>The mutator.</returns>
-    public static IInputMutator<IList<TElement>> Swap<TElement>() => Create<IList<TElement>>(SwapDelegate);
+    public static IInputMutator<IReadOnlyList<TElement>> Swap<TElement>() => Create<IReadOnlyList<TElement>>(SwapDelegate);
 
-    private static IEnumerable<IList<TElement>> SwapDelegate<TElement>(Random random, IList<TElement> input)
+    /// <summary>
+    /// Creates a mutator that randomly removes a range of elements from a sequence.
+    /// </summary>
+    /// <typeparam name="TElement">The type of the elements in the sequence.</typeparam>
+    /// <returns>The mutator.</returns>
+    public static IInputMutator<IReadOnlyList<TElement>> Remove<TElement>() => Create<IReadOnlyList<TElement>>(RemoveDelegate);
+
+    private static IEnumerable<IReadOnlyList<TElement>> SwapDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
     {
         // Can't mutate a sequence with less than 2 elements
         if (input.Count < 2) yield return input;
@@ -51,8 +59,28 @@ public static class InputMutator
 
             if (index1 == index2) continue;
 
-            (input[index1], input[index2]) = (input[index2], input[index1]);
-            yield return input;
+            var inputClone = new List<TElement>(input);
+
+            (inputClone[index1], inputClone[index2]) = (inputClone[index2], inputClone[index1]);
+            yield return inputClone;
+        }
+    }
+
+    private static IEnumerable<IReadOnlyList<TElement>> RemoveDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
+    {
+        // Can't mutate a sequence with less than 1 element
+        if (input.Count < 1) yield return input;
+
+        while (true)
+        {
+            var index = random.Next(input.Count);
+            var maxAmount = input.Count - index;
+            if (maxAmount == 0) continue;
+            var amount = random.Next(1, maxAmount);
+
+            var inputClone = new List<TElement>(input);
+            inputClone.RemoveRange(index, amount);
+            yield return inputClone;
         }
     }
 

@@ -260,7 +260,7 @@ internal sealed class InstrumentationWeaver
 
     private void WeaveMethod(MethodDefinition method)
     {
-        if (method.IsAbstract || method.IsPInvokeImpl || method.IsRuntime || !method.HasBody) return;
+        if (method.IsAbstract || method.IsPInvokeImpl || method.IsRuntime || method.IsRuntimeSpecialName || !method.HasBody) return;
         if (this.SkipMethod(method)) return;
 
         method.Body.SimplifyMacros();

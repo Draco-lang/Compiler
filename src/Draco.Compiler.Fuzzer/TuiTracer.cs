@@ -37,8 +37,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     // Input queue
     private readonly ListView inputQueueListView;
     private readonly List<InputQueueItem> inputQueueList = [];
+    private readonly TextView selectedInputQueueItemTextView;
     private readonly FrameView inputQueueFrame;
     private int inputQueueItemCounter = 0;
+
+    // Faults
+    private readonly ListView faultListView;
+    private readonly List<InputQueueItem> faultList = [];
+    private readonly TextView selectedFaultItemTextView;
 
     public TuiTracer()
     {
@@ -144,19 +150,63 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
         };
         this.inputQueueListView.SetSource(this.inputQueueList);
+        this.selectedInputQueueItemTextView = new()
+        {
+            X = Pos.Right(this.inputQueueListView),
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            ReadOnly = true,
+        };
+        this.inputQueueListView.SelectedItemChanged += e =>
+        {
+            var selectedItem = e.Value as InputQueueItem;
+            this.selectedInputQueueItemTextView.Text = selectedItem?.Input.ToString();
+        };
         this.inputQueueFrame = new FrameView("Input Queue")
         {
             X = 0,
             Y = Pos.Bottom(inputFrame),
+            Width = Dim.Percent(50),
+            Height = Dim.Fill(),
+        };
+        this.inputQueueFrame.Add(this.inputQueueListView, this.selectedInputQueueItemTextView);
+
+        // Faults
+        this.faultListView = new()
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Percent(50),
+            Height = Dim.Fill(),
+        };
+        this.faultListView.SetSource(this.faultList);
+        this.selectedFaultItemTextView = new()
+        {
+            X = Pos.Right(this.faultListView),
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            ReadOnly = true,
+        };
+        this.faultListView.SelectedItemChanged += e =>
+        {
+            var selectedItem = e.Value as InputQueueItem;
+            this.selectedFaultItemTextView.Text = selectedItem?.Input.ToString();
+        };
+        var faultFrame = new FrameView("Faults")
+        {
+            X = Pos.Right(this.inputQueueFrame),
+            Y = Pos.Bottom(inputFrame),
             Width = Dim.Fill(),
             Height = Dim.Fill(),
         };
-        this.inputQueueFrame.Add(this.inputQueueListView);
 
         this.Add(
             coverageFrame,
             inputFrame,
-            this.inputQueueFrame);
+            this.inputQueueFrame,
+            faultFrame);
 
         Application.Top.Add(this);
     }
@@ -166,16 +216,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
 
         this.inputQueueFrame.Title = $"Input Queue (Size: {this.inputQueueList.Count})";
-
-        Application.Refresh();
     }
 
     public void InputDequeued(SyntaxTree input, IReadOnlyCollection<SyntaxTree> inputQueue)
     {
         var itemIndex = this.inputQueueList.FindIndex(item => item.Input == input);
         if (itemIndex >= 0) this.inputQueueList.RemoveAt(itemIndex);
-
-        Application.Refresh();
     }
 
     public void EndOfMinimization(SyntaxTree input, SyntaxTree minimizedInput, CoverageResult coverage, TimeSpan elapsed)
@@ -191,8 +237,6 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         this.currentInputTextView.Text = input.ToString();
         this.minimizedInputTextView.Text = minimizedInput.ToString();
-
-        Application.Refresh();
     }
 
     public void EndOfMutations(SyntaxTree input, int mutationsFound, TimeSpan elapsed)
@@ -201,6 +245,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     public void InputFaulted(SyntaxTree input, FaultResult fault)
     {
+        this.faultList.Add(new(input, this.faultList.Count));
     }
 
     private static double CoverageToPercentage(CoverageResult coverage) =>

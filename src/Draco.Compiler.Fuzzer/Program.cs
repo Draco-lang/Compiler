@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
@@ -21,7 +22,7 @@ internal static class Program
 
     private static readonly MemoryStream peStream = new();
 
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         Application.Init();
         var debuggerWindow = new TuiTracer();
@@ -40,14 +41,15 @@ internal static class Program
         fuzzer.Enqueue(SyntaxTree.Parse("""
             func main() {}
             func foo() {}
+            func bar() {}
+            func baz() {}
+            func qux() {}
             """));
 
-        Application.MainLoop.Invoke(() =>
-        {
-            fuzzer.Fuzz(CancellationToken.None);
-        });
+        var fuzzerTask = Task.Run(() => fuzzer.Fuzz(CancellationToken.None));
 
         Application.Run(Application.Top);
+        await fuzzerTask;
         Application.Shutdown();
     }
 

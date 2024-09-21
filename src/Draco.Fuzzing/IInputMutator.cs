@@ -69,7 +69,7 @@ public static class InputMutator
     private static IEnumerable<IReadOnlyList<TElement>> RemoveDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
     {
         // Can't mutate a sequence with less than 1 element
-        if (input.Count < 1) yield return input;
+        if (input.Count < 1) yield break;
 
         while (true)
         {

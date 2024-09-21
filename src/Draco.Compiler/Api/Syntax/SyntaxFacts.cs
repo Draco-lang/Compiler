@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Security.Principal;
 
 namespace Draco.Compiler.Api.Syntax;
 

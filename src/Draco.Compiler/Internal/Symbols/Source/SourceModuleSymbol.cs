@@ -100,12 +100,14 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
         FunctionDeclaration f => this.BuildFunction(f),
         GlobalDeclaration g => this.BuildGlobal(g),
         MergedModuleDeclaration m => this.BuildModule(m),
+        ClassDeclaration c => this.BuildClass(c),
         _ => throw new ArgumentOutOfRangeException(nameof(declaration)),
     };
 
     private SourceFunctionSymbol BuildFunction(FunctionDeclaration declaration) => new(this, declaration);
     private SourceGlobalSymbol BuildGlobal(GlobalDeclaration declaration) => new(this, declaration);
     private SourceModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new(this.DeclaringCompilation, this, declaration);
+    private SourceClassSymbol BuildClass(ClassDeclaration declaration) => new(this, declaration);
 
     private SymbolDocumentation BuildDocumentation() =>
         MarkdownDocumentationExtractor.Extract(this);

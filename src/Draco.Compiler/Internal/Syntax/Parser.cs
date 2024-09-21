@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -360,10 +361,19 @@ internal sealed class Parser(
     {
         var attributes = this.ParseAttributeList();
         var visibility = this.ParseVisibilityModifier();
+        var global = this.ParseGlobalModifier(); // todo: check for global on other constructions and show custom error.
         switch (this.PeekKind())
         {
         case TokenKind.KeywordImport:
             return this.ParseImportDeclaration(attributes, visibility);
+
+        case TokenKind.KeywordValue:
+        {
+            var valueKeyword = this.Expect(TokenKind.KeywordValue);
+            return this.ParseClassDeclaration(visibility: visibility, global: global, valueType: valueKeyword);
+        }
+        case TokenKind.KeywordClass:
+            return this.ParseClassDeclaration(visibility: visibility, global: global, valueType: null);
 
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration(attributes, visibility, context);
@@ -373,7 +383,7 @@ internal sealed class Parser(
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration(attributes, visibility, context);
+            return this.ParseVariableDeclaration(attributes, visibility, global, context);
 
         case TokenKind.Identifier when this.PeekKind(1) == TokenKind.Colon:
             return this.ParseLabelDeclaration(attributes, visibility, context);
@@ -514,6 +524,78 @@ internal sealed class Parser(
     }
 
     /// <summary>
+    /// Parses a class declaration.
+    /// </summary>
+    /// <param name="visibility">Optional visibility modifier token.</param>
+    /// <param name="valueType">Optional valuetype modifier token.</param>
+    /// <returns>The parsed <see cref="ClassDeclarationSyntax"/>.</returns>
+    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxToken? visibility, SyntaxToken? global, SyntaxToken? valueType)
+    {
+        // Class keyword and name of the class
+        var classKeyword = this.Expect(TokenKind.KeywordClass);
+        var name = this.Expect(TokenKind.Identifier);
+
+        // Optional generics
+        var generics = null as GenericParameterListSyntax;
+        if (this.PeekKind() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
+
+        var body = this.ParseClassBody();
+
+        return new ClassDeclarationSyntax(
+            visibility,
+            valueType,
+            classKeyword,
+            name,
+            generics,
+            body);
+    }
+
+    /// <summary>
+    /// Parses the body of a class.
+    /// </summary>
+    /// <returns>The parsed <see cref="ClassBodySyntax"/>.</returns>
+    private ClassBodySyntax ParseClassBody()
+    {
+        return this.PeekKind() switch
+        {
+            TokenKind.Semicolon => this.ParseEmptyClassBody(),
+            TokenKind.CurlyOpen => this.ParseBlockClassBody(),
+            _ => throw new NotImplementedException(),// TODO
+        };
+    }
+
+    /// <summary>
+    /// Parses an empty class body, which is just a semicolon.
+    /// </summary>
+    /// <returns>The parsed <see cref="EmptyClassBodySyntax"/>.</returns>
+    private EmptyClassBodySyntax ParseEmptyClassBody()
+    {
+        var semicolon = this.Expect(TokenKind.Semicolon);
+        return new EmptyClassBodySyntax(semicolon);
+    }
+
+    /// <summary>
+    /// Parses a block class body declared with curly braces.
+    /// </summary>
+    /// <returns>The parsed <see cref="BlockClassBodySyntax"/>.</returns>
+    private BlockClassBodySyntax ParseBlockClassBody()
+    {
+        var openBrace = this.Expect(TokenKind.CurlyOpen);
+        var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
+        while (true)
+        {
+            // Break on the end of the block
+            if (this.PeekKind() is TokenKind.EndOfInput or TokenKind.CurlyClose) break;
+
+            // Parse a declaration
+            var decl = this.ParseDeclaration(DeclarationContext.Global);
+            decls.Add(decl);
+        }
+        var closeBrace = this.Expect(TokenKind.CurlyClose);
+        return new(openBrace, decls.ToSyntaxList(), closeBrace);
+    }
+
+    /// <summary>
     /// Parses a <see cref="VariableDeclarationSyntax"/>.
     /// </summary>
     /// <param name="attributes">The attributes on the import.</param>
@@ -523,6 +605,7 @@ internal sealed class Parser(
     private VariableDeclarationSyntax ParseVariableDeclaration(
         SyntaxList<AttributeSyntax>? attributes,
         SyntaxToken? visibility,
+        SyntaxToken? global,
         DeclarationContext context)
     {
         if (context == DeclarationContext.Local && attributes is not null)
@@ -552,7 +635,7 @@ internal sealed class Parser(
         }
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(attributes, visibility, keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(attributes, visibility, global, keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
@@ -1514,6 +1597,8 @@ internal sealed class Parser(
     }
 
     private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.PeekKind()) ? this.Advance() : null;
+
+    private SyntaxToken? ParseGlobalModifier() => this.PeekKind() == TokenKind.KeywordGlobal ? this.Advance() : null;
 
     private bool CanBailOut(SyntaxNode node)
     {

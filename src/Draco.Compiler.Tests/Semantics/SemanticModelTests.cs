@@ -479,4 +479,32 @@ public sealed class SemanticModelTests
         Assert.True(nonexistingSymbol.IsError);
         Assert.True(fooSymbol.IsError);
     }
+
+    [Fact]
+    public void GetReferencedSymbolFromSourceClassSymbol()
+    {
+        // class Foo {
+        //     func bar() {}
+        // }
+
+        // Arrange
+        var tree = SyntaxTree.Create(CompilationUnit(ClassDeclaration(
+            "Foo",
+            GenericParameterList(),
+            [FunctionDeclaration("bar", ParameterList(), null, BlockFunctionBody())]
+        )));
+        var compilation = CreateCompilation(tree);
+        var classDecl = tree.GetNode<ClassDeclarationSyntax>(0);
+        Assert.NotNull(classDecl);
+
+        // Act
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var classSymbol = GetInternalSymbol<SourceClassSymbol>(semanticModel.GetDeclaredSymbol(classDecl));
+
+        // Assert
+        Assert.NotNull(classSymbol);
+        Assert.Equal("Foo", classSymbol.Name);
+        Assert.Empty(semanticModel.Diagnostics);
+        Assert.Equal("bar", classSymbol.Members.Single().Name);
+    }
 }

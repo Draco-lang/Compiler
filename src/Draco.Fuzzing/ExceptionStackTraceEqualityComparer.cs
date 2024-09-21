@@ -38,5 +38,5 @@ internal sealed class ExceptionStackTraceEqualityComparer : IEqualityComparer<Ex
         return x.StackTrace == y.StackTrace;
     }
 
-    public int GetHashCode([DisallowNull] Exception obj) => throw new NotImplementedException();
+    public int GetHashCode([DisallowNull] Exception obj) => HashCode.Combine(obj.GetType(), obj.Message, obj.StackTrace);
 }

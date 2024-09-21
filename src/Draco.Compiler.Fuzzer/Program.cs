@@ -9,6 +9,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
 using Draco.Fuzzing;
+using Terminal.Gui;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.Fuzzer;
@@ -22,6 +23,9 @@ internal static class Program
 
     private static void Main(string[] args)
     {
+        Application.Init();
+        var debuggerWindow = new TuiTracer();
+
         var fuzzer = new Fuzzer<SyntaxTree, int>
         {
             InstrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly),
@@ -30,7 +34,7 @@ internal static class Program
             TargetExecutor = TargetExecutor.Create((SyntaxTree tree) => RunCompilation(tree)),
             InputMinimizer = new SyntaxTreeInputMinimizer(),
             InputMutator = new SyntaxTreeInputMutator(),
-            Tracer = new ConsoleTracer(),
+            Tracer = debuggerWindow,
         };
 
         fuzzer.Enqueue(SyntaxTree.Parse("""
@@ -38,7 +42,13 @@ internal static class Program
             func foo() {}
             """));
 
-        fuzzer.Fuzz(CancellationToken.None);
+        Application.MainLoop.Invoke(() =>
+        {
+            fuzzer.Fuzz(CancellationToken.None);
+        });
+
+        Application.Run(Application.Top);
+        Application.Shutdown();
     }
 
     private static void RunCompilation(SyntaxTree syntaxTree)

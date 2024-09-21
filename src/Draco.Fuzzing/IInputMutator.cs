@@ -47,6 +47,13 @@ public static class InputMutator
     /// <returns>The mutator.</returns>
     public static IInputMutator<IReadOnlyList<TElement>> Remove<TElement>() => Create<IReadOnlyList<TElement>>(RemoveDelegate);
 
+    /// <summary>
+    /// Creates a mutator that randomly splices a range of elements from one position to another.
+    /// </summary>
+    /// <typeparam name="TElement">The type of the elements in the sequence.</typeparam>
+    /// <returns>The mutator.</returns>
+    public static IInputMutator<IReadOnlyList<TElement>> Splice<TElement>() => Create<IReadOnlyList<TElement>>(SpliceDelegate);
+
     private static IEnumerable<IReadOnlyList<TElement>> SwapDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
     {
         // Can't mutate a sequence with less than 2 elements
@@ -80,6 +87,31 @@ public static class InputMutator
 
             var inputClone = new List<TElement>(input);
             inputClone.RemoveRange(index, amount);
+            yield return inputClone;
+        }
+    }
+
+    private static IEnumerable<IReadOnlyList<TElement>> SpliceDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
+    {
+        // Can't mutate a sequence with less than 2 elements
+        if (input.Count < 2) yield break;
+
+        while (true)
+        {
+            var removeStart = random.Next(input.Count);
+            var insertStart = random.Next(input.Count);
+
+            if (removeStart == insertStart) continue;
+
+            var maxRemoveAmount = input.Count - removeStart;
+            if (maxRemoveAmount == 0) continue;
+
+            var removeAmount = random.Next(1, maxRemoveAmount);
+
+            var inputClone = new List<TElement>(input);
+            var removed = inputClone.GetRange(removeStart, removeAmount);
+            inputClone.RemoveRange(removeStart, removeAmount);
+            inputClone.InsertRange(insertStart, removed);
             yield return inputClone;
         }
     }

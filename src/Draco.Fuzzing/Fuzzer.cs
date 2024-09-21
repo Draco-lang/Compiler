@@ -171,7 +171,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
             // Call the tracer no matter what
             this.Tracer.InputFaulted(input, faultResult);
         }
-        var coverage = this.InstrumentedAssembly.GetCoverageResult();
+        var coverage = this.InstrumentedAssembly.CoverageResult;
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         return new(faultResult, coverage, compressedCoverage);
     }

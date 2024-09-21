@@ -299,7 +299,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     }
 
     private static double CoverageToPercentage(CoverageResult coverage) =>
-        coverage.Entires.Count(e => e.Hits > 0) / (double)coverage.Entires.Length;
+        coverage.Entries.Count(e => e.Hits > 0) / (double)coverage.Entries.Length;
 
     private static string FormatPercentage(double percentage) =>
         $"{(int)(percentage * 100),3}%";

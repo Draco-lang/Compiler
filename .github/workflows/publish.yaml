@@ -9,6 +9,9 @@ on:
       deploy-repl:
         type: boolean
         description: Deploy components of the REPL (Compiler, Chr, Repl)
+      deploy-coverage-tool:
+        type: boolean
+        description: Deploy the coverage tool (Coverage, Coverage.Toolset)
       deploy-langserver:
         type: boolean
         description: Deploy the language server (Compiler, Chr, LanguageServer, Lsp)
@@ -60,16 +63,22 @@ jobs:
     - name: Package .NET portion
       run: |
         cd src
+
         $sdkProjects = "Compiler", "Chr", "Compiler.Toolset", "Sdk", "ProjectTemplates"
         $replProjects = "Compiler", "Chr", "Repl"
+        $coverageToolProjects = "Coverage", "Coverage.Toolset"
         $langserverProjects = "Compiler", "Chr", "LanguageServer", "Lsp", "JsonRpc"
         $debugadapterProjects = "DebugAdapter", "Dap", "JsonRpc"
+        
         $projects = @()
 
         if ($${{ github.event.inputs.deploy-sdk }}) { $projects += $sdkProjects; }
         if ($${{ github.event.inputs.deploy-repl }}) { $projects += $replProjects; }
+        if ($${{ github.event.inputs.deploy-coverage-tool }}) { $projects += $coverageToolProjects; }
         if ($${{ github.event.inputs.deploy-langserver }}) { $projects += $langserverProjects; }
         if ($${{ github.event.inputs.deploy-debugadapter }}) { $projects += $debugadapterProjects; }
+
+        $projects = $projects | Select-Object -Unique
 
         $version = "${{ env.VERSION }}"
         if ($${{ env.PRERELEASE }}) { $version = "$version-pre"; }

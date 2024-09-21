@@ -10,7 +10,9 @@ namespace Draco.Compiler.Fuzzer;
 internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 {
     private readonly ProgressBar currentCoverageProgressBar;
+    private readonly Label currentCoveragePercentLabel;
     private readonly ProgressBar bestCoverageProgressBar;
+    private readonly Label bestCoveragePercentLabel;
 
     private double bestCoveragePercent = 0;
 
@@ -25,9 +27,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         {
             X = Pos.Right(currentCoverageLabel) + 1,
             Y = 0,
-            Width = Dim.Fill(),
+            Width = Dim.Fill(5),
             Height = 1,
             ProgressBarStyle = ProgressBarStyle.Continuous,
+        };
+        this.currentCoveragePercentLabel = new("  0%")
+        {
+            X = Pos.Right(this.currentCoverageProgressBar) + 1,
+            Y = 0,
         };
 
         var bestCoverageLabel = new Label("Best:   ")
@@ -39,9 +46,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         {
             X = Pos.Right(bestCoverageLabel) + 1,
             Y = 2,
-            Width = Dim.Fill(),
+            Width = Dim.Fill(5),
             Height = 1,
             ProgressBarStyle = ProgressBarStyle.Continuous,
+        };
+        this.bestCoveragePercentLabel = new("  0%")
+        {
+            X = Pos.Right(this.bestCoverageProgressBar) + 1,
+            Y = 2,
         };
 
         var frame = new FrameView("Coverage")
@@ -52,8 +64,8 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Sized(5),
         };
         frame.Add(
-            currentCoverageLabel, this.currentCoverageProgressBar,
-            bestCoverageLabel, this.bestCoverageProgressBar);
+            currentCoverageLabel, this.currentCoverageProgressBar, this.currentCoveragePercentLabel,
+            bestCoverageLabel, this.bestCoverageProgressBar, this.bestCoveragePercentLabel);
 
         this.Add(frame);
 
@@ -66,7 +78,10 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.bestCoveragePercent = Math.Max(this.bestCoveragePercent, currentCoveragePercent);
 
         this.currentCoverageProgressBar.Fraction = (float)currentCoveragePercent;
+        this.currentCoveragePercentLabel.Text = FormatPercentage(currentCoveragePercent);
+
         this.bestCoverageProgressBar.Fraction = (float)this.bestCoveragePercent;
+        this.bestCoveragePercentLabel.Text = FormatPercentage(this.bestCoveragePercent);
 
         Application.Refresh();
     }
@@ -81,4 +96,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     private static double CoverageToPercentage(CoverageResult coverage) =>
         coverage.Entires.Count(e => e.Hits > 0) / (double)coverage.Entires.Length;
+
+    private static string FormatPercentage(double percentage) =>
+        $"{(int)(percentage * 100),3}%";
 }

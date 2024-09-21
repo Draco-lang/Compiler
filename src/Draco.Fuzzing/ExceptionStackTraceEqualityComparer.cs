@@ -34,6 +34,12 @@ internal sealed class ExceptionStackTraceEqualityComparer : IEqualityComparer<Ex
         // One is not null
         if (x.InnerException is not null || y.InnerException is not null) return false;
 
+        // If both traces are null, all we have is the messages to compare
+        if (x.StackTrace is null && y.StackTrace is null) return x.Message == y.Message;
+
+        // NOTE: If we have traces, we don't compare messages, in case there is some specific
+        // name or identifier that would be an insignificant difference
+
         // Compare traces
         return x.StackTrace == y.StackTrace;
     }

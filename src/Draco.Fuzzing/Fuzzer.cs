@@ -104,10 +104,8 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
             var (minimalInput, executionResult) = this.Minimize(input);
             var endOfMinimization = this.stopwatch.Elapsed;
             this.Tracer.EndOfMinimization(input, minimalInput, executionResult.UncompressedCoverage, endOfMinimization - start);
-            // Test for fault
             if (executionResult.FaultResult.IsFaulted)
             {
-                this.Tracer.InputFaulted(minimalInput, executionResult.FaultResult);
                 // NOTE: Should we not skip mutating this input?
                 continue;
             }
@@ -173,6 +171,11 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     {
         this.InstrumentedAssembly.ClearCoverageData();
         var faultResult = this.FaultDetector.Execute(() => this.TargetExecutor.Execute(input, this.InstrumentedAssembly));
+        if (faultResult.IsFaulted)
+        {
+            // Call the tracer no matter what
+            this.Tracer.InputFaulted(input, faultResult);
+        }
         var coverage = this.InstrumentedAssembly.GetCoverageResult();
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         return new(faultResult, coverage, compressedCoverage);

@@ -30,16 +30,14 @@ public interface ITracer<TInput>
     /// <param name="input">The original input.</param>
     /// <param name="minimizedInput">The minimized input.</param>
     /// <param name="coverage">The coverage of the minimized input.</param>
-    /// <param name="elapsed">The time it took to minimize the input.</param>
-    public void EndOfMinimization(TInput input, TInput minimizedInput, CoverageResult coverage, TimeSpan elapsed);
+    public void EndOfMinimization(TInput input, TInput minimizedInput, CoverageResult coverage);
 
     /// <summary>
     /// Called when mutation of an input finishes.
     /// </summary>
     /// <param name="input">The original input.</param>
     /// <param name="mutationsFound">The number of mutations found.</param>
-    /// <param name="elapsed">The time it took to mutate the input.</param>
-    public void EndOfMutations(TInput input, int mutationsFound, TimeSpan elapsed);
+    public void EndOfMutations(TInput input, int mutationsFound);
 
     /// <summary>
     /// Called when an input faulted.

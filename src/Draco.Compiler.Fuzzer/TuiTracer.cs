@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
@@ -41,6 +42,11 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private readonly Label bestCoveragePercentLabel;
 
     private double bestCoveragePercent = 0;
+
+    // Timings
+    private readonly Label fuzzesPerSecondLabel;
+    private readonly Label averageTimePerFuzzLabel;
+    private readonly Stopwatch stopwatch = Stopwatch.StartNew();
 
     // Current input
     private readonly TextView currentInputTextView;
@@ -105,12 +111,32 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         {
             X = 0,
             Y = 0,
-            Width = Dim.Fill(),
+            Width = Dim.Percent(70),
             Height = Dim.Sized(5),
         };
         coverageFrameView.Add(
             currentCoverageLabel, this.currentCoverageProgressBar, this.currentCoveragePercentLabel,
             bestCoverageLabel, this.bestCoverageProgressBar, this.bestCoveragePercentLabel);
+
+        // Timings
+        this.fuzzesPerSecondLabel = new Label("Fuzz/s: 0")
+        {
+            X = 0,
+            Y = 0,
+        };
+        this.averageTimePerFuzzLabel = new Label("Avg/fuzz: 0ms")
+        {
+            X = 0,
+            Y = 2,
+        };
+        var timingsFrameView = new FrameView("Timings")
+        {
+            X = Pos.Right(coverageFrameView),
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Height(coverageFrameView),
+        };
+        timingsFrameView.Add(this.fuzzesPerSecondLabel, this.averageTimePerFuzzLabel);
 
         // Current input
         this.currentInputTextView = new()
@@ -219,10 +245,9 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         faultFrameView.Add(this.faultListView, this.selectedFaultItemTextView);
 
         this.Add(
-            coverageFrameView,
+            coverageFrameView, timingsFrameView,
             this.inputFrameView,
-            this.inputQueueFrameView,
-            faultFrameView);
+            this.inputQueueFrameView, faultFrameView);
 
         Application.Top.Add(this);
     }
@@ -240,7 +265,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         if (itemIndex >= 0) this.inputQueueList.RemoveAt(itemIndex);
     }
 
-    public void EndOfMinimization(SyntaxTree input, SyntaxTree minimizedInput, CoverageResult coverage, TimeSpan elapsed)
+    public void EndOfMinimization(SyntaxTree input, SyntaxTree minimizedInput, CoverageResult coverage)
     {
         var currentCoveragePercent = CoverageToPercentage(coverage);
         this.bestCoveragePercent = Math.Max(this.bestCoveragePercent, currentCoveragePercent);
@@ -256,9 +281,15 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         ++this.minimizedInputCounter;
         this.inputFrameView.Title = $"Input (Tested: {this.minimizedInputCounter})";
+
+        var totalElapsed = this.stopwatch.Elapsed;
+        var fuzzesPerSecond = this.minimizedInputCounter / totalElapsed.TotalSeconds;
+        var averageMillisecondsPerFuzz = totalElapsed.TotalMilliseconds / this.minimizedInputCounter;
+        this.fuzzesPerSecondLabel.Text = $"Fuzz/s: {fuzzesPerSecond:0.00}";
+        this.averageTimePerFuzzLabel.Text = $"Avg/fuzz: {averageMillisecondsPerFuzz:0.00}ms";
     }
 
-    public void EndOfMutations(SyntaxTree input, int mutationsFound, TimeSpan elapsed)
+    public void EndOfMutations(SyntaxTree input, int mutationsFound)
     {
     }
 

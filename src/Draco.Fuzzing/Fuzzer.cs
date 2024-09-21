@@ -66,7 +66,6 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
 
     private readonly Queue<TInput> inputQueue = new();
     private readonly HashSet<TCoverage> discoveredCoverages = new();
-    private readonly Stopwatch stopwatch = new();
 
     /// <summary>
     /// Enqueues the given input.
@@ -95,15 +94,12 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     public void Fuzz(CancellationToken cancellationToken)
     {
         this.ForceAllTypeInitializersToRun();
-        this.stopwatch.Start();
         while (!cancellationToken.IsCancellationRequested && this.inputQueue.TryDequeue(out var input))
         {
             this.Tracer.InputDequeued(input, this.inputQueue);
-            var start = this.stopwatch.Elapsed;
             // Minimize the input
             var (minimalInput, executionResult) = this.Minimize(input);
-            var endOfMinimization = this.stopwatch.Elapsed;
-            this.Tracer.EndOfMinimization(input, minimalInput, executionResult.UncompressedCoverage, endOfMinimization - start);
+            this.Tracer.EndOfMinimization(input, minimalInput, executionResult.UncompressedCoverage);
             if (executionResult.FaultResult.IsFaulted)
             {
                 // NOTE: Should we not skip mutating this input?
@@ -118,8 +114,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
                 this.Enqueue(mutated);
                 ++mutationsFound;
             }
-            var endOfMutations = this.stopwatch.Elapsed;
-            this.Tracer.EndOfMutations(minimalInput, mutationsFound, endOfMutations - endOfMinimization);
+            this.Tracer.EndOfMutations(minimalInput, mutationsFound);
         }
     }
 

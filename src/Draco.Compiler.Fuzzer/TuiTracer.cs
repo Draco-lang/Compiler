@@ -201,6 +201,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Width = Dim.Fill(),
             Height = Dim.Fill(),
         };
+        faultFrame.Add(this.faultListView, this.selectedFaultItemTextView);
 
         this.Add(
             coverageFrame,

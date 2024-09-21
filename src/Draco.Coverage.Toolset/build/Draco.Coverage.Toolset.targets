@@ -10,8 +10,11 @@
         </ItemGroup>
 
         <CoverageWeaveTask
-            InputPath="@(ReferencesWithWeave->'$(OutDir)%(Filename)%(Extension)')"
-            OutputPath="@(ReferencesWithWeave->'$(OutDir)%(Filename)%(Extension)')" />
+            InputPaths="@(ReferencesWithWeave->'$(OutDir)%(Filename)%(Extension)')"
+            OutputPaths="@(ReferencesWithWeave->'$(OutDir)%(Filename)%(Extension)')"
+            WeaverPath="$(MSBuildThisFileDirectory)..\tools\Draco.Coverage.Cli.dll"
+		    ToolPath="$(DotNetHostDirectory)"
+			ToolExe="$(DotNetHostFileName)"/>
     </Target>
     
 </Project>

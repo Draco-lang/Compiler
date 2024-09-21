@@ -1,5 +1,0 @@
-<Project>
-  
-  <UsingTask TaskName="CoverageWeaveTask" AssemblyFile="$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Draco.Coverage.MSBuild.dll" />
-  
-</Project>

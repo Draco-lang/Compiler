@@ -11,7 +11,7 @@ on:
         description: Deploy components of the REPL (Compiler, Chr, Repl)
       deploy-coverage-tool:
         type: boolean
-        description: Deploy the coverage tool (Coverage, Coverage.MSBuild)
+        description: Deploy the coverage tool (Coverage, Coverage.Toolset)
       deploy-langserver:
         type: boolean
         description: Deploy the language server (Compiler, Chr, LanguageServer, Lsp)
@@ -66,7 +66,7 @@ jobs:
 
         $sdkProjects = "Compiler", "Chr", "Compiler.Toolset", "Sdk", "ProjectTemplates"
         $replProjects = "Compiler", "Chr", "Repl"
-        $coverageToolProjects = "Coverage", "Coverage.MSBuild"
+        $coverageToolProjects = "Coverage", "Coverage.Toolset"
         $langserverProjects = "Compiler", "Chr", "LanguageServer", "Lsp", "JsonRpc"
         $debugadapterProjects = "DebugAdapter", "Dap", "JsonRpc"
         

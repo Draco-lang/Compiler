@@ -9,6 +9,7 @@ namespace Draco.Compiler.Fuzzer;
 
 internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 {
+    // Coverage info
     private readonly ProgressBar currentCoverageProgressBar;
     private readonly Label currentCoveragePercentLabel;
     private readonly ProgressBar bestCoverageProgressBar;
@@ -16,8 +17,13 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     private double bestCoveragePercent = 0;
 
+    // Current input
+    private readonly TextView currentInputTextView;
+    private readonly TextView minimizedInputTextView;
+
     public TuiTracer()
     {
+        // Coverage info
         var currentCoverageLabel = new Label("Current:")
         {
             X = 0,
@@ -55,19 +61,64 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             X = Pos.Right(this.bestCoverageProgressBar) + 1,
             Y = 2,
         };
-
-        var frame = new FrameView("Coverage")
+        var coverageFrame = new FrameView("Coverage")
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Sized(5),
         };
-        frame.Add(
+        coverageFrame.Add(
             currentCoverageLabel, this.currentCoverageProgressBar, this.currentCoveragePercentLabel,
             bestCoverageLabel, this.bestCoverageProgressBar, this.bestCoveragePercentLabel);
 
-        this.Add(frame);
+        // Current input
+        this.currentInputTextView = new()
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            ReadOnly = true,
+        };
+        var currentInputFrame = new FrameView("Current")
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Percent(50),
+            Height = Dim.Fill(),
+        };
+        currentInputFrame.Add(this.currentInputTextView);
+
+        this.minimizedInputTextView = new()
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            ReadOnly = true,
+        };
+        var minimizedInputFrame = new FrameView("Minimized")
+        {
+            X = Pos.Right(currentInputFrame),
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+        };
+        minimizedInputFrame.Add(this.minimizedInputTextView);
+
+        var inputFrame = new FrameView("Input")
+        {
+            X = 0,
+            Y = Pos.Bottom(coverageFrame),
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+        };
+        inputFrame.Add(currentInputFrame, minimizedInputFrame);
+
+        this.Add(
+            coverageFrame,
+            inputFrame);
 
         Application.Top.Add(this);
     }
@@ -82,6 +133,9 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         this.bestCoverageProgressBar.Fraction = (float)this.bestCoveragePercent;
         this.bestCoveragePercentLabel.Text = FormatPercentage(this.bestCoveragePercent);
+
+        this.currentInputTextView.Text = input.ToString();
+        this.minimizedInputTextView.Text = minimizedInput.ToString();
 
         Application.Refresh();
     }

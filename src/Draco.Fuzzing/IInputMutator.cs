@@ -50,7 +50,7 @@ public static class InputMutator
     private static IEnumerable<IReadOnlyList<TElement>> SwapDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
     {
         // Can't mutate a sequence with less than 2 elements
-        if (input.Count < 2) yield return input;
+        if (input.Count < 2) yield break;
 
         while (true)
         {

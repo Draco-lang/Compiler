@@ -34,13 +34,7 @@ internal static class Program
         };
 
         fuzzer.Enqueue(SyntaxTree.Parse("""
-            func foo() {}
-            func bar() {}
-            func baz() {}
-            func qux() {}
-            func asd() {}
-            func sdf() {}
-            func dfg() {}
+            func main() {}
             """));
 
         fuzzer.Fuzz(CancellationToken.None);

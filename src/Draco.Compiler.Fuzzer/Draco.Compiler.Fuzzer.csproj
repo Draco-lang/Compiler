@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Draco.Coverage.Toolset" Version="0.1.6-pre" />
+    <PackageReference Include="Draco.Coverage.Toolset" Version="0.1.7-pre" />
     <PackageReference Include="Basic.Reference.Assemblies.Net80" Version="1.4.5" />
   </ItemGroup>
 

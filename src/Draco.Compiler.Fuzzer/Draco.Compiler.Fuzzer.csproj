@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" InstrumentCoverage="True" />
-    <ProjectReference Include="..\Draco.Chr\Draco.Chr.csproj" />
     <ProjectReference Include="..\Draco.Fuzzing\Draco.Fuzzing.csproj" />
   </ItemGroup>
 

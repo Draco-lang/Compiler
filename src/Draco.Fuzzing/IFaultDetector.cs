@@ -27,7 +27,7 @@ public static class FaultDetector
     /// </summary>
     /// <param name="timeout">The timeout for the action.</param>
     /// <returns>The fault detector.</returns>
-    public static IFaultDetector Default(TimeSpan? timeout) => new DefaultFaultDetector(timeout ?? TimeSpan.MaxValue);
+    public static IFaultDetector Default(TimeSpan? timeout = null) => new DefaultFaultDetector(timeout ?? TimeSpan.MaxValue);
 
     private sealed class DefaultFaultDetector(TimeSpan timeout) : IFaultDetector
     {

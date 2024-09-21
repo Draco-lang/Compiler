@@ -200,7 +200,9 @@ public sealed class Compilation : IBinderProvider
     /// <summary>
     /// A compile-time executor engine.
     /// </summary>
-    internal CompileTimeExecutor CompileTimeExecutor { get; }
+    internal CompileTimeExecutor CompileTimeExecutor =>
+        LazyInitializer.EnsureInitialized(ref this.compileTimeExecutor, this.BuildCompileTimeExecutor);
+    private CompileTimeExecutor? compileTimeExecutor;
 
     private readonly BinderCache binderCache;
     private readonly ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels = new();
@@ -238,7 +240,6 @@ public sealed class Compilation : IBinderProvider
         this.TypeProvider = typeProvider ?? new TypeProvider(new RawTypeProvider(this));
         this.binderCache = binderCache ?? new BinderCache(this);
         this.ConstantEvaluator = new(this);
-        this.CompileTimeExecutor = new(this);
     }
 
     /// <summary>
@@ -425,9 +426,12 @@ public sealed class Compilation : IBinderProvider
             .Cast<ModuleSymbol>()
             .Append(this.SourceModule)
             .ToImmutableArray());
+
     private MetadataAssemblySymbol BuildMetadataAssembly(MetadataReference metadataReference) =>
         // NOTE: In case the dict is carried on into another compilation,
         // the metadata compilation will have an outdated ref to the compilation
         // I don't know if this will cause any problems in the future
         new(this, metadataReference.MetadataReader, metadataReference.Documentation);
+
+    private CompileTimeExecutor BuildCompileTimeExecutor() => new(this);
 }

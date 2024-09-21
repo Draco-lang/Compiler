@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Draco.Coverage;
 
@@ -82,6 +83,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="cancellationToken">The cancellation token to cancel the fuzzing process.</param>
     public void Fuzz(CancellationToken cancellationToken)
     {
+        this.ForceAllTypeInitializersToRun();
         this.stopwatch.Start();
         while (!cancellationToken.IsCancellationRequested && this.inputQueue.TryDequeue(out var input))
         {
@@ -106,6 +108,14 @@ public sealed class Fuzzer<TInput, TCoverage>
             }
             var endOfMutations = this.stopwatch.Elapsed;
             this.Tracer.EndOfMutations(minimalInput, mutationsFound, endOfMutations - endOfMinimization);
+        }
+    }
+
+    private void ForceAllTypeInitializersToRun()
+    {
+        foreach (var type in this.InstrumentedAssembly.WeavedAssembly.GetTypes())
+        {
+            RuntimeHelpers.RunClassConstructor(type.TypeHandle);
         }
     }
 

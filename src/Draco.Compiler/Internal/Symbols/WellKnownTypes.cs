@@ -257,7 +257,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         var assemblyName = new AssemblyName() { Name = name };
         assemblyName.SetPublicKeyToken(token);
         return compilation.MetadataAssemblies
-            .SingleOrDefault(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName))
+            .FirstOrDefault(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName))
             ?? throw new InvalidOperationException($"Failed to locate assembly with name '{name}' and public key token '{BitConverter.ToString(token)}'.");
     }
 

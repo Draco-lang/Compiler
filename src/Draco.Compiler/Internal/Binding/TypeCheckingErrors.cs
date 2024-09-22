@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -6,6 +7,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Holds constants for type checking errors.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class TypeCheckingErrors
 {
     private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.TypeChecking, index);

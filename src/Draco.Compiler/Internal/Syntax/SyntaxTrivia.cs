@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -6,6 +7,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// Elements of the source that are not significant for the semantics, like spaces and comments.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed class SyntaxTrivia(TriviaKind kind, string text) : SyntaxNode
 {
     /// <summary>

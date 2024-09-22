@@ -45,4 +45,9 @@ public interface ITracer<TInput>
     /// <param name="input">The input that faulted.</param>
     /// <param name="fault">The fault result.</param>
     public void InputFaulted(TInput input, FaultResult fault);
+
+    /// <summary>
+    /// Called when the fuzzer finishes, because the queue is empty.
+    /// </summary>
+    public void FuzzerFinished();
 }

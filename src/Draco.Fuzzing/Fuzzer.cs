@@ -116,6 +116,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
             }
             this.Tracer.EndOfMutations(minimalInput, mutationsFound);
         }
+        this.Tracer.FuzzerFinished();
     }
 
     private void ForceAllTypeInitializersToRun()

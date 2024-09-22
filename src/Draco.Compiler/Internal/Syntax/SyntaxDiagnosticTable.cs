@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
@@ -10,6 +11,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// A container for syntax diagnostic messages.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal readonly struct SyntaxDiagnosticTable
 {
     /// <summary>

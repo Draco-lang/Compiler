@@ -298,6 +298,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.faultList.Add(new(input, fault));
     }
 
+    public void FuzzerFinished()
+    {
+        // Show a message box
+        MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
+    }
+
     private static double CoverageToPercentage(CoverageResult coverage) =>
         coverage.Hits.Count(h => h > 0) / (double)coverage.Hits.Length;
 

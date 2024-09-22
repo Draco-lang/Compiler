@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 
@@ -12,6 +13,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// A single token in the source code, possibly surrounded by trivia.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed partial class SyntaxToken(
     TokenKind kind,
     string text,

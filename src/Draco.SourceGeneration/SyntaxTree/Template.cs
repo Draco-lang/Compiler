@@ -240,7 +240,7 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
             whenFalse: $$"""
                 {{FieldPrefix(field)}} =>
                 {{When(field.IsNullable,
-                    "Internal.InterlockedUtils.InitializeMaybeNull(",
+                    "Internal.Utilities.InterlockedUtils.InitializeMaybeNull(",
                     "System.Threading.LazyInitializer.EnsureInitialized(")}}
                     ref this.{{CamelCase(field.Name)}},
                     () => ({{field.Type}})this.Green.{{field.Name}}{{Nullable(field)}}

@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
 namespace Draco.Compiler.Internal.Utilities;
 
+[ExcludeFromCodeCoverage]
 internal static class DotAttribs
 {
     public enum RankDir
@@ -30,9 +32,11 @@ internal static class DotAttribs
 /// Builds DOT graphs with a safe API.
 /// </summary>
 /// <typeparam name="TVertex">The vertex type mapped.</typeparam>
+[ExcludeFromCodeCoverage]
 internal sealed class DotGraphBuilder<TVertex>
     where TVertex : notnull
 {
+    [ExcludeFromCodeCoverage]
     public sealed class VertexBuilder
     {
         private readonly VertexInfo info;

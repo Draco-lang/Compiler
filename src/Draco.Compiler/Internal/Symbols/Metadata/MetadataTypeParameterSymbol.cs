@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 

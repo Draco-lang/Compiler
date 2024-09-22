@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Syntax;
 

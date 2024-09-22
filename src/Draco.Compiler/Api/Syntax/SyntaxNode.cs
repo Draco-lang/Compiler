@@ -5,7 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax.Extensions;
-using Draco.Compiler.Internal;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api.Syntax;
 

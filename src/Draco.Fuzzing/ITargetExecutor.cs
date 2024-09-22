@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Draco.Coverage;
 
 namespace Draco.Fuzzing;
@@ -30,6 +31,28 @@ public static class TargetExecutor
     /// <returns>The target executor.</returns>
     public static ITargetExecutor<TInput> Create<TInput>(Action<TInput> action) =>
         new DelegateTargetExecutor<TInput>(action);
+
+    /// <summary>
+    /// Creates a target executor that starts an external process.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input data.</typeparam>
+    /// <param name="func">The function to create the process start info from the input.</param>
+    /// <param name="processReference">The reference to the process being executed.</param>
+    /// <returns>The target executor.</returns>
+    public static ITargetExecutor<TInput> Process<TInput>(
+        Func<TInput, ProcessStartInfo> func,
+        out ProcessReference processReference)
+    {
+        var processRef = new ProcessReference();
+        processReference = processRef;
+        return Create<TInput>(input =>
+        {
+            var startInfo = func(input);
+            var process = new Process { StartInfo = startInfo };
+            processRef.Process = process;
+            process.Start();
+        });
+    }
 
     private sealed class DelegateTargetExecutor<TInput>(Action<TInput> action) : ITargetExecutor<TInput>
     {

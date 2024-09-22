@@ -57,6 +57,20 @@ public static class FaultDetector
     });
 
     /// <summary>
+    /// Creates a default fault detector that detects nonzero exit codes and timeouts of a process.
+    /// </summary>
+    /// <param name="processReference">The process reference.</param>
+    /// <param name="timeout">The timeout for the process.</param>
+    /// <returns>The fault detector.</returns>
+    public static IFaultDetector DefaultOutOfProcess(ProcessReference processReference, TimeSpan? timeout = null) => Create(action =>
+    {
+        timeout ??= TimeSpan.MaxValue;
+        if (!processReference.Process.WaitForExit(timeout.Value)) return FaultResult.Timeout(timeout.Value);
+        if (processReference.Process.ExitCode != 0) return FaultResult.Code(processReference.Process.ExitCode);
+        return FaultResult.Ok;
+    });
+
+    /// <summary>
     /// Creates a fault detector that filters out identical traces, so they are only reported once.
     /// </summary>
     /// <param name="innerDetector">The inner fault detector.</param>

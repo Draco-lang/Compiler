@@ -18,8 +18,8 @@ internal sealed class SyntaxTreeInputMinimizer : IInputMinimizer<SyntaxTree>
             .ToList();
         if (targets.Count == 0) yield break;
 
-        // Just try 5 random samples
-        for (var i = 0; i < 5; i++)
+        // Just try a few random samples
+        for (var i = 0; i < 15; i++)
         {
             var target = targets[random.Next(targets.Count)];
             yield return input.Remove(target);

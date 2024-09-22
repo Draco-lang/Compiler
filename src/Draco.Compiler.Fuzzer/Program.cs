@@ -17,8 +17,9 @@ namespace Draco.Compiler.Fuzzer;
 
 internal static class Program
 {
-    private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
-        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
+    private static ImmutableArray<MetadataReference> BclReferences { get; } = ReferenceInfos.All
+        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+        .ToImmutableArray();
 
     private static readonly MemoryStream peStream = new();
 
@@ -65,7 +66,7 @@ internal static class Program
         peStream.Position = 0;
         var compilation = Compilation.Create(
             syntaxTrees: [syntaxTree],
-            metadataReferences: BclReferences.ToImmutableArray());
+            metadataReferences: BclReferences);
         compilation.Emit(peStream: peStream);
     }
 }

@@ -26,6 +26,15 @@ internal sealed class SyntaxTreeInputMutator : IInputMutator<SyntaxTree>
         foreach (var mutantList in splicer.Mutate(random, tokens).Take(5)) yield return TokenListToSyntaxList(mutantList);
     }
 
-    private static SyntaxTree TokenListToSyntaxList(IEnumerable<SyntaxToken> tokens) =>
-        SyntaxTree.Parse(string.Join(" ", tokens.Select(t => t.Text))).Format();
+    private static SyntaxTree TokenListToSyntaxList(IEnumerable<SyntaxToken> tokens)
+    {
+        var result = SyntaxTree.Parse(string.Join(" ", tokens.Select(t => t.Text)));
+        // NOTE: As much as this sucks, Format() throws away all diagnostics...
+        // This leads to tons of fake errors being randomly discovered
+        // For now, we re-parse the tree after formatting to get back the diagnostics
+        // Long-term we need a smarter formatter that can track changed nodes and their diags
+        // OR this could be something we'll never support
+        result = SyntaxTree.Parse(result.Format().ToString());
+        return result;
+    }
 }

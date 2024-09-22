@@ -238,7 +238,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     }
 
     public MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
-        assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
+        assembly.Lookup(path).OfType<MetadataTypeSymbol>().First();
 
     public Symbol GetDotnetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)
     {
@@ -247,10 +247,10 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     }
 
     public Symbol GetDotnetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
-        assembly.Lookup(path).Where(s => s.IsDotnetType).Single();
+        assembly.Lookup(path).Where(s => s.IsDotnetType).First();
 
     private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>
-        compilation.MetadataAssemblies.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
+        compilation.MetadataAssemblies.First(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
 
     private MetadataAssemblySymbol GetAssemblyWithNameAndToken(string name, byte[] token)
     {

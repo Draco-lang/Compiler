@@ -152,7 +152,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             X = 0,
             Y = 0,
             Width = Dim.Percent(50),
-            Height = Dim.Fill(1),
+            Height = Dim.Fill(),
         };
         currentInputFrameView.Add(this.currentInputTextView);
 

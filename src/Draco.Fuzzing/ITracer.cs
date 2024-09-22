@@ -50,3 +50,26 @@ public interface ITracer<TInput>
     /// </summary>
     public void FuzzerFinished();
 }
+
+/// <summary>
+/// A tracer that does nothing.
+/// </summary>
+/// <typeparam name="T">The type of the input data.</typeparam>
+public sealed class NullTracer<T> : ITracer<T>
+{
+    /// <summary>
+    /// The singleton instance of the null tracer.
+    /// </summary>
+    public static NullTracer<T> Instance { get; } = new();
+
+    private NullTracer()
+    {
+    }
+
+    public void EndOfMinimization(T input, T minimizedInput, CoverageResult coverage) { }
+    public void EndOfMutations(T input, int mutationsFound) { }
+    public void FuzzerFinished() { }
+    public void InputDequeued(T input, IReadOnlyCollection<T> inputQueue) { }
+    public void InputFaulted(T input, FaultResult fault) { }
+    public void InputsEnqueued(IEnumerable<T> inputs, IReadOnlyCollection<T> inputQueue) { }
+}

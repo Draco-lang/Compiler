@@ -30,11 +30,11 @@ public static class FaultDetector
     public static IFaultDetector Create(Func<Action, FaultResult> func) => new DelegateFaultDetector(func);
 
     /// <summary>
-    /// Creates a default fault detector that catches exceptions and timeouts.
+    /// Creates a default fault detector that catches exceptions and timeouts in-process.
     /// </summary>
     /// <param name="timeout">The timeout for the action.</param>
     /// <returns>The fault detector.</returns>
-    public static IFaultDetector Default(TimeSpan? timeout = null) => Create(action =>
+    public static IFaultDetector DefaultInProcess(TimeSpan? timeout = null) => Create(action =>
     {
         timeout ??= TimeSpan.MaxValue;
         var exception = null as Exception;
@@ -56,6 +56,11 @@ public static class FaultDetector
         return FaultResult.Ok;
     });
 
+    /// <summary>
+    /// Creates a fault detector that filters out identical traces, so they are only reported once.
+    /// </summary>
+    /// <param name="innerDetector">The inner fault detector.</param>
+    /// <returns>The fault detector.</returns>
     public static IFaultDetector FilterIdenticalTraces(IFaultDetector innerDetector)
     {
         var exceptionCache = new HashSet<Exception>(ExceptionStackTraceEqualityComparer.Instance);

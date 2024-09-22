@@ -32,7 +32,7 @@ internal static class Program
         {
             InstrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly),
             CoverageCompressor = CoverageCompressor.SimdHash,
-            FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.Default(TimeSpan.FromSeconds(5))),
+            FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.DefaultInProcess(TimeSpan.FromSeconds(5))),
             TargetExecutor = TargetExecutor.Create((SyntaxTree tree) => RunCompilation(tree)),
             InputMinimizer = new SyntaxTreeInputMinimizer(),
             InputMutator = new SyntaxTreeInputMutator(),

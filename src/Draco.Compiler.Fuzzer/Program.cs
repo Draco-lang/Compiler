@@ -23,6 +23,8 @@ internal static class Program
 
     private static readonly MemoryStream peStream = new();
 
+    private static Compilation? previousCompilation;
+
     private static async Task Main(string[] args)
     {
         Application.Init();
@@ -62,11 +64,20 @@ internal static class Program
 
     private static void RunCompilation(SyntaxTree syntaxTree)
     {
+        // Cache compilation to optimize discovered metadata references
+        if (previousCompilation is null)
+        {
+            previousCompilation = Compilation.Create(
+                syntaxTrees: [syntaxTree],
+                metadataReferences: BclReferences);
+        }
+        else
+        {
+            previousCompilation = previousCompilation
+                .UpdateSyntaxTree(previousCompilation.SyntaxTrees[0], syntaxTree);
+        }
         // NOTE: We reuse the same memory stream to de-stress memory usage a little
         peStream.Position = 0;
-        var compilation = Compilation.Create(
-            syntaxTrees: [syntaxTree],
-            metadataReferences: BclReferences);
-        compilation.Emit(peStream: peStream);
+        previousCompilation.Emit(peStream: peStream);
     }
 }

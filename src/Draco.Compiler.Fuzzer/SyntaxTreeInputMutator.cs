@@ -15,6 +15,8 @@ internal sealed class SyntaxTreeInputMutator : IInputMutator<SyntaxTree>
         var swapper = InputMutator.Swap<SyntaxToken>();
         var remover = InputMutator.Remove<SyntaxToken>();
         var splicer = InputMutator.Splice<SyntaxToken>();
+        var copier = InputMutator.Copy<SyntaxToken>();
+
         var tokens = input.Root.Tokens.ToList();
         // The last token is the EOF token, we don't want to use that
         tokens.RemoveAt(tokens.Count - 1);
@@ -24,6 +26,8 @@ internal sealed class SyntaxTreeInputMutator : IInputMutator<SyntaxTree>
         foreach (var mutantList in remover.Mutate(random, tokens).Take(5)) yield return TokenListToSyntaxList(mutantList);
         // We also try to splice tokens
         foreach (var mutantList in splicer.Mutate(random, tokens).Take(5)) yield return TokenListToSyntaxList(mutantList);
+        // We also try to copy tokens
+        foreach (var mutantList in copier.Mutate(random, tokens).Take(5)) yield return TokenListToSyntaxList(mutantList);
     }
 
     private static SyntaxTree TokenListToSyntaxList(IEnumerable<SyntaxToken> tokens)

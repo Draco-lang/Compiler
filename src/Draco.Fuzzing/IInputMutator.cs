@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Draco.Fuzzing;
 
@@ -52,6 +53,13 @@ public static class InputMutator
     /// <typeparam name="TElement">The type of the elements in the sequence.</typeparam>
     /// <returns>The mutator.</returns>
     public static IInputMutator<IReadOnlyList<TElement>> Splice<TElement>() => Create<IReadOnlyList<TElement>>(SpliceDelegate);
+
+    /// <summary>
+    /// Creates a mutator that copies a range of elements and pastes it at a random position.
+    /// </summary>
+    /// <typeparam name="TElement">The type of the elements in the sequence.</typeparam>
+    /// <returns>The mutator.</returns>
+    public static IInputMutator<IReadOnlyList<TElement>> Copy<TElement>() => Create<IReadOnlyList<TElement>>(CopyDelegate);
 
     private static IEnumerable<IReadOnlyList<TElement>> SwapDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
     {
@@ -112,6 +120,27 @@ public static class InputMutator
             var removed = inputClone.GetRange(removeStart, removeAmount);
             inputClone.RemoveRange(removeStart, removeAmount);
             inputClone.InsertRange(insertStart, removed);
+            yield return inputClone;
+        }
+    }
+
+    // Copies a range of the input and pastes it at a random position
+    private static IEnumerable<IReadOnlyList<TElement>> CopyDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
+    {
+        // Empty sequence won't get anything by copying
+        if (input.Count == 0) yield break;
+
+        while (true)
+        {
+            var copyStart = random.Next(input.Count);
+            var maxCopyAmount = input.Count - copyStart;
+            if (maxCopyAmount == 0) continue;
+            var copyAmount = random.Next(1, maxCopyAmount);
+            var insertStart = random.Next(input.Count);
+
+            var inputClone = new List<TElement>(input);
+            var copied = inputClone.GetRange(copyStart, copyAmount);
+            inputClone.InsertRange(insertStart, copied);
             yield return inputClone;
         }
     }

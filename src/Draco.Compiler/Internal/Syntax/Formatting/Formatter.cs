@@ -38,8 +38,10 @@ internal sealed class Formatter : SyntaxVisitor
         // TODO: Is it correct to assume compilation unit?
         var formattedRoot = parser.ParseCompilationUnit();
 
-        // NOTE: We drop path
-        return SyntaxTree.Create(formattedRoot, syntaxDiagnostics: tree.SyntaxDiagnosticTable);
+        return SyntaxTree.Create(
+            root: formattedRoot,
+            path: tree.SourceText.Path,
+            syntaxDiagnostics: tree.SyntaxDiagnosticTable);
     }
 
     /// <summary>

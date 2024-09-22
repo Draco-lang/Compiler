@@ -22,10 +22,22 @@ public sealed class SyntaxTree
 
     internal static SyntaxTree Create(
         Internal.Syntax.SyntaxNode root,
+        SyntaxDiagnosticTable syntaxDiagnostics) => Create(root: root, path: null as Uri, syntaxDiagnostics: syntaxDiagnostics);
+
+    internal static SyntaxTree Create(
+        Internal.Syntax.SyntaxNode root,
         string? path = null,
+        SyntaxDiagnosticTable syntaxDiagnostics = default) => Create(
+            root: root,
+            path: path is null ? null : new Uri(path),
+            syntaxDiagnostics: syntaxDiagnostics);
+
+    internal static SyntaxTree Create(
+        Internal.Syntax.SyntaxNode root,
+        Uri? path = null,
         SyntaxDiagnosticTable syntaxDiagnostics = default) => new(
         sourceText: SourceText.FromText(
-            path: path is null ? null : new Uri(path),
+            path: path,
             text: root.ToCode().AsMemory()),
         greenRoot: root,
         syntaxDiagnostics: syntaxDiagnostics);

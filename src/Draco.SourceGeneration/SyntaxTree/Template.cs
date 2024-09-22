@@ -7,6 +7,8 @@ namespace Draco.SourceGeneration.SyntaxTree;
 internal static class Template
 {
     public static string GenerateTokens(Tree tree) => FormatCSharp($$"""
+using System.Diagnostics.CodeAnalysis;
+
 namespace Draco.Compiler.Api.Syntax;
 
 #nullable enable
@@ -49,6 +51,7 @@ public static partial class SyntaxFactory
 
     public static string GenerateGreenTree(Tree tree) => FormatCSharp($$"""
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -80,6 +83,7 @@ internal abstract partial class SyntaxVisitor<TResult>
 
     public static string GenerateRedTree(Tree tree) => FormatCSharp($$"""
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -117,6 +121,7 @@ public static partial class SyntaxFactory
 
     public static string GenerateRewriters(Tree tree) => FormatCSharp($$"""
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Internal.Syntax;
     
 namespace Draco.Compiler.Internal.Syntax.Rewriting;
@@ -138,6 +143,7 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
     /// <summary>
     /// {{EscapeXml(node.Documentation)}}
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal {{ClassHeader(node)}}
     {
         {{ForEach(node.Fields, field => $"{FieldPrefix(field)} {{ get; }}")}}
@@ -231,6 +237,7 @@ internal abstract partial class SyntaxRewriter : SyntaxVisitor<{{tree.Root.Name}
     /// <summary>
     /// {{EscapeXml(node.Documentation)}}
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public {{ClassHeader(node)}}
     {
         {{ForEach(node.Fields, field => When(field.Abstract,

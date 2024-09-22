@@ -1,8 +1,10 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Draco.Compiler.Internal.BoundTree;
 
+[ExcludeFromCodeCoverage]
 internal abstract partial class BoundTreeRewriter
 {
     public ImmutableArray<TNode> VisitArray<TNode>(ImmutableArray<TNode> array)

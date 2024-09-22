@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
@@ -9,6 +10,7 @@ namespace Draco.Compiler.Internal.BoundTree;
 /// <summary>
 /// The base for all bound nodes in the bound tree.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal abstract partial class BoundNode(SyntaxNode? syntax)
 {
     public SyntaxNode? Syntax { get; } = syntax;

@@ -3,8 +3,7 @@ using static Draco.Compiler.Tests.TestUtilities;
 
 namespace Draco.Compiler.Tests.EndToEnd;
 
-// https://github.com/Draco-lang/Compiler/issues/139
-public sealed class Issue139Tests
+public sealed class DoesNotCrashTests
 {
     [InlineData("""
         func main() {

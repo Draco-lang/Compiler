@@ -152,7 +152,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             X = 0,
             Y = 0,
             Width = Dim.Percent(50),
-            Height = Dim.Fill(),
+            Height = Dim.Fill(1),
         };
         currentInputFrameView.Add(this.currentInputTextView);
 
@@ -244,10 +244,17 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         };
         faultFrameView.Add(this.faultListView, this.selectedFaultItemTextView);
 
+        var statusBar = new StatusBar(
+        [
+            new StatusItem(Key.CtrlMask | Key.F, "~^F~ Cpy Fault", () =>
+                Clipboard.TrySetClipboardData(this.selectedFaultItemTextView.Text.ToString())),
+        ]);
+
         this.Add(
             coverageFrameView, timingsFrameView,
             this.inputFrameView,
-            this.inputQueueFrameView, faultFrameView);
+            this.inputQueueFrameView, faultFrameView,
+            statusBar);
 
         Application.Top.Add(this);
     }

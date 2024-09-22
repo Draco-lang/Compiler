@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Draco.Compiler.Api.Syntax;
 
 /// <summary>
 /// A single token in the source code, possibly surrounded by trivia.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class SyntaxTrivia : SyntaxNode
 {
     /// <summary>

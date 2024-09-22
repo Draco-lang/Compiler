@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -6,6 +7,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// <summary>
 /// A single token in the source code, possibly surrounded by trivia.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class SyntaxToken : SyntaxNode
 {
     /// <summary>

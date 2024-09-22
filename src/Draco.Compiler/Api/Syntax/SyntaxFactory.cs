@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Syntax.Rewriting;
@@ -10,6 +11,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// <summary>
 /// Utilities for constructing <see cref="SyntaxNode"/>s.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public static partial class SyntaxFactory
 {
     // REWRITERS ///////////////////////////////////////////////////////////////

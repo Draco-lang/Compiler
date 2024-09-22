@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Draco.Compiler.Internal.Syntax;
 
+[ExcludeFromCodeCoverage]
 internal abstract partial class SyntaxVisitor
 {
     public virtual void VisitSyntaxList<TNode>(SyntaxList<TNode> node)
@@ -16,6 +19,7 @@ internal abstract partial class SyntaxVisitor
     public virtual void VisitSyntaxTrivia(SyntaxTrivia node) { }
 }
 
+[ExcludeFromCodeCoverage]
 internal abstract partial class SyntaxVisitor<TResult>
 {
     public virtual TResult VisitSyntaxList<TNode>(SyntaxList<TNode> node)

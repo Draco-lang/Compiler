@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
-namespace Draco.Compiler.Internal;
+namespace Draco.Compiler.Internal.Utilities;
 
 /// <summary>
 /// Utility functions for atomic operations.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class InterlockedUtils
 {
     public static T? InitializeMaybeNull<T>(ref T? field, Func<T?> factory)

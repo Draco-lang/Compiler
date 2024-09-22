@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Script;
 

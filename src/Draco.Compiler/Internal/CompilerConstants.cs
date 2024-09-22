@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Draco.Compiler.Internal;
 
+[ExcludeFromCodeCoverage]
 internal static class CompilerConstants
 {
     /// <summary>

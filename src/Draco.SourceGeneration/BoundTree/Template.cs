@@ -7,6 +7,7 @@ internal static class Template
     public static string Generate(Tree tree) => FormatCSharp($$"""
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
 
@@ -50,6 +51,7 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
 """);
 
     private static string GenerateClass(Node node) => $$"""
+    [ExcludeFromCodeCoverage]
     internal {{ClassHeader(node)}}
     {
         {{ForEach(node.Fields, Field)}}

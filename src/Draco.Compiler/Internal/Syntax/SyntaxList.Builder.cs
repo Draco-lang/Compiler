@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -9,6 +10,7 @@ internal sealed partial class SyntaxList<TNode>
     /// <summary>
     /// The builder type for a <see cref="SyntaxList{TNode}"/>.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public sealed class Builder(ImmutableArray<TNode>.Builder underlying) : IList<TNode>
     {
         public bool IsReadOnly => false;

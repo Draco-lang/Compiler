@@ -1,8 +1,10 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Draco.Compiler.Internal.Syntax.Rewriting;
 
+[ExcludeFromCodeCoverage]
 internal abstract partial class SyntaxRewriter
 {
     public override SyntaxNode VisitSyntaxToken(SyntaxToken node) => node;

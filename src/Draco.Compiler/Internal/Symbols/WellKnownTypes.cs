@@ -13,6 +13,7 @@ using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Symbols.Synthetized.Array;
+using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -237,7 +238,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     }
 
     public MetadataTypeSymbol GetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
-        assembly.Lookup(path).OfType<MetadataTypeSymbol>().Single();
+        assembly.Lookup(path).OfType<MetadataTypeSymbol>().First();
 
     public Symbol GetDotnetTypeFromAssembly(AssemblyName name, ImmutableArray<string> path)
     {
@@ -246,17 +247,17 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     }
 
     public Symbol GetDotnetTypeFromAssembly(MetadataAssemblySymbol assembly, ImmutableArray<string> path) =>
-        assembly.Lookup(path).Where(s => s.IsDotnetType).Single();
+        assembly.Lookup(path).Where(s => s.IsDotnetType).First();
 
     private MetadataAssemblySymbol GetAssemblyWithAssemblyName(AssemblyName name) =>
-        compilation.MetadataAssemblies.Single(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
+        compilation.MetadataAssemblies.First(asm => AssemblyNameComparer.Full.Equals(asm.AssemblyName, name));
 
     private MetadataAssemblySymbol GetAssemblyWithNameAndToken(string name, byte[] token)
     {
         var assemblyName = new AssemblyName() { Name = name };
         assemblyName.SetPublicKeyToken(token);
         return compilation.MetadataAssemblies
-            .SingleOrDefault(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName))
+            .FirstOrDefault(asm => AssemblyNameComparer.NameAndToken.Equals(asm.AssemblyName, assemblyName))
             ?? throw new InvalidOperationException($"Failed to locate assembly with name '{name}' and public key token '{BitConverter.ToString(token)}'.");
     }
 

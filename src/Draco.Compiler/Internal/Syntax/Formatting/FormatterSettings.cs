@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Draco.Compiler.Internal.Syntax.Formatting;
@@ -5,6 +6,7 @@ namespace Draco.Compiler.Internal.Syntax.Formatting;
 /// <summary>
 /// The settings of the formatter.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal sealed class FormatterSettings
 {
     /// <summary>
@@ -33,6 +35,7 @@ internal sealed class FormatterSettings
         for (var i = 0; i < amount; ++i) sb.Append(this.Indentation);
         return sb.ToString();
     }
+
     public string PaddingString(int width = 1)
     {
         var sb = new StringBuilder();

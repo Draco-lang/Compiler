@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Utilities;
@@ -8,6 +9,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// A single node in the Draco syntax tree.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal abstract class SyntaxNode
 {
     /// <summary>

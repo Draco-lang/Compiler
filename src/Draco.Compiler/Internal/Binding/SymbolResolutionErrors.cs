@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -6,6 +7,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Holds constants for symbol resolution errors.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class SymbolResolutionErrors
 {
     // TODO: Look through where IllegalReference makes more sense than UndefinedReference

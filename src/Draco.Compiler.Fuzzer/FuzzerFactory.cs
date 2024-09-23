@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -61,7 +62,21 @@ internal static class FuzzerFactory
 
     public static Fuzzer<SyntaxTree, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer)
     {
-        // TODO
-        throw new NotImplementedException();
+        ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
+        {
+            // TODO
+            throw new NotImplementedException();
+        }
+
+        return new()
+        {
+            CoverageCompressor = CoverageCompressor,
+            TargetExecutor = TargetExecutor.Process<SyntaxTree>(CreateStartInfo, out var processReference),
+            CoverageReader = CoverageReader.FromProcess(processReference),
+            FaultDetector = FaultDetector.DefaultOutOfProcess(processReference, Timeout),
+            InputMinimizer = InputMinimizer,
+            InputMutator = InputMutator,
+            Tracer = tracer,
+        };
     }
 }

@@ -5,9 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Draco.Fuzzing\Draco.Fuzzing.csproj" />
     <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" InstrumentCoverage="True" />
     <ProjectReference Include="..\Draco.Compiler.DevHost\Draco.Compiler.DevHost.csproj" />
-    <ProjectReference Include="..\Draco.Fuzzing\Draco.Fuzzing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

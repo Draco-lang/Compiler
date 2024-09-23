@@ -68,30 +68,15 @@ public static class TargetExecutor
     /// Creates a target executor that starts an external process. The process is not waited for to finish.
     /// </summary>
     /// <typeparam name="TInput">The type of the input data.</typeparam>
+    /// <param name="assembly">The instrumented assembly to read metadata from.</param>
     /// <param name="func">The function to create the process start info from the input.</param>
     /// <param name="processReference">The reference to the process being executed.</param>
     /// <returns>The target executor.</returns>
     public static ITargetExecutor<TInput> Process<TInput>(
+        InstrumentedAssembly assembly,
         Func<TInput, ProcessStartInfo> func,
         out ProcessReference processReference)
     {
-        // We need to load the assembly to have an idea about the size of shared memory we need to allocate
-        // This dictionary maps the full path of the assembly to the number of sequence points in it
-        // There is very likely that this dictionary will only have a single entry, but since we have no
-        // idea what user-code produces for start info, we'll just do this
-        var loadedAssemblies = new Dictionary<string, int>();
-
-        int GetNumberOfSequencePoints(string pathToProcess)
-        {
-            if (!loadedAssemblies.TryGetValue(pathToProcess, out var sequencePointCount))
-            {
-                var assembly = System.Reflection.Assembly.LoadFrom(pathToProcess);
-                var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(assembly);
-                sequencePointCount = instrumentedAssembly.SequencePoints.Length;
-            }
-            return sequencePointCount;
-        }
-
         var processRef = new ProcessReference();
         processReference = processRef;
         return Create<TInput>(() => { }, input =>
@@ -100,7 +85,7 @@ public static class TargetExecutor
             // Share memory with the process
             var memoryId = Guid.NewGuid().ToString();
             var sharedMemoryKey = InstrumentedAssembly.SharedMemoryKey(memoryId);
-            var sharedMemory = SharedMemory.CreateNew<int>(sharedMemoryKey, GetNumberOfSequencePoints(startInfo.FileName));
+            var sharedMemory = SharedMemory.CreateNew<int>(sharedMemoryKey, assembly.SequencePoints.Length);
             startInfo.EnvironmentVariables.Add(InstrumentedAssembly.SharedMemoryEnvironmentVariable, memoryId);
             // Create process, write to process reference
             var process = new Process { StartInfo = startInfo };

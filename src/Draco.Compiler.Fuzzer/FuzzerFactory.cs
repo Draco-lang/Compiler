@@ -68,10 +68,11 @@ internal static class FuzzerFactory
             throw new NotImplementedException();
         }
 
+        var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
         return new()
         {
             CoverageCompressor = CoverageCompressor,
-            TargetExecutor = TargetExecutor.Process<SyntaxTree>(CreateStartInfo, out var processReference),
+            TargetExecutor = TargetExecutor.Process<SyntaxTree>(instrumentedAssembly, CreateStartInfo, out var processReference),
             CoverageReader = CoverageReader.FromProcess(processReference),
             FaultDetector = FaultDetector.DefaultOutOfProcess(processReference, Timeout),
             InputMinimizer = InputMinimizer,

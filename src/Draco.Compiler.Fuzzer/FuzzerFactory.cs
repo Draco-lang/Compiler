@@ -64,8 +64,25 @@ internal static class FuzzerFactory
     {
         static ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
         {
-            // TODO
-            throw new NotImplementedException();
+            // dotnet exec Draco.Compiler.DevHost -- compile-base64 <base64-encoded-source-code>
+            var utf8Bytes = System.Text.Encoding.UTF8.GetBytes(syntaxTree.ToString());
+            var base64Source = Convert.ToBase64String(utf8Bytes);
+            return new()
+            {
+                FileName = "dotnet",
+                ArgumentList =
+                {
+                    "exec",
+                    "Draco.Compiler.DevHost",
+                    "--",
+                    "compile-base64",
+                    base64Source,
+                },
+                RedirectStandardOutput = false,
+                RedirectStandardError = false,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);

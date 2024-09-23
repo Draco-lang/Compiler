@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Draco.Coverage;
 
 namespace Draco.Fuzzing;
 
@@ -24,4 +25,14 @@ public sealed class ProcessReference
         }
     }
     private Process? process;
+
+    /// <summary>
+    /// The shared memory with the process.
+    /// </summary>
+    public SharedMemory<int> SharedMemory
+    {
+        get => this.sharedMemory ?? throw new InvalidOperationException("the shared memory is not set");
+        set => this.sharedMemory = value;
+    }
+    private SharedMemory<int>? sharedMemory;
 }

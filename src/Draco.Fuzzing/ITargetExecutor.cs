@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using Draco.Coverage;
 
 namespace Draco.Fuzzing;
@@ -43,13 +45,37 @@ public static class TargetExecutor
         Func<TInput, ProcessStartInfo> func,
         out ProcessReference processReference)
     {
+        // We need to load the assembly to have an idea about the size of shared memory we need to allocate
+        // This dictionary maps the full path of the assembly to the number of sequence points in it
+        // There is very likely that this dictionary will only have a single entry, but since we have no
+        // idea what user-code produces for start info, we'll just do this
+        var loadedAssemblies = new Dictionary<string, int>();
+
+        int GetNumberOfSequencePoints(string pathToProcess)
+        {
+            if (!loadedAssemblies.TryGetValue(pathToProcess, out var sequencePointCount))
+            {
+                var assembly = Assembly.LoadFrom(pathToProcess);
+                var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(assembly);
+                sequencePointCount = instrumentedAssembly.SequencePoints.Length;
+            }
+            return sequencePointCount;
+        }
+
         var processRef = new ProcessReference();
         processReference = processRef;
         return Create<TInput>(input =>
         {
             var startInfo = func(input);
+            // Share memory with the process
+            var memoryId = Guid.NewGuid().ToString();
+            var sharedMemoryKey = InstrumentedAssembly.SharedMemoryKey(memoryId);
+            var sharedMemory = SharedMemory.CreateNew<int>(sharedMemoryKey, GetNumberOfSequencePoints(startInfo.FileName));
+            startInfo.EnvironmentVariables.Add(InstrumentedAssembly.SharedMemoryEnvironmentVariable, memoryId);
+            // Create process, write to process reference
             var process = new Process { StartInfo = startInfo };
             processRef.Process = process;
+            processRef.SharedMemory = sharedMemory;
             process.Start();
         });
     }

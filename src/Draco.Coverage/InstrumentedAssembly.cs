@@ -71,7 +71,8 @@ public sealed class InstrumentedAssembly
     /// <summary>
     /// The sequence points of the weaved assembly.
     /// </summary>
-    public ImmutableArray<SequencePoint> SequencePoints => this.sequencePoints ??= this.GetSequencePoints();
+    public ImmutableArray<SequencePoint> SequencePoints =>
+        this.sequencePoints ??= (ImmutableArray<SequencePoint>)this.SequencePointsField.GetValue(null)!;
     private ImmutableArray<SequencePoint>? sequencePoints;
 
     /// <summary>
@@ -107,13 +108,6 @@ public sealed class InstrumentedAssembly
         this.hitsInstance ??= NotNullOrNotWeaved((int[]?)this.HitsField.GetValue(null));
     private int[]? hitsInstance;
 
-    /// <summary>
-    /// The sequence points instance of the coverage collector.
-    /// </summary>
-    internal Array SequencePointsInstance =>
-        this.sequencePointsInstance ??= NotNullOrNotWeaved((Array?)this.SequencePointsField.GetValue(null));
-    private Array? sequencePointsInstance;
-
     private InstrumentedAssembly(Assembly weavedAssembly)
     {
         CheckForWeaved(weavedAssembly);
@@ -146,14 +140,6 @@ public sealed class InstrumentedAssembly
         var clearMethod = NotNullOrNotWeaved(coverageCollectorType.GetMethod("Clear"));
 
         clearMethod.Invoke(null, null);
-    }
-
-    private ImmutableArray<SequencePoint> GetSequencePoints()
-    {
-        var sequencePointsSpan = MemoryMarshal.CreateSpan(
-            ref Unsafe.As<byte, SequencePoint>(ref MemoryMarshal.GetArrayDataReference(this.SequencePointsInstance)),
-            this.SequencePointsInstance.Length);
-        return [.. sequencePointsSpan];
     }
 
     private static void CheckForWeaved(Assembly assembly) =>

@@ -22,7 +22,7 @@ internal static class CoverageCollector
 
     public static void Clear() => Hits.Span.Clear();
 
-    private static SharedMemory<int> AllocateHits(int length)
+    public static SharedMemory<int> AllocateHits(int length)
     {
         var sharedMemoryName = Environment.GetEnvironmentVariable(InstrumentedAssembly.SharedMemoryEnvironmentVariable);
         return sharedMemoryName is null

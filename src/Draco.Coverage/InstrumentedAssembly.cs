@@ -13,6 +13,18 @@ namespace Draco.Coverage;
 public sealed class InstrumentedAssembly
 {
     /// <summary>
+    /// The environment variable set to collect to an existing shared memory.
+    /// </summary>
+    public const string SharedMemoryEnvironmentVariable = "DRACO_COLLECT_TO_SHARED_MEMORY";
+
+    /// <summary>
+    /// Creates a shared memory key from the given identifier.
+    /// </summary>
+    /// <param name="identifier">The identifier to create the key from.</param>
+    /// <returns>A key that can be used to reference the shared memory.</returns>
+    public static string SharedMemoryKey(string identifier) => $"Draco.Coverage.SharedMemory.{identifier}";
+
+    /// <summary>
     /// Weaves instrumentation code into the given assembly.
     /// </summary>
     /// <param name="sourcePath">The path to the assembly to weave.</param>

@@ -62,7 +62,7 @@ internal static class FuzzerFactory
 
     public static Fuzzer<SyntaxTree, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer)
     {
-        ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
+        static ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
         {
             // TODO
             throw new NotImplementedException();

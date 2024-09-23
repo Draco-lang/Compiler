@@ -33,7 +33,7 @@ public static class TargetExecutor
         new DelegateTargetExecutor<TInput>(action);
 
     /// <summary>
-    /// Creates a target executor that starts an external process.
+    /// Creates a target executor that starts an external process. The process is not waited for to finish.
     /// </summary>
     /// <typeparam name="TInput">The type of the input data.</typeparam>
     /// <param name="func">The function to create the process start info from the input.</param>

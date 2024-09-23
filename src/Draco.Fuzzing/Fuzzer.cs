@@ -29,11 +29,6 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     public Random Random { get; } = seed is null ? new() : new(seed.Value);
 
     /// <summary>
-    /// The target to fuzz.
-    /// </summary>
-    public required InstrumentedAssembly InstrumentedAssembly { get; init; }
-
-    /// <summary>
     /// The input minimizer to use.
     /// </summary>
     public required IInputMinimizer<TInput> InputMinimizer { get; init; }
@@ -42,6 +37,11 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     /// The input mutator to use.
     /// </summary>
     public required IInputMutator<TInput> InputMutator { get; init; }
+
+    /// <summary>
+    /// The reader to read coverage data with.
+    /// </summary>
+    public required ICoverageReader CoverageReader { get; init; }
 
     /// <summary>
     /// The coverage compressor to use.
@@ -92,7 +92,6 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     /// <param name="cancellationToken">The cancellation token to cancel the fuzzing process.</param>
     public void Fuzz(CancellationToken cancellationToken)
     {
-        this.ForceAllTypeInitializersToRun();
         while (!cancellationToken.IsCancellationRequested && this.inputQueue.TryDequeue(out var input))
         {
             this.Tracer.InputDequeued(input, this.inputQueue);
@@ -116,14 +115,6 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
             this.Tracer.EndOfMutations(minimalInput, mutationsFound);
         }
         this.Tracer.FuzzerFinished();
-    }
-
-    private void ForceAllTypeInitializersToRun()
-    {
-        foreach (var type in this.InstrumentedAssembly.WeavedAssembly.GetTypes())
-        {
-            RuntimeHelpers.RunClassConstructor(type.TypeHandle);
-        }
     }
 
     private (TInput Input, ExecutionResult Result) Minimize(TInput input)
@@ -164,14 +155,15 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
 
     private ExecutionResult ExecuteTarget(TInput input)
     {
-        this.InstrumentedAssembly.ClearCoverageData();
-        var faultResult = this.FaultDetector.Execute(() => this.TargetExecutor.Execute(input, this.InstrumentedAssembly));
+        this.TargetExecutor.Initialize();
+        this.CoverageReader.Clear();
+        var faultResult = this.FaultDetector.Execute(() => this.TargetExecutor.Execute(input));
         if (faultResult.IsFaulted)
         {
             // Call the tracer no matter what
             this.Tracer.InputFaulted(input, faultResult);
         }
-        var coverage = this.InstrumentedAssembly.CoverageResult;
+        var coverage = this.CoverageReader.Read();
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         return new(faultResult, coverage, compressedCoverage);
     }

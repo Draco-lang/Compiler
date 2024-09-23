@@ -28,12 +28,14 @@ internal static class Program
         Application.Init();
         var debuggerWindow = new TuiTracer();
 
+        var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
+
         var fuzzer = new Fuzzer<SyntaxTree, int>
         {
-            InstrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly),
             CoverageCompressor = CoverageCompressor.SimdHash,
+            CoverageReader = CoverageReader.FromInstrumentedAssembly(instrumentedAssembly),
             FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.DefaultInProcess(TimeSpan.FromSeconds(5))),
-            TargetExecutor = TargetExecutor.Create((SyntaxTree tree) => RunCompilation(tree)),
+            TargetExecutor = TargetExecutor.Assembly(instrumentedAssembly, (SyntaxTree tree) => RunCompilation(tree)),
             InputMinimizer = new SyntaxTreeInputMinimizer(),
             InputMutator = new SyntaxTreeInputMutator(),
             Tracer = debuggerWindow,

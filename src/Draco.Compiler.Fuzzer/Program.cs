@@ -20,7 +20,7 @@ internal static class Program
         Application.Init();
         var debuggerWindow = new TuiTracer();
 
-        var fuzzer = FuzzerFactory.CreateInProcess(debuggerWindow);
+        var fuzzer = FuzzerFactory.CreateOutOfProcess(debuggerWindow);
 
         fuzzer.Enqueue(SyntaxTree.Parse("""
             func main() {}

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
@@ -42,6 +43,11 @@ internal interface IModule
     /// The compiled procedures within this module.
     /// </summary>
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }
+
+    /// <summary>
+    /// The compiled types within this module.
+    /// </summary>
+    public IReadOnlyDictionary<TypeSymbol, IType> Types { get; }
 
     /// <summary>
     /// The procedure performing global initialization.

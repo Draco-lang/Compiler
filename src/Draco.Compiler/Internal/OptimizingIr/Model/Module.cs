@@ -18,6 +18,9 @@ internal sealed class Module : IModule
     public IDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
     IReadOnlyDictionary<ModuleSymbol, IModule> IModule.Submodules => this.submodules;
 
+    public IDictionary<TypeSymbol, IType> Types => this.types;
+    IReadOnlyDictionary<TypeSymbol, IType> IModule.Types => this.types;
+
     public IReadOnlySet<GlobalSymbol> Globals => this.globals;
 
     public Procedure GlobalInitializer { get; }
@@ -35,6 +38,7 @@ internal sealed class Module : IModule
     private readonly HashSet<GlobalSymbol> globals = [];
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = [];
     private readonly Dictionary<ModuleSymbol, IModule> submodules = [];
+    private readonly Dictionary<TypeSymbol, IType> types = [];
 
     public Module(ModuleSymbol symbol, Assembly assembly, Module? Parent)
     {
@@ -64,7 +68,7 @@ internal sealed class Module : IModule
     {
         if (!this.procedures.TryGetValue(functionSymbol, out var result))
         {
-            result = new Procedure(this, functionSymbol);
+            result = new Procedure(this, null, functionSymbol);
             this.procedures.Add(functionSymbol, result);
         }
         return (Procedure)result;

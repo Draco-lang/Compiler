@@ -69,14 +69,14 @@ public sealed class InstrumentedAssembly
     /// <summary>
     /// The sequence points of the weaved assembly.
     /// </summary>
-    public ImmutableArray<SequencePoint> SequencePoints =>
-        this.sequencePoints ??= (ImmutableArray<SequencePoint>)this.SequencePointsField.GetValue(null)!;
-    private ImmutableArray<SequencePoint>? sequencePoints;
+    public SequencePoint[] SequencePoints =>
+        this.sequencePoints ??= NotNullOrNotWeaved((SequencePoint[]?)this.SequencePointsField.GetValue(null));
+    private SequencePoint[]? sequencePoints;
 
     /// <summary>
     /// Retrieves a copy of the coverage result.
     /// </summary>
-    public CoverageResult CoverageResult => new([.. this.HitsInstance]);
+    public CoverageResult CoverageResult => CoverageResult.FromSharedMemory(this.HitsInstance);
 
     /// <summary>
     /// The coverage collector type weaved into the assembly.
@@ -102,9 +102,9 @@ public sealed class InstrumentedAssembly
     /// <summary>
     /// The hits instance of the coverage collector.
     /// </summary>
-    internal int[] HitsInstance =>
-        this.hitsInstance ??= NotNullOrNotWeaved((int[]?)this.HitsField.GetValue(null));
-    private int[]? hitsInstance;
+    internal SharedMemory<int> HitsInstance =>
+        this.hitsInstance ??= NotNullOrNotWeaved((SharedMemory<int>?)this.HitsField.GetValue(null));
+    private SharedMemory<int>? hitsInstance;
 
     private InstrumentedAssembly(Assembly weavedAssembly)
     {

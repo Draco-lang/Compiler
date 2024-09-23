@@ -15,31 +15,12 @@ namespace Draco.Compiler.Fuzzer;
 
 internal static class Program
 {
-    private static ImmutableArray<MetadataReference> BclReferences { get; } = ReferenceInfos.All
-        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
-        .ToImmutableArray();
-
-    private static readonly MemoryStream peStream = new();
-
-    private static Compilation? previousCompilation;
-
     private static async Task Main(string[] args)
     {
         Application.Init();
         var debuggerWindow = new TuiTracer();
 
-        var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-
-        var fuzzer = new Fuzzer<SyntaxTree, int>
-        {
-            CoverageCompressor = CoverageCompressor.SimdHash,
-            CoverageReader = CoverageReader.FromInstrumentedAssembly(instrumentedAssembly),
-            FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.DefaultInProcess(TimeSpan.FromSeconds(5))),
-            TargetExecutor = TargetExecutor.Assembly(instrumentedAssembly, (SyntaxTree tree) => RunCompilation(tree)),
-            InputMinimizer = new SyntaxTreeInputMinimizer(),
-            InputMutator = new SyntaxTreeInputMutator(),
-            Tracer = debuggerWindow,
-        };
+        var fuzzer = FuzzerFactory.CreateInProcess(debuggerWindow);
 
         fuzzer.Enqueue(SyntaxTree.Parse("""
             func main() {}
@@ -81,24 +62,5 @@ internal static class Program
         Application.Run(Application.Top);
         await fuzzerTask;
         Application.Shutdown();
-    }
-
-    private static void RunCompilation(SyntaxTree syntaxTree)
-    {
-        // Cache compilation to optimize discovered metadata references
-        if (previousCompilation is null)
-        {
-            previousCompilation = Compilation.Create(
-                syntaxTrees: [syntaxTree],
-                metadataReferences: BclReferences);
-        }
-        else
-        {
-            previousCompilation = previousCompilation
-                .UpdateSyntaxTree(previousCompilation.SyntaxTrees[0], syntaxTree);
-        }
-        // NOTE: We reuse the same memory stream to de-stress memory usage a little
-        peStream.Position = 0;
-        previousCompilation.Emit(peStream: peStream);
     }
 }

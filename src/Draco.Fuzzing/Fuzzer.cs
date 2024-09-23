@@ -64,7 +64,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     public required ITracer<TInput> Tracer { get; init; }
 
     private readonly Queue<TInput> inputQueue = new();
-    private readonly HashSet<TCoverage> discoveredCoverages = new();
+    private readonly HashSet<TCoverage> discoveredCoverages = [];
 
     /// <summary>
     /// Enqueues the given input.

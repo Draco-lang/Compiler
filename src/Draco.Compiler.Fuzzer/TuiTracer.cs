@@ -42,8 +42,6 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private readonly ProgressBar bestCoverageProgressBar;
     private readonly Label bestCoveragePercentLabel;
 
-    private double bestCoveragePercent = 0;
-
     // Timings
     private readonly Label fuzzesPerSecondLabel;
     private readonly Label averageTimePerFuzzLabel;
@@ -61,7 +59,6 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private readonly List<InputQueueItem> inputQueueList = [];
     private readonly TextView selectedInputQueueItemTextView;
     private readonly FrameView inputQueueFrameView;
-    private int inputQueueItemCounter = 0;
 
     // Faults
     private readonly ListView faultListView;
@@ -69,12 +66,15 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private readonly TextView selectedFaultItemTextView;
 
     // Counters
-    private int minimizedInputCounter = 0;
+    private int inputQueueItemCounter = 0;
     private int fuzzedInputCounter = 0;
+    private int minimizedInputCounter = 0;
+    private int mutatedInputCounter = 0;
+    private double bestCoveragePercent = 0;
 
     public TuiTracer()
     {
-        // Coverage info
+        #region Coverage Progress Bars
         var currentCoverageLabel = new Label("Current:")
         {
             X = 0,
@@ -122,16 +122,27 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         coverageFrameView.Add(
             currentCoverageLabel, this.currentCoverageProgressBar, this.currentCoveragePercentLabel,
             bestCoverageLabel, this.bestCoverageProgressBar, this.bestCoveragePercentLabel);
+        #endregion
 
-        // Timings
-        this.fuzzesPerSecondLabel = new Label("Fuzz/s: 0")
+        #region Timing Labels
+        var fuzzesPerSecondTextLabel = new Label("Fuzz/s:   ")
         {
             X = 0,
             Y = 0,
         };
-        this.averageTimePerFuzzLabel = new Label("Avg/fuzz: 0ms")
+        this.fuzzesPerSecondLabel = new Label("-")
+        {
+            X = Pos.Right(fuzzesPerSecondTextLabel),
+            Y = 0,
+        };
+        var averageTimePerFuzzTextLabel = new Label("Avg/fuzz: ")
         {
             X = 0,
+            Y = 2,
+        };
+        this.averageTimePerFuzzLabel = new Label("-")
+        {
+            X = Pos.Right(averageTimePerFuzzTextLabel),
             Y = 2,
         };
         var timingsFrameView = new FrameView("Timings")
@@ -141,9 +152,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Width = Dim.Fill(),
             Height = Dim.Height(coverageFrameView),
         };
-        timingsFrameView.Add(this.fuzzesPerSecondLabel, this.averageTimePerFuzzLabel);
+        timingsFrameView.Add(
+            fuzzesPerSecondTextLabel, this.fuzzesPerSecondLabel,
+            averageTimePerFuzzTextLabel, this.averageTimePerFuzzLabel);
+        #endregion
 
-        // Current input
+        #region Input Text Views
         this.currentInputTextView = new()
         {
             X = 0,
@@ -152,7 +166,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
             ReadOnly = true,
         };
-        this.currentInputFrameView = new FrameView("Current")
+        this.currentInputFrameView = new FrameView(GetCurrentInputFrameTitle())
         {
             X = 0,
             Y = 0,
@@ -169,7 +183,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
             ReadOnly = true,
         };
-        this.minimizedInputFrameView = new FrameView("Minimized")
+        this.minimizedInputFrameView = new FrameView(GetMinimizedInputFrameTitle())
         {
             X = Pos.Right(this.currentInputFrameView),
             Y = 0,
@@ -186,8 +200,9 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Percent(50),
         };
         this.inputFrameView.Add(this.currentInputFrameView, this.minimizedInputFrameView);
+        #endregion
 
-        // Input queue
+        #region Input Queue
         this.inputQueueListView = new()
         {
             X = 0,
@@ -209,7 +224,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             var selectedItem = e.Value as InputQueueItem;
             this.selectedInputQueueItemTextView.Text = selectedItem?.Input.ToString();
         };
-        this.inputQueueFrameView = new FrameView("Input Queue")
+        this.inputQueueFrameView = new FrameView(GetInputQueueFrameTitle())
         {
             X = 0,
             Y = Pos.Bottom(this.inputFrameView),
@@ -217,8 +232,9 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
         };
         this.inputQueueFrameView.Add(this.inputQueueListView, this.selectedInputQueueItemTextView);
+        #endregion
 
-        // Faults
+        #region Fault List
         this.faultListView = new()
         {
             X = 0,
@@ -248,6 +264,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
         };
         faultFrameView.Add(this.faultListView, this.selectedFaultItemTextView);
+        #endregion
 
         var statusBar = new StatusBar(
         [
@@ -268,28 +285,37 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     {
         foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
 
-        this.inputQueueFrameView.Title = $"Input Queue (Size: {this.inputQueueList.Count})";
+        this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
     }
 
     public void InputDequeued(SyntaxTree input)
     {
+        this.minimizedInputCounter = 0;
+        this.mutatedInputCounter = 0;
+
         var itemIndex = this.inputQueueList.FindIndex(item => item.Input == input);
         if (itemIndex >= 0) this.inputQueueList.RemoveAt(itemIndex);
+
+        this.currentInputFrameView.Title = GetCurrentInputFrameTitle();
+        this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle();
+        this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
+        this.currentInputTextView.Text = input.ToString();
     }
 
     public void InputFuzzed(SyntaxTree input, CoverageResult coverageResult)
     {
+        // Counters
         ++this.fuzzedInputCounter;
-        var totalElapsed = this.stopwatch.Elapsed;
-        var fuzzesPerSecond = this.minimizedInputCounter / totalElapsed.TotalSeconds;
-        var averageMillisecondsPerFuzz = totalElapsed.TotalMilliseconds / this.minimizedInputCounter;
-        this.fuzzesPerSecondLabel.Text = $"Fuzz/s: {fuzzesPerSecond:0.00}";
-        this.averageTimePerFuzzLabel.Text = $"Avg/fuzz: {averageMillisecondsPerFuzz:0.00}ms";
-    }
 
-    public void MinimizationFound(SyntaxTree input, SyntaxTree minimizedInput)
-    {
-        var currentCoveragePercent = CoverageToPercentage(coverage);
+        var totalElapsed = this.stopwatch.Elapsed;
+        var fuzzesPerSecond = this.fuzzedInputCounter / totalElapsed.TotalSeconds;
+        var averageMillisecondsPerFuzz = totalElapsed.TotalMilliseconds / this.fuzzedInputCounter;
+
+        this.fuzzesPerSecondLabel.Text = fuzzesPerSecond.ToString("0.00");
+        this.averageTimePerFuzzLabel.Text = $"{averageMillisecondsPerFuzz:0.00}ms";
+
+        // Coverage percentage
+        var currentCoveragePercent = CoverageToPercentage(coverageResult);
         this.bestCoveragePercent = Math.Max(this.bestCoveragePercent, currentCoveragePercent);
 
         this.currentCoverageProgressBar.Fraction = (float)currentCoveragePercent;
@@ -297,16 +323,21 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         this.bestCoverageProgressBar.Fraction = (float)this.bestCoveragePercent;
         this.bestCoveragePercentLabel.Text = FormatPercentage(this.bestCoveragePercent);
+    }
 
-        this.currentInputTextView.Text = input.ToString();
-        this.minimizedInputTextView.Text = minimizedInput.ToString();
-
+    public void MinimizationFound(SyntaxTree input, SyntaxTree minimizedInput)
+    {
         ++this.minimizedInputCounter;
-        this.inputFrameView.Title = $"Input (Tested: {this.minimizedInputCounter})";
+
+        this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle(this.minimizedInputCounter);
+        this.minimizedInputTextView.Text = minimizedInput.ToString();
     }
 
     public void MutationFound(SyntaxTree input, SyntaxTree mutatedInput)
     {
+        ++this.mutatedInputCounter;
+
+        this.currentInputFrameView.Title = GetCurrentInputFrameTitle(this.mutatedInputCounter);
     }
 
     public void InputFaulted(SyntaxTree input, FaultResult fault)
@@ -315,6 +346,18 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     }
 
     public void FuzzerFinished() => MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
+
+    private static string GetInputQueueFrameTitle(int? count = null) => count is null
+        ? "Input Queue"
+        : $"Input Queue (Size: {count})";
+
+    private static string GetCurrentInputFrameTitle(int? count = null) => count is null
+        ? "Current"
+        : $"Current (Mutations: {count})";
+
+    private static string GetMinimizedInputFrameTitle(int? count = null) => count is null
+        ? "Minimized"
+        : $"Minimized (Minimizations: {count})";
 
     private static double CoverageToPercentage(CoverageResult coverage) =>
         coverage.Hits.Count(h => h > 0) / (double)coverage.Hits.Length;

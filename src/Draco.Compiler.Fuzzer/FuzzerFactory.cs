@@ -14,6 +14,7 @@ namespace Draco.Compiler.Fuzzer;
 
 internal static class FuzzerFactory
 {
+    private static ICoverageReader CoverageReader => Fuzzing.CoverageReader.Default;
     private static ICoverageCompressor<int> CoverageCompressor => Fuzzing.CoverageCompressor.SimdHash;
     private static IInputMinimizer<SyntaxTree> InputMinimizer => new SyntaxTreeInputMinimizer();
     private static IInputMutator<SyntaxTree> InputMutator => new SyntaxTreeInputMutator();
@@ -51,9 +52,9 @@ internal static class FuzzerFactory
         return new()
         {
             CoverageCompressor = CoverageCompressor,
-            CoverageReader = CoverageReader.FromInstrumentedAssembly(instrumentedAssembly),
-            FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.DefaultInProcess(Timeout)),
-            TargetExecutor = TargetExecutor.Assembly(instrumentedAssembly, (SyntaxTree tree) => RunCompilation(tree)),
+            CoverageReader = CoverageReader,
+            TargetExecutor = TargetExecutor.InProcess(instrumentedAssembly, (SyntaxTree tree) => RunCompilation(tree)),
+            FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.InProcess(Timeout)),
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
             Tracer = tracer,
@@ -88,10 +89,10 @@ internal static class FuzzerFactory
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
         return new()
         {
+            CoverageReader = CoverageReader,
             CoverageCompressor = CoverageCompressor,
-            TargetExecutor = TargetExecutor.Process<SyntaxTree>(instrumentedAssembly, CreateStartInfo, out var processReference),
-            CoverageReader = CoverageReader.FromProcess(processReference),
-            FaultDetector = FaultDetector.DefaultOutOfProcess(processReference, Timeout),
+            TargetExecutor = TargetExecutor.OutOfProcess<SyntaxTree>(instrumentedAssembly, CreateStartInfo),
+            FaultDetector = FaultDetector.OutOfProcess(Timeout),
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
             Tracer = tracer,

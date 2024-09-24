@@ -160,11 +160,11 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
 
     private ExecutionResult GetExecutionResult(QueueEntry entry)
     {
-        entry.ExecutionResult ??= this.Execute(entry.Input).Result;
+        entry.ExecutionResult ??= this.Execute(entry.Input, dontRequeue: true).Result;
         return entry.ExecutionResult.Value;
     }
 
-    private (ExecutionResult Result, bool IsInteresting) Execute(TInput input)
+    private (ExecutionResult Result, bool IsInteresting) Execute(TInput input, bool dontRequeue = false)
     {
         var targetInfo = this.TargetExecutor.Initialize(input);
         this.CoverageReader.Clear(targetInfo);
@@ -178,7 +178,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         var isInteresting = this.IsInteresting(compressedCoverage);
         var executionResult = new ExecutionResult(compressedCoverage, faultResult);
-        if (isInteresting)
+        if (!dontRequeue && isInteresting)
         {
             this.inputQueue.Enqueue(new QueueEntry(input, executionResult));
             this.Tracer.InputsEnqueued([input]);

@@ -13,12 +13,17 @@ public readonly struct TargetInfo
         Assembly = assembly,
         User = user,
     };
-    public static TargetInfo OutOfProcess(InstrumentedAssembly assembly, Process process, object? user = null) => new()
-    {
-        Assembly = assembly,
-        Process = process,
-        User = user,
-    };
+    public static TargetInfo OutOfProcess(
+        InstrumentedAssembly assembly,
+        Process process,
+        SharedMemory<int> sharedMemory,
+        object? user = null) => new()
+        {
+            Assembly = assembly,
+            Process = process,
+            User = user,
+            SharedMemory = sharedMemory,
+        };
 
     /// <summary>
     /// The assembly that is being observed. Even for out-of-process execution, the assembly is loaded into the host process
@@ -35,4 +40,31 @@ public readonly struct TargetInfo
     /// Arbitrary user data.
     /// </summary>
     public object? User { get; init; }
+
+    /// <summary>
+    /// The shared memory for coverage data.
+    /// </summary>
+    public SharedMemory<int>? SharedMemory { get; init; }
+
+    /// <summary>
+    /// The coverage result of the target.
+    /// </summary>
+    public CoverageResult CoverageResult => this.SharedMemory is null
+        ? this.Assembly.CoverageResult
+        : CoverageResult.FromSharedMemory(this.SharedMemory);
+
+    /// <summary>
+    /// Clears the coverage data.
+    /// </summary>
+    public void ClearCoverageData()
+    {
+        if (this.SharedMemory is not null)
+        {
+            this.SharedMemory.Span.Clear();
+        }
+        else
+        {
+            this.Assembly.ClearCoverageData();
+        }
+    }
 }

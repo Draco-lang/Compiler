@@ -8,6 +8,7 @@ namespace Draco.Fuzzing;
 /// A concurrent hash set.
 /// </summary>
 /// <typeparam name="T">The type of the elements in the set.</typeparam>
+/// <param name="comparer">The comparer to use for the elements.</param>
 internal sealed class ConcurrentHashSet<T>(EqualityComparer<T>? comparer = null) : IReadOnlyCollection<T>
     where T : notnull
 {

@@ -69,6 +69,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     public required ITracer<TInput> Tracer { get; init; }
 
     private readonly Queue<QueueEntry> inputQueue = new();
+    private readonly HashSet<TCoverage> seenCoverages = [];
 
     /// <summary>
     /// Enqueues the given input into the fuzzer.
@@ -104,6 +105,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
         {
             if (cancellationToken.IsCancellationRequested) break;
             if (!this.inputQueue.TryDequeue(out var entry)) break;
+            this.Tracer.InputDequeued(entry.Input);
 
             // We want to minimize the input first
             entry = this.Minimize(entry);
@@ -121,11 +123,74 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
 
     private QueueEntry Minimize(QueueEntry entry)
     {
-        // TODO
+        var referenceResult = this.GetExecutionResult(entry);
+        // While we find a minimization step, we continue to minimize
+        while (true)
+        {
+            foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entry.Input))
+            {
+                var (minimizedResult, isInteresting) = this.Execute(minimizedInput);
+                if (!isInteresting) continue;
+                if (AreEqualExecutions(referenceResult, minimizedResult))
+                {
+                    // We found an equivalent execution, replace entry
+                    this.Tracer.MinimizationFound(entry.Input, minimizedInput);
+                    entry = new QueueEntry(minimizedInput, minimizedResult);
+                    goto found;
+                }
+            }
+            // No minimization found
+            break;
+        found:;
+        }
+        return entry;
     }
 
     private void Mutate(QueueEntry entry)
     {
-        // TODO
+        foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entry.Input))
+        {
+            var (result, isInteresting) = this.Execute(mutatedInput);
+            if (isInteresting)
+            {
+                this.Tracer.MutationFound(entry.Input, mutatedInput);
+            }
+        }
     }
+
+    private ExecutionResult GetExecutionResult(QueueEntry entry)
+    {
+        entry.ExecutionResult ??= this.Execute(entry.Input).Result;
+        return entry.ExecutionResult.Value;
+    }
+
+    private (ExecutionResult Result, bool IsInteresting) Execute(TInput input)
+    {
+        var targetInfo = this.TargetExecutor.Initialize(input);
+        this.CoverageReader.Clear(targetInfo);
+        var faultResult = this.FaultDetector.Detect(this.TargetExecutor, targetInfo);
+        if (faultResult.IsFaulted)
+        {
+            this.Tracer.InputFaulted(input, faultResult);
+        }
+        var coverage = this.CoverageReader.Read(targetInfo);
+        this.Tracer.InputFuzzed(input, coverage);
+        var compressedCoverage = this.CoverageCompressor.Compress(coverage);
+        var isInteresting = this.IsInteresting(compressedCoverage);
+        var executionResult = new ExecutionResult(compressedCoverage, faultResult);
+        if (isInteresting)
+        {
+            this.inputQueue.Enqueue(new QueueEntry(input, executionResult));
+            this.Tracer.InputsEnqueued([input]);
+        }
+        return (executionResult, isInteresting);
+    }
+
+    // We deem an input interesting, if it has not been seen before in terms of coverage
+    private bool IsInteresting(TCoverage coverage) => this.seenCoverages.Add(coverage);
+
+    // We deem them equal if they cover the same code and have the same fault result
+    private static bool AreEqualExecutions(ExecutionResult a, ExecutionResult b) =>
+           EqualityComparer<TCoverage>.Default.Equals(a.Coverage, b.Coverage)
+        && FaultEqualityComparer.Instance.Equals(a.FaultResult, b.FaultResult);
 }

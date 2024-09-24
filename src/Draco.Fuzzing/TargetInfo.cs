@@ -37,14 +37,14 @@ public readonly struct TargetInfo
     public Process? Process { get; init; }
 
     /// <summary>
-    /// Arbitrary user data.
-    /// </summary>
-    public object? User { get; init; }
-
-    /// <summary>
     /// The shared memory for coverage data.
     /// </summary>
     public SharedMemory<int>? SharedMemory { get; init; }
+
+    /// <summary>
+    /// Arbitrary user data.
+    /// </summary>
+    public object? User { get; init; }
 
     /// <summary>
     /// The coverage result of the target.

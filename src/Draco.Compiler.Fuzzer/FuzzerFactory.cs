@@ -73,7 +73,7 @@ internal static class FuzzerFactory
                 ArgumentList =
                 {
                     "exec",
-                    "Draco.Compiler.DevHost",
+                    "Draco.Compiler.DevHost.dll",
                     "--",
                     "compile-base64",
                     base64Source,

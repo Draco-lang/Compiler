@@ -94,6 +94,7 @@ internal static class FuzzerFactory
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
             Tracer = tracer,
+            Multithread = true,
         };
     }
 }

@@ -44,7 +44,7 @@ internal static class Program
             }
             """));
 
-        var fuzzerTask = Task.Run(() => fuzzer.Fuzz(CancellationToken.None));
+        var fuzzerTask = Task.Run(() => fuzzer.Run(CancellationToken.None));
 
         Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(500), loop =>
         {

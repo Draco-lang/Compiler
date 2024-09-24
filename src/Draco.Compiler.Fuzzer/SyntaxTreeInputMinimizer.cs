@@ -19,7 +19,7 @@ internal sealed class SyntaxTreeInputMinimizer : IInputMinimizer<SyntaxTree>
         if (targets.Count == 0) yield break;
 
         // Just try a few random samples
-        for (var i = 0; i < 15; i++)
+        for (var i = 0; i < 5; i++)
         {
             var target = targets[random.Next(targets.Count)];
             yield return Reparse(input.Remove(target));

@@ -300,6 +300,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle();
         this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
         this.currentInputTextView.Text = input.ToString();
+        this.minimizedInputTextView.Text = string.Empty;
     }
 
     public void InputFuzzed(SyntaxTree input, CoverageResult coverageResult)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 
 namespace Draco.Fuzzing;
@@ -81,10 +82,12 @@ public static class FaultDetector
                 throw new ArgumentException("target information does not contain a process to run", nameof(targetInfo));
             }
 
-            // TODO: We could definitely capture the STDERR for extra info
+            targetInfo.Process.StartInfo.RedirectStandardError = true;
             targetInfo.Process.Start();
             if (!targetInfo.Process.WaitForExit(this.timeout)) return FaultResult.Timeout(this.timeout);
-            if (targetInfo.Process.ExitCode != 0) return FaultResult.Code(targetInfo.Process.ExitCode);
+
+            var stderr = targetInfo.Process.StandardError.ReadToEnd();
+            if (targetInfo.Process.ExitCode != 0) return FaultResult.Code(targetInfo.Process.ExitCode, errorMessage: stderr);
             return FaultResult.Ok;
         }
     }

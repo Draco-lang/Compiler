@@ -74,7 +74,6 @@ internal static class FuzzerFactory
                 {
                     "exec",
                     "Draco.Compiler.DevHost.dll",
-                    "--",
                     "compile-base64",
                     base64Source,
                 },

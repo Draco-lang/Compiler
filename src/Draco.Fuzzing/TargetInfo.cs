@@ -21,8 +21,8 @@ public readonly struct TargetInfo
         {
             Assembly = assembly,
             Process = process,
-            User = user,
             SharedMemory = sharedMemory,
+            User = user,
         };
 
     /// <summary>

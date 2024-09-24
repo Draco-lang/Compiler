@@ -28,8 +28,7 @@ public interface ITargetExecutor<TInput>
     /// Executes the target.
     /// </summary>
     /// <param name="targetInfo">The target information.</param>
-    /// <param name="input">The input data.</param>
-    public void Execute(TargetInfo targetInfo, TInput input);
+    public void Execute(TargetInfo targetInfo);
 }
 
 /// <summary>
@@ -70,9 +69,16 @@ public sealed class TargetExecutor
             }
         }
 
-        public TargetInfo Initialize(TInput input) => TargetInfo.InProcess(assembly);
+        public TargetInfo Initialize(TInput input) => TargetInfo.InProcess(assembly, user: input);
 
-        public void Execute(TargetInfo targetInfo, TInput input) => action(input);
+        public void Execute(TargetInfo targetInfo)
+        {
+            if (targetInfo.User is not TInput input)
+            {
+                throw new ArgumentException("must have input data to execute in-process", nameof(targetInfo));
+            }
+            action(input);
+        }
     }
 
     private sealed class OutOfProcessExecutor<TInput>(
@@ -97,7 +103,7 @@ public sealed class TargetExecutor
             return TargetInfo.OutOfProcess(assembly, process, sharedMemory);
         }
 
-        public void Execute(TargetInfo targetInfo, TInput input)
+        public void Execute(TargetInfo targetInfo)
         {
             if (targetInfo.Process is null)
             {

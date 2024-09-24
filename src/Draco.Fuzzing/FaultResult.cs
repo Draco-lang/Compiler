@@ -7,47 +7,50 @@ namespace Draco.Fuzzing;
 /// </summary>
 public readonly struct FaultResult
 {
-    public static readonly FaultResult Ok =
-        new(timeoutReached: null, thrownException: null, exitCode: 0, message: null);
-    public static FaultResult Timeout(TimeSpan timeout) =>
-        new(timeout, thrownException: null, exitCode: 0, message: null);
-    public static FaultResult Exception(Exception exception) =>
-        new(timeoutReached: null, exception, exitCode: 0, message: null);
-    public static FaultResult Code(int exitCode, string? message = null) =>
-        new(timeoutReached: null, thrownException: null, exitCode: exitCode, message: message);
+    public static readonly FaultResult Ok = default;
+    public static FaultResult Timeout(TimeSpan timeout) => new()
+    {
+        TimeoutReached = timeout,
+    };
+    public static FaultResult Exception(Exception exception) => new()
+    {
+        ThrownException = exception,
+    };
+    public static FaultResult Code(int exitCode, string? errorMessage = null) => new()
+    {
+        ExitCode = exitCode,
+        ErrorMessage = errorMessage,
+    };
+    public static FaultResult Error(string errorMessage) => new()
+    {
+        ErrorMessage = errorMessage,
+    };
 
     /// <summary>
     /// True, if the target is considered as faulted.
     /// </summary>
     public bool IsFaulted => this.TimeoutReached is not null
                           || this.ThrownException is not null
-                          || this.ExitCode != 0;
+                          || this.ExitCode != 0
+                          || this.ErrorMessage is not null;
 
     /// <summary>
     /// If not null, the timeout was reached for the given time span.
     /// </summary>
-    public TimeSpan? TimeoutReached { get; }
+    public TimeSpan? TimeoutReached { get; init; }
 
     /// <summary>
     /// If not null, the target threw an exception.
     /// </summary>
-    public Exception? ThrownException { get; }
+    public Exception? ThrownException { get; init; }
 
     /// <summary>
     /// The exit code of the target.
     /// </summary>
-    public int ExitCode { get; }
+    public int ExitCode { get; init; }
 
     /// <summary>
     /// Additional error message.
     /// </summary>
-    public string? Message { get; }
-
-    internal FaultResult(TimeSpan? timeoutReached, Exception? thrownException, int exitCode, string? message)
-    {
-        this.TimeoutReached = timeoutReached;
-        this.ThrownException = thrownException;
-        this.ExitCode = exitCode;
-        this.Message = message;
-    }
+    public string? ErrorMessage { get; init; }
 }

@@ -129,8 +129,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
         {
             foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entry.Input))
             {
-                var (minimizedResult, isInteresting) = this.Execute(minimizedInput);
-                if (!isInteresting) continue;
+                var (minimizedResult, _) = this.Execute(minimizedInput);
                 if (AreEqualExecutions(referenceResult, minimizedResult))
                 {
                     // We found an equivalent execution, replace entry

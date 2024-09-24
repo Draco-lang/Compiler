@@ -8,7 +8,7 @@ namespace Draco.Fuzzing;
 /// A concurrent hash set.
 /// </summary>
 /// <typeparam name="T">The type of the elements in the set.</typeparam>
-internal readonly struct ConcurrentHashSet<T>(EqualityComparer<T>? comparer = null) : IReadOnlyCollection<T>
+internal sealed class ConcurrentHashSet<T>(EqualityComparer<T>? comparer = null) : IReadOnlyCollection<T>
     where T : notnull
 {
     public int Count => this.dict.Count;

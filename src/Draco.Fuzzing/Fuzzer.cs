@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Channels;
 using Draco.Coverage;
 
 namespace Draco.Fuzzing;
@@ -16,7 +17,10 @@ namespace Draco.Fuzzing;
 /// <typeparam name="TInput">The type of the input data.</typeparam>
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
 /// <param name="seed">The seed to use for the random number generator.</param>
-public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
+/// <param name="multithreaded">True if the fuzzer should run in multithreaded mode. Only recommended for out-of-process execution.</param>
+public sealed class Fuzzer<TInput, TCoverage>(
+    int? seed = null,
+    bool multithreaded = false)
     where TCoverage : notnull
 {
     // Minimal result info of an execution
@@ -70,12 +74,11 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     /// </summary>
     public required ITracer<TInput> Tracer { get; init; }
 
-    /// <summary>
-    /// True if the fuzzer should run in multithreaded mode. Only recommended for out-of-process execution.
-    /// </summary>
-    public bool Multithread { get; init; }
-
-    private readonly BlockingCollection<QueueEntry> inputQueue = [];
+    private readonly Channel<QueueEntry> inputQueue = Channel.CreateUnbounded<QueueEntry>(new UnboundedChannelOptions
+    {
+        SingleReader = true,
+        SingleWriter = !multithreaded,
+    });
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private readonly object tracerSync = new();
 
@@ -85,7 +88,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     /// <param name="input">The input to enqueue.</param>
     public void Enqueue(TInput input)
     {
-        this.inputQueue.Add(new QueueEntry(input));
+        this.inputQueue.Writer.TryWrite(new QueueEntry(input));
         lock (this.tracerSync) this.Tracer.InputsEnqueued([input]);
     }
 
@@ -95,7 +98,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     /// <param name="inputs">The inputs to enqueue.</param>
     public void EnqueueRange(IEnumerable<TInput> inputs)
     {
-        foreach (var input in inputs) this.inputQueue.Add(new QueueEntry(input));
+        foreach (var input in inputs) this.inputQueue.Writer.TryWrite(new QueueEntry(input));
         lock (this.tracerSync) this.Tracer.InputsEnqueued(inputs);
     }
 
@@ -113,10 +116,15 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
         {
             if (cancellationToken.IsCancellationRequested) break;
 
-            var entry = this.inputQueue.Take(cancellationToken);
+            var entry = null as QueueEntry;
+            while (!this.inputQueue.Reader.TryRead(out entry))
+            {
+                if (cancellationToken.IsCancellationRequested) goto end;
+                Thread.Sleep(1);
+            }
             lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
 
-            if (this.Multithread)
+            if (multithreaded)
             {
                 ThreadPool.QueueUserWorkItem(_ => HandleEntry());
             }
@@ -139,6 +147,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
                 this.Mutate(entry);
             }
         }
+    end:
         lock (this.tracerSync) this.Tracer.FuzzerFinished();
     }
 
@@ -200,7 +209,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
         var executionResult = new ExecutionResult(compressedCoverage, faultResult);
         if (!dontRequeue && isInteresting)
         {
-            this.inputQueue.Add(new QueueEntry(input, executionResult));
+            this.inputQueue.Writer.TryWrite(new QueueEntry(input, executionResult));
             lock (this.tracerSync) this.Tracer.InputsEnqueued([input]);
         }
         return (executionResult, isInteresting);

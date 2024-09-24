@@ -83,7 +83,7 @@ public static class FaultDetector
             }
 
             targetInfo.Process.StartInfo.RedirectStandardError = true;
-            targetInfo.Process.Start();
+            targetExecutor.Execute(targetInfo);
             if (!targetInfo.Process.WaitForExit(this.timeout)) return FaultResult.Timeout(this.timeout);
 
             var stderr = targetInfo.Process.StandardError.ReadToEnd();

@@ -149,7 +149,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     {
         foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entry.Input))
         {
-            var (result, isInteresting) = this.Execute(mutatedInput);
+            var (_, isInteresting) = this.Execute(mutatedInput);
             if (isInteresting)
             {
                 this.Tracer.MutationFound(entry.Input, mutatedInput);

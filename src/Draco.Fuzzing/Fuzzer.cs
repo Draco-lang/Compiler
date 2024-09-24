@@ -56,4 +56,27 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     /// The tracer to use.
     /// </summary>
     public required ITracer<TInput> Tracer { get; init; }
+
+    /// <summary>
+    /// Enqueues the given input into the fuzzer.
+    /// </summary>
+    /// <param name="input">The input to enqueue.</param>
+    public void Enqueue(TInput input)
+    {
+        // TODO
+    }
+
+    public void EnqueueRange(IEnumerable<TInput> inputs)
+    {
+        // TODO
+    }
+
+    /// <summary>
+    /// Runs the fuzzing loop.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
+    public void Run(CancellationToken cancellationToken)
+    {
+        // TODO
+    }
 }

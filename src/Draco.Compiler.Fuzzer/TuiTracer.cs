@@ -31,6 +31,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
                 return $"{this.Fault.ThrownException.GetType().Name}: {this.Fault.ThrownException.Message}";
             }
             if (this.Fault.TimeoutReached is not null) return "Timeout";
+            if (this.Fault.ExitCode != 0) return $"Exit code: {this.Fault.ExitCode}";
             return "Unknown";
         }
     }

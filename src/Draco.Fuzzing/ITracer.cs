@@ -22,12 +22,18 @@ public interface ITracer<TInput>
     public void InputDequeued(TInput input);
 
     /// <summary>
-    /// Called when the minimization of an input finishes.
+    /// The fuzzing of some input completed.
+    /// </summary>
+    /// <param name="input">The input that was fuzzed.</param>
+    /// <param name="coverageResult">The coverage of the input.</param>
+    public void InputFuzzed(TInput input, CoverageResult coverageResult);
+
+    /// <summary>
+    /// Called when a smaller input was found.
     /// </summary>
     /// <param name="input">The original input.</param>
     /// <param name="minimizedInput">The minimized input.</param>
-    /// <param name="coverage">The coverage of the minimized input.</param>
-    public void EndOfMinimization(TInput input, TInput minimizedInput, CoverageResult coverage);
+    public void MinimizationFound(TInput input, TInput minimizedInput);
 
     /// <summary>
     /// Called when a mutation is found.
@@ -66,7 +72,8 @@ public sealed class NullTracer<T> : ITracer<T>
 
     public void InputsEnqueued(IEnumerable<T> inputs) { }
     public void InputDequeued(T input) { }
-    public void EndOfMinimization(T input, T minimizedInput, CoverageResult coverage) { }
+    public void InputFuzzed(T input, CoverageResult coverageResult) { }
+    public void MinimizationFound(T input, T minimizedInput) { }
     public void MutationFound(T input, T mutatedInput) { }
     public void InputFaulted(T input, FaultResult fault) { }
     public void FuzzerFinished() { }

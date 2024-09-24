@@ -6,10 +6,9 @@ using Draco.Coverage;
 namespace Draco.Fuzzing;
 
 /// <summary>
-/// Executes the fuzzed target.
+/// A base interface for the more elaborate <see cref="ITargetExecutor{TInput}"/>.
 /// </summary>
-/// <typeparam name="TInput">The type of the input data.</typeparam>
-public interface ITargetExecutor<TInput>
+public interface ITargetExecutor
 {
     /// <summary>
     /// Called once at the start of the fuzzing process.
@@ -17,18 +16,25 @@ public interface ITargetExecutor<TInput>
     public void GlobalInitializer();
 
     /// <summary>
+    /// Executes the target.
+    /// </summary>
+    /// <param name="targetInfo">The target information.</param>
+    public void Execute(TargetInfo targetInfo);
+}
+
+/// <summary>
+/// Executes the fuzzed target.
+/// </summary>
+/// <typeparam name="TInput">The type of the input data.</typeparam>
+public interface ITargetExecutor<TInput> : ITargetExecutor
+{
+    /// <summary>
     /// Initializes the target for execution.
     /// Called before each execution.
     /// </summary>
     /// <param name="input">The input data.</param>
     /// <returns>The target information.</returns>
     public TargetInfo Initialize(TInput input);
-
-    /// <summary>
-    /// Executes the target.
-    /// </summary>
-    /// <param name="targetInfo">The target information.</param>
-    public void Execute(TargetInfo targetInfo);
 }
 
 /// <summary>

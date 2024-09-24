@@ -82,6 +82,7 @@ public static class FaultDetector
             }
 
             // TODO: We could definitely capture the STDERR for extra info
+            targetInfo.Process.Start();
             if (!targetInfo.Process.WaitForExit(this.timeout)) return FaultResult.Timeout(this.timeout);
             if (targetInfo.Process.ExitCode != 0) return FaultResult.Code(targetInfo.Process.ExitCode);
             return FaultResult.Ok;

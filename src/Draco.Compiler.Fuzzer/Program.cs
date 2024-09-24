@@ -1,15 +1,8 @@
 using System;
-using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
-using Draco.Coverage;
-using Draco.Fuzzing;
 using Terminal.Gui;
-using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.Fuzzer;
 

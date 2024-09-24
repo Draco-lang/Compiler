@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Draco.Fuzzing;
 

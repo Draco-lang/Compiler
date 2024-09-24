@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Draco.Fuzzing;
 
@@ -35,6 +37,13 @@ public static class FaultDetector
     /// <param name="timeout">The timeout for the execution.</param>
     /// <returns>The fault detector.</returns>
     public static IFaultDetector OutOfProcess(TimeSpan? timeout = null) => new OutOfProcessDetector(timeout);
+
+    /// <summary>
+    /// Creates a fault detector that filters out identical traces.
+    /// </summary>
+    /// <param name="innerDetector">The inner detector to detect with.</param>
+    /// <returns>The fault detector.</returns>
+    public static IFaultDetector FilterIdenticalTraces(IFaultDetector innerDetector) => new FilterIdenticalTracesDetector(innerDetector);
 
     private sealed class InProcessDetector(TimeSpan? timeout) : IFaultDetector
     {
@@ -77,6 +86,23 @@ public static class FaultDetector
             if (!targetInfo.Process.WaitForExit(this.timeout)) return FaultResult.Timeout(this.timeout);
             if (targetInfo.Process.ExitCode != 0) return FaultResult.Code(targetInfo.Process.ExitCode);
             return FaultResult.Ok;
+        }
+    }
+
+    private sealed class FilterIdenticalTracesDetector(IFaultDetector innerDetector) : IFaultDetector
+    {
+        private readonly HashSet<Exception> exceptionCache = new(ExceptionStackTraceEqualityComparer.Instance);
+
+        public FaultResult Detect(ITargetExecutor targetExecutor, TargetInfo targetInfo)
+        {
+            var result = innerDetector.Detect(targetExecutor, targetInfo);
+            if (result.ThrownException is not null && !this.exceptionCache.Add(result.ThrownException))
+            {
+                // This was an exception fault and we have seen it before
+                // Lie that the fault was not detected
+                return FaultResult.Ok;
+            }
+            return result;
         }
     }
 }

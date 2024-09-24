@@ -92,6 +92,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
     /// <param name="cancellationToken">The cancellation token to cancel the fuzzing process.</param>
     public void Fuzz(CancellationToken cancellationToken)
     {
+        this.TargetExecutor.GlobalInitializer();
         while (!cancellationToken.IsCancellationRequested && this.inputQueue.TryDequeue(out var input))
         {
             this.Tracer.InputDequeued(input, this.inputQueue);
@@ -155,15 +156,15 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
 
     private ExecutionResult ExecuteTarget(TInput input)
     {
-        this.TargetExecutor.Initialize();
-        this.CoverageReader.Clear();
-        var faultResult = this.FaultDetector.Execute(() => this.TargetExecutor.Execute(input));
+        var targetInfo = this.TargetExecutor.Initialize(input);
+        this.CoverageReader.Clear(targetInfo);
+        var faultResult = this.FaultDetector.Detect(this.TargetExecutor, targetInfo);
         if (faultResult.IsFaulted)
         {
             // Call the tracer no matter what
             this.Tracer.InputFaulted(input, faultResult);
         }
-        var coverage = this.CoverageReader.Read();
+        var coverage = this.CoverageReader.Read(targetInfo);
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         return new(faultResult, coverage, compressedCoverage);
     }
@@ -175,6 +176,7 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
            AreEqualFaults(a.FaultResult, b.FaultResult)
         && Equals(a.CompressedCoverage, b.CompressedCoverage);
 
+    // NOTE: We don't compare exit codes, they are probably not reliable for crashes
     private static bool AreEqualFaults(FaultResult a, FaultResult b) =>
            a.ThrownException?.GetType() == b.ThrownException?.GetType()
         && (a.TimeoutReached is null) == (b.TimeoutReached is null)

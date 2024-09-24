@@ -123,7 +123,6 @@ public static class InputMutator
         }
     }
 
-    // Copies a range of the input and pastes it at a random position
     private static IEnumerable<IReadOnlyList<TElement>> CopyDelegate<TElement>(Random random, IReadOnlyList<TElement> input)
     {
         // Empty sequence won't get anything by copying

@@ -107,6 +107,11 @@ public sealed class Fuzzer<TInput, TCoverage>(int? seed = null)
 
             // We want to minimize the input first
             entry = this.Minimize(entry);
+            if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
+            {
+                // NOTE: For now we don't mutate faulted results
+                continue;
+            }
 
             // And we want to mutate the minimized input
             this.Mutate(entry);

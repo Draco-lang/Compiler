@@ -260,14 +260,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         Application.Top.Add(this);
     }
 
-    public void InputsEnqueued(IEnumerable<SyntaxTree> inputs, IReadOnlyCollection<SyntaxTree> inputQueue)
+    public void InputsEnqueued(IEnumerable<SyntaxTree> inputs)
     {
         foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
 
         this.inputQueueFrameView.Title = $"Input Queue (Size: {this.inputQueueList.Count})";
     }
 
-    public void InputDequeued(SyntaxTree input, IReadOnlyCollection<SyntaxTree> inputQueue)
+    public void InputDequeued(SyntaxTree input)
     {
         var itemIndex = this.inputQueueList.FindIndex(item => item.Input == input);
         if (itemIndex >= 0) this.inputQueueList.RemoveAt(itemIndex);
@@ -297,7 +297,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.averageTimePerFuzzLabel.Text = $"Avg/fuzz: {averageMillisecondsPerFuzz:0.00}ms";
     }
 
-    public void EndOfMutations(SyntaxTree input, int mutationsFound)
+    public void MutationFound(SyntaxTree input, SyntaxTree mutatedInput)
     {
     }
 

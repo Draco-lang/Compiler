@@ -13,15 +13,13 @@ public interface ITracer<TInput>
     /// Called when inputs were enqueued into the fuzzer.
     /// </summary>
     /// <param name="inputs">The inputs that were enqueued.</param>
-    /// <param name="inputQueue">The current input queue.</param>
-    public void InputsEnqueued(IEnumerable<TInput> inputs, IReadOnlyCollection<TInput> inputQueue);
+    public void InputsEnqueued(IEnumerable<TInput> inputs);
 
     /// <summary>
     /// Called when an input was dequeued from the fuzzer.
     /// </summary>
     /// <param name="input">The input that was dequeued.</param>
-    /// <param name="inputQueue">The current input queue.</param>
-    public void InputDequeued(TInput input, IReadOnlyCollection<TInput> inputQueue);
+    public void InputDequeued(TInput input);
 
     /// <summary>
     /// Called when the minimization of an input finishes.
@@ -32,11 +30,11 @@ public interface ITracer<TInput>
     public void EndOfMinimization(TInput input, TInput minimizedInput, CoverageResult coverage);
 
     /// <summary>
-    /// Called when mutation of an input finishes.
+    /// Called when a mutation is found.
     /// </summary>
     /// <param name="input">The original input.</param>
-    /// <param name="mutationsFound">The number of mutations found.</param>
-    public void EndOfMutations(TInput input, int mutationsFound);
+    /// <param name="mutatedInput">The mutated input.</param>
+    public void MutationFound(TInput input, TInput mutatedInput);
 
     /// <summary>
     /// Called when an input faulted.
@@ -66,10 +64,10 @@ public sealed class NullTracer<T> : ITracer<T>
     {
     }
 
+    public void InputsEnqueued(IEnumerable<T> inputs) { }
+    public void InputDequeued(T input) { }
     public void EndOfMinimization(T input, T minimizedInput, CoverageResult coverage) { }
-    public void EndOfMutations(T input, int mutationsFound) { }
-    public void FuzzerFinished() { }
-    public void InputDequeued(T input, IReadOnlyCollection<T> inputQueue) { }
+    public void MutationFound(T input, T mutatedInput) { }
     public void InputFaulted(T input, FaultResult fault) { }
-    public void InputsEnqueued(IEnumerable<T> inputs, IReadOnlyCollection<T> inputQueue) { }
+    public void FuzzerFinished() { }
 }

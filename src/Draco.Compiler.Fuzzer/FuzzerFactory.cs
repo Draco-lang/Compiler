@@ -85,7 +85,7 @@ internal static class FuzzerFactory
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-        return new()
+        return new(multithreaded: true)
         {
             CoverageReader = CoverageReader,
             CoverageCompressor = CoverageCompressor,

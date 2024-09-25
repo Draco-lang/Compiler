@@ -218,6 +218,13 @@ public sealed class DoesNotCrashTests
 
         )WriteLine("   fib(  i}  ) =   fibi});}
         """)]
+    [InlineData("""
+        import System.Console;
+
+        func main() {
+            System.Console();
+        }
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

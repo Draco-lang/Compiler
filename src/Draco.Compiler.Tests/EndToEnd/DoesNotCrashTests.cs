@@ -202,6 +202,11 @@ public sealed class DoesNotCrashTests
             WriteLine("   ").Console;
             );}
         """)]
+    [InlineData("""
+        func foo() {
+            val a  = 1e;
+        }
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

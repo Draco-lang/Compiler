@@ -195,6 +195,13 @@ public sealed class DoesNotCrashTests
     [InlineData("""
         func foo(): string = "\{0}";
         """)]
+    [InlineData("""
+        import System.Console;
+
+        )main(func  {
+            WriteLine("   ").Console;
+            );}
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

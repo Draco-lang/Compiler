@@ -86,7 +86,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             }),
             new MenuBarItem("_Operations", new[]
                         {
-                new MenuItem("_Clear Faults", "Clears the fault list", this.faultList.Clear, canExecute: () => this.faultList.Count > 0),
+                new MenuItem("_Clear Faults", "Clears the fault list", this.ClearFaultList, canExecute: () => this.faultList.Count > 0),
                 new MenuItem("_Export Faults", "Exports the fault list", this.ExportFaults, canExecute: () => this.faultList.Count > 0)
             }),
         ]);

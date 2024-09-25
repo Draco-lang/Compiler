@@ -69,6 +69,7 @@ internal sealed class InstrumentationWeaver
     private readonly InstrumentationWeaverSettings settings;
     private readonly ModuleDefinition weavedModule;
     private readonly List<Mono.Cecil.Cil.SequencePoint> recordedSequencePoints = [];
+    private MethodDefinition? allocateHitsMethod;
     private MethodDefinition? recordHitMethod;
     private MethodDefinition? collectorInitializerMethod;
 
@@ -87,43 +88,16 @@ internal sealed class InstrumentationWeaver
 
     private void InjectCoverageCollector()
     {
-        using var templateAssembly = AssemblyDefinition.ReadAssembly(typeof(CoverageCollector).Assembly.Location);
+        var templateAssembly = typeof(CoverageCollector).Assembly;
+        using var templateAssemblyDefitition = AssemblyDefinition.ReadAssembly(templateAssembly.Location);
+
+        // Reference the assembly
+        this.weavedModule.AssemblyReferences.Add(AssemblyNameReference.Parse(templateAssembly.FullName));
 
         // Collector class
 
-        var collectorTemplate = templateAssembly.MainModule.GetType(typeof(CoverageCollector).FullName);
+        var collectorTemplate = templateAssemblyDefitition.MainModule.GetType(typeof(CoverageCollector).FullName);
         var collectorType = CloneType(collectorTemplate);
-
-        // SequencePoint struct
-
-        var sequencePointTemplate = collectorTemplate.NestedTypes.First(t => t.Name == nameof(CoverageCollector.SequencePoint));
-        var sequencePointType = CloneType(sequencePointTemplate);
-
-        foreach (var customAttrib in sequencePointTemplate.CustomAttributes)
-        {
-            sequencePointType.CustomAttributes.Add(CloneCustomAttribute(customAttrib));
-        }
-
-        foreach (var fieldTemplate in sequencePointTemplate.Fields)
-        {
-            sequencePointType.Fields.Add(CloneField(fieldTemplate));
-        }
-
-        foreach (var ctorTemplate in sequencePointTemplate.GetConstructors())
-        {
-            var ctor = CloneMethod(ctorTemplate);
-            foreach (var parameterTemplate in ctorTemplate.Parameters)
-            {
-                ctor.Parameters.Add(CloneParameter(parameterTemplate));
-            }
-            sequencePointType.Methods.Add(ctor);
-
-            var ilProcessor = ctor.Body.GetILProcessor();
-            foreach (var instruction in ctorTemplate.Body.Instructions)
-            {
-                ilProcessor.Append(CloneInstruction(instruction, sequencePointType));
-            }
-        }
 
         // Collector custom attributes
 
@@ -136,18 +110,7 @@ internal sealed class InstrumentationWeaver
 
         foreach (var fieldTemplate in collectorTemplate.Fields)
         {
-            if (fieldTemplate.Name == nameof(CoverageCollector.SequencePoints))
-            {
-                // We need to reference the sequence point type defined in the collector
-                collectorType.Fields.Add(new FieldDefinition(
-                    name: fieldTemplate.Name,
-                    attributes: fieldTemplate.Attributes,
-                    fieldType: sequencePointType.MakeArrayType()));
-            }
-            else
-            {
-                collectorType.Fields.Add(CloneField(fieldTemplate));
-            }
+            collectorType.Fields.Add(CloneField(fieldTemplate));
         }
 
         // Collector methods
@@ -169,20 +132,31 @@ internal sealed class InstrumentationWeaver
             }
 
             var ilProcessor = method.Body.GetILProcessor();
+
+            // Locals
+            foreach (var local in methodTemplate.Body.Variables)
+            {
+                method.Body.Variables.Add(CloneVariable(local));
+            }
+
+            // Instructions
             foreach (var instruction in methodTemplate.Body.Instructions)
             {
                 ilProcessor.Append(CloneInstruction(instruction, collectorType));
             }
 
-            if (methodTemplate.Name == nameof(CoverageCollector.RecordHit))
+            if (methodTemplate.Name == nameof(CoverageCollector.AllocateHits))
+            {
+                this.allocateHitsMethod = method;
+            }
+            else if (methodTemplate.Name == nameof(CoverageCollector.RecordHit))
             {
                 this.recordHitMethod = method;
             }
         }
 
-        // Add them to the module and nest sequence point in collector
+        // Add the class to the target module
 
-        collectorType.NestedTypes.Add(sequencePointType);
         this.weavedModule.Types.Add(collectorType);
 
         CustomAttribute CloneCustomAttribute(CustomAttribute customAttribute) => new(
@@ -210,6 +184,9 @@ internal sealed class InstrumentationWeaver
             attributes: methodDefinition.Attributes,
             returnType: this.weavedModule.ImportReference(methodDefinition.ReturnType));
 
+        VariableDefinition CloneVariable(VariableDefinition variableDefinition) => new(
+            variableType: this.weavedModule.ImportReference(variableDefinition.VariableType));
+
         Instruction CloneInstruction(Instruction instruction, TypeDefinition typeDefinition)
         {
             if (instruction.Operand is FieldDefinition fieldDefinition)
@@ -235,18 +212,20 @@ internal sealed class InstrumentationWeaver
         var collectorType = this.collectorInitializerMethod.DeclaringType;
         var ilProcessor = this.collectorInitializerMethod.Body.GetILProcessor();
 
-        // Hits = new int[sequencePoints.Length];
+        var sequencePointType = typeof(SequencePoint);
+        var sequencePointTypeRef = this.weavedModule.ImportReference(sequencePointType);
+        var sequencePointCtor = this.weavedModule.ImportReference(sequencePointType.GetConstructors().First(c => c.GetParameters().Length > 0));
+
+        // Hits = AllocateHits(sequencePoints.Length);
         var hitsField = collectorType.Fields.First(f => f.Name == nameof(CoverageCollector.Hits));
         ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, this.recordedSequencePoints.Count));
-        ilProcessor.Append(Instruction.Create(OpCodes.Newarr, this.weavedModule.ImportReference(typeof(int))));
+        ilProcessor.Append(Instruction.Create(OpCodes.Call, this.allocateHitsMethod));
         ilProcessor.Append(Instruction.Create(OpCodes.Stsfld, hitsField));
 
         // SequencePoints = new SequencePoint[sequencePoints.Length];
         var sequencePointsField = collectorType.Fields.First(f => f.Name == nameof(CoverageCollector.SequencePoints));
-        var sequencePointType = sequencePointsField.FieldType.GetElementType();
-        var sequencePointCtor = ((TypeDefinition)sequencePointType).GetConstructors().First(c => c.Parameters.Count > 0);
         ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, this.recordedSequencePoints.Count));
-        ilProcessor.Append(Instruction.Create(OpCodes.Newarr, sequencePointType));
+        ilProcessor.Append(Instruction.Create(OpCodes.Newarr, sequencePointTypeRef));
         ilProcessor.Append(Instruction.Create(OpCodes.Stsfld, sequencePointsField));
         for (var i = 0; i < this.recordedSequencePoints.Count; ++i)
         {
@@ -261,7 +240,7 @@ internal sealed class InstrumentationWeaver
             ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, sequencePoint.EndLine));
             ilProcessor.Append(Instruction.Create(OpCodes.Ldc_I4, sequencePoint.EndColumn));
             ilProcessor.Append(Instruction.Create(OpCodes.Newobj, sequencePointCtor));
-            ilProcessor.Append(Instruction.Create(OpCodes.Stelem_Any, sequencePointType));
+            ilProcessor.Append(Instruction.Create(OpCodes.Stelem_Any, sequencePointTypeRef));
         }
 
         // return

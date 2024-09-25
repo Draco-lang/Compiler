@@ -19,10 +19,10 @@ internal sealed class SyntaxTreeInputMinimizer : IInputMinimizer<SyntaxTree>
         if (targets.Count == 0) yield break;
 
         // Just try a few random samples
-        for (var i = 0; i < 15; i++)
+        for (var i = 0; i < 5; i++)
         {
             var target = targets[random.Next(targets.Count)];
-            yield return input.Remove(target);
+            yield return Reparse(input.Remove(target));
         }
     }
 
@@ -34,4 +34,8 @@ internal sealed class SyntaxTreeInputMinimizer : IInputMinimizer<SyntaxTree>
         if (!parentType.IsGenericType) return false;
         return parentType.GetGenericTypeDefinition() == typeof(SyntaxList<>);
     }
+
+    // A tree where we randomly remove something doesn't necessarily stay valid
+    // To avoid these false errors, we re-parse the tree
+    private static SyntaxTree Reparse(SyntaxTree tree) => SyntaxTree.Parse(tree.ToString());
 }

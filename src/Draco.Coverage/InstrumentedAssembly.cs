@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Immutable;
 using System.IO;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Draco.Coverage;
 
@@ -12,6 +9,18 @@ namespace Draco.Coverage;
 /// </summary>
 public sealed class InstrumentedAssembly
 {
+    /// <summary>
+    /// The environment variable set to collect to an existing shared memory.
+    /// </summary>
+    public const string SharedMemoryEnvironmentVariable = "DRACO_COLLECT_TO_SHARED_MEMORY";
+
+    /// <summary>
+    /// Creates a shared memory key from the given identifier.
+    /// </summary>
+    /// <param name="identifier">The identifier to create the key from.</param>
+    /// <returns>A key that can be used to reference the shared memory.</returns>
+    public static string SharedMemoryKey(string identifier) => $"Draco.Coverage.SharedMemory.{identifier}";
+
     /// <summary>
     /// Weaves instrumentation code into the given assembly.
     /// </summary>
@@ -59,13 +68,14 @@ public sealed class InstrumentedAssembly
     /// <summary>
     /// The sequence points of the weaved assembly.
     /// </summary>
-    public ImmutableArray<SequencePoint> SequencePoints => this.sequencePoints ??= this.GetSequencePoints();
-    private ImmutableArray<SequencePoint>? sequencePoints;
+    public SequencePoint[] SequencePoints =>
+        this.sequencePoints ??= NotNullOrNotWeaved((SequencePoint[]?)this.SequencePointsField.GetValue(null));
+    private SequencePoint[]? sequencePoints;
 
     /// <summary>
     /// Retrieves a copy of the coverage result.
     /// </summary>
-    public CoverageResult CoverageResult => new([.. this.HitsInstance]);
+    public CoverageResult CoverageResult => CoverageResult.FromSharedMemory(this.HitsInstance);
 
     /// <summary>
     /// The coverage collector type weaved into the assembly.
@@ -91,16 +101,9 @@ public sealed class InstrumentedAssembly
     /// <summary>
     /// The hits instance of the coverage collector.
     /// </summary>
-    internal int[] HitsInstance =>
-        this.hitsInstance ??= NotNullOrNotWeaved((int[]?)this.HitsField.GetValue(null));
-    private int[]? hitsInstance;
-
-    /// <summary>
-    /// The sequence points instance of the coverage collector.
-    /// </summary>
-    internal Array SequencePointsInstance =>
-        this.sequencePointsInstance ??= NotNullOrNotWeaved((Array?)this.SequencePointsField.GetValue(null));
-    private Array? sequencePointsInstance;
+    internal SharedMemory<int> HitsInstance =>
+        this.hitsInstance ??= NotNullOrNotWeaved((SharedMemory<int>?)this.HitsField.GetValue(null));
+    private SharedMemory<int>? hitsInstance;
 
     private InstrumentedAssembly(Assembly weavedAssembly)
     {
@@ -134,14 +137,6 @@ public sealed class InstrumentedAssembly
         var clearMethod = NotNullOrNotWeaved(coverageCollectorType.GetMethod("Clear"));
 
         clearMethod.Invoke(null, null);
-    }
-
-    private ImmutableArray<SequencePoint> GetSequencePoints()
-    {
-        var sequencePointsSpan = MemoryMarshal.CreateSpan(
-            ref Unsafe.As<byte, SequencePoint>(ref MemoryMarshal.GetArrayDataReference(this.SequencePointsInstance)),
-            this.SequencePointsInstance.Length);
-        return [.. sequencePointsSpan];
     }
 
     private static void CheckForWeaved(Assembly assembly) =>

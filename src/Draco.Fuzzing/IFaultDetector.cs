@@ -5,16 +5,17 @@ using System.Threading;
 namespace Draco.Fuzzing;
 
 /// <summary>
-/// Detects a fault or crash in the target.
+/// Detects faults (crashes, exceptions, timeouts, ...) in the target to be executed.
 /// </summary>
 public interface IFaultDetector
 {
     /// <summary>
-    /// Attempts to execute the given action and returns the fault result.
+    /// Runs the target and detects faults.
     /// </summary>
-    /// <param name="action">The action to execute.</param>
+    /// <param name="targetExecutor">The target executor.</param>
+    /// <param name="targetInfo">The target information to run the executor with.</param>
     /// <returns>The fault result.</returns>
-    public FaultResult Execute(Action action);
+    public FaultResult Detect(ITargetExecutor targetExecutor, TargetInfo targetInfo);
 }
 
 /// <summary>
@@ -23,58 +24,91 @@ public interface IFaultDetector
 public static class FaultDetector
 {
     /// <summary>
-    /// Creates a fault detector from the given function.
+    /// Creates a fault detector for in-process execution.
     /// </summary>
-    /// <param name="func">The fault detection function.</param>
+    /// <param name="timeout">The timeout for the execution.</param>
     /// <returns>The fault detector.</returns>
-    public static IFaultDetector Create(Func<Action, FaultResult> func) => new DelegateFaultDetector(func);
+    public static IFaultDetector InProcess(TimeSpan? timeout = null) => new InProcessDetector(timeout);
 
     /// <summary>
-    /// Creates a default fault detector that catches exceptions and timeouts.
+    /// Creates a fault detector for out-of-process execution.
     /// </summary>
-    /// <param name="timeout">The timeout for the action.</param>
+    /// <param name="timeout">The timeout for the execution.</param>
     /// <returns>The fault detector.</returns>
-    public static IFaultDetector Default(TimeSpan? timeout = null) => Create(action =>
-    {
-        timeout ??= TimeSpan.MaxValue;
-        var exception = null as Exception;
-        var evt = new ManualResetEvent(false);
-        ThreadPool.QueueUserWorkItem(_ =>
-        {
-            try
-            {
-                action();
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-            evt.Set();
-        });
-        if (!evt.WaitOne(timeout.Value)) return FaultResult.Timeout(timeout.Value);
-        if (exception is not null) return FaultResult.Exception(exception);
-        return FaultResult.Ok;
-    });
+    public static IFaultDetector OutOfProcess(TimeSpan? timeout = null) => new OutOfProcessDetector(timeout);
 
-    public static IFaultDetector FilterIdenticalTraces(IFaultDetector innerDetector)
-    {
-        var exceptionCache = new HashSet<Exception>(ExceptionStackTraceEqualityComparer.Instance);
+    /// <summary>
+    /// Creates a fault detector that filters out identical traces.
+    /// </summary>
+    /// <param name="innerDetector">The inner detector to detect with.</param>
+    /// <returns>The fault detector.</returns>
+    public static IFaultDetector FilterIdenticalTraces(IFaultDetector innerDetector) => new FilterIdenticalTracesDetector(innerDetector);
 
-        return Create(action =>
+    private sealed class InProcessDetector(TimeSpan? timeout) : IFaultDetector
+    {
+        private readonly TimeSpan timeout = timeout ?? TimeSpan.MaxValue;
+
+        public FaultResult Detect(ITargetExecutor targetExecutor, TargetInfo targetInfo)
         {
-            var result = innerDetector.Execute(action);
-            if (result.ThrownException is not null && !exceptionCache.Add(result.ThrownException))
+            var exception = null as Exception;
+            var evt = new ManualResetEvent(false);
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                try
+                {
+                    targetExecutor.Execute(targetInfo);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+                evt.Set();
+            });
+            if (!evt.WaitOne(this.timeout)) return FaultResult.Timeout(this.timeout);
+            if (exception is not null) return FaultResult.Exception(exception);
+            return FaultResult.Ok;
+        }
+    }
+
+    private sealed class OutOfProcessDetector(TimeSpan? timeout) : IFaultDetector
+    {
+        private readonly TimeSpan timeout = timeout ?? TimeSpan.MaxValue;
+
+        public FaultResult Detect(ITargetExecutor targetExecutor, TargetInfo targetInfo)
+        {
+            if (targetInfo.Process is null)
+            {
+                throw new ArgumentException("target information does not contain a process to run", nameof(targetInfo));
+            }
+
+            targetInfo.Process.StartInfo.RedirectStandardError = true;
+            targetExecutor.Execute(targetInfo);
+            if (!targetInfo.Process.WaitForExit(this.timeout))
+            {
+                targetInfo.Process.Kill();
+                return FaultResult.Timeout(this.timeout);
+            }
+
+            var stderr = targetInfo.Process.StandardError.ReadToEnd();
+            if (targetInfo.Process.ExitCode != 0) return FaultResult.Code(targetInfo.Process.ExitCode, errorMessage: stderr);
+            return FaultResult.Ok;
+        }
+    }
+
+    private sealed class FilterIdenticalTracesDetector(IFaultDetector innerDetector) : IFaultDetector
+    {
+        private readonly HashSet<Exception> exceptionCache = new(ExceptionStackTraceEqualityComparer.Instance);
+
+        public FaultResult Detect(ITargetExecutor targetExecutor, TargetInfo targetInfo)
+        {
+            var result = innerDetector.Detect(targetExecutor, targetInfo);
+            if (result.ThrownException is not null && !this.exceptionCache.Add(result.ThrownException))
             {
                 // This was an exception fault and we have seen it before
                 // Lie that the fault was not detected
                 return FaultResult.Ok;
             }
             return result;
-        });
-    }
-
-    private sealed class DelegateFaultDetector(Func<Action, FaultResult> func) : IFaultDetector
-    {
-        public FaultResult Execute(Action action) => func(action);
+        }
     }
 }

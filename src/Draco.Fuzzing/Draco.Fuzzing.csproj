@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="Draco.Coverage" Version="0.1.9-pre" />
+    <PackageReference Include="Draco.Coverage" Version="0.2.0-pre" />
   </ItemGroup>
 
 </Project>

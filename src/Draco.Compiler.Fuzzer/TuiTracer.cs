@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
@@ -31,6 +32,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
                 return $"{this.Fault.ThrownException.GetType().Name}: {this.Fault.ThrownException.Message}";
             }
             if (this.Fault.TimeoutReached is not null) return "Timeout";
+            if (this.Fault.ExitCode != 0) return $"Exit code: {this.Fault.ExitCode}";
             return "Unknown";
         }
     }
@@ -41,8 +43,6 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private readonly ProgressBar bestCoverageProgressBar;
     private readonly Label bestCoveragePercentLabel;
 
-    private double bestCoveragePercent = 0;
-
     // Timings
     private readonly Label fuzzesPerSecondLabel;
     private readonly Label averageTimePerFuzzLabel;
@@ -51,25 +51,48 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     // Current input
     private readonly TextView currentInputTextView;
     private readonly TextView minimizedInputTextView;
+    private readonly FrameView currentInputFrameView;
+    private readonly FrameView minimizedInputFrameView;
     private readonly FrameView inputFrameView;
-
-    private int minimizedInputCounter = 0;
 
     // Input queue
     private readonly ListView inputQueueListView;
     private readonly List<InputQueueItem> inputQueueList = [];
     private readonly TextView selectedInputQueueItemTextView;
     private readonly FrameView inputQueueFrameView;
-    private int inputQueueItemCounter = 0;
 
     // Faults
     private readonly ListView faultListView;
     private readonly List<FaultItem> faultList = [];
     private readonly TextView selectedFaultItemTextView;
 
+    // Counters
+    private int inputQueueItemCounter = 0;
+    private int fuzzedInputCounter = 0;
+    private int minimizedInputCounter = 0;
+    private int mutatedInputCounter = 0;
+    private double bestCoveragePercent = 0;
+
     public TuiTracer()
     {
-        // Coverage info
+        this.Border = new();
+
+        #region Menu
+        var menuBar = new MenuBar(
+        [
+            new MenuBarItem("_File", new[]
+            {
+                new MenuItem("_Quit", "Quits the application", () => Application.RequestStop()),
+            }),
+            new MenuBarItem("_Operations", new[]
+                        {
+                new MenuItem("_Clear Faults", "Clears the fault list", this.ClearFaultList, canExecute: () => this.faultList.Count > 0),
+                new MenuItem("_Export Faults", "Exports the fault list", this.ExportFaults, canExecute: () => this.faultList.Count > 0)
+            }),
+        ]);
+        #endregion
+
+        #region Coverage Progress Bars
         var currentCoverageLabel = new Label("Current:")
         {
             X = 0,
@@ -117,16 +140,27 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         coverageFrameView.Add(
             currentCoverageLabel, this.currentCoverageProgressBar, this.currentCoveragePercentLabel,
             bestCoverageLabel, this.bestCoverageProgressBar, this.bestCoveragePercentLabel);
+        #endregion
 
-        // Timings
-        this.fuzzesPerSecondLabel = new Label("Fuzz/s: 0")
+        #region Timing Labels
+        var fuzzesPerSecondTextLabel = new Label("Fuzz/s:   ")
         {
             X = 0,
             Y = 0,
         };
-        this.averageTimePerFuzzLabel = new Label("Avg/fuzz: 0ms")
+        this.fuzzesPerSecondLabel = new Label("-")
+        {
+            X = Pos.Right(fuzzesPerSecondTextLabel),
+            Y = 0,
+        };
+        var averageTimePerFuzzTextLabel = new Label("Avg/fuzz: ")
         {
             X = 0,
+            Y = 2,
+        };
+        this.averageTimePerFuzzLabel = new Label("-")
+        {
+            X = Pos.Right(averageTimePerFuzzTextLabel),
             Y = 2,
         };
         var timingsFrameView = new FrameView("Timings")
@@ -136,9 +170,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Width = Dim.Fill(),
             Height = Dim.Height(coverageFrameView),
         };
-        timingsFrameView.Add(this.fuzzesPerSecondLabel, this.averageTimePerFuzzLabel);
+        timingsFrameView.Add(
+            fuzzesPerSecondTextLabel, this.fuzzesPerSecondLabel,
+            averageTimePerFuzzTextLabel, this.averageTimePerFuzzLabel);
+        #endregion
 
-        // Current input
+        #region Input Text Views
         this.currentInputTextView = new()
         {
             X = 0,
@@ -147,14 +184,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
             ReadOnly = true,
         };
-        var currentInputFrameView = new FrameView("Current")
+        this.currentInputFrameView = new FrameView(GetCurrentInputFrameTitle())
         {
             X = 0,
             Y = 0,
             Width = Dim.Percent(50),
             Height = Dim.Fill(),
         };
-        currentInputFrameView.Add(this.currentInputTextView);
+        this.currentInputFrameView.Add(this.currentInputTextView);
 
         this.minimizedInputTextView = new()
         {
@@ -164,14 +201,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
             ReadOnly = true,
         };
-        var minimizedInputFrameView = new FrameView("Minimized")
+        this.minimizedInputFrameView = new FrameView(GetMinimizedInputFrameTitle())
         {
-            X = Pos.Right(currentInputFrameView),
+            X = Pos.Right(this.currentInputFrameView),
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
         };
-        minimizedInputFrameView.Add(this.minimizedInputTextView);
+        this.minimizedInputFrameView.Add(this.minimizedInputTextView);
 
         this.inputFrameView = new FrameView("Input")
         {
@@ -180,9 +217,10 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Width = Dim.Fill(),
             Height = Dim.Percent(50),
         };
-        this.inputFrameView.Add(currentInputFrameView, minimizedInputFrameView);
+        this.inputFrameView.Add(this.currentInputFrameView, this.minimizedInputFrameView);
+        #endregion
 
-        // Input queue
+        #region Input Queue
         this.inputQueueListView = new()
         {
             X = 0,
@@ -204,7 +242,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             var selectedItem = e.Value as InputQueueItem;
             this.selectedInputQueueItemTextView.Text = selectedItem?.Input.ToString();
         };
-        this.inputQueueFrameView = new FrameView("Input Queue")
+        this.inputQueueFrameView = new FrameView(GetInputQueueFrameTitle())
         {
             X = 0,
             Y = Pos.Bottom(this.inputFrameView),
@@ -212,8 +250,9 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
         };
         this.inputQueueFrameView.Add(this.inputQueueListView, this.selectedInputQueueItemTextView);
+        #endregion
 
-        // Faults
+        #region Fault List
         this.faultListView = new()
         {
             X = 0,
@@ -243,31 +282,52 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             Height = Dim.Fill(),
         };
         faultFrameView.Add(this.faultListView, this.selectedFaultItemTextView);
+        #endregion
 
         this.Add(
             coverageFrameView, timingsFrameView,
             this.inputFrameView,
             this.inputQueueFrameView, faultFrameView);
 
-        Application.Top.Add(this);
+        Application.Top.Add(menuBar, this);
     }
 
-    public void InputsEnqueued(IEnumerable<SyntaxTree> inputs, IReadOnlyCollection<SyntaxTree> inputQueue)
+    public void InputsEnqueued(IEnumerable<SyntaxTree> inputs)
     {
         foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
 
-        this.inputQueueFrameView.Title = $"Input Queue (Size: {this.inputQueueList.Count})";
+        this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
     }
 
-    public void InputDequeued(SyntaxTree input, IReadOnlyCollection<SyntaxTree> inputQueue)
+    public void InputDequeued(SyntaxTree input)
     {
+        this.minimizedInputCounter = 0;
+        this.mutatedInputCounter = 0;
+
         var itemIndex = this.inputQueueList.FindIndex(item => item.Input == input);
         if (itemIndex >= 0) this.inputQueueList.RemoveAt(itemIndex);
+
+        this.currentInputFrameView.Title = GetCurrentInputFrameTitle();
+        this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle();
+        this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
+        this.currentInputTextView.Text = input.ToString();
+        this.minimizedInputTextView.Text = string.Empty;
     }
 
-    public void EndOfMinimization(SyntaxTree input, SyntaxTree minimizedInput, CoverageResult coverage)
+    public void InputFuzzed(SyntaxTree input, CoverageResult coverageResult)
     {
-        var currentCoveragePercent = CoverageToPercentage(coverage);
+        // Counters
+        ++this.fuzzedInputCounter;
+
+        var totalElapsed = this.stopwatch.Elapsed;
+        var fuzzesPerSecond = this.fuzzedInputCounter / totalElapsed.TotalSeconds;
+        var averageMillisecondsPerFuzz = totalElapsed.TotalMilliseconds / this.fuzzedInputCounter;
+
+        this.fuzzesPerSecondLabel.Text = fuzzesPerSecond.ToString("0.00");
+        this.averageTimePerFuzzLabel.Text = $"{averageMillisecondsPerFuzz:0.00}ms";
+
+        // Coverage percentage
+        var currentCoveragePercent = CoverageToPercentage(coverageResult);
         this.bestCoveragePercent = Math.Max(this.bestCoveragePercent, currentCoveragePercent);
 
         this.currentCoverageProgressBar.Fraction = (float)currentCoveragePercent;
@@ -275,22 +335,21 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         this.bestCoverageProgressBar.Fraction = (float)this.bestCoveragePercent;
         this.bestCoveragePercentLabel.Text = FormatPercentage(this.bestCoveragePercent);
-
-        this.currentInputTextView.Text = input.ToString();
-        this.minimizedInputTextView.Text = minimizedInput.ToString();
-
-        ++this.minimizedInputCounter;
-        this.inputFrameView.Title = $"Input (Tested: {this.minimizedInputCounter})";
-
-        var totalElapsed = this.stopwatch.Elapsed;
-        var fuzzesPerSecond = this.minimizedInputCounter / totalElapsed.TotalSeconds;
-        var averageMillisecondsPerFuzz = totalElapsed.TotalMilliseconds / this.minimizedInputCounter;
-        this.fuzzesPerSecondLabel.Text = $"Fuzz/s: {fuzzesPerSecond:0.00}";
-        this.averageTimePerFuzzLabel.Text = $"Avg/fuzz: {averageMillisecondsPerFuzz:0.00}ms";
     }
 
-    public void EndOfMutations(SyntaxTree input, int mutationsFound)
+    public void MinimizationFound(SyntaxTree input, SyntaxTree minimizedInput)
     {
+        ++this.minimizedInputCounter;
+
+        this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle(this.minimizedInputCounter);
+        this.minimizedInputTextView.Text = minimizedInput.ToString();
+    }
+
+    public void MutationFound(SyntaxTree input, SyntaxTree mutatedInput)
+    {
+        ++this.mutatedInputCounter;
+
+        this.currentInputFrameView.Title = GetCurrentInputFrameTitle(this.mutatedInputCounter);
     }
 
     public void InputFaulted(SyntaxTree input, FaultResult fault)
@@ -298,15 +357,53 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.faultList.Add(new(input, fault));
     }
 
-    public void FuzzerFinished()
+    public void FuzzerFinished() => MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
+
+    private void ClearFaultList()
     {
-        // Show a message box
-        MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
+        this.faultList.Clear();
+        this.faultListView.SetSource(this.faultList);
     }
+
+    private void ExportFaults()
+    {
+        var dialog = new SaveDialog("Export Faults", "Export the fault list", [".txt"])
+        {
+            CanCreateDirectories = true,
+        };
+
+        Application.Run(dialog);
+
+        if (dialog.Canceled) return;
+        if (dialog.FileName is null) return;
+
+        var targetPath = Path.Join(dialog.DirectoryPath.ToString()!, dialog.FileName.ToString()!);
+        var faults = string.Join(Environment.NewLine, this.faultList.Select(FormatFaultForExport));
+        File.WriteAllText(targetPath, faults);
+    }
+
+    private static string GetInputQueueFrameTitle(int? count = null) => count is null
+        ? "Input Queue"
+        : $"Input Queue (Size: {count})";
+
+    private static string GetCurrentInputFrameTitle(int? count = null) => count is null
+        ? "Current"
+        : $"Current (Mutations: {count})";
+
+    private static string GetMinimizedInputFrameTitle(int? count = null) => count is null
+        ? "Minimized"
+        : $"Minimized (Minimizations: {count})";
 
     private static double CoverageToPercentage(CoverageResult coverage) =>
         coverage.Hits.Count(h => h > 0) / (double)coverage.Hits.Length;
 
     private static string FormatPercentage(double percentage) =>
         $"{(int)(percentage * 100),3}%";
+
+    private static string FormatFaultForExport(FaultItem fault) => $"""
+        // ----------------------------------------
+        // {fault}
+        // ----------------------------------------
+        {fault.Input}
+        """;
 }

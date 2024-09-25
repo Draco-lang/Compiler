@@ -396,7 +396,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     private static string FormatFaultForExport(FaultItem fault) => $"""
         // ----------------------------------------
-        // {fault.Fault}
+        // {fault}
         // ----------------------------------------
         {fault.Input}
         """;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
@@ -74,6 +75,23 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     public TuiTracer()
     {
+        this.Border = new();
+
+        #region Menu
+        var menuBar = new MenuBar(
+        [
+            new MenuBarItem("_File", new[]
+            {
+                new MenuItem("_Quit", "Quits the application", () => Application.RequestStop()),
+            }),
+            new MenuBarItem("_Operations", new[]
+                        {
+                new MenuItem("_Clear Faults", "Clears the fault list", this.faultList.Clear, canExecute: () => this.faultList.Count > 0),
+                new MenuItem("_Export Faults", "Exports the fault list", this.ExportFaults, canExecute: () => this.faultList.Count > 0)
+            }),
+        ]);
+        #endregion
+
         #region Coverage Progress Bars
         var currentCoverageLabel = new Label("Current:")
         {
@@ -266,19 +284,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         faultFrameView.Add(this.faultListView, this.selectedFaultItemTextView);
         #endregion
 
-        var statusBar = new StatusBar(
-        [
-            new StatusItem(Key.CtrlMask | Key.F, "~^F~ Cpy Fault", () =>
-                Clipboard.TrySetClipboardData(this.selectedFaultItemTextView.Text.ToString())),
-        ]);
-
         this.Add(
             coverageFrameView, timingsFrameView,
             this.inputFrameView,
-            this.inputQueueFrameView, faultFrameView,
-            statusBar);
+            this.inputQueueFrameView, faultFrameView);
 
-        Application.Top.Add(this);
+        Application.Top.Add(menuBar, this);
     }
 
     public void InputsEnqueued(IEnumerable<SyntaxTree> inputs)
@@ -348,6 +359,23 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     public void FuzzerFinished() => MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
 
+    private void ExportFaults()
+    {
+        var dialog = new SaveDialog("Export Faults", "Export the fault list", [".txt"])
+        {
+            CanCreateDirectories = true,
+        };
+
+        Application.Run(dialog);
+
+        if (dialog.Canceled) return;
+        if (dialog.FileName is null) return;
+
+        var targetPath = Path.Join(dialog.DirectoryPath.ToString()!, dialog.FileName.ToString()!);
+        var faults = string.Join(Environment.NewLine, this.faultList.Select(FormatFaultForExport));
+        File.WriteAllText(targetPath, faults);
+    }
+
     private static string GetInputQueueFrameTitle(int? count = null) => count is null
         ? "Input Queue"
         : $"Input Queue (Size: {count})";
@@ -365,4 +393,11 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     private static string FormatPercentage(double percentage) =>
         $"{(int)(percentage * 100),3}%";
+
+    private static string FormatFaultForExport(FaultItem fault) => $"""
+        // ----------------------------------------
+        // {fault.Fault}
+        // ----------------------------------------
+        {fault.Input}
+        """;
 }

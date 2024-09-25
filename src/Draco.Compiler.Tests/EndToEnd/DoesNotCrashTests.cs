@@ -207,6 +207,17 @@ public sealed class DoesNotCrashTests
             val a  = 1e;
         }
         """)]
+    [InlineData("""
+        import System.Console;
+        import System.Linq;
+
+        func fib(n:int32): int32 = {
+                for (i in Range(0 if (n < .) 1 else fib(n - 1) + fib(n - 2)
+                ;func main() ,fib(i)
+            }
+
+        )WriteLine("   fib(  i}  ) =   fibi});}
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

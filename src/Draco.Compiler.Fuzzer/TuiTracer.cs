@@ -359,6 +359,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     public void FuzzerFinished() => MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
 
+    private void ClearFaultList()
+    {
+        this.faultList.Clear();
+        this.faultListView.SetSource(this.faultList);
+    }
+
     private void ExportFaults()
     {
         var dialog = new SaveDialog("Export Faults", "Export the fault list", [".txt"])

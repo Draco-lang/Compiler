@@ -106,7 +106,7 @@ internal sealed partial class ConstraintSolver
     /// Does not assert the unification success, this is an error-cascading measure.
     /// </summary>
     /// <param name="type">The type to unify with the error type.</param>
-    public static void UnifyError(TypeSymbol type) => Unify(type, WellKnownTypes.ErrorType);
+    public static void UnifyWithError(TypeSymbol type) => Unify(type, WellKnownTypes.ErrorType);
 
     /// <summary>
     /// Assigns a type to another, asserting their success.

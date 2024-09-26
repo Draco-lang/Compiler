@@ -16,4 +16,10 @@
     <PackageReference Include="Terminal.Gui" Version="1.17.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="inputs\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

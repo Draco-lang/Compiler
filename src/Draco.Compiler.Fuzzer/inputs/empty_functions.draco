@@ -1,0 +1,5 @@
+func main() {}
+func foo() {}
+func bar() {}
+func baz() {}
+func qux() {}

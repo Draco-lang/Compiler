@@ -2378,4 +2378,28 @@ public sealed class TypeCheckingTests
 
         Assert.True(diags.All(d => !d.ToString().Contains("operator", StringComparison.OrdinalIgnoreCase)));
     }
+
+    [Fact]
+    public void NonCallableReportedAsIllegalExpression()
+    {
+        // func main() {
+        //     System.Console();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("System"), "Console")))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
+    }
 }

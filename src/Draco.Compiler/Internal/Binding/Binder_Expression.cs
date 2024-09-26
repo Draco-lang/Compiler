@@ -387,7 +387,7 @@ internal partial class Binder
 
             return new BoundCallExpression(syntax, group.Receiver, await symbolPromise, await BindingTask.WhenAll(argsTask));
         }
-        else
+        else if (method.Type is not null)
         {
             constraints.Call(
                 method.TypeRequired,
@@ -395,6 +395,14 @@ internal partial class Binder
                 out var resultType,
                 syntax);
             return new BoundIndirectCallExpression(syntax, method, await BindingTask.WhenAll(argsTask), resultType);
+        }
+        else
+        {
+            // Calling something weird, like System.Console()
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.IllegalExpression,
+                location: syntax.Function.Location));
+            return new BoundUnexpectedExpression(syntax);
         }
     }
 

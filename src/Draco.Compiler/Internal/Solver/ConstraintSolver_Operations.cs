@@ -10,6 +10,62 @@ namespace Draco.Compiler.Internal.Solver;
 
 internal sealed partial class ConstraintSolver
 {
+    // Assignability ///////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Assigns a type to another, asserting their success.
+    /// </summary>
+    /// <param name="targetType">The target type to assign to.</param>
+    /// <param name="assignedType">The assigned type.</param>
+    public static void AssignAsserted(TypeSymbol targetType, TypeSymbol assignedType)
+    {
+        if (Assign(targetType, assignedType)) return;
+        throw new InvalidOperationException($"could not assign {assignedType} to {targetType}");
+    }
+
+    /// <summary>
+    /// Assigns a type to anoter.
+    /// </summary>
+    /// <param name="targetType">The target type to assign to.</param>
+    /// <param name="assignedType">The assigned type.</param>
+    /// <returns>True, if the assignment was successful, false otherwise.</returns>
+    private static bool Assign(TypeSymbol targetType, TypeSymbol assignedType)
+    {
+        targetType = targetType.Substitution;
+        assignedType = assignedType.Substitution;
+
+        if (targetType.IsGenericInstance && assignedType.IsGenericInstance)
+        {
+            // We need to look for the base type
+            var targetGenericDefinition = targetType.GenericDefinition!;
+
+            var assignedToUnify = assignedType.BaseTypes
+                .FirstOrDefault(t => SymbolEqualityComparer.Default.Equals(t.GenericDefinition, targetGenericDefinition));
+            if (assignedToUnify is null)
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
+
+            // Unify
+            return Unify(targetType, assignedToUnify);
+        }
+        else
+        {
+            // TODO: Might not be correct
+            return Unify(targetType, assignedType);
+        }
+    }
+
+    // Unification /////////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Unified a type with the error type.
+    /// Does not assert the unification success, this is an error-cascading measure.
+    /// </summary>
+    /// <param name="type">The type to unify with the error type.</param>
+    public static void UnifyWithError(TypeSymbol type) => Unify(type, WellKnownTypes.ErrorType);
+
     /// <summary>
     /// Unifies two types, asserting their success.
     /// </summary>
@@ -98,58 +154,6 @@ internal sealed partial class ConstraintSolver
 
         default:
             return false;
-        }
-    }
-
-    /// <summary>
-    /// Unified a type with the error type.
-    /// Does not assert the unification success, this is an error-cascading measure.
-    /// </summary>
-    /// <param name="type">The type to unify with the error type.</param>
-    public static void UnifyWithError(TypeSymbol type) => Unify(type, WellKnownTypes.ErrorType);
-
-    /// <summary>
-    /// Assigns a type to another, asserting their success.
-    /// </summary>
-    /// <param name="targetType">The target type to assign to.</param>
-    /// <param name="assignedType">The assigned type.</param>
-    public static void AssignAsserted(TypeSymbol targetType, TypeSymbol assignedType)
-    {
-        if (Assign(targetType, assignedType)) return;
-        throw new InvalidOperationException($"could not assign {assignedType} to {targetType}");
-    }
-
-    /// <summary>
-    /// Assigns a type to anoter.
-    /// </summary>
-    /// <param name="targetType">The target type to assign to.</param>
-    /// <param name="assignedType">The assigned type.</param>
-    /// <returns>True, if the assignment was successful, false otherwise.</returns>
-    private static bool Assign(TypeSymbol targetType, TypeSymbol assignedType)
-    {
-        targetType = targetType.Substitution;
-        assignedType = assignedType.Substitution;
-
-        if (targetType.IsGenericInstance && assignedType.IsGenericInstance)
-        {
-            // We need to look for the base type
-            var targetGenericDefinition = targetType.GenericDefinition!;
-
-            var assignedToUnify = assignedType.BaseTypes
-                .FirstOrDefault(t => SymbolEqualityComparer.Default.Equals(t.GenericDefinition, targetGenericDefinition));
-            if (assignedToUnify is null)
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
-
-            // Unify
-            return Unify(targetType, assignedToUnify);
-        }
-        else
-        {
-            // TODO: Might not be correct
-            return Unify(targetType, assignedType);
         }
     }
 }

@@ -1,0 +1,9 @@
+import System.Console;
+
+func arrayOf<T>(...vs: Array<T>): Array<T> = vs;
+
+func main() {
+    for (s in arrayOf("abc", "def", "ghi")) {
+        WriteLine(s);
+    }
+}

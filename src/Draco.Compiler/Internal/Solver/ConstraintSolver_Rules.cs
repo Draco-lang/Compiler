@@ -422,11 +422,11 @@ internal sealed partial class ConstraintSolver
 
         // If the target type of common ancestor is a concrete type, we can try to unify all non-concrete types
         Simplification(typeof(CommonAncestor))
-            .Guard((CommonAncestor common) => common.CommonType.Substitution.IsGroundType)
+            .Guard((CommonAncestor common) => common.CommonType.Substitution.IsGroundType
+                                           && common.AlternativeTypes.All(alt => CanUnify(alt, common.CommonType)))
             .Body((ConstraintStore store, CommonAncestor common) =>
             {
                 var concreteType = common.CommonType.Substitution;
-                // TODO: Can we do this asserted?
                 foreach (var type in common.AlternativeTypes) UnifyAsserted(type, concreteType);
             })
             .Named("concrete_common_ancestor"),

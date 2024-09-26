@@ -23,6 +23,15 @@ internal partial class Binder
         var symbol = this.BindType(syntax, diagnostics);
         if (symbol is TypeSymbol type)
         {
+            // For example referencing to Array2D without the generic arguments
+            if (type.IsGenericDefinition)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.GenericTypeNotInstantiated,
+                    location: syntax.Location,
+                    formatArgs: type));
+                return WellKnownTypes.ErrorType;
+            }
             // Ok
             return type;
         }

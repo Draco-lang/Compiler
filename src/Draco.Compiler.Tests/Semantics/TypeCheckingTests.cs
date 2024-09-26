@@ -2402,4 +2402,25 @@ public sealed class TypeCheckingTests
         Assert.Single(diags);
         AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
     }
+
+    [Fact]
+    public void GenericTypeNotInstantiatedInTypeContextIsAnError()
+    {
+        // func foo(a: Array2D) {}
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("a", NameType("Array2D"))),
+            null,
+            BlockFunctionBody())));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.GenericTypeNotInstantiated);
+    }
 }

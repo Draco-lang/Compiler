@@ -1,8 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Draco.Compiler.Api.Syntax;
-using Draco.Fuzzing;
 using Terminal.Gui;
 
 namespace Draco.Compiler.Fuzzer;

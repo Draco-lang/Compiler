@@ -119,6 +119,12 @@ internal sealed partial class ConstraintSolver
         throw new InvalidOperationException($"could not assign {assignedType} to {targetType}");
     }
 
+    /// <summary>
+    /// Assigns a type to anoter.
+    /// </summary>
+    /// <param name="targetType">The target type to assign to.</param>
+    /// <param name="assignedType">The assigned type.</param>
+    /// <returns>True, if the assignment was successful, false otherwise.</returns>
     private static bool Assign(TypeSymbol targetType, TypeSymbol assignedType)
     {
         targetType = targetType.Substitution;

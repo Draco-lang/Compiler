@@ -16,4 +16,21 @@
     <PackageReference Include="Terminal.Gui" Version="1.17.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="inputs\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <!-- Also add files from examples -->
+  <ItemGroup>
+    <DracoExampleFiles Include="..\..\examples\**\*.draco" />
+    <DracoExampleFilesRenamedImmediate Include="@(DracoExampleFiles->Replace('\', '-'))" />
+    <DracoExampleFilesRenamed Include="@(DracoExampleFilesRenamedImmediate->Replace('..-..-', ''))" />
+  </ItemGroup>
+  <Target Name="CopyDracoExampleFiles" AfterTargets="Build">
+    <!-- Copy DracoExampleFiles to 'inputs' of output path as DracoExampleFilesRenamed -->
+    <Copy SourceFiles="@(DracoExampleFiles)"
+          DestinationFiles="@(DracoExampleFilesRenamed->'$(OutputPath)inputs\%(Filename)%(Extension)')" />
+  </Target>
+
 </Project>

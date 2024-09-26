@@ -37,6 +37,8 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         }
     }
 
+    public Fuzzer<SyntaxTree, int>? Fuzzer { get; set; }
+
     // Coverage info
     private readonly ProgressBar currentCoverageProgressBar;
     private readonly Label currentCoveragePercentLabel;
@@ -84,10 +86,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             {
                 new MenuItem("_Quit", "Quits the application", () => Application.RequestStop()),
             }),
-            new MenuBarItem("_Operations", new[]
-                        {
-                new MenuItem("_Clear Faults", "Clears the fault list", this.ClearFaultList, canExecute: () => this.faultList.Count > 0),
-                new MenuItem("_Export Faults", "Exports the fault list", this.ExportFaults, canExecute: () => this.faultList.Count > 0)
+            new MenuBarItem("_Inputs", new[]
+            {
+                new MenuItem("_Import", "Imports inputs into the input queue", this.ImportInputs),
+            }),
+            new MenuBarItem("_Faults", new[]
+            {
+                new MenuItem("_Clear", "Clears the fault list", this.ClearFaultList, canExecute: () => this.faultList.Count > 0),
+                new MenuItem("_Export", "Exports the fault list", this.ExportFaults, canExecute: () => this.faultList.Count > 0)
             }),
         ]);
         #endregion
@@ -359,6 +365,27 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     public void FuzzerFinished() => MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
 
+    private void ImportInputs()
+    {
+        this.CheckForFuzzer();
+
+        var dialog = new OpenDialog("Import Inputs", "Import inputs into the input queue", [".draco"])
+        {
+            CanChooseDirectories = false,
+            CanChooseFiles = true,
+            AllowsMultipleSelection = true,
+        };
+
+        Application.Run(dialog);
+
+        if (dialog.Canceled) return;
+
+        var syntaxTrees = dialog.FilePaths
+            .Select(path => SyntaxTree.Parse(File.ReadAllText(path)))
+            .ToList();
+        this.Fuzzer!.EnqueueRange(syntaxTrees);
+    }
+
     private void ClearFaultList()
     {
         this.faultList.Clear();
@@ -380,6 +407,13 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         var targetPath = Path.Join(dialog.DirectoryPath.ToString()!, dialog.FileName.ToString()!);
         var faults = string.Join(Environment.NewLine, this.faultList.Select(FormatFaultForExport));
         File.WriteAllText(targetPath, faults);
+    }
+
+    private void CheckForFuzzer()
+    {
+        if (this.Fuzzer is not null) return;
+
+        throw new InvalidOperationException("fuzzer is not set");
     }
 
     private static string GetInputQueueFrameTitle(int? count = null) => count is null

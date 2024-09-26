@@ -225,6 +225,15 @@ public sealed class DoesNotCrashTests
             System.Console();
         }
         """)]
+    [InlineData("""
+        import System.Collections.Generic;
+        import System.Linq.Enumerable;
+        import System.Console;
+
+        val main(){func l = List();
+
+        for(;}
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

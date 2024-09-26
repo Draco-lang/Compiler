@@ -62,14 +62,14 @@ internal sealed partial class ConstraintSolver
                 {
                     if (!common.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t))) continue;
                     // Found a good common type
-                    UnifyAsserted(common.CommonType, type);
+                    this.Assignable(common.CommonType, type, ConstraintLocator.Constraint(common));
                     return;
                 }
                 // No common type found
                 common.ReportDiagnostic(diagnostics, builder => builder
                     .WithFormatArgs(string.Join(", ", common.AlternativeTypes)));
                 // Stop cascading uninferred type
-                UnifyAsserted(common.CommonType, WellKnownTypes.ErrorType);
+                UnifyError(common.CommonType);
             })
             .Named("common_ancestor"),
 
@@ -82,7 +82,7 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
-                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    UnifyError(member.MemberType);
                     member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
@@ -103,7 +103,7 @@ internal sealed partial class ConstraintSolver
                             .WithFormatArgs(member.MemberName, accessed));
                     }
                     // We still provide a single error symbol
-                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    UnifyError(member.MemberType);
                     member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
@@ -126,7 +126,7 @@ internal sealed partial class ConstraintSolver
                     // TODO: Can this assertion fail? Like in a faulty module decl?
                     // NOTE: Visibility will be checked by the overload constraint
                     Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
-                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    UnifyError(member.MemberType);
                     var overload = new FunctionGroupSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
                     member.CompletionSource.SetResult(overload);
                 }
@@ -142,7 +142,7 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
-                    UnifyAsserted(indexer.ElementType, WellKnownTypes.ErrorType);
+                    UnifyError(indexer.ElementType);
                     // Best-effort shape approximation
                     var errorSymbol = indexer.IsGetter
                         ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
@@ -166,7 +166,7 @@ internal sealed partial class ConstraintSolver
                             : SymbolResolutionErrors.NoSettableIndexerInType)
                         .WithFormatArgs(accessed));
 
-                    UnifyAsserted(indexer.ElementType, WellKnownTypes.ErrorType);
+                    UnifyError(indexer.ElementType);
                     // Best-effort shape approximation
                     var errorSymbol = indexer.IsGetter
                         ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
@@ -225,7 +225,7 @@ internal sealed partial class ConstraintSolver
                 if (called.IsError)
                 {
                     // Don't propagate errors
-                    UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);
+                    UnifyError(callable.ReturnType);
                     return;
                 }
 
@@ -236,7 +236,7 @@ internal sealed partial class ConstraintSolver
                 if (functionType is null)
                 {
                     // Error
-                    UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);
+                    UnifyError(callable.ReturnType);
                     callable.ReportDiagnostic(diagnostics, diag => diag
                         .WithTemplate(TypeCheckingErrors.CallNonFunction)
                         .WithFormatArgs(called));
@@ -300,7 +300,7 @@ internal sealed partial class ConstraintSolver
                 if (candidates.Length == 0)
                 {
                     // Could not resolve, error
-                    UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
+                    UnifyError(overload.ReturnType);
                     // Best-effort shape approximation
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
                     overload.CompletionSource.SetResult(errorSymbol);
@@ -318,7 +318,7 @@ internal sealed partial class ConstraintSolver
                 {
                     // Ambiguity, error
                     // Best-effort shape approximation
-                    UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
+                    UnifyError(overload.ReturnType);
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
                     overload.CompletionSource.SetResult(errorSymbol);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors

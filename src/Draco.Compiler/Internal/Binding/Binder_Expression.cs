@@ -67,6 +67,14 @@ internal partial class Binder
     {
         if (!BinderFacts.TryGetLiteralType(syntax.Literal.Value, this.WellKnownTypes, out var literalType))
         {
+            // It's very likely a literal that has errors, like '1e', which was lexed as a scientific-notation float
+            // but the value was not assigned to the token
+            // If the literal has a diagnostic on it, we swallow the error
+            if (syntax.Literal.Diagnostics.Length > 0)
+            {
+                return FromResult(new BoundUnexpectedExpression(syntax));
+            }
+            // Otherwise, something went wrong in the compiler
             throw new InvalidOperationException("can not determine literal type");
         }
         return FromResult(new BoundLiteralExpression(syntax, syntax.Literal.Value, literalType));
@@ -379,7 +387,7 @@ internal partial class Binder
 
             return new BoundCallExpression(syntax, group.Receiver, await symbolPromise, await BindingTask.WhenAll(argsTask));
         }
-        else
+        else if (method.Type is not null)
         {
             constraints.Call(
                 method.TypeRequired,
@@ -387,6 +395,14 @@ internal partial class Binder
                 out var resultType,
                 syntax);
             return new BoundIndirectCallExpression(syntax, method, await BindingTask.WhenAll(argsTask), resultType);
+        }
+        else
+        {
+            // Calling something weird, like System.Console()
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.IllegalExpression,
+                location: syntax.Function.Location));
+            return new BoundUnexpectedExpression(syntax);
         }
     }
 

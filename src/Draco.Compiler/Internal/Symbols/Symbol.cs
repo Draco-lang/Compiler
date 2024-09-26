@@ -127,12 +127,12 @@ internal abstract partial class Symbol
     /// <summary>
     /// All the members within this symbol.
     /// </summary>
-    public virtual IEnumerable<Symbol> Members => [];
+    public virtual IEnumerable<Symbol> Members => this.DefinedMembers;
 
     /// <summary>
     /// The members defined directly in this symbol.
     /// </summary>
-    public virtual IEnumerable<Symbol> DefinedMembers => this.Members;
+    public virtual IEnumerable<Symbol> DefinedMembers => [];
 
     /// <summary>
     /// The static members within this symbol.

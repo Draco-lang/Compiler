@@ -195,6 +195,36 @@ public sealed class DoesNotCrashTests
     [InlineData("""
         func foo(): string = "\{0}";
         """)]
+    [InlineData("""
+        import System.Console;
+
+        )main(func  {
+            WriteLine("   ").Console;
+            );}
+        """)]
+    [InlineData("""
+        func foo() {
+            val a  = 1e;
+        }
+        """)]
+    [InlineData("""
+        import System.Console;
+        import System.Linq;
+
+        func fib(n:int32): int32 = {
+                for (i in Range(0 if (n < .) 1 else fib(n - 1) + fib(n - 2)
+                ;func main() ,fib(i)
+            }
+
+        )WriteLine("   fib(  i}  ) =   fibi});}
+        """)]
+    [InlineData("""
+        import System.Console;
+
+        func main() {
+            System.Console();
+        }
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

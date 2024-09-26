@@ -43,7 +43,8 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => [this.ElementType];
 
-    public override IEnumerable<Symbol> DefinedMembers => InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildDefinedMembers);
+    public override IEnumerable<Symbol> DefinedMembers =>
+        InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildDefinedMembers);
     private ImmutableArray<Symbol> definedMembers;
 
     public ArrayTypeSymbol(Compilation compilation, int rank, TypeSymbol indexType)

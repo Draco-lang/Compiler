@@ -154,7 +154,8 @@ internal partial class BoundDelegateCreationExpression
 
 internal partial class BoundArrayAccessExpression
 {
-    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
+    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments.FirstOrDefault()
+                                    ?? WellKnownTypes.ErrorType;
 }
 
 internal partial class BoundArrayLengthExpression

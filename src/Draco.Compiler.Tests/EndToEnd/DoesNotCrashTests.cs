@@ -227,12 +227,8 @@ public sealed class DoesNotCrashTests
         """)]
     [InlineData("""
         import System.Collections.Generic;
-        import System.Linq.Enumerable;
-        import System.Console;
 
-        val main(){func l = List();
-
-        for(;}
+        func f() = List();
         """)]
     [Theory]
     public void DoesNotCrash(string source)

@@ -2423,4 +2423,28 @@ public sealed class TypeCheckingTests
         Assert.Single(diags);
         AssertDiagnostics(diags, TypeCheckingErrors.GenericTypeNotInstantiated);
     }
+
+    [Fact]
+    public void TypeInStringInterpolationIsAnError()
+    {
+        // func foo(): string = "\{char}";
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("string"),
+            InlineFunctionBody(StringExpression(
+                LineStringStart,
+                [InterpolationStringPart(InterpolationStart, NameExpression("char"), InterpolationEnd)],
+                LineStringEnd)))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
+    }
 }

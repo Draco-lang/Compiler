@@ -399,6 +399,7 @@ internal sealed partial class ConstraintSolver
 
         // As a last-last effort, we assume that a singular assignment means exact matching types
         Simplification(typeof(Assignable))
+            .Guard((Assignable assignable) => CanAssign(assignable.TargetType, assignable.AssignedType))
             .Body((ConstraintStore store, Assignable assignable) =>
                 AssignAsserted(assignable.TargetType, assignable.AssignedType))
             .Named("sole_assignable"),

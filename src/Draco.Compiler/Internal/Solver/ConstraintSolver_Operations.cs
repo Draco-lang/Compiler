@@ -29,7 +29,27 @@ internal sealed partial class ConstraintSolver
     /// <param name="targetType">The target type to assign to.</param>
     /// <param name="assignedType">The assigned type.</param>
     /// <returns>True, if the assignment was successful, false otherwise.</returns>
-    private static bool Assign(TypeSymbol targetType, TypeSymbol assignedType)
+    private static bool Assign(TypeSymbol targetType, TypeSymbol assignedType) =>
+        AssignRecursionScheme(targetType, assignedType, Unify);
+
+    /// <summary>
+    /// Checks if a type can be assigned to another.
+    /// </summary>
+    /// <param name="targetType">The target type to assign to.</param>
+    /// <param name="assignedType">The assigned type.</param>
+    /// <returns>True, if the assignment is possible, false otherwise.</returns>
+    public static bool CanAssign(TypeSymbol targetType, TypeSymbol assignedType) =>
+        AssignRecursionScheme(targetType, assignedType, CanUnify);
+
+    /// <summary>
+    /// Recursion scheme for assignment with the unification factored out.
+    /// This way the assignment can be reused for checks without performing the unification.
+    /// </summary>
+    /// <param name="targetType">The target type to assign to.</param>
+    /// <param name="assignedType">The assigned type.</param>
+    /// <param name="unify">The unification action to perform.</param>
+    /// <returns>True, if the assignment was successful, false otherwise.</returns>
+    private static bool AssignRecursionScheme(TypeSymbol targetType, TypeSymbol assignedType, Func<TypeSymbol, TypeSymbol, bool> unify)
     {
         targetType = targetType.Substitution;
         assignedType = assignedType.Substitution;
@@ -48,12 +68,12 @@ internal sealed partial class ConstraintSolver
             }
 
             // Unify
-            return Unify(targetType, assignedToUnify);
+            return unify(targetType, assignedToUnify);
         }
         else
         {
             // TODO: Might not be correct
-            return Unify(targetType, assignedType);
+            return unify(targetType, assignedType);
         }
     }
 
@@ -83,7 +103,27 @@ internal sealed partial class ConstraintSolver
     /// <param name="first">The first type to unify.</param>
     /// <param name="second">The second type to unify.</param>
     /// <returns>True, if unification was successful, false otherwise.</returns>
-    public static bool Unify(TypeSymbol first, TypeSymbol second)
+    public static bool Unify(TypeSymbol first, TypeSymbol second) =>
+        UnifyRecursionScheme(first, second, (tv, type) => tv.Substitute(type));
+
+    /// <summary>
+    /// Checks if two types can be unified.
+    /// </summary>
+    /// <param name="first">The first type to unify.</param>
+    /// <param name="second">The second type to unify.</param>
+    /// <returns>True, if unification is possible, false otherwise.</returns>
+    public static bool CanUnify(TypeSymbol first, TypeSymbol second) =>
+        UnifyRecursionScheme(first, second, (_, _) => { });
+
+    /// <summary>
+    /// Recursion scheme for unification with the substitution factored out.
+    /// This way the unification can be reused for checks without performing the substitution.
+    /// </summary>
+    /// <param name="first">The first type to unify.</param>
+    /// <param name="second">The second type to unify.</param>
+    /// <param name="substitute">The substitution action to perform.</param>
+    /// <returns>True, if unification was successful, false otherwise.</returns>
+    private static bool UnifyRecursionScheme(TypeSymbol first, TypeSymbol second, Action<TypeVariable, TypeSymbol> substitute)
     {
         first = first.Substitution;
         second = second.Substitution;
@@ -101,17 +141,17 @@ internal sealed partial class ConstraintSolver
             // NOTE: Referential equality is OK here, we are checking for CIRCULARITY
             // which is  referential check
             if (ReferenceEquals(v1, v2)) return true;
-            v1.Substitute(v2);
+            substitute(v1, v2);
             return true;
         }
         case (TypeVariable v, TypeSymbol other):
         {
-            v.Substitute(other);
+            substitute(v, other);
             return true;
         }
         case (TypeSymbol other, TypeVariable v):
         {
-            v.Substitute(other);
+            substitute(v, other);
             return true;
         }
 

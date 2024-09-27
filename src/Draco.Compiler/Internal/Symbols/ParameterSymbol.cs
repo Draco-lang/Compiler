@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
 
@@ -31,7 +32,12 @@ internal abstract partial class ParameterSymbol : LocalSymbol
     public override void Accept(SymbolVisitor visitor) => visitor.VisitParameter(this);
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitParameter(this);
 
-    public override string ToString() => string.IsNullOrWhiteSpace(this.Name)
-        ? this.Type.ToString()
-        : $"{this.Name}: {this.Type}";
+    public override string ToString()
+    {
+        var result = new StringBuilder();
+        if (this.IsVariadic) result.Append("...");
+        if (!string.IsNullOrWhiteSpace(this.Name)) result.Append($"{this.Name}: ");
+        result.Append(this.Type);
+        return result.ToString();
+    }
 }

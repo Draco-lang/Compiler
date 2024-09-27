@@ -66,7 +66,7 @@ internal sealed class LimitingThreadPool
     /// </summary>
     /// <param name="action">The work to be done.</param>
     /// <param name="cancellationToken">The cancellation token to cancel waiting for thread availability.</param>
-    public void QueueWork(Action action, CancellationToken? cancellationToken)
+    public void QueueWork(Action action, CancellationToken? cancellationToken = null)
     {
         this.semaphore.Wait(cancellationToken ?? CancellationToken.None);
         if (this.threads.TryDequeue(out var thread))

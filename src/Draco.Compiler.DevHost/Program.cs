@@ -15,7 +15,8 @@ namespace Draco.Compiler.DevHost;
 internal class Program
 {
     private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
-        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
+        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+        .Append(MetadataReference.FromAssembly(typeof(Command).Assembly));
 
     internal static int Main(string[] args) =>
         ConfigureCommands().Invoke(args);

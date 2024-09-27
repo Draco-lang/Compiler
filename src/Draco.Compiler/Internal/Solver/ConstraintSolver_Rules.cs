@@ -13,6 +13,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Chr.Rules.RuleFactory;
+using IChrSolver = Draco.Chr.Solve.ISolver;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -436,5 +437,47 @@ internal sealed partial class ConstraintSolver
         UnifyWithError(overload.ReturnType);
         var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
         overload.CompletionSource.SetResult(errorSymbol);
+    }
+
+    /// <summary>
+    /// Attempts to fail all remaining constraints in the store.
+    /// </summary>
+    /// <param name="solver">The CHR solver to use for solving the constraints.</param>
+    private void FailRemainingRules(IChrSolver solver)
+    {
+        var previousStoreSize = this.constraintStore.Count;
+        while (true)
+        {
+            // We unify type variables with the error type
+            foreach (var typeVar in this.typeVariables)
+            {
+                var unwrapped = typeVar.Substitution;
+                if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
+            }
+
+            var constraintsToRemove = new List<IConstraint>();
+
+            // We can also solve all overload constraints by failing them instantly
+            foreach (var constraint in this.constraintStore.ConstraintsOfType(typeof(Constraints.Overload)))
+            {
+                var overload = (Constraints.Overload)constraint.Value;
+                FailOverload(overload);
+                constraintsToRemove.Add(constraint);
+            }
+
+            this.constraintStore.RemoveRange(constraintsToRemove);
+
+            // Assume this solves everything
+            solver.Solve(this.constraintStore);
+
+            // Check for exit condition
+            if (previousStoreSize == this.constraintStore.Count) break;
+            previousStoreSize = this.constraintStore.Count;
+        }
+
+        if (this.constraintStore.Count > 0)
+        {
+            throw new InvalidOperationException("fallback operation could not solve all constraints");
+        }
     }
 }

@@ -299,11 +299,8 @@ internal sealed partial class ConstraintSolver
                 var candidates = overload.Candidates.Dominators;
                 if (candidates.Length == 0)
                 {
-                    // Could not resolve, error
-                    UnifyWithError(overload.ReturnType);
-                    // Best-effort shape approximation
-                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.CompletionSource.SetResult(errorSymbol);
+                    // No such overload, error
+                    FailOverload(overload);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
                     if (overload.Candidates.Arguments.All(a => a.Type.Substitution.IsTypeVariable || !a.Type.Substitution.IsError))
                     {
@@ -317,10 +314,7 @@ internal sealed partial class ConstraintSolver
                 if (candidates.Length > 1)
                 {
                     // Ambiguity, error
-                    // Best-effort shape approximation
-                    UnifyWithError(overload.ReturnType);
-                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.CompletionSource.SetResult(errorSymbol);
+                    FailOverload(overload);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
                     if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsError))
                     {
@@ -432,4 +426,15 @@ internal sealed partial class ConstraintSolver
             })
             .Named("concrete_common_ancestor"),
     ];
+
+    /// <summary>
+    /// Fails the overload constraint by setting the return type to an error type and resolving the promise.
+    /// </summary>
+    /// <param name="overload">The overload constraint to fail.</param>
+    private static void FailOverload(Overload overload)
+    {
+        UnifyWithError(overload.ReturnType);
+        var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
+        overload.CompletionSource.SetResult(errorSymbol);
+    }
 }

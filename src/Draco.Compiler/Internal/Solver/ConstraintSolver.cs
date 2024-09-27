@@ -114,15 +114,35 @@ internal sealed partial class ConstraintSolver(
 
     private void FailRemainingRules(IChrSolver solver)
     {
-        // We unify type variables with the error type
-        foreach (var typeVar in this.typeVariables)
+        var previousStoreSize = this.constraintStore.Count;
+        while (true)
         {
-            var unwrapped = typeVar.Substitution;
-            if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
-        }
+            // We unify type variables with the error type
+            foreach (var typeVar in this.typeVariables)
+            {
+                var unwrapped = typeVar.Substitution;
+                if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
+            }
 
-        // Assume this solves everything
-        solver.Solve(this.constraintStore);
+            var constraintsToRemove = new List<IConstraint>();
+
+            // We can also solve all overload constraints by failing them instantly
+            foreach (var constraint in this.constraintStore.ConstraintsOfType(typeof(Constraints.Overload)))
+            {
+                var overload = (Constraints.Overload)constraint.Value;
+                FailOverload(overload);
+                constraintsToRemove.Add(constraint);
+            }
+
+            this.constraintStore.RemoveRange(constraintsToRemove);
+
+            // Assume this solves everything
+            solver.Solve(this.constraintStore);
+
+            // Check for exit condition
+            if (previousStoreSize == this.constraintStore.Count) break;
+            previousStoreSize = this.constraintStore.Count;
+        }
 
         if (this.constraintStore.Count > 0)
         {

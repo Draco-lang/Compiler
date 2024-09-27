@@ -21,11 +21,17 @@ internal static class Program
         int? Seed,
         RunMode? RunMode,
         bool ForceSingleThreaded,
+        int? MaxThreads,
         ImmutableArray<string> InitialFiles);
 
     private static void Main(string[] args)
     {
         var settings = ParseSettings(args);
+
+        if (settings.MaxThreads is not null)
+        {
+            ThreadPool.SetMaxThreads(settings.MaxThreads.Value, settings.MaxThreads.Value);
+        }
 
         Application.Init();
         Application.MainLoop.Invoke(async () =>
@@ -74,6 +80,7 @@ internal static class Program
         var seed = null as int?;
         var runMode = null as RunMode?;
         var forceSingleThreaded = false;
+        var maxThreads = null as int?;
         var initialFiles = ImmutableArray.CreateBuilder<string>();
 
         while (true)
@@ -91,6 +98,7 @@ internal static class Program
                         -ip, --in-process: Run the fuzzer in-process
                         -oop, --out-of-process: Run the fuzzer out-of-process
                         -fst, --force-single-threaded: Force the fuzzer to run single-threaded
+                        -mt, --max-threads <threads>: The maximum number of threads to use
                         -ad, --add-directory <directory>: Add an entire directory to the initial files
                         -af, --add-file <file>: Add a file to the initial files
                     """);
@@ -117,6 +125,12 @@ internal static class Program
                 if (forceSingleThreaded) throw new ArgumentException("forcing single-threaded already set");
                 forceSingleThreaded = true;
             }
+            else if (arg == "-mt" ||arg == "--max-threads")
+            {
+                if (maxThreads is not null) throw new ArgumentException("max-threads already set");
+                var maxThreadsStr = GetNextArg() ?? throw new ArgumentException("missing max-threads");
+                maxThreads = int.Parse(maxThreadsStr);
+            }
             else if (arg == "-ad" || arg == "--add-directory")
             {
                 var directory = GetNextArg() ?? throw new ArgumentException("missing directory");
@@ -137,6 +151,7 @@ internal static class Program
             Seed: seed,
             RunMode: runMode,
             ForceSingleThreaded: forceSingleThreaded,
+            MaxThreads: maxThreads,
             InitialFiles: initialFiles.ToImmutable());
     }
 }

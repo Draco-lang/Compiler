@@ -230,6 +230,26 @@ public sealed class DoesNotCrashTests
 
         func f() = List();
         """)]
+    [InlineData("""
+        import System.Console;
+        import System.Linq.Enumerable;
+
+        val width = 80;
+        val height = 40;
+
+        func count_neighbors(x:int32, y:int32, map:Array2D<bool>): int32 {
+            return 0;
+        }
+
+        func tick(front:Array2D<bool>, back:Array2D<bool>) {
+            for (y in Range(0, height)) {
+                for (x in Range(0, width)) {
+                    val neighbors = count_neighbors(x, y);
+                    back[x,y] = if (front[x,y]) 2 <= neighbors else if (neighbors == 3) true else false;
+                }
+            }
+        }
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

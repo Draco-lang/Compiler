@@ -184,4 +184,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "the {0} {1} is inaccessible due to its visibility",
         code: Code(19));
+
+    /// <summary>
+    /// The return expression is illegal in the current context.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalReturn = DiagnosticTemplate.Create(
+        title: "illegal return",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal return expression outside of function definition",
+        code: Code(20));
 }

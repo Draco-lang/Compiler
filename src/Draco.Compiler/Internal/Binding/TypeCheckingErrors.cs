@@ -156,5 +156,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "the attribute {0} can not be applied multiple times to the same element",
         code: Code(16));
+
+    /// <summary>
+    /// The generic type was not instantiated in a type context.
+    /// </summary>
+    public static readonly DiagnosticTemplate GenericTypeNotInstantiated = DiagnosticTemplate.Create(
+        title: "generic type not instantiated",
+        severity: DiagnosticSeverity.Error,
+        format: "the generic type {0} is not instantiated",
+        code: Code(17));
 }
 

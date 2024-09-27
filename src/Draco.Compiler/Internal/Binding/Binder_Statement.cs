@@ -23,7 +23,9 @@ internal partial class Binder
     protected virtual BindingTask<BoundStatement> BindStatement(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedFunctionBodySyntax or UnexpectedStatementSyntax => FromResult(new BoundUnexpectedStatement(syntax)),
+        UnexpectedFunctionBodySyntax
+     or UnexpectedStatementSyntax
+     or UnexpectedDeclarationSyntax => FromResult(new BoundUnexpectedStatement(syntax)),
         // Ignored
         ImportDeclarationSyntax => FromResult(BoundNoOpStatement.Default),
         FunctionDeclarationSyntax func => this.BindFunctionDeclaration(func, constraints, diagnostics),
@@ -48,8 +50,7 @@ internal partial class Binder
 
     private async BindingTask<BoundStatement> BindExpressionStatement(ExpressionStatementSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var exprTask = this.BindExpression(syntax.Expression, constraints, diagnostics);
-        _ = exprTask.GetResultType(syntax.Expression, constraints, diagnostics);
+        var exprTask = this.BindExpressionToValueProducingExpression(syntax.Expression, constraints, diagnostics);
         return new BoundExpressionStatement(syntax, await exprTask);
     }
 

@@ -4057,4 +4057,25 @@ public sealed class SymbolResolutionTests
         Assert.Single(diags);
         AssertDiagnostics(diags, SymbolResolutionErrors.NotGettableProperty);
     }
+
+    [Fact]
+    public void ReturningInGlobalBlockIsIllegal()
+    {
+        // val a = { return 4; };
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration(
+                "a",
+                null,
+                BlockExpression(ExpressionStatement(ReturnExpression(LiteralExpression(4)))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, SymbolResolutionErrors.IllegalReturn);
+    }
 }

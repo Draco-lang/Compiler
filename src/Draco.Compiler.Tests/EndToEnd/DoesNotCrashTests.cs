@@ -225,6 +225,11 @@ public sealed class DoesNotCrashTests
             System.Console();
         }
         """)]
+    [InlineData("""
+        import System.Collections.Generic;
+
+        func f() = List();
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

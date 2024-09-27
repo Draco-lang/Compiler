@@ -69,7 +69,7 @@ internal sealed partial class ConstraintSolver
                 common.ReportDiagnostic(diagnostics, builder => builder
                     .WithFormatArgs(string.Join(", ", common.AlternativeTypes)));
                 // Stop cascading uninferred type
-                UnifyError(common.CommonType);
+                UnifyWithError(common.CommonType);
             })
             .Named("common_ancestor"),
 
@@ -82,7 +82,7 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
-                    UnifyError(member.MemberType);
+                    UnifyWithError(member.MemberType);
                     member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
@@ -103,7 +103,7 @@ internal sealed partial class ConstraintSolver
                             .WithFormatArgs(member.MemberName, accessed));
                     }
                     // We still provide a single error symbol
-                    UnifyError(member.MemberType);
+                    UnifyWithError(member.MemberType);
                     member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
@@ -126,7 +126,7 @@ internal sealed partial class ConstraintSolver
                     // TODO: Can this assertion fail? Like in a faulty module decl?
                     // NOTE: Visibility will be checked by the overload constraint
                     Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
-                    UnifyError(member.MemberType);
+                    UnifyWithError(member.MemberType);
                     var overload = new FunctionGroupSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
                     member.CompletionSource.SetResult(overload);
                 }
@@ -142,7 +142,7 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
-                    UnifyError(indexer.ElementType);
+                    UnifyWithError(indexer.ElementType);
                     // Best-effort shape approximation
                     var errorSymbol = indexer.IsGetter
                         ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
@@ -166,7 +166,7 @@ internal sealed partial class ConstraintSolver
                             : SymbolResolutionErrors.NoSettableIndexerInType)
                         .WithFormatArgs(accessed));
 
-                    UnifyError(indexer.ElementType);
+                    UnifyWithError(indexer.ElementType);
                     // Best-effort shape approximation
                     var errorSymbol = indexer.IsGetter
                         ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
@@ -225,7 +225,7 @@ internal sealed partial class ConstraintSolver
                 if (called.IsError)
                 {
                     // Don't propagate errors
-                    UnifyError(callable.ReturnType);
+                    UnifyWithError(callable.ReturnType);
                     return;
                 }
 
@@ -236,7 +236,7 @@ internal sealed partial class ConstraintSolver
                 if (functionType is null)
                 {
                     // Error
-                    UnifyError(callable.ReturnType);
+                    UnifyWithError(callable.ReturnType);
                     callable.ReportDiagnostic(diagnostics, diag => diag
                         .WithTemplate(TypeCheckingErrors.CallNonFunction)
                         .WithFormatArgs(called));
@@ -300,7 +300,7 @@ internal sealed partial class ConstraintSolver
                 if (candidates.Length == 0)
                 {
                     // Could not resolve, error
-                    UnifyError(overload.ReturnType);
+                    UnifyWithError(overload.ReturnType);
                     // Best-effort shape approximation
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
                     overload.CompletionSource.SetResult(errorSymbol);
@@ -318,7 +318,7 @@ internal sealed partial class ConstraintSolver
                 {
                     // Ambiguity, error
                     // Best-effort shape approximation
-                    UnifyError(overload.ReturnType);
+                    UnifyWithError(overload.ReturnType);
                     var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
                     overload.CompletionSource.SetResult(errorSymbol);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
@@ -399,6 +399,7 @@ internal sealed partial class ConstraintSolver
 
         // As a last-last effort, we assume that a singular assignment means exact matching types
         Simplification(typeof(Assignable))
+            .Guard((Assignable assignable) => CanAssign(assignable.TargetType, assignable.AssignedType))
             .Body((ConstraintStore store, Assignable assignable) =>
                 AssignAsserted(assignable.TargetType, assignable.AssignedType))
             .Named("sole_assignable"),
@@ -409,7 +410,8 @@ internal sealed partial class ConstraintSolver
         Simplification(typeof(CommonAncestor))
             .Guard((CommonAncestor common) =>
                 common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) == 1
-             && common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) == common.AlternativeTypes.Length - 1)
+             && common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) == common.AlternativeTypes.Length - 1
+             && common.AlternativeTypes.All(alt => CanUnify(alt, common.CommonType)))
             .Body((ConstraintStore store, CommonAncestor common) =>
             {
                 var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
@@ -421,11 +423,11 @@ internal sealed partial class ConstraintSolver
 
         // If the target type of common ancestor is a concrete type, we can try to unify all non-concrete types
         Simplification(typeof(CommonAncestor))
-            .Guard((CommonAncestor common) => common.CommonType.Substitution.IsGroundType)
+            .Guard((CommonAncestor common) => common.CommonType.Substitution.IsGroundType
+                                           && common.AlternativeTypes.All(alt => CanUnify(alt, common.CommonType)))
             .Body((ConstraintStore store, CommonAncestor common) =>
             {
                 var concreteType = common.CommonType.Substitution;
-                // TODO: Can we do this asserted?
                 foreach (var type in common.AlternativeTypes) UnifyAsserted(type, concreteType);
             })
             .Named("concrete_common_ancestor"),

@@ -112,24 +112,6 @@ internal sealed partial class ConstraintSolver(
         this.FailRemainingRules(solver);
     }
 
-    private void FailRemainingRules(IChrSolver solver)
-    {
-        // We unify type variables with the error type
-        foreach (var typeVar in this.typeVariables)
-        {
-            var unwrapped = typeVar.Substitution;
-            if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
-        }
-
-        // Assume this solves everything
-        solver.Solve(this.constraintStore);
-
-        if (this.constraintStore.Count > 0)
-        {
-            throw new System.InvalidOperationException("fallback operation could not solve all constraints");
-        }
-    }
-
     /// <summary>
     /// Adds a local to the solver.
     /// </summary>

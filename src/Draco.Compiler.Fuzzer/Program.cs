@@ -17,7 +17,11 @@ internal static class Program
         OutOfProcess,
     }
 
-    private readonly record struct Settings(RunMode? RunMode, ImmutableArray<string> InitialFiles);
+    private readonly record struct Settings(
+        int? Seed,
+        RunMode? RunMode,
+        int? MaxDegreeOfParallelism,
+        ImmutableArray<string> InitialFiles);
 
     private static void Main(string[] args)
     {
@@ -30,9 +34,9 @@ internal static class Program
 
             var debuggerWindow = new TuiTracer();
             var fuzzer = runMode == RunMode.InProcess
-                ? FuzzerFactory.CreateInProcess(debuggerWindow)
-                : FuzzerFactory.CreateOutOfProcess(debuggerWindow);
-            debuggerWindow.Fuzzer = fuzzer;
+                ? FuzzerFactory.CreateInProcess(debuggerWindow, settings.Seed)
+                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, settings.Seed, settings.MaxDegreeOfParallelism);
+            debuggerWindow.SetFuzzer(fuzzer);
 
             // Add any pre-registered files
             var addedTrees = settings.InitialFiles
@@ -67,7 +71,9 @@ internal static class Program
         var argIndex = 0;
         string? GetNextArg() => argIndex < args.Length ? args[argIndex++] : null;
 
+        var seed = null as int?;
         var runMode = null as RunMode?;
+        var maxDegreeOfParallelism = null as int?;
         var initialFiles = ImmutableArray.CreateBuilder<string>();
 
         while (true)
@@ -81,35 +87,57 @@ internal static class Program
                     Usage: Draco.Compiler.Fuzzer.exe [options]
                     options:
                         -h, --help: Show this help message
+                        -s, --seed: The seed to use for random number generation
                         -ip, --in-process: Run the fuzzer in-process
-                        -op, --out-of-process: Run the fuzzer out-of-process
+                        -oop, --out-of-process: Run the fuzzer out-of-process
+                        -mp, --max-parallelism <degree>: The maximum degree of parallelism to use
                         -ad, --add-directory <directory>: Add an entire directory to the initial files
                         -af, --add-file <file>: Add a file to the initial files
                     """);
                 Environment.Exit(0);
             }
-            if (arg == "-ip" || arg == "--in-process")
+            else if (arg == "-s" || arg == "--seed")
+            {
+                if (seed is not null) throw new ArgumentException("seed already set");
+                var seedStr = GetNextArg() ?? throw new ArgumentException("missing seed");
+                seed = int.Parse(seedStr);
+            }
+            else if (arg == "-ip" || arg == "--in-process")
             {
                 if (runMode is not null) throw new ArgumentException("run-mode already set");
                 runMode = RunMode.InProcess;
             }
-            if (arg == "-op" || arg == "--out-of-process")
+            else if (arg == "-oop" || arg == "--out-of-process")
             {
                 if (runMode is not null) throw new ArgumentException("run-mode already set");
                 runMode = RunMode.OutOfProcess;
             }
-            if (arg == "-ad" || arg == "--add-directory")
+            else if (arg == "-mp" || arg == "--max-parallelism")
+            {
+                if (maxDegreeOfParallelism is not null) throw new ArgumentException("max-parallelism already set");
+                var degreeStr = GetNextArg() ?? throw new ArgumentException("missing degree");
+                maxDegreeOfParallelism = int.Parse(degreeStr);
+            }
+            else if (arg == "-ad" || arg == "--add-directory")
             {
                 var directory = GetNextArg() ?? throw new ArgumentException("missing directory");
                 initialFiles.AddRange(System.IO.Directory.GetFiles(directory));
             }
-            if (arg == "-af" || arg == "--add-file")
+            else if (arg == "-af" || arg == "--add-file")
             {
                 var file = GetNextArg() ?? throw new ArgumentException("missing file");
                 initialFiles.Add(file);
             }
+            else
+            {
+                throw new ArgumentException($"unknown argument: {arg}");
+            }
         }
 
-        return new Settings(runMode, initialFiles.ToImmutable());
+        return new Settings(
+            Seed: seed,
+            RunMode: runMode,
+            MaxDegreeOfParallelism: maxDegreeOfParallelism,
+            InitialFiles: initialFiles.ToImmutable());
     }
 }

@@ -16,9 +16,7 @@ namespace Draco.Fuzzing;
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
 /// <param name="seed">The seed to use for the random number generator.</param>
 /// <param name="multithreaded">True if the fuzzer should run in multithreaded mode. Only recommended for out-of-process execution.</param>
-public sealed class Fuzzer<TInput, TCoverage>(
-    int? seed = null,
-    bool multithreaded = false)
+public sealed class Fuzzer<TInput, TCoverage>
     where TCoverage : notnull
 {
     // Minimal result info of an execution
@@ -33,9 +31,19 @@ public sealed class Fuzzer<TInput, TCoverage>(
     }
 
     /// <summary>
+    /// The seed to use for the random number generator.
+    /// </summary>
+    public int Seed { get; }
+
+    /// <summary>
+    /// The maximum number of parallelism.
+    /// </summary>
+    public int? MaxDegreeOfParallelism { get; }
+
+    /// <summary>
     /// A shared random number generator.
     /// </summary>
-    public Random Random { get; } = seed is null ? new() : new(seed.Value);
+    public Random Random { get; }
 
     /// <summary>
     /// The input minimizer to use.
@@ -72,13 +80,21 @@ public sealed class Fuzzer<TInput, TCoverage>(
     /// </summary>
     public required ITracer<TInput> Tracer { get; init; }
 
-    private readonly Channel<QueueEntry> inputQueue = Channel.CreateUnbounded<QueueEntry>(new UnboundedChannelOptions
-    {
-        SingleReader = true,
-        SingleWriter = !multithreaded,
-    });
+    private readonly Channel<QueueEntry> inputQueue;
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private readonly object tracerSync = new();
+
+    public Fuzzer(int? seed = null, int? maxDegreeOfParallelism = null)
+    {
+        this.Seed = seed ?? Random.Shared.Next();
+        this.MaxDegreeOfParallelism = maxDegreeOfParallelism;
+        this.Random = new Random(this.Seed);
+        this.inputQueue = Channel.CreateUnbounded<QueueEntry>(new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = maxDegreeOfParallelism == 1,
+        });
+    }
 
     /// <summary>
     /// Enqueues the given input into the fuzzer.
@@ -106,6 +122,9 @@ public sealed class Fuzzer<TInput, TCoverage>(
     /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
     public void Run(CancellationToken cancellationToken)
     {
+        using var semaphore = this.MaxDegreeOfParallelism is null
+            ? null
+            : new SemaphoreSlim(this.MaxDegreeOfParallelism.Value);
         // First off, make sure the executor is set up
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
@@ -122,27 +141,35 @@ public sealed class Fuzzer<TInput, TCoverage>(
             }
             lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
 
-            if (multithreaded)
+            if (this.MaxDegreeOfParallelism == 1)
             {
-                ThreadPool.QueueUserWorkItem(_ => HandleEntry());
+                HandleEntry();
             }
             else
             {
-                HandleEntry();
+                ThreadPool.QueueUserWorkItem(_ => HandleEntry());
             }
 
             void HandleEntry()
             {
-                // We want to minimize the input first
-                entry = this.Minimize(entry);
-                if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
+                semaphore?.Wait(cancellationToken);
+                try
                 {
-                    // NOTE: For now we don't mutate faulted results
-                    return;
-                }
+                    // We want to minimize the input first
+                    entry = this.Minimize(entry);
+                    if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
+                    {
+                        // NOTE: For now we don't mutate faulted results
+                        return;
+                    }
 
-                // And we want to mutate the minimized input
-                this.Mutate(entry);
+                    // And we want to mutate the minimized input
+                    this.Mutate(entry);
+                }
+                finally
+                {
+                    semaphore?.Release();
+                }
             }
         }
     end:

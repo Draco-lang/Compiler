@@ -22,13 +22,11 @@ internal readonly struct CallScore(int length)
     /// <returns>The relationship between <paramref name="first"/> and <paramref name="second"/>.</returns>
     public static CallScoreComparison Compare(CallScore first, CallScore second)
     {
-        if (first.Length != second.Length)
-        {
-            throw new InvalidOperationException("Can not compare call scores of different length");
-        }
+        // NOTE: The length can differ for variadics
+        var minLength = Math.Min(first.Length, second.Length);
 
         var relation = CallScoreComparison.Equal;
-        for (var i = 0; i < first.Length; ++i)
+        for (var i = 0; i < minLength; ++i)
         {
             var firstScore = first[i];
             var secondScore = second[i];
@@ -47,6 +45,14 @@ internal readonly struct CallScore(int length)
 
             if (relation == CallScoreComparison.NoDominance) return CallScoreComparison.NoDominance;
         }
+
+        if (relation == CallScoreComparison.Equal)
+        {
+            // If they are equal, we can still try to disambiguate by length, preferring the sorter
+            if (first.Length < second.Length) return CallScoreComparison.FirstDominates;
+            if (first.Length > second.Length) return CallScoreComparison.SecondDominates;
+        }
+
         return relation;
     }
 

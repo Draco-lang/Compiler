@@ -13,6 +13,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Chr.Rules.RuleFactory;
+using IChrSolver = Draco.Chr.Solve.ISolver;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -299,13 +300,10 @@ internal sealed partial class ConstraintSolver
                 var candidates = overload.Candidates.Dominators;
                 if (candidates.Length == 0)
                 {
-                    // Could not resolve, error
-                    UnifyWithError(overload.ReturnType);
-                    // Best-effort shape approximation
-                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.CompletionSource.SetResult(errorSymbol);
+                    // No such overload, error
+                    FailOverload(overload);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
-                    if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsTypeVariable && !a.Type.Substitution.IsError))
+                    if (overload.Candidates.Arguments.All(a => a.Type.Substitution.IsTypeVariable || !a.Type.Substitution.IsError))
                     {
                         overload.ReportDiagnostic(diagnostics, diag => diag
                             .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
@@ -317,10 +315,7 @@ internal sealed partial class ConstraintSolver
                 if (candidates.Length > 1)
                 {
                     // Ambiguity, error
-                    // Best-effort shape approximation
-                    UnifyWithError(overload.ReturnType);
-                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.CompletionSource.SetResult(errorSymbol);
+                    FailOverload(overload);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
                     if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsError))
                     {
@@ -432,4 +427,60 @@ internal sealed partial class ConstraintSolver
             })
             .Named("concrete_common_ancestor"),
     ];
+
+    /// <summary>
+    /// Fails the overload constraint by setting the return type to an error type and resolving the promise.
+    /// </summary>
+    /// <param name="overload">The overload constraint to fail.</param>
+    private static void FailOverload(Overload overload)
+    {
+        UnifyWithError(overload.ReturnType);
+        var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
+        overload.CompletionSource.SetResult(errorSymbol);
+    }
+
+    /// <summary>
+    /// Attempts to fail all remaining constraints in the store.
+    /// </summary>
+    /// <param name="solver">The CHR solver to use for solving the constraints.</param>
+    private void FailRemainingRules(IChrSolver solver)
+    {
+        var previousStoreSize = this.constraintStore.Count;
+        while (true)
+        {
+            // We unify type variables with the error type
+            foreach (var typeVar in this.typeVariables)
+            {
+                var unwrapped = typeVar.Substitution;
+                if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
+            }
+
+            var constraintsToRemove = new List<IConstraint>();
+
+            // We can also solve all overload constraints by failing them instantly
+            var overloadConstraints = this.constraintStore
+                .ConstraintsOfType(typeof(Overload))
+                .ToList();
+            foreach (var constraint in overloadConstraints)
+            {
+                var overload = (Overload)constraint.Value;
+                FailOverload(overload);
+                constraintsToRemove.Add(constraint);
+            }
+
+            this.constraintStore.RemoveRange(constraintsToRemove);
+
+            // Assume this solves everything
+            solver.Solve(this.constraintStore);
+
+            // Check for exit condition
+            if (previousStoreSize == this.constraintStore.Count) break;
+            previousStoreSize = this.constraintStore.Count;
+        }
+
+        if (this.constraintStore.Count > 0)
+        {
+            throw new InvalidOperationException("fallback operation could not solve all constraints");
+        }
+    }
 }

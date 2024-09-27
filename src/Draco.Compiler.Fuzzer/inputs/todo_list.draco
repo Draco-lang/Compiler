@@ -1,0 +1,112 @@
+import System.Console;
+import System.CommandLine;
+import System.IO;
+import System.Environment;
+import System.Collections.Generic;
+
+func main(args: Array<string>): int32 =
+    CommandExtensions.Invoke(configureCommands(), args, default<IConsole>());
+
+func configureCommands(): RootCommand {
+    val taskArgument = Argument<string>("task", "The name of the task");
+
+    // NOTE: Named args would be so nice here
+    val initCommand = Command("init", "Initializes a new todo list");
+    Handler.SetHandler(initCommand, init);
+
+    val clearCommand = Command("clear", "Clears the todo list, removing it");
+    Handler.SetHandler(clearCommand, clear);
+
+    val addCommand = Command("add", "Adds a new task to the todo list");
+    addCommand.Add(taskArgument);
+    Handler.SetHandler(addCommand, add, taskArgument);
+
+    val removeCommand = Command("remove", "Removes a task from the todo list");
+    removeCommand.Add(taskArgument);
+    Handler.SetHandler(removeCommand, remove, taskArgument);
+
+    val listCommand = Command("list", "Lists all tasks in the todo list");
+    Handler.SetHandler(listCommand, list);
+
+    val rootCommand = RootCommand("A CLI todo list manager");
+    rootCommand.AddCommand(initCommand);
+    rootCommand.AddCommand(clearCommand);
+    rootCommand.AddCommand(addCommand);
+    rootCommand.AddCommand(removeCommand);
+    rootCommand.AddCommand(listCommand);
+    return rootCommand;
+}
+
+func init() {
+    if (File.Exists("todo.txt")) {
+        WriteLine("A todo list already exists.");
+        Exit(1);
+    }
+
+    File.WriteAllText("todo.txt", "");
+    WriteLine("Initialized a new todo list.");
+}
+
+func clear() {
+    if (not File.Exists("todo.txt")) {
+        WriteLine("No todo list exists, nothing to clear.");
+        Exit(0);
+    }
+
+    File.Delete("todo.txt");
+    WriteLine("Cleared the todo list.");
+}
+
+func add(taskName: string) {
+    if (string.IsNullOrWhiteSpace(taskName)) {
+        WriteLine("Task name cannot be empty.");
+        Exit(1);
+    }
+
+    checkIfInitialized();
+
+    File.AppendAllText("todo.txt", "\{taskName}\n");
+    WriteLine("Added task: \{taskName}");
+}
+
+func remove(taskName: string) {
+    if (string.IsNullOrWhiteSpace(taskName)) {
+        WriteLine("Task name cannot be empty.");
+        Exit(1);
+    }
+
+    checkIfInitialized();
+
+    val items = File.ReadAllLines("todo.txt");
+    var removed = false;
+    val newItems = List();
+    for (item in items) {
+        if (item != taskName) {
+            newItems.Add(item);
+            removed = true;
+        }
+    }
+    File.WriteAllLines("todo.txt", newItems);
+
+    if (removed) {
+        WriteLine("Removed task: \{taskName}");
+    } else {
+        WriteLine("Task not found: \{taskName}");
+    }
+}
+
+func list() {
+    checkIfInitialized();
+
+    var items = File.ReadAllLines("todo.txt");
+    for (item in items) {
+        WriteLine(" - \{item}");
+    }
+}
+
+func checkIfInitialized() {
+    if (not File.Exists("todo.txt")) {
+        WriteLine("No todo list exists. Run `todo init` to create one.");
+        Exit(1);
+    }
+}

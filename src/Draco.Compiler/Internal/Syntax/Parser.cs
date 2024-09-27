@@ -1340,7 +1340,7 @@ internal sealed class Parser(
         //  - the leading trivia of the closing quotes contains a newline
         //  - the string is empty and the opening quotes trailing trivia contains a newline
         var isClosingQuoteOnNewline =
-               closeQuote.LeadingTrivia.Count > 0
+               closeQuote.LeadingTrivia.Any(t => t.Kind == TriviaKind.Newline)
             || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline));
         if (isClosingQuoteOnNewline)
         {

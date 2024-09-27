@@ -250,6 +250,18 @@ public sealed class DoesNotCrashTests
             }
         }
         """)]
+    [InlineData("""
+        import System.Console;
+
+        func arrayOf<T>(...vs:Array<T {
+            WriteLine(s);
+            func arrayOf<T>(...vs:Array<T>): Array<T> 
+            func main() {
+                for (s in arrayOf(" ", "   " ;
+                func arrayOf<T>(...vs:Array,  " "))>=
+            }
+        }
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

@@ -17,7 +17,10 @@ internal static class Program
         OutOfProcess,
     }
 
-    private readonly record struct Settings(RunMode? RunMode, ImmutableArray<string> InitialFiles);
+    private readonly record struct Settings(
+        int? Seed,
+        RunMode? RunMode,
+        ImmutableArray<string> InitialFiles);
 
     private static void Main(string[] args)
     {
@@ -26,12 +29,13 @@ internal static class Program
         Application.Init();
         Application.MainLoop.Invoke(async () =>
         {
+            var seed = settings.Seed ?? (int)(DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds;
             var runMode = GetRunMode(settings);
 
-            var debuggerWindow = new TuiTracer();
+            var debuggerWindow = new TuiTracer(seed);
             var fuzzer = runMode == RunMode.InProcess
-                ? FuzzerFactory.CreateInProcess(debuggerWindow)
-                : FuzzerFactory.CreateOutOfProcess(debuggerWindow);
+                ? FuzzerFactory.CreateInProcess(debuggerWindow, seed)
+                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, seed);
             debuggerWindow.Fuzzer = fuzzer;
 
             // Add any pre-registered files
@@ -67,6 +71,7 @@ internal static class Program
         var argIndex = 0;
         string? GetNextArg() => argIndex < args.Length ? args[argIndex++] : null;
 
+        var seed = null as int?;
         var runMode = null as RunMode?;
         var initialFiles = ImmutableArray.CreateBuilder<string>();
 
@@ -81,12 +86,19 @@ internal static class Program
                     Usage: Draco.Compiler.Fuzzer.exe [options]
                     options:
                         -h, --help: Show this help message
+                        -s, --seed: The seed to use for random number generation
                         -ip, --in-process: Run the fuzzer in-process
                         -op, --out-of-process: Run the fuzzer out-of-process
                         -ad, --add-directory <directory>: Add an entire directory to the initial files
                         -af, --add-file <file>: Add a file to the initial files
                     """);
                 Environment.Exit(0);
+            }
+            if (arg == "-s" || arg == "--seed")
+            {
+                if (seed is not null) throw new ArgumentException("seed already set");
+                var seedStr = GetNextArg() ?? throw new ArgumentException("missing seed");
+                seed = int.Parse(seedStr);
             }
             if (arg == "-ip" || arg == "--in-process")
             {
@@ -110,6 +122,6 @@ internal static class Program
             }
         }
 
-        return new Settings(runMode, initialFiles.ToImmutable());
+        return new Settings(seed, runMode, initialFiles.ToImmutable());
     }
 }

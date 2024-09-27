@@ -75,7 +75,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private int mutatedInputCounter = 0;
     private double bestCoveragePercent = 0;
 
-    public TuiTracer()
+    public TuiTracer(int seed)
     {
         this.Border = new();
 
@@ -290,12 +290,17 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         faultFrameView.Add(this.faultListView, this.selectedFaultItemTextView);
         #endregion
 
+        #region Status Bar
+        var statusBar = new StatusBar([
+            new StatusItem(Key.Null, $"Seed: ({seed})", () => { })]);
+        #endregion
+
         this.Add(
             coverageFrameView, timingsFrameView,
             this.inputFrameView,
             this.inputQueueFrameView, faultFrameView);
 
-        Application.Top.Add(menuBar, this);
+        Application.Top.Add(menuBar, this, statusBar);
     }
 
     public void InputsEnqueued(IEnumerable<SyntaxTree> inputs)

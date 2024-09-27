@@ -36,9 +36,9 @@ public sealed class Fuzzer<TInput, TCoverage>
     public int Seed { get; }
 
     /// <summary>
-    /// True, if the fuzzer should run in multithreaded mode. Only recommended for out-of-process execution.
+    /// The maximum number of parallelism.
     /// </summary>
-    public bool Multithreaded { get; }
+    public int? MaxDegreeOfParallelism { get; }
 
     /// <summary>
     /// A shared random number generator.
@@ -84,15 +84,15 @@ public sealed class Fuzzer<TInput, TCoverage>
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private readonly object tracerSync = new();
 
-    public Fuzzer(int? seed = null, bool multithreaded = false)
+    public Fuzzer(int? seed = null, int? maxDegreeOfParallelism = null)
     {
         this.Seed = seed ?? Random.Shared.Next();
-        this.Multithreaded = multithreaded;
+        this.MaxDegreeOfParallelism = maxDegreeOfParallelism;
         this.Random = new Random(this.Seed);
         this.inputQueue = Channel.CreateUnbounded<QueueEntry>(new UnboundedChannelOptions
         {
             SingleReader = true,
-            SingleWriter = !multithreaded,
+            SingleWriter = maxDegreeOfParallelism == 1,
         });
     }
 
@@ -122,6 +122,9 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
     public void Run(CancellationToken cancellationToken)
     {
+        using var semaphore = this.MaxDegreeOfParallelism is null
+            ? null
+            : new SemaphoreSlim(this.MaxDegreeOfParallelism.Value);
         // First off, make sure the executor is set up
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
@@ -138,27 +141,35 @@ public sealed class Fuzzer<TInput, TCoverage>
             }
             lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
 
-            if (this.Multithreaded)
+            if (this.MaxDegreeOfParallelism == 1)
             {
-                ThreadPool.QueueUserWorkItem(_ => HandleEntry());
+                HandleEntry();
             }
             else
             {
-                HandleEntry();
+                ThreadPool.QueueUserWorkItem(_ => HandleEntry());
             }
 
             void HandleEntry()
             {
-                // We want to minimize the input first
-                entry = this.Minimize(entry);
-                if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
+                semaphore?.Wait(cancellationToken);
+                try
                 {
-                    // NOTE: For now we don't mutate faulted results
-                    return;
-                }
+                    // We want to minimize the input first
+                    entry = this.Minimize(entry);
+                    if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
+                    {
+                        // NOTE: For now we don't mutate faulted results
+                        return;
+                    }
 
-                // And we want to mutate the minimized input
-                this.Mutate(entry);
+                    // And we want to mutate the minimized input
+                    this.Mutate(entry);
+                }
+                finally
+                {
+                    semaphore?.Release();
+                }
             }
         }
     end:

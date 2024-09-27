@@ -20,18 +20,12 @@ internal static class Program
     private readonly record struct Settings(
         int? Seed,
         RunMode? RunMode,
-        bool ForceSingleThreaded,
-        int? MaxThreads,
+        int? MaxDegreeOfParallelism,
         ImmutableArray<string> InitialFiles);
 
     private static void Main(string[] args)
     {
         var settings = ParseSettings(args);
-
-        if (settings.MaxThreads is not null)
-        {
-            ThreadPool.SetMaxThreads(settings.MaxThreads.Value, settings.MaxThreads.Value);
-        }
 
         Application.Init();
         Application.MainLoop.Invoke(async () =>
@@ -41,7 +35,7 @@ internal static class Program
             var debuggerWindow = new TuiTracer();
             var fuzzer = runMode == RunMode.InProcess
                 ? FuzzerFactory.CreateInProcess(debuggerWindow, settings.Seed)
-                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, settings.Seed, settings.ForceSingleThreaded);
+                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, settings.Seed, settings.MaxDegreeOfParallelism);
             debuggerWindow.SetFuzzer(fuzzer);
 
             // Add any pre-registered files
@@ -79,8 +73,7 @@ internal static class Program
 
         var seed = null as int?;
         var runMode = null as RunMode?;
-        var forceSingleThreaded = false;
-        var maxThreads = null as int?;
+        var maxDegreeOfParallelism = null as int?;
         var initialFiles = ImmutableArray.CreateBuilder<string>();
 
         while (true)
@@ -97,8 +90,7 @@ internal static class Program
                         -s, --seed: The seed to use for random number generation
                         -ip, --in-process: Run the fuzzer in-process
                         -oop, --out-of-process: Run the fuzzer out-of-process
-                        -fst, --force-single-threaded: Force the fuzzer to run single-threaded
-                        -mt, --max-threads <threads>: The maximum number of threads to use
+                        -mp, --max-parallelism <degree>: The maximum degree of parallelism to use
                         -ad, --add-directory <directory>: Add an entire directory to the initial files
                         -af, --add-file <file>: Add a file to the initial files
                     """);
@@ -120,16 +112,11 @@ internal static class Program
                 if (runMode is not null) throw new ArgumentException("run-mode already set");
                 runMode = RunMode.OutOfProcess;
             }
-            else if (arg == "-fst" || arg == "--force-single-threaded")
+            else if (arg == "-mp" || arg == "--max-parallelism")
             {
-                if (forceSingleThreaded) throw new ArgumentException("forcing single-threaded already set");
-                forceSingleThreaded = true;
-            }
-            else if (arg == "-mt" ||arg == "--max-threads")
-            {
-                if (maxThreads is not null) throw new ArgumentException("max-threads already set");
-                var maxThreadsStr = GetNextArg() ?? throw new ArgumentException("missing max-threads");
-                maxThreads = int.Parse(maxThreadsStr);
+                if (maxDegreeOfParallelism is not null) throw new ArgumentException("max-parallelism already set");
+                var degreeStr = GetNextArg() ?? throw new ArgumentException("missing degree");
+                maxDegreeOfParallelism = int.Parse(degreeStr);
             }
             else if (arg == "-ad" || arg == "--add-directory")
             {
@@ -150,8 +137,7 @@ internal static class Program
         return new Settings(
             Seed: seed,
             RunMode: runMode,
-            ForceSingleThreaded: forceSingleThreaded,
-            MaxThreads: maxThreads,
+            MaxDegreeOfParallelism: maxDegreeOfParallelism,
             InitialFiles: initialFiles.ToImmutable());
     }
 }

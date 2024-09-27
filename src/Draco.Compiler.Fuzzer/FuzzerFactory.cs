@@ -48,7 +48,7 @@ internal static class FuzzerFactory
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-        return new(seed: seed)
+        return new(seed: seed, maxDegreeOfParallelism: 1)
         {
             CoverageCompressor = CoverageCompressor,
             CoverageReader = CoverageReader,
@@ -60,7 +60,7 @@ internal static class FuzzerFactory
         };
     }
 
-    public static Fuzzer<SyntaxTree, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int? seed, bool forceSingleThreaded)
+    public static Fuzzer<SyntaxTree, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int? seed, int? maxParallelism)
     {
         static ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
         {
@@ -85,7 +85,7 @@ internal static class FuzzerFactory
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-        return new(seed: seed, multithreaded: !forceSingleThreaded)
+        return new(seed: seed, maxDegreeOfParallelism: maxParallelism)
         {
             CoverageReader = CoverageReader,
             CoverageCompressor = CoverageCompressor,

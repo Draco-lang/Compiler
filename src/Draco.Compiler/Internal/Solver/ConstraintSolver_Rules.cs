@@ -458,9 +458,12 @@ internal sealed partial class ConstraintSolver
             var constraintsToRemove = new List<IConstraint>();
 
             // We can also solve all overload constraints by failing them instantly
-            foreach (var constraint in this.constraintStore.ConstraintsOfType(typeof(Constraints.Overload)))
+            var overloadConstraints = this.constraintStore
+                .ConstraintsOfType(typeof(Overload))
+                .ToList();
+            foreach (var constraint in overloadConstraints)
             {
-                var overload = (Constraints.Overload)constraint.Value;
+                var overload = (Overload)constraint.Value;
                 FailOverload(overload);
                 constraintsToRemove.Add(constraint);
             }

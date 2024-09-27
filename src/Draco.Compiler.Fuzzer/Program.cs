@@ -29,14 +29,13 @@ internal static class Program
         Application.Init();
         Application.MainLoop.Invoke(async () =>
         {
-            var seed = settings.Seed ?? (int)(DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds;
             var runMode = GetRunMode(settings);
 
-            var debuggerWindow = new TuiTracer(seed);
+            var debuggerWindow = new TuiTracer();
             var fuzzer = runMode == RunMode.InProcess
-                ? FuzzerFactory.CreateInProcess(debuggerWindow, seed)
-                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, seed);
-            debuggerWindow.Fuzzer = fuzzer;
+                ? FuzzerFactory.CreateInProcess(debuggerWindow, settings.Seed)
+                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, settings.Seed);
+            debuggerWindow.SetFuzzer(fuzzer);
 
             // Add any pre-registered files
             var addedTrees = settings.InitialFiles

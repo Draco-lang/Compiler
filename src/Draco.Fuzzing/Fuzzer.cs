@@ -16,9 +16,7 @@ namespace Draco.Fuzzing;
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
 /// <param name="seed">The seed to use for the random number generator.</param>
 /// <param name="multithreaded">True if the fuzzer should run in multithreaded mode. Only recommended for out-of-process execution.</param>
-public sealed class Fuzzer<TInput, TCoverage>(
-    int? seed = null,
-    bool multithreaded = false)
+public sealed class Fuzzer<TInput, TCoverage>
     where TCoverage : notnull
 {
     // Minimal result info of an execution
@@ -33,9 +31,19 @@ public sealed class Fuzzer<TInput, TCoverage>(
     }
 
     /// <summary>
+    /// The seed to use for the random number generator.
+    /// </summary>
+    public int Seed { get; }
+
+    /// <summary>
+    /// True, if the fuzzer should run in multithreaded mode. Only recommended for out-of-process execution.
+    /// </summary>
+    public bool Multithreaded { get; }
+
+    /// <summary>
     /// A shared random number generator.
     /// </summary>
-    public Random Random { get; } = seed is null ? new() : new(seed.Value);
+    public Random Random { get; }
 
     /// <summary>
     /// The input minimizer to use.
@@ -72,13 +80,21 @@ public sealed class Fuzzer<TInput, TCoverage>(
     /// </summary>
     public required ITracer<TInput> Tracer { get; init; }
 
-    private readonly Channel<QueueEntry> inputQueue = Channel.CreateUnbounded<QueueEntry>(new UnboundedChannelOptions
-    {
-        SingleReader = true,
-        SingleWriter = !multithreaded,
-    });
+    private readonly Channel<QueueEntry> inputQueue;
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private readonly object tracerSync = new();
+
+    public Fuzzer(int? seed = null, bool multithreaded = false)
+    {
+        this.Seed = seed ?? Random.Shared.Next();
+        this.Multithreaded = multithreaded;
+        this.Random = new Random(this.Seed);
+        this.inputQueue = Channel.CreateUnbounded<QueueEntry>(new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = !multithreaded,
+        });
+    }
 
     /// <summary>
     /// Enqueues the given input into the fuzzer.
@@ -122,7 +138,7 @@ public sealed class Fuzzer<TInput, TCoverage>(
             }
             lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
 
-            if (multithreaded)
+            if (this.Multithreaded)
             {
                 ThreadPool.QueueUserWorkItem(_ => HandleEntry());
             }

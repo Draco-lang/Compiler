@@ -37,7 +37,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         }
     }
 
-    public Fuzzer<SyntaxTree, int>? Fuzzer { get; set; }
+    public Fuzzer<SyntaxTree, int>? Fuzzer { get; private set; }
 
     // Coverage info
     private readonly ProgressBar currentCoverageProgressBar;
@@ -68,6 +68,9 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private readonly List<FaultItem> faultList = [];
     private readonly TextView selectedFaultItemTextView;
 
+    // Status bar
+    private readonly StatusItem seedStatusItem;
+
     // Counters
     private int inputQueueItemCounter = 0;
     private int fuzzedInputCounter = 0;
@@ -75,7 +78,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private int mutatedInputCounter = 0;
     private double bestCoveragePercent = 0;
 
-    public TuiTracer(int seed)
+    public TuiTracer()
     {
         this.Border = new();
 
@@ -291,8 +294,9 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         #endregion
 
         #region Status Bar
-        var statusBar = new StatusBar([
-            new StatusItem(Key.Null, $"Seed: ({seed})", () => { })]);
+        this.seedStatusItem = new StatusItem(Key.Null, GetSeedStatusBarTitle(), () => { });
+
+        var statusBar = new StatusBar([this.seedStatusItem]);
         #endregion
 
         this.Add(
@@ -301,6 +305,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             this.inputQueueFrameView, faultFrameView);
 
         Application.Top.Add(menuBar, this, statusBar);
+    }
+
+    public void SetFuzzer(Fuzzer<SyntaxTree, int> fuzzer)
+    {
+        this.Fuzzer = fuzzer;
+        this.seedStatusItem.Title = GetSeedStatusBarTitle(fuzzer.Seed);
     }
 
     public void InputsEnqueued(IEnumerable<SyntaxTree> inputs)
@@ -410,7 +420,13 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         if (dialog.FileName is null) return;
 
         var targetPath = Path.Join(dialog.DirectoryPath.ToString()!, dialog.FileName.ToString()!);
-        var faults = string.Join(Environment.NewLine, this.faultList.Select(FormatFaultForExport));
+        var faults = $"""
+            //////////////////////////////////////////
+            // Seed: {this.Fuzzer?.Seed}
+            //////////////////////////////////////////
+
+            {string.Join(Environment.NewLine, this.faultList.Select(FormatFaultForExport))}
+            """;
         File.WriteAllText(targetPath, faults);
     }
 
@@ -420,6 +436,10 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         throw new InvalidOperationException("fuzzer is not set");
     }
+
+    private static string GetSeedStatusBarTitle(int? seed = null) => seed is null
+        ? "Seed: -"
+        : $"Seed: {seed}";
 
     private static string GetInputQueueFrameTitle(int? count = null) => count is null
         ? "Input Queue"

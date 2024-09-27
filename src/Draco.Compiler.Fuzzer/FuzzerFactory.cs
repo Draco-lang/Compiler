@@ -19,7 +19,7 @@ internal static class FuzzerFactory
     private static IInputMutator<SyntaxTree> InputMutator => new SyntaxTreeInputMutator();
     private static TimeSpan Timeout => TimeSpan.FromSeconds(5);
 
-    public static Fuzzer<SyntaxTree, int> CreateInProcess(ITracer<SyntaxTree> tracer, int seed)
+    public static Fuzzer<SyntaxTree, int> CreateInProcess(ITracer<SyntaxTree> tracer, int? seed)
     {
         // Things we share between compilations
         var bclReferences = ReferenceInfos.All
@@ -60,7 +60,7 @@ internal static class FuzzerFactory
         };
     }
 
-    public static Fuzzer<SyntaxTree, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int seed)
+    public static Fuzzer<SyntaxTree, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int? seed)
     {
         static ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
         {

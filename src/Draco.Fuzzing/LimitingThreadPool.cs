@@ -61,6 +61,11 @@ internal sealed class LimitingThreadPool
         }
     }
 
+    /// <summary>
+    /// Enqueues work to be done by a thread in the pool. Blocks, until a thread is available.
+    /// </summary>
+    /// <param name="action">The work to be done.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel waiting for thread availability.</param>
     public void QueueWork(Action action, CancellationToken cancellationToken)
     {
         this.semaphore.Wait(cancellationToken);

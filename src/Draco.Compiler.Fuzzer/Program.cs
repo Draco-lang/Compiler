@@ -20,6 +20,7 @@ internal static class Program
     private readonly record struct Settings(
         int? Seed,
         RunMode? RunMode,
+        bool ForceSingleThreaded,
         ImmutableArray<string> InitialFiles);
 
     private static void Main(string[] args)
@@ -34,7 +35,7 @@ internal static class Program
             var debuggerWindow = new TuiTracer();
             var fuzzer = runMode == RunMode.InProcess
                 ? FuzzerFactory.CreateInProcess(debuggerWindow, settings.Seed)
-                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, settings.Seed);
+                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, settings.Seed, settings.ForceSingleThreaded);
             debuggerWindow.SetFuzzer(fuzzer);
 
             // Add any pre-registered files
@@ -72,6 +73,7 @@ internal static class Program
 
         var seed = null as int?;
         var runMode = null as RunMode?;
+        var forceSingleThreaded = false;
         var initialFiles = ImmutableArray.CreateBuilder<string>();
 
         while (true)
@@ -87,40 +89,54 @@ internal static class Program
                         -h, --help: Show this help message
                         -s, --seed: The seed to use for random number generation
                         -ip, --in-process: Run the fuzzer in-process
-                        -op, --out-of-process: Run the fuzzer out-of-process
+                        -oop, --out-of-process: Run the fuzzer out-of-process
+                        -fst, --force-single-threaded: Force the fuzzer to run single-threaded
                         -ad, --add-directory <directory>: Add an entire directory to the initial files
                         -af, --add-file <file>: Add a file to the initial files
                     """);
                 Environment.Exit(0);
             }
-            if (arg == "-s" || arg == "--seed")
+            else if (arg == "-s" || arg == "--seed")
             {
                 if (seed is not null) throw new ArgumentException("seed already set");
                 var seedStr = GetNextArg() ?? throw new ArgumentException("missing seed");
                 seed = int.Parse(seedStr);
             }
-            if (arg == "-ip" || arg == "--in-process")
+            else if (arg == "-ip" || arg == "--in-process")
             {
                 if (runMode is not null) throw new ArgumentException("run-mode already set");
                 runMode = RunMode.InProcess;
             }
-            if (arg == "-op" || arg == "--out-of-process")
+            else if (arg == "-oop" || arg == "--out-of-process")
             {
                 if (runMode is not null) throw new ArgumentException("run-mode already set");
                 runMode = RunMode.OutOfProcess;
             }
-            if (arg == "-ad" || arg == "--add-directory")
+            else if (arg == "-fst" || arg == "--force-single-threaded")
+            {
+                if (forceSingleThreaded) throw new ArgumentException("forcing single-threaded already set");
+                forceSingleThreaded = true;
+            }
+            else if (arg == "-ad" || arg == "--add-directory")
             {
                 var directory = GetNextArg() ?? throw new ArgumentException("missing directory");
                 initialFiles.AddRange(System.IO.Directory.GetFiles(directory));
             }
-            if (arg == "-af" || arg == "--add-file")
+            else if (arg == "-af" || arg == "--add-file")
             {
                 var file = GetNextArg() ?? throw new ArgumentException("missing file");
                 initialFiles.Add(file);
             }
+            else
+            {
+                throw new ArgumentException($"unknown argument: {arg}");
+            }
         }
 
-        return new Settings(seed, runMode, initialFiles.ToImmutable());
+        return new Settings(
+            Seed: seed,
+            RunMode: runMode,
+            ForceSingleThreaded: forceSingleThreaded,
+            InitialFiles: initialFiles.ToImmutable());
     }
 }

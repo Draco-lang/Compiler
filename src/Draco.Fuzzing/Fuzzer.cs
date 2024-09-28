@@ -126,8 +126,6 @@ public sealed class Fuzzer<TInput, TCoverage>
         lock (this.tracerSync) this.Tracer.FuzzerStarted();
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (cancellationToken.IsCancellationRequested) break;
-
             var entry = this.inputQueue.Take(cancellationToken);
             lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
 

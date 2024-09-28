@@ -2,7 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace Draco.Fuzzing;
 
@@ -118,33 +118,34 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
     public void Run(CancellationToken cancellationToken)
     {
-        var threadPool = new LimitingThreadPool(this.MaxDegreeOfParallelism ?? Environment.ProcessorCount);
         // First off, make sure the executor is set up
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
         this.TargetExecutor.GlobalInitializer();
         lock (this.tracerSync) this.Tracer.FuzzerStarted();
-        while (!cancellationToken.IsCancellationRequested)
+        var parallelOptions = new ParallelOptions
         {
-            var entry = this.inputQueue.Take(cancellationToken);
+            CancellationToken = cancellationToken,
+            MaxDegreeOfParallelism = this.MaxDegreeOfParallelism ?? -1,
+        };
+        var limitedPartitioner = Partitioner.Create(
+            this.inputQueue.GetConsumingEnumerable(cancellationToken),
+            EnumerablePartitionerOptions.NoBuffering);
+        Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
+        {
             lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
 
-            threadPool.QueueWork(HandleEntry);
-
-            void HandleEntry()
+            // We want to minimize the input first
+            entry = this.Minimize(entry);
+            if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
             {
-                // We want to minimize the input first
-                entry = this.Minimize(entry);
-                if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
-                {
-                    // NOTE: For now we don't mutate faulted results
-                    return;
-                }
-
-                // And we want to mutate the minimized input
-                this.Mutate(entry);
+                // NOTE: For now we don't mutate faulted results
+                return;
             }
-        }
+
+            // And we want to mutate the minimized input
+            this.Mutate(entry);
+        });
         lock (this.tracerSync) this.Tracer.FuzzerFinished();
     }
 

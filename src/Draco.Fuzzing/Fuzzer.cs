@@ -127,6 +127,7 @@ public sealed class Fuzzer<TInput, TCoverage>
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
         this.TargetExecutor.GlobalInitializer();
+        lock (this.tracerSync) this.Tracer.FuzzerStarted();
         while (true)
         {
             if (cancellationToken.IsCancellationRequested) break;
@@ -205,13 +206,14 @@ public sealed class Fuzzer<TInput, TCoverage>
     {
         var targetInfo = this.TargetExecutor.Initialize(input);
         this.CoverageReader.Clear(targetInfo);
+        lock (this.tracerSync) this.Tracer.InputFuzzStarted(input, targetInfo);
         var faultResult = this.FaultDetector.Detect(this.TargetExecutor, targetInfo);
         if (faultResult.IsFaulted)
         {
             lock (this.tracerSync) this.Tracer.InputFaulted(input, faultResult);
         }
         var coverage = this.CoverageReader.Read(targetInfo);
-        lock (this.tracerSync) this.Tracer.InputFuzzed(input, coverage);
+        lock (this.tracerSync) this.Tracer.InputFuzzed(input, targetInfo, coverage);
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         var isInteresting = this.IsInteresting(compressedCoverage);
         var executionResult = new ExecutionResult(compressedCoverage, faultResult);

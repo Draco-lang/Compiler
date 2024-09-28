@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading;
 using Draco.Coverage;
 
 namespace Draco.Fuzzing;
@@ -6,30 +7,35 @@ namespace Draco.Fuzzing;
 /// <summary>
 /// Information about a target to be executed.
 /// </summary>
-public readonly struct TargetInfo
+public readonly struct TargetInfo(InstrumentedAssembly assembly)
 {
-    public static TargetInfo InProcess(InstrumentedAssembly assembly, object? user = null) => new()
+    private static int idCounter;
+
+    public static TargetInfo InProcess(InstrumentedAssembly assembly, object? user = null) => new(assembly)
     {
-        Assembly = assembly,
         User = user,
     };
     public static TargetInfo OutOfProcess(
         InstrumentedAssembly assembly,
         Process process,
         SharedMemory<int> sharedMemory,
-        object? user = null) => new()
+        object? user = null) => new(assembly)
         {
-            Assembly = assembly,
             Process = process,
             SharedMemory = sharedMemory,
             User = user,
         };
 
     /// <summary>
+    /// The unique identifier of the target.
+    /// </summary>
+    public int Id { get; } = Interlocked.Increment(ref idCounter);
+
+    /// <summary>
     /// The assembly that is being observed. Even for out-of-process execution, the assembly is loaded into the host process
     /// for information gathering.
     /// </summary>
-    public InstrumentedAssembly Assembly { get; init; }
+    public InstrumentedAssembly Assembly { get; init; } = assembly;
 
     /// <summary>
     /// The process to be executed, in case of out-of-process execution.

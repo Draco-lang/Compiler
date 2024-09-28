@@ -48,7 +48,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     // Timings
     private readonly Label fuzzesPerSecondLabel;
     private readonly Label averageTimePerFuzzLabel;
-    private readonly Stopwatch stopwatch = Stopwatch.StartNew();
+    private readonly Stopwatch stopwatch = new();
 
     // Current input
     private readonly TextView currentInputTextView;
@@ -78,6 +78,11 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private int mutatedInputCounter = 0;
     private double bestCoveragePercent = 0;
 
+    // Statistics
+    // TargetInfo ID -> Elapsed from stopwatch
+    private readonly Dictionary<int, TimeSpan> fuzzStarts = [];
+    private readonly List<TimeSpan> fuzzTimings = [];
+
     public TuiTracer()
     {
         this.Border = new();
@@ -97,6 +102,10 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             {
                 new MenuItem("_Clear", "Clears the fault list", this.ClearFaultList, canExecute: () => this.faultList.Count > 0),
                 new MenuItem("_Export", "Exports the fault list", this.ExportFaults, canExecute: () => this.faultList.Count > 0)
+            }),
+            new MenuBarItem("_Statistics", new[]
+            {
+                new MenuBarItem("_Histogram", "Exports a timing histogram", this.ExportTimingsHistogram, canExecute: () => this.fuzzTimings.Count >0),
             }),
         ]);
         #endregion
@@ -335,7 +344,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.minimizedInputTextView.Text = string.Empty;
     }
 
-    public void InputFuzzed(SyntaxTree input, CoverageResult coverageResult)
+    public void InputFuzzStarted(SyntaxTree input, TargetInfo targetInfo)
+    {
+        this.fuzzStarts.Add(targetInfo.Id, this.stopwatch.Elapsed);
+    }
+
+    public void InputFuzzed(SyntaxTree input, TargetInfo targetInfo, CoverageResult coverageResult)
     {
         // Counters
         ++this.fuzzedInputCounter;
@@ -356,6 +370,13 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         this.bestCoverageProgressBar.Fraction = (float)this.bestCoveragePercent;
         this.bestCoveragePercentLabel.Text = FormatPercentage(this.bestCoveragePercent);
+
+        // Statistics
+        if (this.fuzzStarts.Remove(targetInfo.Id, out var startTime))
+        {
+            var elapsed = totalElapsed - startTime;
+            this.fuzzTimings.Add(elapsed);
+        }
     }
 
     public void MinimizationFound(SyntaxTree input, SyntaxTree minimizedInput)
@@ -376,6 +397,11 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     public void InputFaulted(SyntaxTree input, FaultResult fault)
     {
         this.faultList.Add(new(input, fault));
+    }
+
+    public void FuzzerStarted()
+    {
+        this.stopwatch.Start();
     }
 
     public void FuzzerFinished() => MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
@@ -428,6 +454,25 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             {string.Join(Environment.NewLine, this.faultList.Select(FormatFaultForExport))}
             """;
         File.WriteAllText(targetPath, faults);
+    }
+
+    private void ExportTimingsHistogram()
+    {
+        var dialog = new SaveDialog("Export Timings Histogram", "Export the timings histogram", [".csv"])
+        {
+            CanCreateDirectories = true,
+        };
+
+        Application.Run(dialog);
+
+        if (dialog.Canceled) return;
+        if (dialog.FileName is null) return;
+
+        var targetPath = Path.Join(dialog.DirectoryPath.ToString()!, dialog.FileName.ToString()!);
+        var timings = this.fuzzTimings
+            .Select(timing => timing.TotalMilliseconds.ToString())
+            .ToList();
+        File.WriteAllLines(targetPath, timings);
     }
 
     private void CheckForFuzzer()

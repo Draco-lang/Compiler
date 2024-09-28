@@ -122,9 +122,9 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
     public void Run(CancellationToken cancellationToken)
     {
-        using var semaphore = this.MaxDegreeOfParallelism is null
+        var threadPool = this.MaxDegreeOfParallelism == 1
             ? null
-            : new SemaphoreSlim(this.MaxDegreeOfParallelism.Value);
+            : new LimitingThreadPool(this.MaxDegreeOfParallelism ?? Environment.ProcessorCount);
         // First off, make sure the executor is set up
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
@@ -147,29 +147,21 @@ public sealed class Fuzzer<TInput, TCoverage>
             }
             else
             {
-                ThreadPool.QueueUserWorkItem(_ => HandleEntry());
+                threadPool!.QueueWork(HandleEntry);
             }
 
             void HandleEntry()
             {
-                semaphore?.Wait(cancellationToken);
-                try
+                // We want to minimize the input first
+                entry = this.Minimize(entry);
+                if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
                 {
-                    // We want to minimize the input first
-                    entry = this.Minimize(entry);
-                    if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
-                    {
-                        // NOTE: For now we don't mutate faulted results
-                        return;
-                    }
+                    // NOTE: For now we don't mutate faulted results
+                    return;
+                }
 
-                    // And we want to mutate the minimized input
-                    this.Mutate(entry);
-                }
-                finally
-                {
-                    semaphore?.Release();
-                }
+                // And we want to mutate the minimized input
+                this.Mutate(entry);
             }
         }
     end:

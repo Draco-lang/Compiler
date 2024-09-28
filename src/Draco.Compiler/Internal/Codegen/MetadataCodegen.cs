@@ -98,6 +98,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = [];
     private readonly AssemblyReferenceHandle systemRuntimeReference;
     private readonly TypeReferenceHandle systemObjectReference;
+    private readonly TypeReferenceHandle systemValueTypeReference;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, CodegenFlags flags)
     {
@@ -120,6 +121,11 @@ internal sealed class MetadataCodegen : MetadataWriter
           assembly: this.systemRuntimeReference,
           @namespace: "System",
           name: "Object");
+
+        this.systemValueTypeReference = this.GetOrAddTypeReference(
+            assembly: this.systemRuntimeReference,
+            @namespace: "System",
+            name: "ValueType");
     }
 
     private void WriteModuleAndAssemblyDefinition()
@@ -647,6 +653,89 @@ internal sealed class MetadataCodegen : MetadataWriter
             }
         });
     }
+
+    private TypeDefinitionHandle EncodeClass(
+        IType type,
+        TypeDefinitionHandle? parent,
+        ref int fieldIndex,
+        ref int procIndex
+        )
+    {
+        var startFieldIndex = fieldIndex;
+        var startProcIndex = procIndex;
+
+        var visibility = (type.Symbol.Visibility, parent) switch
+        {
+            (Api.Semantics.Visibility.Public, not null) => TypeAttributes.NestedPublic,
+            (Api.Semantics.Visibility.Public, null) => TypeAttributes.Public,
+            (_, not null) => TypeAttributes.NestedAssembly,
+            (_, null) => TypeAttributes.NotPublic,
+        };
+
+        var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
+
+        if (type.Symbol.IsValueType) attributes |= TypeAttributes.SequentialLayout; // AutoLayout = 0.
+
+        var createdClass = this.AddTypeDefinition(
+            attributes,
+            null,
+            type.Name,
+            type.Symbol.IsValueType ? this.systemValueTypeReference : this.systemObjectReference,
+            fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
+            methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex)
+        );
+
+        // Procedures
+        foreach (var proc in type.Methods.Values)
+        {
+            var handle = this.EncodeProcedure(proc);
+            ++procIndex;
+
+            // Todo: properties
+        }
+
+        // Fields
+        foreach (var field in type.Fields)
+        {
+            this.EncodeField(field.Key);
+            ++fieldIndex;
+        }
+
+        // If this is a valuetype without fields, we add .pack 0 and .size 1
+        if (type.Symbol.IsValueType && type.Fields.Count == 0)
+        {
+            this.MetadataBuilder.AddTypeLayout(
+                type: createdClass,
+                packingSize: 0,
+                size: 1);
+        }
+
+        // If this isn't top level module, we specify nested relationship
+        if (parent is not null) this.MetadataBuilder.AddNestedType(createdClass, parent.Value);
+
+        return createdClass;
+    }
+
+    private FieldDefinitionHandle EncodeField(FieldSymbol field)
+    {
+        var visibility = field.Visibility switch
+        {
+            Api.Semantics.Visibility.Public => FieldAttributes.Public,
+            Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
+            Api.Semantics.Visibility.Private => FieldAttributes.Private,
+            _ => throw new IndexOutOfRangeException(nameof(field.Visibility)),
+        };
+        var mutability = field.IsMutable ? default : FieldAttributes.InitOnly;
+
+        // Definition
+        return this.AddFieldDefinition(
+            attributes: visibility | mutability,
+            name: field.Name,
+            signature: this.EncodeFieldSignature(field));
+    }
+
+    private BlobHandle EncodeFieldSignature(FieldSymbol field) =>
+        this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), field.Type));
 
     private IEnumerable<TypeSymbol> ScalarConstantTypes => [
         this.WellKnownTypes.SystemSByte,

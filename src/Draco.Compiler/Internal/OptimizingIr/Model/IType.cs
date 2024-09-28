@@ -6,6 +6,11 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal interface IType
 {
     /// <summary>
+    /// The symbol of this type.
+    /// </summary>
+    public TypeSymbol Symbol { get; }
+
+    /// <summary>
     /// The name of this type.
     /// </summary>
     public string Name { get; }

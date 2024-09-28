@@ -25,6 +25,10 @@ internal sealed class BinderCache(Compilation compilation)
     /// <returns>The binder for <paramref name="syntax"/>.</returns>
     public Binder GetBinder(SyntaxNode syntax)
     {
+        if(syntax is ClassDeclarationSyntax )
+        {
+
+        }
         var scopeDefiningAncestor = BinderFacts.GetScopeDefiningAncestor(syntax);
         Debug.Assert(scopeDefiningAncestor is not null);
 

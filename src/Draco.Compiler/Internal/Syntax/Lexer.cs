@@ -331,6 +331,7 @@ internal sealed class Lexer
             {
                 "and" => TokenKind.KeywordAnd,
                 "class" => TokenKind.KeywordClass,
+                "global" => TokenKind.KeywordGlobal,
                 "else" => TokenKind.KeywordElse,
                 "false" => TokenKind.KeywordFalse,
                 "for" => TokenKind.KeywordFor,

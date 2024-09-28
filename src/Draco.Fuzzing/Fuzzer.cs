@@ -122,9 +122,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
     public void Run(CancellationToken cancellationToken)
     {
-        var threadPool = this.MaxDegreeOfParallelism == 1
-            ? null
-            : new LimitingThreadPool(this.MaxDegreeOfParallelism ?? Environment.ProcessorCount);
+        var threadPool = new LimitingThreadPool(this.MaxDegreeOfParallelism ?? Environment.ProcessorCount);
         // First off, make sure the executor is set up
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
@@ -141,14 +139,7 @@ public sealed class Fuzzer<TInput, TCoverage>
             }
             lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
 
-            if (this.MaxDegreeOfParallelism == 1)
-            {
-                HandleEntry();
-            }
-            else
-            {
-                threadPool!.QueueWork(HandleEntry);
-            }
+            threadPool.QueueWork(HandleEntry);
 
             void HandleEntry()
             {

@@ -13,7 +13,8 @@ internal sealed class LimitingThreadPool
     {
         public Thread Thread { get; }
         public AutoResetEvent WorkAvailable { get; }
-        public Action? DoWork { get; set; }
+
+        public Action? DoWork;
 
         private readonly LimitingThreadPool pool;
 
@@ -31,7 +32,8 @@ internal sealed class LimitingThreadPool
                 try
                 {
                     this.WorkAvailable.WaitOne();
-                    this.DoWork?.Invoke();
+                    var work = Volatile.Read(ref this.DoWork);
+                    work?.Invoke();
                 }
                 finally
                 {
@@ -72,7 +74,7 @@ internal sealed class LimitingThreadPool
         if (this.threads.TryDequeue(out var thread))
         {
             thread.StartIfNeeded();
-            thread.DoWork = action;
+            Volatile.Write(ref thread.DoWork, action);
             thread.WorkAvailable.Set();
         }
         else

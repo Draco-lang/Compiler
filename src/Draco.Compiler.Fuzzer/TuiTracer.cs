@@ -77,6 +77,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private int minimizedInputCounter = 0;
     private int mutatedInputCounter = 0;
     private double bestCoveragePercent = 0;
+    private CoverageResult? bestCoverage;
 
     // Statistics
     // TargetInfo ID -> Elapsed from stopwatch
@@ -106,6 +107,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             new MenuBarItem("_Statistics", new[]
             {
                 new MenuBarItem("_Histogram", "Exports a timing histogram", this.ExportTimingsHistogram, canExecute: () => this.fuzzTimings.Count > 0),
+                new MenuBarItem("_Export LCOV", "Exports LCOV coverage info", this.ExportLcov, canExecute: () => this.bestCoverage is not null),
             }),
         ]);
         #endregion
@@ -363,7 +365,11 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
         // Coverage percentage
         var currentCoveragePercent = CoverageToPercentage(coverageResult);
-        this.bestCoveragePercent = Math.Max(this.bestCoveragePercent, currentCoveragePercent);
+        if (currentCoveragePercent > this.bestCoveragePercent)
+        {
+            this.bestCoverage = coverageResult;
+            this.bestCoveragePercent = currentCoveragePercent;
+        }
 
         this.currentCoverageProgressBar.Fraction = (float)currentCoveragePercent;
         this.currentCoveragePercentLabel.Text = FormatPercentage(currentCoveragePercent);
@@ -473,6 +479,23 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             .Select(timing => timing.TotalMilliseconds.ToString())
             .ToList();
         File.WriteAllLines(targetPath, timings);
+    }
+
+    private void ExportLcov()
+    {
+        var dialog = new SaveDialog("Export LCOV Coverage", "Export the best LCOV coverage", [".lcov"])
+        {
+            CanCreateDirectories = true,
+        };
+
+        Application.Run(dialog);
+
+        if (dialog.Canceled) return;
+        if (dialog.FileName is null) return;
+
+        var targetPath = Path.Join(dialog.DirectoryPath.ToString()!, dialog.FileName.ToString()!);
+        var lcov = this.bestCoverage!.Value.ToLcov();
+        File.WriteAllText(targetPath, lcov);
     }
 
     private void CheckForFuzzer()

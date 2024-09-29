@@ -105,7 +105,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
             }),
             new MenuBarItem("_Statistics", new[]
             {
-                new MenuBarItem("_Histogram", "Exports a timing histogram", this.ExportTimingsHistogram, canExecute: () => this.fuzzTimings.Count >0),
+                new MenuBarItem("_Histogram", "Exports a timing histogram", this.ExportTimingsHistogram, canExecute: () => this.fuzzTimings.Count > 0),
             }),
         ]);
         #endregion

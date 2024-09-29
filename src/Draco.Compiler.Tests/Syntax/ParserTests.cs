@@ -8,6 +8,8 @@ public sealed class ParserTests
     private readonly SyntaxDiagnosticTable diagnostics = new();
     private IEnumerator<SyntaxNode> treeEnumerator = Enumerable.Empty<SyntaxNode>().GetEnumerator();
 
+    // Input parser utilities //////////////////////////////////////////////////
+
     private void ParseInto<T>(string text, Func<Parser, T> func)
         where T : SyntaxNode
     {
@@ -33,6 +35,8 @@ public sealed class ParserTests
     private void ParseStatement(string text) =>
         this.ParseInto(text, p => p.ParseStatement(true));
 
+    // Walkers and assertions //////////////////////////////////////////////////
+
     private void N<T>(Predicate<T> predicate)
         where T : SyntaxNode
     {
@@ -43,7 +47,13 @@ public sealed class ParserTests
     }
 
     private void N<T>()
-        where T : SyntaxNode => this.N<T>(_ => true);
+        where T : SyntaxNode => this.N<T>(n => this.diagnostics.Get(n).Count == 0);
+
+    private void ErrorN<T>(params Api.Diagnostics.DiagnosticTemplate[] diagnostics)
+        where T : SyntaxNode => this.N<T>(n => this.diagnostics.Get(n)
+            .Select(x => x.Info.Template)
+            .ToHashSet()
+            .IsSupersetOf(diagnostics));
 
     private void T(TokenKind type) => this.N<SyntaxToken>(t =>
            t.Kind == type
@@ -62,16 +72,17 @@ public sealed class ParserTests
     private void MissingT(TokenKind type) => this.N<SyntaxToken>(t =>
            t.Kind == type
         && this.diagnostics.Get(t).Count > 0);
-    private void InvalidT(TokenKind type) => this.N<SyntaxToken>(t =>
+    private void ErrorT(TokenKind type) => this.N<SyntaxToken>(t =>
            t.Kind == type
-        && this.diagnostics.Get(t).Any(d => d.Info.Severity == Api.Diagnostics.DiagnosticSeverity.Error)
-    );
-    private void InvalidT(TokenKind type, params Api.Diagnostics.DiagnosticTemplate[] diagnostics) => this.N<SyntaxToken>(t =>
+        && this.diagnostics.Get(t).Any(d => d.Info.Severity == Api.Diagnostics.DiagnosticSeverity.Error));
+    private void ErrorT(TokenKind type, params Api.Diagnostics.DiagnosticTemplate[] diagnostics) => this.N<SyntaxToken>(t =>
            t.Kind == type
         && this.diagnostics.Get(t)
             .Select(x => x.Info.Template)
             .ToHashSet()
             .IsSupersetOf(diagnostics));
+
+    // Utilities ///////////////////////////////////////////////////////////////
 
     private void MainFunctionPlaceHolder(string inputString, Action predicate)
     {
@@ -127,6 +138,8 @@ public sealed class ParserTests
             this.TValue(TokenKind.EscapeSequence, content);
         }
     }
+
+    // Tests ///////////////////////////////////////////////////////////////////
 
     [Fact]
     public void TestEmpty()
@@ -485,7 +498,7 @@ public sealed class ParserTests
     public void TestUnexpectedDeclarationStartingWithVisibilityModifier()
     {
         this.ParseDeclaration("internal gibrish, more gibrish");
-        this.N<UnexpectedDeclarationSyntax>();
+        this.ErrorN<UnexpectedDeclarationSyntax>(SyntaxErrors.UnexpectedInput);
         {
             this.T(TokenKind.KeywordInternal);
             this.N<SyntaxList<SyntaxNode>>();
@@ -506,7 +519,7 @@ public sealed class ParserTests
         {
             this.N<VariableDeclarationSyntax>();
             {
-                this.InvalidT(TokenKind.KeywordInternal, SyntaxErrors.UnexpectedVisibilityModifier);
+                this.ErrorT(TokenKind.KeywordInternal, SyntaxErrors.UnexpectedVisibilityModifier);
                 this.T(TokenKind.KeywordVar);
                 this.T(TokenKind.Identifier, "x");
                 this.N<ValueSpecifierSyntax>();
@@ -585,7 +598,7 @@ public sealed class ParserTests
             this.N<ValueSpecifierSyntax>();
             {
                 this.T(TokenKind.Assign);
-                this.N<UnexpectedExpressionSyntax>();
+                this.ErrorN<UnexpectedExpressionSyntax>(SyntaxErrors.UnexpectedInput);
                 {
                     this.N<SyntaxList<SyntaxNode>>();
                 }
@@ -625,7 +638,7 @@ public sealed class ParserTests
             this.N<TypeSpecifierSyntax>();
             {
                 this.T(TokenKind.Colon);
-                this.N<UnexpectedTypeSyntax>();
+                this.ErrorN<UnexpectedTypeSyntax>(SyntaxErrors.UnexpectedInput);
                 {
                     this.N<SyntaxList<SyntaxNode>>();
                 }
@@ -673,14 +686,14 @@ public sealed class ParserTests
             this.N<TypeSpecifierSyntax>();
             {
                 this.T(TokenKind.Colon);
-                this.N<UnexpectedTypeSyntax>();
+                this.ErrorN<UnexpectedTypeSyntax>(SyntaxErrors.UnexpectedInput);
                 {
                     this.N<SyntaxList<SyntaxNode>>();
                 }
                 this.N<ValueSpecifierSyntax>();
                 {
                     this.T(TokenKind.Assign);
-                    this.N<UnexpectedExpressionSyntax>();
+                    this.ErrorN<UnexpectedExpressionSyntax>(SyntaxErrors.UnexpectedInput);
                     {
                         this.N<SyntaxList<SyntaxNode>>();
                     }
@@ -787,7 +800,7 @@ public sealed class ParserTests
             }
             """, () =>
         {
-            this.N<UnexpectedStatementSyntax>();
+            this.ErrorN<UnexpectedStatementSyntax>(SyntaxErrors.UnexpectedInput);
             {
                 this.N<SyntaxList<SyntaxNode>>();
                 this.T(TokenKind.KeywordElse);
@@ -910,7 +923,7 @@ public sealed class ParserTests
                 this.T(TokenKind.ParenClose);
                 this.N<StatementExpressionSyntax>();
                 this.N<ExpressionStatementSyntax>();
-                this.N<UnexpectedExpressionSyntax>();
+                this.ErrorN<UnexpectedExpressionSyntax>(SyntaxErrors.UnexpectedInput);
                 {
                     this.N<SyntaxList<SyntaxNode>>();
                 }
@@ -1161,7 +1174,7 @@ public sealed class ParserTests
                 this.T(TokenKind.ParenClose);
                 this.N<StatementExpressionSyntax>();
                 this.N<ExpressionStatementSyntax>();
-                this.N<UnexpectedExpressionSyntax>();
+                this.ErrorN<UnexpectedExpressionSyntax>(SyntaxErrors.UnexpectedInput);
                 {
                     this.N<SyntaxList<SyntaxNode>>();
                 }
@@ -1178,7 +1191,7 @@ public sealed class ParserTests
             myLabel:
             """);
 
-        this.N<UnexpectedDeclarationSyntax>();
+        this.ErrorN<UnexpectedDeclarationSyntax>(SyntaxErrors.IllegalElementInContext);
         this.N<SyntaxList<SyntaxNode>>();
         this.N<LabelDeclarationSyntax>();
         {
@@ -1450,7 +1463,7 @@ public sealed class ParserTests
             {
                 this.T(TokenKind.LiteralInteger, "3");
             }
-            this.InvalidT(TokenKind.CMod, SyntaxErrors.CHeritageToken);
+            this.ErrorT(TokenKind.CMod, SyntaxErrors.CHeritageToken);
             this.N<LiteralExpressionSyntax>();
             {
                 this.T(TokenKind.LiteralInteger, "2");
@@ -1506,16 +1519,16 @@ public sealed class ParserTests
                 {
                     this.T(TokenKind.KeywordTrue);
                 }
-                this.InvalidT(TokenKind.CAnd, SyntaxErrors.CHeritageToken);
+                this.ErrorT(TokenKind.CAnd, SyntaxErrors.CHeritageToken);
                 this.N<LiteralExpressionSyntax>();
                 {
                     this.T(TokenKind.KeywordFalse);
                 }
             }
-            this.InvalidT(TokenKind.COr, SyntaxErrors.CHeritageToken);
+            this.ErrorT(TokenKind.COr, SyntaxErrors.CHeritageToken);
             this.N<UnaryExpressionSyntax>();
             {
-                this.InvalidT(TokenKind.CNot, SyntaxErrors.CHeritageToken);
+                this.ErrorT(TokenKind.CNot, SyntaxErrors.CHeritageToken);
                 this.N<LiteralExpressionSyntax>();
                 {
                     this.T(TokenKind.KeywordFalse);
@@ -1633,7 +1646,7 @@ public sealed class ParserTests
             this.N<InterpolationStringPartSyntax>();
             {
                 this.T(TokenKind.InterpolationStart);
-                this.N<UnexpectedExpressionSyntax>();
+                this.ErrorN<UnexpectedExpressionSyntax>(SyntaxErrors.UnexpectedInput);
                 {
                     this.N<SyntaxList<SyntaxNode>>();
                 }
@@ -1847,7 +1860,7 @@ public sealed class ParserTests
                     }
                     this.T(TokenKind.Semicolon);
                 }
-                this.N<UnexpectedDeclarationSyntax>();
+                this.ErrorN<UnexpectedDeclarationSyntax>(SyntaxErrors.UnexpectedInput);
                 {
                     this.N<SyntaxList<SyntaxNode>>();
                     {
@@ -1871,7 +1884,7 @@ public sealed class ParserTests
 
         this.N<DeclarationStatementSyntax>();
         {
-            this.N<UnexpectedDeclarationSyntax>();
+            this.ErrorN<UnexpectedDeclarationSyntax>(SyntaxErrors.IllegalElementInContext);
             {
                 this.N<SyntaxList<SyntaxNode>>();
                 {
@@ -1892,7 +1905,7 @@ public sealed class ParserTests
 
         this.N<ImportDeclarationSyntax>();
         {
-            this.InvalidT(TokenKind.KeywordPublic);
+            this.ErrorT(TokenKind.KeywordPublic);
             this.T(TokenKind.KeywordImport);
             this.N<RootImportPathSyntax>();
             {
@@ -2014,7 +2027,7 @@ public sealed class ParserTests
                 this.N<DeclarationStatementSyntax>();
                 this.N<FunctionDeclarationSyntax>();
                 {
-                    this.InvalidT(TokenKind.KeywordPublic, SyntaxErrors.UnexpectedVisibilityModifier);
+                    this.ErrorT(TokenKind.KeywordPublic, SyntaxErrors.UnexpectedVisibilityModifier);
                     this.T(TokenKind.KeywordFunc);
                     this.T(TokenKind.Identifier, "bar");
                     this.T(TokenKind.ParenOpen);
@@ -2027,6 +2040,75 @@ public sealed class ParserTests
                         this.T(TokenKind.CurlyClose);
                     }
                 }
+                this.T(TokenKind.CurlyClose);
+            }
+        }
+    }
+
+    [Fact]
+    public void TestEmptyGenericParameterList()
+    {
+        this.ParseDeclaration("""
+            func foo<>() {}
+            """);
+
+        this.N<FunctionDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordFunc);
+            this.T(TokenKind.Identifier, "foo");
+            this.ErrorN<GenericParameterListSyntax>(SyntaxErrors.EmptyGenericList);
+            {
+                this.T(TokenKind.LessThan);
+                this.N<SeparatedSyntaxList<GenericParameterSyntax>>();
+                this.T(TokenKind.GreaterThan);
+            }
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
+            this.T(TokenKind.ParenClose);
+            this.N<BlockFunctionBodySyntax>();
+            {
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
+                this.T(TokenKind.CurlyClose);
+            }
+        }
+    }
+
+    [Fact]
+    public void TestEmptyGenericArgumentList()
+    {
+        this.ParseDeclaration("""
+            func foo(x: List<>) {}
+            """);
+
+        this.N<FunctionDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordFunc);
+            this.T(TokenKind.Identifier, "foo");
+            this.T(TokenKind.ParenOpen);
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
+            {
+                this.N<ParameterSyntax>();
+                {
+                    this.T(TokenKind.Identifier, "x");
+                    this.T(TokenKind.Colon);
+                    this.N<GenericTypeSyntax>();
+                    {
+                        this.N<NameTypeSyntax>();
+                        {
+                            this.T(TokenKind.Identifier, "List");
+                        }
+                        this.T(TokenKind.LessThan);
+                        this.N<SeparatedSyntaxList<TypeSyntax>>();
+                        this.ErrorT(TokenKind.GreaterThan, SyntaxErrors.EmptyGenericList);
+                    }
+                }
+            }
+            this.T(TokenKind.ParenClose);
+            this.N<BlockFunctionBodySyntax>();
+            {
+                this.T(TokenKind.CurlyOpen);
+                this.N<SyntaxList<StatementSyntax>>();
                 this.T(TokenKind.CurlyClose);
             }
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -105,9 +106,16 @@ internal partial class Binder
             .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
             .ToImmutableArray();
 
+        if (args.Length == 0)
+        {
+            // This is not actually a generic instantiation, just illegal syntax, like int32<>
+            // This should have been caught by the parser, so we shouldn't need to report it here
+            return WellKnownTypes.ErrorType;
+        }
+
         if (!instantiated.IsGenericDefinition)
         {
-            // Not even a generic type
+            // Not even a generic construct
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.NotGenericConstruct,
                 location: syntax.Location));

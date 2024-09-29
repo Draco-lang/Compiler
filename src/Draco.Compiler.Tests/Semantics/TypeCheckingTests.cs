@@ -2451,12 +2451,12 @@ public sealed class TypeCheckingTests
     [Fact]
     public void GenericInstantiatingModulesIsAnError()
     {
-        // func foo(): System<> = default();
+        // func foo(): System<int32> = default();
 
         var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             ParameterList(),
-            GenericType(NameType("System")),
+            GenericType(NameType("System"), NameType("int32")),
             InlineFunctionBody(CallExpression(NameExpression("default"))))));
 
         // Act

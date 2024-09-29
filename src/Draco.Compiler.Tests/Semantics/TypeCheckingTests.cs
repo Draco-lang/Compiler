@@ -2473,20 +2473,20 @@ public sealed class TypeCheckingTests
     public void AssigningListToArrayTypeIsIllegal()
     {
         // import System.Collections.Generic;
-        // func main(args: Array<string>) {
-        //     args = List();
+        // func main() {
+        //     var x: Array<int32> = List();
         // }
 
         var main = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Generic"),
             FunctionDeclaration(
                 "main",
-                ParameterList(Parameter("args", GenericType(NameType("Array"), NameType("string")))),
+                ParameterList(),
                 null,
                 BlockFunctionBody(
-                    ExpressionStatement(BinaryExpression(
-                        NameExpression("args"),
-                        Assign,
+                    DeclarationStatement(VariableDeclaration(
+                        "x",
+                        GenericType(NameType("Array"), NameType("int32")),
                         CallExpression(NameExpression("List"))))))));
 
         // Act
@@ -2495,7 +2495,7 @@ public sealed class TypeCheckingTests
         var diags = semanticModel.Diagnostics;
 
         // Assert
-        Assert.Single(diags);
-        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostics(diags, TypeCheckingErrors.InferenceIncomplete, TypeCheckingErrors.TypeMismatch);
     }
 }

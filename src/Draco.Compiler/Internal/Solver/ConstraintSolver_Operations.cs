@@ -61,11 +61,7 @@ internal sealed partial class ConstraintSolver
 
             var assignedToUnify = assignedType.BaseTypes
                 .FirstOrDefault(t => SymbolEqualityComparer.Default.Equals(t.GenericDefinition, targetGenericDefinition));
-            if (assignedToUnify is null)
-            {
-                // TODO
-                throw new NotImplementedException();
-            }
+            if (assignedToUnify is null) return false;
 
             // Unify
             return unify(targetType, assignedToUnify);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.IO;
 using System.Reflection;
 
@@ -68,14 +69,14 @@ public sealed class InstrumentedAssembly
     /// <summary>
     /// The sequence points of the weaved assembly.
     /// </summary>
-    public SequencePoint[] SequencePoints =>
-        this.sequencePoints ??= NotNullOrNotWeaved((SequencePoint[]?)this.SequencePointsField.GetValue(null));
-    private SequencePoint[]? sequencePoints;
+    public ImmutableArray<SequencePoint> SequencePoints =>
+        this.sequencePoints ??= ImmutableArray.Create(NotNullOrNotWeaved((SequencePoint[]?)this.SequencePointsField.GetValue(null)));
+    private ImmutableArray<SequencePoint>? sequencePoints;
 
     /// <summary>
     /// Retrieves a copy of the coverage result.
     /// </summary>
-    public CoverageResult CoverageResult => CoverageResult.FromSharedMemory(this.HitsInstance);
+    public CoverageResult CoverageResult => new(this.SequencePoints, [.. this.HitsInstance.Span]);
 
     /// <summary>
     /// The coverage collector type weaved into the assembly.

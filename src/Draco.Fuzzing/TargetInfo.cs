@@ -57,7 +57,7 @@ public readonly struct TargetInfo(InstrumentedAssembly assembly)
     /// </summary>
     public CoverageResult CoverageResult => this.SharedMemory is null
         ? this.Assembly.CoverageResult
-        : CoverageResult.FromSharedMemory(this.SharedMemory);
+        : new(this.Assembly.SequencePoints, [.. this.SharedMemory.Span]);
 
     /// <summary>
     /// Clears the coverage data.

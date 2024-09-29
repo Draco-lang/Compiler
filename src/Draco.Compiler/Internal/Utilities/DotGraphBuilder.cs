@@ -175,10 +175,10 @@ internal sealed class DotGraphBuilder<TVertex>
         return new StreamReader(stream).ReadToEnd();
     }
 
-    public void WriteTo(Stream stream) => this.WriteTo(new StreamWriter(stream));
-
-    public void WriteTo(StreamWriter writer)
+    public void WriteTo(Stream stream)
     {
+        var writer = new StreamWriter(stream);
+
         // Header
         writer.Write(this.isDirected ? "digraph" : "graph");
         writer.Write(' ');

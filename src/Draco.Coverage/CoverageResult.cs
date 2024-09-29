@@ -38,6 +38,19 @@ public readonly struct CoverageResult
     }
 
     /// <summary>
+    /// Transforms the coverage result into LCOV format.
+    /// </summary>
+    /// <returns>The coverage result in LCOV format.</returns>
+    public string ToLcov()
+    {
+        using var stream = new MemoryStream();
+        this.WriteLcov(stream);
+        stream.Position = 0;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
+    /// <summary>
     /// Writes the coverage result in LCOV format.
     /// </summary>
     /// <param name="stream">The stream to write to.</param>

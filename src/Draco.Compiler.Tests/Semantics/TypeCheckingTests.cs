@@ -2447,4 +2447,25 @@ public sealed class TypeCheckingTests
         Assert.Single(diags);
         AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
     }
+
+    [Fact]
+    public void GenericInstantiatingModulesIsAnError()
+    {
+        // func foo(): System<> = default();
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            GenericType(NameType("System")),
+            InlineFunctionBody(CallExpression(NameExpression("default"))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.NotGenericConstruct);
+    }
 }

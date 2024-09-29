@@ -105,6 +105,15 @@ internal partial class Binder
             .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
             .ToImmutableArray();
 
+        if (!instantiated.IsGenericDefinition)
+        {
+            // Not even a generic type
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.NotGenericConstruct,
+                location: syntax.Location));
+            return WellKnownTypes.ErrorType;
+        }
+
         if (instantiated.GenericParameters.Length != args.Length)
         {
             // Wrong number of args
@@ -114,6 +123,7 @@ internal partial class Binder
                 formatArgs: [instantiated, args.Length]));
             return WellKnownTypes.ErrorType;
         }
+
         // Ok, instantiate
         return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);
     }

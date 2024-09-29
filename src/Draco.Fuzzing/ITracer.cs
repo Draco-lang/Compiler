@@ -22,11 +22,19 @@ public interface ITracer<TInput>
     public void InputDequeued(TInput input);
 
     /// <summary>
+    /// The fuzzing of some input started.
+    /// </summary>
+    /// <param name="targetInfo">The target information.</param>
+    /// <param name="input">The input to be fuzzed.</param>
+    public void InputFuzzStarted(TInput input, TargetInfo targetInfo);
+
+    /// <summary>
     /// The fuzzing of some input completed.
     /// </summary>
     /// <param name="input">The input that was fuzzed.</param>
+    /// <param name="targetInfo">The target information.</param>
     /// <param name="coverageResult">The coverage of the input.</param>
-    public void InputFuzzed(TInput input, CoverageResult coverageResult);
+    public void InputFuzzed(TInput input, TargetInfo targetInfo, CoverageResult coverageResult);
 
     /// <summary>
     /// Called when a smaller input was found.
@@ -48,6 +56,11 @@ public interface ITracer<TInput>
     /// <param name="input">The input that faulted.</param>
     /// <param name="fault">The fault result.</param>
     public void InputFaulted(TInput input, FaultResult fault);
+
+    /// <summary>
+    /// Called when the fuzzer starts.
+    /// </summary>
+    public void FuzzerStarted();
 
     /// <summary>
     /// Called when the fuzzer finishes, because the queue is empty.
@@ -72,9 +85,11 @@ public sealed class NullTracer<T> : ITracer<T>
 
     public void InputsEnqueued(IEnumerable<T> inputs) { }
     public void InputDequeued(T input) { }
-    public void InputFuzzed(T input, CoverageResult coverageResult) { }
+    public void InputFuzzStarted(T input, TargetInfo targetInfo) { }
+    public void InputFuzzed(T input, TargetInfo targetInfo, CoverageResult coverageResult) { }
     public void MinimizationFound(T input, T minimizedInput) { }
     public void MutationFound(T input, T mutatedInput) { }
     public void InputFaulted(T input, FaultResult fault) { }
+    public void FuzzerStarted() { }
     public void FuzzerFinished() { }
 }

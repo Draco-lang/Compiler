@@ -1,7 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace Draco.Fuzzing;
 
@@ -80,7 +81,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// </summary>
     public required ITracer<TInput> Tracer { get; init; }
 
-    private readonly Channel<QueueEntry> inputQueue;
+    private readonly BlockingCollection<QueueEntry> inputQueue = new(new ConcurrentQueue<QueueEntry>());
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private readonly object tracerSync = new();
 
@@ -89,11 +90,6 @@ public sealed class Fuzzer<TInput, TCoverage>
         this.Seed = seed ?? Random.Shared.Next();
         this.MaxDegreeOfParallelism = maxDegreeOfParallelism;
         this.Random = new Random(this.Seed);
-        this.inputQueue = Channel.CreateUnbounded<QueueEntry>(new UnboundedChannelOptions
-        {
-            SingleReader = true,
-            SingleWriter = maxDegreeOfParallelism == 1,
-        });
     }
 
     /// <summary>
@@ -102,7 +98,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="input">The input to enqueue.</param>
     public void Enqueue(TInput input)
     {
-        this.inputQueue.Writer.TryWrite(new QueueEntry(input));
+        this.inputQueue.Add(new QueueEntry(input));
         lock (this.tracerSync) this.Tracer.InputsEnqueued([input]);
     }
 
@@ -112,7 +108,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="inputs">The inputs to enqueue.</param>
     public void EnqueueRange(IEnumerable<TInput> inputs)
     {
-        foreach (var input in inputs) this.inputQueue.Writer.TryWrite(new QueueEntry(input));
+        foreach (var input in inputs) this.inputQueue.Add(new QueueEntry(input));
         lock (this.tracerSync) this.Tracer.InputsEnqueued(inputs);
     }
 
@@ -122,57 +118,34 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
     public void Run(CancellationToken cancellationToken)
     {
-        using var semaphore = this.MaxDegreeOfParallelism is null
-            ? null
-            : new SemaphoreSlim(this.MaxDegreeOfParallelism.Value);
         // First off, make sure the executor is set up
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
         this.TargetExecutor.GlobalInitializer();
-        while (true)
+        lock (this.tracerSync) this.Tracer.FuzzerStarted();
+        var parallelOptions = new ParallelOptions
         {
-            if (cancellationToken.IsCancellationRequested) break;
-
-            var entry = null as QueueEntry;
-            while (!this.inputQueue.Reader.TryRead(out entry))
-            {
-                if (cancellationToken.IsCancellationRequested) goto end;
-                Thread.Sleep(1);
-            }
+            CancellationToken = cancellationToken,
+            MaxDegreeOfParallelism = this.MaxDegreeOfParallelism ?? -1,
+        };
+        var limitedPartitioner = Partitioner.Create(
+            this.inputQueue.GetConsumingEnumerable(cancellationToken),
+            EnumerablePartitionerOptions.NoBuffering);
+        Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
+        {
             lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
 
-            if (this.MaxDegreeOfParallelism == 1)
+            // We want to minimize the input first
+            entry = this.Minimize(entry);
+            if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
             {
-                HandleEntry();
-            }
-            else
-            {
-                ThreadPool.QueueUserWorkItem(_ => HandleEntry());
+                // NOTE: For now we don't mutate faulted results
+                return;
             }
 
-            void HandleEntry()
-            {
-                semaphore?.Wait(cancellationToken);
-                try
-                {
-                    // We want to minimize the input first
-                    entry = this.Minimize(entry);
-                    if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
-                    {
-                        // NOTE: For now we don't mutate faulted results
-                        return;
-                    }
-
-                    // And we want to mutate the minimized input
-                    this.Mutate(entry);
-                }
-                finally
-                {
-                    semaphore?.Release();
-                }
-            }
-        }
-    end:
+            // And we want to mutate the minimized input
+            this.Mutate(entry);
+        });
         lock (this.tracerSync) this.Tracer.FuzzerFinished();
     }
 
@@ -222,19 +195,20 @@ public sealed class Fuzzer<TInput, TCoverage>
     {
         var targetInfo = this.TargetExecutor.Initialize(input);
         this.CoverageReader.Clear(targetInfo);
+        lock (this.tracerSync) this.Tracer.InputFuzzStarted(input, targetInfo);
         var faultResult = this.FaultDetector.Detect(this.TargetExecutor, targetInfo);
         if (faultResult.IsFaulted)
         {
             lock (this.tracerSync) this.Tracer.InputFaulted(input, faultResult);
         }
         var coverage = this.CoverageReader.Read(targetInfo);
-        lock (this.tracerSync) this.Tracer.InputFuzzed(input, coverage);
+        lock (this.tracerSync) this.Tracer.InputFuzzed(input, targetInfo, coverage);
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         var isInteresting = this.IsInteresting(compressedCoverage);
         var executionResult = new ExecutionResult(compressedCoverage, faultResult);
         if (!dontRequeue && isInteresting)
         {
-            this.inputQueue.Writer.TryWrite(new QueueEntry(input, executionResult));
+            this.inputQueue.Add(new QueueEntry(input, executionResult));
             lock (this.tracerSync) this.Tracer.InputsEnqueued([input]);
         }
         return (executionResult, isInteresting);

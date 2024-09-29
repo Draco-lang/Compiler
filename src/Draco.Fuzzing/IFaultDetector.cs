@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Draco.Fuzzing;
 
@@ -81,17 +84,63 @@ public static class FaultDetector
                 throw new ArgumentException("target information does not contain a process to run", nameof(targetInfo));
             }
 
-            targetInfo.Process.StartInfo.RedirectStandardError = true;
+            // Make sure the process is disposed at the end
+            using var process = targetInfo.Process;
+
+            process.StartInfo.RedirectStandardError = true;
             targetExecutor.Execute(targetInfo);
-            if (!targetInfo.Process.WaitForExit(this.timeout))
+
+            using var cancelReadSource = new CancellationTokenSource();
+            var stderrTask = ReadStream(process.StandardError, cancelReadSource.Token);
+
+            if (!process.WaitForExit(this.timeout))
             {
-                targetInfo.Process.Kill();
+                cancelReadSource.Cancel();
+                process.Dispose();
                 return FaultResult.Timeout(this.timeout);
             }
 
-            var stderr = targetInfo.Process.StandardError.ReadToEnd();
-            if (targetInfo.Process.ExitCode != 0) return FaultResult.Code(targetInfo.Process.ExitCode, errorMessage: stderr);
+            var stderr = stderrTask.GetAwaiter().GetResult();
+            if (process.ExitCode != 0) return FaultResult.Code(process.ExitCode, errorMessage: stderr);
             return FaultResult.Ok;
+        }
+
+        // NOTE: We need this because the output stream readers of Process absolutely SUCK
+        // Our original pattern was this:
+        // ```cs
+        // process.Start();
+        // if (!process.WaitForExit(timeout)) { /* TIMEOUT detected */ }
+        // var stderr = process.StandardError.ReadToEnd();
+        // ```
+        // But the problem with this is that redirected output streams can get stuck if the buffer is full
+        // meaning the running process can get stuck on a write operation.
+        // You can't reverse the order of reading and waiting because then we can't detect an actual timeout,
+        // as the ReadToEnd call will block until the process exits.
+        // We tried to launch a task ReadToEndAsync, but that doesn't work either, because the scheduler will get
+        // overwhelmed with incomplete tasks after a while.
+        // This is the only solution I found that can completely eliminate these fake timeouts due to blocked streams.
+        // I hate you System.Diagnostics.Process, maybe forever.
+        private static Task<string> ReadStream(StreamReader reader, CancellationToken cancellationToken)
+        {
+            var stderrSource = new TaskCompletionSource<string>();
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                var result = new StringBuilder();
+                var block = new char[4096];
+                try
+                {
+                    while (!cancellationToken.IsCancellationRequested && !reader.EndOfStream)
+                    {
+                        var read = reader.ReadBlock(block, 0, block.Length);
+                        result.Append(block, 0, read);
+                    }
+                }
+                finally
+                {
+                    stderrSource.SetResult(result.ToString());
+                }
+            });
+            return stderrSource.Task;
         }
     }
 

@@ -202,7 +202,7 @@ public sealed class Fuzzer<TInput, TCoverage>
             lock (this.tracerSync) this.Tracer.InputFaulted(input, faultResult);
         }
         var coverage = this.CoverageReader.Read(targetInfo);
-        lock (this.tracerSync) this.Tracer.InputFuzzed(input, targetInfo, coverage);
+        lock (this.tracerSync) this.Tracer.InputFuzzEnded(input, targetInfo, coverage);
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         var isInteresting = this.IsInteresting(compressedCoverage);
         var executionResult = new ExecutionResult(compressedCoverage, faultResult);

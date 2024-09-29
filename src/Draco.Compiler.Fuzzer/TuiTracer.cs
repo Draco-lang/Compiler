@@ -351,7 +351,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.fuzzStarts.Add(targetInfo.Id, this.stopwatch.Elapsed);
     }
 
-    public void InputFuzzed(SyntaxTree input, TargetInfo targetInfo, CoverageResult coverageResult)
+    public void InputFuzzEnded(SyntaxTree input, TargetInfo targetInfo, CoverageResult coverageResult)
     {
         // Counters
         ++this.fuzzedInputCounter;

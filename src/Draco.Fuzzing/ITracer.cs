@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Draco.Coverage;
 
 namespace Draco.Fuzzing;
@@ -34,7 +35,7 @@ public interface ITracer<TInput>
     /// <param name="input">The input that was fuzzed.</param>
     /// <param name="targetInfo">The target information.</param>
     /// <param name="coverageResult">The coverage of the input.</param>
-    public void InputFuzzed(TInput input, TargetInfo targetInfo, CoverageResult coverageResult);
+    public void InputFuzzEnded(TInput input, TargetInfo targetInfo, CoverageResult coverageResult);
 
     /// <summary>
     /// Called when a smaller input was found.
@@ -86,10 +87,65 @@ public sealed class NullTracer<T> : ITracer<T>
     public void InputsEnqueued(IEnumerable<T> inputs) { }
     public void InputDequeued(T input) { }
     public void InputFuzzStarted(T input, TargetInfo targetInfo) { }
-    public void InputFuzzed(T input, TargetInfo targetInfo, CoverageResult coverageResult) { }
+    public void InputFuzzEnded(T input, TargetInfo targetInfo, CoverageResult coverageResult) { }
     public void MinimizationFound(T input, T minimizedInput) { }
     public void MutationFound(T input, T mutatedInput) { }
     public void InputFaulted(T input, FaultResult fault) { }
     public void FuzzerStarted() { }
     public void FuzzerFinished() { }
+}
+
+/// <summary>
+/// A tracer that broadcasts to multiple tracers.
+/// </summary>
+/// <typeparam name="T">The type of the input data.</typeparam>
+/// <param name="tracers">The tracers to broadcast to.</param>
+public sealed class BroadcastTracer<T>(IEnumerable<ITracer<T>> tracers) : ITracer<T>
+{
+    private readonly List<ITracer<T>> tracers = tracers.ToList();
+
+    public void InputsEnqueued(IEnumerable<T> inputs)
+    {
+        foreach (var tracer in this.tracers) tracer.InputsEnqueued(inputs);
+    }
+
+    public void InputDequeued(T input)
+    {
+        foreach (var tracer in this.tracers) tracer.InputDequeued(input);
+    }
+
+    public void InputFuzzStarted(T input, TargetInfo targetInfo)
+    {
+        foreach (var tracer in this.tracers) tracer.InputFuzzStarted(input, targetInfo);
+    }
+
+    public void InputFuzzEnded(T input, TargetInfo targetInfo, CoverageResult coverageResult)
+    {
+        foreach (var tracer in this.tracers) tracer.InputFuzzEnded(input, targetInfo, coverageResult);
+    }
+
+    public void MinimizationFound(T input, T minimizedInput)
+    {
+        foreach (var tracer in this.tracers) tracer.MinimizationFound(input, minimizedInput);
+    }
+
+    public void MutationFound(T input, T mutatedInput)
+    {
+        foreach (var tracer in this.tracers) tracer.MutationFound(input, mutatedInput);
+    }
+
+    public void InputFaulted(T input, FaultResult fault)
+    {
+        foreach (var tracer in this.tracers) tracer.InputFaulted(input, fault);
+    }
+
+    public void FuzzerStarted()
+    {
+        foreach (var tracer in this.tracers) tracer.FuzzerStarted();
+    }
+
+    public void FuzzerFinished()
+    {
+        foreach (var tracer in this.tracers) tracer.FuzzerFinished();
+    }
 }

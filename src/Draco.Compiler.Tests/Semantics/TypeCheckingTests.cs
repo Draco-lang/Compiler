@@ -2468,4 +2468,34 @@ public sealed class TypeCheckingTests
         Assert.Single(diags);
         AssertDiagnostics(diags, TypeCheckingErrors.NotGenericConstruct);
     }
+
+    [Fact]
+    public void AssigningListToArrayTypeIsIllegal()
+    {
+        // import System.Collections.Generic;
+        // func main(args: Array<string>) {
+        //     args = List();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(Parameter("args", GenericType(NameType("Array"), NameType("string")))),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(
+                        NameExpression("args"),
+                        Assign,
+                        CallExpression(NameExpression("List"))))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
+    }
 }

@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Draco.Fuzzing;
 
@@ -81,18 +85,48 @@ public static class FaultDetector
                 throw new ArgumentException("target information does not contain a process to run", nameof(targetInfo));
             }
 
-            targetInfo.Process.StartInfo.RedirectStandardError = true;
-            targetExecutor.Execute(targetInfo);
-            var stderrTask = targetInfo.Process.StandardError.ReadToEndAsync();
+            // Make sure the process is disposed at the end
+            using var process = targetInfo.Process;
 
-            if (!targetInfo.Process.WaitForExit(this.timeout))
+            process.StartInfo.RedirectStandardError = true;
+            targetExecutor.Execute(targetInfo);
+
+            using var cancelReadSource = new CancellationTokenSource();
+            var stderrTask = ReadStream(process.StandardError, cancelReadSource.Token);
+
+            if (!process.WaitForExit(this.timeout))
             {
-                targetInfo.Process.Kill();
+                cancelReadSource.Cancel();
+                process.Dispose();
                 return FaultResult.Timeout(this.timeout);
             }
 
-            if (targetInfo.Process.ExitCode != 0) return FaultResult.Code(targetInfo.Process.ExitCode, errorMessage: stderrTask.Result);
+            var stderr = stderrTask.GetAwaiter().GetResult();
+            if (process.ExitCode != 0) return FaultResult.Code(process.ExitCode, errorMessage: stderr);
             return FaultResult.Ok;
+        }
+
+        private static Task<string> ReadStream(StreamReader reader, CancellationToken cancellationToken)
+        {
+            var stderrSource = new TaskCompletionSource<string>();
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                var result = new StringBuilder();
+                var block = new char[4096];
+                try
+                {
+                    while (!cancellationToken.IsCancellationRequested && !reader.EndOfStream)
+                    {
+                        var read = reader.ReadBlock(block, 0, block.Length);
+                        result.Append(block, 0, read);
+                    }
+                }
+                finally
+                {
+                    stderrSource.SetResult(result.ToString());
+                }
+            });
+            return stderrSource.Task;
         }
     }
 

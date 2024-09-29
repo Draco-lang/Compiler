@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 
 namespace Draco.Coverage;
@@ -5,22 +6,31 @@ namespace Draco.Coverage;
 /// <summary>
 /// The result of a coverage run.
 /// </summary>
-public readonly struct CoverageResult(ImmutableArray<int> hits)
+public readonly struct CoverageResult
 {
-    /// <summary>
-    /// Creates a new coverage result from the given shared memory.
-    /// </summary>
-    /// <param name="hits">The shared memory containing the hit counts.</param>
-    /// <returns>The coverage result.</returns>
-    public static CoverageResult FromSharedMemory(SharedMemory<int> hits) => new([.. hits.Span]);
-
     /// <summary>
     /// An empty coverage result.
     /// </summary>
-    public static CoverageResult Empty { get; } = new([]);
+    public static CoverageResult Empty { get; } = new([], []);
+
+    /// <summary>
+    /// The sequence points of the weaved assembly.
+    /// </summary>
+    public ImmutableArray<SequencePoint> SequencePoints { get; }
 
     /// <summary>
     /// The hit counts of each sequence point.
     /// </summary>
-    public ImmutableArray<int> Hits { get; } = hits;
+    public ImmutableArray<int> Hits { get; }
+
+    public CoverageResult(ImmutableArray<SequencePoint> sequencePoints, ImmutableArray<int> hits)
+    {
+        if (sequencePoints.Length != hits.Length)
+        {
+            throw new ArgumentException("the sequence points and hits arrays must have the same length");
+        }
+
+        this.SequencePoints = sequencePoints;
+        this.Hits = hits;
+    }
 }

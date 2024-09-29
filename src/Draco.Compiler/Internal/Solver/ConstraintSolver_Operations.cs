@@ -142,11 +142,15 @@ internal sealed partial class ConstraintSolver
         }
         case (TypeVariable v, TypeSymbol other):
         {
+            // Avoid type-recursion
+            if (Contains(other, v)) return false;
             substitute(v, other);
             return true;
         }
         case (TypeSymbol other, TypeVariable v):
         {
+            // Avoid type-recursion
+            if (Contains(other, v)) return false;
             substitute(v, other);
             return true;
         }
@@ -191,5 +195,37 @@ internal sealed partial class ConstraintSolver
         default:
             return false;
         }
+    }
+
+    /// <summary>
+    /// Checks, if a type contains a type variable. This is an important check to not cause type-recursion.
+    /// </summary>
+    /// <param name="type">The type to search in.</param>
+    /// <param name="variable">The variable to search for.</param>
+    /// <returns>True, if the type contains the variable, false otherwise.</returns>
+    private static bool Contains(TypeSymbol type, TypeVariable variable)
+    {
+        if (!ReferenceEquals(variable.Substitution, variable))
+        {
+            throw new ArgumentException("the searched variable must be unsubstituted", nameof(variable));
+        }
+
+        type = type.Substitution;
+
+        // Found the variable
+        if (ReferenceEquals(type, variable)) return true;
+
+        // For generic instances, the arguments can contain the variable
+        if (type.IsGenericInstance && type.GenericArguments.Any(a => Contains(a, variable))) return true;
+
+        // For function types, the parameters and return type can contain the variable
+        if (type is FunctionTypeSymbol f)
+        {
+            if (f.Parameters.Any(p => Contains(p.Type, variable))) return true;
+            if (Contains(f.ReturnType, variable)) return true;
+        }
+
+        // We didn't find the variable
+        return false;
     }
 }

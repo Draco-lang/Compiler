@@ -173,4 +173,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "{0} is not a valid {1} in Draco, use {2} instead",
         code: Code(18));
+
+    /// <summary>
+    /// Empty generic lists are not allowed.
+    /// </summary>
+    public static readonly DiagnosticTemplate EmptyGenericList = DiagnosticTemplate.Create(
+        title: "empty generic list",
+        severity: DiagnosticSeverity.Error,
+        format: "empty generic {0} lists are not allowed",
+        code: Code(19));
 }

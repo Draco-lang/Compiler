@@ -276,6 +276,16 @@ public sealed class DoesNotCrashTests
             }
         }
         """)]
+    [InlineData("""
+        func main() {
+            var front = Array2D(0, 0);
+            var back = Array2D(0, 0);
+            front[3,5] = back;
+            val temp = front;
+            back = temp;
+            back = temp;
+        }
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

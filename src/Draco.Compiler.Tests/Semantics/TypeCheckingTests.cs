@@ -2447,4 +2447,55 @@ public sealed class TypeCheckingTests
         Assert.Single(diags);
         AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
     }
+
+    [Fact]
+    public void GenericInstantiatingModulesIsAnError()
+    {
+        // func foo(): System<int32> = default();
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            GenericType(NameType("System"), NameType("int32")),
+            InlineFunctionBody(CallExpression(NameExpression("default"))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.NotGenericConstruct);
+    }
+
+    [Fact]
+    public void AssigningListToArrayTypeIsIllegal()
+    {
+        // import System.Collections.Generic;
+        // func main() {
+        //     var x: Array<int32> = List();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration(
+                        "x",
+                        GenericType(NameType("Array"), NameType("int32")),
+                        CallExpression(NameExpression("List"))))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostics(diags, TypeCheckingErrors.InferenceIncomplete, TypeCheckingErrors.TypeMismatch);
+    }
 }

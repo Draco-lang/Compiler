@@ -56,7 +56,7 @@ public readonly struct CoverageResult
     /// <param name="stream">The stream to write to.</param>
     public void WriteLcov(Stream stream)
     {
-        using var writer = new StreamWriter(stream);
+        var writer = new StreamWriter(stream);
 
         // We need to emit the data by file
         var dataByFile = this.SequencePoints

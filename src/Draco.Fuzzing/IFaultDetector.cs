@@ -91,7 +91,7 @@ public static class FaultDetector
             targetExecutor.Execute(targetInfo);
 
             using var cancelReadSource = new CancellationTokenSource();
-            //var stderrTask = ReadStream(process.StandardError, cancelReadSource.Token);
+            var stderrTask = ReadStream(process.StandardError, cancelReadSource.Token);
 
             if (!process.WaitForExit(this.timeout))
             {
@@ -100,8 +100,8 @@ public static class FaultDetector
                 return FaultResult.Timeout(this.timeout);
             }
 
-            //var stderr = stderrTask.GetAwaiter().GetResult();
-            if (process.ExitCode != 0) return FaultResult.Code(process.ExitCode /*, errorMessage: stderr */);
+            var stderr = stderrTask.GetAwaiter().GetResult();
+            if (process.ExitCode != 0) return FaultResult.Code(process.ExitCode, errorMessage: stderr);
             return FaultResult.Ok;
         }
 

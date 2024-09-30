@@ -28,7 +28,7 @@ internal static class Program
         var settings = ParseSettings(args);
 
         Application.Init();
-        Application.MainLoop.Invoke(async () =>
+        Application.MainLoop.Invoke(() =>
         {
             var runMode = GetRunMode(settings);
 
@@ -44,10 +44,11 @@ internal static class Program
                 .ToList();
             fuzzer.EnqueueRange(addedTrees);
 
-            var fuzzerTask = Task.Run(() => fuzzer.Run(CancellationToken.None));
-
-            await fuzzerTask;
-            Application.Shutdown();
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                fuzzer.Run(CancellationToken.None);
+                Application.Shutdown();
+            });
         });
         Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(500), loop =>
         {

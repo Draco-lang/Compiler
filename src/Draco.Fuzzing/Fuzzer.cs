@@ -114,7 +114,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// Runs the fuzzing loop.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
-    public void Run(CancellationToken cancellationToken)
+    public void Run(CancellationToken cancellationToken = default)
     {
         // First off, make sure the executor is set up
         // For example, in-process execution will need to run all type constructors here

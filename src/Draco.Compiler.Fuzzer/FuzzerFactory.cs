@@ -17,9 +17,10 @@ internal static class FuzzerFactory
     private static ICoverageCompressor<int> CoverageCompressor => Fuzzing.CoverageCompressor.SimdHash;
     private static IInputMinimizer<SyntaxTree> InputMinimizer => new SyntaxTreeInputMinimizer();
     private static IInputMutator<SyntaxTree> InputMutator => new SyntaxTreeInputMutator();
+    private static IInputCompressor<SyntaxTree, string> InputCompressor => Fuzzing.InputCompressor.String(text => SyntaxTree.Parse(text));
     private static TimeSpan Timeout => TimeSpan.FromSeconds(5);
 
-    public static Fuzzer<SyntaxTree, int> CreateInProcess(ITracer<SyntaxTree> tracer, int? seed)
+    public static Fuzzer<SyntaxTree, string, int> CreateInProcess(ITracer<SyntaxTree> tracer, int? seed)
     {
         // Things we share between compilations
         var bclReferences = ReferenceInfos.All
@@ -56,11 +57,12 @@ internal static class FuzzerFactory
             FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.InProcess(Timeout)),
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
+            InputCompressor = InputCompressor,
             Tracer = tracer,
         };
     }
 
-    public static Fuzzer<SyntaxTree, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int? seed, int? maxParallelism)
+    public static Fuzzer<SyntaxTree, string, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int? seed, int? maxParallelism)
     {
         static ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
         {
@@ -93,6 +95,7 @@ internal static class FuzzerFactory
             FaultDetector = FaultDetector.OutOfProcess(Timeout),
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
+            InputCompressor = InputCompressor,
             Tracer = tracer,
         };
     }

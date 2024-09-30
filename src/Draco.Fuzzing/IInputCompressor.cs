@@ -1,3 +1,5 @@
+using System;
+
 namespace Draco.Fuzzing;
 
 /// <summary>
@@ -34,9 +36,24 @@ public static class InputCompressor
     /// <returns>A compressor that does nothing.</returns>
     public static IInputCompressor<TInput, TInput> Null<TInput>() => new NullCompressor<TInput>();
 
+    /// <summary>
+    /// Creates an input compressor that converts the input to a string by calling <see cref="object.ToString"/>
+    /// and then parses it back using the given parser function.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input data.</typeparam>
+    /// <param name="parser">The parser function to convert the string back to the input type.</param>
+    /// <returns>The input compressor.</returns>
+    public static IInputCompressor<TInput, string> String<TInput>(Func<string, TInput> parser) => new StringCompressor<TInput>(parser);
+
     private sealed class NullCompressor<TInput> : IInputCompressor<TInput, TInput>
     {
         public TInput Compress(TInput input) => input;
         public TInput Decompress(TInput compressedInput) => compressedInput;
+    }
+
+    private sealed class StringCompressor<TInput>(Func<string, TInput> parser) : IInputCompressor<TInput, string>
+    {
+        public string Compress(TInput input) => input?.ToString() ?? string.Empty;
+        public TInput Decompress(string compressedInput) => parser(compressedInput);
     }
 }

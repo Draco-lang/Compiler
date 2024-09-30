@@ -14,8 +14,9 @@ namespace Draco.Fuzzing;
 ///  3. Mutate the test case
 /// </summary>
 /// <typeparam name="TInput">The type of the input data.</typeparam>
+/// <typeparam name="TCompressedInput">The type of the compressed input data.</typeparam>
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
-public sealed class Fuzzer<TInput, TCoverage>
+public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     where TCoverage : notnull
 {
     // Minimal result info of an execution
@@ -23,10 +24,37 @@ public sealed class Fuzzer<TInput, TCoverage>
 
     // Initial inputs have no coverage data, so the entry needs to handle the case where coverage is not yet present
     // and we fill it out later
-    private sealed class QueueEntry(TInput input, ExecutionResult? executionResult = null)
+    private sealed class QueueEntry
     {
-        public TInput Input { get; } = input;
-        public ExecutionResult? ExecutionResult { get; set; } = executionResult;
+        public ExecutionResult? ExecutionResult { get; set; }
+
+        private bool isInputCompressed;
+        private TInput? input;
+        private TCompressedInput? compressedInput;
+
+        public QueueEntry(TInput input, ExecutionResult? executionResult = null)
+        {
+            this.isInputCompressed = false;
+            this.input = input;
+            this.ExecutionResult = executionResult;
+        }
+
+        public QueueEntry(TCompressedInput compressedInput, ExecutionResult? executionResult = null)
+        {
+            this.isInputCompressed = true;
+            this.compressedInput = compressedInput;
+            this.ExecutionResult = executionResult;
+        }
+
+        public TInput GetInput(IInputCompressor<TInput, TCompressedInput> compressor)
+        {
+            if (this.isInputCompressed)
+            {
+                this.input = compressor.Decompress(this.compressedInput!);
+                this.isInputCompressed = false;
+            }
+            return this.input!;
+        }
     }
 
     /// <summary>
@@ -53,6 +81,11 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// The input mutator to use.
     /// </summary>
     public required IInputMutator<TInput> InputMutator { get; init; }
+
+    /// <summary>
+    /// The input compressor to use.
+    /// </summary>
+    public required IInputCompressor<TInput, TCompressedInput> InputCompressor { get; init; }
 
     /// <summary>
     /// The reader to read coverage data with.
@@ -96,7 +129,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="input">The input to enqueue.</param>
     public void Enqueue(TInput input)
     {
-        this.inputQueue.Add(new QueueEntry(input));
+        this.inputQueue.Add(this.MakeQueueEntry(input));
         lock (this.tracerSync) this.Tracer.InputsEnqueued([input]);
     }
 
@@ -106,7 +139,7 @@ public sealed class Fuzzer<TInput, TCoverage>
     /// <param name="inputs">The inputs to enqueue.</param>
     public void EnqueueRange(IEnumerable<TInput> inputs)
     {
-        foreach (var input in inputs) this.inputQueue.Add(new QueueEntry(input));
+        foreach (var input in inputs) this.inputQueue.Add(this.MakeQueueEntry(input));
         lock (this.tracerSync) this.Tracer.InputsEnqueued(inputs);
     }
 
@@ -131,7 +164,7 @@ public sealed class Fuzzer<TInput, TCoverage>
             EnumerablePartitionerOptions.NoBuffering);
         Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
         {
-            lock (this.tracerSync) this.Tracer.InputDequeued(entry.Input);
+            lock (this.tracerSync) this.Tracer.InputDequeued(entry.GetInput(this.InputCompressor));
 
             // We want to minimize the input first
             entry = this.Minimize(entry);
@@ -153,14 +186,15 @@ public sealed class Fuzzer<TInput, TCoverage>
         // While we find a minimization step, we continue to minimize
         while (true)
         {
-            foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entry.Input))
+            var entryInput = entry.GetInput(this.InputCompressor);
+            foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entryInput))
             {
                 var (minimizedResult, _) = this.Execute(minimizedInput);
                 if (AreEqualExecutions(referenceResult, minimizedResult))
                 {
                     // We found an equivalent execution, replace entry
-                    lock (this.tracerSync) this.Tracer.MinimizationFound(entry.Input, minimizedInput);
-                    entry = new QueueEntry(minimizedInput, minimizedResult);
+                    lock (this.tracerSync) this.Tracer.MinimizationFound(entryInput, minimizedInput);
+                    entry = this.MakeQueueEntry(minimizedInput, minimizedResult);
                     goto found;
                 }
             }
@@ -173,19 +207,21 @@ public sealed class Fuzzer<TInput, TCoverage>
 
     private void Mutate(QueueEntry entry)
     {
-        foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entry.Input))
+        var entryInput = entry.GetInput(this.InputCompressor);
+        foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entryInput))
         {
             var (_, isInteresting) = this.Execute(mutatedInput);
             if (isInteresting)
             {
-                lock (this.tracerSync) this.Tracer.MutationFound(entry.Input, mutatedInput);
+                lock (this.tracerSync) this.Tracer.MutationFound(entryInput, mutatedInput);
             }
         }
     }
 
     private ExecutionResult GetExecutionResult(QueueEntry entry)
     {
-        entry.ExecutionResult ??= this.Execute(entry.Input, dontRequeue: true).Result;
+        var entryInput = entry.GetInput(this.InputCompressor);
+        entry.ExecutionResult ??= this.Execute(entryInput, dontRequeue: true).Result;
         return entry.ExecutionResult.Value;
     }
 
@@ -206,10 +242,25 @@ public sealed class Fuzzer<TInput, TCoverage>
         var executionResult = new ExecutionResult(compressedCoverage, faultResult);
         if (!dontRequeue && isInteresting)
         {
-            this.inputQueue.Add(new QueueEntry(input, executionResult));
+            this.inputQueue.Add(this.MakeQueueEntry(input, executionResult));
             lock (this.tracerSync) this.Tracer.InputsEnqueued([input]);
         }
         return (executionResult, isInteresting);
+    }
+
+    private QueueEntry MakeQueueEntry(TInput input, ExecutionResult? executionResult = null)
+    {
+        if (this.inputQueue.Count > 5000)
+        {
+            // Compress
+            var compressedInput = this.InputCompressor.Compress(input);
+            return new QueueEntry(compressedInput, executionResult);
+        }
+        else
+        {
+            // Don't compress
+            return new QueueEntry(input, executionResult);
+        }
     }
 
     // We deem an input interesting, if it has not been seen before in terms of coverage

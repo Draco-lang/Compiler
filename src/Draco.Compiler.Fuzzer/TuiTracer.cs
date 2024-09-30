@@ -37,7 +37,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         }
     }
 
-    public Fuzzer<SyntaxTree, int>? Fuzzer { get; private set; }
+    public Fuzzer<SyntaxTree, string, int>? Fuzzer { get; private set; }
 
     // Coverage info
     private readonly ProgressBar currentCoverageProgressBar;
@@ -318,7 +318,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         Application.Top.Add(menuBar, this, statusBar);
     }
 
-    public void SetFuzzer(Fuzzer<SyntaxTree, int> fuzzer)
+    public void SetFuzzer(Fuzzer<SyntaxTree, string, int> fuzzer)
     {
         this.Fuzzer = fuzzer;
         this.seedStatusItem.Title = GetSeedStatusBarTitle(fuzzer.Seed);

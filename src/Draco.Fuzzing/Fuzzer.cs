@@ -15,8 +15,6 @@ namespace Draco.Fuzzing;
 /// </summary>
 /// <typeparam name="TInput">The type of the input data.</typeparam>
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
-/// <param name="seed">The seed to use for the random number generator.</param>
-/// <param name="multithreaded">True if the fuzzer should run in multithreaded mode. Only recommended for out-of-process execution.</param>
 public sealed class Fuzzer<TInput, TCoverage>
     where TCoverage : notnull
 {

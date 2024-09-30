@@ -108,7 +108,7 @@ internal sealed class BinderCache(Compilation compilation)
         var classSymbol = parent.DeclaredSymbols
             .OfType<SourceClassSymbol>()
             .FirstOrDefault(member => member.DeclaringSyntax == syntax); // should we shove that in an helper ?
-        return new ClassBinder(parent, classSymbol);
+        return new ClassBinder(binder, classSymbol);
     }
 
 

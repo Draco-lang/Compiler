@@ -26,34 +26,40 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     // and we fill it out later
     private sealed class QueueEntry
     {
-        public ExecutionResult? ExecutionResult { get; set; }
 
         private readonly TCompressedInput? compressedInput;
         private bool isInputCompressed;
         private TInput? input;
+        private ExecutionResult? executionResult;
 
         public QueueEntry(TInput input, ExecutionResult? executionResult = null)
         {
             this.isInputCompressed = false;
             this.input = input;
-            this.ExecutionResult = executionResult;
+            this.executionResult = executionResult;
         }
 
         public QueueEntry(TCompressedInput compressedInput, ExecutionResult? executionResult = null)
         {
             this.isInputCompressed = true;
             this.compressedInput = compressedInput;
-            this.ExecutionResult = executionResult;
+            this.executionResult = executionResult;
         }
 
-        public TInput GetInput(IInputCompressor<TInput, TCompressedInput> compressor)
+        public TInput GetInput(Fuzzer<TInput, TCompressedInput, TCoverage> fuzzer)
         {
             if (this.isInputCompressed)
             {
-                this.input = compressor.Decompress(this.compressedInput!);
+                this.input = fuzzer.InputCompressor.Decompress(this.compressedInput!);
                 this.isInputCompressed = false;
             }
             return this.input!;
+        }
+
+        public ExecutionResult GetExecutionResult(Fuzzer<TInput, TCompressedInput, TCoverage> fuzzer)
+        {
+            var input = this.GetInput(fuzzer);
+            return this.executionResult ??= fuzzer.Execute(input, dontRequeue: true).Result;
         }
     }
 
@@ -164,11 +170,11 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
             EnumerablePartitionerOptions.NoBuffering);
         Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
         {
-            lock (this.tracerSync) this.Tracer.InputDequeued(entry.GetInput(this.InputCompressor));
+            lock (this.tracerSync) this.Tracer.InputDequeued(entry.GetInput(this));
 
             // We want to minimize the input first
             entry = this.Minimize(entry);
-            if (entry.ExecutionResult?.FaultResult.IsFaulted == true)
+            if (entry.GetExecutionResult(this).FaultResult.IsFaulted == true)
             {
                 // NOTE: For now we don't mutate faulted results
                 return;
@@ -182,11 +188,11 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
 
     private QueueEntry Minimize(QueueEntry entry)
     {
-        var referenceResult = this.GetExecutionResult(entry);
+        var referenceResult = entry.GetExecutionResult(this);
         // While we find a minimization step, we continue to minimize
         while (true)
         {
-            var entryInput = entry.GetInput(this.InputCompressor);
+            var entryInput = entry.GetInput(this);
             foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entryInput))
             {
                 var (minimizedResult, _) = this.Execute(minimizedInput);
@@ -207,7 +213,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
 
     private void Mutate(QueueEntry entry)
     {
-        var entryInput = entry.GetInput(this.InputCompressor);
+        var entryInput = entry.GetInput(this);
         foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entryInput))
         {
             var (_, isInteresting) = this.Execute(mutatedInput);
@@ -216,13 +222,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
                 lock (this.tracerSync) this.Tracer.MutationFound(entryInput, mutatedInput);
             }
         }
-    }
-
-    private ExecutionResult GetExecutionResult(QueueEntry entry)
-    {
-        var entryInput = entry.GetInput(this.InputCompressor);
-        entry.ExecutionResult ??= this.Execute(entryInput, dontRequeue: true).Result;
-        return entry.ExecutionResult.Value;
     }
 
     private (ExecutionResult Result, bool IsInteresting) Execute(TInput input, bool dontRequeue = false)

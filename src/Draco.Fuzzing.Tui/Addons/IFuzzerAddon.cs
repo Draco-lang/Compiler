@@ -9,6 +9,11 @@ namespace Draco.Fuzzing.Tui;
 public interface IFuzzerAddon
 {
     /// <summary>
+    /// The name of the addon.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
     /// Registers the addon onto a tracer.
     /// </summary>
     /// <param name="tracer">The tracer to register onto.</param>

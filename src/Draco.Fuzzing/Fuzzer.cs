@@ -26,7 +26,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     // and we fill it out later
     private sealed class QueueEntry
     {
-
         private readonly TCompressedInput? compressedInput;
         private bool isInputCompressed;
         private TInput? input;

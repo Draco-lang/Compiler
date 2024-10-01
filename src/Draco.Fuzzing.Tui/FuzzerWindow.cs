@@ -30,6 +30,9 @@ public abstract class FuzzerWindow : Window
     /// </summary>
     public void Initialize()
     {
+        // Remove borders
+        this.Border = new();
+
         // First we register all addons
         foreach (var addon in this.addons) addon.Register(this.tracer);
 

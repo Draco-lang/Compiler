@@ -33,12 +33,12 @@ public sealed class BroadcastTracer<TInput>(IEnumerable<ITracer<TInput>> tracers
         foreach (var tracer in this.tracers) tracer.InputFuzzEnded(input, targetInfo, coverageResult);
     }
 
-    public void MinimizationFound(InputWithId<TInput> input, TInput minimizedInput)
+    public void MinimizationFound(InputWithId<TInput> input, InputWithId<TInput> minimizedInput)
     {
         foreach (var tracer in this.tracers) tracer.MinimizationFound(input, minimizedInput);
     }
 
-    public void MutationFound(InputWithId<TInput> input, TInput mutatedInput)
+    public void MutationFound(InputWithId<TInput> input, InputWithId<TInput> mutatedInput)
     {
         foreach (var tracer in this.tracers) tracer.MutationFound(input, mutatedInput);
     }

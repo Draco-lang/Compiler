@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Draco.Fuzzing.Components;
@@ -29,24 +30,30 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     // and we fill it out later
     private sealed class QueueEntry
     {
+        private readonly int inputId;
         private readonly TCompressedInput? compressedInput;
         private bool isInputCompressed;
         private TInput? input;
         private ExecutionResult? executionResult;
 
-        public QueueEntry(TInput input, ExecutionResult? executionResult = null)
+        public QueueEntry(int inputId, TInput input, ExecutionResult? executionResult = null)
         {
+            this.inputId = inputId;
             this.isInputCompressed = false;
             this.input = input;
             this.executionResult = executionResult;
         }
 
-        public QueueEntry(TCompressedInput compressedInput, ExecutionResult? executionResult = null)
+        public QueueEntry(int inputId, TCompressedInput compressedInput, ExecutionResult? executionResult = null)
         {
+            this.inputId = inputId;
             this.isInputCompressed = true;
             this.compressedInput = compressedInput;
             this.executionResult = executionResult;
         }
+
+        public InputWithId<TInput> GetInputWithId(Fuzzer<TInput, TCompressedInput, TCoverage> fuzzer) =>
+            new(this.inputId, this.GetInput(fuzzer));
 
         public TInput GetInput(Fuzzer<TInput, TCompressedInput, TCoverage> fuzzer)
         {
@@ -61,7 +68,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         public ExecutionResult GetExecutionResult(Fuzzer<TInput, TCompressedInput, TCoverage> fuzzer)
         {
             var input = this.GetInput(fuzzer);
-            return this.executionResult ??= fuzzer.Execute(input, dontRequeue: true).Result;
+            return this.executionResult ??= fuzzer.Execute(input, existingId: this.inputId).Result;
         }
     }
 
@@ -123,6 +130,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     private readonly BlockingCollection<QueueEntry> inputQueue = new(new ConcurrentQueue<QueueEntry>());
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private readonly object tracerSync = new();
+    private int inputIdCounter = 0;
 
     public Fuzzer(int? seed = null, int maxDegreeOfParallelism = -1)
     {
@@ -134,14 +142,17 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         this.Random = new Random(this.Seed);
     }
 
+    private int GetNextInputId() => Interlocked.Increment(ref this.inputIdCounter);
+
     /// <summary>
     /// Enqueues the given input into the fuzzer.
     /// </summary>
     /// <param name="input">The input to enqueue.</param>
     public void Enqueue(TInput input)
     {
-        this.inputQueue.Add(this.MakeQueueEntry(input));
-        lock (this.tracerSync) this.Tracer.InputsEnqueued([input]);
+        var entry = this.MakeQueueEntry(input);
+        this.inputQueue.Add(entry);
+        lock (this.tracerSync) this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
     }
 
     /// <summary>
@@ -150,8 +161,15 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     /// <param name="inputs">The inputs to enqueue.</param>
     public void EnqueueRange(IEnumerable<TInput> inputs)
     {
-        foreach (var input in inputs) this.inputQueue.Add(this.MakeQueueEntry(input));
-        lock (this.tracerSync) this.Tracer.InputsEnqueued(inputs);
+        var entries = inputs
+            .Select(i => this.MakeQueueEntry(i))
+            .ToList();
+        foreach (var entry in entries) this.inputQueue.Add(entry);
+
+        var inputsWithId = entries
+            .Select(e => e.GetInputWithId(this))
+            .ToList();
+        lock (this.tracerSync) this.Tracer.InputsEnqueued(inputsWithId);
     }
 
     /// <summary>
@@ -175,7 +193,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
             EnumerablePartitionerOptions.NoBuffering);
         Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
         {
-            lock (this.tracerSync) this.Tracer.InputDequeued(entry.GetInput(this));
+            lock (this.tracerSync) this.Tracer.InputDequeued(entry.GetInputWithId(this));
 
             // We want to minimize the input first
             entry = this.Minimize(entry);
@@ -197,8 +215,8 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         // While we find a minimization step, we continue to minimize
         while (true)
         {
-            var entryInput = entry.GetInput(this);
-            foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entryInput))
+            var entryInput = entry.GetInputWithId(this);
+            foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entryInput.Input))
             {
                 var (minimizedResult, _) = this.Execute(minimizedInput);
                 if (AreEqualExecutions(referenceResult, minimizedResult))
@@ -218,8 +236,8 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
 
     private void Mutate(QueueEntry entry)
     {
-        var entryInput = entry.GetInput(this);
-        foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entryInput))
+        var entryInput = entry.GetInputWithId(this);
+        foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entryInput.Input))
         {
             var (_, isInteresting) = this.Execute(mutatedInput);
             if (isInteresting)
@@ -229,41 +247,46 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         }
     }
 
-    private (ExecutionResult Result, bool IsInteresting) Execute(TInput input, bool dontRequeue = false)
+    private (ExecutionResult Result, bool IsInteresting) Execute(TInput input, int existingId = -1)
     {
         var targetInfo = this.TargetExecutor.Initialize(input);
         this.CoverageReader.Clear(targetInfo);
-        lock (this.tracerSync) this.Tracer.InputFuzzStarted(input, targetInfo);
+        var inputId = existingId == -1 ? this.GetNextInputId() : existingId;
+        var inputWithId = new InputWithId<TInput>(inputId, input);
+        lock (this.tracerSync) this.Tracer.InputFuzzStarted(inputWithId, targetInfo);
         var faultResult = this.FaultDetector.Detect(this.TargetExecutor, targetInfo);
         if (faultResult.IsFaulted)
         {
-            lock (this.tracerSync) this.Tracer.InputFaulted(input, faultResult);
+            lock (this.tracerSync) this.Tracer.InputFaulted(inputWithId, faultResult);
         }
         var coverage = this.CoverageReader.Read(targetInfo);
-        lock (this.tracerSync) this.Tracer.InputFuzzEnded(input, targetInfo, coverage);
+        lock (this.tracerSync) this.Tracer.InputFuzzEnded(inputWithId, targetInfo, coverage);
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         var isInteresting = this.IsInteresting(compressedCoverage);
         var executionResult = new ExecutionResult(compressedCoverage, faultResult);
-        if (!dontRequeue && isInteresting)
+        // If existing id was not -1, the input was already a queue entry, don't requeue
+        if (existingId == -1 && isInteresting)
         {
-            this.inputQueue.Add(this.MakeQueueEntry(input, executionResult));
-            lock (this.tracerSync) this.Tracer.InputsEnqueued([input]);
+            var entry = this.MakeQueueEntry(input, executionResult, id: inputId);
+            this.inputQueue.Add(entry);
+            lock (this.tracerSync) this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
         }
         return (executionResult, isInteresting);
     }
 
-    private QueueEntry MakeQueueEntry(TInput input, ExecutionResult? executionResult = null)
+    private QueueEntry MakeQueueEntry(TInput input, ExecutionResult? executionResult = null, int id = -1)
     {
+        if (id == -1) id = this.GetNextInputId();
         if (this.inputQueue.Count > 5000)
         {
             // Compress
             var compressedInput = this.InputCompressor.Compress(input);
-            return new QueueEntry(compressedInput, executionResult);
+            return new QueueEntry(id, compressedInput, executionResult);
         }
         else
         {
             // Don't compress
-            return new QueueEntry(input, executionResult);
+            return new QueueEntry(id, input, executionResult);
         }
     }
 

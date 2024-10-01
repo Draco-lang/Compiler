@@ -327,14 +327,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.seedStatusItem.Title = GetSeedStatusBarTitle(fuzzer.Seed);
     }
 
-    public void InputsEnqueued(IEnumerable<SyntaxTree> inputs)
+    public void InputsEnqueued(IEnumerable<InputWithId<SyntaxTree>> inputs)
     {
         foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
 
         this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
     }
 
-    public void InputDequeued(SyntaxTree input)
+    public void InputDequeued(InputWithId<SyntaxTree> input)
     {
         this.minimizedInputCounter = 0;
         this.mutatedInputCounter = 0;
@@ -349,12 +349,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.minimizedInputTextView.Text = string.Empty;
     }
 
-    public void InputFuzzStarted(SyntaxTree input, TargetInfo targetInfo)
+    public void InputFuzzStarted(InputWithId<SyntaxTree> input, TargetInfo targetInfo)
     {
         this.fuzzStarts.Add(targetInfo.Id, this.stopwatch.Elapsed);
     }
 
-    public void InputFuzzEnded(SyntaxTree input, TargetInfo targetInfo, CoverageResult coverageResult)
+    public void InputFuzzEnded(InputWithId<SyntaxTree> input, TargetInfo targetInfo, CoverageResult coverageResult)
     {
         // Counters
         ++this.fuzzedInputCounter;
@@ -388,7 +388,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         }
     }
 
-    public void MinimizationFound(SyntaxTree input, SyntaxTree minimizedInput)
+    public void MinimizationFound(InputWithId<SyntaxTree> input, InputWithId<SyntaxTree> minimizedInput)
     {
         ++this.minimizedInputCounter;
 
@@ -396,14 +396,14 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.minimizedInputTextView.Text = minimizedInput.ToString();
     }
 
-    public void MutationFound(SyntaxTree input, SyntaxTree mutatedInput)
+    public void MutationFound(InputWithId<SyntaxTree> input, InputWithId<SyntaxTree> mutatedInput)
     {
         ++this.mutatedInputCounter;
 
         this.currentInputFrameView.Title = GetCurrentInputFrameTitle(this.mutatedInputCounter);
     }
 
-    public void InputFaulted(SyntaxTree input, FaultResult fault)
+    public void InputFaulted(InputWithId<SyntaxTree> input, FaultResult fault)
     {
         this.faultList.Add(new(input, fault));
     }

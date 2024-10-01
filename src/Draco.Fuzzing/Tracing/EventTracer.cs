@@ -8,8 +8,8 @@ public readonly record struct InputsEnqueuedEventArgs<TInput>(IEnumerable<InputW
 public readonly record struct InputDequeuedEventArgs<TInput>(InputWithId<TInput> Input);
 public readonly record struct InputFuzzStartedEventArgs<TInput>(InputWithId<TInput> Input, TargetInfo TargetInfo);
 public readonly record struct InputFuzzEndedEventArgs<TInput>(InputWithId<TInput> Input, TargetInfo TargetInfo, CoverageResult CoverageResult);
-public readonly record struct MinimizationFoundEventArgs<TInput>(InputWithId<TInput> Input, TInput MinimizedInput);
-public readonly record struct MutationFoundEventArgs<TInput>(InputWithId<TInput> Input, TInput MutatedInput);
+public readonly record struct MinimizationFoundEventArgs<TInput>(InputWithId<TInput> Input, InputWithId<TInput> MinimizedInput);
+public readonly record struct MutationFoundEventArgs<TInput>(InputWithId<TInput> Input, InputWithId<TInput> MutatedInput);
 public readonly record struct InputFaultedEventArgs<TInput>(InputWithId<TInput> Input, FaultResult Fault);
 
 /// <summary>
@@ -36,9 +36,9 @@ public sealed class EventTracer<TInput> : ITracer<TInput>
         this.OnInputFuzzStarted?.Invoke(this, new InputFuzzStartedEventArgs<TInput>(input, targetInfo));
     public void InputFuzzEnded(InputWithId<TInput> input, TargetInfo targetInfo, CoverageResult coverageResult) =>
         this.OnInputFuzzEnded?.Invoke(this, new InputFuzzEndedEventArgs<TInput>(input, targetInfo, coverageResult));
-    public void MinimizationFound(InputWithId<TInput> input, TInput minimizedInput) =>
+    public void MinimizationFound(InputWithId<TInput> input, InputWithId<TInput> minimizedInput) =>
         this.OnMinimizationFound?.Invoke(this, new MinimizationFoundEventArgs<TInput>(input, minimizedInput));
-    public void MutationFound(InputWithId<TInput> input, TInput mutatedInput) =>
+    public void MutationFound(InputWithId<TInput> input, InputWithId<TInput> mutatedInput) =>
         this.OnMutationFound?.Invoke(this, new MutationFoundEventArgs<TInput>(input, mutatedInput));
     public void InputFaulted(InputWithId<TInput> input, FaultResult fault) =>
         this.OnInputFaulted?.Invoke(this, new InputFaultedEventArgs<TInput>(input, fault));

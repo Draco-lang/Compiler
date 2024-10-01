@@ -49,14 +49,14 @@ public interface ITracer<TInput>
     /// </summary>
     /// <param name="input">The original input.</param>
     /// <param name="minimizedInput">The minimized input.</param>
-    public void MinimizationFound(InputWithId<TInput> input, TInput minimizedInput);
+    public void MinimizationFound(InputWithId<TInput> input, InputWithId<TInput> minimizedInput);
 
     /// <summary>
     /// Called when a mutation is found.
     /// </summary>
     /// <param name="input">The original input.</param>
     /// <param name="mutatedInput">The mutated input.</param>
-    public void MutationFound(InputWithId<TInput> input, TInput mutatedInput);
+    public void MutationFound(InputWithId<TInput> input, InputWithId<TInput> mutatedInput);
 
     /// <summary>
     /// Called when an input faulted.

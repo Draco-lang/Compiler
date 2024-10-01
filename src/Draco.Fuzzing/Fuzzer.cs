@@ -129,7 +129,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
 
     private readonly BlockingCollection<QueueEntry> inputQueue = new(new ConcurrentQueue<QueueEntry>());
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
-    private readonly object tracerSync = new();
     private int inputIdCounter = 0;
 
     public Fuzzer(int? seed = null, int maxDegreeOfParallelism = -1)
@@ -152,7 +151,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     {
         var entry = this.MakeQueueEntry(input);
         this.inputQueue.Add(entry);
-        lock (this.tracerSync) this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
+        this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
     }
 
     /// <summary>
@@ -169,7 +168,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         var inputsWithId = entries
             .Select(e => e.GetInputWithId(this))
             .ToList();
-        lock (this.tracerSync) this.Tracer.InputsEnqueued(inputsWithId);
+        this.Tracer.InputsEnqueued(inputsWithId);
     }
 
     /// <summary>
@@ -182,7 +181,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
         this.TargetExecutor.GlobalInitializer();
-        lock (this.tracerSync) this.Tracer.FuzzerStarted();
+        this.Tracer.FuzzerStarted();
         var parallelOptions = new ParallelOptions
         {
             CancellationToken = cancellationToken,
@@ -193,7 +192,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
             EnumerablePartitionerOptions.NoBuffering);
         Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
         {
-            lock (this.tracerSync) this.Tracer.InputDequeued(entry.GetInputWithId(this));
+            this.Tracer.InputDequeued(entry.GetInputWithId(this));
 
             // We want to minimize the input first
             entry = this.Minimize(entry);
@@ -206,7 +205,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
             // And we want to mutate the minimized input
             this.Mutate(entry);
         });
-        lock (this.tracerSync) this.Tracer.FuzzerFinished();
+        this.Tracer.FuzzerFinished();
     }
 
     private QueueEntry Minimize(QueueEntry entry)
@@ -222,7 +221,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
                 if (AreEqualExecutions(referenceResult, minimizedResult))
                 {
                     // We found an equivalent execution, replace entry
-                    lock (this.tracerSync) this.Tracer.MinimizationFound(entryInput, new(id, minimizedInput));
+                    this.Tracer.MinimizationFound(entryInput, new(id, minimizedInput));
                     entry = this.MakeQueueEntry(minimizedInput, minimizedResult);
                     goto found;
                 }
@@ -242,7 +241,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
             var (_, isInteresting, id) = this.Execute(mutatedInput);
             if (isInteresting)
             {
-                lock (this.tracerSync) this.Tracer.MutationFound(entryInput, new(id, mutatedInput));
+                this.Tracer.MutationFound(entryInput, new(id, mutatedInput));
             }
         }
     }
@@ -253,14 +252,14 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         this.CoverageReader.Clear(targetInfo);
         var inputId = existingId == -1 ? this.GetNextInputId() : existingId;
         var inputWithId = new InputWithId<TInput>(inputId, input);
-        lock (this.tracerSync) this.Tracer.InputFuzzStarted(inputWithId, targetInfo);
+        this.Tracer.InputFuzzStarted(inputWithId, targetInfo);
         var faultResult = this.FaultDetector.Detect(this.TargetExecutor, targetInfo);
         if (faultResult.IsFaulted)
         {
-            lock (this.tracerSync) this.Tracer.InputFaulted(inputWithId, faultResult);
+            this.Tracer.InputFaulted(inputWithId, faultResult);
         }
         var coverage = this.CoverageReader.Read(targetInfo);
-        lock (this.tracerSync) this.Tracer.InputFuzzEnded(inputWithId, targetInfo, coverage);
+        this.Tracer.InputFuzzEnded(inputWithId, targetInfo, coverage);
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         var isInteresting = this.IsInteresting(compressedCoverage);
         var executionResult = new ExecutionResult(compressedCoverage, faultResult);
@@ -269,7 +268,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         {
             var entry = this.MakeQueueEntry(input, executionResult, id: inputId);
             this.inputQueue.Add(entry);
-            lock (this.tracerSync) this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
+            this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
         }
         return (executionResult, isInteresting, inputId);
     }

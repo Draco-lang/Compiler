@@ -60,7 +60,7 @@ internal static class FuzzerFactory
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
             InputCompressor = InputCompressor,
-            Tracer = tracer,
+            Tracer = new LockSyncTracer<SyntaxTree>(tracer, new()),
         };
     }
 
@@ -98,7 +98,7 @@ internal static class FuzzerFactory
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
             InputCompressor = InputCompressor,
-            Tracer = tracer,
+            Tracer = new LockSyncTracer<SyntaxTree>(tracer, new()),
         };
     }
 }

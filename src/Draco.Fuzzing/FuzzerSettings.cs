@@ -5,7 +5,7 @@ namespace Draco.Fuzzing;
 /// <summary>
 /// Settings for the fuzzer.
 /// </summary>
-public sealed class FuzzerSettings
+public sealed record class FuzzerSettings
 {
     /// <summary>
     /// The default settings for an in-process fuzzer.

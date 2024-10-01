@@ -146,8 +146,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         this.Random = new Random(this.Seed);
     }
 
-    private int GetNextInputId() => Interlocked.Increment(ref this.inputIdCounter);
-
     /// <summary>
     /// Enqueues the given input into the fuzzer.
     /// </summary>
@@ -353,6 +351,12 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     /// <param name="coverage">The coverage to check.</param>
     /// <returns>True, if the coverage is interesting, false otherwise.</returns>
     private bool IsInteresting(TCoverage coverage) => this.seenCoverages.Add(coverage);
+
+    /// <summary>
+    /// Allocates a new input identifier.
+    /// </summary>
+    /// <returns>The new input identifier.</returns>
+    private int GetNextInputId() => Interlocked.Increment(ref this.inputIdCounter);
 
     /// <summary>
     /// Checks, if two executions are equal. We deem them equal if they cover the same code and have the same fault result.

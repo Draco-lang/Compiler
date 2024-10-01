@@ -64,8 +64,35 @@ public abstract class FuzzerWindow : Window
     private MenuBar ConstructMenuBar()
     {
         // Constructing the menu-bar is quite complex as it requires recursive merging of menu items
+        return new(this.addons
+            .Select(addon => addon.CreateMenuBarItem())
+            .OfType<MenuBarItem>()
+            .GroupBy(item => item.Title)
+            .Select(g => Merge(g, toplevel: true))
+            .Cast<MenuBarItem>()
+            .ToArray());
 
-        // TODO
-        throw new System.NotImplementedException();
+        static MenuItem Merge(IEnumerable<MenuItem> sameNameMenuItems, bool toplevel)
+        {
+            var asList = sameNameMenuItems.ToList();
+            if (asList.Count == 1 && !toplevel)
+            {
+                // We can keep it a menu item
+                return asList[0];
+            }
+            else
+            {
+                // There are multiple, we need a MenuBarItem
+                return new MenuBarItem(
+                    title: asList[0].Title,
+                    children: asList
+                        // If there are multiple, they have to be MenuBarItems to contain children
+                        .Cast<MenuBarItem>()
+                        .SelectMany(c => c.Children)
+                        .GroupBy(i => i.Title)
+                        .Select(g => Merge(g, toplevel: false))
+                        .ToArray());
+            }
+        }
     }
 }

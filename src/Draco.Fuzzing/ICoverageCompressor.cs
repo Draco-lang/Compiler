@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Draco.Coverage;
+using Draco.Fuzzing.Utilities;
 
 namespace Draco.Fuzzing;
 

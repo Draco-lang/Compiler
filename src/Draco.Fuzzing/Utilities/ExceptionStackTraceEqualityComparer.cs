@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Utilities;
 
 /// <summary>
 /// An equality comparer for exceptions that compares their stack traces.

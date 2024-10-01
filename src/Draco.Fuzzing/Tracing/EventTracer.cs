@@ -4,13 +4,13 @@ using Draco.Coverage;
 
 namespace Draco.Fuzzing.Tracing;
 
-public readonly record struct InputsEnqueuedEventArgs<TInput>(IEnumerable<TInput> Inputs);
-public readonly record struct InputDequeuedEventArgs<TInput>(TInput Input);
-public readonly record struct InputFuzzStartedEventArgs<TInput>(TInput Input, TargetInfo TargetInfo);
-public readonly record struct InputFuzzEndedEventArgs<TInput>(TInput Input, TargetInfo TargetInfo, CoverageResult CoverageResult);
-public readonly record struct MinimizationFoundEventArgs<TInput>(TInput Input, TInput MinimizedInput);
-public readonly record struct MutationFoundEventArgs<TInput>(TInput Input, TInput MutatedInput);
-public readonly record struct InputFaultedEventArgs<TInput>(TInput Input, FaultResult Fault);
+public readonly record struct InputsEnqueuedEventArgs<TInput>(IEnumerable<InputWithId<TInput>> Inputs);
+public readonly record struct InputDequeuedEventArgs<TInput>(InputWithId<TInput> Input);
+public readonly record struct InputFuzzStartedEventArgs<TInput>(InputWithId<TInput> Input, TargetInfo TargetInfo);
+public readonly record struct InputFuzzEndedEventArgs<TInput>(InputWithId<TInput> Input, TargetInfo TargetInfo, CoverageResult CoverageResult);
+public readonly record struct MinimizationFoundEventArgs<TInput>(InputWithId<TInput> Input, TInput MinimizedInput);
+public readonly record struct MutationFoundEventArgs<TInput>(InputWithId<TInput> Input, TInput MutatedInput);
+public readonly record struct InputFaultedEventArgs<TInput>(InputWithId<TInput> Input, FaultResult Fault);
 
 /// <summary>
 /// A tracer that raises events for each tracing event.
@@ -28,19 +28,19 @@ public sealed class EventTracer<TInput> : ITracer<TInput>
     public event EventHandler? OnFuzzerStarted;
     public event EventHandler? OnFuzzerFinished;
 
-    public void InputsEnqueued(IEnumerable<TInput> inputs) =>
+    public void InputsEnqueued(IEnumerable<InputWithId<TInput>> inputs) =>
         this.OnInputsEnqueued?.Invoke(this, new InputsEnqueuedEventArgs<TInput>(inputs));
-    public void InputDequeued(TInput input) =>
+    public void InputDequeued(InputWithId<TInput> input) =>
         this.OnInputDequeued?.Invoke(this, new InputDequeuedEventArgs<TInput>(input));
-    public void InputFuzzStarted(TInput input, TargetInfo targetInfo) =>
+    public void InputFuzzStarted(InputWithId<TInput> input, TargetInfo targetInfo) =>
         this.OnInputFuzzStarted?.Invoke(this, new InputFuzzStartedEventArgs<TInput>(input, targetInfo));
-    public void InputFuzzEnded(TInput input, TargetInfo targetInfo, CoverageResult coverageResult) =>
+    public void InputFuzzEnded(InputWithId<TInput> input, TargetInfo targetInfo, CoverageResult coverageResult) =>
         this.OnInputFuzzEnded?.Invoke(this, new InputFuzzEndedEventArgs<TInput>(input, targetInfo, coverageResult));
-    public void MinimizationFound(TInput input, TInput minimizedInput) =>
+    public void MinimizationFound(InputWithId<TInput> input, TInput minimizedInput) =>
         this.OnMinimizationFound?.Invoke(this, new MinimizationFoundEventArgs<TInput>(input, minimizedInput));
-    public void MutationFound(TInput input, TInput mutatedInput) =>
+    public void MutationFound(InputWithId<TInput> input, TInput mutatedInput) =>
         this.OnMutationFound?.Invoke(this, new MutationFoundEventArgs<TInput>(input, mutatedInput));
-    public void InputFaulted(TInput input, FaultResult fault) =>
+    public void InputFaulted(InputWithId<TInput> input, FaultResult fault) =>
         this.OnInputFaulted?.Invoke(this, new InputFaultedEventArgs<TInput>(input, fault));
     public void FuzzerStarted() => this.OnFuzzerStarted?.Invoke(this, EventArgs.Empty);
     public void FuzzerFinished() => this.OnFuzzerFinished?.Invoke(this, EventArgs.Empty);

@@ -20,7 +20,7 @@ namespace Draco.Fuzzing;
 /// <typeparam name="TInput">The type of the input data.</typeparam>
 /// <typeparam name="TCompressedInput">The type of the compressed input data.</typeparam>
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
-public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
+public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings settings)
     where TCoverage : notnull
 {
     /// <summary>
@@ -78,19 +78,14 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     }
 
     /// <summary>
-    /// The seed to use for the random number generator.
+    /// The settings for the fuzzer.
     /// </summary>
-    public int Seed { get; }
-
-    /// <summary>
-    /// The maximum number of parallelism. -1 means unlimited.
-    /// </summary>
-    public int MaxDegreeOfParallelism { get; }
+    public FuzzerSettings Settings { get; } = settings;
 
     /// <summary>
     /// A shared random number generator.
     /// </summary>
-    public Random Random { get; }
+    public Random Random { get; } = new Random(settings.Seed);
 
     /// <summary>
     /// The input minimizer to use.
@@ -135,16 +130,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     private readonly BlockingCollection<QueueEntry> inputQueue = new(new ConcurrentQueue<QueueEntry>());
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private int inputIdCounter = 0;
-
-    public Fuzzer(int? seed = null, int maxDegreeOfParallelism = -1)
-    {
-        ArgumentOutOfRangeException.ThrowIfZero(maxDegreeOfParallelism, nameof(maxDegreeOfParallelism));
-        ArgumentOutOfRangeException.ThrowIfLessThan(maxDegreeOfParallelism, -1, nameof(maxDegreeOfParallelism));
-
-        this.Seed = seed ?? Random.Shared.Next();
-        this.MaxDegreeOfParallelism = maxDegreeOfParallelism;
-        this.Random = new Random(this.Seed);
-    }
 
     /// <summary>
     /// Enqueues the given input into the fuzzer.
@@ -192,7 +177,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         var parallelOptions = new ParallelOptions
         {
             CancellationToken = cancellationToken,
-            MaxDegreeOfParallelism = this.MaxDegreeOfParallelism,
+            MaxDegreeOfParallelism = this.Settings.MaxDegreeOfParallelism,
         };
         var limitedPartitioner = Partitioner.Create(
             this.inputQueue.GetConsumingEnumerable(cancellationToken),
@@ -324,8 +309,8 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     /// <returns>The created queue entry.</returns>
     private QueueEntry MakeQueueEntry(InputWithId<TInput> inputWithId, ExecutionResult? executionResult = null)
     {
-        // TODO: Factor out into settings
-        if (this.inputQueue.Count > 5000)
+        if (this.Settings.CompressAfterQueueSize != -1
+         && this.inputQueue.Count > this.Settings.CompressAfterQueueSize)
         {
             // Need to compress the input
             var compressedInput = this.InputCompressor.Compress(inputWithId.Input);

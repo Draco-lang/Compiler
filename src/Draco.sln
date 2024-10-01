@@ -67,6 +67,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage.Cli", "Draco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Draco.Coverage.Tasks", "Draco.Coverage.Tasks\Draco.Coverage.Tasks.csproj", "{332431F9-6E09-429F-8459-2D157BE030A0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Draco.Fuzzing.Tui", "Draco.Fuzzing.Tui\Draco.Fuzzing.Tui.csproj", "{87A5A8EB-A10C-44C1-8B19-90F860AECEE3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -248,6 +250,12 @@ Global
 		{332431F9-6E09-429F-8459-2D157BE030A0}.Nuget|Any CPU.Build.0 = Debug|Any CPU
 		{332431F9-6E09-429F-8459-2D157BE030A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{332431F9-6E09-429F-8459-2D157BE030A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87A5A8EB-A10C-44C1-8B19-90F860AECEE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87A5A8EB-A10C-44C1-8B19-90F860AECEE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87A5A8EB-A10C-44C1-8B19-90F860AECEE3}.Nuget|Any CPU.ActiveCfg = Debug|Any CPU
+		{87A5A8EB-A10C-44C1-8B19-90F860AECEE3}.Nuget|Any CPU.Build.0 = Debug|Any CPU
+		{87A5A8EB-A10C-44C1-8B19-90F860AECEE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87A5A8EB-A10C-44C1-8B19-90F860AECEE3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

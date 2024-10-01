@@ -28,9 +28,9 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     {
         public ExecutionResult? ExecutionResult { get; set; }
 
+        private readonly TCompressedInput? compressedInput;
         private bool isInputCompressed;
         private TInput? input;
-        private TCompressedInput? compressedInput;
 
         public QueueEntry(TInput input, ExecutionResult? executionResult = null)
         {

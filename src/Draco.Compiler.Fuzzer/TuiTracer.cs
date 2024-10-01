@@ -14,11 +14,12 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 {
     private sealed class InputQueueItem(SyntaxTree input, int index)
     {
-        private readonly string asString = $"Input {index}";
         public SyntaxTree Input { get; } = input;
         public int Index { get; } = index;
 
-        public override string ToString() => this.asString;
+        private readonly string labelString = $"Input {index}";
+
+        public override string ToString() => this.labelString;
     }
 
     private sealed class FaultItem(SyntaxTree input, FaultResult fault)

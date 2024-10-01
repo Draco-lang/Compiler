@@ -6,23 +6,26 @@ using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
 using Draco.Fuzzing;
+using Draco.Fuzzing.Tracing;
 using Terminal.Gui;
 
 namespace Draco.Compiler.Fuzzer;
 
 internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 {
-    private sealed class InputQueueItem(SyntaxTree input, int index)
+    private sealed class InputQueueItem(InputWithId<SyntaxTree> input)
     {
-        public SyntaxTree Input { get; } = input;
-        public int Index { get; } = index;
+        public SyntaxTree Input => input.Input;
+        public int Id => input.Id;
 
-        public override string ToString() => $"Input {this.Index}";
+        private readonly string labelString = $"Input {input.Id}";
+
+        public override string ToString() => this.labelString;
     }
 
-    private sealed class FaultItem(SyntaxTree input, FaultResult fault)
+    private sealed class FaultItem(InputWithId<SyntaxTree> input, FaultResult fault)
     {
-        public SyntaxTree Input { get; } = input;
+        public SyntaxTree Input { get; } = input.Input;
         public FaultResult Fault { get; } = fault;
 
         public override string ToString()
@@ -37,7 +40,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         }
     }
 
-    public Fuzzer<SyntaxTree, int>? Fuzzer { get; private set; }
+    public Fuzzer<SyntaxTree, string, int>? Fuzzer { get; private set; }
 
     // Coverage info
     private readonly ProgressBar currentCoverageProgressBar;
@@ -72,7 +75,6 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private readonly StatusItem seedStatusItem;
 
     // Counters
-    private int inputQueueItemCounter = 0;
     private int fuzzedInputCounter = 0;
     private int minimizedInputCounter = 0;
     private int mutatedInputCounter = 0;
@@ -318,40 +320,40 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         Application.Top.Add(menuBar, this, statusBar);
     }
 
-    public void SetFuzzer(Fuzzer<SyntaxTree, int> fuzzer)
+    public void SetFuzzer(Fuzzer<SyntaxTree, string, int> fuzzer)
     {
         this.Fuzzer = fuzzer;
-        this.seedStatusItem.Title = GetSeedStatusBarTitle(fuzzer.Seed);
+        this.seedStatusItem.Title = GetSeedStatusBarTitle(fuzzer.Settings.Seed);
     }
 
-    public void InputsEnqueued(IEnumerable<SyntaxTree> inputs)
+    public void InputsEnqueued(IEnumerable<InputWithId<SyntaxTree>> inputs)
     {
-        foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
+        foreach (var item in inputs) this.inputQueueList.Add(new(item));
 
         this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
     }
 
-    public void InputDequeued(SyntaxTree input)
+    public void InputDequeued(InputWithId<SyntaxTree> input)
     {
         this.minimizedInputCounter = 0;
         this.mutatedInputCounter = 0;
 
-        var itemIndex = this.inputQueueList.FindIndex(item => item.Input == input);
+        var itemIndex = this.inputQueueList.FindIndex(item => item.Id == input.Id);
         if (itemIndex >= 0) this.inputQueueList.RemoveAt(itemIndex);
 
         this.currentInputFrameView.Title = GetCurrentInputFrameTitle();
         this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle();
         this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
-        this.currentInputTextView.Text = input.ToString();
+        this.currentInputTextView.Text = input.Input.ToString();
         this.minimizedInputTextView.Text = string.Empty;
     }
 
-    public void InputFuzzStarted(SyntaxTree input, TargetInfo targetInfo)
+    public void InputFuzzStarted(InputWithId<SyntaxTree> input, TargetInfo targetInfo)
     {
         this.fuzzStarts.Add(targetInfo.Id, this.stopwatch.Elapsed);
     }
 
-    public void InputFuzzEnded(SyntaxTree input, TargetInfo targetInfo, CoverageResult coverageResult)
+    public void InputFuzzEnded(InputWithId<SyntaxTree> input, TargetInfo targetInfo, CoverageResult coverageResult)
     {
         // Counters
         ++this.fuzzedInputCounter;
@@ -385,22 +387,22 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         }
     }
 
-    public void MinimizationFound(SyntaxTree input, SyntaxTree minimizedInput)
+    public void MinimizationFound(InputWithId<SyntaxTree> input, InputWithId<SyntaxTree> minimizedInput)
     {
         ++this.minimizedInputCounter;
 
         this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle(this.minimizedInputCounter);
-        this.minimizedInputTextView.Text = minimizedInput.ToString();
+        this.minimizedInputTextView.Text = minimizedInput.Input.ToString();
     }
 
-    public void MutationFound(SyntaxTree input, SyntaxTree mutatedInput)
+    public void MutationFound(InputWithId<SyntaxTree> input, InputWithId<SyntaxTree> mutatedInput)
     {
         ++this.mutatedInputCounter;
 
         this.currentInputFrameView.Title = GetCurrentInputFrameTitle(this.mutatedInputCounter);
     }
 
-    public void InputFaulted(SyntaxTree input, FaultResult fault)
+    public void InputFaulted(InputWithId<SyntaxTree> input, FaultResult fault)
     {
         this.faultList.Add(new(input, fault));
     }
@@ -454,7 +456,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         var targetPath = Path.Join(dialog.DirectoryPath.ToString()!, dialog.FileName.ToString()!);
         var faults = $"""
             //////////////////////////////////////////
-            // Seed: {this.Fuzzer?.Seed}
+            // Seed: {this.Fuzzer?.Settings.Seed}
             //////////////////////////////////////////
 
             {string.Join(Environment.NewLine, this.faultList.Select(FormatFaultForExport))}

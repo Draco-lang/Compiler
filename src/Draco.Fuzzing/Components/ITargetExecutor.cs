@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Draco.Coverage;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Components;
 
 /// <summary>
 /// A base interface for the more elaborate <see cref="ITargetExecutor{TInput}"/>.

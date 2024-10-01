@@ -7,19 +7,22 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
 using Draco.Fuzzing;
+using Draco.Fuzzing.Components;
+using Draco.Fuzzing.Tracing;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.Fuzzer;
 
 internal static class FuzzerFactory
 {
-    private static ICoverageReader CoverageReader => Fuzzing.CoverageReader.Default;
-    private static ICoverageCompressor<int> CoverageCompressor => Fuzzing.CoverageCompressor.SimdHash;
+    private static ICoverageReader CoverageReader => Fuzzing.Components.CoverageReader.Default;
+    private static ICoverageCompressor<int> CoverageCompressor => Fuzzing.Components.CoverageCompressor.SimdHash;
     private static IInputMinimizer<SyntaxTree> InputMinimizer => new SyntaxTreeInputMinimizer();
     private static IInputMutator<SyntaxTree> InputMutator => new SyntaxTreeInputMutator();
+    private static IInputCompressor<SyntaxTree, string> InputCompressor => Fuzzing.Components.InputCompressor.String(text => SyntaxTree.Parse(text));
     private static TimeSpan Timeout => TimeSpan.FromSeconds(5);
 
-    public static Fuzzer<SyntaxTree, int> CreateInProcess(ITracer<SyntaxTree> tracer, int? seed)
+    public static Fuzzer<SyntaxTree, string, int> CreateInProcess(ITracer<SyntaxTree> tracer, int? seed)
     {
         // Things we share between compilations
         var bclReferences = ReferenceInfos.All
@@ -48,7 +51,10 @@ internal static class FuzzerFactory
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-        return new(seed: seed, maxDegreeOfParallelism: 1)
+        var settings = seed is null
+            ? FuzzerSettings.DefaultInProcess with { CompressAfterQueueSize = 5000 }
+            : FuzzerSettings.DefaultInProcess with { CompressAfterQueueSize = 5000, Seed = seed.Value };
+        return new(settings)
         {
             CoverageCompressor = CoverageCompressor,
             CoverageReader = CoverageReader,
@@ -56,11 +62,12 @@ internal static class FuzzerFactory
             FaultDetector = FaultDetector.FilterIdenticalTraces(FaultDetector.InProcess(Timeout)),
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
-            Tracer = tracer,
+            InputCompressor = InputCompressor,
+            Tracer = new LockSyncTracer<SyntaxTree>(tracer, new()),
         };
     }
 
-    public static Fuzzer<SyntaxTree, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int? seed, int? maxParallelism)
+    public static Fuzzer<SyntaxTree, string, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int? seed, int? maxParallelism)
     {
         static ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
         {
@@ -85,7 +92,10 @@ internal static class FuzzerFactory
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-        return new(seed: seed, maxDegreeOfParallelism: maxParallelism)
+        var settings = seed is null
+            ? FuzzerSettings.DefaultOutOfProcess with { CompressAfterQueueSize = 5000, }
+            : FuzzerSettings.DefaultOutOfProcess with { CompressAfterQueueSize = 5000, Seed = seed.Value, MaxDegreeOfParallelism = maxParallelism ?? -1 };
+        return new(settings)
         {
             CoverageReader = CoverageReader,
             CoverageCompressor = CoverageCompressor,
@@ -93,7 +103,8 @@ internal static class FuzzerFactory
             FaultDetector = FaultDetector.OutOfProcess(Timeout),
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
-            Tracer = tracer,
+            InputCompressor = InputCompressor,
+            Tracer = new LockSyncTracer<SyntaxTree>(tracer, new()),
         };
     }
 }

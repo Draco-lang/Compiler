@@ -1,8 +1,9 @@
 using System;
 using System.Runtime.InteropServices;
 using Draco.Coverage;
+using Draco.Fuzzing.Utilities;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Components;
 
 /// <summary>
 /// Compresses the coverage result into a type that can be stored in an associative collection.

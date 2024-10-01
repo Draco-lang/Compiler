@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Utilities;
 
 /// <summary>
 /// Checks for the equality of two <see cref="FaultResult"/> instances for the purpose of treating them equivalent.

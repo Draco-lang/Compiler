@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Utilities;
 
 /// <summary>
 /// SIMD utilities.

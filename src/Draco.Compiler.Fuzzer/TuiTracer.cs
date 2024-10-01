@@ -344,7 +344,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.currentInputFrameView.Title = GetCurrentInputFrameTitle();
         this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle();
         this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
-        this.currentInputTextView.Text = input.ToString();
+        this.currentInputTextView.Text = input.Input.ToString();
         this.minimizedInputTextView.Text = string.Empty;
     }
 
@@ -392,7 +392,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         ++this.minimizedInputCounter;
 
         this.minimizedInputFrameView.Title = GetMinimizedInputFrameTitle(this.minimizedInputCounter);
-        this.minimizedInputTextView.Text = minimizedInput.ToString();
+        this.minimizedInputTextView.Text = minimizedInput.Input.ToString();
     }
 
     public void MutationFound(InputWithId<SyntaxTree> input, InputWithId<SyntaxTree> mutatedInput)

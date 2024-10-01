@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Draco.Fuzzing.Utilities;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Components;
 
 /// <summary>
 /// Detects faults (crashes, exceptions, timeouts, ...) in the target to be executed.

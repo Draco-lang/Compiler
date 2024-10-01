@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Draco.Fuzzing.Components;
+using Draco.Fuzzing.Tracing;
 using Draco.Fuzzing.Utilities;
 
 namespace Draco.Fuzzing;

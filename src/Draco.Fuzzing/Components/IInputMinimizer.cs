@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Components;
 
 /// <summary>
 /// A type mutating the input data in order to minimize it.

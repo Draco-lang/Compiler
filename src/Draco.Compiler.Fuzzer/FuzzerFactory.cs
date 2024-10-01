@@ -7,17 +7,19 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
 using Draco.Fuzzing;
+using Draco.Fuzzing.Components;
+using Draco.Fuzzing.Tracing;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.Fuzzer;
 
 internal static class FuzzerFactory
 {
-    private static ICoverageReader CoverageReader => Fuzzing.CoverageReader.Default;
-    private static ICoverageCompressor<int> CoverageCompressor => Fuzzing.CoverageCompressor.SimdHash;
+    private static ICoverageReader CoverageReader => Fuzzing.Components.CoverageReader.Default;
+    private static ICoverageCompressor<int> CoverageCompressor => Fuzzing.Components.CoverageCompressor.SimdHash;
     private static IInputMinimizer<SyntaxTree> InputMinimizer => new SyntaxTreeInputMinimizer();
     private static IInputMutator<SyntaxTree> InputMutator => new SyntaxTreeInputMutator();
-    private static IInputCompressor<SyntaxTree, string> InputCompressor => Fuzzing.InputCompressor.String(text => SyntaxTree.Parse(text));
+    private static IInputCompressor<SyntaxTree, string> InputCompressor => Fuzzing.Components.InputCompressor.String(text => SyntaxTree.Parse(text));
     private static TimeSpan Timeout => TimeSpan.FromSeconds(5);
 
     public static Fuzzer<SyntaxTree, string, int> CreateInProcess(ITracer<SyntaxTree> tracer, int? seed)

@@ -6,6 +6,7 @@ using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
 using Draco.Fuzzing;
+using Draco.Fuzzing.Tracing;
 using Terminal.Gui;
 
 namespace Draco.Compiler.Fuzzer;

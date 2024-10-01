@@ -1,6 +1,6 @@
 using System;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Components;
 
 /// <summary>
 /// Compresses the input data.

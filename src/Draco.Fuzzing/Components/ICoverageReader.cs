@@ -1,6 +1,6 @@
 using Draco.Coverage;
 
-namespace Draco.Fuzzing;
+namespace Draco.Fuzzing.Components;
 
 /// <summary>
 /// Handles coverage information for a target.

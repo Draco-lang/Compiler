@@ -67,8 +67,8 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
 
         public ExecutionResult GetExecutionResult(Fuzzer<TInput, TCompressedInput, TCoverage> fuzzer)
         {
-            var input = this.GetInput(fuzzer);
-            return this.executionResult ??= fuzzer.Execute(input, existingId: this.inputId).Result;
+            var inputWithId = this.GetInputWithId(fuzzer);
+            return this.executionResult ??= fuzzer.Execute(inputWithId);
         }
     }
 
@@ -149,9 +149,11 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     /// <param name="input">The input to enqueue.</param>
     public void Enqueue(TInput input)
     {
-        var entry = this.MakeQueueEntry(input);
+        var inputWithId = this.IdentifyInput(input);
+        var entry = this.MakeQueueEntry(inputWithId);
         this.inputQueue.Add(entry);
-        this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
+        // Notify tracer
+        this.Tracer.InputsEnqueued([inputWithId]);
     }
 
     /// <summary>
@@ -160,11 +162,13 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     /// <param name="inputs">The inputs to enqueue.</param>
     public void EnqueueRange(IEnumerable<TInput> inputs)
     {
+        // First we identify the inputs and make queue entries
         var entries = inputs
-            .Select(i => this.MakeQueueEntry(i))
+            .Select(i => this.MakeQueueEntry(this.IdentifyInput(i)))
             .ToList();
         foreach (var entry in entries) this.inputQueue.Add(entry);
 
+        // Then we notify the tracer
         var inputsWithId = entries
             .Select(e => e.GetInputWithId(this))
             .ToList();
@@ -208,6 +212,11 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         this.Tracer.FuzzerFinished();
     }
 
+    /// <summary>
+    /// Attempts to minimize the input, using the registered <see cref="InputMinimizer"/>.
+    /// </summary>
+    /// <param name="entry">The entry to minimize.</param>
+    /// <returns>The minimized entry.</returns>
     private QueueEntry Minimize(QueueEntry entry)
     {
         var referenceResult = entry.GetExecutionResult(this);
@@ -217,13 +226,19 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
             var entryInput = entry.GetInputWithId(this);
             foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entryInput.Input))
             {
-                var (minimizedResult, _, id) = this.Execute(minimizedInput);
-                if (AreEqualExecutions(referenceResult, minimizedResult))
+                var minimizedInputWithId = this.IdentifyInput(minimizedInput);
+                var executionResult = this.Execute(minimizedInputWithId);
+                if (AreEqualExecutions(referenceResult, executionResult))
                 {
                     // We found an equivalent execution, replace entry
-                    this.Tracer.MinimizationFound(entryInput, new(id, minimizedInput));
-                    entry = this.MakeQueueEntry(minimizedInput, minimizedResult);
+                    this.Tracer.MinimizationFound(entryInput, minimizedInputWithId);
+                    entry = this.MakeQueueEntry(minimizedInputWithId, executionResult);
                     goto found;
+                }
+                else if (this.AddToQueueIfInteresting(minimizedInputWithId, executionResult))
+                {
+                    // New mutation found by minimization, notify tracer
+                    this.Tracer.MutationFound(entryInput, minimizedInputWithId);
                 }
             }
             // No minimization found
@@ -233,66 +248,114 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         return entry;
     }
 
+    /// <summary>
+    /// Attempts to mutate the input, using the registered <see cref="InputMutator"/>.
+    /// All mutations that are deemed interesting are added to the queue.
+    /// </summary>
+    /// <param name="entry">The entry to mutate.</param>
     private void Mutate(QueueEntry entry)
     {
-        var entryInput = entry.GetInputWithId(this);
-        foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entryInput.Input))
+        var entryInputWithId = entry.GetInputWithId(this);
+        foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entryInputWithId.Input))
         {
-            var (_, isInteresting, id) = this.Execute(mutatedInput);
-            if (isInteresting)
+            var mutatedInputWithId = this.IdentifyInput(mutatedInput);
+            var executionResult = this.Execute(mutatedInputWithId);
+            // If the mutation is interesting, add it to the queue
+            if (this.AddToQueueIfInteresting(mutatedInputWithId, executionResult))
             {
-                this.Tracer.MutationFound(entryInput, new(id, mutatedInput));
+                // New mutation found, notify tracer
+                this.Tracer.MutationFound(entryInputWithId, mutatedInputWithId);
             }
         }
     }
 
-    private (ExecutionResult Result, bool IsInteresting, int Id) Execute(TInput input, int existingId = -1)
+    /// <summary>
+    /// Executes the fuzzed target with the given input.
+    /// </summary>
+    /// <param name="inputWithId">The input to feed to the target.</param>
+    /// <returns>The result of the execution.</returns>
+    private ExecutionResult Execute(InputWithId<TInput> inputWithId)
     {
-        var targetInfo = this.TargetExecutor.Initialize(input);
+        // Prepare an execution target
+        var targetInfo = this.TargetExecutor.Initialize(inputWithId.Input);
+        // Clear previous coverage info
         this.CoverageReader.Clear(targetInfo);
-        var inputId = existingId == -1 ? this.GetNextInputId() : existingId;
-        var inputWithId = new InputWithId<TInput>(inputId, input);
+        // Notify tracer about the start
         this.Tracer.InputFuzzStarted(inputWithId, targetInfo);
+        // Actually execute
         var faultResult = this.FaultDetector.Detect(this.TargetExecutor, targetInfo);
-        if (faultResult.IsFaulted)
-        {
-            this.Tracer.InputFaulted(inputWithId, faultResult);
-        }
+        // Read out coverage
         var coverage = this.CoverageReader.Read(targetInfo);
+        // Notify tracer about the end
         this.Tracer.InputFuzzEnded(inputWithId, targetInfo, coverage);
+        // Notify fault, if needed
+        if (faultResult.IsFaulted) this.Tracer.InputFaulted(inputWithId, faultResult);
+        // Compress coverage, keeping around the original is expensive
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
-        var isInteresting = this.IsInteresting(compressedCoverage);
-        var executionResult = new ExecutionResult(compressedCoverage, faultResult);
-        // If existing id was not -1, the input was already a queue entry, don't requeue
-        if (existingId == -1 && isInteresting)
-        {
-            var entry = this.MakeQueueEntry(input, executionResult, id: inputId);
-            this.inputQueue.Add(entry);
-            this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
-        }
-        return (executionResult, isInteresting, inputId);
+        // Done
+        return new ExecutionResult(compressedCoverage, faultResult);
     }
 
-    private QueueEntry MakeQueueEntry(TInput input, ExecutionResult? executionResult = null, int id = -1)
+    /// <summary>
+    /// Adds the input to the queue, if the coverage is interesting.
+    /// </summary>
+    /// <param name="queueEntry">The queue entry to add.</param>
+    /// <returns>True, if the entry was added, false otherwise.</returns>
+    private bool AddToQueueIfInteresting(InputWithId<TInput> inputWithId, ExecutionResult executionResult)
     {
-        if (id == -1) id = this.GetNextInputId();
+        // Check, if the coverage is interesting
+        if (!this.IsInteresting(executionResult.Coverage)) return false;
+
+        // If is, add to queue
+        var queueEntry = this.MakeQueueEntry(inputWithId, executionResult);
+        this.inputQueue.Add(queueEntry);
+        this.Tracer.InputsEnqueued([inputWithId]);
+        return true;
+    }
+
+    /// <summary>
+    /// Creates a queue entry from the given input, compressing it if needed.
+    /// </summary>
+    /// <param name="inputWithId">The input to create the entry from.</param>
+    /// <param name="executionResult">The execution result to add to the entry.</param>
+    /// <returns>The created queue entry.</returns>
+    private QueueEntry MakeQueueEntry(InputWithId<TInput> inputWithId, ExecutionResult? executionResult = null)
+    {
+        // TODO: Factor out into settings
         if (this.inputQueue.Count > 5000)
         {
-            // Compress
-            var compressedInput = this.InputCompressor.Compress(input);
-            return new QueueEntry(id, compressedInput, executionResult);
+            // Need to compress the input
+            var compressedInput = this.InputCompressor.Compress(inputWithId.Input);
+            return new QueueEntry(inputWithId.Id, compressedInput, executionResult);
         }
         else
         {
-            // Don't compress
-            return new QueueEntry(id, input, executionResult);
+            return new QueueEntry(inputWithId.Id, inputWithId.Input, executionResult);
         }
     }
 
-    // We deem an input interesting, if it has not been seen before in terms of coverage
+    /// <summary>
+    /// Adds a new identifier to the given input.
+    /// </summary>
+    /// <param name="input">The input to identify.</param>
+    /// <returns>The input wrapped with an identifier.</returns>
+    private InputWithId<TInput> IdentifyInput(TInput input) => new(this.GetNextInputId(), input);
+
+    /// <summary>
+    /// Checks, if the given coverage is determined to be interesting, which currently means that we haven't seen it before.
+    /// Calling this method will add the coverage to the set of seen coverages.
+    /// </summary>
+    /// <param name="coverage">The coverage to check.</param>
+    /// <returns>True, if the coverage is interesting, false otherwise.</returns>
     private bool IsInteresting(TCoverage coverage) => this.seenCoverages.Add(coverage);
 
-    // We deem them equal if they cover the same code and have the same fault result
+    /// <summary>
+    /// Checks, if two executions are equal. We deem them equal if they cover the same code and have the same fault result.
+    /// This is used for input equivalence checking, like for minimization.
+    /// </summary>
+    /// <param name="a">The first execution.</param>
+    /// <param name="b">The second execution.</param>
+    /// <returns>True, if the executions are equal, false otherwise.</returns>
     private static bool AreEqualExecutions(ExecutionResult a, ExecutionResult b) =>
            EqualityComparer<TCoverage>.Default.Equals(a.Coverage, b.Coverage)
         && FaultEqualityComparer.Instance.Equals(a.FaultResult, b.FaultResult);

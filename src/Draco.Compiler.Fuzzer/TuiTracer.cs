@@ -13,19 +13,19 @@ namespace Draco.Compiler.Fuzzer;
 
 internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 {
-    private sealed class InputQueueItem(SyntaxTree input, int index)
+    private sealed class InputQueueItem(InputWithId<SyntaxTree> input)
     {
-        public SyntaxTree Input { get; } = input;
-        public int Index { get; } = index;
+        public SyntaxTree Input => input.Input;
+        public int Id => input.Id;
 
-        private readonly string labelString = $"Input {index}";
+        private readonly string labelString = $"Input {input.Id}";
 
         public override string ToString() => this.labelString;
     }
 
-    private sealed class FaultItem(SyntaxTree input, FaultResult fault)
+    private sealed class FaultItem(InputWithId<SyntaxTree> input, FaultResult fault)
     {
-        public SyntaxTree Input { get; } = input;
+        public SyntaxTree Input { get; } = input.Input;
         public FaultResult Fault { get; } = fault;
 
         public override string ToString()
@@ -75,7 +75,6 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     private readonly StatusItem seedStatusItem;
 
     // Counters
-    private int inputQueueItemCounter = 0;
     private int fuzzedInputCounter = 0;
     private int minimizedInputCounter = 0;
     private int mutatedInputCounter = 0;
@@ -329,7 +328,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
 
     public void InputsEnqueued(IEnumerable<InputWithId<SyntaxTree>> inputs)
     {
-        foreach (var item in inputs) this.inputQueueList.Add(new(item, this.inputQueueItemCounter++));
+        foreach (var item in inputs) this.inputQueueList.Add(new(item));
 
         this.inputQueueFrameView.Title = GetInputQueueFrameTitle(this.inputQueueList.Count);
     }
@@ -339,7 +338,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.minimizedInputCounter = 0;
         this.mutatedInputCounter = 0;
 
-        var itemIndex = this.inputQueueList.FindIndex(item => item.Input == input);
+        var itemIndex = this.inputQueueList.FindIndex(item => item.Id == input.Id);
         if (itemIndex >= 0) this.inputQueueList.RemoveAt(itemIndex);
 
         this.currentInputFrameView.Title = GetCurrentInputFrameTitle();

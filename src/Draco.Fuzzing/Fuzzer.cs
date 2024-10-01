@@ -218,11 +218,11 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
             var entryInput = entry.GetInputWithId(this);
             foreach (var minimizedInput in this.InputMinimizer.Minimize(this.Random, entryInput.Input))
             {
-                var (minimizedResult, _) = this.Execute(minimizedInput);
+                var (minimizedResult, _, id) = this.Execute(minimizedInput);
                 if (AreEqualExecutions(referenceResult, minimizedResult))
                 {
                     // We found an equivalent execution, replace entry
-                    lock (this.tracerSync) this.Tracer.MinimizationFound(entryInput, minimizedInput);
+                    lock (this.tracerSync) this.Tracer.MinimizationFound(entryInput, new(id, minimizedInput));
                     entry = this.MakeQueueEntry(minimizedInput, minimizedResult);
                     goto found;
                 }
@@ -239,15 +239,15 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         var entryInput = entry.GetInputWithId(this);
         foreach (var mutatedInput in this.InputMutator.Mutate(this.Random, entryInput.Input))
         {
-            var (_, isInteresting) = this.Execute(mutatedInput);
+            var (_, isInteresting, id) = this.Execute(mutatedInput);
             if (isInteresting)
             {
-                lock (this.tracerSync) this.Tracer.MutationFound(entryInput, mutatedInput);
+                lock (this.tracerSync) this.Tracer.MutationFound(entryInput, new(id, mutatedInput));
             }
         }
     }
 
-    private (ExecutionResult Result, bool IsInteresting) Execute(TInput input, int existingId = -1)
+    private (ExecutionResult Result, bool IsInteresting, int Id) Execute(TInput input, int existingId = -1)
     {
         var targetInfo = this.TargetExecutor.Initialize(input);
         this.CoverageReader.Clear(targetInfo);
@@ -271,7 +271,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
             this.inputQueue.Add(entry);
             lock (this.tracerSync) this.Tracer.InputsEnqueued([entry.GetInputWithId(this)]);
         }
-        return (executionResult, isInteresting);
+        return (executionResult, isInteresting, inputId);
     }
 
     private QueueEntry MakeQueueEntry(TInput input, ExecutionResult? executionResult = null, int id = -1)

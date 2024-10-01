@@ -23,11 +23,16 @@ namespace Draco.Fuzzing;
 public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     where TCoverage : notnull
 {
-    // Minimal result info of an execution
+    /// <summary>
+    /// Minimal information about an ececution.
+    /// </summary>
+    /// <param name="Coverage">The compressed coverage data.</param>
+    /// <param name="FaultResult">The fault result of the execution.</param>
     private readonly record struct ExecutionResult(TCoverage Coverage, FaultResult FaultResult);
 
-    // Initial inputs have no coverage data, so the entry needs to handle the case where coverage is not yet present
-    // and we fill it out later
+    /// <summary>
+    /// A queue entry that might never have been ran before, or might have been compressed.
+    /// </summary>
     private sealed class QueueEntry
     {
         private readonly int inputId;

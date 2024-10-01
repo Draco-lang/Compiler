@@ -71,9 +71,9 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     public int Seed { get; }
 
     /// <summary>
-    /// The maximum number of parallelism.
+    /// The maximum number of parallelism. -1 means unlimited.
     /// </summary>
-    public int? MaxDegreeOfParallelism { get; }
+    public int MaxDegreeOfParallelism { get; }
 
     /// <summary>
     /// A shared random number generator.
@@ -124,8 +124,11 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private readonly object tracerSync = new();
 
-    public Fuzzer(int? seed = null, int? maxDegreeOfParallelism = null)
+    public Fuzzer(int? seed = null, int maxDegreeOfParallelism = -1)
     {
+        ArgumentOutOfRangeException.ThrowIfZero(maxDegreeOfParallelism, nameof(maxDegreeOfParallelism));
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxDegreeOfParallelism, -1, nameof(maxDegreeOfParallelism));
+
         this.Seed = seed ?? Random.Shared.Next();
         this.MaxDegreeOfParallelism = maxDegreeOfParallelism;
         this.Random = new Random(this.Seed);
@@ -165,7 +168,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>
         var parallelOptions = new ParallelOptions
         {
             CancellationToken = cancellationToken,
-            MaxDegreeOfParallelism = this.MaxDegreeOfParallelism ?? -1,
+            MaxDegreeOfParallelism = this.MaxDegreeOfParallelism,
         };
         var limitedPartitioner = Partitioner.Create(
             this.inputQueue.GetConsumingEnumerable(cancellationToken),

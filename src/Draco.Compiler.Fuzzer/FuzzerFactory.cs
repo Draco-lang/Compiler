@@ -89,7 +89,7 @@ internal static class FuzzerFactory
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-        return new(seed: seed, maxDegreeOfParallelism: maxParallelism)
+        return new(seed: seed, maxDegreeOfParallelism: maxParallelism ?? -1)
         {
             CoverageReader = CoverageReader,
             CoverageCompressor = CoverageCompressor,

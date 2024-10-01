@@ -1,7 +1,7 @@
 using Draco.Fuzzing.Tracing;
 using Terminal.Gui;
 
-namespace Draco.Fuzzing.Tui;
+namespace Draco.Fuzzing.Tui.Addons;
 
 /// <summary>
 /// Addon for a fuzzer.

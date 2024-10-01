@@ -54,11 +54,9 @@ public abstract class FuzzerWindow : Window
             .OfType<StatusItem>()
             .ToArray());
 
-        // Add all views to the window
-        this.Add(laidOutViews
-            .Prepend(menuBar)
-            .Append(statusBar)
-            .ToArray());
+        // Add all views
+        this.Add(laidOutViews.ToArray());
+        Application.Top.Add(menuBar, this, statusBar);
     }
 
     protected abstract IEnumerable<View> Layout(IReadOnlyDictionary<string, View> views);

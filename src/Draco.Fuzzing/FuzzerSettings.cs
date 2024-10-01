@@ -10,7 +10,7 @@ public sealed record class FuzzerSettings
     /// <summary>
     /// The default settings for an in-process fuzzer.
     /// </summary>
-    public static FuzzerSettings DefaultInProcess { get; } = new() { MaxDegreeOfParallelism = -1 };
+    public static FuzzerSettings DefaultInProcess { get; } = new() { MaxDegreeOfParallelism = 1 };
 
     /// <summary>
     /// The default settings for an out-of-process fuzzer.

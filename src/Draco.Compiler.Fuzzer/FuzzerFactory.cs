@@ -51,7 +51,10 @@ internal static class FuzzerFactory
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-        return new(seed: seed, maxDegreeOfParallelism: 1)
+        var settings = seed is null
+            ? FuzzerSettings.DefaultInProcess
+            : FuzzerSettings.DefaultInProcess with { Seed = seed.Value };
+        return new(settings)
         {
             CoverageCompressor = CoverageCompressor,
             CoverageReader = CoverageReader,
@@ -89,7 +92,10 @@ internal static class FuzzerFactory
         }
 
         var instrumentedAssembly = InstrumentedAssembly.FromWeavedAssembly(typeof(Compilation).Assembly);
-        return new(seed: seed, maxDegreeOfParallelism: maxParallelism ?? -1)
+        var settings = seed is null
+            ? FuzzerSettings.DefaultOutOfProcess
+            : FuzzerSettings.DefaultOutOfProcess with { Seed = seed.Value, MaxDegreeOfParallelism = maxParallelism ?? -1 };
+        return new(settings)
         {
             CoverageReader = CoverageReader,
             CoverageCompressor = CoverageCompressor,

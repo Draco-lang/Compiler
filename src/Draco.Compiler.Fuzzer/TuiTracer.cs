@@ -323,7 +323,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
     public void SetFuzzer(Fuzzer<SyntaxTree, string, int> fuzzer)
     {
         this.Fuzzer = fuzzer;
-        this.seedStatusItem.Title = GetSeedStatusBarTitle(fuzzer.Seed);
+        this.seedStatusItem.Title = GetSeedStatusBarTitle(fuzzer.Settings.Seed);
     }
 
     public void InputsEnqueued(IEnumerable<InputWithId<SyntaxTree>> inputs)
@@ -456,7 +456,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         var targetPath = Path.Join(dialog.DirectoryPath.ToString()!, dialog.FileName.ToString()!);
         var faults = $"""
             //////////////////////////////////////////
-            // Seed: {this.Fuzzer?.Seed}
+            // Seed: {this.Fuzzer?.Settings.Seed}
             //////////////////////////////////////////
 
             {string.Join(Environment.NewLine, this.faultList.Select(FormatFaultForExport))}

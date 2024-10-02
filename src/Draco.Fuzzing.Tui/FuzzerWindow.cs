@@ -14,7 +14,7 @@ public abstract class FuzzerWindow : Window, IFuzzerApplication
     public IFuzzer Fuzzer { get; }
 
     private readonly EventTracer<object?> tracer;
-    private readonly Dictionary<string, IFuzzerAddon> addons = [];
+    private readonly List<IFuzzerAddon> addons = [];
 
     private FuzzerWindow(IFuzzer fuzzer, EventTracer<object?> tracer)
     {
@@ -22,13 +22,13 @@ public abstract class FuzzerWindow : Window, IFuzzerApplication
         this.tracer = tracer;
     }
 
-    public IFuzzerAddon GetAddon(string name) => this.addons[name];
+    public IFuzzerAddon GetAddon(string name) => this.addons.First(a => a.Name == name);
 
     /// <summary>
     /// Adds an addon to the fuzzer window.
     /// </summary>
     /// <param name="addon">The addon to add.</param>
-    public void AddAddon(IFuzzerAddon addon) => this.addons.Add(addon.Name, addon);
+    public void AddAddon(IFuzzerAddon addon) => this.addons.Add(addon);
 
     /// <summary>
     /// Initializes the fuzzer window with all addons registered.
@@ -39,10 +39,10 @@ public abstract class FuzzerWindow : Window, IFuzzerApplication
         this.Border = new();
 
         // First we register all addons
-        foreach (var addon in this.addons) addon.Value.Register(this, this.tracer);
+        foreach (var addon in this.addons) addon.Register(this, this.tracer);
 
         // Create a dictionary of views
-        var views = this.addons.Values
+        var views = this.addons
             .Select(addon => (Name: addon.Name, View: addon.CreateView()))
             .Where(pair => pair.View is not null)
             .ToDictionary(view => view.Name, view => view.View!);
@@ -54,7 +54,7 @@ public abstract class FuzzerWindow : Window, IFuzzerApplication
         var menuBar = this.ConstructMenuBar();
 
         // Status-bar
-        var statusBar = new StatusBar(this.addons.Values
+        var statusBar = new StatusBar(this.addons
             .Select(addon => addon.CreateStatusItem())
             .OfType<StatusItem>()
             .ToArray());
@@ -74,7 +74,7 @@ public abstract class FuzzerWindow : Window, IFuzzerApplication
     private MenuBar ConstructMenuBar()
     {
         // Constructing the menu-bar is quite complex as it requires recursive merging of menu items
-        return new(this.addons.Values
+        return new(this.addons
             .Select(addon => addon.CreateMenuBarItem())
             .OfType<MenuBarItem>()
             .GroupBy(item => item.Title)

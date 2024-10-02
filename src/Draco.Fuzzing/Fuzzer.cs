@@ -41,6 +41,11 @@ public interface IFuzzer
 public interface IFuzzer<TInput> : IFuzzer
 {
     /// <summary>
+    /// The tracer to use.
+    /// </summary>
+    public ITracer<TInput> Tracer { get; }
+
+    /// <summary>
     /// Enqueues the given input into the fuzzer.
     /// </summary>
     /// <param name="input">The input to enqueue.</param>
@@ -165,9 +170,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
     /// </summary>
     public required IFaultDetector FaultDetector { get; init; }
 
-    /// <summary>
-    /// The tracer to use.
-    /// </summary>
     public required ITracer<TInput> Tracer { get; init; }
 
     private readonly BlockingCollection<QueueEntry> inputQueue = new(new ConcurrentQueue<QueueEntry>());

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Fuzzing.Tracing;
@@ -12,14 +13,31 @@ namespace Draco.Fuzzing.Tui;
 public abstract class FuzzerWindow : Window, IFuzzerApplication
 {
     public IFuzzer Fuzzer { get; }
+    public EventTracer<object?> Tracer { get; }
 
-    private readonly EventTracer<object?> tracer;
     private readonly List<IFuzzerAddon> addons = [];
 
-    private FuzzerWindow(IFuzzer fuzzer, EventTracer<object?> tracer)
+    protected FuzzerWindow(IFuzzer fuzzer)
     {
         this.Fuzzer = fuzzer;
-        this.tracer = tracer;
+        this.Tracer = new EventTracer<object?>();
+
+        // We essentially need to do this, but because it's generic, we do it with reflection
+        // var lockTracer = new LockSyncTracer<TInput>(new ObjectTracer<TInput>(innerTracer));
+        // fuzzer.Tracer = lockTracer;
+
+        var inputType = fuzzer
+            .GetType()
+            .FindInterfaces((type, _) => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IFuzzer<>), null)
+            .Single()
+            .GetGenericArguments()[0];
+        var objectTracerType = typeof(ObjectTracer<>).MakeGenericType(inputType);
+        var lockSyncTracerType = typeof(LockSyncTracer<>).MakeGenericType(inputType);
+        var fuzzerTracerProperty = fuzzer.GetType().GetProperty(nameof(IFuzzer<object>.Tracer))!;
+
+        var objectTracer = Activator.CreateInstance(objectTracerType, this.Tracer);
+        var lockSyncTracer = Activator.CreateInstance(lockSyncTracerType, objectTracer);
+        fuzzerTracerProperty.SetValue(fuzzer, lockSyncTracer);
     }
 
     public IFuzzerAddon GetAddon(string name) => this.addons.First(a => a.Name == name);
@@ -39,7 +57,7 @@ public abstract class FuzzerWindow : Window, IFuzzerApplication
         this.Border = new();
 
         // First we register all addons
-        foreach (var addon in this.addons) addon.Register(this, this.tracer);
+        foreach (var addon in this.addons) addon.Register(this);
 
         // Create a dictionary of views
         var views = this.addons

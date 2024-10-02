@@ -33,7 +33,7 @@ public abstract class FuzzerAddon : IFuzzerAddon
         }
     }
 
-    public virtual void Register(IFuzzerApplication application, EventTracer<object?> tracer)
+    public virtual void Register(IFuzzerApplication application)
     {
         this.application = application;
     }

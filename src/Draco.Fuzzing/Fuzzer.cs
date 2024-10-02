@@ -43,7 +43,7 @@ public interface IFuzzer<TInput> : IFuzzer
     /// <summary>
     /// The tracer to use.
     /// </summary>
-    public ITracer<TInput>? Tracer { get; }
+    public ITracer<TInput>? Tracer { get; set; }
 
     /// <summary>
     /// Enqueues the given input into the fuzzer.

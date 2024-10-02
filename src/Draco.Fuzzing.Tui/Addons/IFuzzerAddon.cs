@@ -17,8 +17,7 @@ public interface IFuzzerAddon
     /// Registers the addon onto a tracer.
     /// </summary>
     /// <param name="application">The application to register onto.</param>
-    /// <param name="tracer">The tracer to register onto.</param>
-    public void Register(IFuzzerApplication application, EventTracer<object?> tracer);
+    public void Register(IFuzzerApplication application);
 
     /// <summary>
     /// Creates a view for the addon, if applicable.

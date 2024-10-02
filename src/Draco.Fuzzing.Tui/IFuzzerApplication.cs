@@ -1,3 +1,4 @@
+using Draco.Fuzzing.Tracing;
 using Draco.Fuzzing.Tui.Addons;
 
 namespace Draco.Fuzzing.Tui;
@@ -11,6 +12,11 @@ public interface IFuzzerApplication
     /// The fuzzer being visualized.
     /// </summary>
     public IFuzzer Fuzzer { get; }
+
+    /// <summary>
+    /// The tracer for the fuzzer.
+    /// </summary>
+    public EventTracer<object?> Tracer { get; }
 
     /// <summary>
     /// Gets an addon by name.

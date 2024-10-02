@@ -11,6 +11,49 @@ using Draco.Fuzzing.Utilities;
 namespace Draco.Fuzzing;
 
 /// <summary>
+/// A nongeneric fuzzer interface.
+/// </summary>
+public interface IFuzzer
+{
+    /// <summary>
+    /// Enqueues the given input into the fuzzer.
+    /// </summary>
+    /// <param name="input">The input to enqueue.</param>
+    public void Enqueue(object? input);
+
+    /// <summary>
+    /// Enqueues a range of inputs into the fuzzer.
+    /// </summary>
+    /// <param name="inputs">The inputs to enqueue.</param>
+    public void EnqueueRange(IEnumerable<object?> inputs);
+
+    /// <summary>
+    /// Runs the fuzzing loop.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
+    public void Run(CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// A generic fuzzer interface.
+/// </summary>
+/// <typeparam name="TInput">The type of the input data.</typeparam>
+public interface IFuzzer<TInput> : IFuzzer
+{
+    /// <summary>
+    /// Enqueues the given input into the fuzzer.
+    /// </summary>
+    /// <param name="input">The input to enqueue.</param>
+    public void Enqueue(TInput input);
+
+    /// <summary>
+    /// Enqueues a range of inputs into the fuzzer.
+    /// </summary>
+    /// <param name="inputs">The inputs to enqueue.</param>
+    public void EnqueueRange(IEnumerable<TInput> inputs);
+}
+
+/// <summary>
 /// A fuzzer loop, which generates test cases and runs them against a target.
 /// The method is inspired by the famous AFL fuzzer, which is basically doing 3 steps in a loop:
 ///  1. Load a test case from the queue
@@ -20,7 +63,7 @@ namespace Draco.Fuzzing;
 /// <typeparam name="TInput">The type of the input data.</typeparam>
 /// <typeparam name="TCompressedInput">The type of the compressed input data.</typeparam>
 /// <typeparam name="TCoverage">The type of the compressed coverage data.</typeparam>
-public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings settings)
+public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings settings) : IFuzzer<TInput>
     where TCoverage : notnull
 {
     /// <summary>
@@ -130,6 +173,9 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
     private readonly BlockingCollection<QueueEntry> inputQueue = new(new ConcurrentQueue<QueueEntry>());
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
     private int inputIdCounter = 0;
+
+    void IFuzzer.Enqueue(object? input) => this.Enqueue((TInput)input!);
+    void IFuzzer.EnqueueRange(IEnumerable<object?> inputs) => this.EnqueueRange(inputs.Cast<TInput>());
 
     /// <summary>
     /// Enqueues the given input into the fuzzer.

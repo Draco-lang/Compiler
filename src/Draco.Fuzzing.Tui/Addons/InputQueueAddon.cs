@@ -20,12 +20,19 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
     }
 
     /// <summary>
+    /// The maximum number of items to visualize in the queue.
+    /// -1 means no limit.
+    /// </summary>
+    public int MaxVisualizedItems { get; set; } = -1;
+
+    /// <summary>
     /// A function to get the label of an input.
     /// </summary>
     public Func<InputWithId<TInput>, string>? GetLabel { get; set; }
 
     // State
     private readonly List<Item> items = [];
+    private readonly List<Item> nonVisualizedItems = [];
 
     // UI
     private readonly FrameView inputsFrameView;
@@ -54,28 +61,58 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
     {
         application.Tracer.OnInputsEnqueued += (sender, args) =>
         {
-            var getLabel = this.GetLabel ?? (inputWithId => $"Input {inputWithId.Id}");
+            var getLabel = this.GetLabel ?? GetDefaultLabel;
             foreach (var input in args.Inputs)
             {
                 var unErasedInput = UnErase(input);
                 var item = new Item(unErasedInput, getLabel(unErasedInput));
-                this.items.Add(item);
+                this.AddItem(item);
             }
             this.UpdateFrameTitle();
         };
         application.Tracer.OnInputDequeued += (sender, args) =>
         {
-            var itemIndex = this.items.FindIndex(item => item.Id == args.Input.Id);
-            if (itemIndex == -1) return;
-            this.items.RemoveAt(itemIndex);
+            this.RemoveItem(args.Input.Id);
             this.UpdateFrameTitle();
         };
     }
 
     public override View CreateView() => this.inputsFrameView;
 
-    private void UpdateFrameTitle() => this.inputsFrameView.Title = $"Inputs ({this.items.Count})";
+    private void AddItem(Item item)
+    {
+        if (this.MaxVisualizedItems == -1 || this.items.Count < this.MaxVisualizedItems)
+        {
+            this.items.Add(item);
+        }
+        else
+        {
+            this.nonVisualizedItems.Add(item);
+        }
+    }
+
+    private bool RemoveItem(int id)
+    {
+        var itemIndex = this.items.FindIndex(item => item.Id == id);
+        if (itemIndex != -1)
+        {
+            this.items.RemoveAt(itemIndex);
+            return true;
+        }
+        var nonVisualizedItemIndex = this.nonVisualizedItems.FindIndex(item => item.Id == id);
+        if (nonVisualizedItemIndex != -1)
+        {
+            this.nonVisualizedItems.RemoveAt(nonVisualizedItemIndex);
+            return true;
+        }
+        return false;
+    }
+
+    private void UpdateFrameTitle() =>
+        this.inputsFrameView.Title = $"Inputs ({this.items.Count + this.nonVisualizedItems.Count})";
 
     private static InputWithId<TInput> UnErase(InputWithId<object?> inputWithId) =>
         new(inputWithId.Id, (TInput)inputWithId.Input!);
+
+    private static string GetDefaultLabel(InputWithId<TInput> input) => $"Input {input.Id}";
 }

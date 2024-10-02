@@ -1,12 +1,22 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api.Syntax;
+using Draco.Fuzzing;
+using Draco.Fuzzing.Tui;
+using Draco.Fuzzing.Tui.Addons;
 using Terminal.Gui;
 
 namespace Draco.Compiler.Fuzzer;
+
+internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
+    : FuzzerWindow(fuzzer)
+{
+    protected override IEnumerable<View> Layout(IReadOnlyDictionary<string, View> views) => [];
+}
 
 internal static class Program
 {
@@ -24,6 +34,23 @@ internal static class Program
 
     private static void Main(string[] args)
     {
+        var settings = ParseSettings(args);
+        var runMode = GetRunMode(settings);
+        var fuzzer = runMode == RunMode.InProcess
+            ? FuzzerFactory.CreateInProcess(settings.Seed)
+            : FuzzerFactory.CreateOutOfProcess(settings.Seed, settings.MaxDegreeOfParallelism);
+
+        Application.Init();
+        var window = new CompilerFuzzerWindow(fuzzer);
+        window.AddAddon(new ImportInputAddon<SyntaxTree>
+        {
+            Extensions = [".draco"],
+            Parse = text => SyntaxTree.Parse(text),
+        });
+        window.Initialize();
+        Application.Run(Application.Top);
+
+#if false
         var settings = ParseSettings(args);
 
         Application.Init();
@@ -55,6 +82,7 @@ internal static class Program
             return true;
         });
         Application.Run(Application.Top);
+#endif
     }
 
     private static RunMode GetRunMode(Settings settings)

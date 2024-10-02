@@ -8,6 +8,11 @@ namespace Draco.Fuzzing.Tui;
 public interface IFuzzerApplication
 {
     /// <summary>
+    /// The fuzzer being visualized.
+    /// </summary>
+    public IFuzzer Fuzzer { get; }
+
+    /// <summary>
     /// Gets an addon by name.
     /// </summary>
     /// <typeparam name="TAddon">The type of the addon.</typeparam>

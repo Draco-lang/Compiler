@@ -11,11 +11,14 @@ namespace Draco.Fuzzing.Tui;
 /// </summary>
 public abstract class FuzzerWindow : Window, IFuzzerApplication
 {
+    public IFuzzer Fuzzer { get; }
+
     private readonly EventTracer<object?> tracer;
     private readonly Dictionary<string, IFuzzerAddon> addons = [];
 
-    private FuzzerWindow(EventTracer<object?> tracer)
+    private FuzzerWindow(IFuzzer fuzzer, EventTracer<object?> tracer)
     {
+        this.Fuzzer = fuzzer;
         this.tracer = tracer;
     }
 

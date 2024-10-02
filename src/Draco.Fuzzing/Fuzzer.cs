@@ -43,7 +43,7 @@ public interface IFuzzer<TInput> : IFuzzer
     /// <summary>
     /// The tracer to use.
     /// </summary>
-    public ITracer<TInput> Tracer { get; }
+    public ITracer<TInput>? Tracer { get; }
 
     /// <summary>
     /// Enqueues the given input into the fuzzer.
@@ -170,7 +170,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
     /// </summary>
     public required IFaultDetector FaultDetector { get; init; }
 
-    public required ITracer<TInput> Tracer { get; init; }
+    public ITracer<TInput>? Tracer { get; set; }
 
     private readonly BlockingCollection<QueueEntry> inputQueue = new(new ConcurrentQueue<QueueEntry>());
     private readonly ConcurrentHashSet<TCoverage> seenCoverages = [];
@@ -185,7 +185,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         var entry = this.MakeQueueEntry(inputWithId);
         this.inputQueue.Add(entry);
         // Notify tracer
-        this.Tracer.InputsEnqueued([inputWithId]);
+        this.Tracer?.InputsEnqueued([inputWithId]);
     }
 
     public void EnqueueRange(IEnumerable<TInput> inputs)
@@ -200,7 +200,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         var inputsWithId = entries
             .Select(e => e.GetInputWithId(this))
             .ToList();
-        this.Tracer.InputsEnqueued(inputsWithId);
+        this.Tracer?.InputsEnqueued(inputsWithId);
     }
 
     public void Run(CancellationToken cancellationToken = default)
@@ -209,7 +209,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
         this.TargetExecutor.GlobalInitializer();
-        this.Tracer.FuzzerStarted();
+        this.Tracer?.FuzzerStarted();
         var parallelOptions = new ParallelOptions
         {
             CancellationToken = cancellationToken,
@@ -220,7 +220,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
             EnumerablePartitionerOptions.NoBuffering);
         Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
         {
-            this.Tracer.InputDequeued(entry.GetInputWithId(this));
+            this.Tracer?.InputDequeued(entry.GetInputWithId(this));
 
             // We want to minimize the input first
             entry = this.Minimize(entry);
@@ -233,7 +233,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
             // And we want to mutate the minimized input
             this.Mutate(entry);
         });
-        this.Tracer.FuzzerFinished();
+        this.Tracer?.FuzzerFinished();
     }
 
     /// <summary>
@@ -255,14 +255,14 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
                 if (AreEqualExecutions(referenceResult, executionResult))
                 {
                     // We found an equivalent execution, replace entry
-                    this.Tracer.MinimizationFound(entryInput, minimizedInputWithId);
+                    this.Tracer?.MinimizationFound(entryInput, minimizedInputWithId);
                     entry = this.MakeQueueEntry(minimizedInputWithId, executionResult);
                     goto found;
                 }
                 else if (this.AddToQueueIfInteresting(minimizedInputWithId, executionResult))
                 {
                     // New mutation found by minimization, notify tracer
-                    this.Tracer.MutationFound(entryInput, minimizedInputWithId);
+                    this.Tracer?.MutationFound(entryInput, minimizedInputWithId);
                 }
             }
             // No minimization found
@@ -288,7 +288,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
             if (this.AddToQueueIfInteresting(mutatedInputWithId, executionResult))
             {
                 // New mutation found, notify tracer
-                this.Tracer.MutationFound(entryInputWithId, mutatedInputWithId);
+                this.Tracer?.MutationFound(entryInputWithId, mutatedInputWithId);
             }
         }
     }
@@ -305,15 +305,15 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         // Clear previous coverage info
         this.CoverageReader.Clear(targetInfo);
         // Notify tracer about the start
-        this.Tracer.InputFuzzStarted(inputWithId, targetInfo);
+        this.Tracer?.InputFuzzStarted(inputWithId, targetInfo);
         // Actually execute
         var faultResult = this.FaultDetector.Detect(this.TargetExecutor, targetInfo);
         // Read out coverage
         var coverage = this.CoverageReader.Read(targetInfo);
         // Notify tracer about the end
-        this.Tracer.InputFuzzEnded(inputWithId, targetInfo, coverage);
+        this.Tracer?.InputFuzzEnded(inputWithId, targetInfo, coverage);
         // Notify fault, if needed
-        if (faultResult.IsFaulted) this.Tracer.InputFaulted(inputWithId, faultResult);
+        if (faultResult.IsFaulted) this.Tracer?.InputFaulted(inputWithId, faultResult);
         // Compress coverage, keeping around the original is expensive
         var compressedCoverage = this.CoverageCompressor.Compress(coverage);
         // Done
@@ -333,7 +333,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         // If is, add to queue
         var queueEntry = this.MakeQueueEntry(inputWithId, executionResult);
         this.inputQueue.Add(queueEntry);
-        this.Tracer.InputsEnqueued([inputWithId]);
+        this.Tracer?.InputsEnqueued([inputWithId]);
         return true;
     }
 

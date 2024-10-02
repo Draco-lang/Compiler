@@ -30,6 +30,11 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
     /// </summary>
     public Func<InputWithId<TInput>, string>? GetLabel { get; set; }
 
+    /// <summary>
+    /// A function to convert an input to a string visualization.
+    /// </summary>
+    public Func<TInput, string>? InputToString { get; set; }
+
     // State
     private readonly List<Item> items = [];
     private readonly List<Item> nonVisualizedItems = [];
@@ -49,8 +54,17 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
         this.selectedInputTextView = new()
         {
             ReadOnly = true,
+            X = Pos.Right(this.inputsListView),
             Width = Dim.Fill(),
             Height = Dim.Fill(),
+        };
+        this.inputsListView.SelectedItemChanged += e =>
+        {
+            var selectedItem = e.Value as Item;
+            var inputToString = this.InputToString ?? InputToStringDefault;
+            this.selectedInputTextView.Text = selectedItem is null
+                ? inputToString(default!)
+                : inputToString(selectedItem.Input);
         };
         this.inputsFrameView = new();
         this.inputsFrameView.Add(this.inputsListView, this.selectedInputTextView);
@@ -127,4 +141,6 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
         new(inputWithId.Id, (TInput)inputWithId.Input!);
 
     private static string GetDefaultLabel(InputWithId<TInput> input) => $"Input {input.Id}";
+
+    private static string InputToStringDefault(TInput input) => input?.ToString() ?? string.Empty;
 }

@@ -15,7 +15,13 @@ namespace Draco.Compiler.Fuzzer;
 internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
     : FuzzerWindow(fuzzer)
 {
-    protected override IEnumerable<View> Layout(IReadOnlyDictionary<string, View> views) => [];
+    protected override IEnumerable<View> Layout(IReadOnlyDictionary<string, View> views)
+    {
+        var inputFrame = (FrameView)views["InputQueue"];
+        inputFrame.Width = Dim.Percent(50);
+        inputFrame.Height = Dim.Fill();
+        return [inputFrame];
+    }
 }
 
 internal static class Program
@@ -46,6 +52,9 @@ internal static class Program
         {
             Extensions = [".draco"],
             Parse = text => SyntaxTree.Parse(text),
+        });
+        window.AddAddon(new InputQueueAddon<SyntaxTree>
+        {
         });
         window.Initialize();
         Application.Run(Application.Top);

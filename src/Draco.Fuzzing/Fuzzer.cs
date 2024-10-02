@@ -177,10 +177,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
     void IFuzzer.Enqueue(object? input) => this.Enqueue((TInput)input!);
     void IFuzzer.EnqueueRange(IEnumerable<object?> inputs) => this.EnqueueRange(inputs.Cast<TInput>());
 
-    /// <summary>
-    /// Enqueues the given input into the fuzzer.
-    /// </summary>
-    /// <param name="input">The input to enqueue.</param>
     public void Enqueue(TInput input)
     {
         var inputWithId = this.IdentifyInput(input);
@@ -190,10 +186,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         this.Tracer.InputsEnqueued([inputWithId]);
     }
 
-    /// <summary>
-    /// Enqueues a range of inputs into the fuzzer.
-    /// </summary>
-    /// <param name="inputs">The inputs to enqueue.</param>
     public void EnqueueRange(IEnumerable<TInput> inputs)
     {
         // First we identify the inputs and make queue entries
@@ -209,10 +201,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         this.Tracer.InputsEnqueued(inputsWithId);
     }
 
-    /// <summary>
-    /// Runs the fuzzing loop.
-    /// </summary>
-    /// <param name="cancellationToken">The cancellation token to stop the loop.</param>
     public void Run(CancellationToken cancellationToken = default)
     {
         // First off, make sure the executor is set up

@@ -21,7 +21,17 @@ public abstract class FuzzerAddon : IFuzzerAddon
     /// </summary>
     public IFuzzer Fuzzer => this.Application.Fuzzer;
 
-    public abstract string Name { get; }
+    public virtual string Name
+    {
+        get
+        {
+            var typeName = this.GetType().Name;
+            var backtickIndex = typeName.IndexOf('`');
+            if (backtickIndex >= 0) typeName = typeName[..backtickIndex];
+            if (typeName.EndsWith("Addon", StringComparison.Ordinal)) typeName = typeName[..^5];
+            return typeName;
+        }
+    }
 
     public virtual void Register(IFuzzerApplication application, EventTracer<object?> tracer)
     {

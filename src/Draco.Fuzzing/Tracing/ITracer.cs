@@ -71,7 +71,7 @@ public interface ITracer<TInput>
     public void FuzzerStarted();
 
     /// <summary>
-    /// Called when the fuzzer finishes, because the queue is empty.
+    /// Called when the fuzzer stops.
     /// </summary>
-    public void FuzzerFinished();
+    public void FuzzerStopped();
 }

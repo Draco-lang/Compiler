@@ -26,7 +26,7 @@ public sealed class ObjectTracer<TInput>(ITracer<object?> inner) : ITracer<TInpu
     public void InputFaulted(InputWithId<TInput> input, FaultResult fault) =>
         inner.InputFaulted(Erase(input), fault);
     public void FuzzerStarted() => inner.FuzzerStarted();
-    public void FuzzerFinished() => inner.FuzzerFinished();
+    public void FuzzerStopped() => inner.FuzzerStopped();
 
     private static InputWithId<object?> Erase(InputWithId<TInput> input) => new(input.Id, input.Input);
 }

@@ -56,8 +56,8 @@ public sealed class LockSyncTracer<TInput>(ITracer<TInput> inner, object sync) :
         lock (sync) inner.FuzzerStarted();
     }
 
-    public void FuzzerFinished()
+    public void FuzzerStopped()
     {
-        lock (sync) inner.FuzzerFinished();
+        lock (sync) inner.FuzzerStopped();
     }
 }

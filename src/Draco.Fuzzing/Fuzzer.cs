@@ -218,22 +218,26 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         var limitedPartitioner = Partitioner.Create(
             this.inputQueue.GetConsumingEnumerable(cancellationToken),
             EnumerablePartitionerOptions.NoBuffering);
-        Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
+        try
         {
-            this.Tracer?.InputDequeued(entry.GetInputWithId(this));
-
-            // We want to minimize the input first
-            entry = this.Minimize(entry);
-            if (entry.GetExecutionResult(this).FaultResult.IsFaulted == true)
+            Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
             {
-                // NOTE: For now we don't mutate faulted results
-                return;
-            }
+                this.Tracer?.InputDequeued(entry.GetInputWithId(this));
 
-            // And we want to mutate the minimized input
-            this.Mutate(entry);
-        });
-        this.Tracer?.FuzzerFinished();
+                // We want to minimize the input first
+                entry = this.Minimize(entry);
+                if (entry.GetExecutionResult(this).FaultResult.IsFaulted == true)
+                {
+                    // NOTE: For now we don't mutate faulted results
+                    return;
+                }
+
+                // And we want to mutate the minimized input
+                this.Mutate(entry);
+            });
+        }
+        catch (OperationCanceledException) { }
+        this.Tracer?.FuzzerStopped();
     }
 
     /// <summary>

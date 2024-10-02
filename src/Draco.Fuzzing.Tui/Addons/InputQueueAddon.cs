@@ -73,6 +73,7 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
 
     public override void Register(IFuzzerApplication application)
     {
+        base.Register(application);
         application.Tracer.OnInputsEnqueued += (sender, args) =>
         {
             var getLabel = this.GetLabel ?? GetDefaultLabel;

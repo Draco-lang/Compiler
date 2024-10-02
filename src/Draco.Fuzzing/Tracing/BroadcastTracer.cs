@@ -53,8 +53,8 @@ public sealed class BroadcastTracer<TInput>(IEnumerable<ITracer<TInput>> tracers
         foreach (var tracer in this.tracers) tracer.FuzzerStarted();
     }
 
-    public void FuzzerFinished()
+    public void FuzzerStopped()
     {
-        foreach (var tracer in this.tracers) tracer.FuzzerFinished();
+        foreach (var tracer in this.tracers) tracer.FuzzerStopped();
     }
 }

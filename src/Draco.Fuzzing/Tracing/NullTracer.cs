@@ -26,5 +26,5 @@ public sealed class NullTracer<TInput> : ITracer<TInput>
     public void MutationFound(InputWithId<TInput> input, InputWithId<TInput> mutatedInput) { }
     public void InputFaulted(InputWithId<TInput> input, FaultResult fault) { }
     public void FuzzerStarted() { }
-    public void FuzzerFinished() { }
+    public void FuzzerStopped() { }
 }

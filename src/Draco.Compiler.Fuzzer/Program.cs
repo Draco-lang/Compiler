@@ -48,6 +48,7 @@ internal static class Program
 
         Application.Init();
         var window = new CompilerFuzzerWindow(fuzzer);
+        window.AddAddon(new StartStopAddon());
         window.AddAddon(new ImportInputAddon<SyntaxTree>
         {
             Extensions = [".draco"],

@@ -412,7 +412,7 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         this.stopwatch.Start();
     }
 
-    public void FuzzerFinished() => MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
+    public void FuzzerStopped() => MessageBox.ErrorQuery("Fuzzer Finished", "The fuzzer has finished.", "OK");
 
     private void ImportInputs()
     {

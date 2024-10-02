@@ -26,7 +26,7 @@ public sealed class EventTracer<TInput> : ITracer<TInput>
     public event EventHandler<MutationFoundEventArgs<TInput>>? OnMutationFound;
     public event EventHandler<InputFaultedEventArgs<TInput>>? OnInputFaulted;
     public event EventHandler? OnFuzzerStarted;
-    public event EventHandler? OnFuzzerFinished;
+    public event EventHandler? OnFuzzerStopped;
 
     public void InputsEnqueued(IEnumerable<InputWithId<TInput>> inputs) =>
         this.OnInputsEnqueued?.Invoke(this, new InputsEnqueuedEventArgs<TInput>(inputs));
@@ -43,5 +43,5 @@ public sealed class EventTracer<TInput> : ITracer<TInput>
     public void InputFaulted(InputWithId<TInput> input, FaultResult fault) =>
         this.OnInputFaulted?.Invoke(this, new InputFaultedEventArgs<TInput>(input, fault));
     public void FuzzerStarted() => this.OnFuzzerStarted?.Invoke(this, EventArgs.Empty);
-    public void FuzzerFinished() => this.OnFuzzerFinished?.Invoke(this, EventArgs.Empty);
+    public void FuzzerStopped() => this.OnFuzzerStopped?.Invoke(this, EventArgs.Empty);
 }

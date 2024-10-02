@@ -410,6 +410,7 @@ internal sealed partial class ConstraintSolver
                 if (common.AlternativeTypes.Any(alt => !CanUnify(alt, common.CommonType))) return false;
                 var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
                 var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
+                if (!CanUnify(common.CommonType, nonTypeVar)) return false;
                 return typeVars.All(t => CanUnify(t, nonTypeVar));
             })
             .Body((ConstraintStore store, CommonAncestor common) =>

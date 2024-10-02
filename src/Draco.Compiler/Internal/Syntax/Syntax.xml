@@ -36,6 +36,7 @@
   <Token Kind="KeywordOr" Text="or" Documentation="The keyword 'or'." />
   <Token Kind="KeywordPublic" Text="public" Documentation="The keyword 'public'." />
   <Token Kind="KeywordGlobal" Text="global" Documentation="The keyword 'global'."/>
+  <Token Kind="KeywordThis" Text="this" Documentation="The keyword 'this'."/>
   <Token Kind="KeywordField" Text="field" Documentation="The keyword 'field'."/>
   <Token Kind="KeywordValue" Text="value" Documentation="The keyword 'value'."/>
   <Token Kind="KeywordClass" Text="class" Documentation="The keyword 'class'."/>
@@ -504,7 +505,26 @@
     </Field>
   </Node>
 
-  <Node Name="ParameterSyntax" Base="SyntaxNode">
+  <AbstractNode Name="ParameterSyntaxBase" Base="SyntaxNode">
+    <Documentation>
+      A single parameter in a function parameter list.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="ThisParameterSyntax" Base="ParameterSyntaxBase">
+    <Documentation>
+      The this parameter at the first place in a parameter list.
+    </Documentation>
+
+    <Field Name="ThisToken" Type="SyntaxToken">
+      <Documentation>
+        The this keyword, representing the type instance.
+      </Documentation>
+      <Token Kind="KeywordThis" />
+    </Field>
+  </Node>
+
+  <Node Name="ParameterSyntax" Base="ParameterSyntaxBase">
     <Documentation>
       A single parameter in a function parameter list.
     </Documentation>

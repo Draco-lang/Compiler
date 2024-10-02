@@ -72,7 +72,8 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
         };
         application.Tracer.OnInputDequeued += (sender, args) =>
         {
-            this.RemoveItem(args.Input.Id);
+            if (!this.RemoveItem(args.Input.Id)) return;
+            this.MoveItemsToVisualized();
             this.UpdateFrameTitle();
         };
     }
@@ -106,6 +107,17 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
             return true;
         }
         return false;
+    }
+
+    private void MoveItemsToVisualized()
+    {
+        // NOTE: For big lists this is EXPENSIVE
+        // Ideally we'd use a ring buffer or something
+        while (this.nonVisualizedItems.Count > 0 && (this.MaxVisualizedItems == -1 || this.MaxVisualizedItems < this.items.Count))
+        {
+            this.items.Add(this.nonVisualizedItems[0]);
+            this.nonVisualizedItems.RemoveAt(0);
+        }
     }
 
     private void UpdateFrameTitle() =>

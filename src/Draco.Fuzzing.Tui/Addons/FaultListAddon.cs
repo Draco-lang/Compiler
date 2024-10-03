@@ -98,6 +98,15 @@ public sealed class FaultListAddon<TInput> : FuzzerAddon
 
     public override View CreateView() => this.faultsFrameView;
 
+    public override MenuBarItem CreateMenuBarItem() =>
+        new("Faults", [new MenuItem("Clear", "Clears the fault list", this.Clear)]);
+
+    private void Clear()
+    {
+        this.items.Clear();
+        this.UpdateFrameTitle();
+    }
+
     private void UpdateFrameTitle() =>
         this.faultsFrameView.Title = $"Faults ({this.items.Count})";
 

@@ -31,12 +31,23 @@ internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
         minimizedInputFrame.Width = Dim.Fill();
         minimizedInputFrame.Height = Dim.Percent(50);
 
-        var inputFrame = (FrameView)views["InputQueue"];
-        inputFrame.Y = Pos.Bottom(currentInputFrame);
-        inputFrame.Width = Dim.Fill();
-        inputFrame.Height = Dim.Fill();
+        var inputQueueFrame = (FrameView)views["InputQueue"];
+        inputQueueFrame.Y = Pos.Bottom(currentInputFrame);
+        inputQueueFrame.Width = Dim.Percent(50);
+        inputQueueFrame.Height = Dim.Fill();
 
-        return [coverageFrame, currentInputFrame, minimizedInputFrame, inputFrame];
+        var faultListFrame = (FrameView)views["FaultList"];
+        faultListFrame.Y = Pos.Bottom(minimizedInputFrame);
+        faultListFrame.X = Pos.Right(inputQueueFrame);
+        faultListFrame.Width = Dim.Fill();
+        faultListFrame.Height = Dim.Fill();
+
+        return [
+            coverageFrame,
+            currentInputFrame,
+            minimizedInputFrame,
+            inputQueueFrame,
+            faultListFrame];
     }
 }
 
@@ -74,6 +85,7 @@ internal static class Program
         {
             MaxVisualizedItems = 5000,
         });
+        window.AddAddon(new FaultListAddon<SyntaxTree>());
         window.AddAddon(new CoverageScaleAddon());
         window.AddAddon(new CurrentInputAddon<SyntaxTree>());
         window.AddAddon(new MinimizedInputAddon<SyntaxTree>());

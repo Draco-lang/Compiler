@@ -98,6 +98,7 @@ internal static class Program
         window.AddAddon(new SeedFooterAddon());
         window.AddAddon(new ExportFaultsAddon<SyntaxTree>());
         window.AddAddon(new ExportFuzzTimesAddon());
+        window.AddAddon(new ExportLcovAddon());
         window.Initialize();
         Application.Run(Application.Top);
 

@@ -16,6 +16,11 @@ namespace Draco.Fuzzing;
 public interface IFuzzer
 {
     /// <summary>
+    /// The settings for the fuzzer.
+    /// </summary>
+    public FuzzerSettings Settings { get; }
+
+    /// <summary>
     /// Enqueues the given input into the fuzzer.
     /// </summary>
     /// <param name="input">The input to enqueue.</param>
@@ -125,9 +130,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         }
     }
 
-    /// <summary>
-    /// The settings for the fuzzer.
-    /// </summary>
     public FuzzerSettings Settings { get; } = settings;
 
     /// <summary>

@@ -95,6 +95,7 @@ internal static class Program
         window.AddAddon(new CurrentInputAddon<SyntaxTree>());
         window.AddAddon(new MinimizedInputAddon<SyntaxTree>());
         window.AddAddon(new TimingsAddon());
+        window.AddAddon(new SeedFooterAddon());
         window.Initialize();
         Application.Run(Application.Top);
 

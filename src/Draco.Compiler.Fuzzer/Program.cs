@@ -22,15 +22,21 @@ internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
 
         var currentInputFrame = (FrameView)views["CurrentInput"];
         currentInputFrame.Y = Pos.Bottom(coverageFrame);
-        currentInputFrame.Width = Dim.Fill();
+        currentInputFrame.Width = Dim.Percent(50);
         currentInputFrame.Height = Dim.Percent(50);
+
+        var minimizedInputFrame = (FrameView)views["MinimizedInput"];
+        minimizedInputFrame.Y = Pos.Bottom(coverageFrame);
+        minimizedInputFrame.X = Pos.Right(currentInputFrame);
+        minimizedInputFrame.Width = Dim.Fill();
+        minimizedInputFrame.Height = Dim.Percent(50);
 
         var inputFrame = (FrameView)views["InputQueue"];
         inputFrame.Y = Pos.Bottom(currentInputFrame);
         inputFrame.Width = Dim.Fill();
         inputFrame.Height = Dim.Fill();
 
-        return [coverageFrame, currentInputFrame, inputFrame];
+        return [coverageFrame, currentInputFrame, minimizedInputFrame, inputFrame];
     }
 }
 
@@ -70,6 +76,7 @@ internal static class Program
         });
         window.AddAddon(new CoverageScaleAddon());
         window.AddAddon(new CurrentInputAddon<SyntaxTree>());
+        window.AddAddon(new MinimizedInputAddon<SyntaxTree>());
         window.Initialize();
         Application.Run(Application.Top);
 

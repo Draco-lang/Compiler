@@ -1,12 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using Draco.Compiler.Api.Syntax;
-using Draco.Fuzzing;
-using Draco.Fuzzing.Tui;
 using Draco.Fuzzing.Tui.Addons;
 using Terminal.Gui;
 

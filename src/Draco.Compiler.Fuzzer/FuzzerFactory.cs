@@ -8,7 +8,6 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
 using Draco.Fuzzing;
 using Draco.Fuzzing.Components;
-using Draco.Fuzzing.Tracing;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.Fuzzer;

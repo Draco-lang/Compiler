@@ -1,8 +1,8 @@
-using System.IO;
 using System;
-using Terminal.Gui;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Terminal.Gui;
 
 namespace Draco.Fuzzing.Tui.Addons;
 

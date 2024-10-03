@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Draco.Fuzzing.Tui;
-using Draco.Fuzzing;
-using Terminal.Gui;
-using Draco.Fuzzing.Tui.Addons;
 using Draco.Compiler.Api.Syntax;
+using Draco.Fuzzing;
+using Draco.Fuzzing.Tui;
+using Draco.Fuzzing.Tui.Addons;
+using Terminal.Gui;
 
 namespace Draco.Compiler.Fuzzer;
 

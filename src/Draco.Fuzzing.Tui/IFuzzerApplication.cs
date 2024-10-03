@@ -1,5 +1,4 @@
 using Draco.Fuzzing.Tracing;
-using Draco.Fuzzing.Tui.Addons;
 
 namespace Draco.Fuzzing.Tui;
 

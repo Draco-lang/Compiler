@@ -1,4 +1,3 @@
-using Draco.Fuzzing.Tracing;
 using Terminal.Gui;
 
 namespace Draco.Fuzzing.Tui.Addons;

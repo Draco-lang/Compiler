@@ -1,8 +1,8 @@
-using Draco.Fuzzing.Tracing;
-using System.Collections.Generic;
 using System;
-using Terminal.Gui;
+using System.Collections.Generic;
 using System.Linq;
+using Draco.Fuzzing.Tracing;
+using Terminal.Gui;
 
 namespace Draco.Fuzzing.Tui.Addons;
 

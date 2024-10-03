@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using Draco.Compiler.Api.Syntax;
+using Draco.Fuzzing.Tui.Addons;
 using Terminal.Gui;
 
 namespace Draco.Compiler.Fuzzer;
@@ -25,29 +23,24 @@ internal static class Program
     private static void Main(string[] args)
     {
         var settings = ParseSettings(args);
+        var runMode = GetRunMode(settings);
+        var fuzzer = runMode == RunMode.InProcess
+            ? FuzzerFactory.CreateInProcess(settings.Seed)
+            : FuzzerFactory.CreateOutOfProcess(settings.Seed, settings.MaxDegreeOfParallelism);
 
         Application.Init();
+        var application = CompilerFuzzerWindow.Create(fuzzer);
         Application.MainLoop.Invoke(() =>
         {
             var runMode = GetRunMode(settings);
 
-            var debuggerWindow = new TuiTracer();
-            var fuzzer = runMode == RunMode.InProcess
-                ? FuzzerFactory.CreateInProcess(debuggerWindow, settings.Seed)
-                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, settings.Seed, settings.MaxDegreeOfParallelism);
-            debuggerWindow.SetFuzzer(fuzzer);
+            // Add any pre-registered files through the addon
+            var importInputAddon = application.RequireAddon<ImportInputAddon<SyntaxTree>>("ImportInput", "main application");
+            importInputAddon.ImportFiles(settings.InitialFiles);
 
-            // Add any pre-registered files
-            var addedTrees = settings.InitialFiles
-                .Select(f => SyntaxTree.Parse(File.ReadAllText(f)))
-                .ToList();
-            fuzzer.EnqueueRange(addedTrees);
-
-            ThreadPool.QueueUserWorkItem(_ =>
-            {
-                fuzzer.Run(CancellationToken.None);
-                Application.Shutdown();
-            });
+            // Run the fuzzer through the addon
+            var startStopAddon = application.RequireAddon<StartStopAddon>("StartStop", "main application");
+            startStopAddon.StartFuzzer();
         });
         Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(500), loop =>
         {

@@ -11,6 +11,11 @@ namespace Draco.Fuzzing.Tracing;
 /// <param name="sync">The synchronization object to lock access with.</param>
 public sealed class LockSyncTracer<TInput>(ITracer<TInput> inner, object sync) : ITracer<TInput>
 {
+    public LockSyncTracer(ITracer<TInput> inner)
+        : this(inner, new())
+    {
+    }
+
     public void InputsEnqueued(IEnumerable<InputWithId<TInput>> inputs)
     {
         lock (sync) inner.InputsEnqueued(inputs);
@@ -19,6 +24,11 @@ public sealed class LockSyncTracer<TInput>(ITracer<TInput> inner, object sync) :
     public void InputDequeued(InputWithId<TInput> input)
     {
         lock (sync) inner.InputDequeued(input);
+    }
+
+    public void InputDropped(InputWithId<TInput> input)
+    {
+        lock (sync) inner.InputDropped(input);
     }
 
     public void InputFuzzStarted(InputWithId<TInput> input, TargetInfo targetInfo)
@@ -51,8 +61,8 @@ public sealed class LockSyncTracer<TInput>(ITracer<TInput> inner, object sync) :
         lock (sync) inner.FuzzerStarted();
     }
 
-    public void FuzzerFinished()
+    public void FuzzerStopped()
     {
-        lock (sync) inner.FuzzerFinished();
+        lock (sync) inner.FuzzerStopped();
     }
 }

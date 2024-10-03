@@ -30,6 +30,12 @@ public interface ITracer<TInput>
     public void InputDequeued(InputWithId<TInput> input);
 
     /// <summary>
+    /// Called, when the inputs lifecycle is completed, no more mutations and minimizations will be done.
+    /// </summary>
+    /// <param name="input">The input.</param>
+    public void InputDropped(InputWithId<TInput> input);
+
+    /// <summary>
     /// The fuzzing of some input started.
     /// </summary>
     /// <param name="targetInfo">The target information.</param>
@@ -71,7 +77,7 @@ public interface ITracer<TInput>
     public void FuzzerStarted();
 
     /// <summary>
-    /// Called when the fuzzer finishes, because the queue is empty.
+    /// Called when the fuzzer stops.
     /// </summary>
-    public void FuzzerFinished();
+    public void FuzzerStopped();
 }

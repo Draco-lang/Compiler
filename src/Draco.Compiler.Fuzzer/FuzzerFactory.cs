@@ -8,7 +8,6 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Coverage;
 using Draco.Fuzzing;
 using Draco.Fuzzing.Components;
-using Draco.Fuzzing.Tracing;
 using static Basic.Reference.Assemblies.Net80;
 
 namespace Draco.Compiler.Fuzzer;
@@ -22,7 +21,7 @@ internal static class FuzzerFactory
     private static IInputCompressor<SyntaxTree, string> InputCompressor => Fuzzing.Components.InputCompressor.String(text => SyntaxTree.Parse(text));
     private static TimeSpan Timeout => TimeSpan.FromSeconds(5);
 
-    public static Fuzzer<SyntaxTree, string, int> CreateInProcess(ITracer<SyntaxTree> tracer, int? seed)
+    public static Fuzzer<SyntaxTree, string, int> CreateInProcess(int? seed)
     {
         // Things we share between compilations
         var bclReferences = ReferenceInfos.All
@@ -63,11 +62,10 @@ internal static class FuzzerFactory
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
             InputCompressor = InputCompressor,
-            Tracer = new LockSyncTracer<SyntaxTree>(tracer, new()),
         };
     }
 
-    public static Fuzzer<SyntaxTree, string, int> CreateOutOfProcess(ITracer<SyntaxTree> tracer, int? seed, int? maxParallelism)
+    public static Fuzzer<SyntaxTree, string, int> CreateOutOfProcess(int? seed, int? maxParallelism)
     {
         static ProcessStartInfo CreateStartInfo(SyntaxTree syntaxTree)
         {
@@ -104,7 +102,6 @@ internal static class FuzzerFactory
             InputMinimizer = InputMinimizer,
             InputMutator = InputMutator,
             InputCompressor = InputCompressor,
-            Tracer = new LockSyncTracer<SyntaxTree>(tracer, new()),
         };
     }
 }

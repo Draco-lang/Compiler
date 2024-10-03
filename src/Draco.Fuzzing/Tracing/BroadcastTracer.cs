@@ -23,6 +23,11 @@ public sealed class BroadcastTracer<TInput>(IEnumerable<ITracer<TInput>> tracers
         foreach (var tracer in this.tracers) tracer.InputDequeued(input);
     }
 
+    public void InputDropped(InputWithId<TInput> input)
+    {
+        foreach (var tracer in this.tracers) tracer.InputDropped(input);
+    }
+
     public void InputFuzzStarted(InputWithId<TInput> input, TargetInfo targetInfo)
     {
         foreach (var tracer in this.tracers) tracer.InputFuzzStarted(input, targetInfo);
@@ -53,8 +58,8 @@ public sealed class BroadcastTracer<TInput>(IEnumerable<ITracer<TInput>> tracers
         foreach (var tracer in this.tracers) tracer.FuzzerStarted();
     }
 
-    public void FuzzerFinished()
+    public void FuzzerStopped()
     {
-        foreach (var tracer in this.tracers) tracer.FuzzerFinished();
+        foreach (var tracer in this.tracers) tracer.FuzzerStopped();
     }
 }

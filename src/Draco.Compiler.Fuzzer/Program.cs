@@ -18,7 +18,11 @@ internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
     protected override IEnumerable<View> Layout(IReadOnlyDictionary<string, View> views)
     {
         var coverageFrame = (FrameView)views["CoverageScale"];
-        coverageFrame.Width = Dim.Fill();
+        coverageFrame.Width = Dim.Percent(70);
+
+        var timingsFrame = (FrameView)views["Timings"];
+        timingsFrame.X = Pos.Right(coverageFrame);
+        timingsFrame.Width = Dim.Fill();
 
         var currentInputFrame = (FrameView)views["CurrentInput"];
         currentInputFrame.Y = Pos.Bottom(coverageFrame);
@@ -44,6 +48,7 @@ internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
 
         return [
             coverageFrame,
+            timingsFrame,
             currentInputFrame,
             minimizedInputFrame,
             inputQueueFrame,
@@ -89,6 +94,7 @@ internal static class Program
         window.AddAddon(new CoverageScaleAddon());
         window.AddAddon(new CurrentInputAddon<SyntaxTree>());
         window.AddAddon(new MinimizedInputAddon<SyntaxTree>());
+        window.AddAddon(new TimingsAddon());
         window.Initialize();
         Application.Run(Application.Top);
 

@@ -404,9 +404,15 @@ internal sealed partial class ConstraintSolver
         // We also substitute all the type-vars with the common type
         Simplification(typeof(CommonAncestor))
             .Guard((CommonAncestor common) =>
-                common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) == 1
-             && common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) == common.AlternativeTypes.Length - 1
-             && common.AlternativeTypes.All(alt => CanUnify(alt, common.CommonType)))
+            {
+                if (common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) != 1) return false;
+                if (common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) != common.AlternativeTypes.Length - 1) return false;
+                if (common.AlternativeTypes.Any(alt => !CanUnify(alt, common.CommonType))) return false;
+                var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
+                var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
+                if (!CanUnify(common.CommonType, nonTypeVar)) return false;
+                return typeVars.All(t => CanUnify(t, nonTypeVar));
+            })
             .Body((ConstraintStore store, CommonAncestor common) =>
             {
                 var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);

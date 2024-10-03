@@ -209,7 +209,6 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         // For example, in-process execution will need to run all type constructors here
         // The reason is to not poison the coverage data with all the setup code
         this.TargetExecutor.GlobalInitializer();
-        this.Tracer?.FuzzerStarted();
         var parallelOptions = new ParallelOptions
         {
             CancellationToken = cancellationToken,
@@ -218,6 +217,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         var limitedPartitioner = Partitioner.Create(
             this.inputQueue.GetConsumingEnumerable(cancellationToken),
             EnumerablePartitionerOptions.NoBuffering);
+        this.Tracer?.FuzzerStarted();
         try
         {
             Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>

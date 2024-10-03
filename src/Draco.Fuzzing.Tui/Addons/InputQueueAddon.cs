@@ -76,7 +76,7 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
         base.Register(application);
         application.Tracer.OnInputsEnqueued += (sender, args) =>
         {
-            var getLabel = this.GetLabel ?? GetDefaultLabel;
+            var getLabel = this.GetLabel ?? GetLabelDefault;
             foreach (var input in args.Inputs)
             {
                 var unErasedInput = UnErase(input);
@@ -141,7 +141,7 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
     private static InputWithId<TInput> UnErase(InputWithId<object?> inputWithId) =>
         new(inputWithId.Id, (TInput)inputWithId.Input!);
 
-    private static string GetDefaultLabel(InputWithId<TInput> input) => $"Input {input.Id}";
+    private static string GetLabelDefault(InputWithId<TInput> input) => $"Input {input.Id}";
 
     private static string InputToStringDefault(TInput input) => input?.ToString() ?? string.Empty;
 }

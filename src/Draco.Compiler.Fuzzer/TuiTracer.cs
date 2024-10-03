@@ -535,4 +535,5 @@ internal sealed class TuiTracer : Window, ITracer<SyntaxTree>
         // ----------------------------------------
         {fault.Input}
         """;
+    public void InputDropped(InputWithId<SyntaxTree> input) => throw new NotImplementedException();
 }

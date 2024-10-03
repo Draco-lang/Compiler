@@ -222,7 +222,8 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
         {
             Parallel.ForEach(limitedPartitioner, parallelOptions, entry =>
             {
-                this.Tracer?.InputDequeued(entry.GetInputWithId(this));
+                var inputWithId = entry.GetInputWithId(this);
+                this.Tracer?.InputDequeued(inputWithId);
 
                 // We want to minimize the input first
                 entry = this.Minimize(entry);
@@ -234,6 +235,9 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
 
                 // And we want to mutate the minimized input
                 this.Mutate(entry);
+
+                // Done with the input, notify tracer
+                this.Tracer?.InputDropped(inputWithId);
             });
         }
         catch (OperationCanceledException) { }

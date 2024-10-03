@@ -20,12 +20,17 @@ internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
         var coverageFrame = (FrameView)views["CoverageScale"];
         coverageFrame.Width = Dim.Fill();
 
+        var currentInputFrame = (FrameView)views["CurrentInput"];
+        currentInputFrame.Y = Pos.Bottom(coverageFrame);
+        currentInputFrame.Width = Dim.Fill();
+        currentInputFrame.Height = Dim.Percent(50);
+
         var inputFrame = (FrameView)views["InputQueue"];
-        inputFrame.Y = Pos.Bottom(coverageFrame);
-        inputFrame.Width = Dim.Percent(50);
+        inputFrame.Y = Pos.Bottom(currentInputFrame);
+        inputFrame.Width = Dim.Fill();
         inputFrame.Height = Dim.Fill();
 
-        return [coverageFrame, inputFrame];
+        return [coverageFrame, currentInputFrame, inputFrame];
     }
 }
 
@@ -64,6 +69,7 @@ internal static class Program
             MaxVisualizedItems = 5000,
         });
         window.AddAddon(new CoverageScaleAddon());
+        window.AddAddon(new CurrentInputAddon<SyntaxTree>());
         window.Initialize();
         Application.Run(Application.Top);
 

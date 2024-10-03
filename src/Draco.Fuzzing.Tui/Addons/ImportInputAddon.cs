@@ -22,9 +22,25 @@ public sealed class ImportInputAddon<TInput> : FuzzerAddon
     public required Func<string, TInput> Parse { get; set; }
 
     public override MenuBarItem CreateMenuBarItem() =>
-        new("Input", [new MenuItem("Import", "Import input files", this.Import)]);
+        new("Input", [new MenuItem("Import", "Import input files", this.ImportDialog)]);
 
-    private void Import()
+    /// <summary>
+    /// Imports inputs from the specified paths.
+    /// </summary>
+    /// <param name="paths">The file paths to import.</param>
+    public void ImportPaths(IEnumerable<string> paths)
+    {
+        var inputs = new List<object?>();
+        foreach (var path in paths)
+        {
+            var content = File.ReadAllText(path);
+            var input = this.Parse(content);
+            inputs.Add(input);
+        }
+        this.Fuzzer.EnqueueRange(inputs);
+    }
+
+    private void ImportDialog()
     {
         var dialog = new OpenDialog("Import", "Select input files")
         {
@@ -39,14 +55,6 @@ public sealed class ImportInputAddon<TInput> : FuzzerAddon
         if (dialog.FilePaths is null) return;
         if (dialog.Canceled) return;
 
-        var inputs = new List<object?>(dialog.FilePaths.Count);
-        foreach (var path in dialog.FilePaths)
-        {
-            var content = File.ReadAllText(path);
-            var input = this.Parse(content);
-            inputs.Add(input);
-        }
-
-        this.Fuzzer.EnqueueRange(inputs);
+        this.ImportPaths(dialog.FilePaths);
     }
 }

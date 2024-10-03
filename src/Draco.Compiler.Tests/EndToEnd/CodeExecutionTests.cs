@@ -21,7 +21,7 @@ public class CodeExecutionTests
             }
 
             class Foo {
-                global func bar() {
+                func bar() {
                     WriteLine("Hello, World!");
                 }
             }
@@ -31,5 +31,25 @@ public class CodeExecutionTests
         _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
 
         Assert.Equal($"Hello, World!{Environment.NewLine}", stringWriter.ToString(), ignoreLineEndingDifferences: true);
+    }
+
+    [Fact]
+    public void InstanceField()
+    {
+        var assembly = CompileToAssembly("""
+        import System.Console;
+        
+        func main() {
+            var foo = Foo();
+        }
+        
+        class Foo {
+            i: int;
+            increment(this): void {
+                this.i += 1;
+            }
+        }
+
+        """);
     }
 }

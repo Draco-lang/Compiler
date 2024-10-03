@@ -254,6 +254,7 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
     private QueueEntry Minimize(QueueEntry entry)
     {
         var referenceResult = entry.GetExecutionResult(this);
+        var referenceInput = entry.GetInputWithId(this);
         // While we find a minimization step, we continue to minimize
         while (true)
         {
@@ -265,7 +266,8 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
                 if (AreEqualExecutions(referenceResult, executionResult))
                 {
                     // We found an equivalent execution, replace entry
-                    this.Tracer?.MinimizationFound(entryInput, minimizedInputWithId);
+                    this.Tracer?.MinimizationFound(referenceInput, minimizedInputWithId);
+                    // Actually replace
                     entry = this.MakeQueueEntry(minimizedInputWithId, executionResult);
                     goto found;
                 }
@@ -342,8 +344,8 @@ public sealed class Fuzzer<TInput, TCompressedInput, TCoverage>(FuzzerSettings s
 
         // If is, add to queue
         var queueEntry = this.MakeQueueEntry(inputWithId, executionResult);
-        this.inputQueue.Add(queueEntry);
         this.Tracer?.InputsEnqueued([inputWithId]);
+        this.inputQueue.Add(queueEntry);
         return true;
     }
 

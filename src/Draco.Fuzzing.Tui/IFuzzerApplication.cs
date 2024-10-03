@@ -19,17 +19,11 @@ public interface IFuzzerApplication
     public EventTracer<object?> Tracer { get; }
 
     /// <summary>
-    /// Gets an addon by name.
+    /// Requires the existence of an addon already registered.
     /// </summary>
     /// <typeparam name="TAddon">The type of the addon.</typeparam>
     /// <param name="name">The name of the addon.</param>
-    /// <returns>The addon with the given name.</returns>
-    public TAddon GetAddon<TAddon>(string name) => (TAddon)this.GetAddon(name);
-
-    /// <summary>
-    /// Gets an addon by name.
-    /// </summary>
-    /// <param name="name">The name of the addon.</param>
-    /// <returns>The addon with the given name.</returns>
-    public IFuzzerAddon GetAddon(string name);
+    /// <param name="by">The name of the addon requiring the other addon.</param>
+    /// <returns>The addon.</returns>
+    public TAddon RequireAddon<TAddon>(string name, string by);
 }

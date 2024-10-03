@@ -2,6 +2,7 @@ using Draco.Fuzzing.Tracing;
 using System.Collections.Generic;
 using System;
 using Terminal.Gui;
+using System.Linq;
 
 namespace Draco.Fuzzing.Tui.Addons;
 
@@ -19,23 +20,34 @@ public sealed class FaultListAddon<TInput> : FuzzerAddon
         private readonly string label = FaultResultToString(fault);
 
         public override string ToString() => this.label;
+    }
 
-        private static string FaultResultToString(FaultResult fault)
+    /// <summary>
+    /// Utility to format fault results into a compact message.
+    /// </summary>
+    /// <param name="fault">The fault result.</param>
+    /// <returns>The formatted message.</returns>
+    public static string FaultResultToString(FaultResult fault)
+    {
+        if (fault.ThrownException is not null)
         {
-            if (fault.ThrownException is not null)
-            {
-                return $"{fault.ThrownException.GetType().Name}: {fault.ThrownException.Message}";
-            }
-            if (fault.TimeoutReached is not null) return "Timeout";
-            if (fault.ExitCode != 0) return $"Exit code: {fault.ExitCode}";
-            return "Unknown";
+            return $"{fault.ThrownException.GetType().Name}: {fault.ThrownException.Message}";
         }
+        if (fault.TimeoutReached is not null) return "Timeout";
+        if (fault.ExitCode != 0) return $"Exit code: {fault.ExitCode}";
+        return "Unknown";
     }
 
     /// <summary>
     /// A function to convert an input to a string visualization.
     /// </summary>
     public Func<TInput, string>? InputToString { get; set; }
+
+    /// <summary>
+    /// The faults that happened.
+    /// </summary>
+    public IEnumerable<KeyValuePair<TInput, FaultResult>> Faults =>
+        this.items.Select(item => new KeyValuePair<TInput, FaultResult>(item.Input, item.Fault));
 
     // State
     private readonly List<Item> items = [];

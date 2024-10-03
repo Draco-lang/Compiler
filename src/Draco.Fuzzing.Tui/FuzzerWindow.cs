@@ -40,7 +40,13 @@ public abstract class FuzzerWindow : Window, IFuzzerApplication
         fuzzerTracerProperty.SetValue(fuzzer, lockSyncTracer);
     }
 
-    public IFuzzerAddon GetAddon(string name) => this.addons.First(a => a.Name == name);
+    public TAddon RequireAddon<TAddon>(string name, string by)
+    {
+        var addon = this.addons.FirstOrDefault(a => a.Name == name);
+        if (addon is null) throw new InvalidOperationException($"addon '{by}' requires addon '{name}' to be registered");
+        if (addon is not TAddon addonOfType) throw new InvalidOperationException($"addon '{name}' is not of type '{typeof(TAddon).Name}' which is required by '{by}'");
+        return addonOfType;
+    }
 
     /// <summary>
     /// Adds an addon to the fuzzer window.

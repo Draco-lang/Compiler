@@ -13,7 +13,7 @@ public interface IFuzzerAddon
     public string Name { get; }
 
     /// <summary>
-    /// Registers the addon onto a tracer.
+    /// Registers the addon onto an application.
     /// </summary>
     /// <param name="application">The application to register onto.</param>
     public void Register(IFuzzerApplication application);

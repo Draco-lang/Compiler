@@ -22,7 +22,7 @@ public sealed class ExportLcovAddon : FuzzerAddon
     }
 
     public override MenuBarItem CreateMenuBarItem() =>
-        new("Statistics", [new MenuItem("Export LCOV", "Export best coverage as LCOV", this.Export, canExecute: () => this.bestCoverage is not null)]);
+        new("_Statistics", [new MenuItem("Export LCOV", "Export best coverage as LCOV", this.Export, canExecute: () => this.bestCoverage is not null)]);
 
     private void OnInputFuzzEnded(object? sender, InputFuzzEndedEventArgs<object?> e)
     {

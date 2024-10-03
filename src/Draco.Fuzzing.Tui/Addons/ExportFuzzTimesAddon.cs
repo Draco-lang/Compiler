@@ -26,7 +26,7 @@ public sealed class ExportFuzzTimesAddon : FuzzerAddon
         application.Tracer.OnInputFuzzEnded += this.OnInputFuzzEnded;
     }
 
-    public override MenuBarItem? CreateMenuBarItem() =>
+    public override MenuBarItem CreateMenuBarItem() =>
         new("_Statistics", [new MenuItem("Export fuzz times", "Export fuzz times as CSV", this.Export)]);
 
     private void OnFuzzerStarted(object? sender, EventArgs e) => this.stopwatch.Start();

@@ -97,6 +97,7 @@ internal static class Program
         window.AddAddon(new TimingsAddon());
         window.AddAddon(new SeedFooterAddon());
         window.AddAddon(new ExportFaultsAddon<SyntaxTree>());
+        window.AddAddon(new ExportFuzzTimesAddon());
         window.Initialize();
         Application.Run(Application.Top);
 

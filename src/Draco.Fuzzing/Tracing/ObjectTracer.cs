@@ -15,6 +15,8 @@ public sealed class ObjectTracer<TInput>(ITracer<object?> inner) : ITracer<TInpu
         inner.InputsEnqueued(inputs.Select(Erase));
     public void InputDequeued(InputWithId<TInput> input) =>
         inner.InputDequeued(Erase(input));
+    public void InputDropped(InputWithId<TInput> input) =>
+        inner.InputDropped(Erase(input));
     public void InputFuzzStarted(InputWithId<TInput> input, TargetInfo targetInfo) =>
         inner.InputFuzzStarted(Erase(input), targetInfo);
     public void InputFuzzEnded(InputWithId<TInput> input, TargetInfo targetInfo, CoverageResult coverageResult) =>

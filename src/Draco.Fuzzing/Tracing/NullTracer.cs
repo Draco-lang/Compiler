@@ -20,6 +20,7 @@ public sealed class NullTracer<TInput> : ITracer<TInput>
 
     public void InputsEnqueued(IEnumerable<InputWithId<TInput>> inputs) { }
     public void InputDequeued(InputWithId<TInput> input) { }
+    public void InputDropped(InputWithId<TInput> input) { }
     public void InputFuzzStarted(InputWithId<TInput> input, TargetInfo targetInfo) { }
     public void InputFuzzEnded(InputWithId<TInput> input, TargetInfo targetInfo, CoverageResult coverageResult) { }
     public void MinimizationFound(InputWithId<TInput> input, InputWithId<TInput> minimizedInput) { }

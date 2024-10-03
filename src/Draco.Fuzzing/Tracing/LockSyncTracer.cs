@@ -26,6 +26,11 @@ public sealed class LockSyncTracer<TInput>(ITracer<TInput> inner, object sync) :
         lock (sync) inner.InputDequeued(input);
     }
 
+    public void InputDropped(InputWithId<TInput> input)
+    {
+        lock (sync) inner.InputDropped(input);
+    }
+
     public void InputFuzzStarted(InputWithId<TInput> input, TargetInfo targetInfo)
     {
         lock (sync) inner.InputFuzzStarted(input, targetInfo);

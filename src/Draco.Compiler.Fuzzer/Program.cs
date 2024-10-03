@@ -12,50 +12,6 @@ using Terminal.Gui;
 
 namespace Draco.Compiler.Fuzzer;
 
-internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
-    : FuzzerWindow(fuzzer)
-{
-    protected override IEnumerable<View> Layout(IReadOnlyDictionary<string, View> views)
-    {
-        var coverageFrame = (FrameView)views["CoverageScale"];
-        coverageFrame.Width = Dim.Percent(70);
-
-        var timingsFrame = (FrameView)views["Timings"];
-        timingsFrame.X = Pos.Right(coverageFrame);
-        timingsFrame.Width = Dim.Fill();
-
-        var currentInputFrame = (FrameView)views["CurrentInput"];
-        currentInputFrame.Y = Pos.Bottom(coverageFrame);
-        currentInputFrame.Width = Dim.Percent(50);
-        currentInputFrame.Height = Dim.Percent(50);
-
-        var minimizedInputFrame = (FrameView)views["MinimizedInput"];
-        minimizedInputFrame.Y = Pos.Bottom(coverageFrame);
-        minimizedInputFrame.X = Pos.Right(currentInputFrame);
-        minimizedInputFrame.Width = Dim.Fill();
-        minimizedInputFrame.Height = Dim.Percent(50);
-
-        var inputQueueFrame = (FrameView)views["InputQueue"];
-        inputQueueFrame.Y = Pos.Bottom(currentInputFrame);
-        inputQueueFrame.Width = Dim.Percent(50);
-        inputQueueFrame.Height = Dim.Fill();
-
-        var faultListFrame = (FrameView)views["FaultList"];
-        faultListFrame.Y = Pos.Bottom(minimizedInputFrame);
-        faultListFrame.X = Pos.Right(inputQueueFrame);
-        faultListFrame.Width = Dim.Fill();
-        faultListFrame.Height = Dim.Fill();
-
-        return [
-            coverageFrame,
-            timingsFrame,
-            currentInputFrame,
-            minimizedInputFrame,
-            inputQueueFrame,
-            faultListFrame];
-    }
-}
-
 internal static class Program
 {
     private enum RunMode
@@ -79,54 +35,18 @@ internal static class Program
             : FuzzerFactory.CreateOutOfProcess(settings.Seed, settings.MaxDegreeOfParallelism);
 
         Application.Init();
-        var window = new CompilerFuzzerWindow(fuzzer);
-        window.AddAddon(new StartStopAddon());
-        window.AddAddon(new ImportInputAddon<SyntaxTree>
-        {
-            Extensions = [".draco"],
-            Parse = text => SyntaxTree.Parse(text),
-        });
-        window.AddAddon(new InputQueueAddon<SyntaxTree>()
-        {
-            MaxVisualizedItems = 5000,
-        });
-        window.AddAddon(new FaultListAddon<SyntaxTree>());
-        window.AddAddon(new CoverageScaleAddon());
-        window.AddAddon(new CurrentInputAddon<SyntaxTree>());
-        window.AddAddon(new MinimizedInputAddon<SyntaxTree>());
-        window.AddAddon(new TimingsAddon());
-        window.AddAddon(new SeedFooterAddon());
-        window.AddAddon(new ExportFaultsAddon<SyntaxTree>());
-        window.AddAddon(new ExportFuzzTimesAddon());
-        window.AddAddon(new ExportLcovAddon());
-        window.Initialize();
-        Application.Run(Application.Top);
-
-#if false
-        var settings = ParseSettings(args);
-
-        Application.Init();
+        var application = CompilerFuzzerWindow.Create(fuzzer);
         Application.MainLoop.Invoke(() =>
         {
             var runMode = GetRunMode(settings);
 
-            var debuggerWindow = new TuiTracer();
-            var fuzzer = runMode == RunMode.InProcess
-                ? FuzzerFactory.CreateInProcess(debuggerWindow, settings.Seed)
-                : FuzzerFactory.CreateOutOfProcess(debuggerWindow, settings.Seed, settings.MaxDegreeOfParallelism);
-            debuggerWindow.SetFuzzer(fuzzer);
+            // Add any pre-registered files through the addon
+            var importInputAddon = application.RequireAddon<ImportInputAddon<SyntaxTree>>("ImportInput", "main application");
+            importInputAddon.ImportFiles(settings.InitialFiles);
 
-            // Add any pre-registered files
-            var addedTrees = settings.InitialFiles
-                .Select(f => SyntaxTree.Parse(File.ReadAllText(f)))
-                .ToList();
-            fuzzer.EnqueueRange(addedTrees);
-
-            ThreadPool.QueueUserWorkItem(_ =>
-            {
-                fuzzer.Run(CancellationToken.None);
-                Application.Shutdown();
-            });
+            // Run the fuzzer through the addon
+            var startStopAddon = application.RequireAddon<StartStopAddon>("StartStop", "main application");
+            startStopAddon.StartFuzzer();
         });
         Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(500), loop =>
         {
@@ -134,7 +54,6 @@ internal static class Program
             return true;
         });
         Application.Run(Application.Top);
-#endif
     }
 
     private static RunMode GetRunMode(Settings settings)

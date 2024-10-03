@@ -28,7 +28,7 @@ public sealed class ImportInputAddon<TInput> : FuzzerAddon
     /// Imports inputs from the specified paths.
     /// </summary>
     /// <param name="paths">The file paths to import.</param>
-    public void ImportPaths(IEnumerable<string> paths)
+    public void ImportFiles(IEnumerable<string> paths)
     {
         var inputs = new List<object?>();
         foreach (var path in paths)
@@ -55,6 +55,6 @@ public sealed class ImportInputAddon<TInput> : FuzzerAddon
         if (dialog.FilePaths is null) return;
         if (dialog.Canceled) return;
 
-        this.ImportPaths(dialog.FilePaths);
+        this.ImportFiles(dialog.FilePaths);
     }
 }

@@ -21,7 +21,10 @@ public sealed class StartStopAddon : FuzzerAddon
         new MenuItem("Start", "Start the fuzzer", this.StartFuzzer, canExecute: () => this.cts is null),
         new MenuItem("Stop", "Stop the fuzzer", this.StopFuzzer, canExecute: () => this.cts is not null)]);
 
-    private void StartFuzzer()
+    /// <summary>
+    /// Starts the fuzzer.
+    /// </summary>
+    public void StartFuzzer()
     {
         if (this.cts is not null) return;
 
@@ -29,7 +32,10 @@ public sealed class StartStopAddon : FuzzerAddon
         ThreadPool.QueueUserWorkItem(_ => this.Fuzzer.Run(this.cts.Token));
     }
 
-    private void StopFuzzer()
+    /// <summary>
+    /// Stops the fuzzer.
+    /// </summary>
+    public void StopFuzzer()
     {
         if (this.cts is null) return;
 

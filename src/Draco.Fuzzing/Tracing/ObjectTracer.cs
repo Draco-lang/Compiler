@@ -5,7 +5,7 @@ using Draco.Coverage;
 namespace Draco.Fuzzing.Tracing;
 
 /// <summary>
-/// A tracer that type-erases the input type by casting it to a <see cref="System.Object"/>.
+/// A tracer that type-erases the input type by casting it to a <see cref="object"/>.
 /// </summary>
 /// <typeparam name="TInput">The input type.</typeparam>
 /// <param name="inner">The inner, type-erased tracer.</param>

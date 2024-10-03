@@ -66,7 +66,7 @@ public sealed class LocalFunctionsTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("y", null, NameExpression("x"))))))))));
+                    DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x"))))))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -98,7 +98,7 @@ public sealed class LocalFunctionsTests
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration(
-                        "x",
+                        true, "x",
                         NameType("int32"),
                         StringExpression("Hello"))))))))));
 
@@ -160,8 +160,8 @@ public sealed class LocalFunctionsTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
-                    DeclarationStatement(VariableDeclaration("y", null, NameExpression("x"))))))))));
+                    DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
+                    DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x"))))))))));
 
         // Act
         var compilation = CreateCompilation(tree);

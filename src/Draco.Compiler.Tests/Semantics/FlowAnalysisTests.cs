@@ -262,8 +262,8 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
-                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
+                DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -289,8 +289,8 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration("x", NameType("int32"), LiteralExpression(0))),
-                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0))),
+                DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -316,9 +316,9 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0))),
-                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+                DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -346,11 +346,11 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
                 ExpressionStatement(IfExpression(
                     condition: LiteralExpression(false),
                     then: BlockExpression(ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))),
-                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+                DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -382,12 +382,12 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
                 ExpressionStatement(IfExpression(
                     condition: LiteralExpression(false),
                     then: BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)),
                     @else: BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))),
-                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+                DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -415,12 +415,12 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
                 ExpressionStatement(WhileExpression(
                     condition: LiteralExpression(false),
                     then: BlockExpression(
                         ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))),
-                DeclarationStatement(VariableDeclaration("y", null, NameExpression("x")))))));
+                DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -439,7 +439,7 @@ public sealed class FlowAnalysisTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0))));
+            ImmutableVariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -463,7 +463,7 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
+                DeclarationStatement(ImmutableVariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0)))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -481,7 +481,7 @@ public sealed class FlowAnalysisTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            ImmutableVariableDeclaration("x", NameType("int32"))));
+            ImmutableVariableDeclaration(true, "x", NameType("int32"))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -506,7 +506,7 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32")))))));
+                DeclarationStatement(ImmutableVariableDeclaration(true, "x", NameType("int32")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -532,7 +532,7 @@ public sealed class FlowAnalysisTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0))),
+                DeclarationStatement(ImmutableVariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0))),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))));
 
         // Act
@@ -555,7 +555,7 @@ public sealed class FlowAnalysisTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)),
+            ImmutableVariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0)),
             FunctionDeclaration(
                 "foo",
                 ParameterList(),

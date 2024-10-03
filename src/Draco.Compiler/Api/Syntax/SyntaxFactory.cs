@@ -167,36 +167,37 @@ public static partial class SyntaxFactory
         body);
 
     public static VariableDeclarationSyntax VariableDeclaration(
+        bool globql,
         string name,
-        TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(null, null, true, name, type, value);
+        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(null, globql, true, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         Visibility visibility,
+        bool globql,
         string name,
-        TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), null, true, name, type, value);
+        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), globql, true, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
+        bool global,
         string name,
-        TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(null, null, false, name, type, value);
+        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(null, global, false, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         Visibility visibility,
+        bool global,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), null, false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), global, false, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         TokenKind? visibility,
-        TokenKind? global,
+        bool global,
         bool isMutable,
         string name,
         TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(
         [],
         visibility,
-        global,
+        global ? TokenKind.KeywordGlobal : null,
         isMutable ? TokenKind.KeywordVar : TokenKind.KeywordVal,
         name,
         type is null ? null : TypeSpecifier(type),

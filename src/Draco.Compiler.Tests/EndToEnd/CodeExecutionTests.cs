@@ -44,7 +44,7 @@ public class CodeExecutionTests
         }
         
         class Foo {
-            i: int;
+            field i: int;
             increment(this): void {
                 this.i += 1;
             }

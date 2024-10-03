@@ -35,9 +35,11 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
     /// </summary>
     public Func<TInput, string>? InputToString { get; set; }
 
+    private bool HasSpaceInVisualizedItems => this.MaxVisualizedItems == -1 || this.items.Count < this.MaxVisualizedItems;
+
     // State
     private readonly List<Item> items = [];
-    private readonly List<Item> nonVisualizedItems = [];
+    private readonly Queue<Item> nonVisualizedItems = [];
 
     // UI
     private readonly FrameView inputsFrameView;
@@ -60,9 +62,8 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
         };
         this.inputsListView.SelectedItemChanged += e =>
         {
-            var selectedItem = e.Value as Item;
             var inputToString = this.InputToString ?? InputToStringDefault;
-            this.selectedInputTextView.Text = selectedItem is null
+            this.selectedInputTextView.Text = e.Value is not Item selectedItem
                 ? inputToString(default!)
                 : inputToString(selectedItem.Input);
         };
@@ -97,13 +98,13 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
 
     private void AddItem(Item item)
     {
-        if (this.MaxVisualizedItems == -1 || this.items.Count < this.MaxVisualizedItems)
+        if (this.HasSpaceInVisualizedItems)
         {
             this.items.Add(item);
         }
         else
         {
-            this.nonVisualizedItems.Add(item);
+            this.nonVisualizedItems.Enqueue(item);
         }
     }
 
@@ -115,23 +116,16 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
             this.items.RemoveAt(itemIndex);
             return true;
         }
-        var nonVisualizedItemIndex = this.nonVisualizedItems.FindIndex(item => item.Id == id);
-        if (nonVisualizedItemIndex != -1)
-        {
-            this.nonVisualizedItems.RemoveAt(nonVisualizedItemIndex);
-            return true;
-        }
+        // NOTE: This can cause a bug, if the parallelism is bigger than the visualized list count
+        // as we forget to remove from the non-visualized queue...
         return false;
     }
 
     private void MoveItemsToVisualized()
     {
-        // NOTE: For big lists this is EXPENSIVE
-        // Ideally we'd use a ring buffer or something
-        while (this.nonVisualizedItems.Count > 0 && (this.MaxVisualizedItems == -1 || this.MaxVisualizedItems < this.items.Count))
+        while (this.HasSpaceInVisualizedItems && this.nonVisualizedItems.TryDequeue(out var item))
         {
-            this.items.Add(this.nonVisualizedItems[0]);
-            this.nonVisualizedItems.RemoveAt(0);
+            this.items.Add(item);
         }
     }
 

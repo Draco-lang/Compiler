@@ -116,6 +116,8 @@ public sealed class InputQueueAddon<TInput> : FuzzerAddon
             this.items.RemoveAt(itemIndex);
             return true;
         }
+        // NOTE: This can cause a bug, if the parallelism is bigger than the visualized list count
+        // as we forget to remove from the non-visualized queue...
         return false;
     }
 

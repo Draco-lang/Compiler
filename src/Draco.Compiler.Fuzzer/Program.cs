@@ -17,10 +17,15 @@ internal sealed class CompilerFuzzerWindow(IFuzzer fuzzer)
 {
     protected override IEnumerable<View> Layout(IReadOnlyDictionary<string, View> views)
     {
+        var coverageFrame = (FrameView)views["CoverageScale"];
+        coverageFrame.Width = Dim.Fill();
+
         var inputFrame = (FrameView)views["InputQueue"];
+        inputFrame.Y = Pos.Bottom(coverageFrame);
         inputFrame.Width = Dim.Percent(50);
         inputFrame.Height = Dim.Fill();
-        return [inputFrame];
+
+        return [coverageFrame, inputFrame];
     }
 }
 
@@ -54,9 +59,11 @@ internal static class Program
             Extensions = [".draco"],
             Parse = text => SyntaxTree.Parse(text),
         });
-        window.AddAddon(new InputQueueAddon<SyntaxTree>
+        window.AddAddon(new InputQueueAddon<SyntaxTree>()
         {
+            MaxVisualizedItems = 5000,
         });
+        window.AddAddon(new CoverageScaleAddon());
         window.Initialize();
         Application.Run(Application.Top);
 

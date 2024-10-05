@@ -380,7 +380,8 @@ internal sealed class Parser(
 
         case TokenKind.KeywordModule:
             return this.ParseModuleDeclaration(attributes, visibility, context);
-
+        case TokenKind.KeywordField:
+            return this.ParseFieldDeclaration(attributes, visibility, context);
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
             return this.ParseVariableDeclaration(attributes, visibility, global, context);
@@ -554,15 +555,12 @@ internal sealed class Parser(
     /// Parses the body of a class.
     /// </summary>
     /// <returns>The parsed <see cref="ClassBodySyntax"/>.</returns>
-    private ClassBodySyntax ParseClassBody()
+    private ClassBodySyntax ParseClassBody() => this.PeekKind() switch
     {
-        return this.PeekKind() switch
-        {
-            TokenKind.Semicolon => this.ParseEmptyClassBody(),
-            TokenKind.CurlyOpen => this.ParseBlockClassBody(),
-            _ => throw new NotImplementedException(),// TODO
-        };
-    }
+        TokenKind.Semicolon => this.ParseEmptyClassBody(),
+        TokenKind.CurlyOpen => this.ParseBlockClassBody(),
+        _ => throw new NotImplementedException(),// TODO
+    };
 
     /// <summary>
     /// Parses an empty class body, which is just a semicolon.
@@ -636,6 +634,18 @@ internal sealed class Parser(
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
         return new VariableDeclarationSyntax(attributes, visibility, global, keyword, identifier, type, assignment, semicolon);
+    }
+
+    private FieldDeclarationSyntax ParseFieldDeclaration(
+        SyntaxList<AttributeSyntax>? attributes,
+        SyntaxToken? visibility,
+        SyntaxToken? global,
+        DeclarationContext context)
+    {
+        if(context == DeclarationContext.Local)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedFieldDeclarationInFunction)
+        }
     }
 
     /// <summary>

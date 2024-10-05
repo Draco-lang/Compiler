@@ -171,4 +171,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "{0} is not a valid {1} in Draco, use {2} instead",
         code: Code(18));
+
+    /// <summary>
+    /// There is a field declaration in a function.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedFieldDeclarationInFunction = DiagnosticTemplate.Create(
+        title: "unexpected field declaration",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected field declaration",
+        code: Code(19));
 }

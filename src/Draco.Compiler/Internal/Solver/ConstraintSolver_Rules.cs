@@ -245,8 +245,11 @@ internal sealed partial class ConstraintSolver
                 }
 
                 // It's a function
-                // We can merge the return type
-                UnifyAsserted(callable.ReturnType, functionType.ReturnType);
+                // The inferred return type must be assignable to the return type of the function
+                this.Assignable(
+                    functionType.ReturnType,
+                    callable.ReturnType,
+                    ConstraintLocator.Constraint(callable));
 
                 // Check if it has the same number of args
                 if (functionType.Parameters.Length != callable.Arguments.Length)

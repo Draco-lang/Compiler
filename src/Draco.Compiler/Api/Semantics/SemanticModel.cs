@@ -370,6 +370,7 @@ public sealed partial class SemanticModel : IBinderProvider
             }
         }
 
+        if (result.Count == 0) return [];
         if (result.Count == 1)
         {
             // Just a single method added

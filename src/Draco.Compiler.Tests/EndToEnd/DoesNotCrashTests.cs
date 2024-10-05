@@ -286,6 +286,13 @@ public sealed class DoesNotCrashTests
             back = temp;
         }
         """)]
+    [InlineData("""
+        func bar(): int32 {}
+        func foo() {
+            val x = bar;
+            if (x()) {}
+        }
+        """)]
     [Theory]
     public void DoesNotCrash(string source)
     {

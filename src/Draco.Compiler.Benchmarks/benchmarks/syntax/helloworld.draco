@@ -1,5 +1,0 @@
-import System.Console;
-
-public func main() {
-    WriteLine("Hello, World!");
-}

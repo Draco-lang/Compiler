@@ -4,20 +4,36 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
-  <!-- Copy benchmark inputs -->
-  <ItemGroup>
-    <Content Include="benchmarks\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Draco.Compiler\Draco.Compiler.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageReference Include="Basic.Reference.Assemblies.Net80" Version="1.4.5" />
   </ItemGroup>
+
+  <!-- Copy benchmark inputs -->
+  <ItemGroup>
+    <Content Include="inputs\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <!-- Also add files from examples and the fuzzer -->
+  <ItemGroup>
+    <DracoExampleFiles Include="..\..\examples\**\*.draco" />
+    <DracoExampleFilesRenamedImmediate Include="@(DracoExampleFiles->Replace('\', '-'))" />
+    <DracoExampleFilesRenamed Include="@(DracoExampleFilesRenamedImmediate->Replace('..-..-', ''))" />
+    
+    <DracoFuzzerFiles Include="..\Draco.Compiler.Fuzzer\inputs\*.draco" />
+  </ItemGroup>
+  <Target Name="CopyDracoExampleFiles" AfterTargets="Build">
+    <!-- Copy DracoExampleFiles to 'inputs' of output path as DracoExampleFilesRenamed -->
+    <Copy SourceFiles="@(DracoExampleFiles)"
+          DestinationFiles="@(DracoExampleFilesRenamed->'$(OutputPath)inputs\%(Filename)%(Extension)')" />
+    <!-- Copy DracoFuzzerFiles to 'inputs' of output path as DracoFuzzerFiles -->
+    <Copy SourceFiles="@(DracoFuzzerFiles)"
+          DestinationFiles="@(DracoFuzzerFiles->'$(OutputPath)inputs\%(Filename)%(Extension)')" />
+  </Target>
 
 </Project>

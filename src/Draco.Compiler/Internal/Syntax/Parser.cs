@@ -644,7 +644,8 @@ internal sealed class Parser(
     {
         if(context == DeclarationContext.Local)
         {
-            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedFieldDeclarationInFunction)
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedFieldDeclarationInFunction);
+            this.AddDiagnostic()
         }
     }
 

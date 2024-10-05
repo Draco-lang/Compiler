@@ -7,20 +7,13 @@ using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Benchmarks;
 
-public class E2eBenchmarks : FolderBenchmarkBase
+public class E2eBenchmarks() : FolderBenchmarkBase("inputs")
 {
-    private MemoryStream peStream = null!;
-
-    public E2eBenchmarks()
-        : base("e2e")
-    {
-    }
+    // 64 KB should be enough for anyone, right Bill?
+    private readonly MemoryStream peStream = new(1024 * 64);
 
     [IterationSetup]
-    public void Setup()
-    {
-        this.peStream = new();
-    }
+    public void Setup() => this.peStream.Position = 0;
 
     [Benchmark]
     public EmitResult Compile()

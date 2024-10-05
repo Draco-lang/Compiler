@@ -10,9 +10,7 @@ public abstract class FolderBenchmarkBase(string path)
     [ParamsSource(nameof(GetSourcesFromFolder))]
     public SourceCodeParameter Input { get; set; } = null!;
 
-    private readonly string path = Path.Join("benchmarks", path);
-
     public IEnumerable<SourceCodeParameter> GetSourcesFromFolder() => Directory
-        .GetFiles(this.path)
+        .GetFiles(path)
         .Select(SourceCodeParameter.FromPath);
 }

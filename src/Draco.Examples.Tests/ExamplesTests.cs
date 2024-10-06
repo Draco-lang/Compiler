@@ -27,6 +27,11 @@ public sealed class ExamplesTests
         }
     }
 
+    private const string DescriptionForNotInstalledToolchain = """
+        Note, that you need to have the toolchain installed in the examples directory, in order to run these tests.
+        You can do that by running the install_toolchain.ps1 script in the scripts directory and passing in the path to the examples directory.
+        """;
+
     public ExamplesTests()
     {
         DiffTools.UseOrder(DiffTool.VisualStudioCode, DiffTool.VisualStudio, DiffTool.Rider);
@@ -63,7 +68,10 @@ public sealed class ExamplesTests
         process.WaitForExit();
 
         // Verify that the process exited successfully
-        Assert.Equal(0, process.ExitCode);
+        Assert.True(process.ExitCode == 0, $"""
+            The process exited with a non-zero exit code ({process.ExitCode}).
+            {DescriptionForNotInstalledToolchain}
+            """);
 
         // Configure verifier
         var settings = new VerifySettings();

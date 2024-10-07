@@ -45,7 +45,7 @@ public class CodeExecutionTests
         
         class Foo {
             field i: int;
-            increment(this): void {
+            func increment(this) {
                 this.i += 1;
             }
         }

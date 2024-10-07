@@ -481,7 +481,7 @@
 
       <Token Kind="ParenOpen" />
     </Field>
-    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;ParameterSyntax&gt;">
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;ParameterSyntaxBase&gt;">
       <Documentation>
         The parameters this function declares.
       </Documentation>
@@ -534,6 +534,7 @@
         The attributes of this parameter.
       </Documentation>
     </Field>
+
     <Field Name="Variadic" Type="SyntaxToken?">
       <Documentation>
         The ellipsis token, in case it's variadic.
@@ -729,6 +730,13 @@
     <Documentation>
       A field declaration.
     </Documentation>
+
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The attributes of this field.
+      </Documentation>
+    </Field>
+
 
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
@@ -1412,6 +1420,20 @@
         The list of comparisons.
       </Documentation>
     </Field>
+  </Node>
+
+  <Node Name="ThisExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      The keyword this, representing the type instance.
+    </Documentation>
+
+    <Field Name="Keyword" Type="SyntaxToken">
+      <Documentation>
+        The this keyword.
+      </Documentation>
+      <Token Kind="KeywordThis"/>
+    </Field>
+
   </Node>
 
   <Node Name="GroupingExpressionSyntax" Base="ExpressionSyntax">

@@ -182,4 +182,16 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "the {0} {1} is inaccessible due to its visibility",
         code: Code(19));
+
+    public static readonly DiagnosticTemplate ThisParameterNotFirst = DiagnosticTemplate.Create(
+        title: "this parameter not first",
+        severity: DiagnosticSeverity.Error,
+        format: "the this parameter must be the first parameter",
+        code: Code(20));
+
+    public static readonly DiagnosticTemplate NoTypeInstanceToReference = DiagnosticTemplate.Create(
+        title: "no type instance to reference",
+        severity: DiagnosticSeverity.Error,
+        format: "there is no type instance to reference.",
+        code: Code(21));
 }

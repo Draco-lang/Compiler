@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -50,6 +52,27 @@ internal partial class Binder
     {
         var result = this.LookupInternal(name, BinderFacts.IsTypeSymbol, reference);
         return result.GetType(name, reference, diagnostics);
+    }
+    /// <summary>
+    /// Looks up the declaring type of the current scope.
+    /// </summary>
+    /// <param name="reference">The syntax referencing the symbol.</param>
+    /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    internal TypeSymbol LookupDeclaringType(SyntaxNode reference, DiagnosticBag diagnostics)
+    {
+        foreach (var scope in this.AncestorChain)
+        {
+            if (scope is ClassBinder classBinder)
+            {
+                return classBinder.ContainingSymbol;
+            }
+        }
+        diagnostics.Add(Diagnostic.Create(
+            template: SymbolResolutionErrors.NoTypeInstanceToReference,
+            location: reference.Location));
+        return WellKnownTypes.ErrorType;
     }
 
     /// <summary>

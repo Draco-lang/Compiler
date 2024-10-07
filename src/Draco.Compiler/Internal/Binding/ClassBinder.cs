@@ -10,10 +10,10 @@ using Draco.Compiler.Internal.Symbols.Source;
 namespace Draco.Compiler.Internal.Binding;
 internal sealed class ClassBinder(Binder parent, TypeSymbol symbol) : Binder(parent)
 {
-    public override Symbol? ContainingSymbol => this.symbol;
+    public override TypeSymbol ContainingSymbol => this.symbol;
     public override SyntaxNode? DeclaringSyntax => this.symbol.DeclaringSyntax;
 
-    private readonly Symbol symbol = symbol;
+    private readonly TypeSymbol symbol = symbol;
 
     public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Members
         .Cast<Symbol>()

@@ -91,9 +91,9 @@ public static partial class SyntaxFactory
     public static SeparatedSyntaxList<TNode> SeparatedSyntaxList<TNode>(SyntaxToken separator, params TNode[] elements)
         where TNode : SyntaxNode => SeparatedSyntaxList(separator, elements.AsEnumerable());
 
-    public static SeparatedSyntaxList<ParameterSyntax> ParameterList(IEnumerable<ParameterSyntax> parameters) =>
+    public static SeparatedSyntaxList<ParameterSyntaxBase> ParameterList(IEnumerable<ParameterSyntaxBase> parameters) =>
         SeparatedSyntaxList(Comma, parameters);
-    public static SeparatedSyntaxList<ParameterSyntax> ParameterList(params ParameterSyntax[] parameters) =>
+    public static SeparatedSyntaxList<ParameterSyntaxBase> ParameterList(params ParameterSyntaxBase[] parameters) =>
         SeparatedSyntaxList(Comma, parameters);
     public static ParameterSyntax Parameter(string name, TypeSyntax type) =>
         Parameter([], name, type);
@@ -121,7 +121,7 @@ public static partial class SyntaxFactory
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
-        SeparatedSyntaxList<ParameterSyntax> parameters,
+        SeparatedSyntaxList<ParameterSyntaxBase> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) =>
         FunctionDeclaration([], Semantics.Visibility.Private, name, null, parameters, returnType, body);
@@ -129,7 +129,7 @@ public static partial class SyntaxFactory
     public static FunctionDeclarationSyntax FunctionDeclaration(
         IEnumerable<AttributeSyntax> attributes,
         string name,
-        SeparatedSyntaxList<ParameterSyntax> parameters,
+        SeparatedSyntaxList<ParameterSyntaxBase> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) =>
         FunctionDeclaration(attributes, Semantics.Visibility.Private, name, null, parameters, returnType, body);
@@ -137,7 +137,7 @@ public static partial class SyntaxFactory
     public static FunctionDeclarationSyntax FunctionDeclaration(
         Visibility visibility,
         string name,
-        SeparatedSyntaxList<ParameterSyntax> parameters,
+        SeparatedSyntaxList<ParameterSyntaxBase> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) =>
         FunctionDeclaration([], visibility, name, null, parameters, returnType, body);
@@ -145,7 +145,7 @@ public static partial class SyntaxFactory
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
         GenericParameterListSyntax? generics,
-        SeparatedSyntaxList<ParameterSyntax> parameters,
+        SeparatedSyntaxList<ParameterSyntaxBase> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) =>
         FunctionDeclaration([], Semantics.Visibility.Private, name, generics, parameters, returnType, body);
@@ -155,7 +155,7 @@ public static partial class SyntaxFactory
         Visibility visibility,
         string name,
         GenericParameterListSyntax? generics,
-        SeparatedSyntaxList<ParameterSyntax> parameters,
+        SeparatedSyntaxList<ParameterSyntaxBase> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
         attributes,

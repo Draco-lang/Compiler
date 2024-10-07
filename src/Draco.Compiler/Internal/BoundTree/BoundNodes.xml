@@ -191,6 +191,10 @@
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
+  <Node Name="BoundThisExpression" Base="BoundExpression">
+    <Field Name="Type" Type="TypeSymbol" Override="true" />
+  </Node>
+
   <Node Name="BoundPropertyGetExpression" Base="BoundExpression">
     <Field Name="Receiver" Type="BoundExpression?"/>
     <Field Name="Getter" Type="FunctionSymbol" />

@@ -331,9 +331,9 @@ internal sealed class Lexer
             {
                 "and" => TokenKind.KeywordAnd,
                 "class" => TokenKind.KeywordClass,
-                "this" => TokenKind.KeywordThis,
                 "else" => TokenKind.KeywordElse,
                 "false" => TokenKind.KeywordFalse,
+                "field" => TokenKind.KeywordField,
                 "for" => TokenKind.KeywordFor,
                 "func" => TokenKind.KeywordFunc,
                 "goto" => TokenKind.KeywordGoto,
@@ -348,6 +348,7 @@ internal sealed class Lexer
                 "public" => TokenKind.KeywordPublic,
                 "rem" => TokenKind.KeywordRem,
                 "return" => TokenKind.KeywordReturn,
+                "this" => TokenKind.KeywordThis,
                 "true" => TokenKind.KeywordTrue,
                 "val" => TokenKind.KeywordVal,
                 "value" => TokenKind.KeywordValue,

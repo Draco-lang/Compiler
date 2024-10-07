@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -98,9 +99,28 @@ internal abstract class SyntaxFunctionSymbol(
         var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
+        var isInstance = null as SourceThisParameterSymbol;
+
         for (var i = 0; i < parameterSyntaxes.Count; ++i)
         {
-            var parameterSyntax = parameterSyntaxes[i];
+            var syntax = parameterSyntaxes[i];
+
+            if (syntax is ThisParameterSyntax thisParameter)
+            {
+                var asSymbol = new SourceThisParameterSymbol(this, thisParameter);
+                if (i == 0)
+                {
+                    isInstance = asSymbol;
+                    continue;
+                }
+                binderProvider.DiagnosticBag.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.ThisParameterNotFirst,
+                    location: thisParameter.Location));
+                parameters.Add(asSymbol);
+                continue;
+            }
+            var parameterSyntax = (ParameterSyntax)syntax;
+
             var parameterName = parameterSyntax.Name.Text;
 
             var usedBefore = parameters.Any(p => p.Name == parameterName);
@@ -109,7 +129,7 @@ internal abstract class SyntaxFunctionSymbol(
                 // NOTE: We only report later duplicates, no need to report the first instance
                 binderProvider.DiagnosticBag.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalShadowing,
-                    location: parameterSyntax.Location,
+                    location: syntax.Location,
                     formatArgs: parameterName));
             }
 
@@ -117,7 +137,7 @@ internal abstract class SyntaxFunctionSymbol(
             {
                 binderProvider.DiagnosticBag.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.VariadicParameterNotLast,
-                    location: parameterSyntax.Location,
+                    location: syntax.Location,
                     formatArgs: parameterName));
             }
 

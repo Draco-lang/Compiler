@@ -47,6 +47,7 @@ internal partial class Binder
         MemberExpressionSyntax maccess => this.BindMemberExpression(maccess, constraints, diagnostics),
         GenericExpressionSyntax gen => this.BindGenericExpression(gen, constraints, diagnostics),
         IndexExpressionSyntax index => this.BindIndexExpression(index, constraints, diagnostics),
+        ThisExpressionSyntax @this => this.BindThisExpression(@this, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -677,6 +678,15 @@ internal partial class Binder
             return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask));
         }
     }
+
+    private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax @this, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var declaringType = this.LookupDeclaringType(@this, diagnostics);
+
+        var boundThis = new BoundThisExpression(@this, declaringType);
+        return BindingTask.FromResult<BoundExpression>(boundThis);
+    }
+
 
     private async BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

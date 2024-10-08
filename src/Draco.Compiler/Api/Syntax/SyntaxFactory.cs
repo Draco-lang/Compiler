@@ -167,37 +167,38 @@ public static partial class SyntaxFactory
         body);
 
     public static VariableDeclarationSyntax VariableDeclaration(
-        bool globql,
+        bool global,
         string name,
-        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(null, globql, true, name, type, value);
+        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(null, global, false, true, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         Visibility visibility,
-        bool globql,
+        bool global,
         string name,
-        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), globql, true, name, type, value);
+        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), global, false, true, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         bool global,
         string name,
-        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(null, global, false, name, type, value);
+        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(null, global, false, false, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         Visibility visibility,
         bool global,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), global, false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), global, false, false, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         TokenKind? visibility,
         bool global,
+        bool field,
         bool isMutable,
-        string name,
-        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(
+        string name, TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(
         [],
         visibility,
         global ? TokenKind.KeywordGlobal : null,
+        field ? TokenKind.KeywordField : null,
         isMutable ? TokenKind.KeywordVar : TokenKind.KeywordVal,
         name,
         type is null ? null : TypeSpecifier(type),

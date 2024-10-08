@@ -4,7 +4,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
-internal class SourceFieldSymbol(TypeSymbol containingSymbol, FieldDeclarationSyntax field) : FieldSymbol, ISourceSymbol
+internal class SourceFieldSymbol(TypeSymbol containingSymbol, VariableDeclarationSyntax field) : FieldSymbol, ISourceSymbol
 {
     public override TypeSymbol ContainingSymbol => containingSymbol;
 
@@ -19,9 +19,8 @@ internal class SourceFieldSymbol(TypeSymbol containingSymbol, FieldDeclarationSy
     private TypeSymbol? type;
 
     public override bool IsMutable => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVar;
-    public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override FieldDeclarationSyntax DeclaringSyntax { get; } = field;
+    public override VariableDeclarationSyntax DeclaringSyntax { get; } = field;
 
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {

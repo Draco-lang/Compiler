@@ -382,10 +382,11 @@ internal sealed class Parser(
         case TokenKind.KeywordModule:
             return this.ParseModuleDeclaration(attributes, visibility, context);
         case TokenKind.KeywordField:
-            return this.ParseFieldDeclaration(attributes, visibility, global, context);
+            var fieldToken = this.Advance();
+            return this.ParseVariableDeclaration(attributes, visibility, global, fieldToken, context);
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
-            return this.ParseVariableDeclaration(attributes, visibility, global, context);
+            return this.ParseVariableDeclaration(attributes, visibility, global, null, context);
 
         case TokenKind.Identifier when this.PeekKind(1) == TokenKind.Colon:
             return this.ParseLabelDeclaration(attributes, visibility, context);
@@ -605,6 +606,7 @@ internal sealed class Parser(
         SyntaxList<AttributeSyntax>? attributes,
         SyntaxToken? visibility,
         SyntaxToken? global,
+        SyntaxToken? field,
         DeclarationContext context)
     {
         if (context == DeclarationContext.Local && attributes is not null)
@@ -634,48 +636,9 @@ internal sealed class Parser(
         }
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(attributes, visibility, global, keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(attributes, visibility, global, field, keyword, identifier, type, assignment, semicolon);
     }
 
-
-    /// <summary>
-    /// Parses a <see cref="FieldDeclarationSyntax"/>.
-    /// </summary>
-    /// <param name="attributes">The attributes on the field.</param>
-    /// <param name="visibility">The visibility modifier on the field.</param>
-    /// <param name="context">The current declaration context.</param>
-    /// <returns>The parsed <see cref="FieldDeclarationSyntax"/>.</returns>
-    private FieldDeclarationSyntax ParseFieldDeclaration(
-        SyntaxList<AttributeSyntax>? attributes,
-        SyntaxToken? visibility,
-        SyntaxToken? global,
-        DeclarationContext context)
-    {
-        // NOTE: We will always call this function by checking the leading keyword
-        var keyword = this.Advance();
-        var identifier = this.Expect(TokenKind.Identifier);
-        // We don't necessarily have type specifier
-        TypeSpecifierSyntax? type = null;
-        if (this.PeekKind() == TokenKind.Colon) type = this.ParseTypeSpecifier();
-        // We don't necessarily have value assigned to the variable
-        ValueSpecifierSyntax? assignment = null;
-        if (this.Matches(TokenKind.Assign, out var assign))
-        {
-            var value = this.ParseExpression();
-            assignment = new(assign, value);
-        }
-
-        // Eat semicolon at the end of declaration
-        var semicolon = this.Expect(TokenKind.Semicolon);
-
-        var syntax = new FieldDeclarationSyntax(attributes, visibility, keyword, identifier, type, assignment, semicolon);
-        if (context == DeclarationContext.Local)
-        {
-            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedFieldDeclarationInFunction);
-            this.AddDiagnostic(syntax, info);
-        }
-        return syntax;
-    }
 
     /// <summary>
     /// Parses a function declaration.

@@ -22,6 +22,8 @@ internal class SourceFieldSymbol(TypeSymbol containingSymbol, VariableDeclaratio
 
     public override VariableDeclarationSyntax DeclaringSyntax { get; } = field;
 
+    public override string Name => this.DeclaringSyntax.Name.Text;
+
     private TypeSymbol BindType(IBinderProvider binderProvider)
     {
         if (this.DeclaringSyntax.Type is null) throw new NotImplementedException(); // TODO: what should I do when the type is missing? Do we allow inference here ?

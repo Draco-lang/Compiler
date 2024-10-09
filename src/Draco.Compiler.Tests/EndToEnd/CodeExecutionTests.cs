@@ -44,7 +44,7 @@ public class CodeExecutionTests
         }
         
         class Foo {
-            field var i: int;
+            field var i: int32;
             func increment(this) {
                 this.i += 1;
             }

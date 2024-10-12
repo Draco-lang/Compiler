@@ -29,13 +29,13 @@ public static class CoverageReader
     /// <summary>
     /// A default coverage reader that clears and reads directly from the supported target information.
     /// </summary>
-    public static ICoverageReader Default => DefaultReaderr.Instance;
+    public static ICoverageReader Default => DefaultReader.Instance;
 
-    private sealed class DefaultReaderr : ICoverageReader
+    private sealed class DefaultReader : ICoverageReader
     {
-        public static DefaultReaderr Instance { get; } = new();
+        public static DefaultReader Instance { get; } = new();
 
-        private DefaultReaderr()
+        private DefaultReader()
         {
         }
 

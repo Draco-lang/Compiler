@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
@@ -41,6 +42,9 @@ internal sealed class SourceFunctionSymbol(
         this.CheckForSameParameterOverloads(binderProvider);
 
         // Flow analysis
+        var cfg = ControlFlowGraphBuilder.Build(body);
+        var dot = cfg.ToDot();
+        Console.WriteLine(dot);
         // TODO
         throw new System.NotImplementedException();
         //ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);

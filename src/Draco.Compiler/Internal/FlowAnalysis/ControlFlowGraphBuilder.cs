@@ -101,9 +101,8 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var elseBlock = new BasicBlock();
         var finalBlock = new BasicBlock();
         // Connect the current block to the branches
-        var currentBlock = this.currentBasicBlock;
-        Sequence(currentBlock, thenBlock);
-        Sequence(currentBlock, elseBlock);
+        Sequence(this.currentBasicBlock, thenBlock);
+        Sequence(this.currentBasicBlock, elseBlock);
         // Translate then
         this.currentBasicBlock = thenBlock;
         node.Then.Accept(this);
@@ -176,6 +175,31 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         Sequence(this.currentBasicBlock, rightRuns);
         this.currentBasicBlock = rightRuns;
         node.Right.Accept(this);
+        Sequence(this.currentBasicBlock, finallyBlock);
+        this.currentBasicBlock = finallyBlock;
+    }
+
+    public override void VisitRelationalExpression(BoundRelationalExpression node)
+    {
+        if (node.Comparisons.Length <= 1)
+        {
+            base.VisitRelationalExpression(node);
+            return;
+        }
+
+        // The first 2 operands are always evaluated
+        // After that, each operand might not be evaluated
+        var finallyBlock = new BasicBlock();
+        node.First.Accept(this);
+        node.Comparisons[0].Accept(this);
+        for (var i = 1; i < node.Comparisons.Length; ++i)
+        {
+            var rightRuns = new BasicBlock();
+            Sequence(this.currentBasicBlock, finallyBlock);
+            Sequence(this.currentBasicBlock, rightRuns);
+            this.currentBasicBlock = rightRuns;
+            node.Comparisons[i].Accept(this);
+        }
         Sequence(this.currentBasicBlock, finallyBlock);
         this.currentBasicBlock = finallyBlock;
     }

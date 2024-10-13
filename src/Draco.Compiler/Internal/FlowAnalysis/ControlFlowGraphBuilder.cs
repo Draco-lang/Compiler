@@ -152,6 +152,34 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.currentBasicBlock = breakBlock;
     }
 
+    public override void VisitAndExpression(BoundAndExpression node)
+    {
+        // Right side might not be evaluated
+        var finallyBlock = new BasicBlock();
+        var rightRuns = new BasicBlock();
+        node.Left.Accept(this);
+        Sequence(this.currentBasicBlock, finallyBlock);
+        Sequence(this.currentBasicBlock, rightRuns);
+        this.currentBasicBlock = rightRuns;
+        node.Right.Accept(this);
+        Sequence(this.currentBasicBlock, finallyBlock);
+        this.currentBasicBlock = finallyBlock;
+    }
+
+    public override void VisitOrExpression(BoundOrExpression node)
+    {
+        // Right side might not be evaluated
+        var finallyBlock = new BasicBlock();
+        var rightRuns = new BasicBlock();
+        node.Left.Accept(this);
+        Sequence(this.currentBasicBlock, finallyBlock);
+        Sequence(this.currentBasicBlock, rightRuns);
+        this.currentBasicBlock = rightRuns;
+        node.Right.Accept(this);
+        Sequence(this.currentBasicBlock, finallyBlock);
+        this.currentBasicBlock = finallyBlock;
+    }
+
     // Special cases ///////////////////////////////////////////////////////////
 
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)

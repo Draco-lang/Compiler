@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 
@@ -69,16 +70,16 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     }
 
     /// <summary>
-    /// Connects two basic blocks in a succession.
+    /// Connects the current basic block to another basic block.
+    /// Does not change the current basic block.
     /// </summary>
-    /// <param name="from">The basic block to connect from (predecessor).</param>
     /// <param name="to">The basic block to connect to (successor).</param>
-    private static void Sequence(BasicBlock? from, BasicBlock to)
+    private void Sequence(BasicBlock to)
     {
-        if (from is null) return;
+        if (this.currentBasicBlock is null) return;
 
-        from.Successors.Add(to);
-        to.Predecessors.Add(from);
+        this.currentBasicBlock.Successors.Add(to);
+        to.Predecessors.Add(this.currentBasicBlock);
     }
 
     // Alters flow /////////////////////////////////////////////////////////////
@@ -96,7 +97,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public override void VisitGotoExpression(BoundGotoExpression node)
     {
         var target = this.GetBlock(node.Target);
-        Sequence(this.currentBasicBlock, target);
+        this.Sequence(target);
         this.Detach();
     }
 
@@ -109,16 +110,16 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var elseBlock = new BasicBlock();
         var finalBlock = new BasicBlock();
         // Connect the current block to the branches
-        Sequence(this.currentBasicBlock, thenBlock);
-        Sequence(this.currentBasicBlock, elseBlock);
+        this.Sequence(thenBlock);
+        this.Sequence(elseBlock);
         // Translate then
         this.currentBasicBlock = thenBlock;
         node.Then.Accept(this);
-        Sequence(this.currentBasicBlock, finalBlock);
+        this.Sequence(finalBlock);
         // Translate else
         this.currentBasicBlock = elseBlock;
         node.Else.Accept(this);
-        Sequence(this.currentBasicBlock, finalBlock);
+        this.Sequence(finalBlock);
         // Continue with the final block
         this.currentBasicBlock = finalBlock;
     }
@@ -128,19 +129,19 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var continueBlock = this.GetBlock(node.ContinueLabel);
         var breakBlock = this.GetBlock(node.BreakLabel);
         // Sequence the current block to the continue block
-        Sequence(this.currentBasicBlock, continueBlock);
+        this.Sequence(continueBlock);
         // Translate the condition
         this.currentBasicBlock = continueBlock;
         node.Condition.Accept(this);
         // We can either run the body, or break out
         var bodyBlock = new BasicBlock();
-        Sequence(this.currentBasicBlock, bodyBlock);
-        Sequence(this.currentBasicBlock, breakBlock);
+        this.Sequence(bodyBlock);
+        this.Sequence(breakBlock);
         // Translate the body
         this.currentBasicBlock = bodyBlock;
         node.Then.Accept(this);
         // Go back to the continue block
-        Sequence(this.currentBasicBlock, continueBlock);
+        this.Sequence(continueBlock);
         // Go on with the break block
         this.currentBasicBlock = breakBlock;
     }
@@ -152,8 +153,8 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         // The sequence gets evaluated at the start
         node.Sequence.Accept(this);
         // Then we jump to the continue block or the break block
-        Sequence(this.currentBasicBlock, continueBlock);
-        Sequence(this.currentBasicBlock, breakBlock);
+        this.Sequence(continueBlock);
+        this.Sequence(breakBlock);
         // Translate the body
         this.currentBasicBlock = continueBlock;
         node.Then.Accept(this);
@@ -167,11 +168,11 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var finallyBlock = new BasicBlock();
         var rightRuns = new BasicBlock();
         node.Left.Accept(this);
-        Sequence(this.currentBasicBlock, finallyBlock);
-        Sequence(this.currentBasicBlock, rightRuns);
+        this.Sequence(finallyBlock);
+        this.Sequence(rightRuns);
         this.currentBasicBlock = rightRuns;
         node.Right.Accept(this);
-        Sequence(this.currentBasicBlock, finallyBlock);
+        this.Sequence(finallyBlock);
         this.currentBasicBlock = finallyBlock;
     }
 
@@ -181,11 +182,11 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var finallyBlock = new BasicBlock();
         var rightRuns = new BasicBlock();
         node.Left.Accept(this);
-        Sequence(this.currentBasicBlock, finallyBlock);
-        Sequence(this.currentBasicBlock, rightRuns);
+        this.Sequence(finallyBlock);
+        this.Sequence(rightRuns);
         this.currentBasicBlock = rightRuns;
         node.Right.Accept(this);
-        Sequence(this.currentBasicBlock, finallyBlock);
+        this.Sequence(finallyBlock);
         this.currentBasicBlock = finallyBlock;
     }
 
@@ -205,12 +206,12 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         for (var i = 1; i < node.Comparisons.Length; ++i)
         {
             var rightRuns = new BasicBlock();
-            Sequence(this.currentBasicBlock, finallyBlock);
-            Sequence(this.currentBasicBlock, rightRuns);
+            this.Sequence(finallyBlock);
+            this.Sequence(rightRuns);
             this.currentBasicBlock = rightRuns;
             node.Comparisons[i].Accept(this);
         }
-        Sequence(this.currentBasicBlock, finallyBlock);
+        this.Sequence(finallyBlock);
         this.currentBasicBlock = finallyBlock;
     }
 

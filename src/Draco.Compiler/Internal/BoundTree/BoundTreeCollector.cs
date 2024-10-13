@@ -21,7 +21,7 @@ internal static class BoundTreeCollector
         {
             var collector = new LocalCollector();
             node.Accept(collector);
-            return collector.locals.ToImmutableArray();
+            return [.. collector.locals];
         }
 
         private readonly HashSet<LocalSymbol> locals = [];

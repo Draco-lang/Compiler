@@ -1,3 +1,4 @@
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
@@ -55,5 +56,23 @@ internal sealed class ValAssignment(DiagnosticBag diagnostics) : BoundTreeVisito
             template: FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo,
             location: node.Syntax?.Location,
             formatArgs: lvalue.Name));
+    }
+
+    // NOTE: Hack until we properly reimplement flow analysis
+    public override void VisitBlockExpression(BoundBlockExpression node)
+    {
+        base.VisitBlockExpression(node);
+
+        var illegalImmutableDeclarations = node.Locals
+            .Where(l => !l.IsMutable)
+            .Where(l => l.DeclaringSyntax is VariableDeclarationSyntax { Value: null });
+
+        foreach (var sym in illegalImmutableDeclarations)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: FlowAnalysisErrors.ImmutableVariableMustBeInitialized,
+                location: sym.DeclaringSyntax?.Location,
+                formatArgs: sym.Name));
+        }
     }
 }

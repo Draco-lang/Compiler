@@ -1,4 +1,5 @@
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -46,6 +47,8 @@ internal sealed class ValAssignment(DiagnosticBag diagnostics) : BoundTreeVisito
         };
 
         if (lvalue is null || lvalue.IsMutable) return;
+        // NOTE: Hack until we properly reimplement flow analysis
+        if (node.Syntax is VariableDeclarationSyntax) return;
 
         // Immutable modified
         diagnostics.Add(Diagnostic.Create(

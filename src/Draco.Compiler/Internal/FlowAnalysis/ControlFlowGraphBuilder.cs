@@ -32,6 +32,10 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.currentBasicBlock.Add(node);
     }
 
+    // Alters flow /////////////////////////////////////////////////////////////
+
+    // TODO
+
     // Special cases ///////////////////////////////////////////////////////////
 
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
@@ -170,39 +174,9 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.Append(node);
     }
 
-    public override void VisitLocalExpression(BoundLocalExpression node)
-    {
-        base.VisitLocalExpression(node);
-        this.Append(node);
-    }
-
-    public override void VisitLocalLvalue(BoundLocalLvalue node)
-    {
-        base.VisitLocalLvalue(node);
-        this.Append(node);
-    }
-
-    public override void VisitModuleExpression(BoundModuleExpression node)
-    {
-        base.VisitModuleExpression(node);
-        this.Append(node);
-    }
-
-    public override void VisitNoOpStatement(BoundNoOpStatement node)
-    {
-        base.VisitNoOpStatement(node);
-        this.Append(node);
-    }
-
     public override void VisitObjectCreationExpression(BoundObjectCreationExpression node)
     {
         base.VisitObjectCreationExpression(node);
-        this.Append(node);
-    }
-
-    public override void VisitParameterExpression(BoundParameterExpression node)
-    {
-        base.VisitParameterExpression(node);
         this.Append(node);
     }
 
@@ -224,71 +198,34 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.Append(node);
     }
 
-    public override void VisitReferenceErrorExpression(BoundReferenceErrorExpression node)
-    {
-        base.VisitReferenceErrorExpression(node);
-        this.Append(node);
-    }
-
-    public override void VisitStringExpression(BoundStringExpression node)
-    {
-        base.VisitStringExpression(node);
-        this.Append(node);
-    }
-
-    public override void VisitStringInterpolation(BoundStringInterpolation node)
-    {
-        base.VisitStringInterpolation(node);
-        this.Append(node);
-    }
-
-    public override void VisitStringText(BoundStringText node)
-    {
-        base.VisitStringText(node);
-        this.Append(node);
-    }
-
-    public override void VisitTypeExpression(BoundTypeExpression node)
-    {
-        base.VisitTypeExpression(node);
-        this.Append(node);
-    }
-
     public override void VisitUnaryExpression(BoundUnaryExpression node)
     {
         base.VisitUnaryExpression(node);
         this.Append(node);
     }
 
-    public override void VisitUnexpectedExpression(BoundUnexpectedExpression node)
-    {
-        base.VisitUnexpectedExpression(node);
-        this.Append(node);
-    }
+    // Passthrough /////////////////////////////////////////////////////////////
+    // Elements that themselves do not alter the control flow, but their children might
 
-    public override void VisitUnexpectedLvalue(BoundUnexpectedLvalue node)
-    {
-        base.VisitUnexpectedLvalue(node);
-        this.Append(node);
-    }
+    public override void VisitStringExpression(BoundStringExpression node) => base.VisitStringExpression(node);
+    public override void VisitStringInterpolation(BoundStringInterpolation node) => base.VisitStringInterpolation(node);
 
-    public override void VisitUnexpectedStatement(BoundUnexpectedStatement node)
-    {
-        base.VisitUnexpectedStatement(node);
-        this.Append(node);
-    }
+    // Inert ///////////////////////////////////////////////////////////////////
+    // Elements that have no effect on the control flow
 
-    public override void VisitUnexpectedStringPart(BoundUnexpectedStringPart node)
-    {
-        base.VisitUnexpectedStringPart(node);
-        this.Append(node);
-    }
-
-    public override void VisitUnitExpression(BoundUnitExpression node)
-    {
-        base.VisitUnitExpression(node);
-        this.Append(node);
-    }
+    public override void VisitLocalExpression(BoundLocalExpression node) { }
+    public override void VisitLocalLvalue(BoundLocalLvalue node) { }
+    public override void VisitModuleExpression(BoundModuleExpression node) { }
+    public override void VisitNoOpStatement(BoundNoOpStatement node) { }
+    public override void VisitParameterExpression(BoundParameterExpression node) { }
+    public override void VisitReferenceErrorExpression(BoundReferenceErrorExpression node) { }
+    public override void VisitStringText(BoundStringText node) { }
+    public override void VisitTypeExpression(BoundTypeExpression node) { }
+    public override void VisitUnexpectedExpression(BoundUnexpectedExpression node) { }
+    public override void VisitUnexpectedLvalue(BoundUnexpectedLvalue node) { }
+    public override void VisitUnexpectedStatement(BoundUnexpectedStatement node) { }
+    public override void VisitUnexpectedStringPart(BoundUnexpectedStringPart node) { }
+    public override void VisitUnitExpression(BoundUnitExpression node) { }
 
     // Lowered /////////////////////////////////////////////////////////////////
 

@@ -270,6 +270,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     // Elements that themselves do not alter the control flow, but their children might
 
     public override void VisitBlockExpression(BoundBlockExpression node) => base.VisitBlockExpression(node);
+    public override void VisitComparison(BoundComparison node) => base.VisitComparison(node);
     public override void VisitExpressionStatement(BoundExpressionStatement node) => base.VisitExpressionStatement(node);
     public override void VisitStringExpression(BoundStringExpression node) => base.VisitStringExpression(node);
     public override void VisitStringInterpolation(BoundStringInterpolation node) => base.VisitStringInterpolation(node);

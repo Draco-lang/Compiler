@@ -41,9 +41,11 @@ internal sealed class SourceFunctionSymbol(
         this.CheckForSameParameterOverloads(binderProvider);
 
         // Flow analysis
-        ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
-        DefiniteAssignment.Analyze(body, binderProvider.DiagnosticBag);
-        ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+        // TODO
+        throw new System.NotImplementedException();
+        //ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
+        //DefiniteAssignment.Analyze(body, binderProvider.DiagnosticBag);
+        //ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
     }
 
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)

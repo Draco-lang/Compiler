@@ -20,6 +20,12 @@ internal interface IControlFlowGraph
     /// All basic blocks in the control flow graph.
     /// </summary>
     public IEnumerable<IBasicBlock> AllBlocks { get; }
+
+    /// <summary>
+    /// Translates the control flow graph to a DOT graph.
+    /// </summary>
+    /// <returns>The DOT representation of the control flow graph.</returns>
+    public string ToDot();
 }
 
 /// <summary>
@@ -33,4 +39,20 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
     public IEnumerable<IBasicBlock> AllBlocks => GraphTraversal.DepthFirst(
         start: (this as IControlFlowGraph).Entry,
         getNeighbors: n => n.Successors.Concat(n.Predecessors));
+
+    public string ToDot()
+    {
+        var graph = new DotGraphBuilder<IBasicBlock>(isDirected: true);
+        graph.WithName("ControlFlowGraph");
+
+        foreach (var block in this.AllBlocks)
+        {
+            graph.AddVertex(block);
+
+            foreach (var pred in block.Predecessors) graph.AddEdge(pred, block);
+            foreach (var succ in block.Successors) graph.AddEdge(block, succ);
+        }
+
+        return graph.ToDot();
+    }
 }

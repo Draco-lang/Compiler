@@ -11,15 +11,17 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// </summary>
 internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
 {
+    /// <summary>
+    /// Builds a control flow graph from a bound tree.
+    /// </summary>
+    /// <param name="root">The root of the bound tree.</param>
+    /// <returns>The control flow graph.</returns>
     public static IControlFlowGraph Build(BoundNode root)
     {
         var builder = new ControlFlowGraphBuilder();
         var start = builder.currentBasicBlock!;
         root.Accept(builder);
-        return new ControlFlowGraph
-        {
-            Entry = start,
-        };
+        return new ControlFlowGraph(start);
     }
 
     // All blocks associated to a label

@@ -48,11 +48,6 @@
     <Field Name="EmitNop" Type="bool" />
   </Node>
 
-  <Node Name="BoundLocalDeclaration" Base="BoundStatement">
-    <Field Name="Local" Type="LocalSymbol" />
-    <Field Name="Value" Type="BoundExpression?" />
-  </Node>
-
   <!-- Expressions -->
 
   <Node Name="BoundUnexpectedExpression" Base="BoundExpression">
@@ -164,10 +159,6 @@
   <Node Name="BoundArrayAccessExpression" Base="BoundExpression">
     <Field Name="Array" Type="BoundExpression" />
     <Field Name="Indices" Type="ImmutableArray&lt;BoundExpression&gt;" />
-  </Node>
-
-  <Node Name="BoundArrayLengthExpression" Base="BoundExpression">
-    <Field Name="Array" Type="BoundExpression" />
   </Node>
 
   <Node Name="BoundModuleExpression" Base="BoundExpression">

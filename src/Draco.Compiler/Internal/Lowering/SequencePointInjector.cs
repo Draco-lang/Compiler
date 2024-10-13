@@ -37,18 +37,6 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
         this.context = context;
     }
 
-    public override BoundNode VisitLocalDeclaration(BoundLocalDeclaration node)
-    {
-        var injected = (BoundStatement)base.VisitLocalDeclaration(node);
-        return SequencePointStatement(
-            statement: injected,
-            range: node.Syntax?.Range,
-            // If the value is null, there is nothing to compile
-            // So we enforce a NOP to be emitted
-            // If value is not null, we at least have a store
-            emitNop: node.Value is null);
-    }
-
     public override BoundNode VisitLabelStatement(BoundLabelStatement node)
     {
         // NOTE: Labels don't need to be decorated with anything further
@@ -139,10 +127,10 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
                     statement: null,
                     range: openBrace.Range,
                     emitNop: true),
-                LocalDeclaration(blockValue, BlockExpression(
+                ExpressionStatement(AssignmentExpression(LocalLvalue(blockValue), BlockExpression(
                     locals: node.Locals,
                     statements: statements,
-                    value: value)),
+                    value: value))),
                 SequencePointStatement(
                     statement: null,
                     range: closeBrace.Range,
@@ -248,7 +236,9 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
 
         // Create the assignment, pointing at the iterator syntax
         var iteratorAssignment = SequencePointStatement(
-            statement: LocalDeclaration(node.Iterator, LocalExpression(newIterator)),
+            statement: ExpressionStatement(AssignmentExpression(
+                LocalLvalue(node.Iterator),
+                LocalExpression(newIterator))),
             range: syntax?.Iterator.Range,
             emitNop: true);
 
@@ -310,7 +300,7 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
             locals: [storage],
             statements:
             [
-                LocalDeclaration(storage, value),
+                ExpressionStatement(AssignmentExpression(LocalLvalue(storage), value)),
                 SequencePointStatement(
                     statement: ExpressionStatement(ReturnExpression(LocalExpression(storage))),
                     range: ancestorBlock.CloseBrace.Range,
@@ -371,7 +361,9 @@ internal sealed class SequencePointInjector : BoundTreeRewriter
     {
         var symbol = new SynthetizedLocalSymbol(expr.TypeRequired, false);
         var symbolRef = LocalExpression(symbol);
-        var assignment = LocalDeclaration(local: symbol, value: expr);
+        var assignment = ExpressionStatement(AssignmentExpression(
+            left: LocalLvalue(symbol),
+            right: expr));
         return new(symbol, symbolRef, assignment);
     }
 

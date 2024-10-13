@@ -1819,7 +1819,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(diags);
@@ -1852,7 +1852,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -2071,7 +2071,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(diags);
@@ -2121,9 +2121,9 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDeclSyntax));
-        var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(bDeclSyntax));
-        var tmpSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(tmpDeclSyntax));
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(aDeclSyntax));
+        var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(bDeclSyntax));
+        var tmpSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(tmpDeclSyntax));
 
         var intArrayType = compilation.WellKnownTypes.InstantiateArray(compilation.WellKnownTypes.SystemInt32);
 
@@ -2267,7 +2267,7 @@ public sealed class TypeCheckingTests
 
         var semanticModel = compilation.GetSemanticModel(main);
         var aDecl = main.GetNode<VariableDeclarationSyntax>(0);
-        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDecl));
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(aDecl));
 
         var diags = semanticModel.Diagnostics;
 

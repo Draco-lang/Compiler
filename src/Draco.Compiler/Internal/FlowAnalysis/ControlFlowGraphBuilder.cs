@@ -66,12 +66,6 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.Append(node);
     }
 
-    public override void VisitArrayLengthExpression(BoundArrayLengthExpression node)
-    {
-        base.VisitArrayLengthExpression(node);
-        this.Append(node);
-    }
-
     public override void VisitBinaryExpression(BoundBinaryExpression node)
     {
         base.VisitBinaryExpression(node);
@@ -165,12 +159,6 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public override void VisitLiteralExpression(BoundLiteralExpression node)
     {
         base.VisitLiteralExpression(node);
-        this.Append(node);
-    }
-
-    public override void VisitLocalDeclaration(BoundLocalDeclaration node)
-    {
-        base.VisitLocalDeclaration(node);
         this.Append(node);
     }
 

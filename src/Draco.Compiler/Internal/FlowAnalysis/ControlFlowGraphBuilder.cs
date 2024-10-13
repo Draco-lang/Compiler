@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.BoundTree;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
@@ -14,8 +16,10 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var builder = new ControlFlowGraphBuilder();
     }
 
-    // The node sequence for the current basic block
-    private ImmutableArray<BoundNode>.Builder? currentBasicBlock;
+    // All blocks associated to a label
+    private readonly Dictionary<LabelSymbol, BasicBlock> labelsToBlocks = [];
+    // The current basic block being built
+    private BasicBlock? currentBasicBlock;
 
     private ControlFlowGraphBuilder()
     {
@@ -28,8 +32,23 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// <param name="node">The node to append.</param>
     private void Append(BoundNode node)
     {
-        this.currentBasicBlock ??= ImmutableArray.CreateBuilder<BoundNode>();
-        this.currentBasicBlock.Add(node);
+        this.currentBasicBlock ??= new();
+        this.currentBasicBlock.Nodes.Add(node);
+    }
+
+    /// <summary>
+    /// Retrieves the basic block associated with a label.
+    /// </summary>
+    /// <param name="label">The label to retrieve the basic block for.</param>
+    /// <returns>The basic block associated with the label.</returns>
+    private BasicBlock GetBasicBlock(LabelSymbol label)
+    {
+        if (!this.labelsToBlocks.TryGetValue(label, out var block))
+        {
+            block = new();
+            this.labelsToBlocks.Add(label, block);
+        }
+        return block;
     }
 
     // Alters flow /////////////////////////////////////////////////////////////

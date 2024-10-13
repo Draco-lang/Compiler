@@ -25,17 +25,18 @@ internal interface IBasicBlock : IReadOnlyList<BoundNode>
 /// <summary>
 /// A mutable implementation of <see cref="IBasicBlock"/>.
 /// </summary>
-internal sealed class BasicBlock(ImmutableArray<BoundNode> nodes) : IBasicBlock
+internal sealed class BasicBlock : IBasicBlock
 {
+    public List<BoundNode> Nodes { get; } = [];
     public ISet<BasicBlock> Predecessors { get; } = new HashSet<BasicBlock>();
     public ISet<BasicBlock> Successors { get; } = new HashSet<BasicBlock>();
 
     IEnumerable<BasicBlock> IBasicBlock.Predecessors => this.Predecessors;
     IEnumerable<BasicBlock> IBasicBlock.Successors => this.Successors;
 
-    public int Count => nodes.Length;
-    public BoundNode this[int index] => nodes[index];
+    public int Count => this.Nodes.Count;
+    public BoundNode this[int index] => this.Nodes[index];
 
-    public IEnumerator<BoundNode> GetEnumerator() => nodes.AsEnumerable().GetEnumerator();
+    public IEnumerator<BoundNode> GetEnumerator() => this.Nodes.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

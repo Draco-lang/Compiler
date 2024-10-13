@@ -40,7 +40,7 @@ internal sealed class DefiniteAssignment(ImmutableArray<LocalSymbol> locals)
 
     public readonly record struct LocalState(Dictionary<LocalSymbol, AssignmentStatus> Locals);
 
-    public override LocalState Top => new(Locals: []);
+    public override LocalState Top => new(Locals: locals.ToDictionary(s => s, _ => AssignmentStatus.NotInitialized));
     public override LocalState Bottom => new(Locals: locals.ToDictionary(s => s, _ => AssignmentStatus.Initialized));
 
     public override LocalState Clone(in LocalState state) => new(Locals: new(state.Locals));
@@ -70,13 +70,6 @@ internal sealed class DefiniteAssignment(ImmutableArray<LocalSymbol> locals)
     }
 
     private readonly Dictionary<BoundLocalExpression, AssignmentStatus> referenceStates = [];
-
-    public override void VisitLocalDeclaration(BoundLocalDeclaration node)
-    {
-        node.Value?.Accept(this);
-        var status = node.Value is null ? AssignmentStatus.NotInitialized : AssignmentStatus.Initialized;
-        this.State.Locals[node.Local] = status;
-    }
 
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
     {

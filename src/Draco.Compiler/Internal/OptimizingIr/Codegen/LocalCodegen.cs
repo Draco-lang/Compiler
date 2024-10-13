@@ -261,16 +261,6 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
         return default!;
     }
 
-    public override IOperand VisitLocalDeclaration(BoundLocalDeclaration node)
-    {
-        if (node.Value is null) return default!;
-
-        var right = this.Compile(node.Value);
-        this.WriteAssignment(node.Local, right);
-
-        return default!;
-    }
-
     public override IOperand VisitLabelStatement(BoundLabelStatement node)
     {
         // Define a new basic block
@@ -379,14 +369,6 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
         var dimensions = node.Sizes.Select(this.Compile).ToList();
         var result = this.DefineRegister(node.TypeRequired);
         this.Write(NewArray(result, node.ElementType, dimensions));
-        return result;
-    }
-
-    public override IOperand VisitArrayLengthExpression(BoundArrayLengthExpression node)
-    {
-        var array = this.Compile(node.Array);
-        var result = this.DefineRegister(node.TypeRequired);
-        this.Write(ArrayLength(result, array));
         return result;
     }
 

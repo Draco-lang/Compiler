@@ -124,6 +124,15 @@ internal partial class Binder
                 syntax.Value!.Value);
         }
 
-        return new BoundLocalDeclaration(syntax, localSymbol, valueTask is null ? null : await valueTask);
+        return valueTask is null
+            // If there's no value to assign, this simply becomes a no-op
+            ? new BoundNoOpStatement(syntax)
+            // If there is, we need to create an assignment
+            : new BoundExpressionStatement(
+                syntax,
+                new BoundAssignmentExpression(
+                    syntax,
+                    null,
+                    new BoundLocalLvalue(syntax.Name, localSymbol), await valueTask));
     }
 }

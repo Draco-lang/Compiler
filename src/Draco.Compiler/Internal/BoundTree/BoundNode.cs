@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.BoundTree;
 
@@ -156,12 +155,6 @@ internal partial class BoundArrayAccessExpression
 {
     public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments.FirstOrDefault()
                                     ?? WellKnownTypes.ErrorType;
-}
-
-internal partial class BoundArrayLengthExpression
-{
-    public override TypeSymbol? Type =>
-        (this.Array.TypeRequired.Substitution.GenericDefinition as ArrayTypeSymbol)?.IndexType;
 }
 
 internal partial class BoundCallExpression

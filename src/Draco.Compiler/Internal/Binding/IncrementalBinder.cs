@@ -122,7 +122,6 @@ public sealed partial class SemanticModel
 
         private static Symbol? ExtractSymbol(BoundNode node) => node switch
         {
-            BoundLocalDeclaration l => l.Local,
             BoundLabelStatement l => l.Label,
             BoundParameterExpression p => p.Parameter,
             BoundLocalExpression l => l.Local,

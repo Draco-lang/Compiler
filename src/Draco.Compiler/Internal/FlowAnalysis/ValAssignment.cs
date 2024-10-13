@@ -1,4 +1,6 @@
+using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
@@ -33,17 +35,6 @@ internal sealed class ValAssignment(DiagnosticBag diagnostics) : BoundTreeVisito
         function.Body.Accept(pass);
     }
 
-    public override void VisitLocalDeclaration(BoundLocalDeclaration node)
-    {
-        if (node.Value is not null || node.Local.IsMutable) return;
-
-        // Immutable not assigned
-        diagnostics.Add(Diagnostic.Create(
-            template: FlowAnalysisErrors.ImmutableVariableMustBeInitialized,
-            location: node.Syntax?.Location,
-            formatArgs: node.Local.Name));
-    }
-
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
     {
         base.VisitAssignmentExpression(node);
@@ -57,11 +48,31 @@ internal sealed class ValAssignment(DiagnosticBag diagnostics) : BoundTreeVisito
         };
 
         if (lvalue is null || lvalue.IsMutable) return;
+        // NOTE: Hack until we properly reimplement flow analysis
+        if (node.Syntax is VariableDeclarationSyntax) return;
 
         // Immutable modified
         diagnostics.Add(Diagnostic.Create(
             template: FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo,
             location: node.Syntax?.Location,
             formatArgs: lvalue.Name));
+    }
+
+    // NOTE: Hack until we properly reimplement flow analysis
+    public override void VisitBlockExpression(BoundBlockExpression node)
+    {
+        base.VisitBlockExpression(node);
+
+        var illegalImmutableDeclarations = node.Locals
+            .Where(l => !l.IsMutable)
+            .Where(l => l.DeclaringSyntax is VariableDeclarationSyntax { Value: null });
+
+        foreach (var sym in illegalImmutableDeclarations)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: FlowAnalysisErrors.ImmutableVariableMustBeInitialized,
+                location: sym.DeclaringSyntax?.Location,
+                formatArgs: sym.Name));
+        }
     }
 }

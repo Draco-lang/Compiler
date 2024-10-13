@@ -200,7 +200,6 @@ internal partial class Binder
                 {
                     // Add the assignment to the eval function
                     evalFuncStatements.Add(ExpressionStatement(AssignmentExpression(
-                        compoundOperator: null,
                         left: GlobalLvalue(symbol),
                         right: assignedValue)));
                 }

@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
@@ -47,12 +49,31 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
 
         foreach (var block in this.AllBlocks)
         {
-            graph.AddVertex(block);
+            graph
+                .AddVertex(block)
+                .WithShape(DotAttribs.Shape.Rectangle)
+                .WithHtmlAttribute("label", BasicBlockToLabel(block));
 
             foreach (var succ in block.Successors) graph.AddEdge(block, succ);
             // NOTE: Adding the predecessor would just cause each edge to show up twice
         }
 
         return graph.ToDot();
+
+        static string BasicBlockToLabel(IBasicBlock block)
+        {
+            var result = new StringBuilder();
+            foreach (var node in block)
+            {
+                result.Append(BoundNodeToLabel(node));
+                result.Append("<br align=\"left\"/>");
+            }
+            // NOTE: Empty HTML labels are not allowed by Graphviz, we just add a space
+            if (result.Length == 0) result.Append(' ');
+            return result.ToString();
+        }
+
+        static string BoundNodeToLabel(BoundNode node) =>
+            node.GetType().Name.Replace("Bound", string.Empty);
     }
 }

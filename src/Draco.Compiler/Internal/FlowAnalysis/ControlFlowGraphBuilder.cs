@@ -37,11 +37,20 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     }
 
     /// <summary>
+    /// Detaches the current basic block, meaning the builder will be in an "unreachable" state.
+    /// This could be right after a goto for example.
+    /// </summary>
+    private void Detach()
+    {
+        this.currentBasicBlock = null;
+    }
+
+    /// <summary>
     /// Retrieves the basic block associated with a label.
     /// </summary>
     /// <param name="label">The label to retrieve the basic block for.</param>
     /// <returns>The basic block associated with the label.</returns>
-    private BasicBlock GetBasicBlock(LabelSymbol label)
+    private BasicBlock GetBlock(LabelSymbol label)
     {
         if (!this.labelsToBlocks.TryGetValue(label, out var block))
         {
@@ -49,6 +58,17 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
             this.labelsToBlocks.Add(label, block);
         }
         return block;
+    }
+
+    /// <summary>
+    /// Connects two basic blocks in a succession.
+    /// </summary>
+    /// <param name="from">The basic block to connect from (predecessor).</param>
+    /// <param name="to">The basic block to connect to (successor).</param>
+    private static void Sequence(BasicBlock from, BasicBlock to)
+    {
+        from.Successors.Add(to);
+        to.Predecessors.Add(from);
     }
 
     // Alters flow /////////////////////////////////////////////////////////////

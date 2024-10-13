@@ -158,12 +158,6 @@ internal partial class BoundArrayAccessExpression
                                     ?? WellKnownTypes.ErrorType;
 }
 
-internal partial class BoundArrayLengthExpression
-{
-    public override TypeSymbol? Type =>
-        (this.Array.TypeRequired.Substitution.GenericDefinition as ArrayTypeSymbol)?.IndexType;
-}
-
 internal partial class BoundCallExpression
 {
     public override TypeSymbol Type => this.Method.ReturnType;

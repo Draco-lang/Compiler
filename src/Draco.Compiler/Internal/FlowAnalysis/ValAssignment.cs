@@ -33,17 +33,6 @@ internal sealed class ValAssignment(DiagnosticBag diagnostics) : BoundTreeVisito
         function.Body.Accept(pass);
     }
 
-    public override void VisitLocalDeclaration(BoundLocalDeclaration node)
-    {
-        if (node.Value is not null || node.Local.IsMutable) return;
-
-        // Immutable not assigned
-        diagnostics.Add(Diagnostic.Create(
-            template: FlowAnalysisErrors.ImmutableVariableMustBeInitialized,
-            location: node.Syntax?.Location,
-            formatArgs: node.Local.Name));
-    }
-
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
     {
         base.VisitAssignmentExpression(node);

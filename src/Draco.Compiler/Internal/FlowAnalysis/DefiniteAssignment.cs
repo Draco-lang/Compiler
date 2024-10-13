@@ -71,13 +71,6 @@ internal sealed class DefiniteAssignment(ImmutableArray<LocalSymbol> locals)
 
     private readonly Dictionary<BoundLocalExpression, AssignmentStatus> referenceStates = [];
 
-    public override void VisitLocalDeclaration(BoundLocalDeclaration node)
-    {
-        node.Value?.Accept(this);
-        var status = node.Value is null ? AssignmentStatus.NotInitialized : AssignmentStatus.Initialized;
-        this.State.Locals[node.Local] = status;
-    }
-
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
     {
         base.VisitAssignmentExpression(node);

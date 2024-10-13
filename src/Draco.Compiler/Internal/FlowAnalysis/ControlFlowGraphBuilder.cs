@@ -139,6 +139,8 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         // Translate the body
         this.currentBasicBlock = bodyBlock;
         node.Then.Accept(this);
+        // Go back to the continue block
+        Sequence(this.currentBasicBlock, continueBlock);
         // Go on with the break block
         this.currentBasicBlock = breakBlock;
     }

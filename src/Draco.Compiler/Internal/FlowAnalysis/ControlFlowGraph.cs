@@ -49,8 +49,8 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
         {
             graph.AddVertex(block);
 
-            foreach (var pred in block.Predecessors) graph.AddEdge(pred, block);
             foreach (var succ in block.Successors) graph.AddEdge(block, succ);
+            // NOTE: Adding the predecessor would just cause each edge to show up twice
         }
 
         return graph.ToDot();

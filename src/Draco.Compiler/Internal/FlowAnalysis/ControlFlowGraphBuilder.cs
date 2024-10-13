@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
@@ -65,15 +65,22 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// </summary>
     /// <param name="from">The basic block to connect from (predecessor).</param>
     /// <param name="to">The basic block to connect to (successor).</param>
-    private static void Sequence(BasicBlock from, BasicBlock to)
+    private static void Sequence(BasicBlock? from, BasicBlock to)
     {
+        if (from is null) return;
+
         from.Successors.Add(to);
         to.Predecessors.Add(from);
     }
 
     // Alters flow /////////////////////////////////////////////////////////////
 
-    // TODO
+    public override void VisitGotoExpression(BoundGotoExpression node)
+    {
+        var target = this.GetBlock(node.Target);
+        Sequence(this.currentBasicBlock, target);
+        this.Detach();
+    }
 
     // Special cases ///////////////////////////////////////////////////////////
 

@@ -32,6 +32,16 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.currentBasicBlock.Add(node);
     }
 
+    // Special cases ///////////////////////////////////////////////////////////
+
+    public override void VisitAssignmentExpression(BoundAssignmentExpression node)
+    {
+        // The order of operations is important here
+        node.Right.Accept(this);
+        node.Left.Accept(this);
+        this.Append(node);
+    }
+
     // Trivial topological appending, no control flow //////////////////////////
 
     public override void VisitArrayAccessExpression(BoundArrayAccessExpression node)

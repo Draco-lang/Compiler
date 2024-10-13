@@ -20,7 +20,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public static IControlFlowGraph Build(BoundNode root)
     {
         var builder = new ControlFlowGraphBuilder();
-        var start = builder.currentBasicBlock!;
+        var start = builder.currentBasicBlock;
         root.Accept(builder);
         return new ControlFlowGraph(start);
     }
@@ -28,7 +28,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     // All blocks associated to a label
     private readonly Dictionary<LabelSymbol, BasicBlock> labelsToBlocks = [];
     // The current basic block being built
-    private BasicBlock? currentBasicBlock = new();
+    private BasicBlock currentBasicBlock = new();
 
     private ControlFlowGraphBuilder()
     {
@@ -51,7 +51,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// </summary>
     private void Detach()
     {
-        this.currentBasicBlock = null;
+        this.currentBasicBlock = null!;
     }
 
     /// <summary>

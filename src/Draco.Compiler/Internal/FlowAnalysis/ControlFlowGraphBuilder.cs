@@ -82,6 +82,66 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.Detach();
     }
 
+    public override void VisitIfExpression(BoundIfExpression node)
+    {
+        // Condition runs unconditionally
+        node.Condition.Accept(this);
+        // We have 2 alternative branches
+        var thenBlock = new BasicBlock();
+        var elseBlock = new BasicBlock();
+        var finalBlock = new BasicBlock();
+        // Connect the current block to the branches
+        var currentBlock = this.currentBasicBlock;
+        Sequence(currentBlock, thenBlock);
+        Sequence(currentBlock, elseBlock);
+        // Translate then
+        this.currentBasicBlock = thenBlock;
+        node.Then.Accept(this);
+        Sequence(this.currentBasicBlock, finalBlock);
+        // Translate else
+        this.currentBasicBlock = elseBlock;
+        node.Else.Accept(this);
+        Sequence(this.currentBasicBlock, finalBlock);
+        // Continue with the final block
+        this.currentBasicBlock = finalBlock;
+    }
+
+    public override void VisitWhileExpression(BoundWhileExpression node)
+    {
+        var continueBlock = this.GetBlock(node.ContinueLabel);
+        var breakBlock = this.GetBlock(node.BreakLabel);
+        // Sequence the current block to the continue block
+        Sequence(this.currentBasicBlock, continueBlock);
+        // Translate the condition
+        this.currentBasicBlock = continueBlock;
+        node.Condition.Accept(this);
+        // We can either run the body, or break out
+        var bodyBlock = new BasicBlock();
+        Sequence(this.currentBasicBlock, bodyBlock);
+        Sequence(this.currentBasicBlock, breakBlock);
+        // Translate the body
+        this.currentBasicBlock = bodyBlock;
+        node.Then.Accept(this);
+        // Go on with the break block
+        this.currentBasicBlock = breakBlock;
+    }
+
+    public override void VisitForExpression(BoundForExpression node)
+    {
+        var continueBlock = this.GetBlock(node.ContinueLabel);
+        var breakBlock = this.GetBlock(node.BreakLabel);
+        // The sequence gets evaluated at the start
+        node.Sequence.Accept(this);
+        // Then we jump to the continue block or the break block
+        Sequence(this.currentBasicBlock, continueBlock);
+        Sequence(this.currentBasicBlock, breakBlock);
+        // Translate the body
+        this.currentBasicBlock = continueBlock;
+        node.Then.Accept(this);
+        // Go on with the break block
+        this.currentBasicBlock = breakBlock;
+    }
+
     // Special cases ///////////////////////////////////////////////////////////
 
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)

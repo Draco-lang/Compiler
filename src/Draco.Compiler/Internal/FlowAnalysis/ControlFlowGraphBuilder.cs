@@ -14,12 +14,18 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public static IControlFlowGraph Build(BoundNode root)
     {
         var builder = new ControlFlowGraphBuilder();
+        var start = builder.currentBasicBlock!;
+        root.Accept(builder);
+        return new ControlFlowGraph
+        {
+            Entry = start,
+        };
     }
 
     // All blocks associated to a label
     private readonly Dictionary<LabelSymbol, BasicBlock> labelsToBlocks = [];
     // The current basic block being built
-    private BasicBlock? currentBasicBlock;
+    private BasicBlock? currentBasicBlock = new();
 
     private ControlFlowGraphBuilder()
     {

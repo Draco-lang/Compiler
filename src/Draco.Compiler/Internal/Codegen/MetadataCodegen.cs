@@ -217,7 +217,6 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         case TypeSymbol typeSymbol:
         {
-            // TODO: this branch of code currently cannot work.
             var blob = this.EncodeBlob(e =>
             {
                 var encoder = e.TypeSpecificationSignature();
@@ -892,6 +891,17 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (type is ReferenceTypeSymbol referenceType)
         {
             this.EncodeSignatureType(encoder.Pointer(), referenceType.ElementType);
+            return;
+        }
+
+        if (type is SourceClassSymbol sourceClass)
+        {
+            encoder.Type(
+                type: this.GetOrAddTypeReference(
+                    parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
+                    @namespace: null,
+                    name: sourceClass.MetadataName),
+                isValueType: sourceClass.IsValueType);
             return;
         }
 

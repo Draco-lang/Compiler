@@ -30,7 +30,7 @@ internal sealed class SourceClassSymbol(
     {
     }
 
-    public override Symbol? ContainingSymbol { get; } = containingSymbol;
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
     public override string Name => this.DeclaringSyntax.Name.Text;
 
     public override ClassDeclarationSyntax DeclaringSyntax => syntax;

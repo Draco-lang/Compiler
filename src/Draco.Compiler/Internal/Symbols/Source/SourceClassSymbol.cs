@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -38,6 +39,7 @@ internal sealed class SourceClassSymbol(
     {
         this.BindGenericParametersIfNeeded(binderProvider);
         this.BindMembersIfNeeded(binderProvider);
+
     }
 
     private ImmutableArray<TypeParameterSymbol> BindGenericParametersIfNeeded(IBinderProvider binderProvider) =>
@@ -74,12 +76,14 @@ internal sealed class SourceClassSymbol(
 
     private ImmutableArray<Symbol> BindMembers(IBinderProvider binder)
     {
-        if (this.DeclaringSyntax.Body is EmptyClassBodySyntax) return [];
+
+        if (this.DeclaringSyntax.Body is EmptyClassBodySyntax) return [new DefaultConstructorSymbol(this)];
 
         var bodyClass = this.DeclaringSyntax.Body as BlockClassBodySyntax;
         Debug.Assert(bodyClass is not null);
         var declarationsSyntaxes = bodyClass.Declarations.ToList();
-        var members = ImmutableArray.CreateBuilder<Symbol>(declarationsSyntaxes.Count);
+        var members = ImmutableArray.CreateBuilder<Symbol>(declarationsSyntaxes.Count + 1);
+        members.Add(new DefaultConstructorSymbol(this));
         foreach (var declarationSyntax in declarationsSyntaxes)
         {
             var member = this.BindDeclaration(binder, declarationSyntax);

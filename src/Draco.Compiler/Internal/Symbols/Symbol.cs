@@ -8,6 +8,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -329,4 +330,17 @@ internal abstract partial class Symbol
         TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
         _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
     };
+
+    /// <summary>
+    /// Retrieves additional symbols for the given <paramref name="typeSymbol"/>.
+    /// </summary>
+    /// <param name="symbol">The symbol to get additional symbols for.</param>
+    /// <returns>The additional symbols for the given <paramref name="symbol"/>.</returns>
+    public static IEnumerable<Symbol> GetAdditionalSymbols(Symbol symbol)
+    {
+        if (symbol is not TypeSymbol typeSymbol) return [];
+        if (typeSymbol.IsAbstract) return [];
+        // For other types we provide constructor functions
+        return typeSymbol.Constructors.Select(ctor => new ConstructorFunctionSymbol(ctor));
+    }
 }

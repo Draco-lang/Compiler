@@ -217,6 +217,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         case TypeSymbol typeSymbol:
         {
+            // TODO: this branch of code currently cannot work.
             var blob = this.EncodeBlob(e =>
             {
                 var encoder = e.TypeSpecificationSignature();

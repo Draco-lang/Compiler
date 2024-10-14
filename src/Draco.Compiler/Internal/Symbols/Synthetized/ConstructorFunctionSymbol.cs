@@ -19,6 +19,8 @@ internal sealed class ConstructorFunctionSymbol(FunctionSymbol ctorDefinition) :
     public override SymbolDocumentation Documentation => ctorDefinition.Documentation;
     internal override string RawDocumentation => ctorDefinition.RawDocumentation;
 
+    public override Symbol? ContainingSymbol { get; } = ctorDefinition;
+
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);
     private ImmutableArray<TypeParameterSymbol> genericParameters;

@@ -41,15 +41,25 @@ public class CodeExecutionTests
         
         func main() {
             var foo = Foo();
+            foo.increment();
+            foo.display();
         }
         
         class Foo {
             field var i: int32;
-            func increment(this) {
+            public func increment(this) {
                 this.i += 1;
+            }
+
+            public func display(this) {
+                WriteLine(this.i);
             }
         }
 
         """);
+
+        var stringWriter = new StringWriter();
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
+
     }
 }

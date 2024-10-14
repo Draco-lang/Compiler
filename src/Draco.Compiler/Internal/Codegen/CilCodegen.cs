@@ -227,6 +227,10 @@ internal sealed class CilCodegen
                 this.EncodeToken(global);
                 break;
             }
+            case FieldSymbol field:
+                this.InstructionEncoder.OpCode(ILOpCode.Ldfld);
+                this.EncodeToken(field);
+                break;
             default:
                 throw new InvalidOperationException();
             }
@@ -281,6 +285,11 @@ internal sealed class CilCodegen
                 this.EncodePush(NextOperand());
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.EncodeToken(global);
+                break;
+            case FieldSymbol field:
+                this.EncodePush(NextOperand());
+                this.InstructionEncoder.OpCode(ILOpCode.Stfld);
+                this.EncodeToken(field);
                 break;
             default:
                 throw new InvalidOperationException();

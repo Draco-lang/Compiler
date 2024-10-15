@@ -33,7 +33,7 @@ internal enum FlowConditionKind
 /// </summary>
 /// <param name="Kind">The kind of condition on the edge.</param>
 /// <param name="Value">The condition value.</param>
-internal readonly record struct FlowCondition(FlowConditionKind Kind, BoundNode? Value)
+internal readonly record struct FlowCondition(FlowConditionKind Kind, BoundExpression? Value)
 {
     /// <summary>
     /// An unconditional edge.
@@ -47,19 +47,19 @@ internal readonly record struct FlowCondition(FlowConditionKind Kind, BoundNode?
     /// </summary>
     /// <param name="value">The condition value.</param>
     /// <returns>The new edge.</returns>
-    public static FlowCondition WhenTrue(BoundNode value) => new(FlowConditionKind.WhenTrue, value);
+    public static FlowCondition WhenTrue(BoundExpression value) => new(FlowConditionKind.WhenTrue, value);
 
     /// <summary>
     /// Constructs a new conditional edge when the condition is false.
     /// </summary>
     /// <param name="value">The condition value.</param>
     /// <returns>The new edge.</returns>
-    public static FlowCondition WhenFalse(BoundNode value) => new(FlowConditionKind.WhenFalse, value);
+    public static FlowCondition WhenFalse(BoundExpression value) => new(FlowConditionKind.WhenFalse, value);
 
     /// <summary>
     /// Constructs a new conditional edge when the end of the sequence was reached.
     /// </summary>
     /// <param name="value">The sequence value.</param>
     /// <returns>The new edge.</returns>
-    public static FlowCondition EndOfSequence(BoundNode value) => new(FlowConditionKind.EndOfSequence, value);
+    public static FlowCondition EndOfSequence(BoundExpression value) => new(FlowConditionKind.EndOfSequence, value);
 }

@@ -40,7 +40,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
 
     public IEnumerable<IBasicBlock> AllBlocks => GraphTraversal.DepthFirst(
         start: (this as IControlFlowGraph).Entry,
-        getNeighbors: n => n.Successors.Concat(n.Predecessors));
+        getNeighbors: n => n.Successors.Select(e => e.Successor).Concat(n.Predecessors.Select(e => e.Predecessor)));
 
     public string ToDot()
     {
@@ -54,7 +54,12 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
                 .WithShape(DotAttribs.Shape.Rectangle)
                 .WithHtmlAttribute("label", BasicBlockToLabel(block));
 
-            foreach (var succ in block.Successors) graph.AddEdge(block, succ);
+            foreach (var edge in block.Successors)
+            {
+                graph
+                    .AddEdge(block, edge.Successor)
+                    .WithLabel(edge.Condition.Kind.ToString());
+            }
             // NOTE: Adding the predecessor would just cause each edge to show up twice
         }
 

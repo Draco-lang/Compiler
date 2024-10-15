@@ -74,18 +74,23 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// Does not change the current basic block.
     /// </summary>
     /// <param name="to">The basic block to connect to (successor).</param>
-    private void ConnectTo(BasicBlock to)
+    private void ConnectTo(BasicBlock to, FlowCondition condition)
     {
         if (this.currentBasicBlock is null) return;
 
-        this.currentBasicBlock.Successors.Add(to);
-        to.Predecessors.Add(this.currentBasicBlock);
+        var predecessorEdge = new PredecessorEdge(condition, this.currentBasicBlock);
+        var successorEdge = new SuccessorEdge(condition, to);
+
+        this.currentBasicBlock.Successors.Add(successorEdge);
+        to.Predecessors.Add(predecessorEdge);
     }
 
     // Alters flow /////////////////////////////////////////////////////////////
 
     public override void VisitReturnExpression(BoundReturnExpression node)
     {
+        node.Value?.Accept(this);
+        this.Append(node);
         this.Detach();
     }
 
@@ -97,7 +102,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public override void VisitGotoExpression(BoundGotoExpression node)
     {
         var target = this.GetBlock(node.Target);
-        this.ConnectTo(target);
+        this.ConnectTo(target, FlowCondition.Always);
         this.Detach();
     }
 
@@ -110,16 +115,16 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var elseBlock = new BasicBlock();
         var finalBlock = new BasicBlock();
         // Connect the current block to the branches
-        this.ConnectTo(thenBlock);
-        this.ConnectTo(elseBlock);
+        this.ConnectTo(thenBlock, FlowCondition.WhenTrue(node.Condition));
+        this.ConnectTo(elseBlock, FlowCondition.WhenFalse(node.Condition));
         // Translate then
         this.currentBasicBlock = thenBlock;
         node.Then.Accept(this);
-        this.ConnectTo(finalBlock);
+        this.ConnectTo(finalBlock, FlowCondition.Always);
         // Translate else
         this.currentBasicBlock = elseBlock;
         node.Else.Accept(this);
-        this.ConnectTo(finalBlock);
+        this.ConnectTo(finalBlock, FlowCondition.Always);
         // Continue with the final block
         this.currentBasicBlock = finalBlock;
     }
@@ -129,32 +134,33 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var continueBlock = this.GetBlock(node.ContinueLabel);
         var breakBlock = this.GetBlock(node.BreakLabel);
         // Sequence the current block to the continue block
-        this.ConnectTo(continueBlock);
+        this.ConnectTo(continueBlock, FlowCondition.Always);
         // Translate the condition
         this.currentBasicBlock = continueBlock;
         node.Condition.Accept(this);
         // We can either run the body, or break out
         var bodyBlock = new BasicBlock();
-        this.ConnectTo(bodyBlock);
-        this.ConnectTo(breakBlock);
+        this.ConnectTo(bodyBlock, FlowCondition.WhenTrue(node.Condition));
+        this.ConnectTo(breakBlock, FlowCondition.WhenFalse(node.Condition));
         // Translate the body
         this.currentBasicBlock = bodyBlock;
         node.Then.Accept(this);
         // Go back to the continue block
-        this.ConnectTo(continueBlock);
+        this.ConnectTo(continueBlock, FlowCondition.Always);
         // Go on with the break block
         this.currentBasicBlock = breakBlock;
     }
 
     public override void VisitForExpression(BoundForExpression node)
     {
+        // TODO: This is incorrect
         var continueBlock = this.GetBlock(node.ContinueLabel);
         var breakBlock = this.GetBlock(node.BreakLabel);
         // The sequence gets evaluated at the start
         node.Sequence.Accept(this);
         // Then we jump to the continue block or the break block
-        this.ConnectTo(continueBlock);
-        this.ConnectTo(breakBlock);
+        this.ConnectTo(continueBlock, FlowCondition.Always);
+        this.ConnectTo(breakBlock, FlowCondition.EndOfSequence(node.Sequence));
         // Translate the body
         this.currentBasicBlock = continueBlock;
         node.Then.Accept(this);
@@ -168,11 +174,11 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var finallyBlock = new BasicBlock();
         var rightRuns = new BasicBlock();
         node.Left.Accept(this);
-        this.ConnectTo(finallyBlock);
-        this.ConnectTo(rightRuns);
+        this.ConnectTo(finallyBlock, FlowCondition.WhenFalse(node.Left));
+        this.ConnectTo(rightRuns, FlowCondition.WhenTrue(node.Left));
         this.currentBasicBlock = rightRuns;
         node.Right.Accept(this);
-        this.ConnectTo(finallyBlock);
+        this.ConnectTo(finallyBlock, FlowCondition.Always);
         this.currentBasicBlock = finallyBlock;
     }
 
@@ -182,11 +188,11 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var finallyBlock = new BasicBlock();
         var rightRuns = new BasicBlock();
         node.Left.Accept(this);
-        this.ConnectTo(finallyBlock);
-        this.ConnectTo(rightRuns);
+        this.ConnectTo(finallyBlock, FlowCondition.WhenTrue(node.Left));
+        this.ConnectTo(rightRuns, FlowCondition.WhenFalse(node.Left));
         this.currentBasicBlock = rightRuns;
         node.Right.Accept(this);
-        this.ConnectTo(finallyBlock);
+        this.ConnectTo(finallyBlock, FlowCondition.Always);
         this.currentBasicBlock = finallyBlock;
     }
 
@@ -195,6 +201,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         if (node.Comparisons.Length <= 1)
         {
             base.VisitRelationalExpression(node);
+            this.Append(node);
             return;
         }
 
@@ -206,13 +213,14 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         for (var i = 1; i < node.Comparisons.Length; ++i)
         {
             var rightRuns = new BasicBlock();
-            this.ConnectTo(finallyBlock);
-            this.ConnectTo(rightRuns);
+            this.ConnectTo(finallyBlock, FlowCondition.WhenFalse(node.Comparisons[i - 1]));
+            this.ConnectTo(rightRuns, FlowCondition.WhenTrue(node.Comparisons[i - 1]));
             this.currentBasicBlock = rightRuns;
             node.Comparisons[i].Accept(this);
         }
-        this.ConnectTo(finallyBlock);
+        this.ConnectTo(finallyBlock, FlowCondition.Always);
         this.currentBasicBlock = finallyBlock;
+        this.Append(node);
     }
 
     // Special cases ///////////////////////////////////////////////////////////
@@ -248,6 +256,12 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public override void VisitBinaryExpression(BoundBinaryExpression node)
     {
         base.VisitBinaryExpression(node);
+        this.Append(node);
+    }
+
+    public override void VisitBlockExpression(BoundBlockExpression node)
+    {
+        base.VisitBlockExpression(node);
         this.Append(node);
     }
 
@@ -323,6 +337,12 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.Append(node);
     }
 
+    public override void VisitStringExpression(BoundStringExpression node)
+    {
+        base.VisitStringExpression(node);
+        this.Append(node);
+    }
+
     public override void VisitUnaryExpression(BoundUnaryExpression node)
     {
         base.VisitUnaryExpression(node);
@@ -332,10 +352,8 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     // Passthrough /////////////////////////////////////////////////////////////
     // Elements that themselves do not alter the control flow, but their children might
 
-    public override void VisitBlockExpression(BoundBlockExpression node) => base.VisitBlockExpression(node);
     public override void VisitComparison(BoundComparison node) => base.VisitComparison(node);
     public override void VisitExpressionStatement(BoundExpressionStatement node) => base.VisitExpressionStatement(node);
-    public override void VisitStringExpression(BoundStringExpression node) => base.VisitStringExpression(node);
     public override void VisitStringInterpolation(BoundStringInterpolation node) => base.VisitStringInterpolation(node);
 
     // Inert ///////////////////////////////////////////////////////////////////

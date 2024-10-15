@@ -82,6 +82,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             return result.ToString();
         }
 
+        // Bound node to label with named arguments
         string BoundNodeToLabel(BoundNode node)
         {
             var nodeType = node.GetType();
@@ -99,6 +100,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             return $"{nodePrefix}{nodeName}{args}";
         }
 
+        // Argument with name and value, skips uninteresting properties
         string? ArgumentToLabel(BoundNode node, PropertyInfo propInfo)
         {
             if (propInfo.Name == nameof(BoundNode.Syntax)) return null;
@@ -113,6 +115,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
                 : $"{propInfo.Name} = {valueLabel}";
         }
 
+        // Turning a value into a label, handling cases like bound nodes, symbols, and collections
         string? ArgumentValueToLabel(object? value)
         {
             if (value is BoundNode node)
@@ -121,6 +124,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
                 if (simpleName is not null) return simpleName;
                 var nodeName = GetBoundNodeName(node);
                 if (nodeName is not null) return nodeName;
+                return BoundNodeToLabel(node);
             }
             if (value is null) return string.Empty;
             if (value is string s) return s;
@@ -129,9 +133,10 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             return value.ToString() ?? string.Empty;
         }
 
+        // Unique identifier for each bound node that needs it
         string? GetBoundNodeName(BoundNode node)
         {
-            if (node is not BoundExpression and not BoundLvalue) return null;
+            if (!NeedsUniqueName(node)) return null;
             if (!boundNodeNames.TryGetValue(node, out var name))
             {
                 name = $"e{boundNodeNames.Count}";
@@ -140,6 +145,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             return name;
         }
 
+        // Edges need to have the condition value appended
         string EdgeToLabel(SuccessorEdge edge)
         {
             var kind = edge.Condition.Kind.ToString();
@@ -149,9 +155,10 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             return $"{kind}{value}";
         }
 
-        // For stuff like literals
+        // For stuff like literals we don't need to allocate a new name, just pretty-print contents
         static string? GetSimplifiedBoundNodeName(BoundNode node) => node switch
         {
+            BoundUnitExpression => "unit",
             BoundLocalExpression local => local.Local.Name,
             BoundLocalLvalue local => local.Local.Name,
             BoundGlobalExpression global => global.Global.Name,
@@ -159,5 +166,8 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             BoundLiteralExpression lit => lit.Value?.ToString() ?? "null",
             _ => null,
         };
+
+        // If the node needs a unique name
+        static bool NeedsUniqueName(BoundNode node) => node is BoundExpression or BoundLvalue;
     }
 }

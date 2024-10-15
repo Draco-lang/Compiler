@@ -120,7 +120,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
         {
             if (value is BoundNode node)
             {
-                var simpleName = GetSimplifiedBoundNodeName(node);
+                var simpleName = GetSimplifiedBoundNodeLabel(node);
                 if (simpleName is not null) return simpleName;
                 var nodeName = GetBoundNodeName(node);
                 if (nodeName is not null) return nodeName;
@@ -156,7 +156,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
         }
 
         // For stuff like literals we don't need to allocate a new name, just pretty-print contents
-        static string? GetSimplifiedBoundNodeName(BoundNode node) => node switch
+        static string? GetSimplifiedBoundNodeLabel(BoundNode node) => node switch
         {
             BoundUnitExpression => "unit",
             BoundLocalExpression local => local.Local.Name,
@@ -164,6 +164,8 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             BoundGlobalExpression global => global.Global.Name,
             BoundGlobalLvalue global => global.Global.Name,
             BoundLiteralExpression lit => lit.Value?.ToString() ?? "null",
+            BoundStringExpression str when str.Parts.Length == 1
+                                        && str.Parts[0] is BoundStringText text => text.Text,
             _ => null,
         };
 

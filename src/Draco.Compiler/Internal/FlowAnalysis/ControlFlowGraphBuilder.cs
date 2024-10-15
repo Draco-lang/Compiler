@@ -337,6 +337,8 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public override void VisitStringExpression(BoundStringExpression node)
     {
         base.VisitStringExpression(node);
+        // Trivial strings get inlined for the graph, no append
+        if (node.Parts.Length == 1 && node.Parts[0] is BoundStringText) return;
         this.Append(node);
     }
 

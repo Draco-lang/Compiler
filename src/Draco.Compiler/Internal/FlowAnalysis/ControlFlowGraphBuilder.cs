@@ -213,8 +213,8 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         for (var i = 1; i < node.Comparisons.Length; ++i)
         {
             var rightRuns = new BasicBlock();
-            this.ConnectTo(finallyBlock, FlowCondition.WhenFalse(node.Comparisons[i - 1]));
-            this.ConnectTo(rightRuns, FlowCondition.WhenTrue(node.Comparisons[i - 1]));
+            this.ConnectTo(finallyBlock, FlowCondition.WhenFalse(node.Comparisons[i - 1].Next));
+            this.ConnectTo(rightRuns, FlowCondition.WhenTrue(node.Comparisons[i - 1].Next));
             this.currentBasicBlock = rightRuns;
             node.Comparisons[i].Accept(this);
         }

@@ -58,7 +58,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             {
                 graph
                     .AddEdge(block, edge.Successor)
-                    .WithLabel(edge.Condition.Kind.ToString());
+                    .WithLabel(EdgeToLabel(edge));
             }
             // NOTE: Adding the predecessor would just cause each edge to show up twice
         }
@@ -80,5 +80,8 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
 
         static string BoundNodeToLabel(BoundNode node) =>
             node.GetType().Name.Replace("Bound", string.Empty);
+
+        static string EdgeToLabel(SuccessorEdge edge) =>
+            edge.Condition.Kind.ToString();
     }
 }

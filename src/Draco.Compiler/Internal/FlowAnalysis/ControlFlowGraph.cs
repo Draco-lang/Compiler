@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
@@ -44,6 +46,8 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
 
     public string ToDot()
     {
+        var boundNodeNames = new Dictionary<BoundNode, string>();
+
         var graph = new DotGraphBuilder<IBasicBlock>(isDirected: true);
         graph.WithName("ControlFlowGraph");
 
@@ -65,7 +69,7 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
 
         return graph.ToDot();
 
-        static string BasicBlockToLabel(IBasicBlock block)
+        string BasicBlockToLabel(IBasicBlock block)
         {
             var result = new StringBuilder();
             foreach (var node in block)
@@ -78,10 +82,82 @@ internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
             return result.ToString();
         }
 
-        static string BoundNodeToLabel(BoundNode node) =>
-            node.GetType().Name.Replace("Bound", string.Empty);
+        string BoundNodeToLabel(BoundNode node)
+        {
+            var nodeType = node.GetType();
+            var nodeName = nodeType.Name.Replace("Bound", string.Empty);
+            var nodePrefix = GetBoundNodeName(node);
+            nodePrefix = nodePrefix is null ? null : $"{nodePrefix}: ";
+            var nodeProps = nodeType.GetProperties();
+            var argLabels = nodeProps
+                .Select(prop => ArgumentToLabel(node, prop))
+                .OfType<string>()
+                .ToList();
+            var args = argLabels.Count > 0
+                ? $"({string.Join(", ", argLabels)})"
+                : string.Empty;
+            return $"{nodePrefix}{nodeName}{args}";
+        }
 
-        static string EdgeToLabel(SuccessorEdge edge) =>
-            edge.Condition.Kind.ToString();
+        string? ArgumentToLabel(BoundNode node, PropertyInfo propInfo)
+        {
+            if (propInfo.Name == nameof(BoundNode.Syntax)) return null;
+            if (propInfo.Name == nameof(BoundExpression.Type)) return null;
+            if (propInfo.Name == nameof(BoundExpression.TypeRequired)) return null;
+
+            var value = propInfo.GetValue(node);
+            if (value is null) return null;
+            var valueLabel = ArgumentValueToLabel(value);
+            return valueLabel is null
+                ? null
+                : $"{propInfo.Name} = {valueLabel}";
+        }
+
+        string? ArgumentValueToLabel(object? value)
+        {
+            if (value is BoundNode node)
+            {
+                var simpleName = GetSimplifiedBoundNodeName(node);
+                if (simpleName is not null) return simpleName;
+                var nodeName = GetBoundNodeName(node);
+                if (nodeName is not null) return nodeName;
+            }
+            if (value is null) return string.Empty;
+            if (value is string s) return s;
+            if (value is Symbol symbol) return symbol.Name;
+            if (value is IEnumerable enumerable) return $"[{string.Join(", ", enumerable.Cast<object?>().Select(ArgumentValueToLabel))}]";
+            return value.ToString() ?? string.Empty;
+        }
+
+        string? GetBoundNodeName(BoundNode node)
+        {
+            if (node is not BoundExpression and not BoundLvalue) return null;
+            if (!boundNodeNames.TryGetValue(node, out var name))
+            {
+                name = $"e{boundNodeNames.Count}";
+                boundNodeNames.Add(node, name);
+            }
+            return name;
+        }
+
+        string EdgeToLabel(SuccessorEdge edge)
+        {
+            var kind = edge.Condition.Kind.ToString();
+            var value = edge.Condition.Value is null
+                ? string.Empty
+                : $"({ArgumentValueToLabel(edge.Condition.Value)})";
+            return $"{kind}{value}";
+        }
+
+        // For stuff like literals
+        static string? GetSimplifiedBoundNodeName(BoundNode node) => node switch
+        {
+            BoundLocalExpression local => local.Local.Name,
+            BoundLocalLvalue local => local.Local.Name,
+            BoundGlobalExpression global => global.Global.Name,
+            BoundGlobalLvalue global => global.Global.Name,
+            BoundLiteralExpression lit => lit.Value?.ToString() ?? "null",
+            _ => null,
+        };
     }
 }

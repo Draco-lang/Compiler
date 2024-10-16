@@ -94,8 +94,16 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// <returns>The exit block. Can return null, if there are no exit points.</returns>
     private BasicBlock? MergeExitPoints()
     {
-        if (this.exitPoints.Count <= 1) return this.currentBasicBlock;
+        // If the current block has no successors, we consider it as an implicit exit point
+        if (this.currentBasicBlock is not null && this.currentBasicBlock.Successors.Count == 0)
+        {
+            this.exitPoints.Add(this.currentBasicBlock);
+        }
 
+        // If there is 1 or none, no need to create an extra node
+        if (this.exitPoints.Count <= 1) return this.exitPoints.FirstOrDefault();
+
+        // We need to merge all exit points into a single block
         var finalBlock = new BasicBlock();
         foreach (var exitPoint in this.exitPoints)
         {

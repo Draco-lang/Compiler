@@ -15,11 +15,16 @@ internal abstract class FlowDomain<TState>
     public abstract TState Initial { get; }
 
     /// <summary>
+    /// The top state of the flow analysis, which is the "least defined" state.
+    /// </summary>
+    public abstract TState Top { get; }
+
+    /// <summary>
     /// A clone function that creates a copy of the given state.
     /// </summary>
     /// <param name="state">The state to clone.</param>
     /// <returns>The cloned state.</returns>
-    public virtual TState Clone(TState state) => state;
+    public virtual TState Clone(in TState state) => state;
 
     /// <summary>
     /// The transfer function that updates the state based on the given node.
@@ -42,9 +47,12 @@ internal abstract class FlowDomain<TState>
     /// </summary>
     /// <param name="state">The state to transfer.</param>
     /// <param name="basicBlock">The basic block to transfer the state through.</param>
-    public void TransferForward(ref TState state, BasicBlock basicBlock)
+    /// <returns>True if the state was changed, false otherwise.</returns>
+    public bool TransferForward(ref TState state, IBasicBlock basicBlock)
     {
-        foreach (var node in basicBlock.Nodes) this.Transfer(ref state, node);
+        var changed = false;
+        foreach (var node in basicBlock) changed |= this.Transfer(ref state, node);
+        return changed;
     }
 
     /// <summary>
@@ -52,8 +60,11 @@ internal abstract class FlowDomain<TState>
     /// </summary>
     /// <param name="state">The state to transfer.</param>
     /// <param name="basicBlock">The basic block to transfer the state through.</param>
-    public void TransferBackward(ref TState state, BasicBlock basicBlock)
+    /// <returns>True if the state was changed, false otherwise.</returns>
+    public bool TransferBackward(ref TState state, IBasicBlock basicBlock)
     {
-        for (var i = basicBlock.Nodes.Count - 1; i >= 0; --i) this.Transfer(ref state, basicBlock.Nodes[i]);
+        var changed = false;
+        for (var i = basicBlock.Count - 1; i >= 0; --i) changed |= this.Transfer(ref state, basicBlock[i]);
+        return changed;
     }
 }

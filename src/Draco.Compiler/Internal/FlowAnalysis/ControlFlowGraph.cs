@@ -48,9 +48,13 @@ internal sealed class ControlFlowGraph(BasicBlock entry, BasicBlock? exit) : ICo
     public BasicBlock? Exit { get; } = exit;
     IBasicBlock? IControlFlowGraph.Exit => this.Exit;
 
-    public IEnumerable<IBasicBlock> AllBlocks => GraphTraversal.DepthFirst(
-        start: (this as IControlFlowGraph).Entry,
-        getNeighbors: n => n.Successors.Select(e => e.Successor).Concat(n.Predecessors.Select(e => e.Predecessor)));
+    public IEnumerable<BasicBlock> AllBlocks => GraphTraversal.DepthFirst(
+        start: this.Entry,
+        getNeighbors: n => n.Successors
+            .Select(e => e.Successor)
+            .Concat(n.Predecessors.Select(e => e.Predecessor))
+            .Cast<BasicBlock>());
+    IEnumerable<IBasicBlock> IControlFlowGraph.AllBlocks => this.AllBlocks;
 
     public string ToDot()
     {

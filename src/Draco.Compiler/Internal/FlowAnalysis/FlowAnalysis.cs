@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Draco.Compiler.Internal.BoundTree;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
@@ -38,6 +39,11 @@ internal abstract class FlowAnalysis<TState>(FlowDomain<TState> domain)
     /// <param name="cfg">The control flow graph to analyze.</param>
     /// <returns>The state of the final block.</returns>
     public abstract TState Analyze(ControlFlowGraph cfg);
+
+    /// <summary>
+    /// Clears the state of the flow analysis.
+    /// </summary>
+    protected void Clear() => this.blockStates.Clear();
 
     /// <summary>
     /// Retrieves the state of the given block.
@@ -93,6 +99,8 @@ internal sealed class ForwardFlowAnalysis<TState>(FlowDomain<TState> domain)
 {
     public override TState Analyze(ControlFlowGraph cfg)
     {
+        this.Clear();
+
         // Initialize the entry block by setting the enter state to the initial state of the domain
         // and the exit state to the result of transferring the initial state through the block
         var entryState = this.GetBlockState(cfg.Entry);
@@ -133,6 +141,8 @@ internal sealed class BackwardFlowAnalysis<TState>(FlowDomain<TState> domain)
 {
     public override TState Analyze(ControlFlowGraph cfg)
     {
+        this.Clear();
+
         // TODO: What to do with inconditional infinite loops?
         // We might still want to do the analysis, but we need a good starting point
         if (cfg.Exit is null) return this.Domain.Top;

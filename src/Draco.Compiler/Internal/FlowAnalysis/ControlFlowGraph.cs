@@ -21,6 +21,11 @@ internal interface IControlFlowGraph
     public IBasicBlock Entry { get; }
 
     /// <summary>
+    /// The exit point of the control flow graph, if any.
+    /// </summary>
+    public IBasicBlock? Exit { get; }
+
+    /// <summary>
     /// All basic blocks in the control flow graph.
     /// </summary>
     public IEnumerable<IBasicBlock> AllBlocks { get; }
@@ -35,10 +40,13 @@ internal interface IControlFlowGraph
 /// <summary>
 /// An implementation of <see cref="IControlFlowGraph"/>.
 /// </summary>
-internal sealed class ControlFlowGraph(BasicBlock entry) : IControlFlowGraph
+internal sealed class ControlFlowGraph(BasicBlock entry, BasicBlock? exit) : IControlFlowGraph
 {
     public BasicBlock Entry { get; } = entry;
     IBasicBlock IControlFlowGraph.Entry => this.Entry;
+
+    public BasicBlock? Exit { get; } = exit;
+    IBasicBlock? IControlFlowGraph.Exit => this.Exit;
 
     public IEnumerable<IBasicBlock> AllBlocks => GraphTraversal.DepthFirst(
         start: (this as IControlFlowGraph).Entry,

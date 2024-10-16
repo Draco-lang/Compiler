@@ -22,11 +22,14 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var builder = new ControlFlowGraphBuilder();
         var start = builder.currentBasicBlock;
         root.Accept(builder);
-        return new ControlFlowGraph(start);
+        var exit = builder.MergeExitPoints();
+        return new ControlFlowGraph(start, exit);
     }
 
     // All blocks associated to a label
     private readonly Dictionary<LabelSymbol, BasicBlock> labelsToBlocks = [];
+    // All exit points
+    private readonly HashSet<BasicBlock> exitPoints = [];
     // The current basic block being built
     private BasicBlock currentBasicBlock = new();
 
@@ -85,12 +88,30 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         to.Predecessors.Add(predecessorEdge);
     }
 
+    /// <summary>
+    /// Merge all exit points into a single block.
+    /// </summary>
+    /// <returns>The exit block. Can return null, if there are no exit points.</returns>
+    private BasicBlock? MergeExitPoints()
+    {
+        if (this.exitPoints.Count <= 1) return this.currentBasicBlock;
+
+        var finalBlock = new BasicBlock();
+        foreach (var exitPoint in this.exitPoints)
+        {
+            this.currentBasicBlock = exitPoint;
+            this.ConnectTo(finalBlock, FlowCondition.Always);
+        }
+        return finalBlock;
+    }
+
     // Alters flow /////////////////////////////////////////////////////////////
 
     public override void VisitReturnExpression(BoundReturnExpression node)
     {
         node.Value?.Accept(this);
         this.Append(node);
+        this.exitPoints.Add(this.currentBasicBlock);
         this.Detach();
     }
 

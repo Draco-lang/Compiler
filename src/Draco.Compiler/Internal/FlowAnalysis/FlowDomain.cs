@@ -41,8 +41,7 @@ internal abstract class FlowDomain<TState>
     /// </summary>
     /// <param name="target">The target state to combine the sources into.</param>
     /// <param name="sources">The states to combine into the target.</param>
-    /// <returns>True if the target state was changed, false otherwise.</returns>
-    public abstract bool Join(ref TState target, IEnumerable<TState> sources);
+    public abstract void Join(ref TState target, IEnumerable<TState> sources);
 
     /// <summary>
     /// Transfers the state forward through the given basic block.
@@ -144,4 +143,17 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
     /// <param name="node">The node to construct the kill set for.</param>
     /// <returns>The kill set for the node.</returns>
     protected abstract BitArray ComputeKill(BoundNode node);
+
+    /// <summary>
+    /// Constructs a bit array with the bits set for the given elements.
+    /// </summary>
+    /// <param name="elements">The elements to set the bits for.</param>
+    /// <param name="equalityComparer">The equality comparer to use for searching the elements.</param>
+    /// <returns>The bit array with the bits set for the elements.</returns>
+    protected BitArray CreateWithBitsSet(IEnumerable<TElement> elements, IEqualityComparer<TElement>? equalityComparer = null)
+    {
+        var result = new BitArray(this.Elements.Length);
+        foreach (var local in elements) result[this.Elements.IndexOf(local, equalityComparer)] = true;
+        return result;
+    }
 }

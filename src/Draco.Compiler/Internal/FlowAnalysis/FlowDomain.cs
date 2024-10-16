@@ -96,12 +96,9 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
         // I hate you BitArray for needing to clone instead of reporting number of bits changed
         var oldState = this.Clone(in state);
         state = state.And(notKill).Or(gen);
-        // And I hate you for needing to compare each bit
-        for (var i = 0; i < state.Length; ++i)
-        {
-            if (state[i] != oldState[i]) return true;
-        }
-        return false;
+        // And I hate you for needing to compare with this hack
+        oldState.Xor(state);
+        return oldState.HasAnySet();
     }
 
     /// <summary>

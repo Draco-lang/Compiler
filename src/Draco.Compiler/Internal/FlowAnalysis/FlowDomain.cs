@@ -26,14 +26,16 @@ internal abstract class FlowDomain<TState>
     /// </summary>
     /// <param name="state">The state to update.</param>
     /// <param name="node">The node to use for updating the state.</param>
-    public abstract void Transfer(ref TState state, BoundNode node);
+    /// <returns>True if the state was changed, false otherwise.</returns>
+    public abstract bool Transfer(ref TState state, BoundNode node);
 
     /// <summary>
     /// A join function that combines the given states into a single state.
     /// </summary>
     /// <param name="target">The target state to combine the sources into.</param>
     /// <param name="sources">The states to combine into the target.</param>
-    public abstract void Join(ref TState target, IEnumerable<TState> sources);
+    /// <returns>True if the target state was changed, false otherwise.</returns>
+    public abstract bool Join(ref TState target, IEnumerable<TState> sources);
 
     /// <summary>
     /// Transfers the state forward through the given basic block.

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
 /// <summary>
@@ -6,6 +8,9 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// <typeparam name="TState">The state type of the domain used in the flow analysis.</typeparam>
 internal abstract class FlowAnalysis<TState>(FlowDomain<TState> domain)
 {
+    /// <summary>
+    /// The state of a single block.
+    /// </summary>
     protected sealed class BlockState(TState entry, TState exit)
     {
         /// <summary>
@@ -23,4 +28,6 @@ internal abstract class FlowAnalysis<TState>(FlowDomain<TState> domain)
     /// The domain that is used in the flow analysis.
     /// </summary>
     protected FlowDomain<TState> Domain { get; } = domain;
+
+    private readonly Dictionary<BasicBlock, BlockState> blockStates = [];
 }

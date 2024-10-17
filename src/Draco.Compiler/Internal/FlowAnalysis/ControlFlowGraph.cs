@@ -63,12 +63,14 @@ internal sealed class ControlFlowGraph(BasicBlock entry, BasicBlock? exit) : ICo
         var graph = new DotGraphBuilder<IBasicBlock>(isDirected: true);
         graph.WithName("ControlFlowGraph");
 
+        var blockIndex = 0;
         foreach (var block in this.AllBlocks)
         {
             graph
                 .AddVertex(block)
                 .WithShape(DotAttribs.Shape.Rectangle)
-                .WithHtmlAttribute("label", BasicBlockToLabel(block));
+                .WithHtmlAttribute("label", BasicBlockToLabel(block))
+                .WithXLabel($"b{blockIndex}");
 
             foreach (var edge in block.Successors)
             {
@@ -77,6 +79,8 @@ internal sealed class ControlFlowGraph(BasicBlock entry, BasicBlock? exit) : ICo
                     .WithLabel(EdgeToLabel(edge));
             }
             // NOTE: Adding the predecessor would just cause each edge to show up twice
+
+            ++blockIndex;
         }
 
         return graph.ToDot();

@@ -143,20 +143,19 @@ internal sealed class BackwardFlowAnalysis<TState>(FlowDomain<TState> domain)
     {
         this.Clear();
 
-        // TODO: What to do with inconditional infinite loops?
-        // We might still want to do the analysis, but we need a good starting point
-        if (cfg.Exit is null) return this.Domain.Top;
-
-        // Initialize the exit block by setting the exit state to the initial state of the domain
-        // and the enter state to the result of transferring the initial state through the block
-        var exitState = this.GetBlockState(cfg.Exit);
-        exitState.Exit = this.Domain.Initial;
-        exitState.Enter = this.TransferBackward(in exitState.Enter, cfg.Exit, out _);
+        if (cfg.Exit is not null)
+        {
+            // Initialize the exit block by setting the exit state to the initial state of the domain
+            // and the enter state to the result of transferring the initial state through the block
+            var exitState = this.GetBlockState(cfg.Exit);
+            exitState.Exit = this.Domain.Initial;
+            exitState.Enter = this.TransferBackward(in exitState.Enter, cfg.Exit, out _);
+        }
 
         // The rest are initialized to the top state by default
 
         // Initialize the worklist with all blocks, except the entry and exit blocks
-        var worklist = new Queue<IBasicBlock>(cfg.AllBlocks.Except([cfg.Entry, cfg.Exit]));
+        var worklist = new Queue<IBasicBlock>(cfg.AllBlocks.Except([cfg.Entry, cfg.Exit!]));
 
         // Perform the analysis
         while (worklist.TryDequeue(out var block))

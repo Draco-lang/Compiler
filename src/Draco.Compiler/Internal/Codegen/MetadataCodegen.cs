@@ -467,6 +467,12 @@ internal sealed class MetadataCodegen : MetadataWriter
             currentFieldIndex++;
         }
 
+        foreach (var type in module.Types.Values)
+        {
+            //TODO: what to do about the parent here ?
+            this.EncodeClass(type, parent: null, ref fieldIndex, ref procIndex);
+        }
+
         // Go through procedures
         foreach (var procedure in module.Procedures.Values)
         {
@@ -506,6 +512,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             baseType: this.systemObjectReference,
             fieldList: MetadataTokens.FieldDefinitionHandle(fieldIndex),
             methodList: MetadataTokens.MethodDefinitionHandle(procIndex));
+
 
         // If this isn't top level module, we specify nested relationship
         if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);

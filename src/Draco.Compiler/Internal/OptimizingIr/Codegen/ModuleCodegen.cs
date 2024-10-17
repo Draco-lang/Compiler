@@ -67,6 +67,12 @@ internal sealed class ModuleCodegen : SymbolVisitor
         }
     }
 
+    public override void VisitType(TypeSymbol typeSymbol)
+    {
+        var type = this.module.DefineType(typeSymbol);
+        base.VisitType(typeSymbol);
+    }
+
     public override void VisitFunction(FunctionSymbol functionSymbol)
     {
         if (functionSymbol.Body is null) return;

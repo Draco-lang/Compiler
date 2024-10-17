@@ -84,6 +84,16 @@ internal sealed class Module : IModule
         return (Module)result;
     }
 
+    public Type DefineType(TypeSymbol typeSymbol)
+    {
+        if (!this.types.TryGetValue(typeSymbol, out var result))
+        {
+            result = new Type(this, typeSymbol);
+            this.types.Add(typeSymbol, result);
+        }
+        return (Type)result;
+    }
+
     public override string ToString()
     {
         var result = new StringBuilder();

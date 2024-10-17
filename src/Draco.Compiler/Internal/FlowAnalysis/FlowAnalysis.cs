@@ -38,7 +38,7 @@ internal abstract class FlowAnalysis<TState>(FlowDomain<TState> domain)
     /// </summary>
     /// <param name="cfg">The control flow graph to analyze.</param>
     /// <returns>The state of the final block.</returns>
-    public abstract TState Analyze(ControlFlowGraph cfg);
+    public abstract TState Analyze(IControlFlowGraph cfg);
 
     /// <summary>
     /// Clears the state of the flow analysis.
@@ -97,7 +97,7 @@ internal abstract class FlowAnalysis<TState>(FlowDomain<TState> domain)
 internal sealed class ForwardFlowAnalysis<TState>(FlowDomain<TState> domain)
     : FlowAnalysis<TState>(domain)
 {
-    public override TState Analyze(ControlFlowGraph cfg)
+    public override TState Analyze(IControlFlowGraph cfg)
     {
         this.Clear();
 
@@ -139,7 +139,7 @@ internal sealed class ForwardFlowAnalysis<TState>(FlowDomain<TState> domain)
 internal sealed class BackwardFlowAnalysis<TState>(FlowDomain<TState> domain)
     : FlowAnalysis<TState>(domain)
 {
-    public override TState Analyze(ControlFlowGraph cfg)
+    public override TState Analyze(IControlFlowGraph cfg)
     {
         this.Clear();
 

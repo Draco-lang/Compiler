@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
@@ -8,6 +9,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.FlowAnalysis;
+using Draco.Compiler.Internal.FlowAnalysis.Domains;
 using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -45,6 +47,11 @@ internal sealed class SourceFunctionSymbol(
         var cfg = ControlFlowGraphBuilder.Build(body);
         var dot = cfg.ToDot();
         Console.WriteLine(dot);
+
+        var locals = BoundTreeCollector.CollectLocals(body);
+        var analysisDomain = new DefiniteAssignmentDomain(locals);
+        var analysis = new ForwardFlowAnalysis<BitArray>(analysisDomain);
+        var result = analysis.Analyze(cfg);
         // TODO
         throw new System.NotImplementedException();
         //ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -47,9 +48,12 @@ internal sealed class Procedure : IProcedure
 
     public int GetParameterIndex(ParameterSymbol symbol)
     {
+        if (symbol is SourceThisParameterSymbol) return 0;
+        var isStaticMethod = symbol.ContainingSymbol.IsStatic;
         var idx = this.Symbol.Parameters.IndexOf(symbol);
         if (idx == -1) throw new System.ArgumentOutOfRangeException(nameof(symbol));
-        return idx;
+        return isStaticMethod ? idx : idx + 1;
+
     }
 
     public BasicBlock DefineBasicBlock(LabelSymbol symbol)

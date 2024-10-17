@@ -12,6 +12,8 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
@@ -679,11 +681,18 @@ internal partial class Binder
         }
     }
 
-    private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax @this, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var declaringType = this.LookupDeclaringType(@this, diagnostics);
+        var thisArg = ((SyntaxFunctionSymbol)this.ContainingSymbol!).ThisArgument;
+        if (thisArg == null)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.NoThisInStaticMethod,
+                    location: syntax.Location,
+                    formatArgs: [this.ContainingSymbol!.Name]));
 
-        var boundThis = new BoundThisExpression(@this, declaringType);
+        }
+        var boundThis = new BoundParameterExpression(syntax, thisArg); // todo: what should i do here ?
         return BindingTask.FromResult<BoundExpression>(boundThis);
     }
 

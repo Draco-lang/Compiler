@@ -35,6 +35,16 @@ internal abstract class SyntaxFunctionSymbol(
     public override ImmutableArray<ParameterSymbol> Parameters => this.BindParametersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<ParameterSymbol> parameters;
 
+    public SourceThisParameterSymbol? ThisArgument
+    {
+        get
+        {
+            this.BindParametersIfNeeded(this.DeclaringCompilation!);
+            return this.thisArgument;
+        }
+    }
+    private SourceThisParameterSymbol? thisArgument;
+
     public override TypeSymbol ReturnType => this.BindReturnTypeIfNeeded(this.DeclaringCompilation!);
     private TypeSymbol? returnType;
 
@@ -110,6 +120,7 @@ internal abstract class SyntaxFunctionSymbol(
                 var asSymbol = new SourceThisParameterSymbol(this, thisParameter);
                 if (i == 0)
                 {
+                    this.thisArgument = asSymbol;
                     isInstance = asSymbol;
                     continue;
                 }

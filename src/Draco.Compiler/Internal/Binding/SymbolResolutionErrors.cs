@@ -194,4 +194,10 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "there is no type instance to reference.",
         code: Code(21));
+
+    public static readonly DiagnosticTemplate NoThisInStaticMethod = DiagnosticTemplate.Create(
+        title: "instance reference in static method",
+        severity: DiagnosticSeverity.Error,
+        format: "cannot reference the type instance in static method {0}",
+        code: Code(22));
 }

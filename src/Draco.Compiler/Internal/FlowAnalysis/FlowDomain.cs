@@ -6,11 +6,32 @@ using Draco.Compiler.Internal.BoundTree;
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
 /// <summary>
+/// The direction of the flow analysis.
+/// </summary>
+internal enum FlowDirection
+{
+    /// <summary>
+    /// The flow analysis is forward.
+    /// </summary>
+    Forward,
+
+    /// <summary>
+    /// The flow analysis is backward.
+    /// </summary>
+    Backward,
+}
+
+/// <summary>
 /// Represents a domain of values that can be used in a flow analysis.
 /// </summary>
 /// <typeparam name="TState">The state type of the flow analysis.</typeparam>
 internal abstract class FlowDomain<TState>
 {
+    /// <summary>
+    /// The direction of the flow analysis.
+    /// </summary>
+    public abstract FlowDirection Direction { get; }
+
     /// <summary>
     /// The initial state of the flow analysis.
     /// </summary>
@@ -22,7 +43,7 @@ internal abstract class FlowDomain<TState>
     public abstract TState Top { get; }
 
     /// <summary>
-    /// A clone function that creates a copy of the given state.
+    /// A clone function that creates a deep-copy of the given state.
     /// </summary>
     /// <param name="state">The state to clone.</param>
     /// <returns>The cloned state.</returns>
@@ -44,28 +65,32 @@ internal abstract class FlowDomain<TState>
     public abstract void Join(ref TState target, IEnumerable<TState> sources);
 
     /// <summary>
-    /// Transfers the state forward through the given basic block.
+    /// Transfers the state through the given basic block.
     /// </summary>
     /// <param name="state">The state to transfer.</param>
     /// <param name="basicBlock">The basic block to transfer the state through.</param>
+    /// <param name="until">The node to stop transferring at (excluded).
     /// <returns>True if the state was changed, false otherwise.</returns>
-    public bool TransferForward(ref TState state, IBasicBlock basicBlock)
+    public bool Transfer(ref TState state, IBasicBlock basicBlock, BoundNode? until = null)
     {
         var changed = false;
-        foreach (var node in basicBlock) changed |= this.Transfer(ref state, node);
-        return changed;
-    }
-
-    /// <summary>
-    /// Transfers the state backward through the given basic block.
-    /// </summary>
-    /// <param name="state">The state to transfer.</param>
-    /// <param name="basicBlock">The basic block to transfer the state through.</param>
-    /// <returns>True if the state was changed, false otherwise.</returns>
-    public bool TransferBackward(ref TState state, IBasicBlock basicBlock)
-    {
-        var changed = false;
-        for (var i = basicBlock.Count - 1; i >= 0; --i) changed |= this.Transfer(ref state, basicBlock[i]);
+        if (this.Direction == FlowDirection.Forward)
+        {
+            foreach (var node in basicBlock)
+            {
+                if (ReferenceEquals(node, until)) break;
+                changed |= this.Transfer(ref state, node);
+            }
+        }
+        else
+        {
+            for (var i = basicBlock.Count - 1; i >= 0; --i)
+            {
+                var node = basicBlock[i];
+                if (ReferenceEquals(node, until)) break;
+                changed |= this.Transfer(ref state, node);
+            }
+        }
         return changed;
     }
 }
@@ -89,8 +114,8 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
 
     public override bool Transfer(ref BitArray state, BoundNode node)
     {
-        var gen = this.Gen(node);
-        var notKill = this.NotKill(node);
+        var gen = this.GetGenCached(node);
+        var notKill = this.GetNotKillCached(node);
 
         // I hate you BitArray for needing to clone instead of reporting number of bits changed
         var oldState = this.Clone(in state);
@@ -100,31 +125,21 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
         return oldState.HasAnySet();
     }
 
-    /// <summary>
-    /// Retrieves the gen set for the given node.
-    /// </summary>
-    /// <param name="node">The node to retrieve the gen set for.</param>
-    /// <returns>The gen set for the node.</returns>
-    private BitArray Gen(BoundNode node)
+    private BitArray GetGenCached(BoundNode node)
     {
         if (!this.genSets.TryGetValue(node, out var gen))
         {
-            gen = this.ComputeGen(node);
+            gen = this.Gen(node);
             this.genSets.Add(node, gen);
         }
         return gen;
     }
 
-    /// <summary>
-    /// Retrieves the kill set for the given node.
-    /// </summary>
-    /// <param name="node">The node to retrieve the kill set for.</param>
-    /// <returns>The kill set for the node.</returns>
-    private BitArray NotKill(BoundNode node)
+    private BitArray GetNotKillCached(BoundNode node)
     {
         if (!this.notKillSets.TryGetValue(node, out var notKill))
         {
-            notKill = this.ComputeKill(node).Not();
+            notKill = this.Kill(node).Not();
             this.notKillSets.Add(node, notKill);
         }
         return notKill;
@@ -135,14 +150,14 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
     /// </summary>
     /// <param name="node">The node to construct the gen set for.</param>
     /// <returns>The gen set for the node.</returns>
-    protected abstract BitArray ComputeGen(BoundNode node);
+    protected abstract BitArray Gen(BoundNode node);
 
     /// <summary>
     /// Constructsthe kill set for the given node.
     /// </summary>
     /// <param name="node">The node to construct the kill set for.</param>
     /// <returns>The kill set for the node.</returns>
-    protected abstract BitArray ComputeKill(BoundNode node);
+    protected abstract BitArray Kill(BoundNode node);
 
     /// <summary>
     /// Constructs a bit array with the bits set for the given elements.

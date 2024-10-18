@@ -20,8 +20,8 @@ internal sealed class DefiniteAssignmentDomain(IEnumerable<LocalSymbol> locals)
         foreach (var element in sources) target.Or(element);
     }
 
-    protected override BitArray ComputeGen(BoundNode node) => new(this.Elements.Length);
-    protected override BitArray ComputeKill(BoundNode node) => node switch
+    protected override BitArray Gen(BoundNode node) => new(this.Elements.Length);
+    protected override BitArray Kill(BoundNode node) => node switch
     {
         BoundAssignmentExpression assignment when assignment.Left is BoundLocalLvalue localLvalue =>
             this.CreateWithBitsSet([localLvalue.Local]),

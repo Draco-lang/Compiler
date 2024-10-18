@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.OptimizingIr.Instructions;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
@@ -8,12 +9,20 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// A single flow analysis that can be performed on a control flow graph.
 /// </summary>
 /// <typeparam name="TState">The state type of the domain used in the flow analysis.</typeparam>
-internal abstract class FlowAnalysis<TState>(FlowDomain<TState> domain)
+internal sealed class FlowAnalysis<TState>
 {
+    /// <summary>
+    /// Constructs a new flow analysis on the given control flow graph.
+    /// </summary>
+    /// <param name="cfg">The control flow graph to analyze.</param>
+    /// <param name="domain">The domain of the flow analysis.</param>
+    /// <returns>The created flow analysis.</returns>
+    public static FlowAnalysis<TState> Create(IControlFlowGraph cfg, FlowDomain<TState> domain) => new(cfg, domain);
+
     /// <summary>
     /// The state of a single block.
     /// </summary>
-    protected sealed class BlockState(TState enter, TState exit)
+    private sealed class BlockState(TState enter, TState exit)
     {
         /// <summary>
         /// The entry state of the block.
@@ -26,150 +35,83 @@ internal abstract class FlowAnalysis<TState>(FlowDomain<TState> domain)
         public TState Exit = exit;
     }
 
-    /// <summary>
-    /// The domain that is used in the flow analysis.
-    /// </summary>
-    public FlowDomain<TState> Domain { get; } = domain;
+    private FlowDirection Direction => this.domain.Direction;
 
+    private readonly IControlFlowGraph cfg;
+    private readonly FlowDomain<TState> domain;
     private readonly Dictionary<IBasicBlock, BlockState> blockStates = [];
 
-    /// <summary>
-    /// Analyzes the given control flow graph and returns the state of the final block.
-    /// </summary>
-    /// <param name="cfg">The control flow graph to analyze.</param>
-    /// <returns>The state of the final block.</returns>
-    public abstract TState Analyze(IControlFlowGraph cfg);
+    private FlowAnalysis(IControlFlowGraph cfg, FlowDomain<TState> domain)
+    {
+        this.cfg = cfg;
+        this.domain = domain;
+    }
 
-    /// <summary>
-    /// Clears the state of the flow analysis.
-    /// </summary>
-    protected void Clear() => this.blockStates.Clear();
+    private void RunAnalysis()
+    {
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // Initialize the entry block by setting the enter state to the initial state of the domain
+            // and the exit state to the result of transferring the initial state through the block
+            var entryState = this.GetBlockState(this.cfg.Entry);
+            entryState.Enter = this.domain.Initial;
+            entryState.Exit = this.TransferAndCopy(in entryState.Exit, this.cfg.Entry, out _);
+        }
+        else if (this.cfg.Exit is not null)
+        {
+            // Initialize the exit block by setting the exit state to the initial state of the domain
+            // and the enter state to the result of transferring the initial state through the block
+            var exitState = this.GetBlockState(this.cfg.Exit);
+            exitState.Exit = this.domain.Initial;
+            exitState.Enter = this.TransferAndCopy(in exitState.Enter, this.cfg.Exit, out _);
+        }
 
-    /// <summary>
-    /// Retrieves the state of the given block.
-    /// </summary>
-    /// <param name="block">The block to retrieve the state for.</param>
-    /// <returns>The state of the block.</returns>
-    protected BlockState GetBlockState(IBasicBlock block)
+        // The rest are initialized to the top state by default
+
+        // Initialize the worklist with all blocks, except the entry and exit blocks
+        var worklist = new Queue<IBasicBlock>(this.cfg.AllBlocks.Except([this.cfg.Entry, this.cfg.Exit!]));
+
+        // Perform the analysis while we have blocks to process in the worklist
+        while (worklist.TryDequeue(out var block))
+        {
+            var blockState = this.GetBlockState(block);
+            if (this.Direction == FlowDirection.Forward)
+            {
+                // Compute the exit state of n by combining the enter states of its successors
+                this.domain.Join(ref blockState.Exit, block.Successors.Select(e => this.GetBlockState(e.Successor).Enter));
+                blockState.Enter = this.TransferAndCopy(blockState.Exit, block, out var changed);
+                if (!changed) continue;
+
+                // If there was a change, all the predecessors might change too, enqueue them
+                foreach (var edge in block.Predecessors) worklist.Enqueue(edge.Predecessor);
+            }
+            else
+            {
+                // Compute the entry state of n by combining the exit states of its predecessors
+                this.domain.Join(ref blockState.Enter, block.Predecessors.Select(e => this.GetBlockState(e.Predecessor).Exit));
+                blockState.Exit = this.TransferAndCopy(blockState.Enter, block, out var changed);
+                if (!changed) continue;
+
+                // If there was a change, all the successors might change too, enqueue them
+                foreach (var edge in block.Successors) worklist.Enqueue(edge.Successor);
+            }
+        }
+    }
+
+    private BlockState GetBlockState(IBasicBlock block)
     {
         if (!this.blockStates.TryGetValue(block, out var state))
         {
-            state = new(this.Domain.Top, this.Domain.Top);
+            state = new(this.domain.Top, this.domain.Top);
             this.blockStates.Add(block, state);
         }
         return state;
     }
 
-    /// <summary>
-    /// Transfers the state forward through the given basic block.
-    /// </summary>
-    /// <param name="state">The state to clone and transfer.</param>
-    /// <param name="block">The basic block to transfer the state through.</param>
-    /// <param name="changed">Whether the state changed.</param>
-    /// <returns>The new state.</returns>
-    protected TState TransferForward(in TState state, IBasicBlock block, out bool changed)
+    private TState TransferAndCopy(in TState state, IBasicBlock block, out bool changed)
     {
-        var newState = this.Domain.Clone(in state);
-        changed = this.Domain.TransferForward(ref newState, block);
+        var newState = this.domain.Clone(in state);
+        changed = this.domain.Transfer(ref newState, block);
         return newState;
-    }
-
-    /// <summary>
-    /// Transfers the state backward through the given basic block.
-    /// </summary>
-    /// <param name="state">The state to clone and transfer.</param>
-    /// <param name="block">The basic block to transfer the state through.</param>
-    /// <param name="changed">Whether the state changed.</param>
-    /// <returns>The new state.</returns>
-    protected TState TransferBackward(in TState state, IBasicBlock block, out bool changed)
-    {
-        var newState = this.Domain.Clone(in state);
-        changed = this.Domain.TransferBackward(ref newState, block);
-        return newState;
-    }
-}
-
-/// <summary>
-/// Implements a forward flow analysis on a control flow graph.
-/// </summary>
-/// <typeparam name="TState">The state type of the domain used in the flow analysis.</typeparam>
-/// <param name="domain">The domain to use in the flow analysis.</param>
-internal sealed class ForwardFlowAnalysis<TState>(FlowDomain<TState> domain)
-    : FlowAnalysis<TState>(domain)
-{
-    public override TState Analyze(IControlFlowGraph cfg)
-    {
-        this.Clear();
-
-        // Initialize the entry block by setting the enter state to the initial state of the domain
-        // and the exit state to the result of transferring the initial state through the block
-        var entryState = this.GetBlockState(cfg.Entry);
-        entryState.Enter = this.Domain.Initial;
-        entryState.Exit = this.TransferForward(in entryState.Exit, cfg.Entry, out _);
-
-        // The rest are initialized to the top state by default
-
-        // Initialize the worklist with all blocks, except the entry and exit blocks
-        var worklist = new Queue<IBasicBlock>(cfg.AllBlocks.Except([cfg.Entry, cfg.Exit!]));
-
-        // Perform the analysis
-        while (worklist.TryDequeue(out var block))
-        {
-            // Compute the entry state of n by combining the exit states of its predecessors
-            var blockState = this.GetBlockState(block);
-            this.Domain.Join(ref blockState.Enter, block.Predecessors.Select(e => this.GetBlockState(e.Predecessor).Exit));
-            blockState.Exit = this.TransferForward(blockState.Enter, block, out var changed);
-            if (!changed) continue;
-
-            // If there was a change, all the successors might change too, enqueue them
-            foreach (var edge in block.Successors) worklist.Enqueue(edge.Successor);
-        }
-
-        return cfg.Exit is null
-            ? this.Domain.Top
-            : this.GetBlockState(cfg.Exit).Exit;
-    }
-}
-
-/// <summary>
-/// Implements a forward flow analysis on a control flow graph.
-/// </summary>
-/// <typeparam name="TState"></typeparam>
-/// <param name="domain"></param>
-internal sealed class BackwardFlowAnalysis<TState>(FlowDomain<TState> domain)
-    : FlowAnalysis<TState>(domain)
-{
-    public override TState Analyze(IControlFlowGraph cfg)
-    {
-        this.Clear();
-
-        if (cfg.Exit is not null)
-        {
-            // Initialize the exit block by setting the exit state to the initial state of the domain
-            // and the enter state to the result of transferring the initial state through the block
-            var exitState = this.GetBlockState(cfg.Exit);
-            exitState.Exit = this.Domain.Initial;
-            exitState.Enter = this.TransferBackward(in exitState.Enter, cfg.Exit, out _);
-        }
-
-        // The rest are initialized to the top state by default
-
-        // Initialize the worklist with all blocks, except the entry and exit blocks
-        var worklist = new Queue<IBasicBlock>(cfg.AllBlocks.Except([cfg.Entry, cfg.Exit!]));
-
-        // Perform the analysis
-        while (worklist.TryDequeue(out var block))
-        {
-            // Compute the exit state of n by combining the enter states of its successors
-            var blockState = this.GetBlockState(block);
-            this.Domain.Join(ref blockState.Exit, block.Successors.Select(e => this.GetBlockState(e.Successor).Enter));
-            blockState.Enter = this.TransferBackward(blockState.Exit, block, out var changed);
-            if (!changed) continue;
-
-            // If there was a change, all the predecessors might change too, enqueue them
-            foreach (var edge in block.Predecessors) worklist.Enqueue(edge.Predecessor);
-        }
-
-        return this.GetBlockState(cfg.Entry).Enter;
     }
 }

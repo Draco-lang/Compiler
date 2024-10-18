@@ -6,6 +6,22 @@ using Draco.Compiler.Internal.OptimizingIr.Instructions;
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
 /// <summary>
+/// Factory class for creating flow analyses.
+/// </summary>
+internal static class FlowAnalysis
+{
+    /// <summary>
+    /// Constructs a new flow analysis on the given control flow graph.
+    /// </summary>
+    /// <typeparam name="TState">The state type of the domain used in the flow analysis.</typeparam>
+    /// <param name="cfg">The control flow graph to analyze.</param>
+    /// <param name="domain">The domain of the flow analysis.</param>
+    /// <returns>The created flow analysis.</returns>
+    public static FlowAnalysis<TState> Create<TState>(IControlFlowGraph cfg, FlowDomain<TState> domain) =>
+        FlowAnalysis<TState>.Create(cfg, domain);
+}
+
+/// <summary>
 /// A single flow analysis that can be performed on a control flow graph.
 /// </summary>
 /// <typeparam name="TState">The state type of the domain used in the flow analysis.</typeparam>

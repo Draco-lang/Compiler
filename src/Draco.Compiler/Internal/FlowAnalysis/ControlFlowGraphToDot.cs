@@ -21,7 +21,20 @@ internal static class ControlFlowGraphToDot
     /// </summary>
     /// <param name="cfg">The control flow graph to convert.</param>
     /// <returns>The DOT representation of the control flow graph.</returns>
-    public static string ToDot(this IControlFlowGraph cfg)
+    public static string ToDot(this IControlFlowGraph cfg) =>
+        ToDotIntenral(cfg, null as FlowAnalysis<int>);
+
+    /// <summary>
+    /// Translates the control flow graph to a DOT graph with flow analysis information.
+    /// </summary>
+    /// <typeparam name="TState">The state type of the domain used in the flow analysis.</typeparam>
+    /// <param name="cfg">The control flow graph to convert.</param>
+    /// <param name="flowAnalysis">The flow analysis to use for additional information.</param>
+    /// <returns>The DOT representation of the control flow graph.</returns>
+    public static string ToDot<TState>(this IControlFlowGraph cfg, FlowAnalysis<TState> flowAnalysis) =>
+        ToDotIntenral(cfg, flowAnalysis);
+
+    private static string ToDotIntenral<TState>(IControlFlowGraph cfg, FlowAnalysis<TState>? flowAnalysis = null)
     {
         var boundNodeNames = new Dictionary<BoundNode, string>();
 

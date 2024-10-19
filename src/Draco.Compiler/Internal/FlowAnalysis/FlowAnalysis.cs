@@ -51,17 +51,24 @@ internal sealed class FlowAnalysis<TState>
         public TState Exit = exit;
     }
 
-    private FlowDirection Direction => this.domain.Direction;
+    /// <summary>
+    /// The direction of the flow analysis.
+    /// </summary>
+    public FlowDirection Direction => this.Domain.Direction;
+
+    /// <summary>
+    /// The domain of the flow analysis.
+    /// </summary>
+    public FlowDomain<TState> Domain { get; }
 
     private readonly IControlFlowGraph cfg;
-    private readonly FlowDomain<TState> domain;
     private readonly Dictionary<IBasicBlock, BlockState> blockStates = [];
     private readonly Dictionary<BoundNode, IBasicBlock> nodesToBlocks = [];
 
     private FlowAnalysis(IControlFlowGraph cfg, FlowDomain<TState> domain)
     {
         this.cfg = cfg;
-        this.domain = domain;
+        this.Domain = domain;
     }
 
     /// <summary>
@@ -73,7 +80,7 @@ internal sealed class FlowAnalysis<TState>
     {
         this.RunAnalysisIfNeeded();
         // NOTE: Clone so that the caller can't modify the state
-        return this.domain.Clone(this.GetBlockState(block).Enter);
+        return this.Domain.Clone(this.GetBlockState(block).Enter);
     }
 
     /// <summary>
@@ -85,7 +92,7 @@ internal sealed class FlowAnalysis<TState>
     {
         this.RunAnalysisIfNeeded();
         // NOTE: Clone so that the caller can't modify the state
-        return this.domain.Clone(this.GetBlockState(block).Exit);
+        return this.Domain.Clone(this.GetBlockState(block).Exit);
     }
 
     /// <summary>
@@ -102,7 +109,7 @@ internal sealed class FlowAnalysis<TState>
         {
             // Start from the entry state of the block containing the node
             var entryState = this.GetEntry(block);
-            this.domain.Transfer(ref entryState, block, node);
+            this.Domain.Transfer(ref entryState, block, node);
             return entryState;
         }
         else
@@ -110,7 +117,7 @@ internal sealed class FlowAnalysis<TState>
             // Start from the exit state of the block containing the node
             var exitState = this.GetExit(block);
             // We need to stop at the node before the one we're looking for
-            this.domain.Transfer(ref exitState, block, node, inclusive: true);
+            this.Domain.Transfer(ref exitState, block, node, inclusive: true);
             return exitState;
         }
     }
@@ -130,14 +137,14 @@ internal sealed class FlowAnalysis<TState>
             // Start from the entry state of the block containing the node
             // We need to stop at the node after the one we're looking for
             var entryState = this.GetEntry(block);
-            this.domain.Transfer(ref entryState, block, node, inclusive: true);
+            this.Domain.Transfer(ref entryState, block, node, inclusive: true);
             return entryState;
         }
         else
         {
             // Start from the exit state of the block containing the node
             var exitState = this.GetExit(block);
-            this.domain.Transfer(ref exitState, block, node);
+            this.Domain.Transfer(ref exitState, block, node);
             return exitState;
         }
     }
@@ -151,7 +158,7 @@ internal sealed class FlowAnalysis<TState>
             // Initialize the entry block by setting the enter state to the initial state of the domain
             // and the exit state to the result of transferring the initial state through the block
             var entryState = this.GetBlockState(this.cfg.Entry);
-            entryState.Enter = this.domain.Initial;
+            entryState.Enter = this.Domain.Initial;
             entryState.Exit = this.TransferAndCopy(in entryState.Exit, this.cfg.Entry, out _);
         }
         else if (this.cfg.Exit is not null)
@@ -159,7 +166,7 @@ internal sealed class FlowAnalysis<TState>
             // Initialize the exit block by setting the exit state to the initial state of the domain
             // and the enter state to the result of transferring the initial state through the block
             var exitState = this.GetBlockState(this.cfg.Exit);
-            exitState.Exit = this.domain.Initial;
+            exitState.Exit = this.Domain.Initial;
             exitState.Enter = this.TransferAndCopy(in exitState.Enter, this.cfg.Exit, out _);
         }
 
@@ -175,7 +182,7 @@ internal sealed class FlowAnalysis<TState>
             if (this.Direction == FlowDirection.Forward)
             {
                 // Compute the exit state of n by combining the enter states of its successors
-                this.domain.Join(ref blockState.Exit, block.Successors.Select(e => this.GetBlockState(e.Successor).Enter));
+                this.Domain.Join(ref blockState.Exit, block.Successors.Select(e => this.GetBlockState(e.Successor).Enter));
                 blockState.Enter = this.TransferAndCopy(blockState.Exit, block, out var changed);
                 if (!changed) continue;
 
@@ -185,7 +192,7 @@ internal sealed class FlowAnalysis<TState>
             else
             {
                 // Compute the entry state of n by combining the exit states of its predecessors
-                this.domain.Join(ref blockState.Enter, block.Predecessors.Select(e => this.GetBlockState(e.Predecessor).Exit));
+                this.Domain.Join(ref blockState.Enter, block.Predecessors.Select(e => this.GetBlockState(e.Predecessor).Exit));
                 blockState.Exit = this.TransferAndCopy(blockState.Enter, block, out var changed);
                 if (!changed) continue;
 
@@ -199,7 +206,7 @@ internal sealed class FlowAnalysis<TState>
     {
         if (!this.blockStates.TryGetValue(block, out var state))
         {
-            state = new(this.domain.Top, this.domain.Top);
+            state = new(this.Domain.Top, this.Domain.Top);
             this.blockStates.Add(block, state);
         }
         return state;
@@ -207,8 +214,8 @@ internal sealed class FlowAnalysis<TState>
 
     private TState TransferAndCopy(in TState state, IBasicBlock block, out bool changed)
     {
-        var newState = this.domain.Clone(in state);
-        changed = this.domain.Transfer(ref newState, block);
+        var newState = this.Domain.Clone(in state);
+        changed = this.Domain.Transfer(ref newState, block);
         return newState;
     }
 

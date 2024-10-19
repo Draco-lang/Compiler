@@ -43,6 +43,13 @@ internal abstract class FlowDomain<TState>
     public abstract TState Top { get; }
 
     /// <summary>
+    /// Transforms the state into a string representation.
+    /// </summary>
+    /// <param name="state">The state to transform.</param>
+    /// <returns>The string representation of the state.</returns>
+    public virtual string ToString(TState state) => state?.ToString() ?? string.Empty;
+
+    /// <summary>
     /// A clone function that creates a deep-copy of the given state.
     /// </summary>
     /// <param name="state">The state to clone.</param>

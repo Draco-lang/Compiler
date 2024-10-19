@@ -69,17 +69,19 @@ internal abstract class FlowDomain<TState>
     /// </summary>
     /// <param name="state">The state to transfer.</param>
     /// <param name="basicBlock">The basic block to transfer the state through.</param>
-    /// <param name="until">The node to stop transferring at (excluded).
+    /// <param name="until">The node to stop transferring at.</param>
+    /// <param name="inclusive">True if the node to stop at should be included, false otherwise.</param>
     /// <returns>True if the state was changed, false otherwise.</returns>
-    public bool Transfer(ref TState state, IBasicBlock basicBlock, BoundNode? until = null)
+    public bool Transfer(ref TState state, IBasicBlock basicBlock, BoundNode? until = null, bool inclusive = false)
     {
         var changed = false;
         if (this.Direction == FlowDirection.Forward)
         {
             foreach (var node in basicBlock)
             {
-                if (ReferenceEquals(node, until)) break;
+                if (!inclusive && ReferenceEquals(node, until)) break;
                 changed |= this.Transfer(ref state, node);
+                if (inclusive && ReferenceEquals(node, until)) break;
             }
         }
         else
@@ -87,8 +89,9 @@ internal abstract class FlowDomain<TState>
             for (var i = basicBlock.Count - 1; i >= 0; --i)
             {
                 var node = basicBlock[i];
-                if (ReferenceEquals(node, until)) break;
+                if (!inclusive && ReferenceEquals(node, until)) break;
                 changed |= this.Transfer(ref state, node);
+                if (inclusive && ReferenceEquals(node, until)) break;
             }
         }
         return changed;

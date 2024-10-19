@@ -56,6 +56,7 @@ internal sealed class FlowAnalysis<TState>
     private readonly IControlFlowGraph cfg;
     private readonly FlowDomain<TState> domain;
     private readonly Dictionary<IBasicBlock, BlockState> blockStates = [];
+    private readonly Dictionary<BoundNode, IBasicBlock> nodesToBlocks = [];
 
     private FlowAnalysis(IControlFlowGraph cfg, FlowDomain<TState> domain)
     {
@@ -63,8 +64,88 @@ internal sealed class FlowAnalysis<TState>
         this.domain = domain;
     }
 
-    private void RunAnalysis()
+    /// <summary>
+    /// Retrieves the entry state of the given block.
+    /// </summary>
+    /// <param name="block">The block to retrieve the entry state for.</param>
+    /// <returns>The entry state of the block.</returns>
+    public TState GetEntry(IBasicBlock block)
     {
+        this.RunAnalysisIfNeeded();
+        // NOTE: Clone so that the caller can't modify the state
+        return this.domain.Clone(this.GetBlockState(block).Enter);
+    }
+
+    /// <summary>
+    /// Retrieves the exit state of the given block.
+    /// </summary>
+    /// <param name="block">The block to retrieve the exit state for.</param>
+    /// <returns>The exit state of the block.</returns>
+    public TState GetExit(IBasicBlock block)
+    {
+        this.RunAnalysisIfNeeded();
+        // NOTE: Clone so that the caller can't modify the state
+        return this.domain.Clone(this.GetBlockState(block).Exit);
+    }
+
+    /// <summary>
+    /// Retrieves the entry state of the given node.
+    /// </summary>
+    /// <param name="node">The node to retrieve the entry state for.</param>
+    /// <returns>The entry state of the node.</returns>
+    public TState GetEntry(BoundNode node)
+    {
+        this.AssociateAllNodesWithBlocksIfNeeded();
+        var block = this.nodesToBlocks[node];
+
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // Start from the entry state of the block containing the node
+            var entryState = this.GetEntry(block);
+            this.domain.Transfer(ref entryState, block, node);
+            return entryState;
+        }
+        else
+        {
+            // Start from the exit state of the block containing the node
+            var exitState = this.GetExit(block);
+            // We need to stop at the node before the one we're looking for
+            this.domain.Transfer(ref exitState, block, node, inclusive: true);
+            return exitState;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the exit state of the given node.
+    /// </summary>
+    /// <param name="node">The node to retrieve the exit state for.</param>
+    /// <returns>The exit state of the node.</returns>
+    public TState GetExit(BoundNode node)
+    {
+        this.AssociateAllNodesWithBlocksIfNeeded();
+        var block = this.nodesToBlocks[node];
+
+        if (this.Direction == FlowDirection.Forward)
+        {
+            // Start from the entry state of the block containing the node
+            // We need to stop at the node after the one we're looking for
+            var entryState = this.GetEntry(block);
+            this.domain.Transfer(ref entryState, block, node, inclusive: true);
+            return entryState;
+        }
+        else
+        {
+            // Start from the exit state of the block containing the node
+            var exitState = this.GetExit(block);
+            this.domain.Transfer(ref exitState, block, node);
+            return exitState;
+        }
+    }
+
+    private void RunAnalysisIfNeeded()
+    {
+        if (this.blockStates.Count > 0) return;
+
         if (this.Direction == FlowDirection.Forward)
         {
             // Initialize the entry block by setting the enter state to the initial state of the domain
@@ -129,5 +210,16 @@ internal sealed class FlowAnalysis<TState>
         var newState = this.domain.Clone(in state);
         changed = this.domain.Transfer(ref newState, block);
         return newState;
+    }
+
+    private void AssociateAllNodesWithBlocksIfNeeded()
+    {
+        if (this.nodesToBlocks.Count > 0) return;
+        foreach (var block in this.cfg.AllBlocks) this.AssociateNodesWithBlock(block);
+    }
+
+    private void AssociateNodesWithBlock(IBasicBlock block)
+    {
+        foreach (var node in block) this.nodesToBlocks.Add(node, block);
     }
 }

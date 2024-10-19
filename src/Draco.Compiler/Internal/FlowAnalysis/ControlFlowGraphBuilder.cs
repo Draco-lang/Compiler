@@ -127,6 +127,8 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
 
     public override void VisitLabelStatement(BoundLabelStatement node)
     {
+        // Connect the current block to the label
+        this.ConnectTo(this.GetBlock(node.Label), FlowCondition.Always);
         this.currentBasicBlock = this.GetBlock(node.Label);
     }
 

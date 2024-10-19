@@ -69,7 +69,7 @@ internal static class ControlFlowGraphToDot
         {
             var result = new StringBuilder();
             // Append the entry state of the block at the start
-            if (flowAnalysis is not null)
+            if (flowAnalysis is not null && block.Count > 0)
             {
                 var entryState = flowAnalysis.GetEntry(block);
                 var str = flowAnalysis.Domain.ToString(entryState);

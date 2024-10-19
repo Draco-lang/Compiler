@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
 
@@ -22,7 +23,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         var builder = new ControlFlowGraphBuilder();
         var start = builder.currentBasicBlock;
         root.Accept(builder);
-        var exit = builder.MergeExitPoints();
+        var exit = builder.MergeExitPoints(start);
         return new ControlFlowGraph(start, exit);
     }
 
@@ -91,14 +92,15 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// <summary>
     /// Merge all exit points into a single block.
     /// </summary>
+    /// <param name="start">The start block.</param>
     /// <returns>The exit block. Can return null, if there are no exit points.</returns>
-    private BasicBlock? MergeExitPoints()
+    private BasicBlock? MergeExitPoints(IBasicBlock start)
     {
-        // If the current block has no successors, we consider it as an implicit exit point
-        if (this.currentBasicBlock is not null && this.currentBasicBlock.Successors.Count == 0)
-        {
-            this.exitPoints.Add(this.currentBasicBlock);
-        }
+        // Add all basic blocks as exit points that have no successors
+        var blocksWithNoSuccessors = GraphTraversal
+            .DepthFirst(start, bb => bb.Successors.Select(s => s.Successor))
+            .Where(bb => !bb.Successors.Any());
+        foreach (var block in blocksWithNoSuccessors) this.exitPoints.Add((BasicBlock)block);
 
         // If there is 1 or none, no need to create an extra node
         if (this.exitPoints.Count <= 1) return this.exitPoints.FirstOrDefault();

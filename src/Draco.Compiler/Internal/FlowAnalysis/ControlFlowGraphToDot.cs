@@ -43,7 +43,11 @@ internal static class ControlFlowGraphToDot
         graph.WithName("ControlFlowGraph");
 
         // We name the blocks using a breadth-first manner to have some kind of logical ranking
-        var blocksInDepthFirstOrder = GraphTraversal.BreadthFirst(cfg.Entry, bb => bb.Successors.Select(s => s.Successor));
+        var blocksInDepthFirstOrder = GraphTraversal.BreadthFirst(
+            cfg.Entry,
+            bb => bb.Successors
+                .Select(s => s.Successor)
+                .Concat(bb.Predecessors.Select(s => s.Predecessor)));
         foreach (var block in blocksInDepthFirstOrder) blockNames[block] = $"b{blockNames.Count}";
 
         foreach (var block in cfg.AllBlocks)

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
 using Draco.Compiler.Internal.BoundTree;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
@@ -119,6 +120,34 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
 
     private readonly Dictionary<BoundNode, BitArray> genSets = [];
     private readonly Dictionary<BoundNode, BitArray> notKillSets = [];
+
+    public override string ToString(BitArray state)
+    {
+        var result = new StringBuilder();
+        result.Append('[');
+        var first = true;
+        for (var i = 0; i < this.Elements.Length; i++)
+        {
+            if (state[i]) continue;
+            if (!first) result.Append(',');
+            var elementStr = this.ElementToString(state, i);
+            if (elementStr is null) continue;
+            result.Append(elementStr);
+            first = false;
+        }
+        result.Append(']');
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Converts the given element to a string representation.
+    /// </summary>
+    /// <param name="state">The state to convert to a string.</param>
+    /// <param name="elementIndex">The index of the element in the elements array.</param>
+    /// <returns>The string representation of the element, or null if the element should be ignored.</returns>
+    protected virtual string? ElementToString(BitArray state, int elementIndex) => state[elementIndex]
+        ? this.Elements[elementIndex]?.ToString()
+        : null;
 
     public override BitArray Clone(in BitArray state) => new(state);
 

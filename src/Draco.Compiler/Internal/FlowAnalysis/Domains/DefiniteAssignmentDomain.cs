@@ -17,21 +17,9 @@ internal sealed class DefiniteAssignmentDomain(IEnumerable<LocalSymbol> locals)
     public override BitArray Initial => new(this.Elements.Length, true);
     public override BitArray Top => new(this.Elements.Length, true);
 
-    public override string ToString(BitArray state)
-    {
-        var result = new StringBuilder();
-        result.Append('[');
-        var first = true;
-        for (var i = 0; i < this.Elements.Length; i++)
-        {
-            if (state[i]) continue;
-            if (!first) result.Append(',');
-            result.Append(this.Elements[i].Name);
-            first = false;
-        }
-        result.Append(']');
-        return result.ToString();
-    }
+    protected override string? ElementToString(BitArray state, int elementIndex) => state[elementIndex]
+        ? null
+        : this.Elements[elementIndex].Name;
 
     public override void Join(ref BitArray target, IEnumerable<BitArray> sources)
     {
@@ -43,7 +31,7 @@ internal sealed class DefiniteAssignmentDomain(IEnumerable<LocalSymbol> locals)
     protected override BitArray Kill(BoundNode node) => node switch
     {
         BoundAssignmentExpression assignment when assignment.Left is BoundLocalLvalue localLvalue =>
-            this.CreateWithBitsSet([localLvalue.Local]).Not(),
+            this.CreateWithBitsSet([localLvalue.Local]),
         _ => new(this.Elements.Length),
     };
 }

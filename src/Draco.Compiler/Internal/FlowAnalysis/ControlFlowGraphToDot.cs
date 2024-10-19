@@ -36,19 +36,23 @@ internal static class ControlFlowGraphToDot
 
     private static string ToDotIntenral<TState>(IControlFlowGraph cfg, DataFlowAnalysis<TState>? flowAnalysis = null)
     {
+        var blockNames = new Dictionary<IBasicBlock, string>();
         var boundNodeNames = new Dictionary<BoundNode, string>();
 
         var graph = new DotGraphBuilder<IBasicBlock>(isDirected: true);
         graph.WithName("ControlFlowGraph");
 
-        var blockIndex = 0;
+        // We name the blocks using a breadth-first manner to have some kind of logical ranking
+        var blocksInDepthFirstOrder = GraphTraversal.BreadthFirst(cfg.Entry, bb => bb.Successors.Select(s => s.Successor));
+        foreach (var block in blocksInDepthFirstOrder) blockNames[block] = $"b{blockNames.Count}";
+
         foreach (var block in cfg.AllBlocks)
         {
             graph
                 .AddVertex(block)
                 .WithShape(DotAttribs.Shape.Rectangle)
                 .WithHtmlAttribute("label", BasicBlockToLabel(block))
-                .WithXLabel($"b{blockIndex}");
+                .WithXLabel(blockNames[block]);
 
             foreach (var edge in block.Successors)
             {
@@ -57,8 +61,6 @@ internal static class ControlFlowGraphToDot
                     .WithLabel(EdgeToLabel(edge));
             }
             // NOTE: Adding the predecessor would just cause each edge to show up twice
-
-            ++blockIndex;
         }
 
         return graph.ToDot();

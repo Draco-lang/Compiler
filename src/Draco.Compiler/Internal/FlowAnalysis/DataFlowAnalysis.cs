@@ -181,16 +181,6 @@ internal sealed class DataFlowAnalysis<TState>
             var blockState = this.GetBlockState(block);
             if (this.Direction == FlowDirection.Forward)
             {
-                // Compute the exit state of n by combining the enter states of its successors
-                this.Domain.Join(ref blockState.Exit, block.Successors.Select(e => this.GetBlockState(e.Successor).Enter));
-                blockState.Enter = this.TransferAndCopy(blockState.Exit, block, out var changed);
-                if (!changed) continue;
-
-                // If there was a change, all the predecessors might change too, enqueue them
-                foreach (var edge in block.Predecessors) worklist.Enqueue(edge.Predecessor);
-            }
-            else
-            {
                 // Compute the entry state of n by combining the exit states of its predecessors
                 this.Domain.Join(ref blockState.Enter, block.Predecessors.Select(e => this.GetBlockState(e.Predecessor).Exit));
                 blockState.Exit = this.TransferAndCopy(blockState.Enter, block, out var changed);
@@ -198,6 +188,16 @@ internal sealed class DataFlowAnalysis<TState>
 
                 // If there was a change, all the successors might change too, enqueue them
                 foreach (var edge in block.Successors) worklist.Enqueue(edge.Successor);
+            }
+            else
+            {
+                // Compute the exit state of n by combining the enter states of its successors
+                this.Domain.Join(ref blockState.Exit, block.Successors.Select(e => this.GetBlockState(e.Successor).Enter));
+                blockState.Enter = this.TransferAndCopy(blockState.Exit, block, out var changed);
+                if (!changed) continue;
+
+                // If there was a change, all the predecessors might change too, enqueue them
+                foreach (var edge in block.Predecessors) worklist.Enqueue(edge.Predecessor);
             }
         }
     }

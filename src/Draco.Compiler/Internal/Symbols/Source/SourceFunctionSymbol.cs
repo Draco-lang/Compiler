@@ -45,13 +45,13 @@ internal sealed class SourceFunctionSymbol(
 
         // Flow analysis
         var cfg = ControlFlowGraphBuilder.Build(body);
-        var dot = cfg.ToDot();
-        Console.WriteLine(dot);
-
         var locals = BoundTreeCollector.CollectLocals(body);
         var analysisDomain = new DefiniteAssignmentDomain(locals);
-        var analysis = new ForwardFlowAnalysis<BitArray>(analysisDomain);
-        var result = analysis.Analyze(cfg);
+        var analysis = DataFlowAnalysis.Create(cfg, analysisDomain);
+
+        var dot = cfg.ToDot(analysis);
+        Console.WriteLine(dot);
+
         // TODO
         throw new System.NotImplementedException();
         //ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);

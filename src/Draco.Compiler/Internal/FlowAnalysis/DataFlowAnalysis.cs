@@ -8,7 +8,7 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// <summary>
 /// Factory class for creating flow analyses.
 /// </summary>
-internal static class FlowAnalysis
+internal static class DataFlowAnalysis
 {
     /// <summary>
     /// Constructs a new flow analysis on the given control flow graph.
@@ -17,15 +17,15 @@ internal static class FlowAnalysis
     /// <param name="cfg">The control flow graph to analyze.</param>
     /// <param name="domain">The domain of the flow analysis.</param>
     /// <returns>The created flow analysis.</returns>
-    public static FlowAnalysis<TState> Create<TState>(IControlFlowGraph cfg, FlowDomain<TState> domain) =>
-        FlowAnalysis<TState>.Create(cfg, domain);
+    public static DataFlowAnalysis<TState> Create<TState>(IControlFlowGraph cfg, FlowDomain<TState> domain) =>
+        DataFlowAnalysis<TState>.Create(cfg, domain);
 }
 
 /// <summary>
 /// A single flow analysis that can be performed on a control flow graph.
 /// </summary>
 /// <typeparam name="TState">The state type of the domain used in the flow analysis.</typeparam>
-internal sealed class FlowAnalysis<TState>
+internal sealed class DataFlowAnalysis<TState>
 {
     /// <summary>
     /// Constructs a new flow analysis on the given control flow graph.
@@ -33,7 +33,7 @@ internal sealed class FlowAnalysis<TState>
     /// <param name="cfg">The control flow graph to analyze.</param>
     /// <param name="domain">The domain of the flow analysis.</param>
     /// <returns>The created flow analysis.</returns>
-    public static FlowAnalysis<TState> Create(IControlFlowGraph cfg, FlowDomain<TState> domain) => new(cfg, domain);
+    public static DataFlowAnalysis<TState> Create(IControlFlowGraph cfg, FlowDomain<TState> domain) => new(cfg, domain);
 
     /// <summary>
     /// The state of a single block.
@@ -65,7 +65,7 @@ internal sealed class FlowAnalysis<TState>
     private readonly Dictionary<IBasicBlock, BlockState> blockStates = [];
     private readonly Dictionary<BoundNode, IBasicBlock> nodesToBlocks = [];
 
-    private FlowAnalysis(IControlFlowGraph cfg, FlowDomain<TState> domain)
+    private DataFlowAnalysis(IControlFlowGraph cfg, FlowDomain<TState> domain)
     {
         this.cfg = cfg;
         this.Domain = domain;

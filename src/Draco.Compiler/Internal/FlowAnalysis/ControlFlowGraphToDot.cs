@@ -22,7 +22,7 @@ internal static class ControlFlowGraphToDot
     /// <param name="cfg">The control flow graph to convert.</param>
     /// <returns>The DOT representation of the control flow graph.</returns>
     public static string ToDot(this IControlFlowGraph cfg) =>
-        ToDotIntenral(cfg, null as FlowAnalysis<int>);
+        ToDotIntenral(cfg, null as DataFlowAnalysis<int>);
 
     /// <summary>
     /// Translates the control flow graph to a DOT graph with flow analysis information.
@@ -31,10 +31,10 @@ internal static class ControlFlowGraphToDot
     /// <param name="cfg">The control flow graph to convert.</param>
     /// <param name="flowAnalysis">The flow analysis to use for additional information.</param>
     /// <returns>The DOT representation of the control flow graph.</returns>
-    public static string ToDot<TState>(this IControlFlowGraph cfg, FlowAnalysis<TState> flowAnalysis) =>
+    public static string ToDot<TState>(this IControlFlowGraph cfg, DataFlowAnalysis<TState> flowAnalysis) =>
         ToDotIntenral(cfg, flowAnalysis);
 
-    private static string ToDotIntenral<TState>(IControlFlowGraph cfg, FlowAnalysis<TState>? flowAnalysis = null)
+    private static string ToDotIntenral<TState>(IControlFlowGraph cfg, DataFlowAnalysis<TState>? flowAnalysis = null)
     {
         var boundNodeNames = new Dictionary<BoundNode, string>();
 
@@ -66,10 +66,27 @@ internal static class ControlFlowGraphToDot
         string BasicBlockToLabel(IBasicBlock block)
         {
             var result = new StringBuilder();
+            // Append the entry state of the block at the start
+            if (flowAnalysis is not null)
+            {
+                var entryState = flowAnalysis.GetEntry(block);
+                var str = flowAnalysis.Domain.ToString(entryState);
+                result.Append(str);
+                result.Append("<br align=\"center\"/>");
+            }
+            // Print each node in the block
             foreach (var node in block)
             {
                 result.Append(BoundNodeToLabel(node));
                 result.Append("<br align=\"left\"/>");
+                // Append the state after the node
+                if (flowAnalysis is not null)
+                {
+                    var exitState = flowAnalysis.GetExit(node);
+                    var str = flowAnalysis.Domain.ToString(exitState);
+                    result.Append(str);
+                    result.Append("<br align=\"center\"/>");
+                }
             }
             // NOTE: Empty HTML labels are not allowed by Graphviz, we just add a space
             if (result.Length == 0) result.Append(' ');

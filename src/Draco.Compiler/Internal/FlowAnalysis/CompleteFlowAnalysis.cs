@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.FlowAnalysis.Domains;
@@ -54,7 +55,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     }
 
     private readonly DiagnosticBag diagnostics;
-    private readonly DataFlowAnalysis<(ReturnState, Dictionary<LocalSymbol, AssignementState>)> analysis;
+    private readonly DataFlowAnalysis<(ReturnState Return, Dictionary<LocalSymbol, AssignementState> LocalAssignment)> analysis;
 
     private CompleteFlowAnalysis(
         DiagnosticBag diagnostics,
@@ -68,13 +69,49 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     {
         base.VisitLocalExpression(node);
 
-        // TODO
+        var (@return, localAssignment) = this.analysis.GetEntry(node);
+        if (!localAssignment.TryGetValue(node.Local, out var state) || state != AssignementState.DefinitelyAssigned)
+        {
+            // Referencing an unassigned local, error
+            this.diagnostics.Add(Diagnostic.Create(
+                template: FlowAnalysisErrors.VariableUsedBeforeInit,
+                location: node.Syntax?.Location,
+                formatArgs: node.Local.Name));
+        }
     }
 
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
     {
         base.VisitAssignmentExpression(node);
+        if (node.Left is not BoundLocalLvalue localLvalue) return;
 
-        // TODO
+        var (@return, localAssignment) = this.analysis.GetEntry(node);
+
+        // First we check, if we have a compound assignment
+        if (node.CompoundOperator is not null)
+        {
+            // In this case, the left side is also a read first, needs to be assigned
+            if (!localAssignment.TryGetValue(localLvalue.Local, out var state) || state != AssignementState.DefinitelyAssigned)
+            {
+                // Referencing an unassigned local, error
+                this.diagnostics.Add(Diagnostic.Create(
+                    template: FlowAnalysisErrors.VariableUsedBeforeInit,
+                    location: node.Left.Syntax?.Location,
+                    formatArgs: localLvalue.Local.Name));
+            }
+        }
+
+        // If we have an immutable local, we need to check, if it's been assigned before
+        if (!localLvalue.Local.IsMutable)
+        {
+            if (localAssignment.TryGetValue(localLvalue.Local, out var state) && state != AssignementState.DefinitelyUnassigned)
+            {
+                // We are trying to assign multiple times to an immutable local
+                this.diagnostics.Add(Diagnostic.Create(
+                    template: FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo,
+                    location: node.Syntax?.Location,
+                    formatArgs: localLvalue.Local.Name));
+            }
+        }
     }
 }

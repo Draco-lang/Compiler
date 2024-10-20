@@ -20,18 +20,22 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     /// <param name="diagnostics">The diagnostics to report errors to.</param>
     public static void AnalyzeFunction(SourceFunctionSymbol symbol, DiagnosticBag diagnostics)
     {
-        var analysis = CreateAnalysis(symbol.Body);
+        var cfg = ControlFlowGraphBuilder.Build(symbol.Body);
+        var analysis = CreateAnalysis(symbol.Body, cfg);
         var flowAnalysis = new CompleteFlowAnalysis(diagnostics, analysis);
         symbol.Body.Accept(flowAnalysis);
 
         // We need to check the exit state, if it's returning on all paths
-        var (returnState, _) = analysis.GetExit(symbol.Body);
-        if (returnState != ReturnState.Returns)
+        if (cfg.Exit is not null)
         {
-            diagnostics.Add(Diagnostic.Create(
-                template: FlowAnalysisErrors.DoesNotReturn,
-                location: symbol.DeclaringSyntax.Name.Location,
-                formatArgs: symbol.Name));
+            var (returnState, _) = analysis.GetExit(cfg.Exit);
+            if (returnState != ReturnState.Returns)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: FlowAnalysisErrors.DoesNotReturn,
+                    location: symbol.DeclaringSyntax.Name.Location,
+                    formatArgs: symbol.Name));
+            }
         }
     }
 
@@ -44,14 +48,16 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     {
         if (symbol.Value is null) return;
 
-        var analysis = CreateAnalysis(symbol.Value);
+        var cfg = ControlFlowGraphBuilder.Build(symbol.Value);
+        var analysis = CreateAnalysis(symbol.Value, cfg);
         var flowAnalysis = new CompleteFlowAnalysis(diagnostics, analysis);
         symbol.Value.Accept(flowAnalysis);
     }
 
-    private static DataFlowAnalysis<(ReturnState, Dictionary<LocalSymbol, AssignementState>)> CreateAnalysis(BoundNode node)
+    private static DataFlowAnalysis<(ReturnState, Dictionary<LocalSymbol, AssignementState>)> CreateAnalysis(
+        BoundNode node,
+        IControlFlowGraph cfg)
     {
-        var cfg = ControlFlowGraphBuilder.Build(node);
         var domain = BuildForwardDomain(node);
         return DataFlowAnalysis.Create(cfg, domain);
     }

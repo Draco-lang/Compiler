@@ -14,7 +14,6 @@ internal sealed class DefiniteAssignmentDomain(IEnumerable<LocalSymbol> locals)
 {
     public override FlowDirection Direction => FlowDirection.Forward;
 
-    public override BitArray Initial => new(this.Elements.Length, true);
     public override BitArray Top => new(this.Elements.Length, true);
 
     protected override string? ElementToString(BitArray state, int elementIndex) => state[elementIndex]

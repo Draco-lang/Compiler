@@ -38,7 +38,7 @@ internal sealed class SourceFunctionSymbol(
         // Force binding of parameters, as the type is lazy too
         foreach (var param in this.Parameters.Cast<SourceParameterSymbol>()) param.Bind(binderProvider);
         this.BindReturnTypeIfNeeded(binderProvider);
-        var body = this.BindBodyIfNeeded(binderProvider);
+        this.BindBodyIfNeeded(binderProvider);
 
         // Check, if this function collides with any other overloads that are visible from here
         this.CheckForSameParameterOverloads(binderProvider);

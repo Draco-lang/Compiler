@@ -108,4 +108,38 @@ public sealed class ControlFlowGraphTests
         // Assert
         await Verify(dot, this.settings);
     }
+
+    [Fact]
+    public async Task WhileLoop()
+    {
+        // Arrange
+        // func foo() {
+        //     var i = 0;
+        //     while (i < 10) {
+        //        bar();
+        //        i += 1;
+        //     }
+        // }
+        // func bar() {}
+        var program = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("i", null, LiteralExpression(0))),
+                    ExpressionStatement(WhileExpression(
+                        RelationalExpression(NameExpression("i"), ComparisonElement(LessThan, LiteralExpression(10))),
+                        BlockExpression(
+                            ExpressionStatement(CallExpression(NameExpression("bar"))),
+                            ExpressionStatement(BinaryExpression(NameExpression("i"), PlusAssign, LiteralExpression(1)))))))),
+            FunctionDeclaration("bar", ParameterList(), null, BlockFunctionBody())));
+
+        // Act
+        var cfg = FunctionToCfg(program);
+        var dot = cfg.ToDot();
+
+        // Assert
+        await Verify(dot, this.settings);
+    }
 }

@@ -176,6 +176,7 @@ internal static class ControlFlowGraphToDot
         static string? GetSimplifiedBoundNodeLabel(BoundNode node) => node switch
         {
             BoundUnitExpression => "unit",
+            BoundParameterExpression param => param.Parameter.Name,
             BoundLocalExpression local => local.Local.Name,
             BoundLocalLvalue local => local.Local.Name,
             BoundGlobalExpression global => global.Global.Name,

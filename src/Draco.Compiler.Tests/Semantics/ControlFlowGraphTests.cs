@@ -142,4 +142,37 @@ public sealed class ControlFlowGraphTests
         // Assert
         await Verify(dot, this.settings);
     }
+
+    [Fact]
+    public async Task EarlyReturn()
+    {
+        // Arrange
+        // func foo(b: bool) {
+        //    bar();
+        //    if (b) return;
+        //    baz();
+        // }
+        // func bar() {}
+        // func baz() {}
+        var program = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(Parameter("b", NameType("bool"))),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(CallExpression(NameExpression("bar"))),
+                    ExpressionStatement(IfExpression(
+                        NameExpression("b"),
+                        ReturnExpression())),
+                    ExpressionStatement(CallExpression(NameExpression("baz"))))),
+            FunctionDeclaration("bar", ParameterList(), null, BlockFunctionBody()),
+            FunctionDeclaration("baz", ParameterList(), null, BlockFunctionBody())));
+
+        // Act
+        var cfg = FunctionToCfg(program);
+        var dot = cfg.ToDot();
+
+        // Assert
+        await Verify(dot, this.settings);
+    }
 }

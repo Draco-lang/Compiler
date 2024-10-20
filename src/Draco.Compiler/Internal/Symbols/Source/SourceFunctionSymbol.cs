@@ -44,19 +44,7 @@ internal sealed class SourceFunctionSymbol(
         this.CheckForSameParameterOverloads(binderProvider);
 
         // Flow analysis
-        var cfg = ControlFlowGraphBuilder.Build(body);
-        var locals = BoundTreeCollector.CollectLocals(body);
-        var analysisDomain = new DefiniteAssignmentDomain(locals);
-        var analysis = DataFlowAnalysis.Create(cfg, analysisDomain);
-
-        var dot = cfg.ToDot(analysis);
-        Console.WriteLine(dot);
-
-        // TODO
-        throw new System.NotImplementedException();
-        //ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
-        //DefiniteAssignment.Analyze(body, binderProvider.DiagnosticBag);
-        //ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+        CompleteFlowAnalysis.AnalyzeFunction(this, binderProvider.DiagnosticBag);
     }
 
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)

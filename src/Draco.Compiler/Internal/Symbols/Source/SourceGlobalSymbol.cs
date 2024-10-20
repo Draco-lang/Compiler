@@ -34,13 +34,10 @@ internal sealed class SourceGlobalSymbol(
 
     public override void Bind(IBinderProvider binderProvider)
     {
-        var (_, value) = this.BindTypeAndValueIfNeeded(binderProvider);
+        this.BindTypeAndValueIfNeeded(binderProvider);
 
         // Flow analysis
-        // TODO
-        throw new System.NotImplementedException();
-        // if (value is not null) DefiniteAssignment.Analyze(value, binderProvider.DiagnosticBag);
-        // ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+        CompleteFlowAnalysis.AnalyzeValue(this, binderProvider.DiagnosticBag);
     }
 
     private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValueIfNeeded(IBinderProvider binderProvider)

@@ -175,4 +175,36 @@ public sealed class ControlFlowGraphTests
         // Assert
         await Verify(dot, this.settings);
     }
+
+    [Fact]
+    public async Task ConditionalGotoInAssignment()
+    {
+        // Arrange
+        // func foo(b: bool) {
+        //     val x = if (b) goto noassign else 1;
+        // noassign:
+        //     bar();
+        // }
+        // func bar() {}
+        var program = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(Parameter("b", NameType("bool"))),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration("x", null, IfExpression(
+                        NameExpression("b"),
+                        GotoExpression(NameLabel("noassign")),
+                        LiteralExpression(1)))),
+                    DeclarationStatement(LabelDeclaration("noassign")),
+                    ExpressionStatement(CallExpression(NameExpression("bar"))))),
+            FunctionDeclaration("bar", ParameterList(), null, BlockFunctionBody())));
+
+        // Act
+        var cfg = FunctionToCfg(program);
+        var dot = cfg.ToDot();
+
+        // Assert
+        await Verify(dot, this.settings);
+    }
 }

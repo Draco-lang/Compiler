@@ -62,7 +62,7 @@ internal static class ControlFlowGraphToDot
             {
                 graph
                     .AddEdge(block, edge.Successor)
-                    .WithLabel(EdgeToLabel(edge));
+                    .WithLabel(edge.ToString());
             }
             // NOTE: Adding the predecessor would just cause each edge to show up twice
         }
@@ -160,16 +160,6 @@ internal static class ControlFlowGraphToDot
                 boundNodeNames.Add(node, name);
             }
             return name;
-        }
-
-        // Edges need to have the condition value appended
-        string EdgeToLabel(SuccessorEdge edge)
-        {
-            var kind = edge.Condition.Kind.ToString();
-            var value = edge.Condition.Value is null
-                ? string.Empty
-                : $"({ArgumentValueToLabel(edge.Condition.Value)})";
-            return $"{kind}{value}";
         }
 
         // For stuff like literals we don't need to allocate a new name, just pretty-print contents

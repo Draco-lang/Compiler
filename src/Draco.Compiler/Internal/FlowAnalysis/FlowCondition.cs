@@ -1,3 +1,4 @@
+using System;
 using Draco.Compiler.Internal.BoundTree;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;
@@ -23,9 +24,24 @@ internal enum FlowConditionKind
     WhenFalse,
 
     /// <summary>
+    /// An iteration of a loop continued, as there was still a sequence item.
+    /// </summary>
+    SequenceItem,
+
+    /// <summary>
     /// An iteration of a loop ended, because the end of the sequence was reached.
     /// </summary>
-    EndOfSequence,
+    SequenceEnd,
+
+    /// <summary>
+    /// The comparison is true.
+    /// </summary>
+    ComparisonTrue,
+
+    /// <summary>
+    /// The comparison is false.
+    /// </summary>
+    ComparisonFalse,
 }
 
 /// <summary>
@@ -33,14 +49,18 @@ internal enum FlowConditionKind
 /// </summary>
 /// <param name="Kind">The kind of condition on the edge.</param>
 /// <param name="Value">The condition value.</param>
-internal readonly record struct FlowCondition(FlowConditionKind Kind, BoundExpression? Value)
+/// <param name="Comparison">The comparison value, if any.</param>
+internal readonly record struct FlowCondition(
+    FlowConditionKind Kind,
+    BoundExpression? Value = null,
+    BoundComparison? Comparison = null)
 {
     /// <summary>
     /// An unconditional edge.
     /// </summary>
     /// <param name="target">The target basic block.</param>
     /// <returns>The new edge.</returns>
-    public static readonly FlowCondition Always = new(FlowConditionKind.Always, null);
+    public static readonly FlowCondition Always = new(FlowConditionKind.Always);
 
     /// <summary>
     /// Constructs a new conditional edge when the condition is true.
@@ -57,9 +77,46 @@ internal readonly record struct FlowCondition(FlowConditionKind Kind, BoundExpre
     public static FlowCondition WhenFalse(BoundExpression value) => new(FlowConditionKind.WhenFalse, value);
 
     /// <summary>
+    /// Constructs a new conditional edge when the sequence has more items.
+    /// </summary>
+    /// <param name="value">The sequence value.</param>
+    /// <returns>The new edge.</returns>
+    public static FlowCondition SequenceItem(BoundExpression value) => new(FlowConditionKind.SequenceItem, value);
+
+    /// <summary>
     /// Constructs a new conditional edge when the end of the sequence was reached.
     /// </summary>
     /// <param name="value">The sequence value.</param>
     /// <returns>The new edge.</returns>
-    public static FlowCondition EndOfSequence(BoundExpression value) => new(FlowConditionKind.EndOfSequence, value);
+    public static FlowCondition SequenceEnd(BoundExpression value) => new(FlowConditionKind.SequenceEnd, value);
+
+    /// <summary>
+    /// Constructs a new conditional edge when the comparison is true.
+    /// </summary>
+    /// <param name="value">The value being compared.</param>
+    /// <param name="comparison">The comparison being made.</param>
+    /// <returns>The new edge.</returns>
+    public static FlowCondition ComparisonTrue(BoundExpression value, BoundComparison comparison) =>
+        new(FlowConditionKind.ComparisonTrue, value, comparison);
+
+    /// <summary>
+    /// Constructs a new conditional edge when the comparison is false.
+    /// </summary>
+    /// <param name="value">The value being compared.</param>
+    /// <param name="comparison">The comparison being made.</param>
+    /// <returns>The new edge.</returns>
+    public static FlowCondition ComparisonFalse(BoundExpression value, BoundComparison comparison) =>
+        new(FlowConditionKind.ComparisonFalse, value, comparison);
+
+    public override string ToString() => this.Kind switch
+    {
+        FlowConditionKind.Always => "Always",
+        FlowConditionKind.WhenTrue
+     or FlowConditionKind.WhenFalse
+     or FlowConditionKind.SequenceItem
+     or FlowConditionKind.SequenceEnd => $"{this.Kind}({this.Value})",
+        FlowConditionKind.ComparisonTrue
+     or FlowConditionKind.ComparisonFalse => $"{this.Kind}({this.Value}, {this.Comparison!.Operator}, {this.Comparison!.Next})",
+        _ => throw new InvalidOperationException(),
+    };
 }

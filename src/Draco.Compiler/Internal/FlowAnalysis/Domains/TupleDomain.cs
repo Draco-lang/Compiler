@@ -34,16 +34,21 @@ internal sealed class TupleDomain<T1, T2> : FlowDomain<(T1, T2)>
     }
 
     public override (T1, T2) Clone(in (T1, T2) state) => (this.Domain1.Clone(state.Item1), this.Domain2.Clone(state.Item2));
+    public override bool Equals((T1, T2) state1, (T1, T2) state2) =>
+        this.Domain1.Equals(state1.Item1, state2.Item1)
+     && this.Domain2.Equals(state1.Item2, state2.Item2);
+
     public override string ToString((T1, T2) state) => $"({this.Domain1.ToString(state.Item1)}, {this.Domain2.ToString(state.Item2)})";
 
     public override void Join(ref (T1, T2) target, IEnumerable<(T1, T2)> sources)
     {
-        var sources1 = sources.Select(s => s.Item1);
-        var sources2 = sources.Select(s => s.Item2);
-        this.Domain1.Join(ref target.Item1, sources1);
-        this.Domain2.Join(ref target.Item2, sources2);
+        this.Domain1.Join(ref target.Item1, sources.Select(s => s.Item1));
+        this.Domain2.Join(ref target.Item2, sources.Select(s => s.Item2));
     }
 
-    public override bool Transfer(ref (T1, T2) state, BoundNode node) =>
-        this.Domain1.Transfer(ref state.Item1, node) | this.Domain2.Transfer(ref state.Item2, node);
+    public override void Transfer(ref (T1, T2) state, BoundNode node)
+    {
+        this.Domain1.Transfer(ref state.Item1, node);
+        this.Domain2.Transfer(ref state.Item2, node);
+    }
 }

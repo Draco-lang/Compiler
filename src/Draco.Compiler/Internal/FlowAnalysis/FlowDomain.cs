@@ -58,12 +58,19 @@ internal abstract class FlowDomain<TState>
     public virtual TState Clone(in TState state) => state;
 
     /// <summary>
+    /// Checks if the two states are equal.
+    /// </summary>
+    /// <param name="state1">The first state to compare.</param>
+    /// <param name="state2">The second state to compare.</param>
+    /// <returns>True if the states are equal, false otherwise.</returns>
+    public virtual bool Equals(TState state1, TState state2) => object.Equals(state1, state2);
+
+    /// <summary>
     /// The transfer function that updates the state based on the given node.
     /// </summary>
     /// <param name="state">The state to update.</param>
     /// <param name="node">The node to use for updating the state.</param>
-    /// <returns>True if the state was changed, false otherwise.</returns>
-    public abstract bool Transfer(ref TState state, BoundNode node);
+    public abstract void Transfer(ref TState state, BoundNode node);
 
     /// <summary>
     /// A join function that combines the given states into a single state.
@@ -79,16 +86,14 @@ internal abstract class FlowDomain<TState>
     /// <param name="basicBlock">The basic block to transfer the state through.</param>
     /// <param name="until">The node to stop transferring at.</param>
     /// <param name="inclusive">True if the node to stop at should be included, false otherwise.</param>
-    /// <returns>True if the state was changed, false otherwise.</returns>
-    public bool Transfer(ref TState state, IBasicBlock basicBlock, BoundNode? until = null, bool inclusive = false)
+    public void Transfer(ref TState state, IBasicBlock basicBlock, BoundNode? until = null, bool inclusive = false)
     {
-        var changed = false;
         if (this.Direction == FlowDirection.Forward)
         {
             foreach (var node in basicBlock)
             {
                 if (!inclusive && ReferenceEquals(node, until)) break;
-                changed |= this.Transfer(ref state, node);
+                this.Transfer(ref state, node);
                 if (inclusive && ReferenceEquals(node, until)) break;
             }
         }
@@ -98,11 +103,10 @@ internal abstract class FlowDomain<TState>
             {
                 var node = basicBlock[i];
                 if (!inclusive && ReferenceEquals(node, until)) break;
-                changed |= this.Transfer(ref state, node);
+                this.Transfer(ref state, node);
                 if (inclusive && ReferenceEquals(node, until)) break;
             }
         }
-        return changed;
     }
 }
 
@@ -151,17 +155,21 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
 
     public override BitArray Clone(in BitArray state) => new(state);
 
-    public override bool Transfer(ref BitArray state, BoundNode node)
+    public override bool Equals(BitArray state1, BitArray state2)
+    {
+        // NOTE: Inefficient, bitarray does not expose a SIMD-friendly way to compare
+        for (var i = 0; i < this.Elements.Length; ++i)
+        {
+            if (state1[i] != state2[i]) return false;
+        }
+        return true;
+    }
+
+    public override void Transfer(ref BitArray state, BoundNode node)
     {
         var gen = this.GetGenCached(node);
         var notKill = this.GetNotKillCached(node);
-
-        // I hate you BitArray for needing to clone instead of reporting number of bits changed
-        var oldState = this.Clone(in state);
         state = state.And(notKill).Or(gen);
-        // And I hate you for needing to compare with this hack
-        oldState.Xor(state);
-        return oldState.HasAnySet();
     }
 
     private BitArray GetGenCached(BoundNode node)

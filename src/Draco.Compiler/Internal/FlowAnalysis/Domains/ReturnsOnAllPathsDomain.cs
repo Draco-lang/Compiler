@@ -31,17 +31,10 @@ internal sealed class ReturnsOnAllPathsDomain : FlowDomain<ReturnState>
     public override void Join(ref ReturnState target, IEnumerable<ReturnState> sources) =>
         target = sources.Contains(ReturnState.DoesNotReturn) ? ReturnState.DoesNotReturn : ReturnState.Returns;
 
-    public override bool Transfer(ref ReturnState state, BoundNode node) => node switch
+    public override void Transfer(ref ReturnState state, BoundNode node)
     {
-        BoundReturnExpression ret => this.TransferReturn(ref state, ret),
-        _ => false,
-    };
-
-    private bool TransferReturn(ref ReturnState state, BoundReturnExpression ret)
-    {
-        if (state == ReturnState.Returns) return false;
+        if (node is not BoundReturnExpression) return;
 
         state = ReturnState.Returns;
-        return true;
     }
 }

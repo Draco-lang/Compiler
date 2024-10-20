@@ -215,7 +215,8 @@ internal sealed class DataFlowAnalysis<TState>
     private TState TransferAndCopy(in TState state, IBasicBlock block, out bool changed)
     {
         var newState = this.Domain.Clone(in state);
-        changed = this.Domain.Transfer(ref newState, block);
+        this.Domain.Transfer(ref newState, block);
+        changed = !this.Domain.Equals(state, newState);
         return newState;
     }
 

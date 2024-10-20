@@ -63,4 +63,18 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         this.diagnostics = diagnostics;
         this.analysis = analysis;
     }
+
+    public override void VisitLocalExpression(BoundLocalExpression node)
+    {
+        base.VisitLocalExpression(node);
+
+        // TODO
+    }
+
+    public override void VisitAssignmentExpression(BoundAssignmentExpression node)
+    {
+        base.VisitAssignmentExpression(node);
+
+        // TODO
+    }
 }

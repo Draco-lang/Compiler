@@ -235,4 +235,42 @@ public sealed class ControlFlowGraphTests
         // Assert
         await Verify(dot, this.settings);
     }
+
+    [Fact]
+    public async Task ChainedComparison()
+    {
+        // Arrange
+        // func foo(a: int32, b: int32, c: int32, d: int32): bool =
+        //     { bar(); a } < { baz(); b } == { qux(); c } > { qwe(); d };
+        // 
+        // func bar() {}
+        // func baz() {}
+        // func qux() {}
+        // func qwe() {}
+        var program = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "foo",
+                ParameterList(
+                    Parameter("a", NameType("int32")),
+                    Parameter("b", NameType("int32")),
+                    Parameter("c", NameType("int32")),
+                    Parameter("d", NameType("int32"))),
+                null,
+                InlineFunctionBody(RelationalExpression(
+                    BlockExpression([ExpressionStatement(CallExpression(NameExpression("bar")))], NameExpression("a")),
+                    ComparisonElement(LessThan, BlockExpression([ExpressionStatement(CallExpression(NameExpression("baz")))], NameExpression("b"))),
+                    ComparisonElement(Equal, BlockExpression([ExpressionStatement(CallExpression(NameExpression("qux")))], NameExpression("c"))),
+                    ComparisonElement(GreaterThan, BlockExpression([ExpressionStatement(CallExpression(NameExpression("qwe")))], NameExpression("d")))))),
+            FunctionDeclaration("bar", ParameterList(), null, BlockFunctionBody()),
+            FunctionDeclaration("baz", ParameterList(), null, BlockFunctionBody()),
+            FunctionDeclaration("qux", ParameterList(), null, BlockFunctionBody()),
+            FunctionDeclaration("qwe", ParameterList(), null, BlockFunctionBody())));
+
+        // Act
+        var cfg = FunctionToCfg(program);
+        var dot = cfg.ToDot();
+
+        // Assert
+        await Verify(dot, this.settings);
+    }
 }

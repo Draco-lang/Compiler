@@ -452,14 +452,17 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         FlowCondition.SequenceEnd(Unwrap(condition));
 
     private static FlowCondition ComparisonTrue(BoundExpression left, BoundComparison right) =>
-        FlowCondition.ComparisonTrue(Unwrap(left), right);
+        FlowCondition.ComparisonTrue(Unwrap(left), Unwrap(right));
 
     private static FlowCondition ComparisonFalse(BoundExpression left, BoundComparison right) =>
-        FlowCondition.ComparisonFalse(Unwrap(left), right);
+        FlowCondition.ComparisonFalse(Unwrap(left), Unwrap(right));
 
     private static BoundExpression Unwrap(BoundExpression node) => node switch
     {
         BoundBlockExpression block => Unwrap(block.Value),
         _ => node,
     };
+
+    private static BoundComparison Unwrap(BoundComparison comparison) =>
+        new(null, comparison.Operator, Unwrap(comparison.Next));
 }

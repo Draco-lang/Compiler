@@ -107,16 +107,4 @@ internal readonly record struct FlowCondition(
     /// <returns>The new edge.</returns>
     public static FlowCondition ComparisonFalse(BoundExpression value, BoundComparison comparison) =>
         new(FlowConditionKind.ComparisonFalse, value, comparison);
-
-    public override string ToString() => this.Kind switch
-    {
-        FlowConditionKind.Always => "Always",
-        FlowConditionKind.WhenTrue
-     or FlowConditionKind.WhenFalse
-     or FlowConditionKind.SequenceItem
-     or FlowConditionKind.SequenceEnd => $"{this.Kind}({this.Value})",
-        FlowConditionKind.ComparisonTrue
-     or FlowConditionKind.ComparisonFalse => $"{this.Kind}({this.Value}, {this.Comparison!.Operator}, {this.Comparison!.Next})",
-        _ => throw new InvalidOperationException(),
-    };
 }

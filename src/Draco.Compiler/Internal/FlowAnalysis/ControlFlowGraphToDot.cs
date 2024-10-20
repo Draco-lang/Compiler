@@ -62,7 +62,7 @@ internal static class ControlFlowGraphToDot
             {
                 graph
                     .AddEdge(block, edge.Successor)
-                    .WithLabel(edge.Condition.ToString());
+                    .WithLabel(ConditionToLabel(edge.Condition));
             }
             // NOTE: Adding the predecessor would just cause each edge to show up twice
         }
@@ -161,6 +161,18 @@ internal static class ControlFlowGraphToDot
             }
             return name;
         }
+
+        string ConditionToLabel(FlowCondition condition) => condition.Kind switch
+        {
+            FlowConditionKind.Always => "Always",
+            FlowConditionKind.WhenTrue
+         or FlowConditionKind.WhenFalse
+         or FlowConditionKind.SequenceItem
+         or FlowConditionKind.SequenceEnd => $"{condition.Kind}({ArgumentValueToLabel(condition.Value)})",
+            FlowConditionKind.ComparisonTrue
+         or FlowConditionKind.ComparisonFalse => $"{condition.Kind}({ArgumentValueToLabel(condition.Value)}, {condition.Comparison!.Operator}, {ArgumentValueToLabel(condition.Comparison!.Next)})",
+            _ => throw new InvalidOperationException(),
+        };
 
         // For stuff like literals we don't need to allocate a new name, just pretty-print contents
         static string? GetSimplifiedBoundNodeLabel(BoundNode node) => node switch

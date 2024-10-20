@@ -173,7 +173,9 @@ internal sealed class DataFlowAnalysis<TState>
         // The rest are initialized to the top state by default
 
         // Initialize the worklist with all blocks, except the entry and exit blocks
-        var worklist = new Queue<IBasicBlock>(this.cfg.AllBlocks.Except([this.cfg.Entry, this.cfg.Exit!]));
+        var worklist = new Queue<IBasicBlock>(this.Direction == FlowDirection.Forward
+            ? this.cfg.AllBlocks.Except([this.cfg.Entry])
+            : this.cfg.AllBlocks.Except([this.cfg.Exit!]));
 
         // Perform the analysis while we have blocks to process in the worklist
         while (worklist.TryDequeue(out var block))

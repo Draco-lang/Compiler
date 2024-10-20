@@ -359,6 +359,12 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
         this.Append(node);
     }
 
+    public override void VisitLocalExpression(BoundLocalExpression node)
+    {
+        base.VisitLocalExpression(node);
+        this.Append(node);
+    }
+
     public override void VisitObjectCreationExpression(BoundObjectCreationExpression node)
     {
         base.VisitObjectCreationExpression(node);
@@ -413,7 +419,6 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public override void VisitGlobalLvalue(BoundGlobalLvalue node) { }
     public override void VisitIllegalLvalue(BoundIllegalLvalue node) { }
     public override void VisitLiteralExpression(BoundLiteralExpression node) { }
-    public override void VisitLocalExpression(BoundLocalExpression node) { }
     public override void VisitLocalFunction(BoundLocalFunction node) { }
     public override void VisitLocalLvalue(BoundLocalLvalue node) { }
     public override void VisitModuleExpression(BoundModuleExpression node) { }

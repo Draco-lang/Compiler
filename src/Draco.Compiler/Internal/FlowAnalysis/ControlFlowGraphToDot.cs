@@ -83,6 +83,8 @@ internal static class ControlFlowGraphToDot
             // Print each node in the block
             foreach (var node in block)
             {
+                if (GetSimplifiedBoundNodeLabel(node) is not null) continue;
+
                 result.Append(BoundNodeToLabel(node));
                 result.Append("<br align=\"left\"/>");
                 // Append the state after the node

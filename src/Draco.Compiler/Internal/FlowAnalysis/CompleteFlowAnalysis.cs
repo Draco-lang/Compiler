@@ -23,6 +23,16 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         var analysis = CreateAnalysis(symbol.Body);
         var flowAnalysis = new CompleteFlowAnalysis(diagnostics, analysis);
         symbol.Body.Accept(flowAnalysis);
+
+        // We need to check the exit state, if it's returning on all paths
+        var (returnState, _) = analysis.GetExit(symbol.Body);
+        if (returnState != ReturnState.Returns)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: FlowAnalysisErrors.DoesNotReturn,
+                location: symbol.DeclaringSyntax.Name.Location,
+                formatArgs: symbol.Name));
+        }
     }
 
     /// <summary>

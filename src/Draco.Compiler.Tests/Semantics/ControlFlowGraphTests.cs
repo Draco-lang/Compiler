@@ -54,4 +54,28 @@ public sealed class ControlFlowGraphTests
         // Assert
         await Verify(dot, this.settings);
     }
+
+    [Fact]
+    public async Task UnconditionalBackwardsJump()
+    {
+        // Arrange
+        // func main() {
+        // loop:
+        //    goto loop;
+        // }
+        var program = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(LabelDeclaration("loop")),
+                ExpressionStatement(GotoExpression(NameLabel("loop")))))));
+
+        // Act
+        var cfg = FunctionToCfg(program);
+        var dot = cfg.ToDot();
+
+        // Assert
+        await Verify(dot, this.settings);
+    }
 }

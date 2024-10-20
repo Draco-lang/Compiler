@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
@@ -21,8 +22,8 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public static IControlFlowGraph Build(BoundNode root)
     {
         var builder = new ControlFlowGraphBuilder();
-        var start = builder.currentBasicBlock;
         root.Accept(builder);
+        var start = builder.entryPoint ?? new BasicBlock();
         var exit = builder.MergeExitPoints(start);
         return new ControlFlowGraph(start, exit);
     }
@@ -32,7 +33,9 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     // All exit points
     private readonly HashSet<BasicBlock> exitPoints = [];
     // The current basic block being built
-    private BasicBlock currentBasicBlock = new();
+    private BasicBlock? currentBasicBlock = null;
+    // The first block created, baseically the entry point
+    private BasicBlock? entryPoint = null;
 
     private ControlFlowGraphBuilder()
     {
@@ -46,6 +49,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     private void Append(BoundNode node)
     {
         this.currentBasicBlock ??= new();
+        this.entryPoint ??= this.currentBasicBlock;
         this.currentBasicBlock.Nodes.Add(node);
     }
 
@@ -80,7 +84,11 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// <param name="to">The basic block to connect to (successor).</param>
     private void ConnectTo(BasicBlock to, FlowCondition condition)
     {
-        if (this.currentBasicBlock is null) return;
+        if (this.currentBasicBlock is null)
+        {
+            this.entryPoint ??= to;
+            return;
+        }
 
         var predecessorEdge = new PredecessorEdge(condition, this.currentBasicBlock);
         var successorEdge = new SuccessorEdge(condition, to);
@@ -121,6 +129,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     {
         node.Value?.Accept(this);
         this.Append(node);
+        Debug.Assert(this.currentBasicBlock is not null);
         this.exitPoints.Add(this.currentBasicBlock);
         this.Detach();
     }

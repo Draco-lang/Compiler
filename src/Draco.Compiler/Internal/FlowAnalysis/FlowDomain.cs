@@ -36,7 +36,7 @@ internal abstract class FlowDomain<TState>
     /// <summary>
     /// Constructs a new instance of the initial state of the flow analysis.
     /// </summary>
-    public abstract TState Initial { get; }
+    public virtual TState Initial => this.Top;
 
     /// <summary>
     /// Constructs a new instance of the top state of the flow analysis, which is the "least defined" state.

@@ -159,7 +159,7 @@ internal sealed class DataFlowAnalysis<TState>
             // and the exit state to the result of transferring the initial state through the block
             var entryState = this.GetBlockState(this.cfg.Entry);
             entryState.Enter = this.Domain.Initial;
-            entryState.Exit = this.TransferAndCopy(in entryState.Exit, this.cfg.Entry, out _);
+            entryState.Exit = this.TransferAndCopy(in entryState.Exit, this.cfg.Entry);
         }
         else if (this.cfg.Exit is not null)
         {
@@ -167,7 +167,7 @@ internal sealed class DataFlowAnalysis<TState>
             // and the enter state to the result of transferring the initial state through the block
             var exitState = this.GetBlockState(this.cfg.Exit);
             exitState.Exit = this.Domain.Initial;
-            exitState.Enter = this.TransferAndCopy(in exitState.Enter, this.cfg.Exit, out _);
+            exitState.Enter = this.TransferAndCopy(in exitState.Enter, this.cfg.Exit);
         }
 
         // The rest are initialized to the top state by default
@@ -185,9 +185,11 @@ internal sealed class DataFlowAnalysis<TState>
             {
                 // Compute the entry state of n by combining the exit states of its predecessors
                 this.Domain.Join(ref blockState.Enter, block.Predecessors.Select(e => this.GetBlockState(e.Predecessor).Exit));
-                blockState.Exit = this.TransferAndCopy(blockState.Enter, block, out var changed);
+                var newExit = this.TransferAndCopy(blockState.Enter, block);
+                var changed = !this.Domain.Equals(blockState.Exit, newExit);
                 if (!changed) continue;
 
+                blockState.Exit = newExit;
                 // If there was a change, all the successors might change too, enqueue them
                 foreach (var edge in block.Successors) worklist.Enqueue(edge.Successor);
             }
@@ -195,9 +197,11 @@ internal sealed class DataFlowAnalysis<TState>
             {
                 // Compute the exit state of n by combining the enter states of its successors
                 this.Domain.Join(ref blockState.Exit, block.Successors.Select(e => this.GetBlockState(e.Successor).Enter));
-                blockState.Enter = this.TransferAndCopy(blockState.Exit, block, out var changed);
+                var newEnter = this.TransferAndCopy(blockState.Exit, block);
+                var changed = !this.Domain.Equals(blockState.Enter, newEnter);
                 if (!changed) continue;
 
+                blockState.Enter = newEnter;
                 // If there was a change, all the predecessors might change too, enqueue them
                 foreach (var edge in block.Predecessors) worklist.Enqueue(edge.Predecessor);
             }
@@ -214,11 +218,10 @@ internal sealed class DataFlowAnalysis<TState>
         return state;
     }
 
-    private TState TransferAndCopy(in TState state, IBasicBlock block, out bool changed)
+    private TState TransferAndCopy(in TState state, IBasicBlock block)
     {
         var newState = this.Domain.Clone(in state);
         this.Domain.Transfer(ref newState, block);
-        changed = !this.Domain.Equals(state, newState);
         return newState;
     }
 

@@ -230,6 +230,6 @@ internal sealed class DataFlowAnalysis<TState>
 
     private void AssociateNodesWithBlock(IBasicBlock block)
     {
-        foreach (var node in block) this.nodesToBlocks.Add(node, block);
+        foreach (var node in block) this.nodesToBlocks[node] = block;
     }
 }

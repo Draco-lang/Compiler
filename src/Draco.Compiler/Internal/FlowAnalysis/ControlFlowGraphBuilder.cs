@@ -22,8 +22,9 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public static IControlFlowGraph Build(BoundNode root)
     {
         var builder = new ControlFlowGraphBuilder();
+        builder.EnsureBlock();
+        var start = builder.currentBasicBlock!;
         root.Accept(builder);
-        var start = builder.entryPoint ?? new BasicBlock();
         var exit = builder.MergeExitPoints(start);
         return new ControlFlowGraph(start, exit);
     }
@@ -34,8 +35,6 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     private readonly HashSet<BasicBlock> exitPoints = [];
     // The current basic block being built
     private BasicBlock? currentBasicBlock = null;
-    // The first block created, baseically the entry point
-    private BasicBlock? entryPoint = null;
 
     private ControlFlowGraphBuilder()
     {
@@ -49,7 +48,6 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     private void Append(BoundNode node)
     {
         this.currentBasicBlock ??= new();
-        this.entryPoint ??= this.currentBasicBlock;
         this.currentBasicBlock.Nodes.Add(node);
     }
 
@@ -60,6 +58,14 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     private void Detach()
     {
         this.currentBasicBlock = null!;
+    }
+
+    /// <summary>
+    /// Ensures that there is a current basic block.
+    /// </summary>
+    private void EnsureBlock()
+    {
+        this.currentBasicBlock ??= new();
     }
 
     /// <summary>
@@ -84,11 +90,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// <param name="to">The basic block to connect to (successor).</param>
     private void ConnectTo(BasicBlock to, FlowCondition condition)
     {
-        if (this.currentBasicBlock is null)
-        {
-            this.entryPoint ??= to;
-            return;
-        }
+        if (this.currentBasicBlock is null) return;
 
         var predecessorEdge = new PredecessorEdge(condition, this.currentBasicBlock);
         var successorEdge = new SuccessorEdge(condition, to);

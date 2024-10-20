@@ -1,4 +1,6 @@
 ﻿digraph ControlFlowGraph {
   0 [shape=rectangle, label=< >, xlabel="b0"];
-  0 -> 0 [label="Always"];
+  1 [shape=rectangle, label=< >, xlabel="b1"];
+  0 -> 1 [label="Always"];
+  1 -> 1 [label="Always"];
 }

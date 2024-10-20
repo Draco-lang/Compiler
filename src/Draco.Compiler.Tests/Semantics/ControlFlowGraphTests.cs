@@ -207,4 +207,32 @@ public sealed class ControlFlowGraphTests
         // Assert
         await Verify(dot, this.settings);
     }
+
+    [Fact]
+    public async Task ForLoop()
+    {
+        // Arrange
+        // func foo(s: Array<int32>) {
+        //     for (i in s) bar(i);
+        // }
+        // func bar(x: int32) {}
+        var program = SyntaxTree.Create(CompilationUnit(
+            FunctionDeclaration(
+                "main",
+                ParameterList(Parameter("s", GenericType(NameType("Array"), NameType("int32")))),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(ForExpression(
+                        "i",
+                        NameExpression("s"),
+                        CallExpression(NameExpression("bar"), NameExpression("i")))))),
+            FunctionDeclaration("bar", ParameterList(Parameter("x", NameType("int32"))), null, BlockFunctionBody())));
+
+        // Act
+        var cfg = FunctionToCfg(program);
+        var dot = cfg.ToDot();
+
+        // Assert
+        await Verify(dot, this.settings);
+    }
 }

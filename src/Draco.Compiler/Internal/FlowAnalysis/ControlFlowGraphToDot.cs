@@ -62,7 +62,7 @@ internal static class ControlFlowGraphToDot
             {
                 graph
                     .AddEdge(block, edge.Successor)
-                    .WithLabel(edge.ToString());
+                    .WithLabel(edge.Condition.ToString());
             }
             // NOTE: Adding the predecessor would just cause each edge to show up twice
         }

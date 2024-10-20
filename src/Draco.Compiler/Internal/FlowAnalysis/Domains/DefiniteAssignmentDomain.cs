@@ -46,8 +46,7 @@ internal sealed class DefiniteAssignmentDomain(ImmutableArray<LocalSymbol> local
     public ImmutableArray<LocalSymbol> Locals { get; } = locals;
 
     public override FlowDirection Direction => FlowDirection.Forward;
-    public override Dictionary<LocalSymbol, AssignementState> Top =>
-        this.Locals.ToDictionary(l => l, _ => AssignementState.DefinitelyUnassigned);
+    public override Dictionary<LocalSymbol, AssignementState> Top => [];
 
     public override bool Equals(Dictionary<LocalSymbol, AssignementState> state1, Dictionary<LocalSymbol, AssignementState> state2)
     {
@@ -74,12 +73,12 @@ internal sealed class DefiniteAssignmentDomain(ImmutableArray<LocalSymbol> local
         foreach (var local in this.Locals)
         {
             var localState = null as AssignementState?;
-            var localStates = sources.Select(d => d.TryGetValue(local, out var s) ? s : AssignementState.DefinitelyUnassigned);
-            foreach (var state in localStates)
+            foreach (var source in sources)
             {
+                if (!source.TryGetValue(local, out var state)) continue;
                 localState = localState is null ? state : Join(localState.Value, state);
             }
-            target[local] = localState ?? AssignementState.DefinitelyUnassigned;
+            if (localState is not null) target.Add(local, localState.Value);
         }
     }
 

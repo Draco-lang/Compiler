@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Internal.Binding;
@@ -36,7 +37,12 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
     }
 
     private void Compile(BoundStatement stmt) => stmt.Accept(this);
-    private IOperand Compile(BoundExpression expr) => expr.Accept(this);
+    private IOperand Compile(BoundExpression expr)
+    {
+        var val = expr.Accept(this);
+        Debug.Assert(val != null);
+        return val;
+    }
 
     private void AttachBlock(BasicBlock basicBlock)
     {

@@ -27,6 +27,8 @@ internal sealed class SourceFunctionSymbol(
     {
     }
 
+    public override bool IsStatic => this.ThisArgument == null;
+
     public override void Bind(IBinderProvider binderProvider)
     {
         this.BindAttributesIfNeeded(binderProvider);

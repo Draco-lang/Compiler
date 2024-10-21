@@ -456,21 +456,27 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
-    private void EncodeModule(IModule module, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
+    private void EncodeModule(IModule module)
     {
-        var currentFieldIndex = fieldIndex;
-        var currentProcIndex = procIndex;
+        var fieldIndex = 1;
+        var procIndex = 1;
+        this.EncodeModule(module, parent: null, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
+    }
+
+    private void EncodeModule(
+        IModule module,
+        TypeDefinitionHandle? parent,
+        ref int fieldIndex,
+        ref int procIndex)
+    {
+        var startFieldIndex = fieldIndex;
+        var startProcIndex = procIndex;
+
         // Go through globals
         foreach (var global in module.Globals)
         {
             this.EncodeGlobal(global);
-            currentFieldIndex++;
-        }
-
-        foreach (var type in module.Types.Values)
-        {
-            //TODO: what to do about the parent here ?
-            this.EncodeClass(type, parent: null, ref fieldIndex, ref procIndex);
+            ++fieldIndex;
         }
 
         // Go through procedures
@@ -484,22 +490,17 @@ internal sealed class MetadataCodegen : MetadataWriter
 
             // If this is the entry point, save it
             if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
-            currentProcIndex++;
+
+            ++procIndex;
         }
 
         // Compile global initializer too
         this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
-        currentProcIndex++;
+        ++procIndex;
 
-        TypeAttributes visibility;
-        if (module.Symbol.Visibility == Api.Semantics.Visibility.Public)
-        {
-            visibility = parentModule is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public;
-        }
-        else
-        {
-            visibility = parentModule is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic;
-        }
+        var visibility = module.Symbol.Visibility == Api.Semantics.Visibility.Public
+            ? (parent is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public)
+            : (parent is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic);
         var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed;
 
         var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
@@ -510,17 +511,22 @@ internal sealed class MetadataCodegen : MetadataWriter
             @namespace: default,
             name: name,
             baseType: this.systemObjectReference,
-            fieldList: MetadataTokens.FieldDefinitionHandle(fieldIndex),
-            methodList: MetadataTokens.MethodDefinitionHandle(procIndex));
-
+            fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
+            methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));
 
         // If this isn't top level module, we specify nested relationship
-        if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
+        if (parent is not null) this.MetadataBuilder.AddNestedType(createdModule, parent.Value);
+
+        // We encode every class
+        foreach (var @class in module.Types.Values)
+        {
+            this.EncodeClass(@class, parent: createdModule, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
+        }
 
         // We encode every submodule
         foreach (var subModule in module.Submodules.Values)
         {
-            this.EncodeModule(subModule, createdModule, currentFieldIndex, currentProcIndex);
+            this.EncodeModule(subModule, parent: createdModule, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
         }
     }
 
@@ -573,10 +579,11 @@ internal sealed class MetadataCodegen : MetadataWriter
             hasDynamicStackAllocation: false);
 
         // Determine attributes
-        var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
+        var attributes = MethodAttributes.HideBySig;
         attributes |= specialName is null
             ? visibility
             : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+        if (procedure.Symbol.IsStatic) attributes |= MethodAttributes.Static;
 
         // Parameters
         var parameterList = this.NextParameterHandle;

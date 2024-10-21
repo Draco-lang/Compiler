@@ -1,0 +1,11 @@
+﻿digraph ControlFlowGraph {
+  0 [shape=rectangle, label=<e0: CallExpression(Method = bar, Arguments = [])<br align="left"/>e1: CallExpression(Method = baz, Arguments = [])<br align="left"/>>, xlabel="b0"];
+  1 [shape=rectangle, label=<e4: RelationalExpression(First = e5, Comparisons = [Comparison(Operator = op_LessThan, Next = e6), Comparison(Operator = op_Equality, Next = e7), Comparison(Operator = op_GreaterThan, Next = e8)])<br align="left"/>e9: ReturnExpression(Value = e4)<br align="left"/>>, xlabel="b1"];
+  2 [shape=rectangle, label=<e2: CallExpression(Method = qux, Arguments = [])<br align="left"/>>, xlabel="b2"];
+  3 [shape=rectangle, label=<e3: CallExpression(Method = qwe, Arguments = [])<br align="left"/>>, xlabel="b3"];
+  0 -> 1 [label="ComparisonFalse(b, op_Equality(Int32, Int32): Boolean, c)"];
+  0 -> 2 [label="ComparisonTrue(b, op_Equality(Int32, Int32): Boolean, c)"];
+  2 -> 1 [label="ComparisonFalse(c, op_GreaterThan(Int32, Int32): Boolean, d)"];
+  2 -> 3 [label="ComparisonTrue(c, op_GreaterThan(Int32, Int32): Boolean, d)"];
+  3 -> 1 [label="Always"];
+}

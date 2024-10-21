@@ -30,31 +30,12 @@ internal static class FlowAnalysisErrors
         format: "the variable {0} is used before initialized",
         code: Code(2));
 
-    // TODO: Is this really a dataflow error?
-    /// <summary>
-    /// Illegal value on left side of assignment.
-    /// </summary>
-    public static readonly DiagnosticTemplate IllegalLValue = DiagnosticTemplate.Create(
-        title: "illegal lvaule",
-        severity: DiagnosticSeverity.Error,
-        format: "illegal value on the left side of assignment",
-        code: Code(3));
-
-    /// <summary>
-    /// Immutable variable must be initialized at declaration site.
-    /// </summary>
-    public static readonly DiagnosticTemplate ImmutableVariableMustBeInitialized = DiagnosticTemplate.Create(
-        title: "immutable variable must be initialized",
-        severity: DiagnosticSeverity.Error,
-        format: "the immutable variable {0} must be initialized",
-        code: Code(4));
-
     /// <summary>
     /// Immutable variable can not be assigned to.
     /// </summary>
     public static readonly DiagnosticTemplate ImmutableVariableCanNotBeAssignedTo = DiagnosticTemplate.Create(
-        title: "immutable variable can not be assigned to",
+        title: "immutable variable assigned multiple times",
         severity: DiagnosticSeverity.Error,
-        format: "the immutable variable {0} can not be assigned to, it is read only",
-        code: Code(5));
+        format: "the immutable variable {0} can only be assigned once",
+        code: Code(3));
 }

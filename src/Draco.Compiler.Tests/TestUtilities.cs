@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Api.Syntax.Extensions;
 using Draco.Compiler.Internal;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Microsoft.CodeAnalysis.CSharp;
 using Binder = Draco.Compiler.Internal.Binding.Binder;
 using CSharpSourceText = Microsoft.CodeAnalysis.Text.SourceText;

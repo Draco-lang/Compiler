@@ -71,7 +71,7 @@ internal abstract partial class BoundTreeRewriter : BoundTreeVisitor<{{tree.Root
                 result.Append("{{node.Name}}");
                 result.Append('(');
 
-                {{ForEach(node.Fields, field => $$"""
+                {{ForEach(node.Fields, "result.Append(\", \");", field => $$"""
                     {{When(node.Fields.Count > 1, $"result.Append(\"{field.Name}: \");")}}
                     {{When(field.IsArray,
                         whenTrue: $"""

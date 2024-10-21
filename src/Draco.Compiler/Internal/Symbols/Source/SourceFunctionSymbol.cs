@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
@@ -7,6 +9,7 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.FlowAnalysis;
+using Draco.Compiler.Internal.FlowAnalysis.Domains;
 using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
@@ -35,15 +38,13 @@ internal sealed class SourceFunctionSymbol(
         // Force binding of parameters, as the type is lazy too
         foreach (var param in this.Parameters.Cast<SourceParameterSymbol>()) param.Bind(binderProvider);
         this.BindReturnTypeIfNeeded(binderProvider);
-        var body = this.BindBodyIfNeeded(binderProvider);
+        this.BindBodyIfNeeded(binderProvider);
 
         // Check, if this function collides with any other overloads that are visible from here
         this.CheckForSameParameterOverloads(binderProvider);
 
         // Flow analysis
-        ReturnsOnAllPaths.Analyze(this, binderProvider.DiagnosticBag);
-        DefiniteAssignment.Analyze(body, binderProvider.DiagnosticBag);
-        ValAssignment.Analyze(this, binderProvider.DiagnosticBag);
+        CompleteFlowAnalysis.AnalyzeFunction(this, binderProvider.DiagnosticBag);
     }
 
     private void CheckForSameParameterOverloads(IBinderProvider binderProvider)

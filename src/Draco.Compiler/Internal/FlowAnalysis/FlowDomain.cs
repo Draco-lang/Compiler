@@ -125,6 +125,14 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
     private readonly Dictionary<BoundNode, BitArray> genSets = [];
     private readonly Dictionary<BoundNode, BitArray> notKillSets = [];
 
+    /// <summary>
+    /// Checks if the bit for the given element is set in the state.
+    /// </summary>
+    /// <param name="state">The state to check.</param>
+    /// <param name="element">The element to check the bit for.</param>
+    /// <returns>True if the corresponding bit for the element is set, false otherwise.</returns>
+    public bool IsSet(BitArray state, TElement element) => state[this.Elements.IndexOf(element)];
+
     public override string ToString(BitArray state)
     {
         var result = new StringBuilder();

@@ -6,6 +6,18 @@ using Draco.Compiler.Internal.BoundTree;
 namespace Draco.Compiler.Internal.FlowAnalysis.Domains;
 
 /// <summary>
+/// Factory methods for creating tuple domains.
+/// </summary>
+internal static class TupleDomain
+{
+    public static TupleDomain<T1, T2> Create<T1, T2>(FlowDomain<T1> d1, FlowDomain<T2> d2) =>
+        new(d1, d2);
+
+    public static TupleDomain<T1, T2, T3> Create<T1, T2, T3>(FlowDomain<T1> d1, FlowDomain<T2> d2, FlowDomain<T3> d3) =>
+        new(d1, d2, d3);
+}
+
+/// <summary>
 /// A tuple of domains for flow analysis.
 /// </summary>
 /// <typeparam name="T1">The type of the first domain.</typeparam>

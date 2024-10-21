@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.BoundTree;
@@ -21,14 +22,13 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     public static void AnalyzeFunction(SourceFunctionSymbol symbol, DiagnosticBag diagnostics)
     {
         var cfg = ControlFlowGraphBuilder.Build(symbol.Body);
-        var analysis = CreateAnalysis(symbol.Body, cfg);
-        var flowAnalysis = new CompleteFlowAnalysis(diagnostics, analysis);
-        symbol.Body.Accept(flowAnalysis);
+        var analysis = CreateAnalysis(diagnostics, symbol.Body, cfg);
+        symbol.Body.Accept(analysis);
 
         // We need to check the exit state, if it's returning on all paths
         if (cfg.Exit is not null)
         {
-            var (returnState, _) = analysis.GetExit(cfg.Exit);
+            var (returnState, _, _) = analysis.analysis.GetExit(cfg.Exit);
             if (returnState != ReturnState.Returns)
             {
                 diagnostics.Add(Diagnostic.Create(
@@ -49,35 +49,49 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         if (symbol.Value is null) return;
 
         var cfg = ControlFlowGraphBuilder.Build(symbol.Value);
-        var analysis = CreateAnalysis(symbol.Value, cfg);
-        var flowAnalysis = new CompleteFlowAnalysis(diagnostics, analysis);
-        symbol.Value.Accept(flowAnalysis);
+        var analysis = CreateAnalysis(diagnostics, symbol.Value, cfg);
+        symbol.Value.Accept(analysis);
     }
 
-    private static DataFlowAnalysis<(ReturnState, Dictionary<LocalSymbol, AssignementState>)> CreateAnalysis(
+    private static CompleteFlowAnalysis CreateAnalysis(
+        DiagnosticBag diagnostics,
         BoundNode node,
         IControlFlowGraph cfg)
     {
-        var domain = BuildForwardDomain(node);
-        return DataFlowAnalysis.Create(cfg, domain);
-    }
-
-    private static TupleDomain<ReturnState, Dictionary<LocalSymbol, AssignementState>> BuildForwardDomain(BoundNode node)
-    {
         var locals = BoundTreeCollector.CollectLocals(node);
-        var returnAnalysisDomain = new ReturnsOnAllPathsDomain();
-        var assignmentAnalysisDomain = new DefiniteAssignmentDomain(locals);
-        return new(returnAnalysisDomain, assignmentAnalysisDomain);
+
+        var returnsOnAllPathsDomain = new ReturnsOnAllPathsDomain();
+        var definiteAssignmentDomain = new DefiniteAssignmentDomain(locals);
+        var singleAssignmentDomain = new SingleAssignmentDomain(locals);
+
+        var domain = TupleDomain.Create(returnsOnAllPathsDomain, definiteAssignmentDomain, singleAssignmentDomain);
+        var flowAnalysis = DataFlowAnalysis.Create(cfg, domain);
+
+        return new(
+            diagnostics,
+            returnsOnAllPathsDomain,
+            definiteAssignmentDomain,
+            singleAssignmentDomain,
+            flowAnalysis);
     }
 
     private readonly DiagnosticBag diagnostics;
-    private readonly DataFlowAnalysis<(ReturnState Return, Dictionary<LocalSymbol, AssignementState> LocalAssignment)> analysis;
+    private readonly ReturnsOnAllPathsDomain returnsOnAllPathsDomain;
+    private readonly DefiniteAssignmentDomain definiteAssignmentDomain;
+    private readonly SingleAssignmentDomain singleAssignmentDomain;
+    private readonly DataFlowAnalysis<(ReturnState Return, BitArray DefiniteAssignment, BitArray SingleAssignment)> analysis;
 
     private CompleteFlowAnalysis(
         DiagnosticBag diagnostics,
-        DataFlowAnalysis<(ReturnState, Dictionary<LocalSymbol, AssignementState>)> analysis)
+        ReturnsOnAllPathsDomain returnsOnAllPathsDomain,
+        DefiniteAssignmentDomain definiteAssignmentDomain,
+        SingleAssignmentDomain singleAssignmentDomain,
+        DataFlowAnalysis<(ReturnState, BitArray, BitArray)> analysis)
     {
         this.diagnostics = diagnostics;
+        this.returnsOnAllPathsDomain = returnsOnAllPathsDomain;
+        this.definiteAssignmentDomain = definiteAssignmentDomain;
+        this.singleAssignmentDomain = singleAssignmentDomain;
         this.analysis = analysis;
     }
 
@@ -85,8 +99,9 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     {
         base.VisitLocalExpression(node);
 
-        var (@return, localAssignment) = this.analysis.GetEntry(node);
-        if (!localAssignment.TryGetValue(node.Local, out var state) || state != AssignementState.DefinitelyAssigned)
+        var (_, localAssignment, _) = this.analysis.GetEntry(node);
+        var isUnassigned = this.definiteAssignmentDomain.IsSet(localAssignment, node.Local);
+        if (isUnassigned)
         {
             // Referencing an unassigned local, error
             this.diagnostics.Add(Diagnostic.Create(
@@ -101,13 +116,14 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         base.VisitAssignmentExpression(node);
         if (node.Left is not BoundLocalLvalue localLvalue) return;
 
-        var (@return, localAssignment) = this.analysis.GetEntry(node);
+        var (_, localAssignment, singleAssignment) = this.analysis.GetEntry(node);
 
         // First we check, if we have a compound assignment
         if (node.CompoundOperator is not null)
         {
             // In this case, the left side is also a read first, needs to be assigned
-            if (!localAssignment.TryGetValue(localLvalue.Local, out var state) || state != AssignementState.DefinitelyAssigned)
+            var isUnassigned = this.definiteAssignmentDomain.IsSet(localAssignment, localLvalue.Local);
+            if (isUnassigned)
             {
                 // Referencing an unassigned local, error
                 this.diagnostics.Add(Diagnostic.Create(
@@ -120,7 +136,8 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         // If we have an immutable local, we need to check, if it's been assigned before
         if (!localLvalue.Local.IsMutable)
         {
-            if (localAssignment.TryGetValue(localLvalue.Local, out var state) && state != AssignementState.DefinitelyUnassigned)
+            var isAssigned = this.singleAssignmentDomain.IsSet(singleAssignment, localLvalue.Local);
+            if (isAssigned)
             {
                 // We are trying to assign multiple times to an immutable local
                 this.diagnostics.Add(Diagnostic.Create(

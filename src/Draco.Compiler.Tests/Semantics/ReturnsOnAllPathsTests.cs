@@ -118,6 +118,32 @@ public sealed class ReturnsOnAllPathsTests
     }
 
     [Fact]
+    public void NonUnitMethodReturnsConditionallyOnBothBranches()
+    {
+        // Arrange
+        // func foo(b: bool): int32 {
+        //     if (b) return 42; else return 0;
+        // }
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("b", NameType("bool"))),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(IfExpression(
+                    NameExpression("b"),
+                    ReturnExpression(LiteralExpression(42)),
+                    ReturnExpression(LiteralExpression(0))))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
     public void NonUnitMethodReturnsConditionallyButThenUnconditionally()
     {
         // Arrange

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.FlowAnalysis.Domains;
@@ -134,7 +135,8 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         }
 
         // If we have an immutable local, we need to check, if it's been assigned before
-        if (!localLvalue.Local.IsMutable)
+        // We allow the definition to make an assignment
+        if (!localLvalue.Local.IsMutable && node.Syntax is not VariableDeclarationSyntax)
         {
             var isAssigned = this.singleAssignmentDomain.IsSet(singleAssignment, localLvalue.Local);
             if (isAssigned)

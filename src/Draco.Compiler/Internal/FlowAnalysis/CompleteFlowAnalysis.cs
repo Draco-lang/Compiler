@@ -80,14 +80,17 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     private readonly ReturnsOnAllPathsDomain returnsOnAllPathsDomain;
     private readonly DefiniteAssignmentDomain definiteAssignmentDomain;
     private readonly SingleAssignmentDomain singleAssignmentDomain;
-    private readonly DataFlowAnalysis<(ReturnState Return, BitArray DefiniteAssignment, BitArray SingleAssignment)> analysis;
+    private readonly DataFlowAnalysis<(
+        ReturnState Return,
+        Dictionary<LocalSymbol, AssignmentState> DefiniteAssignment,
+        BitArray SingleAssignment)> analysis;
 
     private CompleteFlowAnalysis(
         DiagnosticBag diagnostics,
         ReturnsOnAllPathsDomain returnsOnAllPathsDomain,
         DefiniteAssignmentDomain definiteAssignmentDomain,
         SingleAssignmentDomain singleAssignmentDomain,
-        DataFlowAnalysis<(ReturnState, BitArray, BitArray)> analysis)
+        DataFlowAnalysis<(ReturnState, Dictionary<LocalSymbol, AssignmentState>, BitArray)> analysis)
     {
         this.diagnostics = diagnostics;
         this.returnsOnAllPathsDomain = returnsOnAllPathsDomain;
@@ -101,7 +104,8 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         base.VisitLocalExpression(node);
 
         var (_, localAssignment, _) = this.analysis.GetEntry(node);
-        var isUnassigned = this.definiteAssignmentDomain.IsSet(localAssignment, node.Local);
+        // NOTE: We compare like this to catch unknown states as well
+        var isUnassigned = localAssignment[node.Local] != AssignmentState.Assigned;
         if (isUnassigned)
         {
             // Referencing an unassigned local, error
@@ -150,7 +154,8 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         if (node.CompoundOperator is not null)
         {
             // In this case, the left side is also a read first, needs to be assigned
-            var isUnassigned = this.definiteAssignmentDomain.IsSet(localAssignment, localLvalue.Local);
+            // NOTE: We compare like this to catch unknown states as well
+            var isUnassigned = localAssignment[localLvalue.Local] != AssignmentState.Assigned;
             if (isUnassigned)
             {
                 // Referencing an unassigned local, error

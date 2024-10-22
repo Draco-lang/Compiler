@@ -159,7 +159,7 @@ internal sealed class DataFlowAnalysis<TState>
             // and the exit state to the result of transferring the initial state through the block
             var entryState = this.GetBlockState(this.cfg.Entry);
             entryState.Enter = this.Domain.Initial;
-            entryState.Exit = this.TransferAndCopy(in entryState.Exit, this.cfg.Entry);
+            entryState.Exit = this.TransferAndCopy(in entryState.Enter, this.cfg.Entry);
         }
         else if (this.cfg.Exit is not null)
         {
@@ -167,7 +167,7 @@ internal sealed class DataFlowAnalysis<TState>
             // and the enter state to the result of transferring the initial state through the block
             var exitState = this.GetBlockState(this.cfg.Exit);
             exitState.Exit = this.Domain.Initial;
-            exitState.Enter = this.TransferAndCopy(in exitState.Enter, this.cfg.Exit);
+            exitState.Enter = this.TransferAndCopy(in exitState.Exit, this.cfg.Exit);
         }
 
         // The rest are initialized to the top state by default

@@ -135,7 +135,8 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         }
 
         // If we have an immutable local, we need to check, if it's been assigned before
-        // We allow the definition to make an assignment
+        // We allow the definition to make an assignment, as the reaching definition could leak back to it
+        // It is not a problem, the other assignment should be reported as reassignment in that case
         if (!localLvalue.Local.IsMutable && node.Syntax is not VariableDeclarationSyntax)
         {
             var isAssigned = this.singleAssignmentDomain.IsSet(singleAssignment, localLvalue.Local);

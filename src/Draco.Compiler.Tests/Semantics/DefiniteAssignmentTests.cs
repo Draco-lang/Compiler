@@ -75,7 +75,7 @@ public sealed class DefiniteAssignmentTests
                 DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
                 ExpressionStatement(IfExpression(
                     NameExpression("b"),
-                    BinaryExpression(NameExpression("x"), Assign, LiteralExpression(42)),
+                    StatementExpression(ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(42)))),
                     null as ExpressionSyntax)),
                 DeclarationStatement(VariableDeclaration("y", NameType("int32"), NameExpression("x")))))));
 

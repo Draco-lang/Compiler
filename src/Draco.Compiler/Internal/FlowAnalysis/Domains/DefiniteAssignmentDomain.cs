@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols;
 
@@ -43,9 +44,9 @@ internal sealed class DefiniteAssignmentDomain(IEnumerable<LocalSymbol> locals)
 
     public override FlowDirection Direction => FlowDirection.Forward;
     public override Dictionary<LocalSymbol, AssignmentState> Initial =>
-        this.Locals.ToDictionary(l => l, _ => AssignmentState.Unassigned);
+        this.Locals.ToDictionary(l => l, l => IsForLoopVariable(l) ? AssignmentState.Assigned : AssignmentState.Unassigned);
     public override Dictionary<LocalSymbol, AssignmentState> Top =>
-        this.Locals.ToDictionary(l => l, _ => AssignmentState.Unknown);
+        this.Locals.ToDictionary(l => l, l => IsForLoopVariable(l) ? AssignmentState.Assigned : AssignmentState.Unknown);
 
     public override Dictionary<LocalSymbol, AssignmentState> Clone(in Dictionary<LocalSymbol, AssignmentState> state) => new(state);
 
@@ -105,4 +106,8 @@ internal sealed class DefiniteAssignmentDomain(IEnumerable<LocalSymbol> locals)
             return;
         }
     }
+
+    // TODO: Is this too hacky? Should we instead add a flag to the local symbol?
+    private static bool IsForLoopVariable(LocalSymbol local) =>
+        local.DeclaringSyntax?.Parent is ForExpressionSyntax;
 }

@@ -16,8 +16,7 @@ internal sealed class DefiniteAssignmentDomain(IEnumerable<LocalSymbol> locals)
     : GenKillFlowDomain<LocalSymbol>(locals)
 {
     public override FlowDirection Direction => FlowDirection.Forward;
-    public override BitArray Initial => new(this.Elements.Length, true);
-    public override BitArray Top => new(this.Elements.Length, false);
+    public override BitArray Top => new(this.Elements.Length, true);
 
     public override void Join(ref BitArray target, IEnumerable<BitArray> sources)
     {

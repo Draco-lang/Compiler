@@ -149,4 +149,30 @@ public sealed class DefiniteAssignmentTests
         Assert.Single(diagnostics);
         AssertDiagnostics(diagnostics, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
+
+    [Fact]
+    public void CompoundAssigningUnassignedVariable()
+    {
+        // Arrange
+        // func foo() {
+        //     var x: int32;
+        //     x += 42;
+        // }
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                ExpressionStatement(BinaryExpression(NameExpression("x"), PlusAssign, LiteralExpression(42)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diagnostics);
+        AssertDiagnostics(diagnostics, FlowAnalysisErrors.VariableUsedBeforeInit);
+    }
 }

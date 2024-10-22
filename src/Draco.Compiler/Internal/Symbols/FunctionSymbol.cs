@@ -131,6 +131,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// <summary>
     /// The bound body of this function, if it has one.
     /// This is the case for in-source and certain synthesized functions.
+    /// When null, the function will not be emitted.
     /// </summary>
     public virtual BoundStatement? Body => null;
 

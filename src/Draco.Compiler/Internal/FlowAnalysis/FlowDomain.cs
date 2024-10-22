@@ -140,10 +140,9 @@ internal abstract class GenKillFlowDomain<TElement>(IEnumerable<TElement> elemen
         var first = true;
         for (var i = 0; i < this.Elements.Length; i++)
         {
-            if (state[i]) continue;
-            if (!first) result.Append(',');
             var elementStr = this.ElementToString(state, i);
             if (elementStr is null) continue;
+            if (!first) result.Append(',');
             result.Append(elementStr);
             first = false;
         }

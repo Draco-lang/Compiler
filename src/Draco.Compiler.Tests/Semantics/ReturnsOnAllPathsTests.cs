@@ -68,4 +68,105 @@ public sealed class ReturnsOnAllPathsTests
         // Assert
         Assert.Empty(diagnostics);
     }
+
+    [Fact]
+    public void NonUnitMethodReturnsUnconditionally()
+    {
+        // Arrange
+        // func foo(): int32 {
+        //     return 42;
+        //
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("int32"),
+            BlockFunctionBody(ExpressionStatement(ReturnExpression(LiteralExpression(42)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void NonUnitMethodReturnsConditionally()
+    {
+        // Arrange
+        // func foo(b: bool): int32 {
+        //     if (b) return 42;
+        // }
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("b", NameType("bool"))),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(IfExpression(
+                    NameExpression("b"),
+                    ReturnExpression(LiteralExpression(42))))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diagnostics);
+        AssertDiagnostics(diagnostics, FlowAnalysisErrors.DoesNotReturn);
+    }
+
+    [Fact]
+    public void NonUnitMethodReturnsConditionallyButThenUnconditionally()
+    {
+        // Arrange
+        // func foo(b: bool): int32 {
+        //     if (b) return 42;
+        //     return 0;
+        // }
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("b", NameType("bool"))),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(IfExpression(
+                    NameExpression("b"),
+                    ReturnExpression(LiteralExpression(42)))),
+                ExpressionStatement(ReturnExpression(LiteralExpression(0)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void NonUnitMethodReturnsInConditionalLoop()
+    {
+        // Arrange
+        // func foo(b: bool): int32 {
+        //     while (b) return 42;
+        // }
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("b", NameType("bool"))),
+            NameType("int32"),
+            BlockFunctionBody(
+                ExpressionStatement(WhileExpression(
+                    NameExpression("b"),
+                    ReturnExpression(LiteralExpression(42))))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diagnostics);
+        AssertDiagnostics(diagnostics, FlowAnalysisErrors.DoesNotReturn);
+    }
 }

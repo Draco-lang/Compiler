@@ -555,6 +555,11 @@ internal sealed class Parser(
         // Field modifier
         var fieldModifier = null as SyntaxToken;
         this.Matches(TokenKind.KeywordField, out fieldModifier);
+        if (context == DeclarationContext.Local && fieldModifier is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedFieldModifier);
+            this.AddDiagnostic(fieldModifier, info);
+        }
         // var or val keyword
         var keyword = this.Expect([TokenKind.KeywordVal, TokenKind.KeywordVar], onError: TokenKind.KeywordVar);
         // Variable name

@@ -1,7 +1,5 @@
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.FlowAnalysis;
-using Draco.Compiler.Internal.FlowAnalysis.Domains;
-using Draco.Compiler.Internal.Symbols.Source;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using static Draco.Compiler.Tests.TestUtilities;
 

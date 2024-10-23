@@ -47,7 +47,18 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     /// <param name="diagnostics">The diagnostics to report errors to.</param>
     public static void AnalyzeValue(SourceGlobalSymbol symbol, DiagnosticBag diagnostics)
     {
-        if (symbol.Value is null) return;
+        if (symbol.Value is null)
+        {
+            if (!symbol.IsMutable)
+            {
+                // Error, we expect globals to be inline initialized
+                diagnostics.Add(Diagnostic.Create(
+                    template: FlowAnalysisErrors.GlobalImmutableMustBeInitialized,
+                    location: symbol.DeclaringSyntax.Location,
+                    formatArgs: symbol.Name));
+            }
+            return;
+        }
 
         var cfg = ControlFlowGraphBuilder.Build(symbol.Value);
         var analysis = CreateAnalysis(diagnostics, symbol.Value, cfg);

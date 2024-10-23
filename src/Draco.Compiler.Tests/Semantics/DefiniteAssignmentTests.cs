@@ -175,4 +175,72 @@ public sealed class DefiniteAssignmentTests
         Assert.Single(diagnostics);
         AssertDiagnostics(diagnostics, FlowAnalysisErrors.VariableUsedBeforeInit);
     }
+
+    [Fact]
+    public void UseVariableAssignedLater()
+    {
+        // Arrange
+        // func foo(b: bool) {
+        //     while (b) {
+        //         var x: int32;
+        //         var y = x;
+        //         x = 42;
+        //     }
+        // }
+        var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("b", NameType("bool"))),
+            null,
+            BlockFunctionBody(
+                ExpressionStatement(WhileExpression(
+                    NameExpression("b"),
+                    BlockExpression(
+                        DeclarationStatement(VariableDeclaration("x", NameType("int32"))),
+                        DeclarationStatement(VariableDeclaration("y", NameType("int32"), NameExpression("x"))),
+                        ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(42))))))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diagnostics);
+        AssertDiagnostics(diagnostics, FlowAnalysisErrors.VariableUsedBeforeInit);
+    }
+
+    [Fact]
+    public void GlobalImmutableInitialized()
+    {
+        // Arrange
+        // val x: int32 = 0;
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void GlobalImmutableNotInitialized()
+    {
+        // Arrange
+        // val x: int32;
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration("x", NameType("int32"))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diagnostics);
+        AssertDiagnostics(diagnostics, FlowAnalysisErrors.GlobalImmutableMustBeInitialized);
+    }
 }

@@ -141,4 +141,31 @@ public sealed class SingleAssignmentTests
         Assert.Single(diagnostics);
         AssertDiagnostics(diagnostics, FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes);
     }
+
+    [Fact]
+    public void GlobalImmutableReassigned()
+    {
+        // Arrange
+        // val x: int32 = 0;
+        // func foo() {
+        //     x = 1;
+        // }
+        var tree = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)),
+            FunctionDeclaration(
+                "foo",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))));
+
+        // Act
+        var compilation = CreateCompilation(tree);
+        var semanticModel = compilation.GetSemanticModel(tree);
+        var diagnostics = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diagnostics);
+        AssertDiagnostics(diagnostics, FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes);
+    }
 }

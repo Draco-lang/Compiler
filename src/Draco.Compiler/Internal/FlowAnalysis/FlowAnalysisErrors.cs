@@ -38,4 +38,13 @@ internal static class FlowAnalysisErrors
         severity: DiagnosticSeverity.Error,
         format: "the immutable variable {0} can only be assigned once",
         code: Code(3));
+
+    /// <summary>
+    /// A variable is used before it's initialized.
+    /// </summary>
+    public static readonly DiagnosticTemplate GlobalImmutableMustBeInitialized = DiagnosticTemplate.Create(
+        title: "global immutable left uninitialized",
+        severity: DiagnosticSeverity.Error,
+        format: "the global immutable {0} must be initialized inline",
+        code: Code(4));
 }

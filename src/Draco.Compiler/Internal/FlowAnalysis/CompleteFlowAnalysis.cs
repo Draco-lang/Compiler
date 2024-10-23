@@ -93,7 +93,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     private readonly SingleAssignmentDomain singleAssignmentDomain;
     private readonly DataFlowAnalysis<(
         ReturnState Return,
-        Dictionary<LocalSymbol, AssignmentState> DefiniteAssignment,
+        BitArray DefiniteAssignment,
         BitArray SingleAssignment)> analysis;
 
     private CompleteFlowAnalysis(
@@ -101,7 +101,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         ReturnsOnAllPathsDomain returnsOnAllPathsDomain,
         DefiniteAssignmentDomain definiteAssignmentDomain,
         SingleAssignmentDomain singleAssignmentDomain,
-        DataFlowAnalysis<(ReturnState, Dictionary<LocalSymbol, AssignmentState>, BitArray)> analysis)
+        DataFlowAnalysis<(ReturnState, BitArray, BitArray)> analysis)
     {
         this.diagnostics = diagnostics;
         this.returnsOnAllPathsDomain = returnsOnAllPathsDomain;
@@ -115,8 +115,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         base.VisitLocalExpression(node);
 
         var (_, localAssignment, _) = this.analysis.GetEntry(node);
-        // NOTE: We compare like this to catch unknown states as well
-        var isUnassigned = localAssignment[node.Local] != AssignmentState.Assigned;
+        var isUnassigned = this.definiteAssignmentDomain.IsSet(localAssignment, node.Local);
         if (isUnassigned)
         {
             // Referencing an unassigned local, error
@@ -165,8 +164,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         if (node.CompoundOperator is not null)
         {
             // In this case, the left side is also a read first, needs to be assigned
-            // NOTE: We compare like this to catch unknown states as well
-            var isUnassigned = localAssignment[localLvalue.Local] != AssignmentState.Assigned;
+            var isUnassigned = this.definiteAssignmentDomain.IsSet(localAssignment, localLvalue.Local);
             if (isUnassigned)
             {
                 // Referencing an unassigned local, error

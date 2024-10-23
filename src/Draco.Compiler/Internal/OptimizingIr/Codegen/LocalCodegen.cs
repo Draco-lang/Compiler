@@ -40,7 +40,6 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
     private IOperand Compile(BoundExpression expr)
     {
         var val = expr.Accept(this);
-        Debug.Assert(val != null);
         return val;
     }
 

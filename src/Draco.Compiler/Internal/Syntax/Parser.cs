@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -192,6 +193,7 @@ internal sealed class Parser(
     private static readonly TokenKind[] declarationStarters =
     [
         TokenKind.KeywordImport,
+        TokenKind.KeywordField,
         TokenKind.KeywordFunc,
         TokenKind.KeywordModule,
         TokenKind.KeywordVar,
@@ -386,6 +388,7 @@ internal sealed class Parser(
 
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
+        case TokenKind.KeywordField:
             return this.ParseVariableDeclaration(attributes, visibility, context);
 
         case TokenKind.Identifier when this.PeekKind(1) == TokenKind.Colon:
@@ -549,15 +552,18 @@ internal sealed class Parser(
             this.AddDiagnostic(visibility, info);
         }
 
-        // NOTE: We will always call this function by checking the leading keyword
-        var keyword = this.Advance();
-        Debug.Assert(keyword.Kind is TokenKind.KeywordVal or TokenKind.KeywordVar);
+        // Field modifier
+        var fieldModifier = null as SyntaxToken;
+        this.Matches(TokenKind.KeywordField, out fieldModifier);
+        // var or val keyword
+        var keyword = this.Expect([TokenKind.KeywordVal, TokenKind.KeywordVar], onError: TokenKind.KeywordVar);
+        // Variable name
         var identifier = this.Expect(TokenKind.Identifier);
         // We don't necessarily have type specifier
-        TypeSpecifierSyntax? type = null;
+        var type = null as TypeSpecifierSyntax;
         if (this.PeekKind() == TokenKind.Colon) type = this.ParseTypeSpecifier();
         // We don't necessarily have value assigned to the variable
-        ValueSpecifierSyntax? assignment = null;
+        var assignment = null as ValueSpecifierSyntax;
         if (this.Matches(TokenKind.Assign, out var assign))
         {
             var value = this.ParseExpression();
@@ -565,7 +571,7 @@ internal sealed class Parser(
         }
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(attributes, visibility, keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(attributes, visibility, fieldModifier, keyword, identifier, type, assignment, semicolon);
     }
 
     /// <summary>
@@ -1593,19 +1599,30 @@ internal sealed class Parser(
     /// </summary>
     /// <param name="kind">The expected <see cref="TokenKind"/>.</param>
     /// <returns>The consumed <see cref="SyntaxToken"/>.</returns>
-    private SyntaxToken Expect(TokenKind kind)
+    private SyntaxToken Expect(TokenKind kind) => this.Expect([kind], kind);
+
+    /// <summary>
+    /// Expects certain allowed tokens to be at the current position.
+    /// If the upcoming token is one of the allowed kinds, it is consumed.
+    /// </summary>
+    /// <param name="kinds">The expected <see cref="TokenKind"/>s.</param>
+    /// <param name="onError">The <see cref="TokenKind"/> to construct in case of an error.</param>
+    /// <returns>The consumed <see cref="SyntaxToken"/>.</returns>
+    private SyntaxToken Expect(TokenKind[] kinds, TokenKind onError)
     {
-        if (!this.Matches(kind, out var token))
+        var peekKind = this.PeekKind();
+        if (!kinds.Contains(peekKind))
         {
             // We construct an empty token that signals that this is missing from the tree
             // The attached diagnostic message describes what is missing
-            var friendlyName = SyntaxFacts.GetUserFriendlyName(kind);
+            var friendlyName = string.Join(" or ", kinds.Select(SyntaxFacts.GetUserFriendlyName));
             var info = DiagnosticInfo.Create(SyntaxErrors.ExpectedToken, formatArgs: friendlyName);
             var diag = new SyntaxDiagnosticInfo(info, Offset: 0, Width: 0);
-            token = SyntaxToken.From(kind, string.Empty);
-            this.AddDiagnostic(token, diag);
+            var errorToken = SyntaxToken.From(onError, string.Empty);
+            this.AddDiagnostic(errorToken, diag);
+            return errorToken;
         }
-        return token;
+        return this.Advance();
     }
 
     /// <summary>

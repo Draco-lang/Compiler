@@ -21,8 +21,7 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     public static IControlFlowGraph Build(BoundNode root)
     {
         var builder = new ControlFlowGraphBuilder();
-        builder.EnsureBlock();
-        var start = builder.currentBasicBlock!;
+        var start = builder.EnsureBlock();
         root.Accept(builder);
         var exit = builder.MergeExitPoints(start);
         return new ControlFlowGraph(start, exit);
@@ -46,26 +45,20 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     /// <param name="node">The node to append.</param>
     private void Append(BoundNode node)
     {
-        this.currentBasicBlock ??= new();
-        this.currentBasicBlock.Nodes.Add(node);
+        var block = this.EnsureBlock();
+        block.Nodes.Add(node);
     }
 
     /// <summary>
     /// Detaches the current basic block, meaning the builder will be in an "unreachable" state.
     /// This could be right after a goto for example.
     /// </summary>
-    private void Detach()
-    {
-        this.currentBasicBlock = null!;
-    }
+    private void Detach() => this.currentBasicBlock = null;
 
     /// <summary>
     /// Ensures that there is a current basic block.
     /// </summary>
-    private void EnsureBlock()
-    {
-        this.currentBasicBlock ??= new();
-    }
+    private BasicBlock EnsureBlock() => this.currentBasicBlock ??= new();
 
     /// <summary>
     /// Retrieves the basic block associated with a label.

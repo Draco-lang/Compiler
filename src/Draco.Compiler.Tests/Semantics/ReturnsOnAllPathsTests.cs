@@ -73,7 +73,7 @@ public sealed class ReturnsOnAllPathsTests
         // Arrange
         // func foo(): int32 {
         //     return 42;
-        //
+        // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             ParameterList(),

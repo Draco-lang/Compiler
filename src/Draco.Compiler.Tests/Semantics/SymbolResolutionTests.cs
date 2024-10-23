@@ -1862,7 +1862,7 @@ public sealed class SymbolResolutionTests
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes);
     }
 
     [Fact]
@@ -1904,7 +1904,7 @@ public sealed class SymbolResolutionTests
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes);
     }
 
     [Fact]
@@ -1947,7 +1947,7 @@ public sealed class SymbolResolutionTests
         Assert.Single(diags);
         Assert.False(fooSym.IsError);
         Assert.Same(fooSym, fooDecl);
-        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo);
+        AssertDiagnostics(diags, FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes);
     }
 
     [Fact]

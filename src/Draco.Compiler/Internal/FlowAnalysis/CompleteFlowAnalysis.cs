@@ -130,7 +130,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         if (globalLvalue.Global.IsMutable) return;
 
         this.diagnostics.Add(Diagnostic.Create(
-            template: FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo,
+            template: FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes,
             location: node.Syntax?.Location,
             formatArgs: globalLvalue.Global.Name));
     }
@@ -141,7 +141,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         if (fieldLvalue.Field.IsMutable) return;
 
         this.diagnostics.Add(Diagnostic.Create(
-            template: FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo,
+            template: FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes,
             location: node.Syntax?.Location,
             formatArgs: fieldLvalue.Field.Name));
     }
@@ -176,7 +176,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
             {
                 // We are trying to assign multiple times to an immutable local
                 this.diagnostics.Add(Diagnostic.Create(
-                    template: FlowAnalysisErrors.ImmutableVariableCanNotBeAssignedTo,
+                    template: FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes,
                     location: node.Syntax?.Location,
                     formatArgs: localLvalue.Local.Name));
             }

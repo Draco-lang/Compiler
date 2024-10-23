@@ -33,7 +33,7 @@ internal static class FlowAnalysisErrors
     /// <summary>
     /// Immutable variable can not be assigned to.
     /// </summary>
-    public static readonly DiagnosticTemplate ImmutableVariableCanNotBeAssignedTo = DiagnosticTemplate.Create(
+    public static readonly DiagnosticTemplate ImmutableVariableAssignedMultipleTimes = DiagnosticTemplate.Create(
         title: "immutable variable assigned multiple times",
         severity: DiagnosticSeverity.Error,
         format: "the immutable variable {0} can only be assigned once",

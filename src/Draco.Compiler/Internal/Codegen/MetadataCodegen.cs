@@ -15,6 +15,7 @@ using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.Codegen;
@@ -702,7 +703,15 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Procedures
         foreach (var proc in type.Methods.Values)
         {
-            var handle = this.EncodeProcedure(proc);
+            if (proc.Symbol is DefaultConstructorSymbol ctor)
+            {
+                var handle = this.EncodeProcedure(proc, ".ctor");
+            }
+            else
+            {
+                var handle = this.EncodeProcedure(proc);
+
+            }
             ++procIndex;
 
             // Todo: properties

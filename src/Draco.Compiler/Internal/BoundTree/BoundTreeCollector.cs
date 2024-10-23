@@ -31,6 +31,12 @@ internal static class BoundTreeCollector
             base.VisitBlockExpression(node);
             foreach (var local in node.Locals) this.locals.Add(local);
         }
+
+        public override void VisitForExpression(BoundForExpression node)
+        {
+            base.VisitForExpression(node);
+            this.locals.Add(node.Iterator);
+        }
     }
 
     private sealed class LocalFunctionCollector : BoundTreeVisitor

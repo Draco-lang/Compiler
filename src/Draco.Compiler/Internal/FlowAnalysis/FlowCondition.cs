@@ -1,4 +1,3 @@
-using System;
 using Draco.Compiler.Internal.BoundTree;
 
 namespace Draco.Compiler.Internal.FlowAnalysis;

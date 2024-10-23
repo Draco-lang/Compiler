@@ -1,17 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DiffEngine;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols.Source;
-using VerifyTests;
-using VerifyXunit;
 using static Draco.Compiler.Api.Syntax.SyntaxFactory;
 using static Draco.Compiler.Tests.TestUtilities;
-using static VerifyXunit.Verifier;
 
 namespace Draco.Compiler.Tests.Semantics;
 

@@ -580,11 +580,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             hasDynamicStackAllocation: false);
 
         // Determine attributes
-        var attributes = MethodAttributes.HideBySig;
-        attributes |= specialName is null
-            ? visibility
-            : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+        var attributes = MethodAttributes.HideBySig | visibility;
         if (procedure.Symbol.IsStatic) attributes |= MethodAttributes.Static;
+        if (procedure.Symbol.IsSpecialName) attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
         // Parameters
         var parameterList = this.NextParameterHandle;
@@ -634,7 +632,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {
         e
-            .MethodSignature(genericParameterCount: procedure.Generics.Count)
+            .MethodSignature(genericParameterCount: procedure.Generics.Count, isInstanceMethod: !procedure.IsStatic)
             .Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
         this.EncodeReturnType(retEncoder, procedure.ReturnType);
         foreach (var param in procedure.Parameters)
@@ -720,7 +718,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Fields
         foreach (var field in type.Fields)
         {
-            this.EncodeField(field.Key);
+            this.EncodeField(field);
             ++fieldIndex;
         }
 

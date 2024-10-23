@@ -14,6 +14,11 @@ internal interface IProcedure
     public FunctionSymbol Symbol { get; }
 
     /// <summary>
+    /// Whether this procedure is static or not.
+    /// </summary>
+    public bool IsStatic { get; }
+
+    /// <summary>
     /// The name of this procedure.
     /// </summary>
     public string Name { get; }

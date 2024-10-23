@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -15,10 +17,12 @@ internal class Type(Module declaringModule, TypeSymbol symbol) : IType
 
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Methods => this.methods;
-    public IReadOnlyDictionary<FieldSymbol, IField> Fields => this.fields;
+    public IReadOnlyList<FieldSymbol> Fields => InterlockedUtils.InitializeDefault(
+        ref this.fields,
+        () => this.Symbol.DefinedMembers.OfType<FieldSymbol>().ToImmutableArray());
+    private ImmutableArray<FieldSymbol> fields;
 
     private readonly Dictionary<FunctionSymbol, IProcedure> methods = [];
-    private readonly Dictionary<FieldSymbol, IField> fields = [];
 
     public Procedure DefineMethod(FunctionSymbol functionSymbol)
     {
@@ -28,15 +32,5 @@ internal class Type(Module declaringModule, TypeSymbol symbol) : IType
             this.methods.Add(functionSymbol, result);
         }
         return (Procedure)result;
-    }
-
-    public Field DefineField(FieldSymbol fieldSymbol)
-    {
-        if (!this.fields.TryGetValue(fieldSymbol, out var result))
-        {
-            result = new Field(fieldSymbol, this);
-            this.fields.Add(fieldSymbol, result);
-        }
-        return (Field)result;
     }
 }

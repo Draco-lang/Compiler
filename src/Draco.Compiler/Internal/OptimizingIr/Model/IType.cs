@@ -38,5 +38,5 @@ internal interface IType
     /// <summary>
     /// The fields on this type.
     /// </summary>
-    public IReadOnlyDictionary<FieldSymbol, IField> Fields { get; }
+    public IReadOnlyList<FieldSymbol> Fields { get; }
 }

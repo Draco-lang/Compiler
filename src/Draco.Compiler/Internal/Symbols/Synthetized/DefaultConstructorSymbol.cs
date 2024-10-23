@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,8 +20,9 @@ internal sealed class DefaultConstructorSymbol(TypeSymbol containingSymbol) : Fu
     public override TypeSymbol ReturnType { get; } = WellKnownTypes.Unit;
 
     public override bool IsConstructor => true;
+    public override bool IsStatic => false;
 
-    public override string Name => "Foo";
+    public override string Name => ".ctor";
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
 

@@ -34,6 +34,8 @@ internal sealed class Procedure : IProcedure
     public IReadOnlyList<LocalSymbol> Locals => this.locals;
     public IReadOnlyList<Register> Registers => this.registers;
 
+    public bool IsStatic => this.Symbol.IsStatic;
+
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = [];
     private readonly List<LocalSymbol> locals = [];
     private readonly List<Register> registers = [];

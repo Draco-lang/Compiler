@@ -144,7 +144,9 @@ internal sealed class ScriptModuleSymbol(
     };
 
     private ScriptFunctionSymbol BuildFunction(FunctionDeclarationSyntax syntax) => new(this, syntax);
-    private ScriptGlobalSymbol BuildGlobal(VariableDeclarationSyntax syntax) => new(this, syntax);
+    private Symbol BuildGlobal(VariableDeclarationSyntax syntax) => syntax.FieldModifier is null
+        ? throw new NotImplementedException("TODO: script auto-props")
+        : new ScriptGlobalSymbol(this, syntax);
 
     private SourceModuleSymbol BuildModule(ModuleDeclarationSyntax syntax)
     {

@@ -17,6 +17,8 @@ internal abstract class SyntaxAutoPropertySymbol : PropertySymbol, ISourceSymbol
     public override VariableDeclarationSyntax DeclaringSyntax { get; }
 
     public override string Name => this.DeclaringSyntax.Name.Text;
+    public override bool IsIndexer => false;
+    public override bool IsExplicitImplementation => false;
 
     public override Visibility Visibility =>
         GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier?.Kind);

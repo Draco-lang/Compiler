@@ -16,10 +16,6 @@ public class CodeExecutionTests
         var assembly = CompileToAssembly("""
             import System.Console;
 
-            func main() {
-                WriteLine("Hello, World!");
-            }
-
             class Foo {
                 func bar() {
                     WriteLine("Hello, World!");
@@ -28,7 +24,7 @@ public class CodeExecutionTests
             """);
 
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
+        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter, methodName: "bar", moduleName: "FreeFunctions.Foo");
 
         Assert.Equal($"Hello, World!{Environment.NewLine}", stringWriter.ToString(), ignoreLineEndingDifferences: true);
     }
@@ -39,10 +35,10 @@ public class CodeExecutionTests
         var assembly = CompileToAssembly("""
         import System.Console;
         
-        func main() {
+        func main(): int32 {
             var foo = Foo();
             foo.increment();
-            foo.display();
+            return foo.get();
         }
         
         class Foo {
@@ -51,15 +47,16 @@ public class CodeExecutionTests
                 this.i += 1;
             }
 
-            public func display(this) {
-                WriteLine(this.i);
+            public func get(this): int32 {
+                return this.i;
             }
         }
 
         """);
 
         var stringWriter = new StringWriter();
-        _ = Invoke<object?>(assembly: assembly, stdout: stringWriter);
+        var value = Invoke<int>(assembly: assembly, stdout: stringWriter);
+        Assert.Equal(1, value);
 
     }
 }

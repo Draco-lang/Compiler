@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -22,6 +23,9 @@ internal abstract class SyntaxAutoPropertySymbol : PropertySymbol, ISourceSymbol
 
     public override Visibility Visibility =>
         GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier?.Kind);
+
+    public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
+    private SymbolDocumentation? documentation;
 
     internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
 

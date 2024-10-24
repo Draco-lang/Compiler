@@ -182,7 +182,6 @@ internal static class TestUtilities
         };
 
         var peStream = CompileToMemory(compilation);
-        File.WriteAllBytes("output.dll", peStream.ToArray());
         var assembly = assemblyLoadContext.LoadFromStream(peStream);
 
         // Load additional references

@@ -105,8 +105,10 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     };
 
     private SourceFunctionSymbol BuildFunction(FunctionDeclaration declaration) => new(this, declaration);
-    private SourceGlobalSymbol BuildGlobal(GlobalDeclaration declaration) => new(this, declaration);
     private SourceModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new(this.DeclaringCompilation, this, declaration);
+    private Symbol BuildGlobal(GlobalDeclaration declaration) => declaration.Syntax.FieldModifier is null
+        ? throw new NotImplementedException("TODO: autoprops")
+        : new SourceGlobalSymbol(this, declaration);
 
     private SymbolDocumentation BuildDocumentation() =>
         MarkdownDocumentationExtractor.Extract(this);

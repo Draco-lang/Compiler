@@ -5,7 +5,7 @@ using Draco.Compiler.Api.Syntax;
 namespace Draco.Compiler.Internal.Declarations;
 
 /// <summary>
-/// A global variable declaration.
+/// A global variable (either field or auto-property) declaration.
 /// </summary>
 internal sealed class GlobalDeclaration(VariableDeclarationSyntax syntax)
     : Declaration(syntax.Name.Text)

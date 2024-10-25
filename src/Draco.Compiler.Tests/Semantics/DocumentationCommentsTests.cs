@@ -105,7 +105,7 @@ public sealed class DocumentationCommentsTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);

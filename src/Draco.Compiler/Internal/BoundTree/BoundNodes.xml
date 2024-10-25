@@ -173,12 +173,8 @@
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
 
-  <Node Name="BoundGlobalExpression" Base="BoundExpression">
-    <Field Name="Global" Type="GlobalSymbol" />
-  </Node>
-
   <Node Name="BoundFieldExpression" Base="BoundExpression">
-    <Field Name="Receiver" Type="BoundExpression"/>
+    <Field Name="Receiver" Type="BoundExpression?"/>
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 
@@ -273,12 +269,8 @@
     <Field Name="Local" Type="LocalSymbol" />
   </Node>
 
-  <Node Name="BoundGlobalLvalue" Base="BoundLvalue">
-    <Field Name="Global" Type="GlobalSymbol" />
-  </Node>
-
   <Node Name="BoundFieldLvalue" Base="BoundLvalue">
-    <Field Name="Receiver" Type="BoundExpression"/>
+    <Field Name="Receiver" Type="BoundExpression?"/>
     <Field Name="Field" Type="FieldSymbol" />
   </Node>
 

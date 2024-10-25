@@ -221,7 +221,7 @@ internal sealed class CilCodegen
                 this.LoadLocal(local);
                 break;
             }
-            case GlobalSymbol global:
+            case FieldSymbol { IsStatic: true } global:
             {
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
                 this.EncodeToken(global);
@@ -277,7 +277,7 @@ internal sealed class CilCodegen
                 this.EncodePush(NextOperand());
                 this.StoreLocal(local);
                 break;
-            case GlobalSymbol global:
+            case FieldSymbol { IsStatic: true } global:
                 this.EncodePush(NextOperand());
                 this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
                 this.EncodeToken(global);
@@ -341,7 +341,7 @@ internal sealed class CilCodegen
                 this.StoreRegister(addressOf.Target);
                 break;
             }
-            case GlobalSymbol global:
+            case FieldSymbol { IsStatic: true } global:
             {
                 this.InstructionEncoder.OpCode(ILOpCode.Ldsflda);
                 this.EncodeToken(global);

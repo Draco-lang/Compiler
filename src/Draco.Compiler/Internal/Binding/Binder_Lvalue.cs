@@ -40,8 +40,6 @@ internal partial class Binder
         {
         case LocalSymbol local:
             return FromResult(new BoundLocalLvalue(syntax, local));
-        case GlobalSymbol global:
-            return FromResult(new BoundGlobalLvalue(syntax, global));
         case FieldSymbol:
         case PropertySymbol:
             return FromResult(this.SymbolToLvalue(syntax, symbol, constraints, diagnostics));
@@ -175,8 +173,8 @@ internal partial class Binder
     {
         switch (symbol)
         {
-        case GlobalSymbol global:
-            return new BoundGlobalLvalue(syntax, global);
+        case FieldSymbol { IsStatic: true } global:
+            return new BoundFieldLvalue(syntax, null, global);
         case PropertySymbol prop:
             var setter = GetSetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertySetLvalue(syntax, null, setter);

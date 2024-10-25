@@ -182,9 +182,7 @@ internal sealed class MetadataTypeSymbol(
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
             // Add it
-            var fieldSym = fieldDef.Attributes.HasFlag(FieldAttributes.Static)
-                ? new MetadataStaticFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef) as Symbol
-                : new MetadataFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef);
+            var fieldSym = new MetadataFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef);
             result.Add(fieldSym);
         }
 

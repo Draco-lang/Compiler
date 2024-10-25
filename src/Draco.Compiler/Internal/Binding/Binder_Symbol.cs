@@ -200,7 +200,7 @@ internal partial class Binder
                 {
                     // Add the assignment to the eval function
                     evalFuncStatements.Add(ExpressionStatement(AssignmentExpression(
-                        left: GlobalLvalue(symbol),
+                        left: FieldLvalue(receiver: null, field: symbol),
                         right: assignedValue)));
                 }
 
@@ -301,7 +301,7 @@ internal partial class Binder
         var (targetFlag, targetName) = target switch
         {
             FunctionSymbol _ => (AttributeTargets.Method, "function"),
-            GlobalSymbol _ => (AttributeTargets.Field, "global"),
+            FieldSymbol { IsStatic: true } _ => (AttributeTargets.Field, "global"),
             ParameterSymbol _ => (AttributeTargets.Parameter, "parameter"),
             TypeSymbol t when t.IsValueType => (AttributeTargets.Struct, "value-type"),
             TypeSymbol => (AttributeTargets.Class, "reference-type"),

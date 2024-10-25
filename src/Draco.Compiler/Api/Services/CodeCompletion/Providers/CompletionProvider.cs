@@ -56,7 +56,6 @@ public abstract class CompletionProvider
 
         SymbolKind.Function
      or SymbolKind.FunctionGroup
-     or SymbolKind.Global
      or SymbolKind.Local
      or SymbolKind.Parameter
      or SymbolKind.Field => context.HasFlag(CompletionContext.Expression),

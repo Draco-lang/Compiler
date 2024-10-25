@@ -127,20 +127,8 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     public override void VisitAssignmentExpression(BoundAssignmentExpression node)
     {
         base.VisitAssignmentExpression(node);
-        if (node.Left is BoundGlobalLvalue globalLvalue) this.VisitGlobalAssignmentExpression(node, globalLvalue);
         if (node.Left is BoundLocalLvalue localLvalue) this.VisitLocalAssignmentExpression(node, localLvalue);
         if (node.Left is BoundFieldLvalue fieldLvalue) this.VisitFieldAssignmentExpression(node, fieldLvalue);
-    }
-
-    private void VisitGlobalAssignmentExpression(BoundAssignmentExpression node, BoundGlobalLvalue globalLvalue)
-    {
-        // We never allow assignment to global immutables, we assume they are always initialized
-        if (globalLvalue.Global.IsMutable) return;
-
-        this.diagnostics.Add(Diagnostic.Create(
-            template: FlowAnalysisErrors.ImmutableVariableAssignedMultipleTimes,
-            location: node.Syntax?.Location,
-            formatArgs: globalLvalue.Global.Name));
     }
 
     private void VisitFieldAssignmentExpression(BoundAssignmentExpression node, BoundFieldLvalue fieldLvalue)

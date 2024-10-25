@@ -671,7 +671,7 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
         // Optimization: if it's already a symbol reference, leave as-is
         // Optimization: if it's a literal, don't bother copying
         if (expr is BoundLocalExpression
-                 or BoundGlobalExpression
+                 or BoundFieldExpression { Field.IsStatic: true }
                  or BoundParameterExpression
                  or BoundFunctionGroupExpression
                  or BoundLiteralExpression)

@@ -93,7 +93,7 @@ internal sealed class MetadataStaticClassSymbol(
             if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
             // Skip non-static fields
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
-            var fieldSym = new MetadataStaticFieldSymbol(
+            var fieldSym = new MetadataFieldSymbol(
                 containingSymbol: this,
                 fieldDefinition: fieldDef);
             result.Add(fieldSym);

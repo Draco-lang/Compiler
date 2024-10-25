@@ -182,8 +182,8 @@ internal static class ControlFlowGraphToDot
             BoundParameterExpression param => param.Parameter.Name,
             BoundLocalExpression local => local.Local.Name,
             BoundLocalLvalue local => local.Local.Name,
-            BoundGlobalExpression global => global.Global.Name,
-            BoundGlobalLvalue global => global.Global.Name,
+            BoundFieldExpression { Field.IsStatic: true } global => global.Field.Name,
+            BoundFieldLvalue { Field.IsStatic: true } global => global.Field.Name,
             BoundLiteralExpression lit => lit.Value?.ToString() ?? "null",
             BoundStringExpression str when str.Parts.Length == 1
                                         && str.Parts[0] is BoundStringText text => text.Text,

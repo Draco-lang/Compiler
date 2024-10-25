@@ -18,7 +18,7 @@ internal sealed class Module : IModule
     public IDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
     IReadOnlyDictionary<ModuleSymbol, IModule> IModule.Submodules => this.submodules;
 
-    public IReadOnlySet<GlobalSymbol> Globals => this.globals;
+    public IReadOnlySet<FieldSymbol> Fields => this.fields;
 
     public Procedure GlobalInitializer { get; }
     IProcedure IModule.GlobalInitializer => this.GlobalInitializer;
@@ -32,7 +32,7 @@ internal sealed class Module : IModule
     public Module? Parent { get; }
     IModule? IModule.Parent => this.Parent;
 
-    private readonly HashSet<GlobalSymbol> globals = [];
+    private readonly HashSet<FieldSymbol> fields = [];
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = [];
     private readonly Dictionary<ModuleSymbol, IModule> submodules = [];
 
@@ -58,7 +58,7 @@ internal sealed class Module : IModule
         return result.ToImmutable();
     }
 
-    public void DefineGlobal(GlobalSymbol globalSymbol) => this.globals.Add(globalSymbol);
+    public void DefineField(FieldSymbol fieldSymbol) => this.fields.Add(fieldSymbol);
 
     public Procedure DefineProcedure(FunctionSymbol functionSymbol)
     {
@@ -84,8 +84,8 @@ internal sealed class Module : IModule
     {
         var result = new StringBuilder();
         result.AppendLine($"module {this.Symbol.Name}");
-        result.AppendJoin(Environment.NewLine, this.globals);
-        if (this.globals.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
+        result.AppendJoin(Environment.NewLine, this.fields);
+        if (this.fields.Count > 0 && this.procedures.Count > 1) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.procedures.Values);
         if (this.procedures.Count > 0 && this.submodules.Count > 0) result.Append(doubleNewline);
         result.AppendJoin(doubleNewline, this.submodules.Values);

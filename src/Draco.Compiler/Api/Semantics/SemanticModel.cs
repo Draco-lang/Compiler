@@ -41,7 +41,7 @@ public sealed partial class SemanticModel : IBinderProvider
 
     // Filled out by incremental binding
     private readonly ConcurrentDictionary<SyntaxFunctionSymbol, BoundStatement> boundFunctions = new();
-    private readonly ConcurrentDictionary<SyntaxGlobalSymbol, GlobalBinding> boundGlobals = new();
+    private readonly ConcurrentDictionary<SyntaxFieldSymbol, GlobalBinding> boundGlobals = new();
     private readonly ConcurrentDictionary<SyntaxNode, BoundNode> boundNodeMap = new();
     private readonly ConcurrentDictionary<SyntaxNode, Symbol> symbolMap = new();
 
@@ -92,7 +92,7 @@ public sealed partial class SemanticModel : IBinderProvider
             {
                 // We need to search for this global
                 var globalSymbol = binder.ContainingSymbol?.Members
-                    .OfType<SyntaxGlobalSymbol>()
+                    .OfType<SyntaxFieldSymbol>()
                     .FirstOrDefault(s => s.Name == varDecl.Name.Text);
                 globalSymbol?.Bind(this);
                 break;

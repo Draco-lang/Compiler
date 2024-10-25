@@ -23,6 +23,8 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
     public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
+    public override bool IsStatic => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Static);
+
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
 
     public override bool IsSpecialName => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.SpecialName);
@@ -45,6 +47,11 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
                 : Api.Semantics.Visibility.Internal;
         }
     }
+
+    public override bool IsLiteral => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal);
+
+    public override object? LiteralValue => InterlockedUtils.InitializeMaybeNull(ref this.literalValue, this.BuildLiteralValue);
+    private object? literalValue;
 
     public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
@@ -70,11 +77,6 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     public MetadataFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition)
     {
-        if (fieldDefinition.Attributes.HasFlag(FieldAttributes.Static))
-        {
-            throw new System.ArgumentException("fields must be constructed from nonstatic fields");
-        }
-
         this.ContainingSymbol = containingSymbol;
         this.fieldDefinition = fieldDefinition;
     }
@@ -84,6 +86,15 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     private TypeSymbol BuildType() =>
         this.fieldDefinition.DecodeSignature(this.Assembly.DeclaringCompilation.TypeProvider, this);
+
+    private object? BuildLiteralValue()
+    {
+        var constantHandle = this.fieldDefinition.GetDefaultValue();
+        if (constantHandle.IsNil) return null;
+
+        var constant = this.MetadataReader.GetConstant(constantHandle);
+        return MetadataSymbol.DecodeConstant(constant, this.MetadataReader);
+    }
 
     private SymbolDocumentation BuildDocumentation() =>
         XmlDocumentationExtractor.Extract(this);

@@ -82,7 +82,6 @@ public sealed class CompletionItem
         SymbolKind.Module => CompletionKind.ModuleName,
         SymbolKind.Field => CompletionKind.FieldName,
         SymbolKind.Property => CompletionKind.PropertyName,
-        SymbolKind.Global => CompletionKind.VariableName,
         SymbolKind.Local => CompletionKind.VariableName,
         SymbolKind.Parameter => CompletionKind.ParameterName,
         SymbolKind.Function => CompletionKind.FunctionName,

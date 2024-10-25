@@ -407,8 +407,6 @@ internal sealed class ControlFlowGraphBuilder : BoundTreeVisitor
     // Elements that have no effect on the control flow
 
     public override void VisitFunctionGroupExpression(BoundFunctionGroupExpression node) { }
-    public override void VisitGlobalExpression(BoundGlobalExpression node) { }
-    public override void VisitGlobalLvalue(BoundGlobalLvalue node) { }
     public override void VisitIllegalLvalue(BoundIllegalLvalue node) { }
     public override void VisitLiteralExpression(BoundLiteralExpression node) { }
     public override void VisitLocalFunction(BoundLocalFunction node) { }

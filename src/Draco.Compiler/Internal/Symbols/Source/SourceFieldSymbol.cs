@@ -9,11 +9,11 @@ using Draco.Compiler.Internal.Symbols.Syntax;
 namespace Draco.Compiler.Internal.Symbols.Source;
 
 /// <summary>
-/// An in-source defined global variable.
+/// An in-source defined field - either a global variable or a class member.
 /// </summary>
-internal sealed class SourceGlobalSymbol(
+internal sealed class SourceFieldSymbol(
     Symbol containingSymbol,
-    VariableDeclarationSyntax syntax) : SyntaxGlobalSymbol(containingSymbol, syntax), ISourceSymbol
+    VariableDeclarationSyntax syntax) : SyntaxFieldSymbol(containingSymbol, syntax), ISourceSymbol
 {
     public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
@@ -27,7 +27,7 @@ internal sealed class SourceGlobalSymbol(
 
     private readonly object buildLock = new();
 
-    public SourceGlobalSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
+    public SourceFieldSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
         : this(containingSymbol, declaration.Syntax)
     {
     }

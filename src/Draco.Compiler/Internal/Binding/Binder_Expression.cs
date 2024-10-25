@@ -800,8 +800,8 @@ internal partial class Binder
             return new BoundParameterExpression(syntax, param);
         case LocalSymbol local:
             return new BoundLocalExpression(syntax, local);
-        case GlobalSymbol global:
-            return new BoundGlobalExpression(syntax, global);
+        case FieldSymbol { IsStatic: true } global:
+            return new BoundFieldExpression(syntax, null, global);
         case PropertySymbol prop:
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);

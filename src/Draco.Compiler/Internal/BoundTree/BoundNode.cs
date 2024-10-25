@@ -86,11 +86,6 @@ internal partial class BoundParameterExpression
     public override TypeSymbol Type => this.Parameter.Type;
 }
 
-internal partial class BoundGlobalExpression
-{
-    public override TypeSymbol Type => this.Global.Type;
-}
-
 internal partial class BoundFieldExpression
 {
     public override TypeSymbol Type => this.Field.Type;
@@ -192,11 +187,6 @@ internal partial class BoundIllegalLvalue
 internal partial class BoundLocalLvalue
 {
     public override TypeSymbol Type => this.Local.Type;
-}
-
-internal partial class BoundGlobalLvalue
-{
-    public override TypeSymbol Type => this.Global.Type;
 }
 
 internal partial class BoundFieldLvalue

@@ -75,11 +75,6 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     public MetadataFieldSymbol(Symbol containingSymbol, FieldDefinition fieldDefinition)
     {
-        if (fieldDefinition.Attributes.HasFlag(FieldAttributes.Static))
-        {
-            throw new System.ArgumentException("fields must be constructed from nonstatic fields");
-        }
-
         this.ContainingSymbol = containingSymbol;
         this.fieldDefinition = fieldDefinition;
     }

@@ -171,33 +171,35 @@ public static partial class SyntaxFactory
     public static VariableDeclarationSyntax VariableDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(null, true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(null, false, true, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         Visibility visibility,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), false, true, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(null, false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(null, false, false, name, type, value);
 
     public static VariableDeclarationSyntax ImmutableVariableDeclaration(
         Visibility visibility,
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), false, false, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         TokenKind? visibility,
+        bool isField,
         bool isMutable,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) => VariableDeclaration(
         [],
         visibility,
+        isField ? TokenKind.KeywordField : null,
         isMutable ? TokenKind.KeywordVar : TokenKind.KeywordVal,
         name,
         type is null ? null : TypeSpecifier(type),

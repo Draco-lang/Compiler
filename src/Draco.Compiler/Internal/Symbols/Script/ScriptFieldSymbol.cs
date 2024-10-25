@@ -6,14 +6,14 @@ using Draco.Compiler.Internal.Symbols.Syntax;
 namespace Draco.Compiler.Internal.Symbols.Script;
 
 /// <summary>
-/// A global variable defined inside a script.
+/// A field defined inside a script.
 ///
-/// Globals are special in script context, as they can be inferred from other statements,
+/// Fields are special in script context, as global fields (global variables) can be inferred from other statements,
 /// and their initialization intermixes with the rest of the script.
 /// </summary>
-internal sealed class ScriptGlobalSymbol(
+internal sealed class ScriptFieldSymbol(
     ScriptModuleSymbol containingSymbol,
-    VariableDeclarationSyntax syntax) : SyntaxGlobalSymbol(containingSymbol, syntax), ISourceSymbol
+    VariableDeclarationSyntax syntax) : SyntaxFieldSymbol(containingSymbol, syntax), ISourceSymbol
 {
     public override TypeSymbol Type => this.type ??= new TypeVariable(1);
     private TypeSymbol? type;

@@ -319,19 +319,6 @@ internal sealed class MetadataCodegen : MetadataWriter
                 }));
         }
 
-        case GlobalSymbol global:
-        {
-            return this.AddMemberReference(
-                parent: this.GetEntityHandle(global.ContainingSymbol
-                                          ?? throw new InvalidOperationException()),
-                name: global.Name,
-                signature: this.EncodeBlob(e =>
-                {
-                    var encoder = e.Field();
-                    this.EncodeSignatureType(encoder.Type(), global.Type);
-                }));
-        }
-
         default:
             throw new ArgumentOutOfRangeException(nameof(symbol));
         }
@@ -454,10 +441,10 @@ internal sealed class MetadataCodegen : MetadataWriter
     {
         var currentFieldIndex = fieldIndex;
         var currentProcIndex = procIndex;
-        // Go through globals
-        foreach (var global in module.Globals)
+        // Go through global fields
+        foreach (var field in module.Fields)
         {
-            this.EncodeGlobal(global);
+            this.EncodeField(field);
             currentFieldIndex++;
         }
 
@@ -511,21 +498,21 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
-    private FieldDefinitionHandle EncodeGlobal(GlobalSymbol global)
+    private FieldDefinitionHandle EncodeField(FieldSymbol field)
     {
-        var visibility = global.Visibility switch
+        var visibility = field.Visibility switch
         {
             Api.Semantics.Visibility.Public => FieldAttributes.Public,
             Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
             Api.Semantics.Visibility.Private => FieldAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(global)),
+            _ => throw new ArgumentOutOfRangeException(nameof(field)),
         };
 
         // Definition
         return this.AddFieldDefinition(
             attributes: visibility | FieldAttributes.Static,
-            name: global.Name,
-            signature: this.EncodeGlobalSignature(global));
+            name: field.Name,
+            signature: this.EncodeFieldSignature(field));
     }
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
@@ -607,8 +594,8 @@ internal sealed class MetadataCodegen : MetadataWriter
         return definitionHandle;
     }
 
-    private BlobHandle EncodeGlobalSignature(GlobalSymbol global) =>
-        this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), global.Type));
+    private BlobHandle EncodeFieldSignature(FieldSymbol field) =>
+        this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), field.Type));
 
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {

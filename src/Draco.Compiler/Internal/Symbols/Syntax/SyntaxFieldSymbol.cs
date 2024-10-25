@@ -8,11 +8,11 @@ using Draco.Compiler.Internal.Symbols.Source;
 namespace Draco.Compiler.Internal.Symbols.Syntax;
 
 /// <summary>
-/// The base for global symbols defined based on some syntax.
+/// The base for field symbols defined based on some syntax.
 /// </summary>
-internal abstract class SyntaxGlobalSymbol(
+internal abstract class SyntaxFieldSymbol(
     Symbol containingSymbol,
-    VariableDeclarationSyntax syntax) : GlobalSymbol, ISourceSymbol
+    VariableDeclarationSyntax syntax) : FieldSymbol, ISourceSymbol
 {
     public override Symbol ContainingSymbol => containingSymbol;
     public override VariableDeclarationSyntax DeclaringSyntax => syntax;

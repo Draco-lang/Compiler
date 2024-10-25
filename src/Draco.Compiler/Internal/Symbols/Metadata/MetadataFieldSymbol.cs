@@ -46,6 +46,11 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
         }
     }
 
+    public override bool IsLiteral => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal);
+
+    public override object? LiteralValue => InterlockedUtils.InitializeMaybeNull(ref this.literalValue, this.BuildLiteralValue);
+    private object? literalValue;
+
     public override SymbolDocumentation Documentation => LazyInitializer.EnsureInitialized(ref this.documentation, this.BuildDocumentation);
     private SymbolDocumentation? documentation;
 
@@ -84,6 +89,15 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
 
     private TypeSymbol BuildType() =>
         this.fieldDefinition.DecodeSignature(this.Assembly.DeclaringCompilation.TypeProvider, this);
+
+    private object? BuildLiteralValue()
+    {
+        var constantHandle = this.fieldDefinition.GetDefaultValue();
+        if (constantHandle.IsNil) return null;
+
+        var constant = this.MetadataReader.GetConstant(constantHandle);
+        return MetadataSymbol.DecodeConstant(constant, this.MetadataReader);
+    }
 
     private SymbolDocumentation BuildDocumentation() =>
         XmlDocumentationExtractor.Extract(this);

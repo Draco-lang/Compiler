@@ -43,13 +43,13 @@ internal sealed class ModuleCodegen : SymbolVisitor
         this.globalInitializer.Write(Ret(default(Void)));
     }
 
-    public override void VisitGlobal(GlobalSymbol globalSymbol)
+    public override void VisitField(FieldSymbol fieldSymbol)
     {
-        if (globalSymbol is not SyntaxGlobalSymbol syntaxGlobal) return;
+        if (fieldSymbol is not SyntaxFieldSymbol syntaxField) return;
 
-        this.module.DefineGlobal(syntaxGlobal);
+        this.module.DefineField(syntaxField);
 
-        if (syntaxGlobal is not SourceGlobalSymbol sourceGlobal) return;
+        if (syntaxField is not SourceFieldSymbol sourceGlobal) return;
 
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)

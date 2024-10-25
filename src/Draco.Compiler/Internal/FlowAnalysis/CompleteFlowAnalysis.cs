@@ -43,7 +43,7 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     /// </summary>
     /// <param name="symbol">The symbol to analyze.</param>
     /// <param name="diagnostics">The diagnostics to report errors to.</param>
-    public static void AnalyzeValue(SourceGlobalSymbol symbol, DiagnosticBag diagnostics)
+    public static void AnalyzeValue(SourceFieldSymbol symbol, DiagnosticBag diagnostics)
     {
         if (symbol.Value is null)
         {

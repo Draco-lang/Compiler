@@ -30,7 +30,7 @@ internal partial class Binder
         return statementTask.Result;
     }
 
-    public virtual GlobalBinding BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics)
+    public virtual GlobalBinding BindGlobal(SourceFieldSymbol global, DiagnosticBag diagnostics)
     {
         var globalName = global.DeclaringSyntax.Name.Text;
         var constraints = new ConstraintSolver(this, $"global {globalName}");
@@ -110,7 +110,7 @@ internal partial class Binder
                 {
                     // Retrieve the symbol
                     var symbol = module.Members
-                        .OfType<ScriptGlobalSymbol>()
+                        .OfType<ScriptFieldSymbol>()
                         .First(g => g.DeclaringSyntax == varDecl);
 
                     BindGlobal(symbol);
@@ -170,7 +170,7 @@ internal partial class Binder
                 value: BoundUnitExpression.Default)),
             EvalType: evalType);
 
-        void BindGlobal(ScriptGlobalSymbol symbol)
+        void BindGlobal(ScriptFieldSymbol symbol)
         {
             var typeSyntax = symbol.DeclaringSyntax.Type;
             var valueSyntax = symbol.DeclaringSyntax.Value;

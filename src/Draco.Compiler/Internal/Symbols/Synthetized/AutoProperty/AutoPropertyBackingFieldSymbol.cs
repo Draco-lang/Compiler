@@ -4,10 +4,10 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
 /// Auto-generated backing field for an auto-property.
 /// </summary>
 internal sealed class AutoPropertyBackingFieldSymbol(
-    TypeSymbol containingSymbol,
+    Symbol containingSymbol,
     PropertySymbol property) : FieldSymbol
 {
-    public override TypeSymbol ContainingSymbol { get; } = containingSymbol;
+    public override Symbol ContainingSymbol { get; } = containingSymbol;
 
     public override TypeSymbol Type => this.Property.Type;
     public override bool IsStatic => this.Property.IsStatic;

@@ -23,6 +23,8 @@ internal sealed class MetadataFieldSymbol : FieldSymbol, IMetadataSymbol
     public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
     private TypeSymbol? type;
 
+    public override bool IsStatic => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Static);
+
     public override bool IsMutable => !(this.fieldDefinition.Attributes.HasFlag(FieldAttributes.Literal) || this.fieldDefinition.Attributes.HasFlag(FieldAttributes.InitOnly));
 
     public override bool IsSpecialName => this.fieldDefinition.Attributes.HasFlag(FieldAttributes.SpecialName);

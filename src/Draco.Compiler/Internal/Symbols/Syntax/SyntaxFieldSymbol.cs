@@ -17,6 +17,8 @@ internal abstract class SyntaxFieldSymbol(
     public override Symbol ContainingSymbol => containingSymbol;
     public override VariableDeclarationSyntax DeclaringSyntax => syntax;
 
+    // NOTE: In the future we probably want to check the global modifier
+    public override bool IsStatic => this.ContainingSymbol is not TypeSymbol;
     public override bool IsMutable => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVar;
     public override string Name => this.DeclaringSyntax.Name.Text;
 

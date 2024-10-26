@@ -67,6 +67,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
         }
     }
 
+    // TODO: Copypasta from VisitField
     public override void VisitProperty(PropertySymbol propertySymbol)
     {
         // TODO: Not flexible, won't work for non-auto props
@@ -77,13 +78,13 @@ internal sealed class ModuleCodegen : SymbolVisitor
         // If there's a value, compile it
         if (sourceAutoProp.Value is not null)
         {
-            var body = this.RewriteBody(sourceGlobal.Value);
+            var body = this.RewriteBody(sourceAutoProp.Value);
             // Yank out potential local functions and closures
             var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
             // Compile it
             var value = bodyWithoutLocalFunctions.Accept(this.globalInitializer);
             // Store it
-            this.globalInitializer.WriteAssignment(sourceGlobal, value);
+            this.globalInitializer.WriteAssignment(sourceAutoProp.BackingField, value);
 
             // Compile the local functions
             foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);

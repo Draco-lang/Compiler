@@ -63,6 +63,27 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         symbol.Value.Accept(analysis);
     }
 
+    // TODO: Copypasta from SourceFieldSymbol
+    public static void AnalyzeValue(SourceAutoPropertySymbol symbol, DiagnosticBag diagnostics)
+    {
+        if (symbol.Value is null)
+        {
+            if (symbol.Getter is null)
+            {
+                // Error, we expect globals to be inline initialized
+                diagnostics.Add(Diagnostic.Create(
+                    template: FlowAnalysisErrors.GlobalImmutableMustBeInitialized,
+                    location: symbol.DeclaringSyntax.Location,
+                    formatArgs: symbol.Name));
+            }
+            return;
+        }
+
+        var cfg = ControlFlowGraphBuilder.Build(symbol.Value);
+        var analysis = CreateAnalysis(diagnostics, symbol.Value, cfg);
+        symbol.Value.Accept(analysis);
+    }
+
     private static CompleteFlowAnalysis CreateAnalysis(
         DiagnosticBag diagnostics,
         BoundNode node,

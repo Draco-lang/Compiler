@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Syntax;
+using Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
@@ -45,11 +46,11 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     public override void VisitField(FieldSymbol fieldSymbol)
     {
-        if (fieldSymbol is not SyntaxFieldSymbol syntaxField) return;
+        if (fieldSymbol is not SyntaxFieldSymbol and not AutoPropertyBackingFieldSymbol) return;
 
-        this.module.DefineField(syntaxField);
+        this.module.DefineField(fieldSymbol);
 
-        if (syntaxField is not SourceFieldSymbol sourceGlobal) return;
+        if (fieldSymbol is not SourceFieldSymbol sourceGlobal) return;
 
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)

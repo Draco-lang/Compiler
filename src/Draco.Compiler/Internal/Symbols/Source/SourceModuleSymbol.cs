@@ -105,7 +105,9 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     };
 
     private SourceFunctionSymbol BuildFunction(FunctionDeclaration declaration) => new(this, declaration);
-    private SourceFieldSymbol BuildGlobal(GlobalDeclaration declaration) => new(this, declaration);
+    private Symbol BuildGlobal(GlobalDeclaration declaration) => declaration.Syntax.FieldModifier is null
+        ? new SourceAutoPropertySymbol(this, declaration)
+        : new SourceFieldSymbol(this, declaration);
     private SourceModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new(this.DeclaringCompilation, this, declaration);
 
     private SymbolDocumentation BuildDocumentation() =>

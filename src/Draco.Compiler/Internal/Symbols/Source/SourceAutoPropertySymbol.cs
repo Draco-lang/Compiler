@@ -2,6 +2,7 @@ using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
@@ -42,6 +43,11 @@ internal sealed class SourceAutoPropertySymbol(
     private BoundExpression? value;
 
     private readonly object buildLock = new();
+
+    public SourceAutoPropertySymbol(Symbol containingSymbol, GlobalDeclaration declaration)
+        : this(containingSymbol, declaration.Syntax)
+    {
+    }
 
     public override void Bind(IBinderProvider binderProvider)
     {

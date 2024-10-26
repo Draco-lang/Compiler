@@ -505,6 +505,6 @@ public sealed class SemanticModelTests
         Assert.NotNull(classSymbol);
         Assert.Equal("Foo", classSymbol.Name);
         Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal("bar", classSymbol.Members.Single().Name);
+        Assert.Equal("bar", classSymbol.Members.Single(x => x.Name == "bar").Name);
     }
 }

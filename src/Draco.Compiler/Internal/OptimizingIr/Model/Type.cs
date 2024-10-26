@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal class Type(Module declaringModule, TypeSymbol symbol) : IType

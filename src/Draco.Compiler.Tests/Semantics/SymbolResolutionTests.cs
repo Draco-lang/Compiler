@@ -4065,6 +4065,7 @@ public sealed class SymbolResolutionTests
 
         var main = SyntaxTree.Create(CompilationUnit(
             ImmutableVariableDeclaration(
+                true,
                 "a",
                 null,
                 BlockExpression(ExpressionStatement(ReturnExpression(LiteralExpression(4)))))));

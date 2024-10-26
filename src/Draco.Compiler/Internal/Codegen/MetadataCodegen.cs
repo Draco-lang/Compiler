@@ -461,9 +461,9 @@ internal sealed class MetadataCodegen : MetadataWriter
         var startProcIndex = procIndex;
 
         // Go through globals
-        foreach (var global in module.Globals)
+        foreach (var global in module.Fields)
         {
-            this.EncodeGlobal(global);
+            this.EncodeField(global);
             ++fieldIndex;
         }
 
@@ -723,27 +723,6 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         return createdClass;
     }
-
-    private FieldDefinitionHandle EncodeField(FieldSymbol field)
-    {
-        var visibility = field.Visibility switch
-        {
-            Api.Semantics.Visibility.Public => FieldAttributes.Public,
-            Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
-            Api.Semantics.Visibility.Private => FieldAttributes.Private,
-            _ => throw new IndexOutOfRangeException(nameof(field.Visibility)),
-        };
-        var mutability = field.IsMutable ? default : FieldAttributes.InitOnly;
-
-        // Definition
-        return this.AddFieldDefinition(
-            attributes: visibility | mutability,
-            name: field.Name,
-            signature: this.EncodeFieldSignature(field));
-    }
-
-    private BlobHandle EncodeFieldSignature(FieldSymbol field) =>
-        this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), field.Type));
 
     private IEnumerable<TypeSymbol> ScalarConstantTypes => [
         this.WellKnownTypes.SystemSByte,

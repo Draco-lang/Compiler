@@ -21,7 +21,6 @@ internal sealed class Module : IModule
     public IDictionary<TypeSymbol, IType> Types => this.types;
     IReadOnlyDictionary<TypeSymbol, IType> IModule.Types => this.types;
 
-    public IReadOnlySet<GlobalSymbol> Globals => this.globals;
     public IReadOnlySet<FieldSymbol> Fields => this.fields;
 
     public Procedure GlobalInitializer { get; }

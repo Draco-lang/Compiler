@@ -2485,6 +2485,7 @@ public sealed class TypeCheckingTests
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration(
+                        true,
                         "x",
                         GenericType(NameType("Array"), NameType("int32")),
                         CallExpression(NameExpression("List"))))))));

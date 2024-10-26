@@ -35,7 +35,7 @@ internal abstract class SymbolVisitor
     {
     }
 
-    public virtual void VisitProperty(PropertySymbol fieldSymbol)
+    public virtual void VisitProperty(PropertySymbol propertySymbol)
     {
     }
 

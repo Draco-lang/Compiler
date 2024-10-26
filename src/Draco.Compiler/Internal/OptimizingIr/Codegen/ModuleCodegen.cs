@@ -67,6 +67,29 @@ internal sealed class ModuleCodegen : SymbolVisitor
         }
     }
 
+    public override void VisitProperty(PropertySymbol propertySymbol)
+    {
+        // TODO: Not flexible, won't work for non-auto props
+        if (propertySymbol is not SourceAutoPropertySymbol sourceAutoProp) return;
+
+        this.module.DefineProperty(sourceAutoProp);
+
+        // If there's a value, compile it
+        if (sourceAutoProp.Value is not null)
+        {
+            var body = this.RewriteBody(sourceGlobal.Value);
+            // Yank out potential local functions and closures
+            var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
+            // Compile it
+            var value = bodyWithoutLocalFunctions.Accept(this.globalInitializer);
+            // Store it
+            this.globalInitializer.WriteAssignment(sourceGlobal, value);
+
+            // Compile the local functions
+            foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
+        }
+    }
+
     public override void VisitFunction(FunctionSymbol functionSymbol)
     {
         if (functionSymbol.Body is null) return;

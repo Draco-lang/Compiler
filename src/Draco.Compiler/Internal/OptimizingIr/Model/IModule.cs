@@ -39,6 +39,11 @@ internal interface IModule
     public IReadOnlySet<FieldSymbol> Fields { get; }
 
     /// <summary>
+    /// The properties within this module.
+    /// </summary>
+    public IReadOnlySet<PropertySymbol> Properties { get; }
+
+    /// <summary>
     /// The compiled procedures within this module.
     /// </summary>
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }

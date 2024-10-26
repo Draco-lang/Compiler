@@ -1,0 +1,20 @@
+<Project>
+
+    <Target Name="CoverageWeave" AfterTargets="Build">
+        <Error Condition="'$(UsingMicrosoftNETSdk)' != 'true'" Text="Draco.Coverage.MSBuild only works with SDK-style projects" />
+
+        <ItemGroup>
+            <ReferencesWithWeave
+                Include="@(ReferenceCopyLocalPaths)"
+                Condition="'%(ReferenceCopyLocalPaths.InstrumentCoverage)' == 'True'" />
+        </ItemGroup>
+
+        <CoverageWeaveTask
+            InputPaths="@(ReferencesWithWeave->'$(OutDir)%(Filename)%(Extension)')"
+            OutputPaths="@(ReferencesWithWeave->'$(OutDir)%(Filename)%(Extension)')"
+            WeaverPath="$(MSBuildThisFileDirectory)..\tools\Draco.Coverage.Cli.dll"
+            ToolPath="$(DotNetHostDirectory)"
+            ToolExe="$(DotNetHostFileName)"/>
+    </Target>
+    
+</Project>

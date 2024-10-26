@@ -121,7 +121,6 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             .Select(n => n.Accept(this))
             .Cast<BoundExpression>()
             .Select((n, i) => ExpressionStatement(AssignmentExpression(
-                compoundOperator: null,
                 left: ArrayAccessLvalue(
                     array: LocalExpression(varArgs),
                     indices: [this.LiteralExpression(i)]),
@@ -136,7 +135,6 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             statements: fixedArgs
                 .Select(a => a.Assignment)
                 .Append(ExpressionStatement(AssignmentExpression(
-                    compoundOperator: null,
                     left: LocalLvalue(varArgs),
                     right: ArrayCreationExpression(
                         elementType: elementType,
@@ -241,14 +239,13 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             locals: [result],
             statements:
             [
-                LocalDeclaration(result, null),
                 ConditionalGotoStatement(condition, thenLabel),
                 ExpressionStatement(GotoExpression(elseLabel)),
                 LabelStatement(thenLabel),
-                ExpressionStatement(AssignmentExpression(null, LocalLvalue(result), then)),
+                ExpressionStatement(AssignmentExpression(LocalLvalue(result), then)),
                 ExpressionStatement(GotoExpression(finallyLabel)),
                 LabelStatement(elseLabel),
-                ExpressionStatement(AssignmentExpression(null, LocalLvalue(result), @else)),
+                ExpressionStatement(AssignmentExpression(LocalLvalue(result), @else)),
                 LabelStatement(finallyLabel),
                 SequencePointStatement(
                     statement: null,
@@ -332,7 +329,6 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             statements:
             [
                 ExpressionStatement(AssignmentExpression(
-                    compoundOperator: null,
                     left: LocalLvalue(enumerator),
                     right: CallExpression(
                         receiver: node.Sequence,
@@ -348,7 +344,6 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
                         statements:
                         [
                             ExpressionStatement(AssignmentExpression(
-                                compoundOperator: null,
                                 left: LocalLvalue(node.Iterator),
                                 right: PropertyGetExpression(
                                     receiver: LocalExpression(enumerator),
@@ -520,18 +515,17 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
         var arrayAssignmentBuilder = ImmutableArray.CreateBuilder<BoundStatement>(1 + args.Count);
 
         // var args = new object[number of interpolated expressions];
-        arrayAssignmentBuilder.Add(LocalDeclaration(
-            local: arrayLocal,
-            value: ArrayCreationExpression(
+        arrayAssignmentBuilder.Add(ExpressionStatement(AssignmentExpression(
+            left: LocalLvalue(arrayLocal),
+            right: ArrayCreationExpression(
                 elementType: this.WellKnownTypes.SystemObject,
                 sizes: [this.LiteralExpression(args.Count)],
-                type: this.WellKnownTypes.InstantiateArray(this.WellKnownTypes.SystemObject))));
+                type: this.WellKnownTypes.InstantiateArray(this.WellKnownTypes.SystemObject)))));
 
         for (var i = 0; i < args.Count; i++)
         {
             // args[i] = interpolatedExpr;
             arrayAssignmentBuilder.Add(ExpressionStatement(AssignmentExpression(
-                compoundOperator: null,
                 left: ArrayAccessLvalue(
                     array: LocalExpression(arrayLocal),
                     indices: [this.LiteralExpression(i)]),
@@ -677,7 +671,7 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
         // Optimization: if it's already a symbol reference, leave as-is
         // Optimization: if it's a literal, don't bother copying
         if (expr is BoundLocalExpression
-                 or BoundGlobalExpression
+                 or BoundFieldExpression { Field.IsStatic: true }
                  or BoundParameterExpression
                  or BoundFunctionGroupExpression
                  or BoundLiteralExpression)
@@ -688,9 +682,9 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
         // Otherwise compute and store
         var symbol = new SynthetizedLocalSymbol(expr.TypeRequired, false);
         var symbolRef = LocalExpression(symbol);
-        var assignment = LocalDeclaration(
-            local: symbol,
-            value: (BoundExpression)expr.Accept(this));
+        var assignment = ExpressionStatement(AssignmentExpression(
+            left: LocalLvalue(symbol),
+            right: (BoundExpression)expr.Accept(this)));
         return new(symbol, symbolRef, assignment);
     }
 

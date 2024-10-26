@@ -9,6 +9,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Script;
 
@@ -143,7 +144,7 @@ internal sealed class ScriptModuleSymbol(
     };
 
     private ScriptFunctionSymbol BuildFunction(FunctionDeclarationSyntax syntax) => new(this, syntax);
-    private ScriptGlobalSymbol BuildGlobal(VariableDeclarationSyntax syntax) => new(this, syntax);
+    private ScriptFieldSymbol BuildGlobal(VariableDeclarationSyntax syntax) => new(this, syntax);
 
     private SourceModuleSymbol BuildModule(ModuleDeclarationSyntax syntax)
     {

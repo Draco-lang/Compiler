@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -10,6 +11,7 @@ namespace Draco.Compiler.Internal.Syntax;
 /// <summary>
 /// Utilities for <see cref="SeparatedSyntaxList{TNode}"/>.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class SeparatedSyntaxList
 {
     /// <summary>
@@ -25,6 +27,7 @@ internal static class SeparatedSyntaxList
 /// A generic list of <see cref="SyntaxNode"/>s separated by <see cref="SyntaxToken"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds between the separators.</typeparam>
+[ExcludeFromCodeCoverage]
 internal sealed partial class SeparatedSyntaxList<TNode>(
     ImmutableArray<SyntaxNode> nodes) : SyntaxNode, IReadOnlyList<SyntaxNode>
     where TNode : SyntaxNode

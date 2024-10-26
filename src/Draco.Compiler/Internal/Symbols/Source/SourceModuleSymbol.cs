@@ -11,6 +11,7 @@ using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
@@ -111,7 +112,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     };
 
     private SourceFunctionSymbol BuildFunction(FunctionDeclaration declaration) => new(this, declaration);
-    private SourceGlobalSymbol BuildGlobal(GlobalDeclaration declaration) => new(this, declaration);
+    private SourceFieldSymbol BuildGlobal(GlobalDeclaration declaration) => new(this, declaration);
     private SourceModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new(this.DeclaringCompilation, this, declaration);
     private SourceClassSymbol BuildClass(ClassDeclaration declaration) => new(this, declaration);
 

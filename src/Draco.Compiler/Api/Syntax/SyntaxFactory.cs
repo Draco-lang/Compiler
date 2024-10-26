@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Syntax.Rewriting;
@@ -10,6 +11,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// <summary>
 /// Utilities for constructing <see cref="SyntaxNode"/>s.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public static partial class SyntaxFactory
 {
     // REWRITERS ///////////////////////////////////////////////////////////////
@@ -274,6 +276,7 @@ public static partial class SyntaxFactory
 
     public static SyntaxToken LineStringStart { get; } = Token(TokenKind.LineStringStart, "\"");
     public static SyntaxToken LineStringEnd { get; } = Token(TokenKind.LineStringEnd, "\"");
+    public static SyntaxToken InterpolationStart { get; } = Token(TokenKind.InterpolationStart, @"\{");
 
     private static SyntaxToken Token(TokenKind tokenKind) =>
         Internal.Syntax.SyntaxToken.From(tokenKind).ToRedNode(null!, null, 0);

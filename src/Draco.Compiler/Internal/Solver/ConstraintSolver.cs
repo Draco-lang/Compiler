@@ -106,28 +106,10 @@ internal sealed partial class ConstraintSolver(
         // Couldn't solve all constraints or infer all variables
         diagnostics.Add(Diagnostic.Create(
             template: TypeCheckingErrors.InferenceIncomplete,
-            location: this.Context.DeclaringSyntax?.Location,
+            location: InferDiagnosticTargetSyntax(this.Context.DeclaringSyntax)?.Location,
             formatArgs: this.ContextName));
 
         this.FailRemainingRules(solver);
-    }
-
-    private void FailRemainingRules(IChrSolver solver)
-    {
-        // We unify type variables with the error type
-        foreach (var typeVar in this.typeVariables)
-        {
-            var unwrapped = typeVar.Substitution;
-            if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
-        }
-
-        // Assume this solves everything
-        solver.Solve(this.constraintStore);
-
-        if (this.constraintStore.Count > 0)
-        {
-            throw new System.InvalidOperationException("fallback operation could not solve all constraints");
-        }
     }
 
     /// <summary>
@@ -154,4 +136,10 @@ internal sealed partial class ConstraintSolver(
     /// </summary>
     /// <param name="typeVariable">The type-variable to track.</param>
     public void Track(TypeVariable typeVariable) => this.typeVariables.Add(typeVariable);
+
+    private static SyntaxNode? InferDiagnosticTargetSyntax(SyntaxNode? declaringSyntax) => declaringSyntax switch
+    {
+        FunctionDeclarationSyntax decl => decl.Name,
+        _ => declaringSyntax,
+    };
 }

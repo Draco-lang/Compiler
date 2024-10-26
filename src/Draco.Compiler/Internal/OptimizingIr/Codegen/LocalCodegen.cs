@@ -218,10 +218,6 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
         {
             return (Load: Load(default!, local.Local), Store: Store(local.Local, default!));
         }
-        case BoundGlobalLvalue global:
-        {
-            return (Load: Load(default!, global.Global), Store: Store(global.Global, default!));
-        }
         case BoundFieldLvalue field:
         {
             var receiver = field.Receiver is null ? null : this.Compile(field.Receiver);
@@ -262,16 +258,6 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
 
         // Compile the statement, if there is one
         if (node.Statement is not null) this.Compile(node.Statement);
-
-        return default!;
-    }
-
-    public override IOperand VisitLocalDeclaration(BoundLocalDeclaration node)
-    {
-        if (node.Value is null) return default!;
-
-        var right = this.Compile(node.Value);
-        this.WriteAssignment(node.Local, right);
 
         return default!;
     }
@@ -387,14 +373,6 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
         return result;
     }
 
-    public override IOperand VisitArrayLengthExpression(BoundArrayLengthExpression node)
-    {
-        var array = this.Compile(node.Array);
-        var result = this.DefineRegister(node.TypeRequired);
-        this.Write(ArrayLength(result, array));
-        return result;
-    }
-
     public override IOperand VisitGotoExpression(BoundGotoExpression node)
     {
         var target = this.DefineBasicBlock(node.Target);
@@ -465,26 +443,6 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
         return default!;
     }
 
-    public override IOperand VisitGlobalExpression(BoundGlobalExpression node)
-    {
-        // Check, if constant literal that has to be inlined
-        if (node.Global.IsLiteral)
-        {
-            // NOTE: Literals possibly have a different type than the signature of the global
-            var defaultValue = node.Global.LiteralValue;
-            if (!BinderFacts.TryGetLiteralType(defaultValue, this.WellKnownTypes, out var literalType))
-            {
-                throw new System.InvalidOperationException();
-            }
-            return new Constant(defaultValue, literalType);
-        }
-
-        // Regular global
-        var result = this.DefineRegister(node.TypeRequired);
-        this.Write(Load(result, node.Global));
-        return result;
-    }
-
     public override IOperand VisitLocalExpression(BoundLocalExpression node)
     {
         var result = this.DefineRegister(node.TypeRequired);
@@ -505,8 +463,29 @@ internal sealed class LocalCodegen : BoundTreeVisitor<IOperand>
 
     public override IOperand VisitFieldExpression(BoundFieldExpression node)
     {
-        var receiver = this.Compile(node.Receiver);
+        // Check, if constant literal that has to be inlined
+        if (node.Field.IsLiteral)
+        {
+            // NOTE: Literals possibly have a different type than the signature of the global
+            var defaultValue = node.Field.LiteralValue;
+            if (!BinderFacts.TryGetLiteralType(defaultValue, this.WellKnownTypes, out var literalType))
+            {
+                throw new System.InvalidOperationException();
+            }
+            return new Constant(defaultValue, literalType);
+        }
+
         var result = this.DefineRegister(node.TypeRequired);
+
+        if (node.Receiver is null)
+        {
+            // Regular global
+            this.Write(Load(result, node.Field));
+            return result;
+        }
+
+        // Member access
+        var receiver = this.Compile(node.Receiver);
         this.Write(LoadField(result, receiver, node.Field));
         return result;
     }

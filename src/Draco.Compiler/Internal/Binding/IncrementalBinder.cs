@@ -54,7 +54,7 @@ public sealed partial class SemanticModel
                 key: function,
                 valueFactory: _ => base.BindFunction(function, diagnostics));
 
-        public override GlobalBinding BindGlobal(SourceGlobalSymbol global, DiagnosticBag diagnostics) =>
+        public override GlobalBinding BindGlobal(SourceFieldSymbol global, DiagnosticBag diagnostics) =>
             semanticModel.boundGlobals.GetOrAdd(
                 key: global,
                 valueFactory: _ => base.BindGlobal(global, diagnostics));
@@ -122,14 +122,11 @@ public sealed partial class SemanticModel
 
         private static Symbol? ExtractSymbol(BoundNode node) => node switch
         {
-            BoundLocalDeclaration l => l.Local,
             BoundLabelStatement l => l.Label,
             BoundParameterExpression p => p.Parameter,
             BoundLocalExpression l => l.Local,
-            BoundGlobalExpression g => g.Global,
             BoundReferenceErrorExpression e => e.Symbol,
             BoundLocalLvalue l => l.Local,
-            BoundGlobalLvalue g => g.Global,
             BoundCallExpression c => c.Method,
             BoundFieldLvalue f => f.Field,
             BoundFieldExpression f => f.Field,

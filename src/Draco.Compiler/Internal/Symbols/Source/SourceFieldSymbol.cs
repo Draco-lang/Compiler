@@ -1,37 +1,66 @@
-using System;
 using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
+using Draco.Compiler.Internal.BoundTree;
+using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.FlowAnalysis;
+using Draco.Compiler.Internal.Symbols.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
-internal class SourceFieldSymbol(TypeSymbol containingSymbol, VariableDeclarationSyntax field) : FieldSymbol, ISourceSymbol
+
+/// <summary>
+/// An in-source defined field - either a global variable or a class member.
+/// </summary>
+internal sealed class SourceFieldSymbol(
+    Symbol containingSymbol,
+    VariableDeclarationSyntax syntax) : SyntaxFieldSymbol(containingSymbol, syntax), ISourceSymbol
 {
-    public override TypeSymbol ContainingSymbol => containingSymbol;
+    public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
+    public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
 
-    public override TypeSymbol Type => this.BindTypeIfNeeded(this.DeclaringCompilation!);
-
-    public override Api.Semantics.Visibility Visibility =>
-        GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier?.Kind);
-
-    private TypeSymbol BindTypeIfNeeded(IBinderProvider binder) =>
-        LazyInitializer.EnsureInitialized(ref this.type, () => this.BindType(binder));
+    // IMPORTANT: flag is type, needs to be written last
+    // NOTE: We check the TYPE here, as value is nullable
+    private bool NeedsBuild => Volatile.Read(ref this.type) is null;
 
     private TypeSymbol? type;
+    private BoundExpression? value;
 
-    public override bool IsMutable => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVar;
+    private readonly object buildLock = new();
 
-    public override VariableDeclarationSyntax DeclaringSyntax { get; } = field;
-
-    public override string Name => this.DeclaringSyntax.Name.Text;
-
-    private TypeSymbol BindType(IBinderProvider binderProvider)
+    public SourceFieldSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
+        : this(containingSymbol, declaration.Syntax)
     {
-        if (this.DeclaringSyntax.Type is null) throw new NotImplementedException(); // TODO: what should I do when the type is missing? Do we allow inference here ?
-
-        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        return binder.BindTypeToTypeSymbol(this.DeclaringSyntax.Type.Type, binderProvider.DiagnosticBag);
     }
 
-    public void Bind(IBinderProvider binder) =>
-        this.BindTypeIfNeeded(binder);
+    public override void Bind(IBinderProvider binderProvider)
+    {
+        this.BindTypeAndValueIfNeeded(binderProvider);
+
+        // Flow analysis
+        CompleteFlowAnalysis.AnalyzeValue(this, binderProvider.DiagnosticBag);
+    }
+
+    private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValueIfNeeded(IBinderProvider binderProvider)
+    {
+        if (!this.NeedsBuild) return (this.type!, this.value);
+        lock (this.buildLock)
+        {
+            // NOTE: We check the TYPE here, as value is nullable,
+            // but a type always needs to be inferred
+            if (this.NeedsBuild)
+            {
+                var (type, value) = this.BindTypeAndValue(binderProvider);
+                this.value = value;
+                // IMPORTANT: type is flag, written last
+                Volatile.Write(ref this.type, type);
+            }
+            return (this.type!, this.value);
+        }
+    }
+
+    private GlobalBinding BindTypeAndValue(IBinderProvider binderProvider)
+    {
+        var binder = binderProvider.GetBinder(this.DeclaringSyntax);
+        return binder.BindGlobal(this, binderProvider.DiagnosticBag);
+    }
 }

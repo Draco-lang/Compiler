@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding.Tasks;
@@ -19,8 +18,13 @@ internal partial class Binder
         ConstraintSolver constraints,
         DiagnosticBag diagnostics)
     {
-        var containingFunction = (FunctionSymbol?)this.ContainingSymbol;
-        Debug.Assert(containingFunction is not null);
+        if (this.ContainingSymbol is not FunctionSymbol containingFunction)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalReturn,
+                location: returnSyntax.Location));
+            return;
+        }
         var returnTypeSyntax = (containingFunction as SyntaxFunctionSymbol)?.DeclaringSyntax.ReturnType?.Type;
         constraints.Assignable(
             containingFunction.ReturnType,

@@ -21,6 +21,27 @@ namespace Draco.Compiler.Internal.Binding;
 internal partial class Binder
 {
     /// <summary>
+    /// Binds a syntax node to a value-producing expression.
+    /// If the expression is not a value-producing expression, an error is reported.
+    /// </summary>
+    /// <param name="syntax">The syntax to bind.</param>
+    /// <param name="constraints">The constraints that has been collected during the binding process.</param>
+    /// <param name="diagnostics">The diagnostics produced during the process.</param>
+    /// <returns></returns>
+    private async BindingTask<BoundExpression> BindExpressionToValueProducingExpression(SyntaxNode syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        var result = await this.BindExpression(syntax, constraints, diagnostics);
+        if (result.Type is null)
+        {
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.IllegalExpression,
+                location: syntax.Location));
+            return new BoundUnexpectedExpression(syntax);
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Binds the given syntax node to an untyped expression.
     /// </summary>
     /// <param name="syntax">The syntax to bind.</param>
@@ -70,6 +91,14 @@ internal partial class Binder
     {
         if (!BinderFacts.TryGetLiteralType(syntax.Literal.Value, this.WellKnownTypes, out var literalType))
         {
+            // It's very likely a literal that has errors, like '1e', which was lexed as a scientific-notation float
+            // but the value was not assigned to the token
+            // If the literal has a diagnostic on it, we swallow the error
+            if (syntax.Literal.Diagnostics.Length > 0)
+            {
+                return FromResult(new BoundUnexpectedExpression(syntax));
+            }
+            // Otherwise, something went wrong in the compiler
             throw new InvalidOperationException("can not determine literal type");
         }
         return FromResult(new BoundLiteralExpression(syntax, syntax.Literal.Value, literalType));
@@ -96,9 +125,8 @@ internal partial class Binder
             }
             case InterpolationStringPartSyntax interpolation:
             {
-                partsTask.Add(BindingTask.FromResult<BoundStringPart>(new BoundStringInterpolation(
-                    syntax,
-                    await this.BindExpression(interpolation.Expression, constraints, diagnostics))));
+                var expr = await this.BindExpressionToValueProducingExpression(interpolation.Expression, constraints, diagnostics);
+                partsTask.Add(BindingTask.FromResult<BoundStringPart>(new BoundStringInterpolation(syntax, expr)));
                 lastNewline = false;
                 break;
             }
@@ -382,7 +410,7 @@ internal partial class Binder
 
             return new BoundCallExpression(syntax, group.Receiver, await symbolPromise, await BindingTask.WhenAll(argsTask));
         }
-        else
+        else if (method.Type is not null)
         {
             constraints.Call(
                 method.TypeRequired,
@@ -390,6 +418,14 @@ internal partial class Binder
                 out var resultType,
                 syntax);
             return new BoundIndirectCallExpression(syntax, method, await BindingTask.WhenAll(argsTask), resultType);
+        }
+        else
+        {
+            // Calling something weird, like System.Console()
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.IllegalExpression,
+                location: syntax.Function.Location));
+            return new BoundUnexpectedExpression(syntax);
         }
     }
 
@@ -783,8 +819,8 @@ internal partial class Binder
             return new BoundParameterExpression(syntax, param);
         case LocalSymbol local:
             return new BoundLocalExpression(syntax, local);
-        case GlobalSymbol global:
-            return new BoundGlobalExpression(syntax, global);
+        case FieldSymbol { IsStatic: true } global:
+            return new BoundFieldExpression(syntax, null, global);
         case PropertySymbol prop:
             var getter = GetGetterSymbol(syntax, prop, diagnostics);
             return new BoundPropertyGetExpression(syntax, null, getter);

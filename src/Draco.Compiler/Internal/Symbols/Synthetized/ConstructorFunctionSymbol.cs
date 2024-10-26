@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
+using Draco.Compiler.Internal.Utilities;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized;

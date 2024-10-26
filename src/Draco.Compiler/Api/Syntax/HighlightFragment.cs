@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Semantics;
 
 namespace Draco.Compiler.Api.Syntax;
@@ -10,6 +11,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// <param name="Span">The span of the colored fragment within <paramref name="Syntax"/>.</param>
 /// <param name="Color">The syntax color of the fragment.</param>
 /// <param name="Symbol">The symbol associated with the fragment, if any.</param>
+[ExcludeFromCodeCoverage]
 public readonly record struct HighlightFragment(
     SyntaxNode Syntax,
     SourceSpan Span,

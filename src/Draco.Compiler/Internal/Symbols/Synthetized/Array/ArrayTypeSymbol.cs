@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
@@ -42,7 +43,8 @@ internal sealed class ArrayTypeSymbol : TypeSymbol
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters => [this.ElementType];
 
-    public override IEnumerable<Symbol> DefinedMembers => InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildDefinedMembers);
+    public override IEnumerable<Symbol> DefinedMembers =>
+        InterlockedUtils.InitializeDefault(ref this.definedMembers, this.BuildDefinedMembers);
     private ImmutableArray<Symbol> definedMembers;
 
     public ArrayTypeSymbol(Compilation compilation, int rank, TypeSymbol indexType)

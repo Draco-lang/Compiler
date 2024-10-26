@@ -1,17 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax.Extensions;
-using Draco.Compiler.Internal;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Api.Syntax;
 
 /// <summary>
 /// A single node in the Draco syntax tree.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public abstract class SyntaxNode : IEquatable<SyntaxNode>
 {
     /// <summary>

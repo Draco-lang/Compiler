@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -6,6 +7,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Holds constants for symbol resolution errors.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class SymbolResolutionErrors
 {
     // TODO: Look through where IllegalReference makes more sense than UndefinedReference
@@ -200,4 +202,13 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "cannot reference the type instance in static method {0}",
         code: Code(22));
+
+    /// <summary>
+    /// The return expression is illegal in the current context.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalReturn = DiagnosticTemplate.Create(
+        title: "illegal return",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal return expression outside of function definition",
+        code: Code(23));
 }

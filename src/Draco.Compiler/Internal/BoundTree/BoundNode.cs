@@ -1,14 +1,15 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Synthetized.Array;
 
 namespace Draco.Compiler.Internal.BoundTree;
 
 /// <summary>
 /// The base for all bound nodes in the bound tree.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal abstract partial class BoundNode(SyntaxNode? syntax)
 {
     public SyntaxNode? Syntax { get; } = syntax;
@@ -85,11 +86,6 @@ internal partial class BoundParameterExpression
     public override TypeSymbol Type => this.Parameter.Type;
 }
 
-internal partial class BoundGlobalExpression
-{
-    public override TypeSymbol Type => this.Global.Type;
-}
-
 internal partial class BoundFieldExpression
 {
     public override TypeSymbol Type => this.Field.Type;
@@ -152,13 +148,8 @@ internal partial class BoundDelegateCreationExpression
 
 internal partial class BoundArrayAccessExpression
 {
-    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
-}
-
-internal partial class BoundArrayLengthExpression
-{
-    public override TypeSymbol? Type =>
-        (this.Array.TypeRequired.Substitution.GenericDefinition as ArrayTypeSymbol)?.IndexType;
+    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments.FirstOrDefault()
+                                    ?? WellKnownTypes.ErrorType;
 }
 
 internal partial class BoundCallExpression
@@ -196,11 +187,6 @@ internal partial class BoundIllegalLvalue
 internal partial class BoundLocalLvalue
 {
     public override TypeSymbol Type => this.Local.Type;
-}
-
-internal partial class BoundGlobalLvalue
-{
-    public override TypeSymbol Type => this.Global.Type;
 }
 
 internal partial class BoundFieldLvalue

@@ -5,16 +5,26 @@ using Draco.Compiler.Internal.Symbols.Generic;
 namespace Draco.Compiler.Internal.Symbols;
 
 /// <summary>
-/// Represents a nonstatic field.
+/// Represents a field either on a module-level (global variable) or on a type-level (instance field).
 /// </summary>
 internal abstract class FieldSymbol : VariableSymbol, IMemberSymbol
 {
-    public bool IsStatic => false;
+    public virtual bool IsStatic => this.ContainingSymbol is ModuleSymbol;
     public bool IsExplicitImplementation => false;
 
     // NOTE: Override for covariant return type
     public override FieldSymbol? GenericDefinition => null;
     public override SymbolKind Kind => SymbolKind.Field;
+
+    /// <summary>
+    /// True, if this global is a literal, meaning its value is known at compile-time and has to be inlined.
+    /// </summary>
+    public virtual bool IsLiteral => false;
+
+    /// <summary>
+    /// The literal value of this global, if it is a literal.
+    /// </summary>
+    public virtual object? LiteralValue => null;
 
     public override FieldSymbol GenericInstantiate(Symbol? containingSymbol, ImmutableArray<TypeSymbol> arguments) =>
         (FieldSymbol)base.GenericInstantiate(containingSymbol, arguments);

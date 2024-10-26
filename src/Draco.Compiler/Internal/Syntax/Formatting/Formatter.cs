@@ -38,7 +38,7 @@ internal sealed class Formatter : SyntaxVisitor
         // TODO: Is it correct to assume compilation unit?
         var formattedRoot = parser.ParseCompilationUnit();
 
-        // NOTE: We drop the original trees diags and source text
+        // NOTE: The formatter currently THROWS AWAY DIAGNOSTICS
         return SyntaxTree.Create(formattedRoot);
     }
 

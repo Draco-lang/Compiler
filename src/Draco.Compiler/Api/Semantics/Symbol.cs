@@ -290,14 +290,6 @@ internal sealed class PropertySymbol(Internal.Symbols.PropertySymbol property)
     public IFunctionSymbol? Setter => this.Symbol.Setter?.ToApiSymbol();
 }
 
-internal sealed class GlobalSymbol(Internal.Symbols.GlobalSymbol global)
-    : SymbolBase<Internal.Symbols.GlobalSymbol>(global), IGlobalSymbol
-{
-    public bool IsMutable => this.Symbol.IsMutable;
-    public bool IsStatic => this.Symbol.IsStatic;
-    public ITypeSymbol Type => this.Symbol.Type.ToApiSymbol();
-}
-
 internal sealed class LocalSymbol(Internal.Symbols.LocalSymbol local)
     : SymbolBase<Internal.Symbols.LocalSymbol>(local), ILocalSymbol
 {

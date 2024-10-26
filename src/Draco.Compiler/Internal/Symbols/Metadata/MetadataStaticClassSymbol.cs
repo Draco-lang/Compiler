@@ -8,6 +8,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -92,7 +93,7 @@ internal sealed class MetadataStaticClassSymbol(
             if (fieldDef.Attributes.HasFlag(FieldAttributes.SpecialName)) continue;
             // Skip non-static fields
             if (!fieldDef.Attributes.HasFlag(FieldAttributes.Static)) continue;
-            var fieldSym = new MetadataStaticFieldSymbol(
+            var fieldSym = new MetadataFieldSymbol(
                 containingSymbol: this,
                 fieldDefinition: fieldDef);
             result.Add(fieldSym);

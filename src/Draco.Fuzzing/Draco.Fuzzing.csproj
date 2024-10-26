@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Draco.Coverage" Version="0.2.2-pre" />
+  </ItemGroup>
+
+</Project>

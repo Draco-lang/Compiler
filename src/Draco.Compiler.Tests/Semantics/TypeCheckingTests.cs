@@ -234,7 +234,7 @@ public sealed class TypeCheckingTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -256,7 +256,7 @@ public sealed class TypeCheckingTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -278,7 +278,7 @@ public sealed class TypeCheckingTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -301,7 +301,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
-        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -328,7 +328,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
-        var xSym = GetInternalSymbol<GlobalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -1066,7 +1066,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
 
         var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
-        var stringEmptySym = AssertMember<GlobalSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
+        var stringEmptySym = AssertMember<FieldSymbol>(GetInternalSymbol<TypeSymbol>(semanticModel.GetReferencedSymbol(consoleRef)), "Empty");
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -1819,7 +1819,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(diags);
@@ -1852,7 +1852,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -2071,7 +2071,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(xDecl));
+        var xSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(diags);
@@ -2121,9 +2121,9 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(main);
 
         var diags = semanticModel.Diagnostics;
-        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDeclSyntax));
-        var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(bDeclSyntax));
-        var tmpSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(tmpDeclSyntax));
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(aDeclSyntax));
+        var bSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(bDeclSyntax));
+        var tmpSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(tmpDeclSyntax));
 
         var intArrayType = compilation.WellKnownTypes.InstantiateArray(compilation.WellKnownTypes.SystemInt32);
 
@@ -2267,7 +2267,7 @@ public sealed class TypeCheckingTests
 
         var semanticModel = compilation.GetSemanticModel(main);
         var aDecl = main.GetNode<VariableDeclarationSyntax>(0);
-        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetReferencedSymbol(aDecl));
+        var aSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(aDecl));
 
         var diags = semanticModel.Diagnostics;
 
@@ -2377,5 +2377,125 @@ public sealed class TypeCheckingTests
         AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
 
         Assert.True(diags.All(d => !d.ToString().Contains("operator", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public void NonCallableReportedAsIllegalExpression()
+    {
+        // func main() {
+        //     System.Console();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "main",
+            ParameterList(),
+            null,
+            BlockFunctionBody(
+                ExpressionStatement(CallExpression(MemberExpression(NameExpression("System"), "Console")))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
+    }
+
+    [Fact]
+    public void GenericTypeNotInstantiatedInTypeContextIsAnError()
+    {
+        // func foo(a: Array2D) {}
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("a", NameType("Array2D"))),
+            null,
+            BlockFunctionBody())));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.GenericTypeNotInstantiated);
+    }
+
+    [Fact]
+    public void TypeInStringInterpolationIsAnError()
+    {
+        // func foo(): string = "\{char}";
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            NameType("string"),
+            InlineFunctionBody(StringExpression(
+                LineStringStart,
+                [InterpolationStringPart(InterpolationStart, NameExpression("char"), InterpolationEnd)],
+                LineStringEnd)))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.IllegalExpression);
+    }
+
+    [Fact]
+    public void GenericInstantiatingModulesIsAnError()
+    {
+        // func foo(): System<int32> = default();
+
+        var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
+            "foo",
+            ParameterList(),
+            GenericType(NameType("System"), NameType("int32")),
+            InlineFunctionBody(CallExpression(NameExpression("default"))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, TypeCheckingErrors.NotGenericConstruct);
+    }
+
+    [Fact]
+    public void AssigningListToArrayTypeIsIllegal()
+    {
+        // import System.Collections.Generic;
+        // func main() {
+        //     var x: Array<int32> = List();
+        // }
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VariableDeclaration(
+                        "x",
+                        GenericType(NameType("Array"), NameType("int32")),
+                        CallExpression(NameExpression("List"))))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Equal(2, diags.Length);
+        AssertDiagnostics(diags, TypeCheckingErrors.InferenceIncomplete, TypeCheckingErrors.TypeMismatch);
     }
 }

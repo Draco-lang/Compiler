@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Draco.Compiler.Internal.Symbols;
 
@@ -20,13 +21,22 @@ internal static class BoundTreeCollector
         {
             var collector = new LocalCollector();
             node.Accept(collector);
-            return collector.locals.ToImmutable();
+            return [.. collector.locals];
         }
 
-        private readonly ImmutableArray<LocalSymbol>.Builder locals = ImmutableArray.CreateBuilder<LocalSymbol>();
+        private readonly HashSet<LocalSymbol> locals = [];
 
-        public override void VisitLocalDeclaration(BoundLocalDeclaration node) =>
-            this.locals.Add(node.Local);
+        public override void VisitBlockExpression(BoundBlockExpression node)
+        {
+            base.VisitBlockExpression(node);
+            foreach (var local in node.Locals) this.locals.Add(local);
+        }
+
+        public override void VisitForExpression(BoundForExpression node)
+        {
+            base.VisitForExpression(node);
+            this.locals.Add(node.Iterator);
+        }
     }
 
     private sealed class LocalFunctionCollector : BoundTreeVisitor

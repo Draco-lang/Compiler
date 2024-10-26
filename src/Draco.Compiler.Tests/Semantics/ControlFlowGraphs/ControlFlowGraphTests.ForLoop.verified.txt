@@ -1,0 +1,10 @@
+﻿digraph ControlFlowGraph {
+  0 [shape=rectangle, label=< >, xlabel="b0"];
+  1 [shape=rectangle, label=< >, xlabel="b1"];
+  2 [shape=rectangle, label=<e0: CallExpression(Method = bar, Arguments = [i])<br align="left"/>>, xlabel="b2"];
+  3 [shape=rectangle, label=<e1: ReturnExpression(Value = unit)<br align="left"/>>, xlabel="b3"];
+  0 -> 1 [label="Always"];
+  1 -> 2 [label="SequenceItem(s)"];
+  1 -> 3 [label="SequenceEnd(s)"];
+  2 -> 1 [label="Always"];
+}

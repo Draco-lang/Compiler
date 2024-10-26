@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -51,6 +52,7 @@ internal sealed class TypeInstanceSymbol(
     public override ImmutableArray<TypeSymbol> ImmediateBaseTypes => this.GenericDefinition.ImmediateBaseTypes
         .Select(x => x.GenericInstantiate(x.ContainingSymbol, this.Context))
         .ToImmutableArray();
+
     public override bool IsAbstract => this.GenericDefinition.IsAbstract;
     public override bool IsTypeVariable => this.GenericDefinition.IsTypeVariable;
     public override bool IsValueType => this.GenericDefinition.IsValueType;

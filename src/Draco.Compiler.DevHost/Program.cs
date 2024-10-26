@@ -15,7 +15,8 @@ namespace Draco.Compiler.DevHost;
 internal class Program
 {
     private static IEnumerable<MetadataReference> BclReferences => ReferenceInfos.All
-        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)));
+        .Select(r => MetadataReference.FromPeStream(new MemoryStream(r.ImageBytes)))
+        .Append(MetadataReference.FromAssembly(typeof(Command).Assembly));
 
     internal static int Main(string[] args) =>
         ConfigureCommands().Invoke(args);
@@ -28,6 +29,7 @@ internal class Program
         var referencesOption = new Option<FileInfo[]>(["-r", "--reference"], Array.Empty<FileInfo>, "Specifies additional assembly references to use when compiling");
         var filesArgument = new Argument<FileInfo[]>("source files", Array.Empty<FileInfo>, "Specifies draco source files that should be compiled");
         var rootModuleOption = new Option<DirectoryInfo?>(["-m", "--root-module"], () => null, "Specifies the root module folder of the compiled files");
+        var base64SourceArgument = new Argument<string>("base64-source", "The Draco source code encoded in base64");
 
         // Compile
 
@@ -39,6 +41,14 @@ internal class Program
             referencesOption,
         };
         compileCommand.SetHandler(CompileCommand, filesArgument, outputOption, rootModuleOption, referencesOption);
+
+        // Compile base64 to memory
+
+        var compileBase64Command = new Command("compile-base64", "Compiles the Draco program from a base64 encoded string for testing purposes")
+        {
+            base64SourceArgument,
+        };
+        compileBase64Command.SetHandler(CompileBase64Command, base64SourceArgument);
 
         // Run
 
@@ -92,6 +102,7 @@ internal class Program
         return new RootCommand("CLI for the Draco compiler")
         {
             compileCommand,
+            compileBase64Command,
             runCommand,
             irCommand,
             symbolsCommand,
@@ -118,6 +129,20 @@ internal class Program
         var emitResult = compilation.Emit(
             peStream: peStream,
             pdbStream: pdbStream);
+        EmitDiagnostics(emitResult);
+    }
+
+    private static void CompileBase64Command(string base64Source)
+    {
+        // Decode the base64 source and compile it
+        var sourceBytes = Convert.FromBase64String(base64Source);
+        var decodedSource = System.Text.Encoding.UTF8.GetString(sourceBytes);
+        var syntaxTree = SyntaxTree.Parse(decodedSource);
+        var compilation = Compilation.Create(
+            syntaxTrees: [syntaxTree],
+            metadataReferences: BclReferences.ToImmutableArray());
+        using var peStream = new MemoryStream();
+        var emitResult = compilation.Emit(peStream: peStream);
         EmitDiagnostics(emitResult);
     }
 

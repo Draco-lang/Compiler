@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
 namespace Draco.Compiler.Internal.Utilities;
 
+[ExcludeFromCodeCoverage]
 internal static class DotAttribs
 {
     public enum RankDir
@@ -30,9 +32,11 @@ internal static class DotAttribs
 /// Builds DOT graphs with a safe API.
 /// </summary>
 /// <typeparam name="TVertex">The vertex type mapped.</typeparam>
+[ExcludeFromCodeCoverage]
 internal sealed class DotGraphBuilder<TVertex>
     where TVertex : notnull
 {
+    [ExcludeFromCodeCoverage]
     public sealed class VertexBuilder
     {
         private readonly VertexInfo info;
@@ -171,10 +175,10 @@ internal sealed class DotGraphBuilder<TVertex>
         return new StreamReader(stream).ReadToEnd();
     }
 
-    public void WriteTo(Stream stream) => this.WriteTo(new StreamWriter(stream));
-
-    public void WriteTo(StreamWriter writer)
+    public void WriteTo(Stream stream)
     {
+        var writer = new StreamWriter(stream);
+
         // Header
         writer.Write(this.isDirected ? "digraph" : "graph");
         writer.Write(' ');

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -11,6 +12,7 @@ namespace Draco.Compiler.Api.Syntax;
 /// A generic list of <see cref="SyntaxNode"/>s.
 /// </summary>
 /// <typeparam name="TNode">The kind of <see cref="SyntaxNode"/>s the list holds.</typeparam>
+[ExcludeFromCodeCoverage]
 public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
     where TNode : SyntaxNode
 {
@@ -41,7 +43,7 @@ public sealed class SyntaxList<TNode> : SyntaxNode, IReadOnlyList<TNode>
                 var prevWidth = this.GreenList
                     .Take(index)
                     .Sum(g => g.FullWidth);
-                return this.GreenList[index].ToRedNode(this.Tree, this.Parent, this.FullPosition + prevWidth);
+                return this.GreenList[index].ToRedNode(this.Tree, this, this.FullPosition + prevWidth);
             });
             return (TNode)existing;
         }

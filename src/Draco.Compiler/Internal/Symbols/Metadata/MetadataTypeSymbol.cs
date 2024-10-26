@@ -9,6 +9,7 @@ using Draco.Compiler.Api;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Documentation.Extractors;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -36,7 +37,8 @@ internal sealed class MetadataTypeSymbol(
     public override string Name => LazyInitializer.EnsureInitialized(ref this.name, this.BuildName);
     private string? name;
 
-    public override string MetadataName => this.MetadataReader.GetString(typeDefinition.Name);
+    public override string MetadataName => LazyInitializer.EnsureInitialized(ref this.metadataName, this.BuildMetadataName);
+    private string? metadataName;
 
     public override Visibility Visibility => typeDefinition.Attributes switch
     {
@@ -103,6 +105,8 @@ internal sealed class MetadataTypeSymbol(
             ? name
             : name[..backtickIndex];
     }
+
+    private string BuildMetadataName() => this.MetadataReader.GetString(typeDefinition.Name);
 
     private ImmutableArray<TypeParameterSymbol> BuildGenericParameters()
     {
@@ -178,9 +182,7 @@ internal sealed class MetadataTypeSymbol(
         {
             var fieldDef = this.MetadataReader.GetFieldDefinition(fieldHandle);
             // Add it
-            var fieldSym = fieldDef.Attributes.HasFlag(FieldAttributes.Static)
-                ? new MetadataStaticFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef) as Symbol
-                : new MetadataFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef);
+            var fieldSym = new MetadataFieldSymbol(containingSymbol: this, fieldDefinition: fieldDef);
             result.Add(fieldSym);
         }
 

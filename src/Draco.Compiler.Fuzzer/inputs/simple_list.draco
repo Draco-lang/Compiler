@@ -1,0 +1,11 @@
+import System.Collections.Generic;
+import System.Linq.Enumerable;
+import System.Console;
+
+func main() {
+    val l = List();
+    for (i in Range(0, 100)) {
+        l.Add(i);
+    }
+    WriteLine("Count = \{l.Count}");
+}

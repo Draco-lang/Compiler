@@ -7,17 +7,12 @@ using SyntaxToken = Draco.Compiler.Internal.Syntax.SyntaxToken;
 
 namespace Draco.Compiler.Benchmarks;
 
-public class SyntaxBenchmarks : FolderBenchmarkBase
+public class SyntaxBenchmarks() : FolderBenchmarkBase("inputs")
 {
     private SyntaxToken[] tokens = null!;
 
     private Lexer lexer = null!;
     private Parser parser = null!;
-
-    public SyntaxBenchmarks()
-        : base("syntax")
-    {
-    }
 
     [GlobalSetup]
     public void GlobalSetup()

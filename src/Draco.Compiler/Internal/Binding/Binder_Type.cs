@@ -23,6 +23,15 @@ internal partial class Binder
         var symbol = this.BindType(syntax, diagnostics);
         if (symbol is TypeSymbol type)
         {
+            // For example referencing to Array2D without the generic arguments
+            if (type.IsGenericDefinition)
+            {
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.GenericTypeNotInstantiated,
+                    location: syntax.Location,
+                    formatArgs: type));
+                return WellKnownTypes.ErrorType;
+            }
             // Ok
             return type;
         }
@@ -96,6 +105,22 @@ internal partial class Binder
             .Select(arg => this.BindTypeToTypeSymbol(arg, diagnostics))
             .ToImmutableArray();
 
+        if (args.Length == 0)
+        {
+            // This is not actually a generic instantiation, just illegal syntax, like int32<>
+            // This should have been caught by the parser, so we shouldn't need to report it here
+            return WellKnownTypes.ErrorType;
+        }
+
+        if (!instantiated.IsGenericDefinition)
+        {
+            // Not even a generic construct
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.NotGenericConstruct,
+                location: syntax.Location));
+            return WellKnownTypes.ErrorType;
+        }
+
         if (instantiated.GenericParameters.Length != args.Length)
         {
             // Wrong number of args
@@ -105,6 +130,7 @@ internal partial class Binder
                 formatArgs: [instantiated, args.Length]));
             return WellKnownTypes.ErrorType;
         }
+
         // Ok, instantiate
         return instantiated.GenericInstantiate(instantiated.ContainingSymbol, args);
     }

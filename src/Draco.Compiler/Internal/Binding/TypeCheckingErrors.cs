@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -6,6 +7,7 @@ namespace Draco.Compiler.Internal.Binding;
 /// <summary>
 /// Holds constants for type checking errors.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class TypeCheckingErrors
 {
     private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.TypeChecking, index);
@@ -154,5 +156,14 @@ internal static class TypeCheckingErrors
         severity: DiagnosticSeverity.Error,
         format: "the attribute {0} can not be applied multiple times to the same element",
         code: Code(16));
+
+    /// <summary>
+    /// The generic type was not instantiated in a type context.
+    /// </summary>
+    public static readonly DiagnosticTemplate GenericTypeNotInstantiated = DiagnosticTemplate.Create(
+        title: "generic type not instantiated",
+        severity: DiagnosticSeverity.Error,
+        format: "the generic type {0} is not instantiated",
+        code: Code(17));
 }
 

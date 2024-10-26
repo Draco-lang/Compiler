@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Internal.Diagnostics;
 
@@ -6,6 +7,7 @@ namespace Draco.Compiler.Internal.FlowAnalysis;
 /// <summary>
 /// Holds constants for flow analysis errors.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class FlowAnalysisErrors
 {
     private static string Code(int index) => DiagnosticTemplate.CreateDiagnosticCode(DiagnosticCategory.FlowAnalysis, index);
@@ -28,31 +30,21 @@ internal static class FlowAnalysisErrors
         format: "the variable {0} is used before initialized",
         code: Code(2));
 
-    // TODO: Is this really a dataflow error?
-    /// <summary>
-    /// Illegal value on left side of assignment.
-    /// </summary>
-    public static readonly DiagnosticTemplate IllegalLValue = DiagnosticTemplate.Create(
-        title: "illegal lvaule",
-        severity: DiagnosticSeverity.Error,
-        format: "illegal value on the left side of assignment",
-        code: Code(3));
-
-    /// <summary>
-    /// Immutable variable must be initialized at declaration site.
-    /// </summary>
-    public static readonly DiagnosticTemplate ImmutableVariableMustBeInitialized = DiagnosticTemplate.Create(
-        title: "immutable variable must be initialized",
-        severity: DiagnosticSeverity.Error,
-        format: "the immutable variable {0} must be initialized",
-        code: Code(4));
-
     /// <summary>
     /// Immutable variable can not be assigned to.
     /// </summary>
-    public static readonly DiagnosticTemplate ImmutableVariableCanNotBeAssignedTo = DiagnosticTemplate.Create(
-        title: "immutable variable can not be assigned to",
+    public static readonly DiagnosticTemplate ImmutableVariableAssignedMultipleTimes = DiagnosticTemplate.Create(
+        title: "immutable variable assigned multiple times",
         severity: DiagnosticSeverity.Error,
-        format: "the immutable variable {0} can not be assigned to, it is read only",
-        code: Code(5));
+        format: "the immutable variable {0} can only be assigned once",
+        code: Code(3));
+
+    /// <summary>
+    /// A variable is used before it's initialized.
+    /// </summary>
+    public static readonly DiagnosticTemplate GlobalImmutableMustBeInitialized = DiagnosticTemplate.Create(
+        title: "global immutable left uninitialized",
+        severity: DiagnosticSeverity.Error,
+        format: "the global immutable {0} must be initialized inline",
+        code: Code(4));
 }

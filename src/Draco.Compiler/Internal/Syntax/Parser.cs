@@ -98,6 +98,19 @@ internal sealed class Parser(
         SyntaxToken CloseCurly);
 
     /// <summary>
+    /// Represents a parsed generic argument list.
+    /// This is factored out as it's reused in expression and type contexts with error handling, and separate
+    /// AST nodes would be wasteful since these are always inlined.
+    /// </summary>
+    /// <param name="OpenBracked">The open bracket.</param>
+    /// <param name="Arguments">The list of generic arguments.</param>
+    /// <param name="CloseBracket">The close bracket.</param>
+    private readonly record struct ParsedGenericArgumentList(
+        SyntaxToken OpenBracked,
+        SeparatedSyntaxList<TypeSyntax> Arguments,
+        SyntaxToken CloseBracket);
+
+    /// <summary>
     /// A delegate for an <see cref="ExpressionSyntax"/> parser.
     /// </summary>
     /// <param name="level">The level in the precedence table.</param>
@@ -829,7 +842,14 @@ internal sealed class Parser(
             separatorKind: TokenKind.Comma,
             stopKind: TokenKind.GreaterThan);
         var closeBracket = this.Expect(TokenKind.GreaterThan);
-        return new(openBracket, parameters, closeBracket);
+        var result = new GenericParameterListSyntax(openBracket, parameters, closeBracket);
+        if (!parameters.Any())
+        {
+            // We don't allow empty generic lists
+            var info = DiagnosticInfo.Create(SyntaxErrors.EmptyGenericList, "parameter");
+            this.AddDiagnostic(result, info);
+        }
+        return result;
     }
 
     /// <summary>
@@ -916,12 +936,7 @@ internal sealed class Parser(
             else if (peek == TokenKind.LessThan)
             {
                 // Generic instantiation
-                var openBracket = this.Advance();
-                var args = this.ParseSeparatedSyntaxList(
-                    elementParser: this.ParseType,
-                    separatorKind: TokenKind.Comma,
-                    stopKind: TokenKind.GreaterThan);
-                var closeBracket = this.Expect(TokenKind.GreaterThan);
+                var (openBracket, args, closeBracket) = this.ParseGenericArgumentList();
                 result = new GenericTypeSyntax(result, openBracket, args, closeBracket);
             }
             else
@@ -1275,12 +1290,7 @@ internal sealed class Parser(
                   && this.DisambiguateLessThan() == LessThanDisambiguation.Generics)
             {
                 // Generic instantiation
-                var openBracket = this.Expect(TokenKind.LessThan);
-                var args = this.ParseSeparatedSyntaxList(
-                    elementParser: this.ParseType,
-                    separatorKind: TokenKind.Comma,
-                    stopKind: TokenKind.GreaterThan);
-                var closeBracket = this.Expect(TokenKind.GreaterThan);
+                var (openBracket, args, closeBracket) = this.ParseGenericArgumentList();
                 result = new GenericExpressionSyntax(result, openBracket, args, closeBracket);
             }
             else if (this.Matches(TokenKind.Dot, out var dot))
@@ -1439,7 +1449,7 @@ internal sealed class Parser(
         //  - the leading trivia of the closing quotes contains a newline
         //  - the string is empty and the opening quotes trailing trivia contains a newline
         var isClosingQuoteOnNewline =
-               closeQuote.LeadingTrivia.Count > 0
+               closeQuote.LeadingTrivia.Any(t => t.Kind == TriviaKind.Newline)
             || (content.Count == 0 && openQuote.TrailingTrivia.Any(t => t.Kind == TriviaKind.Newline));
         if (isClosingQuoteOnNewline)
         {
@@ -1493,6 +1503,27 @@ internal sealed class Parser(
             this.AddDiagnostic(closeQuote, info);
         }
         return new(openQuote, content.ToSyntaxList(), closeQuote);
+    }
+
+    /// <summary>
+    /// Parses a generic argument list and checks for empty list to report as an error, if needed.
+    /// </summary>
+    /// <returns>The parsed <see cref="ParsedGenericArgumentList"/>.</returns>
+    private ParsedGenericArgumentList ParseGenericArgumentList()
+    {
+        var openBracket = this.Expect(TokenKind.LessThan);
+        var args = this.ParseSeparatedSyntaxList(
+            elementParser: this.ParseType,
+            separatorKind: TokenKind.Comma,
+            stopKind: TokenKind.GreaterThan);
+        var closeBracket = this.Expect(TokenKind.GreaterThan);
+        if (!args.Any())
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.EmptyGenericList, "argument");
+            // NOTE: We add the diagnostic to the closing bracket, it's more logical because it's the 'early terminator' token
+            this.AddDiagnostic(closeBracket, info);
+        }
+        return new(openBracket, args, closeBracket);
     }
 
     /// <summary>

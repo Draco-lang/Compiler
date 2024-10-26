@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Draco.Compiler.Internal.Syntax;
 
@@ -8,6 +9,7 @@ internal sealed partial class SeparatedSyntaxList<TNode>
     /// <summary>
     /// The builder type for a <see cref="SeparatedSyntaxList{TNode}"/>.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public sealed class Builder(ImmutableArray<SyntaxNode>.Builder underlying)
     {
         private bool separatorsTurn;

@@ -16,6 +16,7 @@ internal sealed class FieldInstanceSymbol(
 
     public override string Name => this.GenericDefinition.Name;
     public override bool IsMutable => this.GenericDefinition.IsMutable;
+    public override bool IsStatic => this.GenericDefinition.IsStatic;
     public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;

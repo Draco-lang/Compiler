@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Syntax;
@@ -8,6 +9,7 @@ internal sealed partial class SyntaxToken
     /// <summary>
     /// Builder for a <see cref="SyntaxToken"/>.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public sealed class Builder
     {
         /// <summary>

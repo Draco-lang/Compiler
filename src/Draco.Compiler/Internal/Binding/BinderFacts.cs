@@ -37,7 +37,6 @@ internal static class BinderFacts
     /// <returns>True, if <paramref name="symbol"/> can be referenced in a value-context.</returns>
     public static bool IsValueSymbol(Symbol symbol) => symbol
         is LocalSymbol
-        or GlobalSymbol
         or FieldSymbol
         or PropertySymbol
         or FunctionSymbol

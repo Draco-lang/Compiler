@@ -35,9 +35,9 @@ internal interface IModule
     public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules { get; }
 
     /// <summary>
-    /// The globals within this module.
+    /// The fields within this module.
     /// </summary>
-    public IReadOnlySet<GlobalSymbol> Globals { get; }
+    public IReadOnlySet<FieldSymbol> Fields { get; }
 
     /// <summary>
     /// The compiled procedures within this module.

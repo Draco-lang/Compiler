@@ -8,7 +8,6 @@ public enum SymbolKind
     Module,
     Field,
     Property,
-    Global,
     Local,
     Parameter,
     Function,

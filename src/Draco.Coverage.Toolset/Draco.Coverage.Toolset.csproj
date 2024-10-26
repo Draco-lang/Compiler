@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <HasRuntimeOutput>true</HasRuntimeOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5100</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Draco.Coverage.Tasks\Draco.Coverage.Tasks.csproj" DestinationSubDirectory="tasks\" PrivateAssets="All" />
+    <ProjectReference Include="..\Draco.Coverage\Draco.Coverage.csproj" DestinationSubDirectory="lib\" />
+    <ProjectReference Include="..\Draco.Coverage.Cli\Draco.Coverage.Cli.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <Target Name="GetFilesToPackage" AfterTargets="Build">
+    <ItemGroup>
+      <_File Include="$(OutDir)\**\*.*" PackagePath="tools" Exclude="$(OutDir)\tasks\**\*.*;$(OutDir)\lib\**\*.*" />
+      <_File Include="$(OutDir)\tasks\**\*.*" PackagePath="tasks" />
+      <_File Include="$(OutDir)\lib\**\*.*" PackagePath="lib\$(TargetFramework)" />
+      <_File Include="$(OutDir)\lib\**\*.*" PackagePath="tools" />
+
+      <_File Include="build\**\*.*" PackagePath="build" />
+
+      <None Include="@(_File)" Pack="True" PackagePath="%(_File.PackagePath)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Don't actually create binaries for this project. -->
+  <Target Name="CoreCompile" />
+  <Target Name="CreateManifestResourceNames" />
+
+  <!-- And don't try to copy them to the build output either. -->
+  <PropertyGroup>
+    <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+
+</Project>

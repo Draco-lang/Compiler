@@ -13,6 +13,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using static Draco.Chr.Rules.RuleFactory;
+using IChrSolver = Draco.Chr.Solve.ISolver;
 
 namespace Draco.Compiler.Internal.Solver;
 
@@ -62,14 +63,14 @@ internal sealed partial class ConstraintSolver
                 {
                     if (!common.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t))) continue;
                     // Found a good common type
-                    UnifyAsserted(common.CommonType, type);
+                    this.Assignable(common.CommonType, type, ConstraintLocator.Constraint(common));
                     return;
                 }
                 // No common type found
                 common.ReportDiagnostic(diagnostics, builder => builder
                     .WithFormatArgs(string.Join(", ", common.AlternativeTypes)));
                 // Stop cascading uninferred type
-                UnifyAsserted(common.CommonType, WellKnownTypes.ErrorType);
+                UnifyWithError(common.CommonType);
             })
             .Named("common_ancestor"),
 
@@ -82,7 +83,7 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
-                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    UnifyWithError(member.MemberType);
                     member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
@@ -103,7 +104,7 @@ internal sealed partial class ConstraintSolver
                             .WithFormatArgs(member.MemberName, accessed));
                     }
                     // We still provide a single error symbol
-                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    UnifyWithError(member.MemberType);
                     member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
                     return;
                 }
@@ -126,7 +127,7 @@ internal sealed partial class ConstraintSolver
                     // TODO: Can this assertion fail? Like in a faulty module decl?
                     // NOTE: Visibility will be checked by the overload constraint
                     Debug.Assert(membersWithName.All(m => m is FunctionSymbol));
-                    UnifyAsserted(member.MemberType, WellKnownTypes.ErrorType);
+                    UnifyWithError(member.MemberType);
                     var overload = new FunctionGroupSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
                     member.CompletionSource.SetResult(overload);
                 }
@@ -142,7 +143,7 @@ internal sealed partial class ConstraintSolver
                 // Don't propagate type errors
                 if (accessed.IsError)
                 {
-                    UnifyAsserted(indexer.ElementType, WellKnownTypes.ErrorType);
+                    UnifyWithError(indexer.ElementType);
                     // Best-effort shape approximation
                     var errorSymbol = indexer.IsGetter
                         ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
@@ -166,7 +167,7 @@ internal sealed partial class ConstraintSolver
                             : SymbolResolutionErrors.NoSettableIndexerInType)
                         .WithFormatArgs(accessed));
 
-                    UnifyAsserted(indexer.ElementType, WellKnownTypes.ErrorType);
+                    UnifyWithError(indexer.ElementType);
                     // Best-effort shape approximation
                     var errorSymbol = indexer.IsGetter
                         ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
@@ -225,7 +226,7 @@ internal sealed partial class ConstraintSolver
                 if (called.IsError)
                 {
                     // Don't propagate errors
-                    UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);
+                    UnifyWithError(callable.ReturnType);
                     return;
                 }
 
@@ -236,7 +237,7 @@ internal sealed partial class ConstraintSolver
                 if (functionType is null)
                 {
                     // Error
-                    UnifyAsserted(callable.ReturnType, WellKnownTypes.ErrorType);
+                    UnifyWithError(callable.ReturnType);
                     callable.ReportDiagnostic(diagnostics, diag => diag
                         .WithTemplate(TypeCheckingErrors.CallNonFunction)
                         .WithFormatArgs(called));
@@ -244,8 +245,11 @@ internal sealed partial class ConstraintSolver
                 }
 
                 // It's a function
-                // We can merge the return type
-                UnifyAsserted(callable.ReturnType, functionType.ReturnType);
+                // The inferred return type must be assignable to the return type of the function
+                this.Assignable(
+                    functionType.ReturnType,
+                    callable.ReturnType,
+                    ConstraintLocator.Constraint(callable));
 
                 // Check if it has the same number of args
                 if (functionType.Parameters.Length != callable.Arguments.Length)
@@ -299,13 +303,10 @@ internal sealed partial class ConstraintSolver
                 var candidates = overload.Candidates.Dominators;
                 if (candidates.Length == 0)
                 {
-                    // Could not resolve, error
-                    UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
-                    // Best-effort shape approximation
-                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.CompletionSource.SetResult(errorSymbol);
+                    // No such overload, error
+                    FailOverload(overload);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
-                    if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsTypeVariable && !a.Type.Substitution.IsError))
+                    if (overload.Candidates.Arguments.All(a => a.Type.Substitution.IsTypeVariable || !a.Type.Substitution.IsError))
                     {
                         overload.ReportDiagnostic(diagnostics, diag => diag
                             .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
@@ -317,10 +318,7 @@ internal sealed partial class ConstraintSolver
                 if (candidates.Length > 1)
                 {
                     // Ambiguity, error
-                    // Best-effort shape approximation
-                    UnifyAsserted(overload.ReturnType, WellKnownTypes.ErrorType);
-                    var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
-                    overload.CompletionSource.SetResult(errorSymbol);
+                    FailOverload(overload);
                     // NOTE: If the arguments have an error, we don't report an error here to not cascade errors
                     if (overload.Candidates.Arguments.All(a => !a.Type.Substitution.IsError))
                     {
@@ -399,6 +397,7 @@ internal sealed partial class ConstraintSolver
 
         // As a last-last effort, we assume that a singular assignment means exact matching types
         Simplification(typeof(Assignable))
+            .Guard((Assignable assignable) => CanAssign(assignable.TargetType, assignable.AssignedType))
             .Body((ConstraintStore store, Assignable assignable) =>
                 AssignAsserted(assignable.TargetType, assignable.AssignedType))
             .Named("sole_assignable"),
@@ -408,8 +407,15 @@ internal sealed partial class ConstraintSolver
         // We also substitute all the type-vars with the common type
         Simplification(typeof(CommonAncestor))
             .Guard((CommonAncestor common) =>
-                common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) == 1
-             && common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) == common.AlternativeTypes.Length - 1)
+            {
+                if (common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) != 1) return false;
+                if (common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) != common.AlternativeTypes.Length - 1) return false;
+                if (common.AlternativeTypes.Any(alt => !CanUnify(alt, common.CommonType))) return false;
+                var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
+                var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
+                if (!CanUnify(common.CommonType, nonTypeVar)) return false;
+                return typeVars.All(t => CanUnify(t, nonTypeVar));
+            })
             .Body((ConstraintStore store, CommonAncestor common) =>
             {
                 var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
@@ -421,13 +427,69 @@ internal sealed partial class ConstraintSolver
 
         // If the target type of common ancestor is a concrete type, we can try to unify all non-concrete types
         Simplification(typeof(CommonAncestor))
-            .Guard((CommonAncestor common) => common.CommonType.Substitution.IsGroundType)
+            .Guard((CommonAncestor common) => common.CommonType.Substitution.IsGroundType
+                                           && common.AlternativeTypes.All(alt => CanUnify(alt, common.CommonType)))
             .Body((ConstraintStore store, CommonAncestor common) =>
             {
                 var concreteType = common.CommonType.Substitution;
-                // TODO: Can we do this asserted?
                 foreach (var type in common.AlternativeTypes) UnifyAsserted(type, concreteType);
             })
             .Named("concrete_common_ancestor"),
     ];
+
+    /// <summary>
+    /// Fails the overload constraint by setting the return type to an error type and resolving the promise.
+    /// </summary>
+    /// <param name="overload">The overload constraint to fail.</param>
+    private static void FailOverload(Overload overload)
+    {
+        UnifyWithError(overload.ReturnType);
+        var errorSymbol = new ErrorFunctionSymbol(overload.Candidates.Arguments.Length);
+        overload.CompletionSource.SetResult(errorSymbol);
+    }
+
+    /// <summary>
+    /// Attempts to fail all remaining constraints in the store.
+    /// </summary>
+    /// <param name="solver">The CHR solver to use for solving the constraints.</param>
+    private void FailRemainingRules(IChrSolver solver)
+    {
+        var previousStoreSize = this.constraintStore.Count;
+        while (true)
+        {
+            // We unify type variables with the error type
+            foreach (var typeVar in this.typeVariables)
+            {
+                var unwrapped = typeVar.Substitution;
+                if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
+            }
+
+            var constraintsToRemove = new List<IConstraint>();
+
+            // We can also solve all overload constraints by failing them instantly
+            var overloadConstraints = this.constraintStore
+                .ConstraintsOfType(typeof(Overload))
+                .ToList();
+            foreach (var constraint in overloadConstraints)
+            {
+                var overload = (Overload)constraint.Value;
+                FailOverload(overload);
+                constraintsToRemove.Add(constraint);
+            }
+
+            this.constraintStore.RemoveRange(constraintsToRemove);
+
+            // Assume this solves everything
+            solver.Solve(this.constraintStore);
+
+            // Check for exit condition
+            if (previousStoreSize == this.constraintStore.Count) break;
+            previousStoreSize = this.constraintStore.Count;
+        }
+
+        if (this.constraintStore.Count > 0)
+        {
+            throw new InvalidOperationException("fallback operation could not solve all constraints");
+        }
+    }
 }

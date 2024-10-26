@@ -20,6 +20,7 @@ internal sealed class AutoPropertySetterSymbol(
     public override string Name => $"{this.Property.Name}_Setter";
     public override bool IsStatic => this.Property.IsStatic;
     public override Api.Semantics.Visibility Visibility => this.Property.Visibility;
+    public override bool IsSpecialName => true;
 
     public override ImmutableArray<ParameterSymbol> Parameters => InterlockedUtils.InitializeDefault(ref this.parameters, this.BuildParameters);
     private ImmutableArray<ParameterSymbol> parameters;

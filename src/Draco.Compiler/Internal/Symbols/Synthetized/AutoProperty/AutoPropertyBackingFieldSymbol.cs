@@ -14,6 +14,7 @@ internal sealed class AutoPropertyBackingFieldSymbol(
     public override bool IsMutable => this.Property.Setter is not null;
     public override string Name => $"<{this.Property.Name}>_BackingField";
     public override Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Private;
+    public override bool IsSpecialName => true;
 
     /// <summary>
     /// The property this backing field is for.

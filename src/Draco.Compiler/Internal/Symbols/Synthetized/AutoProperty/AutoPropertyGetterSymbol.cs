@@ -19,6 +19,7 @@ internal sealed class AutoPropertyGetterSymbol(
     public override string Name => $"{this.Property.Name}_Getter";
     public override bool IsStatic => this.Property.IsStatic;
     public override Api.Semantics.Visibility Visibility => this.Property.Visibility;
+    public override bool IsSpecialName => true;
 
     public override ImmutableArray<ParameterSymbol> Parameters => ImmutableArray<ParameterSymbol>.Empty;
     public override TypeSymbol ReturnType => this.Property.Type;

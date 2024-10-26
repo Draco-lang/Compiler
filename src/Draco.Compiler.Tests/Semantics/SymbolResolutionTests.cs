@@ -430,7 +430,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
-        var varSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(varDecl));
+        var varSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(varDecl));
         var funcSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(funcDecl));
 
         // Assert
@@ -465,8 +465,8 @@ public sealed class SymbolResolutionTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var varRefSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetReferencedSymbol(localVarDecl.Value!.Value));
-        var varDeclSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(globalVarDecl));
+        var varRefSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(localVarDecl.Value!.Value));
+        var varDeclSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(globalVarDecl));
 
         // Assert
         Assert.True(ReferenceEquals(varDeclSym, varRefSym));
@@ -570,7 +570,7 @@ public sealed class SymbolResolutionTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xDeclSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xDeclSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var xRefSym = semanticModel.GetReferencedSymbol(xRef);
 
         // TODO: Should see it, but should report illegal reference error

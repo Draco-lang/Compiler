@@ -87,8 +87,16 @@ public sealed partial class SemanticModel : IBinderProvider
                 containingSymbol?.Bind(this);
                 break;
             }
-            // NOTE: Only globals need binding
-            case VariableDeclarationSyntax varDecl:
+            case VariableDeclarationSyntax varDecl when varDecl.FieldModifier is null:
+            {
+                // We need to search for this global
+                var globalSymbol = binder.ContainingSymbol?.Members
+                    .OfType<SyntaxAutoPropertySymbol>()
+                    .FirstOrDefault(s => s.Name == varDecl.Name.Text);
+                globalSymbol?.Bind(this);
+                break;
+            }
+            case VariableDeclarationSyntax varDecl when varDecl.FieldModifier is not null:
             {
                 // We need to search for this global
                 var globalSymbol = binder.ContainingSymbol?.Members

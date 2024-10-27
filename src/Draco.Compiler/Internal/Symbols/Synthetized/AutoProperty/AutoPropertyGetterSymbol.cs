@@ -1,5 +1,6 @@
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 using System;
 using System.Collections.Immutable;
 using System.Threading;
@@ -12,7 +13,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
 /// </summary>
 internal sealed class AutoPropertyGetterSymbol(
     Symbol containingSymbol,
-    SourceAutoPropertySymbol property) : FunctionSymbol, IPropertyAccessorSymbol
+    SyntaxAutoPropertySymbol property) : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override Symbol ContainingSymbol { get; } = containingSymbol;
 
@@ -28,7 +29,7 @@ internal sealed class AutoPropertyGetterSymbol(
     private BoundStatement? body;
 
     PropertySymbol IPropertyAccessorSymbol.Property => this.Property;
-    public SourceAutoPropertySymbol Property { get; } = property;
+    public SyntaxAutoPropertySymbol Property { get; } = property;
 
     private BoundStatement BuildBody() => ExpressionStatement(BlockExpression(
         locals: [],

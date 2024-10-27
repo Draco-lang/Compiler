@@ -1,5 +1,6 @@
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Utilities;
 using System;
 using System.Collections.Immutable;
@@ -13,7 +14,7 @@ namespace Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
 /// </summary>
 internal sealed class AutoPropertySetterSymbol(
     Symbol containingSymbol,
-    SourceAutoPropertySymbol property) : FunctionSymbol, IPropertyAccessorSymbol
+    SyntaxAutoPropertySymbol property) : FunctionSymbol, IPropertyAccessorSymbol
 {
     public override Symbol ContainingSymbol { get; } = containingSymbol;
 
@@ -31,7 +32,7 @@ internal sealed class AutoPropertySetterSymbol(
     private BoundStatement? body;
 
     PropertySymbol IPropertyAccessorSymbol.Property => this.Property;
-    public SourceAutoPropertySymbol Property { get; } = property;
+    public SyntaxAutoPropertySymbol Property { get; } = property;
 
     private ImmutableArray<ParameterSymbol> BuildParameters() =>
         [new SynthetizedParameterSymbol(this, "value", this.Property.Type)];

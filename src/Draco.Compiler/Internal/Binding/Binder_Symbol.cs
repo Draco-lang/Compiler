@@ -157,14 +157,26 @@ internal partial class Binder
                 // Imports are skipped
                 if (decl is ImportDeclarationSyntax) continue;
                 // Globals mean an assignment into the eval function
-                if (decl is VariableDeclarationSyntax varDecl)
+                if (decl is VariableDeclarationSyntax { FieldModifier: not null } varDecl)
                 {
                     // Retrieve the symbol
                     var symbol = module.Members
                         .OfType<ScriptFieldSymbol>()
                         .First(g => g.DeclaringSyntax == varDecl);
 
-                    BindGlobal(symbol);
+                    BindGlobalField(symbol);
+
+                    continue;
+                }
+                // TODO: Copy-pasta from above
+                if (decl is VariableDeclarationSyntax { FieldModifier: null } varDecl2)
+                {
+                    // Retrieve the symbol
+                    var symbol = module.Members
+                        .OfType<ScriptAutoPropertySymbol>()
+                        .First(g => g.DeclaringSyntax == varDecl2);
+
+                    BindGlobalProperty(symbol);
 
                     continue;
                 }
@@ -221,7 +233,7 @@ internal partial class Binder
                 value: BoundUnitExpression.Default)),
             EvalType: evalType);
 
-        void BindGlobal(ScriptFieldSymbol symbol)
+        void BindGlobalField(ScriptFieldSymbol symbol)
         {
             var typeSyntax = symbol.DeclaringSyntax.Type;
             var valueSyntax = symbol.DeclaringSyntax.Value;
@@ -252,6 +264,45 @@ internal partial class Binder
                     // Add the assignment to the eval function
                     evalFuncStatements.Add(ExpressionStatement(AssignmentExpression(
                         left: FieldLvalue(receiver: null, field: symbol),
+                        right: assignedValue)));
+                }
+
+                globalBindings.Add(symbol.DeclaringSyntax, new(declaredType, assignedValue));
+            });
+        }
+
+        // TODO: Copypasta
+        void BindGlobalProperty(ScriptAutoPropertySymbol symbol)
+        {
+            var typeSyntax = symbol.DeclaringSyntax.Type;
+            var valueSyntax = symbol.DeclaringSyntax.Value;
+
+            var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
+            var valueTask = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, solver, diagnostics);
+
+            // Infer declared type
+            var declaredType = type ?? solver.AllocateTypeVariable();
+
+            // Unify with the type declared on the symbol
+            ConstraintSolver.UnifyAsserted(declaredType, symbol.Type);
+
+            // Add assignability constraint, if needed
+            if (valueTask is not null)
+            {
+                solver.Assignable(
+                    declaredType,
+                    valueTask.GetResultType(valueSyntax!.Value, solver, diagnostics),
+                    valueSyntax.Value);
+            }
+
+            fillerTasks.Add(() =>
+            {
+                var assignedValue = valueTask?.Result;
+                if (assignedValue is not null)
+                {
+                    // Add the assignment to the eval function
+                    evalFuncStatements.Add(ExpressionStatement(AssignmentExpression(
+                        left: FieldLvalue(receiver: null, field: symbol.BackingField),
                         right: assignedValue)));
                 }
 

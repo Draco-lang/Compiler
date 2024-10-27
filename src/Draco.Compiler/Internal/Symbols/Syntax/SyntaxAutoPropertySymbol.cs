@@ -6,6 +6,8 @@ using Draco.Compiler.Internal.Documentation;
 using System.Threading;
 using System;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Utilities;
+using Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
 
 namespace Draco.Compiler.Internal.Symbols.Syntax;
 
@@ -31,6 +33,20 @@ internal abstract class SyntaxAutoPropertySymbol : PropertySymbol, ISourceSymbol
 
     internal override string RawDocumentation => this.DeclaringSyntax.Documentation;
 
+    public override FunctionSymbol Getter => LazyInitializer.EnsureInitialized(ref this.getter, this.BuildGetter);
+    private FunctionSymbol? getter;
+
+    public override FunctionSymbol? Setter => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVal
+        ? null
+        : InterlockedUtils.InitializeMaybeNull(ref this.setter, this.BuildSetter);
+    private FunctionSymbol? setter;
+
+    /// <summary>
+    /// The backing field of this auto-prop.
+    /// </summary>
+    public FieldSymbol BackingField => LazyInitializer.EnsureInitialized(ref this.backingField, this.BuildBackingField);
+    private FieldSymbol? backingField;
+
     protected SyntaxAutoPropertySymbol(Symbol containingSymbol, VariableDeclarationSyntax syntax)
     {
         if (syntax.FieldModifier is not null) throw new ArgumentException("a property must not have the field modifier", nameof(syntax));
@@ -43,4 +59,8 @@ internal abstract class SyntaxAutoPropertySymbol : PropertySymbol, ISourceSymbol
 
     private SymbolDocumentation BuildDocumentation() =>
         MarkdownDocumentationExtractor.Extract(this);
+
+    private FunctionSymbol BuildGetter() => new AutoPropertyGetterSymbol(this.ContainingSymbol, this);
+    private FunctionSymbol? BuildSetter() => new AutoPropertySetterSymbol(this.ContainingSymbol, this);
+    private FieldSymbol BuildBackingField() => new AutoPropertyBackingFieldSymbol(this.ContainingSymbol, this);
 }

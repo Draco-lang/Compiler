@@ -21,20 +21,6 @@ internal sealed class SourceAutoPropertySymbol(
     public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
 
-    public override FunctionSymbol Getter => LazyInitializer.EnsureInitialized(ref this.getter, this.BuildGetter);
-    private FunctionSymbol? getter;
-
-    public override FunctionSymbol? Setter => this.DeclaringSyntax.Keyword.Kind == TokenKind.KeywordVal
-        ? null
-        : InterlockedUtils.InitializeMaybeNull(ref this.setter, this.BuildSetter);
-    private FunctionSymbol? setter;
-
-    /// <summary>
-    /// The backing field of this auto-prop.
-    /// </summary>
-    public FieldSymbol BackingField => LazyInitializer.EnsureInitialized(ref this.backingField, this.BuildBackingField);
-    private FieldSymbol? backingField;
-
     // IMPORTANT: flag is type, needs to be written last
     // NOTE: We check the TYPE here, as value is nullable
     private bool NeedsBuild => Volatile.Read(ref this.type) is null;
@@ -80,8 +66,4 @@ internal sealed class SourceAutoPropertySymbol(
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
         return binder.BindGlobal(this, binderProvider.DiagnosticBag);
     }
-
-    private FunctionSymbol BuildGetter() => new AutoPropertyGetterSymbol(this.ContainingSymbol, this);
-    private FunctionSymbol? BuildSetter() => new AutoPropertySetterSymbol(this.ContainingSymbol, this);
-    private FieldSymbol BuildBackingField() => new AutoPropertyBackingFieldSymbol(this.ContainingSymbol, this);
 }

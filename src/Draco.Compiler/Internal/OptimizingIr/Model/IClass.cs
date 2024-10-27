@@ -3,7 +3,7 @@ using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
-internal interface IType
+internal interface IClass
 {
     /// <summary>
     /// The symbol of this type.

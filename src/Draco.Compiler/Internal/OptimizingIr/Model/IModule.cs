@@ -47,7 +47,7 @@ internal interface IModule
     /// <summary>
     /// The compiled types within this module.
     /// </summary>
-    public IReadOnlyDictionary<TypeSymbol, IType> Types { get; }
+    public IReadOnlyDictionary<TypeSymbol, IClass> Types { get; }
 
     /// <summary>
     /// The procedure performing global initialization.

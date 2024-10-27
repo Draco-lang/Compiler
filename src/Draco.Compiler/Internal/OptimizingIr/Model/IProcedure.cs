@@ -27,7 +27,7 @@ internal interface IProcedure
     /// The type this procedure is defined in.
     /// When <see langword="null"/>, this procedure is a free function.
     /// </summary>
-    public IType? DeclaringType { get; }
+    public IClass? DeclaringType { get; }
 
     /// <summary>
     /// The module this procedure is defined in.

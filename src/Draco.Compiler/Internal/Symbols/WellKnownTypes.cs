@@ -204,7 +204,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
     /// </summary>
     /// <param name="type">The reflected type to translate.</param>
     /// <returns>The translated type symbol, or <see langword="null"/> if it's not a translatable primitive type.</returns>
-    public TypeSymbol? TranslatePrimitive(System.Type type)
+    public TypeSymbol? TranslatePrimitive(Type type)
     {
         if (type == typeof(byte)) return this.SystemByte;
         if (type == typeof(ushort)) return this.SystemUInt16;
@@ -225,7 +225,7 @@ internal sealed partial class WellKnownTypes(Compilation compilation)
         if (type == typeof(string)) return this.SystemString;
         if (type == typeof(object)) return this.SystemObject;
 
-        if (type == typeof(System.Type)) return this.SystemType;
+        if (type == typeof(Type)) return this.SystemType;
 
         return null;
     }

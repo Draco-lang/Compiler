@@ -655,7 +655,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     }
 
     private TypeDefinitionHandle EncodeClass(
-        IType type,
+        IClass @class,
         TypeDefinitionHandle? parent,
         ref int fieldIndex,
         ref int procIndex
@@ -664,7 +664,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         var startFieldIndex = fieldIndex;
         var startProcIndex = procIndex;
 
-        var visibility = (type.Symbol.Visibility, parent) switch
+        var visibility = (@class.Symbol.Visibility, parent) switch
         {
             (Api.Semantics.Visibility.Public, not null) => TypeAttributes.NestedPublic,
             (Api.Semantics.Visibility.Public, null) => TypeAttributes.Public,
@@ -674,19 +674,19 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
 
-        if (type.Symbol.IsValueType) attributes |= TypeAttributes.SequentialLayout; // AutoLayout = 0.
+        if (@class.Symbol.IsValueType) attributes |= TypeAttributes.SequentialLayout; // AutoLayout = 0.
 
         var createdClass = this.AddTypeDefinition(
             attributes,
             null,
-            type.Name,
-            type.Symbol.IsValueType ? this.systemValueTypeReference : this.systemObjectReference,
+            @class.Name,
+            @class.Symbol.IsValueType ? this.systemValueTypeReference : this.systemObjectReference,
             fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
             methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex)
         );
 
         // Procedures
-        foreach (var proc in type.Methods.Values)
+        foreach (var proc in @class.Methods.Values)
         {
             if (proc.Symbol is DefaultConstructorSymbol ctor)
             {
@@ -703,14 +703,14 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
 
         // Fields
-        foreach (var field in type.Fields)
+        foreach (var field in @class.Fields)
         {
             this.EncodeField(field);
             ++fieldIndex;
         }
 
         // If this is a valuetype without fields, we add .pack 0 and .size 1
-        if (type.Symbol.IsValueType && type.Fields.Count == 0)
+        if (@class.Symbol.IsValueType && @class.Fields.Count == 0)
         {
             this.MetadataBuilder.AddTypeLayout(
                 type: createdClass,

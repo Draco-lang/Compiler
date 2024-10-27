@@ -158,7 +158,7 @@ internal abstract partial class Symbol
     /// <summary>
     /// The visibility of this symbol.
     /// </summary>
-    public virtual Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
+    public virtual Visibility Visibility => Visibility.Internal;
 
     /// <summary>
     /// The syntax declaring this symbol.
@@ -323,11 +323,11 @@ internal abstract partial class Symbol
         return string.Empty;
     }
 
-    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
+    private protected static Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
     {
-        null => Api.Semantics.Visibility.Private,
-        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
-        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
+        null => Visibility.Private,
+        TokenKind.KeywordInternal => Visibility.Internal,
+        TokenKind.KeywordPublic => Visibility.Public,
         _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
     };
 

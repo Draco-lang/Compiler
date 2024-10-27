@@ -13,7 +13,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 /// <summary>
 /// Generates IR code for a class.
 /// </summary>
-internal sealed class ClassCodegen(ModuleCodegen moduleCodegen, Type @class) : SymbolVisitor
+internal sealed class ClassCodegen(ModuleCodegen moduleCodegen, Class @class) : SymbolVisitor
 {
     private Compilation Compilation => moduleCodegen.Compilation;
     private bool EmitSequencePoints => moduleCodegen.EmitSequencePoints;

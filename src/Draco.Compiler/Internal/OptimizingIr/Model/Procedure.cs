@@ -17,8 +17,8 @@ internal sealed class Procedure : IProcedure
     public TypeSymbol? TypeSymbol => this.Symbol.Type;
     public Module DeclaringModule { get; }
     IModule IProcedure.DeclaringModule => this.DeclaringModule;
-    public Type? DeclaringType { get; }
-    IType? IProcedure.DeclaringType => this.DeclaringType;
+    public Class? DeclaringType { get; }
+    IClass? IProcedure.DeclaringType => this.DeclaringType;
     public Assembly Assembly => this.DeclaringModule.Assembly;
     IAssembly IProcedure.Assembly => this.Assembly;
     public BasicBlock Entry { get; }
@@ -40,7 +40,7 @@ internal sealed class Procedure : IProcedure
     private readonly List<LocalSymbol> locals = [];
     private readonly List<Register> registers = [];
 
-    public Procedure(Module declaringModule, Type? declaringType, FunctionSymbol symbol)
+    public Procedure(Module declaringModule, Class? declaringType, FunctionSymbol symbol)
     {
         this.DeclaringModule = declaringModule;
         this.DeclaringType = declaringType;

@@ -5,16 +5,16 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
-internal class Type(Module declaringModule, TypeSymbol symbol) : IType
+internal class Class(Module declaringModule, TypeSymbol symbol) : IClass
 {
 
     public TypeSymbol Symbol { get; } = symbol;
     public string Name => this.Symbol.Name;
 
     public Module DeclaringModule { get; } = declaringModule;
-    IModule IType.DeclaringModule => this.DeclaringModule;
+    IModule IClass.DeclaringModule => this.DeclaringModule;
     public Assembly Assembly => this.DeclaringModule.Assembly;
-    IAssembly IType.Assembly => this.Assembly;
+    IAssembly IClass.Assembly => this.Assembly;
 
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Methods => this.methods;

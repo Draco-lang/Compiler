@@ -18,8 +18,8 @@ internal sealed class Module : IModule
     public IDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
     IReadOnlyDictionary<ModuleSymbol, IModule> IModule.Submodules => this.submodules;
 
-    public IDictionary<TypeSymbol, IType> Types => this.types;
-    IReadOnlyDictionary<TypeSymbol, IType> IModule.Types => this.types;
+    public IDictionary<TypeSymbol, IClass> Types => this.types;
+    IReadOnlyDictionary<TypeSymbol, IClass> IModule.Types => this.types;
 
     public IReadOnlySet<FieldSymbol> Fields => this.fields;
 
@@ -38,7 +38,7 @@ internal sealed class Module : IModule
     private readonly HashSet<FieldSymbol> fields = [];
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = [];
     private readonly Dictionary<ModuleSymbol, IModule> submodules = [];
-    private readonly Dictionary<TypeSymbol, IType> types = [];
+    private readonly Dictionary<TypeSymbol, IClass> types = [];
 
     public Module(ModuleSymbol symbol, Assembly assembly, Module? Parent)
     {
@@ -84,14 +84,14 @@ internal sealed class Module : IModule
         return (Module)result;
     }
 
-    public Type DefineType(TypeSymbol typeSymbol)
+    public Class DefineType(TypeSymbol typeSymbol)
     {
         if (!this.types.TryGetValue(typeSymbol, out var result))
         {
-            result = new Type(this, typeSymbol);
+            result = new Class(this, typeSymbol);
             this.types.Add(typeSymbol, result);
         }
-        return (Type)result;
+        return (Class)result;
     }
 
     public override string ToString()

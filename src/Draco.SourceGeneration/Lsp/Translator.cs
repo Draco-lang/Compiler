@@ -24,7 +24,7 @@ internal sealed class Translator(Ts.MetaModel sourceModel)
     /// </summary>
     /// <param name="name">The name of the type.</param>
     /// <param name="type">The reflected type.</param>
-    public void AddBuiltinType(string name, System.Type type) =>
+    public void AddBuiltinType(string name, Type type) =>
         this.AddBuiltinType(name, type.FullName);
 
     /// <summary>

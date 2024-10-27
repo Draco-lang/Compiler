@@ -213,9 +213,9 @@ public sealed class DefiniteAssignmentTests
     public void GlobalImmutableInitialized()
     {
         // Arrange
-        // val x: int32 = 0;
+        // field val x: int32 = 0;
         var tree = SyntaxTree.Create(CompilationUnit(
-            ValDeclaration("x", NameType("int32"), LiteralExpression(0))));
+            FieldValDeclaration("x", NameType("int32"), LiteralExpression(0))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -230,9 +230,9 @@ public sealed class DefiniteAssignmentTests
     public void GlobalImmutableNotInitialized()
     {
         // Arrange
-        // val x: int32;
+        // field val x: int32;
         var tree = SyntaxTree.Create(CompilationUnit(
-            ValDeclaration("x", NameType("int32"))));
+            FieldValDeclaration("x", NameType("int32"))));
 
         // Act
         var compilation = CreateCompilation(tree);

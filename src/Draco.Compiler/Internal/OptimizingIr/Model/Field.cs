@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
-internal class Field(FieldSymbol symbol, Type declaringType) : IField
+
+internal sealed class Field(FieldSymbol symbol, Type declaringType) : IField
 {
     public FieldSymbol Symbol { get; } = symbol;
 

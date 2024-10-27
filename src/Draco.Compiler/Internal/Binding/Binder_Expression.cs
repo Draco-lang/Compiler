@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding.Tasks;
 using Draco.Compiler.Internal.BoundTree;
@@ -14,7 +15,15 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Syntax;
-using Draco.Compiler.Internal.Symbols.Synthetized;
+using FieldSymbol = Draco.Compiler.Internal.Symbols.FieldSymbol;
+using FunctionGroupSymbol = Draco.Compiler.Internal.Symbols.Synthetized.FunctionGroupSymbol;
+using FunctionSymbol = Draco.Compiler.Internal.Symbols.FunctionSymbol;
+using LabelSymbol = Draco.Compiler.Internal.Symbols.LabelSymbol;
+using LocalSymbol = Draco.Compiler.Internal.Symbols.LocalSymbol;
+using ModuleSymbol = Draco.Compiler.Internal.Symbols.ModuleSymbol;
+using ParameterSymbol = Draco.Compiler.Internal.Symbols.ParameterSymbol;
+using PropertySymbol = Draco.Compiler.Internal.Symbols.PropertySymbol;
+using TypeSymbol = Draco.Compiler.Internal.Symbols.TypeSymbol;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -719,19 +728,20 @@ internal partial class Binder
 
     private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var thisArg = ((SyntaxFunctionSymbol)this.ContainingSymbol!).ThisArgument;
-        if (thisArg == null)
+        var function = ((SyntaxFunctionSymbol)this.ContainingSymbol!);
+        var thisArg = function.ThisArgument as ParameterSymbol;
+        if (thisArg is null)
         {
             diagnostics.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.NoThisInStaticMethod,
-                    location: syntax.Location,
-                    formatArgs: [this.ContainingSymbol!.Name]));
-
+                template: SymbolResolutionErrors.NoThisInStaticMethod,
+                location: syntax.Location,
+                formatArgs: [this.ContainingSymbol!.Name]));
+            var type = function.ContainingSymbol as TypeSymbol ?? WellKnownTypes.ErrorType;
+            thisArg = new ErrorThisParameterSymbol(type, function);
         }
-        var boundThis = new BoundParameterExpression(syntax, thisArg); // todo: what should i do here ?
+        var boundThis = new BoundParameterExpression(syntax, thisArg);
         return BindingTask.FromResult<BoundExpression>(boundThis);
     }
-
 
     private async BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {

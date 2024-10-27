@@ -10,7 +10,6 @@ using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 
-
 /// <summary>
 /// Generates IR code for a class.
 /// </summary>

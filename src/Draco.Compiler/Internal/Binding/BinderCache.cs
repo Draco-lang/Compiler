@@ -103,10 +103,9 @@ internal sealed class BinderCache(Compilation compilation)
         var parent = UnwrapFromImportBinder(binder);
         var classSymbol = parent.DeclaredSymbols
             .OfType<SourceClassSymbol>()
-            .FirstOrDefault(member => member.DeclaringSyntax == syntax); // should we shove that in an helper ?
+            .First(member => member.DeclaringSyntax == syntax); // should we shove that in a helper ?
         return new ClassBinder(binder, classSymbol);
     }
-
 
     private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax)
     {

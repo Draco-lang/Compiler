@@ -82,7 +82,6 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
         ? null
         : this.ContainingSymbol as TypeSymbol;
 
-
     /// <summary>
     /// The parameters of this function.
     /// </summary>

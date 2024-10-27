@@ -1004,14 +1004,14 @@ public sealed class CompilingCodeTests
     public void ClassHelloWorld()
     {
         var assembly = CompileToAssembly("""
-                                         import System.Console;
+            import System.Console;
 
-                                         class Foo {
-                                             func bar() {
-                                                 WriteLine("Hello, World!");
-                                             }
-                                         }
-                                         """);
+            class Foo {
+                func bar() {
+                    WriteLine("Hello, World!");
+                }
+            }
+            """);
 
         var stringWriter = new StringWriter();
         _ = Invoke<object?>(assembly: assembly, stdout: stringWriter, methodName: "bar", moduleName: "FreeFunctions.Foo");
@@ -1023,26 +1023,25 @@ public sealed class CompilingCodeTests
     public void InstanceField()
     {
         var assembly = CompileToAssembly("""
-                                         import System.Console;
+            import System.Console;
 
-                                         func main(): int32 {
-                                             var foo = Foo();
-                                             foo.increment();
-                                             return foo.get();
-                                         }
+            func main(): int32 {
+                var foo = Foo();
+                foo.increment();
+                return foo.get();
+            }
 
-                                         class Foo {
-                                             field var i: int32;
-                                             public func increment(this) {
-                                                 this.i += 1;
-                                             }
+            class Foo {
+                field var i: int32;
+                public func increment(this) {
+                    this.i += 1;
+                }
 
-                                             public func get(this): int32 {
-                                                 return this.i;
-                                             }
-                                         }
-
-                                         """);
+                public func get(this): int32 {
+                    return this.i;
+                }
+            }
+            """);
 
         var stringWriter = new StringWriter();
         var value = Invoke<int>(assembly: assembly, stdout: stringWriter);

@@ -8,6 +8,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 
 namespace Draco.Compiler.Internal.Binding;
+
 internal sealed class ClassBinder(Binder parent, TypeSymbol symbol) : Binder(parent)
 {
     public override TypeSymbol ContainingSymbol => this.symbol;
@@ -39,7 +40,5 @@ internal sealed class ClassBinder(Binder parent, TypeSymbol symbol) : Binder(par
             result.Add(member);
             break;
         }
-
-        flags |= LookupFlags.DisallowLocals | LookupFlags.AllowGlobals;
     }
 }

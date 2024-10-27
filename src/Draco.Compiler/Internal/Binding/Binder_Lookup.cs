@@ -53,27 +53,6 @@ internal partial class Binder
         var result = this.LookupInternal(name, BinderFacts.IsTypeSymbol, reference);
         return result.GetType(name, reference, diagnostics);
     }
-    /// <summary>
-    /// Looks up the declaring type of the current scope.
-    /// </summary>
-    /// <param name="reference">The syntax referencing the symbol.</param>
-    /// <param name="diagnostics">The diagnostics are added here from lookup.</param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
-    internal TypeSymbol LookupDeclaringType(SyntaxNode reference, DiagnosticBag diagnostics)
-    {
-        foreach (var scope in this.AncestorChain)
-        {
-            if (scope is ClassBinder classBinder)
-            {
-                return classBinder.ContainingSymbol;
-            }
-        }
-        diagnostics.Add(Diagnostic.Create(
-            template: SymbolResolutionErrors.NoTypeInstanceToReference,
-            location: reference.Location));
-        return WellKnownTypes.ErrorType;
-    }
 
     /// <summary>
     /// Looks up a symbol that can be used in label-context.

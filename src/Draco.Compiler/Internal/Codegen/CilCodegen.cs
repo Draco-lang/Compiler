@@ -81,6 +81,7 @@ internal sealed class CilCodegen
     }
 
     private int? GetLocalIndex(LocalSymbol local) => this.GetAllocatedLocal(local)?.Index;
+
     private int? GetRegisterIndex(Register register)
     {
         if (SymbolEqualityComparer.Default.Equals(register.Type, WellKnownTypes.Unit)) return null;
@@ -91,6 +92,7 @@ internal sealed class CilCodegen
             allocatedRegister = this.allocatedLocals.Count + this.allocatedRegisters.Count;
             this.allocatedRegisters.Add(register, allocatedRegister);
         }
+
         return allocatedRegister;
     }
 
@@ -108,6 +110,7 @@ internal sealed class CilCodegen
             label = this.InstructionEncoder.DefineLabel();
             this.labels.Add(block, label);
         }
+
         return label;
     }
 
@@ -128,11 +131,13 @@ internal sealed class CilCodegen
     private void EncodeInstruction(IInstruction instruction)
     {
         var operandEnumerator = instruction.Operands.GetEnumerator();
+
         IOperand NextOperand()
         {
             if (!operandEnumerator!.MoveNext()) throw new InvalidOperationException();
             return operandEnumerator.Current;
         }
+
         IEnumerable<IOperand> RemainingOperands()
         {
             while (operandEnumerator!.MoveNext()) yield return operandEnumerator.Current;
@@ -221,19 +226,16 @@ internal sealed class CilCodegen
                 this.LoadLocal(local);
                 break;
             }
-            case FieldSymbol { IsStatic: true } global:
-            {
-                this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
-                this.EncodeToken(global);
-                break;
-            }
             case FieldSymbol field:
-                this.InstructionEncoder.OpCode(ILOpCode.Ldfld);
+            {
+                this.InstructionEncoder.OpCode(field.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
                 this.EncodeToken(field);
                 break;
+            }
             default:
                 throw new InvalidOperationException();
             }
+
             // Just copy to the target local
             this.StoreRegister(load.Target);
             break;
@@ -259,6 +261,7 @@ internal sealed class CilCodegen
                     loadElement.Target.Type,
                     loadElement.Indices.Count));
             }
+
             // Store result
             this.StoreRegister(loadElement.Target);
             break;
@@ -281,19 +284,15 @@ internal sealed class CilCodegen
                 this.EncodePush(NextOperand());
                 this.StoreLocal(local);
                 break;
-            case FieldSymbol { IsStatic: true } global:
-                this.EncodePush(NextOperand());
-                this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
-                this.EncodeToken(global);
-                break;
             case FieldSymbol field:
                 this.EncodePush(NextOperand());
-                this.InstructionEncoder.OpCode(ILOpCode.Stfld);
+                this.InstructionEncoder.OpCode(field.IsStatic ? ILOpCode.Stsfld : ILOpCode.Stfld);
                 this.EncodeToken(field);
                 break;
             default:
                 throw new InvalidOperationException();
             }
+
             break;
         }
         case StoreElementInstruction storeElement:
@@ -320,6 +319,7 @@ internal sealed class CilCodegen
                     targetStorageType,
                     storeElement.Indices.Count));
             }
+
             break;
         }
         case StoreFieldInstruction storeField:
@@ -360,6 +360,7 @@ internal sealed class CilCodegen
             default:
                 throw new InvalidOperationException();
             }
+
             break;
         }
         case CallInstruction call:
@@ -415,6 +416,7 @@ internal sealed class CilCodegen
                     newArr.ElementType,
                     newArr.Dimensions.Count));
             }
+
             // Store result
             this.StoreRegister(newArr.Target);
             break;
@@ -521,6 +523,7 @@ internal sealed class CilCodegen
             default:
                 throw new NotImplementedException();
             }
+
             break;
         case DefaultValue d:
         {
@@ -556,8 +559,10 @@ internal sealed class CilCodegen
                 // Need to pop
                 this.InstructionEncoder.OpCode(ILOpCode.Pop);
             }
+
             return;
         }
+
         this.InstructionEncoder.StoreLocal(index.Value);
     }
 

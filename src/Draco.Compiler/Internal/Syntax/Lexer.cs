@@ -336,6 +336,7 @@ internal sealed class Lexer
                 "for" => TokenKind.KeywordFor,
                 "func" => TokenKind.KeywordFunc,
                 "goto" => TokenKind.KeywordGoto,
+                "global" => TokenKind.KeywordGlobal,
                 "if" => TokenKind.KeywordIf,
                 "import" => TokenKind.KeywordImport,
                 "in" => TokenKind.KeywordIn,

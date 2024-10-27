@@ -257,8 +257,7 @@ public static partial class SyntaxFactory
             null,
             name,
             generics,
-            BlockClassBody(members)
-    );
+            BlockClassBody(members));
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) =>
         IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 
@@ -267,7 +266,7 @@ public static partial class SyntaxFactory
     public static LiteralExpressionSyntax LiteralExpression(int value) => LiteralExpression(Integer(value));
     public static LiteralExpressionSyntax LiteralExpression(bool value) => LiteralExpression(value ? KeywordTrue : KeywordFalse);
     public static StringExpressionSyntax StringExpression(string value) =>
-        StringExpression(LineStringStart, SyntaxList(TextStringPart(value)), LineStringEnd);
+        StringExpression(LineStringStart, [TextStringPart(value)], LineStringEnd);
 
     public static TextStringPartSyntax TextStringPart(string value) =>
         TextStringPart(Token(TokenKind.StringContent, value, value));

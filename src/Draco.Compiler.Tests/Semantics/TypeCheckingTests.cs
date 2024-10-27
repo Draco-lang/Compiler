@@ -166,7 +166,8 @@ public sealed class TypeCheckingTests
             null,
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration(
-                    true, "x",
+                    true,
+                    "x",
                     NameType("int32"),
                     StringExpression("Hello")))))));
 
@@ -317,7 +318,8 @@ public sealed class TypeCheckingTests
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
             VariableDeclaration(
-                true, "x",
+                true,
+                "x",
                 NameType("int32"),
                 StringExpression("Hello"))));
 
@@ -495,7 +497,8 @@ public sealed class TypeCheckingTests
             null,
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration(
-                    true, "x",
+                    true,
+                    "x",
                     value: IfExpression(
                         condition: LiteralExpression(true),
                         then: LiteralExpression(0),
@@ -603,7 +606,8 @@ public sealed class TypeCheckingTests
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration(
-                        true, "x",
+                        true,
+                        "x",
                         value: BinaryExpression(LiteralExpression(1), Plus, StringExpression("Hello"))))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
@@ -1367,7 +1371,8 @@ public sealed class TypeCheckingTests
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration(
-                        true, "x",
+                        true,
+                        "x",
                         null,
                         CallExpression(NameExpression("identity"), LiteralExpression(0))))))));
 
@@ -2056,7 +2061,8 @@ public sealed class TypeCheckingTests
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration(
-                        true, "x",
+                        true,
+                        "x",
                         null,
                         IfExpression(
                             LiteralExpression(true),
@@ -2223,7 +2229,8 @@ public sealed class TypeCheckingTests
             null,
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration(
-                    true, "x",
+                    true,
+                    "x",
                     NameType("object"),
                     StringExpression("Hello")))))));
 

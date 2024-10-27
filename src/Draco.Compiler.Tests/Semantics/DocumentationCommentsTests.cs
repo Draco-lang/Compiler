@@ -94,7 +94,8 @@ public sealed class DocumentationCommentsTests
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
             WithDocumentation(VariableDeclaration(
-            true, "x",
+            true,
+            "x",
             null,
             LiteralExpression(0)),
             docComment)));
@@ -566,7 +567,7 @@ public sealed class DocumentationCommentsTests
             public class TestClass
             {
                 {{CreateXmlDocComment(originalDocs)}}
-                public int TestMethod<T>(int arg1, int arg2) => arg1 + arg2; 
+                public int TestMethod<T>(int arg1, int arg2) => arg1 + arg2;
             }
             """, xmlDocStream: xmlStream);
 

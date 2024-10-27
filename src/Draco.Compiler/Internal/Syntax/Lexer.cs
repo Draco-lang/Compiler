@@ -326,7 +326,6 @@ internal sealed class Lexer
             while (IsIdent(this.Peek(offset))) ++offset;
             var ident = this.Advance(offset);
             // Remap keywords
-            // TODO: Any better/faster way?
             var tokenKind = ident.Span switch
             {
                 "and" => TokenKind.KeywordAnd,

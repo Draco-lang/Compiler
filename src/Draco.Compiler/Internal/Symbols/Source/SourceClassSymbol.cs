@@ -77,7 +77,6 @@ internal sealed class SourceClassSymbol(
 
     private ImmutableArray<Symbol> BindMembers(IBinderProvider binder)
     {
-
         if (this.DeclaringSyntax.Body is EmptyClassBodySyntax) return [new DefaultConstructorSymbol(this)];
 
         var bodyClass = this.DeclaringSyntax.Body as BlockClassBodySyntax;

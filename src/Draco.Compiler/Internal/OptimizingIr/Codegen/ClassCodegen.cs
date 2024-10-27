@@ -19,7 +19,7 @@ internal sealed class ClassCodegen(ModuleCodegen moduleCodegen, Type @class) : S
     private Compilation Compilation => moduleCodegen.Compilation;
     private bool EmitSequencePoints => moduleCodegen.EmitSequencePoints;
 
-    // TODO: Copypasta from ModuleCodegen
+    // Copypasta from ModuleCodegen
     public override void VisitFunction(FunctionSymbol functionSymbol)
     {
         if (functionSymbol.Body is null) return;
@@ -44,8 +44,6 @@ internal sealed class ClassCodegen(ModuleCodegen moduleCodegen, Type @class) : S
         // No-op, the Class model reads it up from the symbol
     }
 
-    // TODO: Copypasta from ModuleCodegen
-    // TODO: Except we check for syntax not being null because we can have synthetized symbols
     private BoundNode RewriteBody(BoundNode body)
     {
         // If needed, inject sequence points

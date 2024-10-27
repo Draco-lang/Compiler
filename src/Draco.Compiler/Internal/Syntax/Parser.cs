@@ -574,7 +574,7 @@ internal sealed class Parser(
     {
         TokenKind.Semicolon => this.ParseEmptyClassBody(),
         TokenKind.CurlyOpen => this.ParseBlockClassBody(),
-        _ => throw new NotImplementedException(),// TODO
+        _ => throw new NotImplementedException()
     };
 
     /// <summary>

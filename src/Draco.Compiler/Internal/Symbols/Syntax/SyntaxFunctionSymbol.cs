@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;

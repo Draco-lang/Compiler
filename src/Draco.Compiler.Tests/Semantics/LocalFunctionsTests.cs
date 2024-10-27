@@ -98,7 +98,8 @@ public sealed class LocalFunctionsTests
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(VariableDeclaration(
-                        true, "x",
+                        true,
+                        "x",
                         NameType("int32"),
                         StringExpression("Hello"))))))))));
 

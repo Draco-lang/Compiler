@@ -569,7 +569,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Determine attributes
         var attributes = MethodAttributes.HideBySig | visibility;
         if (procedure.Symbol.IsStatic) attributes |= MethodAttributes.Static;
-        if (procedure.Symbol.IsSpecialName) attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+        if (specialName != null) attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
         // Parameters
         var parameterList = this.NextParameterHandle;

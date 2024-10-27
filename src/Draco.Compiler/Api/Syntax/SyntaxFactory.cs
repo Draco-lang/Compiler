@@ -67,11 +67,12 @@ public static partial class SyntaxFactory
     public static SyntaxToken Identifier(string text) => Token(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => Token(TokenKind.LiteralInteger, value.ToString(), value);
 
-    public static TokenKind? Visibility(Visibility visibility) => visibility switch
+    public static TokenKind? Visibility(Visibility? visibility) => visibility switch
     {
         Semantics.Visibility.Private => null,
         Semantics.Visibility.Internal => TokenKind.KeywordInternal,
         Semantics.Visibility.Public => TokenKind.KeywordPublic,
+        null => null,
         _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
     };
 
@@ -168,37 +169,68 @@ public static partial class SyntaxFactory
         returnType is null ? null : TypeSpecifier(returnType),
         body);
 
-    public static VariableDeclarationSyntax VariableDeclaration(
+    public static VariableDeclarationSyntax ValDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(null, false, true, name, type, value);
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], null, false, false, name, type, value);
+
+    public static VariableDeclarationSyntax VarDeclaration(
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], null, false, true, name, type, value);
+
+    public static VariableDeclarationSyntax FieldValDeclaration(
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], null, true, false, name, type, value);
+
+    public static VariableDeclarationSyntax FieldVarDeclaration(
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], null, true, true, name, type, value);
+
+    public static VariableDeclarationSyntax ValDeclaration(
+        Visibility? visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], visibility, false, false, name, type, value);
+
+    public static VariableDeclarationSyntax VarDeclaration(
+        Visibility? visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], visibility, false, true, name, type, value);
+
+    public static VariableDeclarationSyntax FieldValDeclaration(
+        Visibility? visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], visibility, true, false, name, type, value);
+
+    public static VariableDeclarationSyntax FieldVarDeclaration(
+        Visibility? visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], visibility, true, true, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
-        Visibility visibility,
-        string name,
-        TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), false, true, name, type, value);
-
-    public static VariableDeclarationSyntax ImmutableVariableDeclaration(
-        string name,
-        TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(null, false, false, name, type, value);
-
-    public static VariableDeclarationSyntax ImmutableVariableDeclaration(
-        Visibility visibility,
-        string name,
-        TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), false, false, name, type, value);
-
-    public static VariableDeclarationSyntax VariableDeclaration(
-        TokenKind? visibility,
+        IEnumerable<AttributeSyntax> attributes,
+        Visibility? visibility,
         bool isField,
         bool isMutable,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) => VariableDeclaration(
-        [],
-        visibility,
+        attributes,
+        Visibility(visibility),
         isField ? TokenKind.KeywordField : null,
         isMutable ? TokenKind.KeywordVar : TokenKind.KeywordVal,
         name,

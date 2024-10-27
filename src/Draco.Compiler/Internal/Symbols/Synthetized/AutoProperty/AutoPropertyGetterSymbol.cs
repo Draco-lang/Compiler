@@ -21,7 +21,7 @@ internal sealed class AutoPropertyGetterSymbol(
     public override Api.Semantics.Visibility Visibility => this.Property.Visibility;
     public override bool IsSpecialName => true;
 
-    public override ImmutableArray<ParameterSymbol> Parameters => ImmutableArray<ParameterSymbol>.Empty;
+    public override ImmutableArray<ParameterSymbol> Parameters => [];
     public override TypeSymbol ReturnType => this.Property.Type;
 
     public override BoundStatement Body => LazyInitializer.EnsureInitialized(ref this.body, this.BuildBody);

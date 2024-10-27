@@ -72,9 +72,11 @@ internal sealed class ModuleCodegen : SymbolVisitor
     public override void VisitProperty(PropertySymbol propertySymbol)
     {
         // TODO: Not flexible, won't work for non-auto props
-        if (propertySymbol is not SourceAutoPropertySymbol sourceAutoProp) return;
+        if (propertySymbol is not SyntaxAutoPropertySymbol) return;
 
-        this.module.DefineProperty(sourceAutoProp);
+        this.module.DefineProperty(propertySymbol);
+
+        if (propertySymbol is not SourceAutoPropertySymbol sourceAutoProp) return;
 
         // If there's a value, compile it
         if (sourceAutoProp.Value is not null)

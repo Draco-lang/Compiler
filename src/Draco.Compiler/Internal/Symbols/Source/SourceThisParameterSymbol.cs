@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;

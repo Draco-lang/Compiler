@@ -5,7 +5,6 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Error;
 
 namespace Draco.Compiler.Internal.Binding;
 

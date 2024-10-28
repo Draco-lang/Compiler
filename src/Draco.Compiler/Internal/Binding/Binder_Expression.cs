@@ -13,15 +13,7 @@ using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Syntax;
-using FieldSymbol = Draco.Compiler.Internal.Symbols.FieldSymbol;
-using FunctionGroupSymbol = Draco.Compiler.Internal.Symbols.Synthetized.FunctionGroupSymbol;
-using FunctionSymbol = Draco.Compiler.Internal.Symbols.FunctionSymbol;
-using LabelSymbol = Draco.Compiler.Internal.Symbols.LabelSymbol;
-using LocalSymbol = Draco.Compiler.Internal.Symbols.LocalSymbol;
-using ModuleSymbol = Draco.Compiler.Internal.Symbols.ModuleSymbol;
-using ParameterSymbol = Draco.Compiler.Internal.Symbols.ParameterSymbol;
-using PropertySymbol = Draco.Compiler.Internal.Symbols.PropertySymbol;
-using TypeSymbol = Draco.Compiler.Internal.Symbols.TypeSymbol;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -74,7 +66,7 @@ internal partial class Binder
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
-        MemberExpressionSyntax maccess => this.BindMemberExpression(maccess, constraints, diagnostics),
+        MemberExpressionSyntax mem => this.BindMemberExpression(mem, constraints, diagnostics),
         GenericExpressionSyntax gen => this.BindGenericExpression(gen, constraints, diagnostics),
         IndexExpressionSyntax index => this.BindIndexExpression(index, constraints, diagnostics),
         ThisExpressionSyntax @this => this.BindThisExpression(@this, constraints, diagnostics),
@@ -718,10 +710,7 @@ internal partial class Binder
             // Array getter
             return new BoundArrayAccessExpression(syntax, receiver, await BindingTask.WhenAll(argsTask));
         }
-        else
-        {
-            return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask));
-        }
+        return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask));
     }
 
     private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -871,16 +860,13 @@ internal partial class Binder
                 return BindingTask.FromResult<BoundExpression>(
                     new BoundDelegateCreationExpression(syntax, receiver, functions[0], delegateCtor));
             }
-            else
-            {
-                // TODO: We should construct some constraints to resolve which one
-                // For now we report an error to not crash tools
-                diagnostics.Add(Diagnostic.Create(
-                    template: TypeCheckingErrors.IllegalExpression,
-                    location: syntax.Location));
-                return BindingTask.FromResult<BoundExpression>(
-                    new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType));
-            }
+            // TODO: We should construct some constraints to resolve which one
+            // For now we report an error to not crash tools
+            diagnostics.Add(Diagnostic.Create(
+                template: TypeCheckingErrors.IllegalExpression,
+                location: syntax.Location));
+            return BindingTask.FromResult<BoundExpression>(
+                new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType));
         }
     }
 

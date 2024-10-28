@@ -24,13 +24,13 @@ public sealed class LocalFunctionsTests
             BlockFunctionBody(DeclarationStatement(FunctionDeclaration(
                 "bar",
                 ParameterList(
-                    Parameter("x", NameType("int32")),
-                    Parameter("x", NameType("int32"))),
+                    NormalParameter("x", NameType("int32")),
+                    NormalParameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody()))))));
 
-        var x1Decl = tree.GetNode<ParameterSyntax>(0);
-        var x2Decl = tree.GetNode<ParameterSyntax>(1);
+        var x1Decl = tree.GetNode<NormalParameterSyntax>(0);
+        var x2Decl = tree.GetNode<NormalParameterSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -190,7 +190,7 @@ public sealed class LocalFunctionsTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 name: "foo",
-                parameters: ParameterList(Parameter("x", NameType("int32"))),
+                parameters: ParameterList(NormalParameter("x", NameType("int32"))),
                 returnType: null,
                 body: BlockFunctionBody()),
             FunctionDeclaration(
@@ -200,7 +200,7 @@ public sealed class LocalFunctionsTests
                 body: BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         name: "foo",
-                        parameters: ParameterList(Parameter("x", NameType("string"))),
+                        parameters: ParameterList(NormalParameter("x", NameType("string"))),
                         returnType: null,
                         body: BlockFunctionBody())),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),

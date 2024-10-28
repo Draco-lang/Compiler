@@ -655,7 +655,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 Api.Semantics.Visibility.Internal,
                 "foo",
-                ParameterList(Parameter("x", NameType("string"))),
+                ParameterList(NormalParameter("x", NameType("string"))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0)))),
            ToPath("Tests", "FooModule", "foo.draco"));
@@ -702,7 +702,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 Api.Semantics.Visibility.Internal,
                 "foo",
-                ParameterList(Parameter("x", NameType("string"))),
+                ParameterList(NormalParameter("x", NameType("string"))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0)))),
            ToPath("Tests", "FooModule", "foo.draco"));
@@ -736,12 +736,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(Parameter("x", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "foo",
-                ParameterList(Parameter("x", NameType("bool"))),
+                ParameterList(NormalParameter("x", NameType("bool"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
@@ -788,12 +788,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(Parameter("x", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(Parameter("x", NameType("bool"))),
+                        ParameterList(NormalParameter("x", NameType("bool"))),
                         null,
                         BlockFunctionBody())),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
@@ -837,12 +837,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(Parameter("x", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(Parameter("x", NameType("bool"))),
+                        ParameterList(NormalParameter("x", NameType("bool"))),
                         null,
                         BlockFunctionBody())))),
             FunctionDeclaration(
@@ -888,12 +888,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(Parameter("x", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "foo",
-                ParameterList(Parameter("x", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody())));
 
@@ -919,13 +919,13 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "foo",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
+                ParameterList(NormalParameter("x", NameType("int32")), NormalParameter("y", NameType("T"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "foo",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
+                ParameterList(NormalParameter("x", NameType("int32")), NormalParameter("y", NameType("T"))),
                 null,
                 BlockFunctionBody())));
 
@@ -951,12 +951,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(Parameter("x", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(Parameter("x", NameType("int32"))),
+                        ParameterList(NormalParameter("x", NameType("int32"))),
                         null,
                         BlockFunctionBody()))))));
 
@@ -992,12 +992,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(Parameter("x", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(Parameter("x", NameType("bool"))),
+                        ParameterList(NormalParameter("x", NameType("bool"))),
                         null,
                         BlockFunctionBody(
                             ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
@@ -1009,7 +1009,7 @@ public sealed class TypeCheckingTests
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(Parameter("x", NameType("bool"))),
+                        ParameterList(NormalParameter("x", NameType("bool"))),
                         null,
                         BlockFunctionBody(
                             ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
@@ -1191,7 +1191,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "identity",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("T"))),
+                ParameterList(NormalParameter("x", NameType("T"))),
                 NameType("T"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
@@ -1269,7 +1269,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "identity",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("T"))),
+                ParameterList(NormalParameter("x", NameType("T"))),
                 NameType("T"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
@@ -1362,7 +1362,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "identity",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("T"))),
+                ParameterList(NormalParameter("x", NameType("T"))),
                 NameType("T"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
@@ -1490,12 +1490,12 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "identity",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("T"))),
+                ParameterList(NormalParameter("x", NameType("T"))),
                 NameType("T"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
                 "identity",
-                ParameterList(Parameter("x", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("int32"))),
                 NameType("int32"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
@@ -1551,13 +1551,13 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "foo",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("T")), Parameter("y", NameType("int32"))),
+                ParameterList(NormalParameter("x", NameType("T")), NormalParameter("y", NameType("int32"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "foo",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
+                ParameterList(NormalParameter("x", NameType("int32")), NormalParameter("y", NameType("T"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
@@ -1595,14 +1595,14 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "bar",
                 ParameterList(
-                    Parameter("s", NameType("string")),
-                    Parameter("x", NameType("int32"))),
+                    NormalParameter("s", NameType("string")),
+                    NormalParameter("x", NameType("int32"))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0))),
             FunctionDeclaration(
                 "bar",
                 ParameterList(
-                    Parameter("s", NameType("string")),
+                    NormalParameter("s", NameType("string")),
                     VariadicParameter("x", GenericType(NameType("Array"), NameType("int32")))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0))),
@@ -1666,15 +1666,15 @@ public sealed class TypeCheckingTests
                 "bar",
                 GenericParameterList(GenericParameter("T")),
                 ParameterList(
-                    Parameter("s", NameType("string")),
-                    Parameter("x", NameType("T"))),
+                    NormalParameter("s", NameType("string")),
+                    NormalParameter("x", NameType("T"))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0))),
             FunctionDeclaration(
                 "bar",
                 GenericParameterList(GenericParameter("T")),
                 ParameterList(
-                    Parameter("s", NameType("string")),
+                    NormalParameter("s", NameType("string")),
                     VariadicParameter("x", GenericType(NameType("Array"), NameType("T")))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0))),
@@ -1732,8 +1732,8 @@ public sealed class TypeCheckingTests
                 "foo",
                 GenericParameterList(GenericParameter("T")),
                 ParameterList(
-                    Parameter("x", NameType("T")),
-                    Parameter("y", NameType("T"))),
+                    NormalParameter("x", NameType("T")),
+                    NormalParameter("y", NameType("T"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
@@ -1886,7 +1886,7 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))))),
             FunctionDeclaration(
                 "bar",
-                ParameterList(Parameter("x", NameType("Object"))),
+                ParameterList(NormalParameter("x", NameType("Object"))),
                 null,
                 BlockFunctionBody())));
 
@@ -1922,7 +1922,7 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
             FunctionDeclaration(
                 "bar",
-                ParameterList(Parameter("x", NameType("String"))),
+                ParameterList(NormalParameter("x", NameType("String"))),
                 null,
                 BlockFunctionBody())));
 
@@ -1961,12 +1961,12 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
             FunctionDeclaration(
                 "bar",
-                ParameterList(Parameter("x", NameType("Object"))),
+                ParameterList(NormalParameter("x", NameType("Object"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "bar",
-                ParameterList(Parameter("x", NameType("Random"))),
+                ParameterList(NormalParameter("x", NameType("Random"))),
                 null,
                 BlockFunctionBody())));
 
@@ -2019,9 +2019,9 @@ public sealed class TypeCheckingTests
                 "bar",
                 GenericParameterList(GenericParameter("T")),
                 ParameterList(
-                    Parameter("x", NameType("T")),
-                    Parameter("y", NameType("T")),
-                    Parameter("z", NameType("T"))),
+                    NormalParameter("x", NameType("T")),
+                    NormalParameter("y", NameType("T")),
+                    NormalParameter("z", NameType("T"))),
                 null,
                 BlockFunctionBody())));
 
@@ -2417,7 +2417,7 @@ public sealed class TypeCheckingTests
 
         var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("a", NameType("Array2D"))),
+            ParameterList(NormalParameter("a", NameType("Array2D"))),
             null,
             BlockFunctionBody())));
 

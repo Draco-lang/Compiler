@@ -87,7 +87,7 @@ public sealed class CompletionService(ICompletionFilter filter)
             // Type expression
             NameTypeSyntax => CompletionContext.Type,
             // Parameter name declaration
-            ParameterSyntax => CompletionContext.None,
+            NormalParameterSyntax => CompletionContext.None,
             // Global declaration
             UnexpectedDeclarationSyntax => CompletionContext.Declaration,
             // Declaring identifier

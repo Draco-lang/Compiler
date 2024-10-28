@@ -140,7 +140,7 @@ public static class SyntaxHighlighter
     private static IEnumerable<HighlightFragment> Identifier(SyntaxToken token, SemanticModel? semanticModel)
     {
         // Make a guess based on syntax
-        if (token.Parent is ParameterSyntax param && param.Name.Equals(token))
+        if (token.Parent is NormalParameterSyntax param && param.Name.Equals(token))
         {
             return Fragment(token, SyntaxColoring.ParameterName);
         }

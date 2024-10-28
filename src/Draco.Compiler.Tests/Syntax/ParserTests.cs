@@ -100,7 +100,7 @@ public sealed class ParserTests
                 this.T(TokenKind.Identifier);
 
                 this.T(TokenKind.ParenOpen);
-                this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
                 this.T(TokenKind.ParenClose);
 
                 this.N<BlockFunctionBodySyntax>();
@@ -170,7 +170,7 @@ public sealed class ParserTests
                 this.T(TokenKind.Identifier);
 
                 this.T(TokenKind.ParenOpen);
-                this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
                 this.T(TokenKind.ParenClose);
 
                 this.N<BlockFunctionBodySyntax>();
@@ -199,7 +199,7 @@ public sealed class ParserTests
                 this.T(TokenKind.Identifier);
 
                 this.T(TokenKind.ParenOpen);
-                this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
                 this.T(TokenKind.ParenClose);
 
                 this.N<BlockFunctionBodySyntax>();
@@ -247,7 +247,7 @@ public sealed class ParserTests
                 }
 
                 this.T(TokenKind.ParenOpen);
-                this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+                this.N<SeparatedSyntaxList<ParameterSyntax>>();
                 this.T(TokenKind.ParenClose);
 
                 this.N<BlockFunctionBodySyntax>();
@@ -1988,9 +1988,9 @@ public sealed class ParserTests
             this.T(TokenKind.KeywordFunc);
             this.T(TokenKind.Identifier, "foo");
             this.T(TokenKind.ParenOpen);
-            this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
             {
-                this.N<ParameterSyntax>();
+                this.N<NormalParameterSyntax>();
                 {
                     this.N<SyntaxList<AttributeSyntax>>();
                     this.N<AttributeSyntax>();
@@ -2051,7 +2051,7 @@ public sealed class ParserTests
             this.T(TokenKind.KeywordFunc);
             this.T(TokenKind.Identifier, "foo");
             this.T(TokenKind.ParenOpen);
-            this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
             this.T(TokenKind.ParenClose);
             this.N<BlockFunctionBodySyntax>();
             {
@@ -2064,7 +2064,7 @@ public sealed class ParserTests
                     this.T(TokenKind.KeywordFunc);
                     this.T(TokenKind.Identifier, "bar");
                     this.T(TokenKind.ParenOpen);
-                    this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+                    this.N<SeparatedSyntaxList<ParameterSyntax>>();
                     this.T(TokenKind.ParenClose);
                     this.N<BlockFunctionBodySyntax>();
                     {
@@ -2096,7 +2096,7 @@ public sealed class ParserTests
                 this.T(TokenKind.GreaterThan);
             }
             this.T(TokenKind.ParenOpen);
-            this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
             this.T(TokenKind.ParenClose);
             this.N<BlockFunctionBodySyntax>();
             {
@@ -2119,9 +2119,9 @@ public sealed class ParserTests
             this.T(TokenKind.KeywordFunc);
             this.T(TokenKind.Identifier, "foo");
             this.T(TokenKind.ParenOpen);
-            this.N<SeparatedSyntaxList<ParameterSyntaxBase>>();
+            this.N<SeparatedSyntaxList<ParameterSyntax>>();
             {
-                this.N<ParameterSyntax>();
+                this.N<NormalParameterSyntax>();
                 {
                     this.T(TokenKind.Identifier, "x");
                     this.T(TokenKind.Colon);

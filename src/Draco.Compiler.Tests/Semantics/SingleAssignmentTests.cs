@@ -66,7 +66,7 @@ public sealed class SingleAssignmentTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("b", NameType("bool"))),
+            ParameterList(NormalParameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
                 DeclarationStatement(ImmutableVariableDeclaration(true, "x", NameType("int32"))),
@@ -95,7 +95,7 @@ public sealed class SingleAssignmentTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("b", NameType("bool"))),
+            ParameterList(NormalParameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
                 DeclarationStatement(ImmutableVariableDeclaration(true, "x", NameType("int32"))),
@@ -124,7 +124,7 @@ public sealed class SingleAssignmentTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("b", NameType("bool"))),
+            ParameterList(NormalParameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
                 DeclarationStatement(ImmutableVariableDeclaration(true, "x", NameType("int32"))),

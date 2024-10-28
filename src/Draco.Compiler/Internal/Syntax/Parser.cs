@@ -808,8 +808,8 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a function parameter.
     /// </summary>
-    /// <returns>The parsed <see cref="ParameterSyntax"/>.</returns>
-    private ParameterSyntaxBase ParseParameter()
+    /// <returns>The parsed <see cref="NormalParameterSyntax"/>.</returns>
+    private ParameterSyntax ParseParameter()
     {
         var attributes = this.ParseAttributeList();
         if (this.Matches(TokenKind.KeywordThis, out var thisKeyWord))
@@ -825,7 +825,7 @@ internal sealed class Parser(
         var name = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
-        return new ParameterSyntax(attributes, variadic, name, colon, type);
+        return new NormalParameterSyntax(attributes, variadic, name, colon, type);
     }
 
     /// <summary>

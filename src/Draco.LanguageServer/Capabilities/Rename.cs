@@ -85,7 +85,7 @@ internal partial class DracoLanguageServer : IRename
 
     private static Lsp.Model.TextEdit RenameNode(SyntaxNode original, string name) => original switch
     {
-        ParameterSyntax p => RenameToken(p.Name, name),
+        NormalParameterSyntax p => RenameToken(p.Name, name),
         GenericParameterSyntax g => RenameToken(g.Name, name),
         FunctionDeclarationSyntax f => RenameToken(f.Name, name),
         VariableDeclarationSyntax v => RenameToken(v.Name, name),

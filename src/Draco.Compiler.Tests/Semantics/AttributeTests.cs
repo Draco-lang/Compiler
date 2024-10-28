@@ -103,7 +103,7 @@ public sealed class AttributeTests
             FunctionDeclaration(
                 [Attribute(NameType("ObsoleteAttribute"), StringExpression("do not use this function"))],
                 "foo",
-                ParameterList(Parameter([Attribute(NameType("AllowNullAttribute"))], "arg", NameType("object"))),
+                ParameterList(NormalParameter([Attribute(NameType("AllowNullAttribute"))], "arg", NameType("object"))),
                 null,
                 BlockFunctionBody())));
 
@@ -132,7 +132,7 @@ public sealed class AttributeTests
             FunctionDeclaration(
                 [Attribute(NameType("ObsoleteAttribute"), StringExpression("do not use this function"))],
                 "foo",
-                ParameterList(Parameter([Attribute(NameType("AllowNullAttribute"))], "arg", NameType("object"))),
+                ParameterList(NormalParameter([Attribute(NameType("AllowNullAttribute"))], "arg", NameType("object"))),
                 null,
                 BlockFunctionBody())));
 

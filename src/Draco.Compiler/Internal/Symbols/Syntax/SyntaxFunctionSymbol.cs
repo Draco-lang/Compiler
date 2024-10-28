@@ -130,7 +130,7 @@ internal abstract class SyntaxFunctionSymbol(
                 parameters.Add(asSymbol);
                 continue;
             }
-            var parameterSyntax = (ParameterSyntax)syntax;
+            var parameterSyntax = (NormalParameterSyntax)syntax;
 
             var parameterName = parameterSyntax.Name.Text;
 

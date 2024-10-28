@@ -133,7 +133,7 @@ internal static class BinderFacts
     public static bool DefinesSymbol(SyntaxNode node) => node
         is FunctionDeclarationSyntax
         or VariableDeclarationSyntax
-        or ParameterSyntax
+        or NormalParameterSyntax
         or LabelDeclarationSyntax
         or ClassDeclarationSyntax;
 

@@ -40,7 +40,7 @@ public sealed class SymbolResolutionTests
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             ParameterList(
-                Parameter("n", NameType("int32"))),
+                NormalParameter("n", NameType("int32"))),
             null,
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration(true, "x1")),
@@ -53,7 +53,7 @@ public sealed class SymbolResolutionTests
                     ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration(true, "x6"))))))))));
 
         var foo = tree.GetNode<FunctionDeclarationSyntax>();
-        var n = tree.GetNode<ParameterSyntax>();
+        var n = tree.GetNode<NormalParameterSyntax>();
         var x1 = tree.GetNode<VariableDeclarationSyntax>(0);
         var x2 = tree.GetNode<VariableDeclarationSyntax>(1);
         var x3 = tree.GetNode<VariableDeclarationSyntax>(2);
@@ -327,13 +327,13 @@ public sealed class SymbolResolutionTests
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             ParameterList(
-                Parameter("x", NameType("int32")),
-                Parameter("x", NameType("int32"))),
+                NormalParameter("x", NameType("int32")),
+                NormalParameter("x", NameType("int32"))),
             null,
             BlockFunctionBody())));
 
-        var x1Decl = tree.GetNode<ParameterSyntax>(0);
-        var x2Decl = tree.GetNode<ParameterSyntax>(1);
+        var x1Decl = tree.GetNode<NormalParameterSyntax>(0);
+        var x2Decl = tree.GetNode<NormalParameterSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -361,14 +361,14 @@ public sealed class SymbolResolutionTests
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             ParameterList(
-                Parameter("x", NameType("int32")),
-                Parameter("x", NameType("int32"))),
+                NormalParameter("x", NameType("int32")),
+                NormalParameter("x", NameType("int32"))),
             null,
             BlockFunctionBody(
                 DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x")))))));
 
-        var x1Decl = tree.GetNode<ParameterSyntax>(0);
-        var x2Decl = tree.GetNode<ParameterSyntax>(1);
+        var x1Decl = tree.GetNode<NormalParameterSyntax>(0);
+        var x2Decl = tree.GetNode<NormalParameterSyntax>(1);
         var xRef = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
@@ -418,7 +418,7 @@ public sealed class SymbolResolutionTests
             VariableDeclaration(true, "b", NameType("int32")),
             FunctionDeclaration(
                 "b",
-                ParameterList(Parameter("b", NameType("int32"))),
+                ParameterList(NormalParameter("b", NameType("int32"))),
                 NameType("int32"),
                 InlineFunctionBody(NameExpression("b")))));
 
@@ -1664,7 +1664,7 @@ public sealed class SymbolResolutionTests
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("x", NameType("unknown"))),
+            ParameterList(NormalParameter("x", NameType("unknown"))),
             null,
             BlockFunctionBody())));
 
@@ -3246,7 +3246,7 @@ public sealed class SymbolResolutionTests
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             GenericParameterList(GenericParameter("T")),
-            ParameterList(Parameter("x", NameType("T"))),
+            ParameterList(NormalParameter("x", NameType("T"))),
             NameType("T"),
             InlineFunctionBody(NameExpression("x")))));
 

@@ -98,7 +98,7 @@ public sealed class ReturnsOnAllPathsTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("b", NameType("bool"))),
+            ParameterList(NormalParameter("b", NameType("bool"))),
             NameType("int32"),
             BlockFunctionBody(
                 ExpressionStatement(IfExpression(
@@ -124,7 +124,7 @@ public sealed class ReturnsOnAllPathsTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("b", NameType("bool"))),
+            ParameterList(NormalParameter("b", NameType("bool"))),
             NameType("int32"),
             BlockFunctionBody(
                 ExpressionStatement(IfExpression(
@@ -151,7 +151,7 @@ public sealed class ReturnsOnAllPathsTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("b", NameType("bool"))),
+            ParameterList(NormalParameter("b", NameType("bool"))),
             NameType("int32"),
             BlockFunctionBody(
                 ExpressionStatement(IfExpression(
@@ -177,7 +177,7 @@ public sealed class ReturnsOnAllPathsTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(Parameter("b", NameType("bool"))),
+            ParameterList(NormalParameter("b", NameType("bool"))),
             NameType("int32"),
             BlockFunctionBody(
                 ExpressionStatement(WhileExpression(

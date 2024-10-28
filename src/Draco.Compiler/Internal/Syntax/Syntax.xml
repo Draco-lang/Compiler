@@ -481,7 +481,7 @@
 
       <Token Kind="ParenOpen" />
     </Field>
-    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;ParameterSyntaxBase&gt;">
+    <Field Name="ParameterList" Type="SeparatedSyntaxList&lt;ParameterSyntax&gt;">
       <Documentation>
         The parameters this function declares.
       </Documentation>
@@ -505,13 +505,13 @@
     </Field>
   </Node>
 
-  <AbstractNode Name="ParameterSyntaxBase" Base="SyntaxNode">
+  <AbstractNode Name="ParameterSyntax" Base="SyntaxNode">
     <Documentation>
       A single parameter in a function parameter list.
     </Documentation>
   </AbstractNode>
 
-  <Node Name="ThisParameterSyntax" Base="ParameterSyntaxBase">
+  <Node Name="ThisParameterSyntax" Base="ParameterSyntax">
     <Documentation>
       The this parameter at the first place in a parameter list.
     </Documentation>
@@ -524,7 +524,7 @@
     </Field>
   </Node>
 
-  <Node Name="ParameterSyntax" Base="ParameterSyntaxBase">
+  <Node Name="NormalParameterSyntax" Base="ParameterSyntax">
     <Documentation>
       A single parameter in a function parameter list.
     </Documentation>

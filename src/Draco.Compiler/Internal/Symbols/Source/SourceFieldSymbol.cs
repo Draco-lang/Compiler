@@ -61,6 +61,6 @@ internal sealed class SourceFieldSymbol(
     private GlobalBinding BindTypeAndValue(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        return binder.BindGlobal(this, binderProvider.DiagnosticBag);
+        return binder.BindGlobalField(this, binderProvider.DiagnosticBag);
     }
 }

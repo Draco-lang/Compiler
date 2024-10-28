@@ -30,19 +30,25 @@ internal partial class Binder
         return statementTask.Result;
     }
 
-    public virtual GlobalBinding BindGlobal(SourceFieldSymbol global, DiagnosticBag diagnostics)
+    public virtual GlobalBinding BindGlobalField(SourceFieldSymbol global, DiagnosticBag diagnostics) =>
+        this.BindGlobal(global, global.DeclaringSyntax, diagnostics);
+
+    public virtual GlobalBinding BindGlobalProperty(SourceAutoPropertySymbol global, DiagnosticBag diagnostics) =>
+        this.BindGlobal(global, global.DeclaringSyntax, diagnostics);
+
+    private GlobalBinding BindGlobal(Symbol symbol, VariableDeclarationSyntax syntax, DiagnosticBag diagnostics)
     {
-        var globalName = global.DeclaringSyntax.Name.Text;
+        var globalName = syntax.Name.Text;
         var constraints = new ConstraintSolver(this, $"global {globalName}");
 
-        var typeSyntax = global.DeclaringSyntax.Type;
-        var valueSyntax = global.DeclaringSyntax.Value;
+        var typeSyntax = syntax.Type?.Type;
+        var valueSyntax = syntax.Value?.Value;
 
         // Bind type and value
-        var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
+        var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax, diagnostics);
         var valueTask = valueSyntax is null
             ? null
-            : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
+            : this.BindExpression(valueSyntax, constraints, diagnostics);
 
         // Infer declared type
         var declaredType = type ?? constraints.AllocateTypeVariable(track: false);
@@ -53,7 +59,7 @@ internal partial class Binder
             constraints.Assignable(
                 declaredType,
                 valueTask.GetResultType(valueSyntax, constraints, diagnostics),
-                global.DeclaringSyntax.Value!.Value);
+                valueSyntax!);
         }
 
         // Solve
@@ -70,59 +76,8 @@ internal partial class Binder
             // We could not infer the type
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.CouldNotInferType,
-                location: global.DeclaringSyntax.Location,
-                formatArgs: global.Name));
-            // We use an error type
-            declaredType = WellKnownTypes.ErrorType;
-        }
-
-        // Done
-        return new(declaredType, boundValue);
-    }
-
-    // TODO: Copypasta from SourceFieldSymbol
-    public virtual GlobalBinding BindGlobal(SourceAutoPropertySymbol global, DiagnosticBag diagnostics)
-    {
-        var globalName = global.DeclaringSyntax.Name.Text;
-        var constraints = new ConstraintSolver(this, $"global {globalName}");
-
-        var typeSyntax = global.DeclaringSyntax.Type;
-        var valueSyntax = global.DeclaringSyntax.Value;
-
-        // Bind type and value
-        var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
-        var valueTask = valueSyntax is null
-            ? null
-            : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
-
-        // Infer declared type
-        var declaredType = type ?? constraints.AllocateTypeVariable(track: false);
-
-        // Add assignability constraint, if needed
-        if (valueTask is not null)
-        {
-            constraints.Assignable(
-                declaredType,
-                valueTask.GetResultType(valueSyntax, constraints, diagnostics),
-                global.DeclaringSyntax.Value!.Value);
-        }
-
-        // Solve
-        constraints.Solve(diagnostics);
-
-        // Type out the expression, if needed
-        var boundValue = valueTask?.Result;
-
-        // Unwrap the type
-        declaredType = declaredType.Substitution;
-
-        if (declaredType.IsTypeVariable)
-        {
-            // We could not infer the type
-            diagnostics.Add(Diagnostic.Create(
-                template: TypeCheckingErrors.CouldNotInferType,
-                location: global.DeclaringSyntax.Location,
-                formatArgs: global.Name));
+                location: syntax.Location,
+                formatArgs: symbol.Name));
             // We use an error type
             declaredType = WellKnownTypes.ErrorType;
         }

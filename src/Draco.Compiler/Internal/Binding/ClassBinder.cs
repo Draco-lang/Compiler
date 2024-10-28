@@ -19,7 +19,6 @@ internal sealed class ClassBinder(Binder parent, TypeSymbol symbol) : Binder(par
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)
     {
-        // copied from the function binder, as far as i understand it, it should be the same.
         foreach (var typeParam in this.symbol.GenericParameters)
         {
             if (typeParam.Name != name) continue;
@@ -27,8 +26,6 @@ internal sealed class ClassBinder(Binder parent, TypeSymbol symbol) : Binder(par
             result.Add(typeParam);
             break;
         }
-
-        if (flags.HasFlag(LookupFlags.DisallowLocals)) return;
 
         foreach (var member in this.symbol.Members)
         {

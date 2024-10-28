@@ -37,7 +37,7 @@ internal sealed class SourceFieldSymbol(
         this.BindTypeAndValueIfNeeded(binderProvider);
 
         // Flow analysis
-        CompleteFlowAnalysis.AnalyzeValue(this, binderProvider.DiagnosticBag);
+        CompleteFlowAnalysis.AnalyzeField(this, binderProvider.DiagnosticBag);
     }
 
     private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValueIfNeeded(IBinderProvider binderProvider)

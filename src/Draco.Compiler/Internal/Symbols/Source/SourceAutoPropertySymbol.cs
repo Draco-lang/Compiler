@@ -40,7 +40,7 @@ internal sealed class SourceAutoPropertySymbol(
         this.BindTypeAndValueIfNeeded(binderProvider);
 
         // Flow analysis
-        CompleteFlowAnalysis.AnalyzeValue(this, binderProvider.DiagnosticBag);
+        CompleteFlowAnalysis.AnalyzeProperty(this, binderProvider.DiagnosticBag);
     }
 
     private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValueIfNeeded(IBinderProvider binderProvider)

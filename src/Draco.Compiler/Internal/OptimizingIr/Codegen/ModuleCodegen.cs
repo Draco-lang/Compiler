@@ -68,7 +68,6 @@ internal sealed class ModuleCodegen : SymbolVisitor
         }
     }
 
-    // TODO: Copypasta from VisitField
     public override void VisitProperty(PropertySymbol propertySymbol)
     {
         // TODO: Not flexible, won't work for non-auto props

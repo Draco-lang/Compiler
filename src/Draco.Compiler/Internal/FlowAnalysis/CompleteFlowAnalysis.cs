@@ -39,11 +39,11 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     }
 
     /// <summary>
-    /// Analyzes a global value.
+    /// Analyzes a global field.
     /// </summary>
     /// <param name="symbol">The symbol to analyze.</param>
     /// <param name="diagnostics">The diagnostics to report errors to.</param>
-    public static void AnalyzeValue(SourceFieldSymbol symbol, DiagnosticBag diagnostics)
+    public static void AnalyzeField(SourceFieldSymbol symbol, DiagnosticBag diagnostics)
     {
         if (symbol.Value is null)
         {
@@ -63,8 +63,12 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
         symbol.Value.Accept(analysis);
     }
 
-    // TODO: Copypasta from SourceFieldSymbol
-    public static void AnalyzeValue(SourceAutoPropertySymbol symbol, DiagnosticBag diagnostics)
+    /// <summary>
+    /// Analyzes a global property.
+    /// </summary>
+    /// <param name="symbol">The symbol to analyze.</param>
+    /// <param name="diagnostics">The diagnostics to report errors to.</param>
+    public static void AnalyzeProperty(SourceAutoPropertySymbol symbol, DiagnosticBag diagnostics)
     {
         if (symbol.Value is null)
         {

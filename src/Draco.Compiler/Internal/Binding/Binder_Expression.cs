@@ -715,16 +715,17 @@ internal partial class Binder
 
     private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var function = ((SyntaxFunctionSymbol)this.ContainingSymbol!);
-        var thisArg = function.ThisArgument as ParameterSymbol;
+        var function = this.ContainingSymbol as SyntaxFunctionSymbol;
+        var thisArg = function?.ThisArgument as ParameterSymbol;
         if (thisArg is null)
         {
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.NoThisInStaticMethod,
                 location: syntax.Location,
                 formatArgs: [this.ContainingSymbol!.Name]));
-            var type = function.ContainingSymbol as TypeSymbol ?? WellKnownTypes.ErrorType;
-            thisArg = new ErrorThisParameterSymbol(type, function);
+            var type = function?.ContainingSymbol as TypeSymbol ?? WellKnownTypes.ErrorType;
+
+            thisArg = new ErrorThisParameterSymbol(type, function as FunctionSymbol ?? new ErrorFunctionSymbol(0));
         }
         var boundThis = new BoundParameterExpression(syntax, thisArg);
         return BindingTask.FromResult<BoundExpression>(boundThis);

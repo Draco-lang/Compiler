@@ -55,7 +55,6 @@ internal sealed class Procedure : IProcedure
         var idx = this.Symbol.Parameters.IndexOf(symbol);
         if (idx == -1) throw new System.ArgumentOutOfRangeException(nameof(symbol));
         return isStaticMethod ? idx : idx + 1;
-
     }
 
     public BasicBlock DefineBasicBlock(LabelSymbol symbol)

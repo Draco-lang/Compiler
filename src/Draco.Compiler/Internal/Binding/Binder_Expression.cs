@@ -14,6 +14,7 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -715,20 +716,35 @@ internal partial class Binder
 
     private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        var function = this.ContainingSymbol as SyntaxFunctionSymbol;
-        var thisArg = function?.ThisArgument as ParameterSymbol;
-        if (thisArg is null)
+        if (this.ContainingSymbol is not SyntaxFunctionSymbol function || this.ContainingSymbol == null)
         {
             diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalThis,
+                location: syntax.Location
+            ));
+            return BindingTask.FromResult<BoundExpression>(
+                new BoundParameterExpression(
+                    syntax,
+                    new ErrorThisParameterSymbol(WellKnownTypes.ErrorType, new ErrorFunctionSymbol(0))));
+        }
+
+        var thisArg = function.ThisArgument;
+        if (thisArg is not null)
+        {
+            var boundThis = new BoundParameterExpression(syntax, thisArg);
+            return BindingTask.FromResult<BoundExpression>(boundThis);
+        }
+
+        diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.NoThisInStaticMethod,
                 location: syntax.Location,
                 formatArgs: [this.ContainingSymbol!.Name]));
-            var type = function?.ContainingSymbol as TypeSymbol ?? WellKnownTypes.ErrorType;
+        var type = function.ContainingSymbol as TypeSymbol ?? WellKnownTypes.ErrorType;
 
-            thisArg = new ErrorThisParameterSymbol(type, function as FunctionSymbol ?? new ErrorFunctionSymbol(0));
-        }
-        var boundThis = new BoundParameterExpression(syntax, thisArg);
-        return BindingTask.FromResult<BoundExpression>(boundThis);
+        return BindingTask.FromResult<BoundExpression>(
+            new BoundParameterExpression(
+                syntax,
+                new ErrorThisParameterSymbol(type, function)));
     }
 
     private async BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

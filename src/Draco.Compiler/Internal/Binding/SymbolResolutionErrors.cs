@@ -211,4 +211,10 @@ internal static class SymbolResolutionErrors
         severity: DiagnosticSeverity.Error,
         format: "illegal return expression outside of function definition",
         code: Code(23));
+
+    public static readonly DiagnosticTemplate IllegalThis = DiagnosticTemplate.Create(
+        title: "ilegal this",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal this expression outside of a function definition",
+        code: Code(24));
 }

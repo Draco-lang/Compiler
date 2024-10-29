@@ -1375,7 +1375,7 @@
 
   <Node Name="ThisExpressionSyntax" Base="ExpressionSyntax">
     <Documentation>
-      The keyword this, representing the type instance.
+      The expression referencing the receiver of a member function.
     </Documentation>
 
     <Field Name="Keyword" Type="SyntaxToken">

@@ -30,19 +30,25 @@ internal partial class Binder
         return statementTask.Result;
     }
 
-    public virtual GlobalBinding BindGlobal(SourceFieldSymbol global, DiagnosticBag diagnostics)
+    public virtual GlobalBinding BindGlobalField(SourceFieldSymbol global, DiagnosticBag diagnostics) =>
+        this.BindGlobal(global, global.DeclaringSyntax, diagnostics);
+
+    public virtual GlobalBinding BindGlobalProperty(SourceAutoPropertySymbol global, DiagnosticBag diagnostics) =>
+        this.BindGlobal(global, global.DeclaringSyntax, diagnostics);
+
+    private GlobalBinding BindGlobal(Symbol symbol, VariableDeclarationSyntax syntax, DiagnosticBag diagnostics)
     {
-        var globalName = global.DeclaringSyntax.Name.Text;
+        var globalName = syntax.Name.Text;
         var constraints = new ConstraintSolver(this, $"global {globalName}");
 
-        var typeSyntax = global.DeclaringSyntax.Type;
-        var valueSyntax = global.DeclaringSyntax.Value;
+        var typeSyntax = syntax.Type?.Type;
+        var valueSyntax = syntax.Value?.Value;
 
         // Bind type and value
-        var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
+        var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax, diagnostics);
         var valueTask = valueSyntax is null
             ? null
-            : this.BindExpression(valueSyntax.Value, constraints, diagnostics);
+            : this.BindExpression(valueSyntax, constraints, diagnostics);
 
         // Infer declared type
         var declaredType = type ?? constraints.AllocateTypeVariable(track: false);
@@ -53,7 +59,7 @@ internal partial class Binder
             constraints.Assignable(
                 declaredType,
                 valueTask.GetResultType(valueSyntax, constraints, diagnostics),
-                global.DeclaringSyntax.Value!.Value);
+                valueSyntax!);
         }
 
         // Solve
@@ -70,8 +76,8 @@ internal partial class Binder
             // We could not infer the type
             diagnostics.Add(Diagnostic.Create(
                 template: TypeCheckingErrors.CouldNotInferType,
-                location: global.DeclaringSyntax.Location,
-                formatArgs: global.Name));
+                location: syntax.Location,
+                formatArgs: symbol.Name));
             // We use an error type
             declaredType = WellKnownTypes.ErrorType;
         }
@@ -105,15 +111,26 @@ internal partial class Binder
                 var decl = declStmt.Declaration;
                 // Imports are skipped
                 if (decl is ImportDeclarationSyntax) continue;
-                // Globals mean an assignment into the eval function
-                if (decl is VariableDeclarationSyntax varDecl)
+                // Global fields and props mean an assignment into the eval function
+                if (decl is VariableDeclarationSyntax { FieldModifier: not null } fieldDecl)
                 {
                     // Retrieve the symbol
                     var symbol = module.Members
                         .OfType<ScriptFieldSymbol>()
-                        .First(g => g.DeclaringSyntax == varDecl);
+                        .First(g => g.DeclaringSyntax == fieldDecl);
 
-                    BindGlobal(symbol);
+                    BindGlobalField(symbol);
+
+                    continue;
+                }
+                if (decl is VariableDeclarationSyntax { FieldModifier: null } propDecl)
+                {
+                    // Retrieve the symbol
+                    var symbol = module.Members
+                        .OfType<ScriptAutoPropertySymbol>()
+                        .First(g => g.DeclaringSyntax == propDecl);
+
+                    BindGlobalProperty(symbol);
 
                     continue;
                 }
@@ -170,27 +187,30 @@ internal partial class Binder
                 value: BoundUnitExpression.Default)),
             EvalType: evalType);
 
-        void BindGlobal(ScriptFieldSymbol symbol)
-        {
-            var typeSyntax = symbol.DeclaringSyntax.Type;
-            var valueSyntax = symbol.DeclaringSyntax.Value;
+        void BindGlobalField(ScriptFieldSymbol symbol) => BindGlobal(symbol.DeclaringSyntax, symbol);
+        void BindGlobalProperty(ScriptAutoPropertySymbol symbol) => BindGlobal(symbol.DeclaringSyntax, symbol.BackingField);
 
-            var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax.Type, diagnostics);
-            var valueTask = valueSyntax is null ? null : this.BindExpression(valueSyntax.Value, solver, diagnostics);
+        void BindGlobal(VariableDeclarationSyntax syntax, FieldSymbol targetField)
+        {
+            var typeSyntax = syntax.Type?.Type;
+            var valueSyntax = syntax.Value?.Value;
+
+            var type = typeSyntax is null ? null : this.BindTypeToTypeSymbol(typeSyntax, diagnostics);
+            var valueTask = valueSyntax is null ? null : this.BindExpression(valueSyntax, solver, diagnostics);
 
             // Infer declared type
             var declaredType = type ?? solver.AllocateTypeVariable();
 
             // Unify with the type declared on the symbol
-            ConstraintSolver.UnifyAsserted(declaredType, symbol.Type);
+            ConstraintSolver.UnifyAsserted(declaredType, targetField.Type);
 
             // Add assignability constraint, if needed
             if (valueTask is not null)
             {
                 solver.Assignable(
                     declaredType,
-                    valueTask.GetResultType(valueSyntax!.Value, solver, diagnostics),
-                    valueSyntax.Value);
+                    valueTask.GetResultType(valueSyntax, solver, diagnostics),
+                    valueSyntax!);
             }
 
             fillerTasks.Add(() =>
@@ -200,11 +220,11 @@ internal partial class Binder
                 {
                     // Add the assignment to the eval function
                     evalFuncStatements.Add(ExpressionStatement(AssignmentExpression(
-                        left: FieldLvalue(receiver: null, field: symbol),
+                        left: FieldLvalue(receiver: null, field: targetField),
                         right: assignedValue)));
                 }
 
-                globalBindings.Add(symbol.DeclaringSyntax, new(declaredType, assignedValue));
+                globalBindings.Add(syntax, new(declaredType, assignedValue));
             });
         }
 

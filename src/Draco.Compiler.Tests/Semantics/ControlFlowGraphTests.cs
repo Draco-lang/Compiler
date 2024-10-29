@@ -119,7 +119,7 @@ public sealed class ControlFlowGraphTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("i", null, LiteralExpression(0))),
+                    DeclarationStatement(VarDeclaration("i", null, LiteralExpression(0))),
                     ExpressionStatement(WhileExpression(
                         RelationalExpression(NameExpression("i"), ComparisonElement(LessThan, LiteralExpression(10))),
                         BlockExpression(
@@ -184,7 +184,7 @@ public sealed class ControlFlowGraphTests
                 ParameterList(Parameter("b", NameType("bool"))),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration("x", null, IfExpression(
+                    DeclarationStatement(VarDeclaration("x", null, IfExpression(
                         NameExpression("b"),
                         GotoExpression(NameLabel("noassign")),
                         LiteralExpression(1)))),

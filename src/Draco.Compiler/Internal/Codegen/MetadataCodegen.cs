@@ -437,15 +437,53 @@ internal sealed class MetadataCodegen : MetadataWriter
         }
     }
 
-    private void EncodeModule(IModule module, TypeDefinitionHandle? parentModule = null, int fieldIndex = 1, int procIndex = 1)
+    private void EncodeModule(IModule module)
     {
-        var currentFieldIndex = fieldIndex;
-        var currentProcIndex = procIndex;
+        var fieldIndex = 1;
+        var procIndex = 1;
+        this.EncodeModule(module, parent: null, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
+    }
+
+    private void EncodeModule(IModule module, TypeDefinitionHandle? parent, ref int fieldIndex, ref int procIndex)
+    {
+        var startFieldIndex = fieldIndex;
+        var startProcIndex = procIndex;
+
+        var visibility = module.Symbol.Visibility == Api.Semantics.Visibility.Public
+            ? (parent is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public)
+            : (parent is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic);
+        var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed;
+
+        var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
+
+        // Create the type
+        var createdModule = this.AddTypeDefinition(
+            attributes: attributes,
+            @namespace: default,
+            name: name,
+            baseType: this.systemObjectReference,
+            fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
+            methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));
+
+        // If this isn't top level module, we specify nested relationship
+        if (parent is not null) this.MetadataBuilder.AddNestedType(createdModule, parent.Value);
+
+        // Properties
+        var firstProperty = null as PropertyDefinitionHandle?;
+        var propertyHandleMap = new Dictionary<Symbol, PropertyDefinitionHandle>();
+        foreach (var prop in module.Properties)
+        {
+            var propHandle = this.EncodeProperty(createdModule, prop);
+            firstProperty ??= propHandle;
+            propertyHandleMap.Add(prop, propHandle);
+        }
+        if (firstProperty is not null) this.MetadataBuilder.AddPropertyMap(createdModule, firstProperty.Value);
+
         // Go through global fields
         foreach (var field in module.Fields)
         {
             this.EncodeField(field);
-            currentFieldIndex++;
+            ++fieldIndex;
         }
 
         // Go through procedures
@@ -459,54 +497,33 @@ internal sealed class MetadataCodegen : MetadataWriter
 
             // If this is the entry point, save it
             if (ReferenceEquals(this.assembly.EntryPoint, procedure)) this.EntryPointHandle = handle;
-            currentProcIndex++;
+            ++procIndex;
+
+            if (procedure.Symbol is IPropertyAccessorSymbol propAccessor)
+            {
+                // This is an accessor
+                var isGetter = propAccessor.Property.Getter == propAccessor;
+                this.MetadataBuilder.AddMethodSemantics(
+                    association: propertyHandleMap[propAccessor.Property],
+                    semantics: isGetter ? MethodSemanticsAttributes.Getter : MethodSemanticsAttributes.Setter,
+                    methodDefinition: handle);
+            }
         }
 
         // Compile global initializer too
         this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
-        currentProcIndex++;
-
-        TypeAttributes visibility;
-        if (module.Symbol.Visibility == Api.Semantics.Visibility.Public)
-        {
-            visibility = parentModule is not null ? TypeAttributes.NestedPublic : TypeAttributes.Public;
-        }
-        else
-        {
-            visibility = parentModule is not null ? TypeAttributes.NestedAssembly : TypeAttributes.NotPublic;
-        }
-        var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Abstract | TypeAttributes.Sealed;
-
-        var name = string.IsNullOrEmpty(module.Name) ? CompilerConstants.DefaultModuleName : module.Name;
-
-        // Create the type
-        var createdModule = this.AddTypeDefinition(
-            attributes: attributes,
-            @namespace: default,
-            name: name,
-            baseType: this.systemObjectReference,
-            fieldList: MetadataTokens.FieldDefinitionHandle(fieldIndex),
-            methodList: MetadataTokens.MethodDefinitionHandle(procIndex));
-
-        // If this isn't top level module, we specify nested relationship
-        if (parentModule is not null) this.MetadataBuilder.AddNestedType(createdModule, parentModule.Value);
+        ++procIndex;
 
         // We encode every submodule
         foreach (var subModule in module.Submodules.Values)
         {
-            this.EncodeModule(subModule, createdModule, currentFieldIndex, currentProcIndex);
+            this.EncodeModule(subModule, createdModule, ref fieldIndex, ref procIndex);
         }
     }
 
     private FieldDefinitionHandle EncodeField(FieldSymbol field)
     {
-        var visibility = field.Visibility switch
-        {
-            Api.Semantics.Visibility.Public => FieldAttributes.Public,
-            Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
-            Api.Semantics.Visibility.Private => FieldAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(field)),
-        };
+        var visibility = GetFieldVisibility(field.Visibility);
 
         // Definition
         return this.AddFieldDefinition(
@@ -517,13 +534,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private MethodDefinitionHandle EncodeProcedure(IProcedure procedure, string? specialName = null)
     {
-        var visibility = procedure.Symbol.Visibility switch
-        {
-            Api.Semantics.Visibility.Public => MethodAttributes.Public,
-            Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
-            Api.Semantics.Visibility.Private => MethodAttributes.Private,
-            _ => throw new ArgumentOutOfRangeException(nameof(procedure)),
-        };
+        var visibility = GetMethodVisibility(procedure.Symbol.Visibility);
 
         // Encode instructions
         var cilCodegen = new CilCodegen(this, procedure);
@@ -593,6 +604,19 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         return definitionHandle;
     }
+
+    private PropertyDefinitionHandle EncodeProperty(
+        TypeDefinitionHandle declaringType,
+        PropertySymbol prop) => this.MetadataBuilder.AddProperty(
+        attributes: PropertyAttributes.None,
+        name: this.GetOrAddString(prop.Name),
+        signature: this.EncodeBlob(e =>
+        {
+            e
+                .PropertySignature(isInstanceProperty: !prop.IsStatic)
+                .Parameters(0, out var returnType, out _);
+            this.EncodeReturnType(returnType, prop.Type);
+        }));
 
     private BlobHandle EncodeFieldSignature(FieldSymbol field) =>
         this.EncodeBlob(e => this.EncodeSignatureType(e.Field().Type(), field.Type));
@@ -815,4 +839,20 @@ internal sealed class MetadataCodegen : MetadataWriter
         var contentId = peBuilder.Serialize(peBlob);
         peBlob.WriteContentTo(peStream);
     }
+
+    private static FieldAttributes GetFieldVisibility(Api.Semantics.Visibility visibility) => visibility switch
+    {
+        Api.Semantics.Visibility.Public => FieldAttributes.Public,
+        Api.Semantics.Visibility.Internal => FieldAttributes.Assembly,
+        Api.Semantics.Visibility.Private => FieldAttributes.Private,
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
+    };
+
+    private static MethodAttributes GetMethodVisibility(Api.Semantics.Visibility visibility) => visibility switch
+    {
+        Api.Semantics.Visibility.Public => MethodAttributes.Public,
+        Api.Semantics.Visibility.Internal => MethodAttributes.Assembly,
+        Api.Semantics.Visibility.Private => MethodAttributes.Private,
+        _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
+    };
 }

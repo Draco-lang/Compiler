@@ -19,6 +19,7 @@ internal sealed class Module : IModule
     IReadOnlyDictionary<ModuleSymbol, IModule> IModule.Submodules => this.submodules;
 
     public IReadOnlySet<FieldSymbol> Fields => this.fields;
+    public IReadOnlySet<PropertySymbol> Properties => this.properties;
 
     public Procedure GlobalInitializer { get; }
     IProcedure IModule.GlobalInitializer => this.GlobalInitializer;
@@ -33,6 +34,7 @@ internal sealed class Module : IModule
     IModule? IModule.Parent => this.Parent;
 
     private readonly HashSet<FieldSymbol> fields = [];
+    private readonly HashSet<PropertySymbol> properties = [];
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = [];
     private readonly Dictionary<ModuleSymbol, IModule> submodules = [];
 
@@ -59,6 +61,7 @@ internal sealed class Module : IModule
     }
 
     public void DefineField(FieldSymbol fieldSymbol) => this.fields.Add(fieldSymbol);
+    public void DefineProperty(PropertySymbol propertySymbol) => this.properties.Add(propertySymbol);
 
     public Procedure DefineProcedure(FunctionSymbol functionSymbol)
     {

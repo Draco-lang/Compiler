@@ -38,7 +38,9 @@ internal class ModuleBinder : Binder
         {
             if (symbol.Name != name) continue;
             if (!allowSymbol(symbol)) continue;
+            // NOTE: These are here to disallow self-referencing
             if (symbol is FieldSymbol { IsStatic: true } && !flags.HasFlag(LookupFlags.AllowGlobals)) continue;
+            if (symbol is PropertySymbol { IsStatic: true } && !flags.HasFlag(LookupFlags.AllowGlobals)) continue;
             result.Add(symbol);
         }
     }

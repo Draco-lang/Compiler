@@ -58,7 +58,8 @@ public abstract class CompletionProvider
      or SymbolKind.FunctionGroup
      or SymbolKind.Local
      or SymbolKind.Parameter
-     or SymbolKind.Field => context.HasFlag(CompletionContext.Expression),
+     or SymbolKind.Field
+     or SymbolKind.Property => context.HasFlag(CompletionContext.Expression),
 
         SymbolKind.Alias => IsAppropriateForContext(((Internal.Symbols.AliasSymbol)symbol).FullResolution, context),
 

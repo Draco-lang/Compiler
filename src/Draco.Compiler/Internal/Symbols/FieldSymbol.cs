@@ -9,7 +9,7 @@ namespace Draco.Compiler.Internal.Symbols;
 /// </summary>
 internal abstract class FieldSymbol : VariableSymbol, IMemberSymbol
 {
-    public virtual bool IsStatic => this.ContainingSymbol is ModuleSymbol;
+    public abstract bool IsStatic { get; }
     public bool IsExplicitImplementation => false;
 
     // NOTE: Override for covariant return type

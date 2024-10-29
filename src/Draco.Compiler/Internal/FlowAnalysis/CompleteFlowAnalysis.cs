@@ -39,15 +39,40 @@ internal sealed class CompleteFlowAnalysis : BoundTreeVisitor
     }
 
     /// <summary>
-    /// Analyzes a global value.
+    /// Analyzes a global field.
     /// </summary>
     /// <param name="symbol">The symbol to analyze.</param>
     /// <param name="diagnostics">The diagnostics to report errors to.</param>
-    public static void AnalyzeValue(SourceFieldSymbol symbol, DiagnosticBag diagnostics)
+    public static void AnalyzeField(SourceFieldSymbol symbol, DiagnosticBag diagnostics)
     {
         if (symbol.Value is null)
         {
             if (!symbol.IsMutable)
+            {
+                // Error, we expect globals to be inline initialized
+                diagnostics.Add(Diagnostic.Create(
+                    template: FlowAnalysisErrors.GlobalImmutableMustBeInitialized,
+                    location: symbol.DeclaringSyntax.Location,
+                    formatArgs: symbol.Name));
+            }
+            return;
+        }
+
+        var cfg = ControlFlowGraphBuilder.Build(symbol.Value);
+        var analysis = CreateAnalysis(diagnostics, symbol.Value, cfg);
+        symbol.Value.Accept(analysis);
+    }
+
+    /// <summary>
+    /// Analyzes a global property.
+    /// </summary>
+    /// <param name="symbol">The symbol to analyze.</param>
+    /// <param name="diagnostics">The diagnostics to report errors to.</param>
+    public static void AnalyzeProperty(SourceAutoPropertySymbol symbol, DiagnosticBag diagnostics)
+    {
+        if (symbol.Value is null)
+        {
+            if (symbol.Getter is null)
             {
                 // Error, we expect globals to be inline initialized
                 diagnostics.Add(Diagnostic.Create(

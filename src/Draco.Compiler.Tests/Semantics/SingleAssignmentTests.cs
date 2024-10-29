@@ -19,7 +19,7 @@ public sealed class SingleAssignmentTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
+                DeclarationStatement(ValDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -43,7 +43,7 @@ public sealed class SingleAssignmentTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0))),
+                DeclarationStatement(ValDeclaration("x", NameType("int32"), LiteralExpression(0))),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))));
 
         // Act
@@ -69,7 +69,7 @@ public sealed class SingleAssignmentTests
             ParameterList(Parameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(ValDeclaration("x", NameType("int32"))),
                 ExpressionStatement(IfExpression(
                     NameExpression("b"),
                     StatementExpression(ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))),
@@ -98,7 +98,7 @@ public sealed class SingleAssignmentTests
             ParameterList(Parameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(ValDeclaration("x", NameType("int32"))),
                 ExpressionStatement(IfExpression(
                     NameExpression("b"),
                     StatementExpression(ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1)))))),
@@ -127,7 +127,7 @@ public sealed class SingleAssignmentTests
             ParameterList(Parameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration("x", NameType("int32"))),
+                DeclarationStatement(ValDeclaration("x", NameType("int32"))),
                 ExpressionStatement(WhileExpression(
                     NameExpression("b"),
                     StatementExpression(ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(1))))))))));
@@ -146,12 +146,12 @@ public sealed class SingleAssignmentTests
     public void GlobalImmutableReassigned()
     {
         // Arrange
-        // val x: int32 = 0;
+        // field val x: int32 = 0;
         // func foo() {
         //     x = 1;
         // }
         var tree = SyntaxTree.Create(CompilationUnit(
-            ImmutableVariableDeclaration("x", NameType("int32"), LiteralExpression(0)),
+            FieldValDeclaration("x", NameType("int32"), LiteralExpression(0)),
             FunctionDeclaration(
                 "foo",
                 ParameterList(),

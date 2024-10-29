@@ -6,6 +6,7 @@ using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Syntax;
+using Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
 using static Draco.Compiler.Internal.OptimizingIr.InstructionFactory;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
@@ -45,11 +46,11 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     public override void VisitField(FieldSymbol fieldSymbol)
     {
-        if (fieldSymbol is not SyntaxFieldSymbol syntaxField) return;
+        if (fieldSymbol is not SyntaxFieldSymbol and not AutoPropertyBackingFieldSymbol) return;
 
-        this.module.DefineField(syntaxField);
+        this.module.DefineField(fieldSymbol);
 
-        if (syntaxField is not SourceFieldSymbol sourceGlobal) return;
+        if (fieldSymbol is not SourceFieldSymbol sourceGlobal) return;
 
         // If there's a value, compile it
         if (sourceGlobal.Value is not null)
@@ -61,6 +62,31 @@ internal sealed class ModuleCodegen : SymbolVisitor
             var value = bodyWithoutLocalFunctions.Accept(this.globalInitializer);
             // Store it
             this.globalInitializer.WriteAssignment(sourceGlobal, value);
+
+            // Compile the local functions
+            foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);
+        }
+    }
+
+    public override void VisitProperty(PropertySymbol propertySymbol)
+    {
+        // TODO: Not flexible, won't work for non-auto props
+        if (propertySymbol is not SyntaxAutoPropertySymbol) return;
+
+        this.module.DefineProperty(propertySymbol);
+
+        if (propertySymbol is not SourceAutoPropertySymbol sourceAutoProp) return;
+
+        // If there's a value, compile it
+        if (sourceAutoProp.Value is not null)
+        {
+            var body = this.RewriteBody(sourceAutoProp.Value);
+            // Yank out potential local functions and closures
+            var (bodyWithoutLocalFunctions, localFunctions) = ClosureRewriter.Rewrite(body);
+            // Compile it
+            var value = bodyWithoutLocalFunctions.Accept(this.globalInitializer);
+            // Store it
+            this.globalInitializer.WriteAssignment(sourceAutoProp.BackingField, value);
 
             // Compile the local functions
             foreach (var localFunc in localFunctions) this.VisitFunction(localFunc);

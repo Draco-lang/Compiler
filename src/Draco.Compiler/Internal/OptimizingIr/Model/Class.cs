@@ -5,7 +5,8 @@ using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
-internal class Class(Module declaringModule, TypeSymbol symbol) : IClass
+
+internal sealed class Class(Module declaringModule, TypeSymbol symbol) : IClass
 {
 
     public TypeSymbol Symbol { get; } = symbol;

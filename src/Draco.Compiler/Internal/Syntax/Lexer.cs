@@ -328,6 +328,7 @@ internal sealed class Lexer
             var tokenKind = ident.Span switch
             {
                 "and" => TokenKind.KeywordAnd,
+                "class" => TokenKind.KeywordClass,
                 "else" => TokenKind.KeywordElse,
                 "false" => TokenKind.KeywordFalse,
                 "field" => TokenKind.KeywordField,

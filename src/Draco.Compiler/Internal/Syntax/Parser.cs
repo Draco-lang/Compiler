@@ -384,6 +384,7 @@ internal sealed class Parser(
 
         case TokenKind.KeywordValue:
         case TokenKind.KeywordClass:
+            // TODO: Attributes?
             return this.ParseClassDeclaration(visibility);
 
         case TokenKind.KeywordFunc:

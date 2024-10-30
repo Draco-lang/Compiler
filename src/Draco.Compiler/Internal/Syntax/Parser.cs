@@ -541,7 +541,7 @@ internal sealed class Parser(
     /// <returns>The parsed <see cref="ClassDeclarationSyntax"/>.</returns>
     private ClassDeclarationSyntax ParseClassDeclaration(SyntaxToken? visibility)
     {
-        this.Matches(TokenKind.KeywordGlobal, out var valueModifier);
+        this.Matches(TokenKind.KeywordValue, out var valueModifier);
 
         // Class keyword and name of the class
         var classKeyword = this.Expect(TokenKind.KeywordClass);

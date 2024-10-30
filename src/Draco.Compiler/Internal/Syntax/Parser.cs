@@ -193,9 +193,11 @@ internal sealed class Parser(
         TokenKind.KeywordImport,
         TokenKind.KeywordField,
         TokenKind.KeywordFunc,
+        TokenKind.KeywordGlobal,
         TokenKind.KeywordModule,
         TokenKind.KeywordVar,
         TokenKind.KeywordVal,
+        TokenKind.KeywordValue,
     ];
 
     /// <summary>
@@ -374,31 +376,24 @@ internal sealed class Parser(
     {
         var attributes = this.ParseAttributeList();
         var visibility = this.ParseVisibilityModifier();
-        var global = this.ParseGlobalModifier(); // todo: check for global on other constructions and show custom error.
         switch (this.PeekKind())
         {
         case TokenKind.KeywordImport:
             return this.ParseImportDeclaration(attributes, visibility);
 
         case TokenKind.KeywordValue:
-        {
-            var valueKeyword = this.Expect(TokenKind.KeywordValue);
-            return this.ParseClassDeclaration(visibility: visibility, global: global, valueType: valueKeyword);
-        }
         case TokenKind.KeywordClass:
-            return this.ParseClassDeclaration(visibility: visibility, global: global, valueType: null);
+            return this.ParseClassDeclaration(visibility);
 
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration(attributes, visibility, context);
 
         case TokenKind.KeywordModule:
             return this.ParseModuleDeclaration(attributes, visibility, context);
-        case TokenKind.KeywordField:
-            var fieldToken = this.Advance();
-            return this.ParseVariableDeclaration(attributes, visibility, global, fieldToken, context);
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
         case TokenKind.KeywordField:
+        case TokenKind.KeywordGlobal:
             return this.ParseVariableDeclaration(attributes, visibility, context);
 
         case TokenKind.Identifier when this.PeekKind(1) == TokenKind.Colon:
@@ -543,10 +538,11 @@ internal sealed class Parser(
     /// Parses a class declaration.
     /// </summary>
     /// <param name="visibility">Optional visibility modifier token.</param>
-    /// <param name="valueType">Optional valuetype modifier token.</param>
     /// <returns>The parsed <see cref="ClassDeclarationSyntax"/>.</returns>
-    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxToken? visibility, SyntaxToken? global, SyntaxToken? valueType)
+    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxToken? visibility)
     {
+        this.Matches(TokenKind.KeywordGlobal, out var valueModifier);
+
         // Class keyword and name of the class
         var classKeyword = this.Expect(TokenKind.KeywordClass);
         var name = this.Expect(TokenKind.Identifier);
@@ -559,7 +555,7 @@ internal sealed class Parser(
 
         return new ClassDeclarationSyntax(
             visibility,
-            valueType,
+            valueModifier,
             classKeyword,
             name,
             generics,
@@ -618,7 +614,6 @@ internal sealed class Parser(
     private VariableDeclarationSyntax ParseVariableDeclaration(
         SyntaxList<AttributeSyntax>? attributes,
         SyntaxToken? visibility,
-        SyntaxToken? global,
         DeclarationContext context)
     {
         if (context == DeclarationContext.Local && attributes is not null)
@@ -632,9 +627,12 @@ internal sealed class Parser(
             this.AddDiagnostic(visibility, info);
         }
 
+        // Global modifier
+        this.Matches(TokenKind.KeywordGlobal, out var globalModifier);
+        // TODO: Check where this is correct
+
         // Field modifier
-        var fieldModifier = null as SyntaxToken;
-        this.Matches(TokenKind.KeywordField, out fieldModifier);
+        this.Matches(TokenKind.KeywordField, out var fieldModifier);
         if (context == DeclarationContext.Local && fieldModifier is not null)
         {
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedFieldModifier);
@@ -660,7 +658,16 @@ internal sealed class Parser(
 
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(attributes, visibility, fieldModifier, keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(
+            attributes,
+            visibility,
+            globalModifier,
+            fieldModifier,
+            keyword,
+            identifier,
+            type,
+            assignment,
+            semicolon);
     }
 
 

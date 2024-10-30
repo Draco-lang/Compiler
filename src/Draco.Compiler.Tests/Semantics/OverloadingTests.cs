@@ -18,34 +18,34 @@ public sealed class OverloadingTests
     private static IEnumerable<DeclarationSyntax> GetGenericListOverloads() => [
         FunctionDeclaration(
             "foo",
-            ParameterList(NormalParameter("l", GenericType(NameType("List"), NameType("int32")))),
+            ParameterList(Parameter("l", GenericType(NameType("List"), NameType("int32")))),
             null,
             BlockFunctionBody()),
         FunctionDeclaration(
             "foo",
-            ParameterList(NormalParameter("l", GenericType(NameType("List"), NameType("string")))),
-            null,
-            BlockFunctionBody()),
-        FunctionDeclaration(
-            "foo",
-            GenericParameterList(GenericParameter("T")),
-            ParameterList(NormalParameter("l", GenericType(NameType("List"), NameType("T")))),
-            null,
-            BlockFunctionBody()),
-        FunctionDeclaration(
-            "foo",
-            ParameterList(NormalParameter("l", GenericType(NameType("IEnumerable"), NameType("int32")))),
-            null,
-            BlockFunctionBody()),
-        FunctionDeclaration(
-            "foo",
-            ParameterList(NormalParameter("l", GenericType(NameType("IEnumerable"), NameType("string")))),
+            ParameterList(Parameter("l", GenericType(NameType("List"), NameType("string")))),
             null,
             BlockFunctionBody()),
         FunctionDeclaration(
             "foo",
             GenericParameterList(GenericParameter("T")),
-            ParameterList(NormalParameter("l", GenericType(NameType("IEnumerable"), NameType("T")))),
+            ParameterList(Parameter("l", GenericType(NameType("List"), NameType("T")))),
+            null,
+            BlockFunctionBody()),
+        FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("l", GenericType(NameType("IEnumerable"), NameType("int32")))),
+            null,
+            BlockFunctionBody()),
+        FunctionDeclaration(
+            "foo",
+            ParameterList(Parameter("l", GenericType(NameType("IEnumerable"), NameType("string")))),
+            null,
+            BlockFunctionBody()),
+        FunctionDeclaration(
+            "foo",
+            GenericParameterList(GenericParameter("T")),
+            ParameterList(Parameter("l", GenericType(NameType("IEnumerable"), NameType("T")))),
             null,
             BlockFunctionBody()),
     ];

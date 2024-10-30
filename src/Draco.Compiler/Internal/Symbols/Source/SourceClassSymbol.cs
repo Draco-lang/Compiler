@@ -97,7 +97,7 @@ internal sealed class SourceClassSymbol(
         case FunctionDeclarationSyntax functionSyntax:
             return new SourceFunctionSymbol(this, functionSyntax);
         case VariableDeclarationSyntax fieldSyntax:
-            if (fieldSyntax.FieldKeyword is null) throw new NotImplementedException();
+            if (fieldSyntax.FieldModifier is null) throw new NotImplementedException();
             return new SourceFieldSymbol(this, fieldSyntax);
         default:
             throw new NotImplementedException(); // TODO implement this

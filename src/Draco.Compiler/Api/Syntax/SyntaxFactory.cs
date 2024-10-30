@@ -101,9 +101,9 @@ public static partial class SyntaxFactory
     public static ParameterSyntax Parameter(string name, TypeSyntax type) =>
         Parameter([], name, type);
     public static ParameterSyntax Parameter(IEnumerable<AttributeSyntax> attributes, string name, TypeSyntax type) =>
-        Parameter(SyntaxList(attributes), null, Identifier(name), Colon, type);
+        NormalParameter(SyntaxList(attributes), null, Identifier(name), Colon, type);
     public static ParameterSyntax VariadicParameter(string name, TypeSyntax type) =>
-        Parameter(SyntaxList<AttributeSyntax>(), Ellipsis, Identifier(name), Colon, type);
+        NormalParameter(SyntaxList<AttributeSyntax>(), Ellipsis, Identifier(name), Colon, type);
 
     public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
         SeparatedSyntaxList(Comma, parameters);
@@ -173,57 +173,114 @@ public static partial class SyntaxFactory
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) =>
-        VariableDeclaration([], null, false, false, name, type, value);
+        VariableDeclaration(
+            attributes: [], null,
+            isGlobal: false,
+            isField: false,
+            isMutable: false,
+            name: name,
+            type: type,
+            value: value);
 
     public static VariableDeclarationSyntax VarDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) =>
-        VariableDeclaration([], null, false, true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(
+            attributes: [],
+            visibility: null,
+            isGlobal: false,
+            isField: false,
+            isMutable: true,
+            name: name,
+            type: type,
+            value: value);
 
     public static VariableDeclarationSyntax FieldValDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) =>
-        VariableDeclaration([], null, true, false, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(
+            attributes: [],
+            visibility: null,
+            isGlobal: false,
+            isField: true,
+            isMutable: false,
+            name: name,
+            type: type,
+            value: value);
 
     public static VariableDeclarationSyntax FieldVarDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) =>
-        VariableDeclaration([], null, true, true, name, type, value);
+        ExpressionSyntax? value = null) => VariableDeclaration(
+            attributes: [],
+            visibility: null,
+            isGlobal: false,
+            isField: true,
+            isMutable: true,
+            name: name,
+            type: type,
+            value: value);
 
     public static VariableDeclarationSyntax ValDeclaration(
         Visibility? visibility,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) =>
-        VariableDeclaration([], visibility, false, false, name, type, value);
+        VariableDeclaration(
+            attributes: [],
+            visibility: visibility,
+            isGlobal: false,
+            isField: false,
+            isMutable: false,
+            name: name,
+            type: type,
+            value: value);
 
     public static VariableDeclarationSyntax VarDeclaration(
         Visibility? visibility,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) =>
-        VariableDeclaration([], visibility, false, true, name, type, value);
+        VariableDeclaration(
+            attributes: [],
+            visibility: visibility,
+            isGlobal: false,
+            false, true, name, type, value);
 
     public static VariableDeclarationSyntax FieldValDeclaration(
         Visibility? visibility,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) =>
-        VariableDeclaration([], visibility, true, false, name, type, value);
+        VariableDeclaration(
+            attributes: [],
+            visibility: visibility,
+            isGlobal: false,
+            isField: true,
+            isMutable: false,
+            name: name,
+            type: type,
+            value: value);
 
     public static VariableDeclarationSyntax FieldVarDeclaration(
         Visibility? visibility,
         string name,
         TypeSyntax? type = null,
         ExpressionSyntax? value = null) =>
-        VariableDeclaration([], visibility, true, true, name, type, value);
+        VariableDeclaration(
+            attributes: [],
+            visibility: visibility,
+            isGlobal: false,
+            isField: true,
+            isMutable: true,
+            name: name,
+            type: type,
+            value: value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
         IEnumerable<AttributeSyntax> attributes,
         Visibility? visibility,
+        bool isGlobal,
         bool isField,
         bool isMutable,
         string name,
@@ -231,6 +288,7 @@ public static partial class SyntaxFactory
         ExpressionSyntax? value = null) => VariableDeclaration(
         attributes,
         Visibility(visibility),
+        isGlobal ? TokenKind.KeywordGlobal : null,
         isField ? TokenKind.KeywordField : null,
         isMutable ? TokenKind.KeywordVar : TokenKind.KeywordVal,
         name,

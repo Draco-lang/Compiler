@@ -83,7 +83,7 @@ public sealed class ControlFlowGraphTests
         var program = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "main",
-                ParameterList(NormalParameter("b", NameType("bool"))),
+                ParameterList(Parameter("b", NameType("bool"))),
                 null,
                 BlockFunctionBody(
                     ExpressionStatement(IfExpression(
@@ -149,7 +149,7 @@ public sealed class ControlFlowGraphTests
         var program = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "main",
-                ParameterList(NormalParameter("b", NameType("bool"))),
+                ParameterList(Parameter("b", NameType("bool"))),
                 null,
                 BlockFunctionBody(
                     ExpressionStatement(CallExpression(NameExpression("bar"))),
@@ -181,7 +181,7 @@ public sealed class ControlFlowGraphTests
         var program = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "main",
-                ParameterList(NormalParameter("b", NameType("bool"))),
+                ParameterList(Parameter("b", NameType("bool"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(VarDeclaration("x", null, IfExpression(
@@ -211,14 +211,14 @@ public sealed class ControlFlowGraphTests
         var program = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "main",
-                ParameterList(NormalParameter("s", GenericType(NameType("Array"), NameType("int32")))),
+                ParameterList(Parameter("s", GenericType(NameType("Array"), NameType("int32")))),
                 null,
                 BlockFunctionBody(
                     ExpressionStatement(ForExpression(
                         "i",
                         NameExpression("s"),
                         CallExpression(NameExpression("bar"), NameExpression("i")))))),
-            FunctionDeclaration("bar", ParameterList(NormalParameter("x", NameType("int32"))), null, BlockFunctionBody())));
+            FunctionDeclaration("bar", ParameterList(Parameter("x", NameType("int32"))), null, BlockFunctionBody())));
 
         // Act
         var cfg = FunctionToCfg(program);
@@ -243,10 +243,10 @@ public sealed class ControlFlowGraphTests
             FunctionDeclaration(
                 "foo",
                 ParameterList(
-                    NormalParameter("a", NameType("int32")),
-                    NormalParameter("b", NameType("int32")),
-                    NormalParameter("c", NameType("int32")),
-                    NormalParameter("d", NameType("int32"))),
+                    Parameter("a", NameType("int32")),
+                    Parameter("b", NameType("int32")),
+                    Parameter("c", NameType("int32")),
+                    Parameter("d", NameType("int32"))),
                 null,
                 InlineFunctionBody(RelationalExpression(
                     BlockExpression([ExpressionStatement(CallExpression(NameExpression("bar")))], NameExpression("a")),

@@ -108,11 +108,11 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 
     private IEnumerable<Symbol> BuildMember(Declaration declaration) => declaration switch
     {
-        FunctionDeclaration f => this.BuildFunction(f),
-        MergedModuleDeclaration m => this.BuildModule(m),
+        FunctionDeclaration f => [this.BuildFunction(f)],
+        MergedModuleDeclaration m => [this.BuildModule(m)],
         GlobalDeclaration g when g.Syntax.FieldModifier is not null => [this.BuildGlobalField(g)],
         GlobalDeclaration g when g.Syntax.FieldModifier is null => this.BuildGlobalProperty(g),
-        ClassDeclaration c => this.BuildClass(c),
+        ClassDeclaration c => [this.BuildClass(c)],
         _ => throw new ArgumentOutOfRangeException(nameof(declaration)),
     };
 

@@ -21,11 +21,13 @@
   <Token Kind="InterpolationStart" Documentation="The start of string interpolation." />
   <Token Kind="InterpolationEnd" Text="}" Documentation="The end of string interpolation." />
   <Token Kind="KeywordAnd" Text="and" Documentation="The keyword 'and'." />
+  <Token Kind="KeywordClass" Text="class" Documentation="The keyword 'class'."/>
   <Token Kind="KeywordElse" Text="else" Documentation="The keyword 'else'." />
   <Token Kind="KeywordFalse" Text="false" Value="false" Documentation="The keyword 'false'." />
   <Token Kind="KeywordField" Text="field" Documentation="The keyword 'field'." />
   <Token Kind="KeywordFor" Text="for" Documentation="The keyword 'for'." />
   <Token Kind="KeywordFunc" Text="func" Documentation="The keyword 'func'." />
+  <Token Kind="KeywordGlobal" Text="global" Documentation="The keyword 'global'."/>
   <Token Kind="KeywordGoto" Text="goto" Documentation="The keyword 'goto'." />
   <Token Kind="KeywordIf" Text="if" Documentation="The keyword 'if'." />
   <Token Kind="KeywordImport" Text="import" Documentation="The keyword 'import'." />
@@ -36,15 +38,12 @@
   <Token Kind="KeywordNot" Text="not" Documentation="The keyword 'not'." />
   <Token Kind="KeywordOr" Text="or" Documentation="The keyword 'or'." />
   <Token Kind="KeywordPublic" Text="public" Documentation="The keyword 'public'." />
-  <Token Kind="KeywordGlobal" Text="global" Documentation="The keyword 'global'."/>
-  <Token Kind="KeywordThis" Text="this" Documentation="The keyword 'this'."/>
-  <Token Kind="KeywordField" Text="field" Documentation="The keyword 'field'."/>
-  <Token Kind="KeywordValue" Text="value" Documentation="The keyword 'value'."/>
-  <Token Kind="KeywordClass" Text="class" Documentation="The keyword 'class'."/>
   <Token Kind="KeywordRem" Text="rem" Documentation="The keyword 'rem'." />
   <Token Kind="KeywordReturn" Text="return" Documentation="The keyword 'return'." />
+  <Token Kind="KeywordThis" Text="this" Documentation="The keyword 'this'."/>
   <Token Kind="KeywordTrue" Text="true" Value="true" Documentation="The keyword 'true'." />
   <Token Kind="KeywordVal" Text="val" Documentation="The keyword 'val'." />
+  <Token Kind="KeywordValue" Text="value" Documentation="The keyword 'value'."/>
   <Token Kind="KeywordVar" Text="var" Documentation="The keyword 'var'." />
   <Token Kind="KeywordWhile" Text="while" Documentation="The keyword 'while'" />
   <Token Kind="ParenOpen" Text="(" Documentation="'('." />
@@ -692,7 +691,7 @@
       <Documentation>
         The optional global keyword that mark this variable as a global.
       </Documentation>
-      
+
       <Token Kind="KeywordGlobal"/>
     </Field>
 

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
@@ -31,6 +32,7 @@ internal sealed class SourceLocalSymbol(
     public SourceLocalSymbol(Symbol containingSymbol, TypeSymbol type, VariableDeclarationSyntax syntax)
         : this(containingSymbol, syntax.Name.Text, type, syntax.Keyword.Kind == TokenKind.KeywordVar, syntax)
     {
+        if (syntax.FieldModifier is not null) throw new ArgumentException("local symbols cannot have field modifiers");
     }
 
     public void Bind(IBinderProvider binderProvider) { }

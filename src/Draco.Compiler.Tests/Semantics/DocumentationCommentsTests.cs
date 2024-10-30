@@ -93,8 +93,7 @@ public sealed class DocumentationCommentsTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            WithDocumentation(VariableDeclaration(
-            true,
+            WithDocumentation(VarDeclaration(
             "x",
             null,
             LiteralExpression(0)),
@@ -106,7 +105,7 @@ public sealed class DocumentationCommentsTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -170,14 +169,14 @@ public sealed class DocumentationCommentsTests
         var tree = SyntaxTree.Create(CompilationUnit(
             WithDocumentation(ModuleDeclaration(
             "documentedModule",
-            VariableDeclaration(Api.Semantics.Visibility.Public, true, "Foo", null, LiteralExpression(0))),
+            VarDeclaration(Api.Semantics.Visibility.Public, "Foo", null, LiteralExpression(0))),
             docComment),
             FunctionDeclaration(
                 "foo",
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("documentedModule"), "Foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("documentedModule"), "Foo")))))));
 
         var moduleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
 
@@ -284,7 +283,7 @@ public sealed class DocumentationCommentsTests
             "main",
             ParameterList(),
             null,
-            BlockFunctionBody(DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("TestClass"), "foo")))))));
+            BlockFunctionBody(DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("TestClass"), "foo")))))));
 
         var docs = "<summary> Documentation for TestClass </summary>";
 
@@ -567,7 +566,7 @@ public sealed class DocumentationCommentsTests
             public class TestClass
             {
                 {{CreateXmlDocComment(originalDocs)}}
-                public int TestMethod<T>(int arg1, int arg2) => arg1 + arg2;
+                public int TestMethod<T>(int arg1, int arg2) => arg1 + arg2; 
             }
             """, xmlDocStream: xmlStream);
 

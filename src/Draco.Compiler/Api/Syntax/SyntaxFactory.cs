@@ -67,11 +67,12 @@ public static partial class SyntaxFactory
     public static SyntaxToken Identifier(string text) => Token(TokenKind.Identifier, text);
     public static SyntaxToken Integer(int value) => Token(TokenKind.LiteralInteger, value.ToString(), value);
 
-    public static TokenKind? Visibility(Visibility visibility) => visibility switch
+    public static TokenKind? Visibility(Visibility? visibility) => visibility switch
     {
         Semantics.Visibility.Private => null,
         Semantics.Visibility.Internal => TokenKind.KeywordInternal,
         Semantics.Visibility.Public => TokenKind.KeywordPublic,
+        null => null,
         _ => throw new ArgumentOutOfRangeException(nameof(visibility)),
     };
 
@@ -97,17 +98,17 @@ public static partial class SyntaxFactory
         SeparatedSyntaxList(Comma, parameters);
     public static SeparatedSyntaxList<ParameterSyntax> ParameterList(params ParameterSyntax[] parameters) =>
         SeparatedSyntaxList(Comma, parameters);
-    public static NormalParameterSyntax NormalParameter(string name, TypeSyntax type) =>
-        NormalParameter([], name, type);
-    public static NormalParameterSyntax NormalParameter(IEnumerable<AttributeSyntax> attributes, string name, TypeSyntax type) =>
-        NormalParameter(SyntaxList(attributes), null, Identifier(name), Colon, type);
-    public static NormalParameterSyntax VariadicParameter(string name, TypeSyntax type) =>
-        NormalParameter(SyntaxList<AttributeSyntax>(), Ellipsis, Identifier(name), Colon, type);
+    public static ParameterSyntax Parameter(string name, TypeSyntax type) =>
+        Parameter([], name, type);
+    public static ParameterSyntax Parameter(IEnumerable<AttributeSyntax> attributes, string name, TypeSyntax type) =>
+        Parameter(SyntaxList(attributes), null, Identifier(name), Colon, type);
+    public static ParameterSyntax VariadicParameter(string name, TypeSyntax type) =>
+        Parameter(SyntaxList<AttributeSyntax>(), Ellipsis, Identifier(name), Colon, type);
 
-    public static GenericParameterListSyntax GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
-        GenericParameterList(SeparatedSyntaxList(Comma, parameters));
-    public static GenericParameterListSyntax GenericParameterList(params GenericParameterSyntax[] parameters) =>
-        GenericParameterList(SeparatedSyntaxList(Comma, parameters));
+    public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(IEnumerable<GenericParameterSyntax> parameters) =>
+        SeparatedSyntaxList(Comma, parameters);
+    public static SeparatedSyntaxList<GenericParameterSyntax> GenericParameterList(params GenericParameterSyntax[] parameters) =>
+        SeparatedSyntaxList(Comma, parameters);
 
     public static ModuleDeclarationSyntax ModuleDeclaration(string name, IEnumerable<DeclarationSyntax> declarations) =>
         ModuleDeclaration([], null, name, declarations);
@@ -146,7 +147,7 @@ public static partial class SyntaxFactory
 
     public static FunctionDeclarationSyntax FunctionDeclaration(
         string name,
-        GenericParameterListSyntax? generics,
+        SeparatedSyntaxList<GenericParameterSyntax>? generics,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) =>
@@ -156,51 +157,81 @@ public static partial class SyntaxFactory
         IEnumerable<AttributeSyntax> attributes,
         Visibility visibility,
         string name,
-        GenericParameterListSyntax? generics,
+        SeparatedSyntaxList<GenericParameterSyntax>? generics,
         SeparatedSyntaxList<ParameterSyntax> parameters,
         TypeSyntax? returnType,
         FunctionBodySyntax body) => FunctionDeclaration(
         attributes,
         Visibility(visibility),
         name,
-        generics,
+        generics is null ? null : GenericParameterList(generics),
         parameters,
         returnType is null ? null : TypeSpecifier(returnType),
         body);
 
-    public static VariableDeclarationSyntax VariableDeclaration(
-        bool global,
-        string name,
-        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(null, global, false, true, name, type, value);
-
-    public static VariableDeclarationSyntax VariableDeclaration(
-        Visibility visibility,
-        bool global,
-        string name,
-        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), global, false, true, name, type, value);
-
-    public static VariableDeclarationSyntax ImmutableVariableDeclaration(
-        bool global,
-        string name,
-        TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(null, global, false, false, name, type, value);
-
-    public static VariableDeclarationSyntax ImmutableVariableDeclaration(
-        Visibility visibility,
-        bool global,
+    public static VariableDeclarationSyntax ValDeclaration(
         string name,
         TypeSyntax? type = null,
-        ExpressionSyntax? value = null) => VariableDeclaration(Visibility(visibility), global, false, false, name, type, value);
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], null, false, false, name, type, value);
+
+    public static VariableDeclarationSyntax VarDeclaration(
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], null, false, true, name, type, value);
+
+    public static VariableDeclarationSyntax FieldValDeclaration(
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], null, true, false, name, type, value);
+
+    public static VariableDeclarationSyntax FieldVarDeclaration(
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], null, true, true, name, type, value);
+
+    public static VariableDeclarationSyntax ValDeclaration(
+        Visibility? visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], visibility, false, false, name, type, value);
+
+    public static VariableDeclarationSyntax VarDeclaration(
+        Visibility? visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], visibility, false, true, name, type, value);
+
+    public static VariableDeclarationSyntax FieldValDeclaration(
+        Visibility? visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], visibility, true, false, name, type, value);
+
+    public static VariableDeclarationSyntax FieldVarDeclaration(
+        Visibility? visibility,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) =>
+        VariableDeclaration([], visibility, true, true, name, type, value);
 
     public static VariableDeclarationSyntax VariableDeclaration(
-        TokenKind? visibility,
-        bool global,
-        bool field,
+        IEnumerable<AttributeSyntax> attributes,
+        Visibility? visibility,
+        bool isField,
         bool isMutable,
-        string name, TypeSyntax? type = null, ExpressionSyntax? value = null) => VariableDeclaration(
-        [],
-        visibility,
-        global ? TokenKind.KeywordGlobal : null,
-        field ? TokenKind.KeywordField : null,
+        string name,
+        TypeSyntax? type = null,
+        ExpressionSyntax? value = null) => VariableDeclaration(
+        attributes,
+        Visibility(visibility),
+        isField ? TokenKind.KeywordField : null,
         isMutable ? TokenKind.KeywordVar : TokenKind.KeywordVal,
         name,
         type is null ? null : TypeSpecifier(type),
@@ -249,15 +280,6 @@ public static partial class SyntaxFactory
     public static GenericTypeSyntax GenericType(TypeSyntax instantiated, params TypeSyntax[] typeParameters) =>
         GenericType(instantiated, SeparatedSyntaxList(Comma, typeParameters));
 
-    public static ClassDeclarationSyntax ClassDeclaration(
-        string name,
-        GenericParameterListSyntax? generics,
-        IEnumerable<DeclarationSyntax> members) => ClassDeclaration(
-            null,
-            null,
-            name,
-            generics,
-            BlockClassBody(members));
     public static IndexExpressionSyntax IndexExpression(ExpressionSyntax indexed, params ExpressionSyntax[] indices) =>
         IndexExpression(indexed, SeparatedSyntaxList(Comma, indices));
 

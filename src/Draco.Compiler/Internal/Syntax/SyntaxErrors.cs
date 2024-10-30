@@ -191,4 +191,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "empty generic {0} lists are not allowed",
         code: Code(20));
+
+    /// <summary>
+    /// There is a field modifier in a local context.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedFieldModifier = DiagnosticTemplate.Create(
+        title: "unexpected field modifier",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected field modifier in a local context",
+        code: Code(21));
 }

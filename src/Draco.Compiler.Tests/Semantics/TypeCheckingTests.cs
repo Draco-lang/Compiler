@@ -21,7 +21,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0)))))));
+                DeclarationStatement(VarDeclaration("x", NameType("int32"), LiteralExpression(0)))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -49,7 +49,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", value: LiteralExpression(0)))))));
+                DeclarationStatement(VarDeclaration("x", value: LiteralExpression(0)))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -77,7 +77,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32")))))));
+                DeclarationStatement(VarDeclaration("x", NameType("int32")))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -106,7 +106,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x")),
+                DeclarationStatement(VarDeclaration("x")),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
@@ -135,7 +135,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x"))))));
+                DeclarationStatement(VarDeclaration("x"))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -165,8 +165,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(
-                    true,
+                DeclarationStatement(VarDeclaration(
                     "x",
                     NameType("int32"),
                     StringExpression("Hello")))))));
@@ -201,7 +200,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x")),
+                DeclarationStatement(VarDeclaration("x")),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0))),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, StringExpression("Hello")))))));
 
@@ -227,7 +226,7 @@ public sealed class TypeCheckingTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0))));
+            VarDeclaration("x", NameType("int32"), LiteralExpression(0))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -235,7 +234,7 @@ public sealed class TypeCheckingTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -249,7 +248,7 @@ public sealed class TypeCheckingTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(true, "x", value: LiteralExpression(0))));
+            VarDeclaration("x", value: LiteralExpression(0))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -257,7 +256,7 @@ public sealed class TypeCheckingTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -271,7 +270,7 @@ public sealed class TypeCheckingTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(true, "x", NameType("int32"))));
+            VarDeclaration("x", NameType("int32"))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -279,7 +278,7 @@ public sealed class TypeCheckingTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Empty(semanticModel.Diagnostics);
@@ -293,7 +292,7 @@ public sealed class TypeCheckingTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(true, "x")));
+            VarDeclaration("x")));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -302,7 +301,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
-        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -317,8 +316,7 @@ public sealed class TypeCheckingTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(
-                true,
+            VarDeclaration(
                 "x",
                 NameType("int32"),
                 StringExpression("Hello"))));
@@ -330,7 +328,7 @@ public sealed class TypeCheckingTests
         var semanticModel = compilation.GetSemanticModel(tree);
         var diags = semanticModel.Diagnostics;
 
-        var xSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(xDecl));
 
         // Assert
         Assert.Single(diags);
@@ -496,8 +494,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(
-                    true,
+                DeclarationStatement(VarDeclaration(
                     "x",
                     value: IfExpression(
                         condition: LiteralExpression(true),
@@ -571,8 +568,8 @@ public sealed class TypeCheckingTests
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(LabelDeclaration("start")),
-                    DeclarationStatement(VariableDeclaration(true, "x", value: IfExpression(LiteralExpression(true), LiteralExpression(0), ReturnExpression()))),
-                    DeclarationStatement(VariableDeclaration(true, "y", value: IfExpression(LiteralExpression(true), LiteralExpression(0), GotoExpression("start"))))))));
+                    DeclarationStatement(VarDeclaration("x", value: IfExpression(LiteralExpression(true), LiteralExpression(0), ReturnExpression()))),
+                    DeclarationStatement(VarDeclaration("y", value: IfExpression(LiteralExpression(true), LiteralExpression(0), GotoExpression("start"))))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
         var yDecl = tree.GetNode<VariableDeclarationSyntax>(1);
@@ -605,8 +602,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(
-                        true,
+                    DeclarationStatement(VarDeclaration(
                         "x",
                         value: BinaryExpression(LiteralExpression(1), Plus, StringExpression("Hello"))))))));
 
@@ -655,7 +651,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 Api.Semantics.Visibility.Internal,
                 "foo",
-                ParameterList(NormalParameter("x", NameType("string"))),
+                ParameterList(Parameter("x", NameType("string"))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0)))),
            ToPath("Tests", "FooModule", "foo.draco"));
@@ -702,7 +698,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 Api.Semantics.Visibility.Internal,
                 "foo",
-                ParameterList(NormalParameter("x", NameType("string"))),
+                ParameterList(Parameter("x", NameType("string"))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0)))),
            ToPath("Tests", "FooModule", "foo.draco"));
@@ -736,12 +732,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(NormalParameter("x", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "foo",
-                ParameterList(NormalParameter("x", NameType("bool"))),
+                ParameterList(Parameter("x", NameType("bool"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
@@ -788,12 +784,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(NormalParameter("x", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(NormalParameter("x", NameType("bool"))),
+                        ParameterList(Parameter("x", NameType("bool"))),
                         null,
                         BlockFunctionBody())),
                     ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
@@ -837,12 +833,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(NormalParameter("x", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(NormalParameter("x", NameType("bool"))),
+                        ParameterList(Parameter("x", NameType("bool"))),
                         null,
                         BlockFunctionBody())))),
             FunctionDeclaration(
@@ -888,12 +884,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(NormalParameter("x", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "foo",
-                ParameterList(NormalParameter("x", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody())));
 
@@ -919,13 +915,13 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "foo",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(NormalParameter("x", NameType("int32")), NormalParameter("y", NameType("T"))),
+                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "foo",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(NormalParameter("x", NameType("int32")), NormalParameter("y", NameType("T"))),
+                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
                 null,
                 BlockFunctionBody())));
 
@@ -951,12 +947,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(NormalParameter("x", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(NormalParameter("x", NameType("int32"))),
+                        ParameterList(Parameter("x", NameType("int32"))),
                         null,
                         BlockFunctionBody()))))));
 
@@ -992,12 +988,12 @@ public sealed class TypeCheckingTests
         var tree = SyntaxTree.Create(CompilationUnit(
             FunctionDeclaration(
                 "foo",
-                ParameterList(NormalParameter("x", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("int32"))),
                 null,
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(NormalParameter("x", NameType("bool"))),
+                        ParameterList(Parameter("x", NameType("bool"))),
                         null,
                         BlockFunctionBody(
                             ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
@@ -1009,7 +1005,7 @@ public sealed class TypeCheckingTests
                 BlockFunctionBody(
                     DeclarationStatement(FunctionDeclaration(
                         "foo",
-                        ParameterList(NormalParameter("x", NameType("bool"))),
+                        ParameterList(Parameter("x", NameType("bool"))),
                         null,
                         BlockFunctionBody(
                             ExpressionStatement(CallExpression(NameExpression("foo"), LiteralExpression(0))),
@@ -1060,7 +1056,7 @@ public sealed class TypeCheckingTests
             null,
             BlockFunctionBody(
                 DeclarationStatement(ImportDeclaration("System")),
-                DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("String"), "Empty")))))));
+                DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("String"), "Empty")))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
         var consoleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
@@ -1093,7 +1089,7 @@ public sealed class TypeCheckingTests
             null,
             BlockFunctionBody(
                 DeclarationStatement(ImportDeclaration("System")),
-                DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("Console"), "WindowWidth")))))));
+                DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("Console"), "WindowWidth")))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
         var consoleRef = tree.GetNode<MemberExpressionSyntax>(0).Accessed;
@@ -1127,8 +1123,8 @@ public sealed class TypeCheckingTests
             null,
             BlockFunctionBody(
                 DeclarationStatement(ImportDeclaration("System", "Collections", "Generic")),
-                DeclarationStatement(VariableDeclaration(true, "list", null, CallExpression(GenericExpression(NameExpression("List"), NameType("int32"))))),
-                DeclarationStatement(VariableDeclaration(true, "x", null, IndexExpression(NameExpression("list"), LiteralExpression(0))))))));
+                DeclarationStatement(VarDeclaration("list", null, CallExpression(GenericExpression(NameExpression("List"), NameType("int32"))))),
+                DeclarationStatement(VarDeclaration("x", null, IndexExpression(NameExpression("list"), LiteralExpression(0))))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(1);
         var listRef = tree.GetNode<IndexExpressionSyntax>(0).Indexed;
@@ -1161,7 +1157,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "a", null, LiteralExpression(0))),
+                    DeclarationStatement(VarDeclaration("a", null, LiteralExpression(0))),
                     ExpressionStatement(CallExpression(NameExpression("a")))))));
 
         // Act
@@ -1191,7 +1187,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "identity",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(NormalParameter("x", NameType("T"))),
+                ParameterList(Parameter("x", NameType("T"))),
                 NameType("T"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
@@ -1199,20 +1195,20 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(
-                        true, "a",
+                    DeclarationStatement(VarDeclaration(
+                        "a",
                         null,
                         CallExpression(
                             GenericExpression(NameExpression("identity"), NameType("int32")),
                             LiteralExpression(0)))),
-                    DeclarationStatement(VariableDeclaration(
-                        true, "b",
+                    DeclarationStatement(VarDeclaration(
+                        "b",
                         null,
                         CallExpression(
                             GenericExpression(NameExpression("identity"), NameType("string")),
                             StringExpression("foo")))),
-                    DeclarationStatement(VariableDeclaration(
-                        true, "c",
+                    DeclarationStatement(VarDeclaration(
+                        "c",
                         null,
                         CallExpression(
                             GenericExpression(NameExpression("identity"), NameType("int32")),
@@ -1269,7 +1265,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "identity",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(NormalParameter("x", NameType("T"))),
+                ParameterList(Parameter("x", NameType("T"))),
                 NameType("T"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
@@ -1277,8 +1273,8 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(
-                        true, "a",
+                    DeclarationStatement(VarDeclaration(
+                        "a",
                         null,
                         CallExpression(
                             GenericExpression(NameExpression("identity"), NameType("int32"), NameType("int32")),
@@ -1310,7 +1306,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "a", null, LiteralExpression(0))),
+                    DeclarationStatement(VarDeclaration("a", null, LiteralExpression(0))),
                     ExpressionStatement(CallExpression(GenericExpression(NameExpression("a"), NameType("int32"))))))));
 
         // Act
@@ -1333,8 +1329,8 @@ public sealed class TypeCheckingTests
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
             ImportDeclaration("System", "Collections", "Generic"),
-            VariableDeclaration(
-                true, "l",
+            VarDeclaration(
+                "l",
                 GenericType(NameType("List"), NameType("int32"), NameType("int32")))));
 
         // Act
@@ -1362,7 +1358,7 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "identity",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(NormalParameter("x", NameType("T"))),
+                ParameterList(Parameter("x", NameType("T"))),
                 NameType("T"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
@@ -1370,8 +1366,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(
-                        true,
+                    DeclarationStatement(VarDeclaration(
                         "x",
                         null,
                         CallExpression(NameExpression("identity"), LiteralExpression(0))))))));
@@ -1414,7 +1409,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "s", null, CallExpression(NameExpression("Stack")))),
+                    DeclarationStatement(VarDeclaration("s", null, CallExpression(NameExpression("Stack")))),
                     ExpressionStatement(CallExpression(
                         MemberExpression(NameExpression("s"), "Push"),
                         LiteralExpression(0)))))));
@@ -1457,7 +1452,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "s", null, CallExpression(NameExpression("Stack"))))))));
+                    DeclarationStatement(VarDeclaration("s", null, CallExpression(NameExpression("Stack"))))))));
 
         var callSyntax = tree.GetNode<CallExpressionSyntax>();
         var varSyntax = tree.GetNode<VariableDeclarationSyntax>();
@@ -1490,12 +1485,12 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "identity",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(NormalParameter("x", NameType("T"))),
+                ParameterList(Parameter("x", NameType("T"))),
                 NameType("T"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
                 "identity",
-                ParameterList(NormalParameter("x", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("int32"))),
                 NameType("int32"),
                 InlineFunctionBody(NameExpression("x"))),
             FunctionDeclaration(
@@ -1551,13 +1546,13 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "foo",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(NormalParameter("x", NameType("T")), NormalParameter("y", NameType("int32"))),
+                ParameterList(Parameter("x", NameType("T")), Parameter("y", NameType("int32"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "foo",
                 GenericParameterList(GenericParameter("T")),
-                ParameterList(NormalParameter("x", NameType("int32")), NormalParameter("y", NameType("T"))),
+                ParameterList(Parameter("x", NameType("int32")), Parameter("y", NameType("T"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
@@ -1595,14 +1590,14 @@ public sealed class TypeCheckingTests
             FunctionDeclaration(
                 "bar",
                 ParameterList(
-                    NormalParameter("s", NameType("string")),
-                    NormalParameter("x", NameType("int32"))),
+                    Parameter("s", NameType("string")),
+                    Parameter("x", NameType("int32"))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0))),
             FunctionDeclaration(
                 "bar",
                 ParameterList(
-                    NormalParameter("s", NameType("string")),
+                    Parameter("s", NameType("string")),
                     VariadicParameter("x", GenericType(NameType("Array"), NameType("int32")))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0))),
@@ -1666,15 +1661,15 @@ public sealed class TypeCheckingTests
                 "bar",
                 GenericParameterList(GenericParameter("T")),
                 ParameterList(
-                    NormalParameter("s", NameType("string")),
-                    NormalParameter("x", NameType("T"))),
+                    Parameter("s", NameType("string")),
+                    Parameter("x", NameType("T"))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0))),
             FunctionDeclaration(
                 "bar",
                 GenericParameterList(GenericParameter("T")),
                 ParameterList(
-                    NormalParameter("s", NameType("string")),
+                    Parameter("s", NameType("string")),
                     VariadicParameter("x", GenericType(NameType("Array"), NameType("T")))),
                 NameType("int32"),
                 InlineFunctionBody(LiteralExpression(0))),
@@ -1732,8 +1727,8 @@ public sealed class TypeCheckingTests
                 "foo",
                 GenericParameterList(GenericParameter("T")),
                 ParameterList(
-                    NormalParameter("x", NameType("T")),
-                    NormalParameter("y", NameType("T"))),
+                    Parameter("x", NameType("T")),
+                    Parameter("y", NameType("T"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
@@ -1814,7 +1809,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", NameType("Object"), CallExpression(NameExpression("Random"))))))));
+                    DeclarationStatement(VarDeclaration("x", NameType("Object"), CallExpression(NameExpression("Random"))))))));
 
         var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
@@ -1847,7 +1842,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", NameType("String"), CallExpression(NameExpression("Object"))))))));
+                    DeclarationStatement(VarDeclaration("x", NameType("String"), CallExpression(NameExpression("Object"))))))));
 
         var xDecl = main.GetNode<VariableDeclarationSyntax>(0);
 
@@ -1886,7 +1881,7 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Random")))))),
             FunctionDeclaration(
                 "bar",
-                ParameterList(NormalParameter("x", NameType("Object"))),
+                ParameterList(Parameter("x", NameType("Object"))),
                 null,
                 BlockFunctionBody())));
 
@@ -1922,7 +1917,7 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
             FunctionDeclaration(
                 "bar",
-                ParameterList(NormalParameter("x", NameType("String"))),
+                ParameterList(Parameter("x", NameType("String"))),
                 null,
                 BlockFunctionBody())));
 
@@ -1961,12 +1956,12 @@ public sealed class TypeCheckingTests
                     ExpressionStatement(CallExpression(NameExpression("bar"), CallExpression(NameExpression("Object")))))),
             FunctionDeclaration(
                 "bar",
-                ParameterList(NormalParameter("x", NameType("Object"))),
+                ParameterList(Parameter("x", NameType("Object"))),
                 null,
                 BlockFunctionBody()),
             FunctionDeclaration(
                 "bar",
-                ParameterList(NormalParameter("x", NameType("Random"))),
+                ParameterList(Parameter("x", NameType("Random"))),
                 null,
                 BlockFunctionBody())));
 
@@ -2019,9 +2014,9 @@ public sealed class TypeCheckingTests
                 "bar",
                 GenericParameterList(GenericParameter("T")),
                 ParameterList(
-                    NormalParameter("x", NameType("T")),
-                    NormalParameter("y", NameType("T")),
-                    NormalParameter("z", NameType("T"))),
+                    Parameter("x", NameType("T")),
+                    Parameter("y", NameType("T")),
+                    Parameter("z", NameType("T"))),
                 null,
                 BlockFunctionBody())));
 
@@ -2060,8 +2055,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(
-                        true,
+                    DeclarationStatement(VarDeclaration(
                         "x",
                         null,
                         IfExpression(
@@ -2101,19 +2095,19 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(
-                    true, "a",
+                DeclarationStatement(VarDeclaration(
+                    "a",
                     null,
                     CallExpression(NameExpression("Array"), LiteralExpression(5)))),
-                DeclarationStatement(VariableDeclaration(
-                    true, "b",
+                DeclarationStatement(VarDeclaration(
+                    "b",
                     null,
                     CallExpression(NameExpression("Array"), LiteralExpression(5)))),
                 ExpressionStatement(BinaryExpression(
                     IndexExpression(NameExpression("a"), LiteralExpression(0)),
                     Assign,
                     LiteralExpression(1))),
-                DeclarationStatement(ImmutableVariableDeclaration(true, "tmp", null, NameExpression("a"))),
+                DeclarationStatement(ValDeclaration("tmp", null, NameExpression("a"))),
                 ExpressionStatement(BinaryExpression(NameExpression("a"), Assign, NameExpression("b"))),
                 ExpressionStatement(BinaryExpression(NameExpression("b"), Assign, NameExpression("tmp")))))));
 
@@ -2156,9 +2150,9 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 NameType("int32"),
                 BlockFunctionBody(
-                    DeclarationStatement(ImmutableVariableDeclaration(
-                        true,
-                        "line", null,
+                    DeclarationStatement(ValDeclaration(
+                        "line",
+                        null,
                         CallExpression(MemberExpression(NameExpression("Console"), "ReadLine")))),
                     ExpressionStatement(ReturnExpression(
                         CallExpression(
@@ -2190,7 +2184,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             using System;
@@ -2228,8 +2222,7 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(
-                    true,
+                DeclarationStatement(VarDeclaration(
                     "x",
                     NameType("object"),
                     StringExpression("Hello")))))));
@@ -2258,9 +2251,9 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration(
-                    true,
-                    "a", null,
+                DeclarationStatement(ValDeclaration(
+                    "a",
+                    null,
                     CallExpression(
                         NameExpression("Array"),
                         LiteralExpression(5)))),
@@ -2297,13 +2290,13 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration(
-                    true,
-                    "a", null,
+                DeclarationStatement(ValDeclaration(
+                    "a",
+                    null,
                     CallExpression(GenericExpression(NameExpression("Array"), NameType("int32")), LiteralExpression(3)))),
-                DeclarationStatement(ImmutableVariableDeclaration(
-                    true,
-                    "x", null,
+                DeclarationStatement(ValDeclaration(
+                    "x",
+                    null,
                     IndexExpression(NameExpression("a"), LiteralExpression(0))))))));
 
         // Act
@@ -2333,9 +2326,9 @@ public sealed class TypeCheckingTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(ImmutableVariableDeclaration(
-                    true,
-                    "a", null,
+                DeclarationStatement(ValDeclaration(
+                    "a",
+                    null,
                     CallExpression(GenericExpression(NameExpression("Array"), NameType("int32")), LiteralExpression(3)))),
                 ExpressionStatement(ForExpression(
                     "x",
@@ -2417,7 +2410,7 @@ public sealed class TypeCheckingTests
 
         var main = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(NormalParameter("a", NameType("Array2D"))),
+            ParameterList(Parameter("a", NameType("Array2D"))),
             null,
             BlockFunctionBody())));
 
@@ -2491,8 +2484,7 @@ public sealed class TypeCheckingTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(
-                        true,
+                    DeclarationStatement(VarDeclaration(
                         "x",
                         GenericType(NameType("Array"), NameType("int32")),
                         CallExpression(NameExpression("List"))))))));

@@ -25,7 +25,7 @@ public sealed class SemanticModelTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x"))))));
+                DeclarationStatement(VarDeclaration("x"))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -55,7 +55,7 @@ public sealed class SemanticModelTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x"))))));
+                DeclarationStatement(VarDeclaration("x"))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -85,7 +85,7 @@ public sealed class SemanticModelTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x"))))));
+                DeclarationStatement(VarDeclaration("x"))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
 
@@ -117,8 +117,8 @@ public sealed class SemanticModelTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
-                DeclarationStatement(VariableDeclaration(true, "y", value: NameExpression("x")))))));
+                DeclarationStatement(VarDeclaration("x", NameType("int32"))),
+                DeclarationStatement(VarDeclaration("y", value: NameExpression("x")))))));
 
         var mainDecl = tree.GetNode<FunctionDeclarationSyntax>(0);
 
@@ -312,7 +312,7 @@ public sealed class SemanticModelTests
             null,
             BlockFunctionBody(
                 DeclarationStatement(ImportDeclaration("System", "Text")),
-                DeclarationStatement(VariableDeclaration(true, "builder", null, CallExpression(NameExpression("StringBuilder")))),
+                DeclarationStatement(VarDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
                 ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "AppendLine")))))));
 
         var memberExprSyntax = tree.GetNode<MemberExpressionSyntax>(0);
@@ -350,7 +350,7 @@ public sealed class SemanticModelTests
             null,
             BlockFunctionBody(
                 DeclarationStatement(ImportDeclaration("System", "Text")),
-                DeclarationStatement(VariableDeclaration(true, "builder", null, CallExpression(NameExpression("StringBuilder")))),
+                DeclarationStatement(VarDeclaration("builder", null, CallExpression(NameExpression("StringBuilder")))),
                 ExpressionStatement(CallExpression(MemberExpression(NameExpression("builder"), "Ap")))))));
 
         var memberExprSyntax = tree.GetNode<MemberExpressionSyntax>(0);
@@ -478,33 +478,5 @@ public sealed class SemanticModelTests
         Assert.Contains(collectionsSymbol, systemSymbol.Members);
         Assert.True(nonexistingSymbol.IsError);
         Assert.True(fooSymbol.IsError);
-    }
-
-    [Fact]
-    public void GetReferencedSymbolFromSourceClassSymbol()
-    {
-        // class Foo {
-        //     func bar() {}
-        // }
-
-        // Arrange
-        var tree = SyntaxTree.Create(CompilationUnit(ClassDeclaration(
-            "Foo",
-            GenericParameterList(),
-            [FunctionDeclaration("bar", ParameterList(), null, BlockFunctionBody())]
-        )));
-        var compilation = CreateCompilation(tree);
-        var classDecl = tree.GetNode<ClassDeclarationSyntax>(0);
-        Assert.NotNull(classDecl);
-
-        // Act
-        var semanticModel = compilation.GetSemanticModel(tree);
-        var classSymbol = GetInternalSymbol<SourceClassSymbol>(semanticModel.GetDeclaredSymbol(classDecl));
-
-        // Assert
-        Assert.NotNull(classSymbol);
-        Assert.Equal("Foo", classSymbol.Name);
-        Assert.Empty(semanticModel.Diagnostics);
-        Assert.Equal("bar", classSymbol.Members.Single(x => x.Name == "bar").Name);
     }
 }

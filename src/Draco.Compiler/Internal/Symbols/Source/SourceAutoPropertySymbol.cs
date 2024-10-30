@@ -5,15 +5,18 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Declarations;
 using Draco.Compiler.Internal.FlowAnalysis;
 using Draco.Compiler.Internal.Symbols.Syntax;
+using Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
+using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Source;
 
 /// <summary>
-/// An in-source defined field - either a global variable or a class member.
+/// Auto-property defined based on some source.
+/// Currently this class only models global =module-level) auto-properties, which is the equivalent of C# static auto-properties.
 /// </summary>
-internal sealed class SourceFieldSymbol(
+internal sealed class SourceAutoPropertySymbol(
     Symbol containingSymbol,
-    VariableDeclarationSyntax syntax) : SyntaxFieldSymbol(containingSymbol, syntax), ISourceSymbol
+    VariableDeclarationSyntax syntax) : SyntaxAutoPropertySymbol(containingSymbol, syntax)
 {
     public override TypeSymbol Type => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Type;
     public BoundExpression? Value => this.BindTypeAndValueIfNeeded(this.DeclaringCompilation!).Value;
@@ -27,7 +30,7 @@ internal sealed class SourceFieldSymbol(
 
     private readonly object buildLock = new();
 
-    public SourceFieldSymbol(Symbol containingSymbol, GlobalDeclaration declaration)
+    public SourceAutoPropertySymbol(Symbol containingSymbol, GlobalDeclaration declaration)
         : this(containingSymbol, declaration.Syntax)
     {
     }
@@ -37,7 +40,7 @@ internal sealed class SourceFieldSymbol(
         this.BindTypeAndValueIfNeeded(binderProvider);
 
         // Flow analysis
-        CompleteFlowAnalysis.AnalyzeField(this, binderProvider.DiagnosticBag);
+        CompleteFlowAnalysis.AnalyzeProperty(this, binderProvider.DiagnosticBag);
     }
 
     private (TypeSymbol Type, BoundExpression? Value) BindTypeAndValueIfNeeded(IBinderProvider binderProvider)
@@ -61,6 +64,6 @@ internal sealed class SourceFieldSymbol(
     private GlobalBinding BindTypeAndValue(IBinderProvider binderProvider)
     {
         var binder = binderProvider.GetBinder(this.DeclaringSyntax);
-        return binder.BindGlobalField(this, binderProvider.DiagnosticBag);
+        return binder.BindGlobalProperty(this, binderProvider.DiagnosticBag);
     }
 }

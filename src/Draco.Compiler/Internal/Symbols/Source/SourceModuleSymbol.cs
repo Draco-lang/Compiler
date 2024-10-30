@@ -71,10 +71,9 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
     {
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
-        // Syntax-declaration
-        foreach (var declaration in this.declaration.Children)
+        // A declaration can yield multiple members, like an auto-property a getter and setter
+        foreach (var member in this.declaration.Children.SelectMany(this.BuildMember))
         {
-            var member = this.BuildMember(declaration);
             var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
             result.Add(member);
 
@@ -90,6 +89,11 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
             // Overloading is legal
             if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
 
+            // NOTE: An illegal shadowing can be caused by a property, which introduces additional synthetized symbols
+            // like the backing field
+            // We check for these synthetized symbols and if they are special-named, we ignore them
+            if (member.IsSpecialName) continue;
+
             // Illegal
             var syntax = member.DeclaringSyntax;
             Debug.Assert(syntax is not null);
@@ -102,17 +106,29 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
         return result.ToImmutable();
     }
 
-    private Symbol BuildMember(Declaration declaration) => declaration switch
+    private IEnumerable<Symbol> BuildMember(Declaration declaration) => declaration switch
     {
         FunctionDeclaration f => this.BuildFunction(f),
-        GlobalDeclaration g => this.BuildGlobal(g),
         MergedModuleDeclaration m => this.BuildModule(m),
+        GlobalDeclaration g when g.Syntax.FieldModifier is not null => [this.BuildGlobalField(g)],
+        GlobalDeclaration g when g.Syntax.FieldModifier is null => this.BuildGlobalProperty(g),
         ClassDeclaration c => this.BuildClass(c),
         _ => throw new ArgumentOutOfRangeException(nameof(declaration)),
     };
 
     private SourceFunctionSymbol BuildFunction(FunctionDeclaration declaration) => new(this, declaration);
-    private SourceFieldSymbol BuildGlobal(GlobalDeclaration declaration) => new(this, declaration);
+    private SourceFieldSymbol BuildGlobalField(GlobalDeclaration declaration) => new(this, declaration);
+
+    private IEnumerable<Symbol> BuildGlobalProperty(GlobalDeclaration declaration)
+    {
+        // Auto-property, need to add getter, setter and backing field
+        var prop = new SourceAutoPropertySymbol(this, declaration);
+        yield return prop;
+        if (prop.Getter is not null) yield return prop.Getter;
+        if (prop.Setter is not null) yield return prop.Setter;
+        yield return prop.BackingField;
+    }
+
     private SourceModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new(this.DeclaringCompilation, this, declaration);
     private SourceClassSymbol BuildClass(ClassDeclaration declaration) => new(this, declaration);
 

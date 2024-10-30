@@ -40,20 +40,20 @@ public sealed class SymbolResolutionTests
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             ParameterList(
-                NormalParameter("n", NameType("int32"))),
+                Parameter("n", NameType("int32"))),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x1")),
+                DeclarationStatement(VarDeclaration("x1")),
                 ExpressionStatement(BlockExpression(
-                    DeclarationStatement(VariableDeclaration(true, "x2")),
-                    ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration(true, "x3")))))),
+                    DeclarationStatement(VarDeclaration("x2")),
+                    ExpressionStatement(BlockExpression(DeclarationStatement(VarDeclaration("x3")))))),
                 ExpressionStatement(BlockExpression(
-                    DeclarationStatement(VariableDeclaration(true, "x4")),
-                    ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration(true, "x5")))),
-                    ExpressionStatement(BlockExpression(DeclarationStatement(VariableDeclaration(true, "x6"))))))))));
+                    DeclarationStatement(VarDeclaration("x4")),
+                    ExpressionStatement(BlockExpression(DeclarationStatement(VarDeclaration("x5")))),
+                    ExpressionStatement(BlockExpression(DeclarationStatement(VarDeclaration("x6"))))))))));
 
         var foo = tree.GetNode<FunctionDeclarationSyntax>();
-        var n = tree.GetNode<NormalParameterSyntax>();
+        var n = tree.GetNode<ParameterSyntax>();
         var x1 = tree.GetNode<VariableDeclarationSyntax>(0);
         var x2 = tree.GetNode<VariableDeclarationSyntax>(1);
         var x3 = tree.GetNode<VariableDeclarationSyntax>(2);
@@ -107,10 +107,10 @@ public sealed class SymbolResolutionTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", null, LiteralExpression(0))),
-                DeclarationStatement(VariableDeclaration(true, "x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1)))),
-                DeclarationStatement(VariableDeclaration(true, "x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1)))),
-                DeclarationStatement(VariableDeclaration(true, "x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1))))))));
+                DeclarationStatement(VarDeclaration("x", null, LiteralExpression(0))),
+                DeclarationStatement(VarDeclaration("x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1)))),
+                DeclarationStatement(VarDeclaration("x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1)))),
+                DeclarationStatement(VarDeclaration("x", null, BinaryExpression(NameExpression("x"), Plus, LiteralExpression(1))))))));
 
         var x0 = tree.GetNode<VariableDeclarationSyntax>(0);
         var x1 = tree.GetNode<VariableDeclarationSyntax>(1);
@@ -213,9 +213,9 @@ public sealed class SymbolResolutionTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x")),
-                DeclarationStatement(VariableDeclaration(true, "y", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("z")))),
-                DeclarationStatement(VariableDeclaration(true, "z"))))));
+                DeclarationStatement(VarDeclaration("x")),
+                DeclarationStatement(VarDeclaration("y", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("z")))),
+                DeclarationStatement(VarDeclaration("z"))))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
         var yDecl = tree.GetNode<VariableDeclarationSyntax>(1);
@@ -264,15 +264,15 @@ public sealed class SymbolResolutionTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x")),
+                DeclarationStatement(VarDeclaration("x")),
                 ExpressionStatement(BlockExpression(
-                    DeclarationStatement(VariableDeclaration(true, "y")),
-                    DeclarationStatement(VariableDeclaration(true, "z", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("y")))),
-                    DeclarationStatement(VariableDeclaration(true, "x")),
+                    DeclarationStatement(VarDeclaration("y")),
+                    DeclarationStatement(VarDeclaration("z", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("y")))),
+                    DeclarationStatement(VarDeclaration("x")),
                     ExpressionStatement(BlockExpression(
-                        DeclarationStatement(VariableDeclaration(true, "k", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("w")))))),
-                    DeclarationStatement(VariableDeclaration(true, "w")))),
-                DeclarationStatement(VariableDeclaration(true, "k", value: NameExpression("w")))))));
+                        DeclarationStatement(VarDeclaration("k", value: BinaryExpression(NameExpression("x"), Plus, NameExpression("w")))))),
+                    DeclarationStatement(VarDeclaration("w")))),
+                DeclarationStatement(VarDeclaration("k", value: NameExpression("w")))))));
 
         var x1Decl = tree.GetNode<VariableDeclarationSyntax>(0);
         var y1Decl = tree.GetNode<VariableDeclarationSyntax>(1);
@@ -327,13 +327,13 @@ public sealed class SymbolResolutionTests
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             ParameterList(
-                NormalParameter("x", NameType("int32")),
-                NormalParameter("x", NameType("int32"))),
+                Parameter("x", NameType("int32")),
+                Parameter("x", NameType("int32"))),
             null,
             BlockFunctionBody())));
 
-        var x1Decl = tree.GetNode<NormalParameterSyntax>(0);
-        var x2Decl = tree.GetNode<NormalParameterSyntax>(1);
+        var x1Decl = tree.GetNode<ParameterSyntax>(0);
+        var x2Decl = tree.GetNode<ParameterSyntax>(1);
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -361,14 +361,14 @@ public sealed class SymbolResolutionTests
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             ParameterList(
-                NormalParameter("x", NameType("int32")),
-                NormalParameter("x", NameType("int32"))),
+                Parameter("x", NameType("int32")),
+                Parameter("x", NameType("int32"))),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "y", null, NameExpression("x")))))));
+                DeclarationStatement(VarDeclaration("y", null, NameExpression("x")))))));
 
-        var x1Decl = tree.GetNode<NormalParameterSyntax>(0);
-        var x2Decl = tree.GetNode<NormalParameterSyntax>(1);
+        var x1Decl = tree.GetNode<ParameterSyntax>(0);
+        var x2Decl = tree.GetNode<ParameterSyntax>(1);
         var xRef = tree.GetNode<NameExpressionSyntax>(0);
 
         // Act
@@ -415,10 +415,10 @@ public sealed class SymbolResolutionTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(true, "b", NameType("int32")),
+            VarDeclaration("b", NameType("int32")),
             FunctionDeclaration(
                 "b",
-                ParameterList(NormalParameter("b", NameType("int32"))),
+                ParameterList(Parameter("b", NameType("int32"))),
                 NameType("int32"),
                 InlineFunctionBody(NameExpression("b")))));
 
@@ -430,7 +430,7 @@ public sealed class SymbolResolutionTests
         var semanticModel = compilation.GetSemanticModel(tree);
         var diagnostics = semanticModel.Diagnostics;
 
-        var varSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(varDecl));
+        var varSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(varDecl));
         var funcSym = GetInternalSymbol<FunctionSymbol>(semanticModel.GetDeclaredSymbol(funcDecl));
 
         // Assert
@@ -455,8 +455,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "y", value: NameExpression("x"))))),
-            VariableDeclaration(true, "x")));
+                    DeclarationStatement(VarDeclaration("y", value: NameExpression("x"))))),
+            VarDeclaration("x")));
 
         var localVarDecl = tree.GetNode<VariableDeclarationSyntax>(0);
         var globalVarDecl = tree.GetNode<VariableDeclarationSyntax>(1);
@@ -465,8 +465,8 @@ public sealed class SymbolResolutionTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var varRefSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetReferencedSymbol(localVarDecl.Value!.Value));
-        var varDeclSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(globalVarDecl));
+        var varRefSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetReferencedSymbol(localVarDecl.Value!.Value));
+        var varDeclSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(globalVarDecl));
 
         // Assert
         Assert.True(ReferenceEquals(varDeclSym, varRefSym));
@@ -560,8 +560,8 @@ public sealed class SymbolResolutionTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(true, "x", null, LiteralExpression(0)),
-            VariableDeclaration(true, "y", null, NameExpression("x"))));
+            VarDeclaration("x", null, LiteralExpression(0)),
+            VarDeclaration("y", null, NameExpression("x"))));
 
         var xDecl = tree.GetNode<VariableDeclarationSyntax>(0);
         var xRef = tree.GetNode<NameExpressionSyntax>(0);
@@ -570,7 +570,7 @@ public sealed class SymbolResolutionTests
         var compilation = CreateCompilation(tree);
         var semanticModel = compilation.GetSemanticModel(tree);
 
-        var xDeclSym = GetInternalSymbol<FieldSymbol>(semanticModel.GetDeclaredSymbol(xDecl));
+        var xDeclSym = GetInternalSymbol<PropertySymbol>(semanticModel.GetDeclaredSymbol(xDecl));
         var xRefSym = semanticModel.GetReferencedSymbol(xRef);
 
         // TODO: Should see it, but should report illegal reference error
@@ -588,7 +588,7 @@ public sealed class SymbolResolutionTests
 
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(true, "x", null, CallExpression(NameExpression("foo"))),
+            VarDeclaration("x", null, CallExpression(NameExpression("foo"))),
             FunctionDeclaration(
                 "foo",
                 ParameterList(),
@@ -828,7 +828,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "a", null, NameExpression("System")))))));
+                    DeclarationStatement(VarDeclaration("a", null, NameExpression("System")))))));
 
         var varDecl = tree.GetNode<VariableDeclarationSyntax>(0);
         var moduleRef = tree.GetNode<NameExpressionSyntax>(0);
@@ -940,7 +940,7 @@ public sealed class SymbolResolutionTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", null, LiteralExpression(0))),
+                DeclarationStatement(VarDeclaration("x", null, LiteralExpression(0))),
                 DeclarationStatement(ImportDeclaration("System"))))));
 
         var importPath = tree.GetNode<ImportPathSyntax>(0);
@@ -1002,7 +1002,7 @@ public sealed class SymbolResolutionTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("System"), LiteralExpression(0)))))));
+                DeclarationStatement(VarDeclaration("x", NameType("System"), LiteralExpression(0)))))));
 
         var varTypeSyntax = tree.GetNode<NameTypeSyntax>(0);
 
@@ -1213,13 +1213,13 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", type: null, value: MemberExpression(NameExpression("BarModule"), "bar")))))),
+                    DeclarationStatement(VarDeclaration("x", type: null, value: MemberExpression(NameExpression("BarModule"), "bar")))))),
             ToPath("Tests", "main.draco"));
 
         // var bar = 0;
 
         var foo = SyntaxTree.Create(CompilationUnit(
-            VariableDeclaration(true, "bar", type: null, value: LiteralExpression(0))),
+            VarDeclaration("bar", type: null, value: LiteralExpression(0))),
            ToPath("Tests", "BarModule", "bar.draco"));
 
         // Act
@@ -1598,14 +1598,14 @@ public sealed class SymbolResolutionTests
                     ParameterList(),
                     null,
                     BlockFunctionBody(
-                        DeclarationStatement(VariableDeclaration(true, "sb", null, CallExpression(NameExpression("StringBuilder")))),
+                        DeclarationStatement(VarDeclaration("sb", null, CallExpression(NameExpression("StringBuilder")))),
                         ExpressionStatement(CallExpression(NameExpression("WriteLine"), CallExpression(MemberExpression(NameExpression("sb"), "ToString"))))))),
             FunctionDeclaration(
                 "baz",
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "sb", null, CallExpression(NameExpression("StringBuilder")))),
+                    DeclarationStatement(VarDeclaration("sb", null, CallExpression(NameExpression("StringBuilder")))),
                     ExpressionStatement(CallExpression(NameExpression("WriteLine")))))));
 
         // Act
@@ -1664,7 +1664,7 @@ public sealed class SymbolResolutionTests
         // Arrange
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(NormalParameter("x", NameType("unknown"))),
+            ParameterList(Parameter("x", NameType("unknown"))),
             null,
             BlockFunctionBody())));
 
@@ -1700,7 +1700,7 @@ public sealed class SymbolResolutionTests
                 null,
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
@@ -1747,7 +1747,7 @@ public sealed class SymbolResolutionTests
                 null,
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, NameExpression("foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, NameExpression("foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
@@ -1792,9 +1792,9 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
@@ -1921,7 +1921,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
@@ -1964,8 +1964,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType { }
@@ -2008,7 +2008,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
@@ -2087,7 +2087,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule { }
@@ -2131,7 +2131,7 @@ public sealed class SymbolResolutionTests
                 null,
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("FooModule"), "foo"), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
@@ -2178,7 +2178,7 @@ public sealed class SymbolResolutionTests
                 null,
                 BlockFunctionBody(
                     ExpressionStatement(BinaryExpression(NameExpression("foo"), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, NameExpression("foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, NameExpression("foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
@@ -2223,9 +2223,9 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
@@ -2311,7 +2311,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("FooModule"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public static class FooModule{
@@ -2353,7 +2353,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
@@ -2396,8 +2396,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("fooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
@@ -2442,7 +2442,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(MemberExpression(NameExpression("fooType"), "foo"), PlusAssign, LiteralExpression(2)))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
@@ -2525,9 +2525,9 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
+                    DeclarationStatement(VarDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
@@ -2575,7 +2575,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("fooType"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
@@ -2616,8 +2616,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("x", null, IndexExpression(NameExpression("fooType"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
@@ -2663,9 +2663,9 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
+                    DeclarationStatement(VarDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
@@ -2718,7 +2718,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
@@ -2762,8 +2762,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "fooType", null, CallExpression(NameExpression("FooType")))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
+                    DeclarationStatement(VarDeclaration("fooType", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("x", null, IndexExpression(MemberExpression(NameExpression("fooType"), "foo"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType{
@@ -2813,8 +2813,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("FooType")))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("x", null, IndexExpression(NameExpression("foo"), LiteralExpression(0))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType { }
@@ -2857,7 +2857,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), Assign, LiteralExpression(5)))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
@@ -2896,7 +2896,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
                     ExpressionStatement(BinaryExpression(IndexExpression(NameExpression("foo"), LiteralExpression(0)), PlusAssign, LiteralExpression(2)))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
@@ -3061,7 +3061,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public static class ParentType
@@ -3106,7 +3106,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(MemberExpression(NameExpression("ParentType"), "FooType"), "foo")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType
@@ -3152,8 +3152,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("foo"), "member")))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public static class ParentType
@@ -3202,8 +3202,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("foo"), "member")))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(MemberExpression(NameExpression("ParentType"), "FooType")))),
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("foo"), "member")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType
@@ -3246,7 +3246,7 @@ public sealed class SymbolResolutionTests
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
             GenericParameterList(GenericParameter("T")),
-            ParameterList(NormalParameter("x", NameType("T"))),
+            ParameterList(Parameter("x", NameType("T"))),
             NameType("T"),
             InlineFunctionBody(NameExpression("x")))));
 
@@ -3288,7 +3288,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression((NameExpression("FooType")))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType { }
@@ -3329,7 +3329,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression((NameExpression("FooType")))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType { }
@@ -3372,7 +3372,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression((NameExpression("FooType")))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
         var baseStream = CompileCSharpToStream("""
             public class ParentType
@@ -3425,7 +3425,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression((NameExpression("FooType")))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType<T> { }
@@ -3473,7 +3473,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression((NameExpression("FooType")))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public interface ParentInterface { }
@@ -3517,7 +3517,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression((NameExpression("FooType")))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class FooType : System.ICloneable
@@ -3562,7 +3562,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression((NameExpression("FooType")))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression((NameExpression("FooType")))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public interface ParentInterface<T> { }
@@ -3612,8 +3612,8 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("FooType")))),
-                    DeclarationStatement(VariableDeclaration(true, "x", null, MemberExpression(NameExpression("foo"), "Field")))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("FooType")))),
+                    DeclarationStatement(VarDeclaration("x", null, MemberExpression(NameExpression("foo"), "Field")))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class ParentType
@@ -3659,7 +3659,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("Derived"))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class Base
@@ -3708,7 +3708,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("Derived"))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class Base
@@ -3757,7 +3757,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("Derived"))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
         var baseStream = CompileCSharpToStream("""
             public class Base
@@ -3812,7 +3812,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("Derived"))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class Base
@@ -3861,7 +3861,7 @@ public sealed class SymbolResolutionTests
                 ParameterList(),
                 null,
                 BlockFunctionBody(
-                    DeclarationStatement(VariableDeclaration(true, "foo", null, CallExpression(NameExpression("Derived"))))))));
+                    DeclarationStatement(VarDeclaration("foo", null, CallExpression(NameExpression("Derived"))))))));
 
         var fooRef = CompileCSharpToMetadataReference("""
             public class Base
@@ -4064,8 +4064,7 @@ public sealed class SymbolResolutionTests
         // val a = { return 4; };
 
         var main = SyntaxTree.Create(CompilationUnit(
-            ImmutableVariableDeclaration(
-                true,
+            ValDeclaration(
                 "a",
                 null,
                 BlockExpression(ExpressionStatement(ReturnExpression(LiteralExpression(4)))))));
@@ -4078,27 +4077,5 @@ public sealed class SymbolResolutionTests
         // Assert
         Assert.Single(diags);
         AssertDiagnostics(diags, SymbolResolutionErrors.IllegalReturn);
-    }
-
-    [Fact]
-    public void ThisExpressionInGlobalContextIsIllegal()
-    {
-        // val a = this;
-
-        var main = SyntaxTree.Create(CompilationUnit(
-            ImmutableVariableDeclaration(
-                true,
-                "a",
-                value: ThisExpression())));
-
-        // Act
-
-        var compilation = CreateCompilation(main);
-        var semanticModel = compilation.GetSemanticModel(main);
-        var diags = semanticModel.Diagnostics;
-
-        // Assert
-        Assert.Single(diags);
-        AssertDiagnostics(diags, SymbolResolutionErrors.IllegalThis);
     }
 }

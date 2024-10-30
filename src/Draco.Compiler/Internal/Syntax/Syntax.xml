@@ -23,6 +23,7 @@
   <Token Kind="KeywordAnd" Text="and" Documentation="The keyword 'and'." />
   <Token Kind="KeywordElse" Text="else" Documentation="The keyword 'else'." />
   <Token Kind="KeywordFalse" Text="false" Value="false" Documentation="The keyword 'false'." />
+  <Token Kind="KeywordField" Text="field" Documentation="The keyword 'field'." />
   <Token Kind="KeywordFor" Text="for" Documentation="The keyword 'for'." />
   <Token Kind="KeywordFunc" Text="func" Documentation="The keyword 'func'." />
   <Token Kind="KeywordGoto" Text="goto" Documentation="The keyword 'goto'." />
@@ -688,13 +689,19 @@
     </Field>
 
     <Field Name="GlobalKeyword" Type="SyntaxToken?">
-      <Documentation>The optional global keyword that mark this variable as global.</Documentation>
+      <Documentation>
+        The optional global keyword that mark this variable as a global.
+      </Documentation>
+      
       <Token Kind="KeywordGlobal"/>
     </Field>
 
-    <Field Name="FieldKeyword" Type="SyntaxToken?">
-      <Documentation>The optional field keyword that mark this variable as field.</Documentation>
-      <Token Kind="KeywordField"/>
+    <Field Name="FieldModifier" Type="SyntaxToken?">
+      <Documentation>
+        The field modifier keyword to specify the variable to be manifested as a field.
+      </Documentation>
+
+      <Token Kind="KeywordField" />
     </Field>
 
     <Field Name="Keyword" Type="SyntaxToken">

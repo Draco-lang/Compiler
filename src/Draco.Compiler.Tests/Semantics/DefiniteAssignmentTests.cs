@@ -20,8 +20,8 @@ public sealed class DefiniteAssignmentTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
-                DeclarationStatement(VariableDeclaration(true, "y", NameType("int32"), NameExpression("x")))))));
+                DeclarationStatement(VarDeclaration("x", NameType("int32"))),
+                DeclarationStatement(VarDeclaration("y", NameType("int32"), NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -46,8 +46,8 @@ public sealed class DefiniteAssignmentTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0))),
-                DeclarationStatement(VariableDeclaration(true, "y", NameType("int32"), NameExpression("x")))))));
+                DeclarationStatement(VarDeclaration("x", NameType("int32"), LiteralExpression(0))),
+                DeclarationStatement(VarDeclaration("y", NameType("int32"), NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -69,15 +69,15 @@ public sealed class DefiniteAssignmentTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(NormalParameter("b", NameType("bool"))),
+            ParameterList(Parameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
+                DeclarationStatement(VarDeclaration("x", NameType("int32"))),
                 ExpressionStatement(IfExpression(
                     NameExpression("b"),
                     StatementExpression(ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(42)))),
                     null as ExpressionSyntax)),
-                DeclarationStatement(VariableDeclaration(true, "y", NameType("int32"), NameExpression("x")))))));
+                DeclarationStatement(VarDeclaration("y", NameType("int32"), NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -100,15 +100,15 @@ public sealed class DefiniteAssignmentTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(NormalParameter("b", NameType("bool"))),
+            ParameterList(Parameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
+                DeclarationStatement(VarDeclaration("x", NameType("int32"))),
                 ExpressionStatement(IfExpression(
                     NameExpression("b"),
                     BinaryExpression(NameExpression("x"), Assign, LiteralExpression(42)),
                     BinaryExpression(NameExpression("x"), Assign, LiteralExpression(0)))),
-                DeclarationStatement(VariableDeclaration(true, "y", NameType("int32"), NameExpression("x")))))));
+                DeclarationStatement(VarDeclaration("y", NameType("int32"), NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -130,15 +130,15 @@ public sealed class DefiniteAssignmentTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(NormalParameter("b", NameType("bool"))),
+            ParameterList(Parameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"), IfExpression(
+                DeclarationStatement(VarDeclaration("x", NameType("int32"), IfExpression(
                     NameExpression("b"),
                     GotoExpression(NameLabel("end")),
                     LiteralExpression(42)))),
                 DeclarationStatement(LabelDeclaration("end")),
-                DeclarationStatement(VariableDeclaration(true, "y", NameType("int32"), NameExpression("x")))))));
+                DeclarationStatement(VarDeclaration("y", NameType("int32"), NameExpression("x")))))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -163,7 +163,7 @@ public sealed class DefiniteAssignmentTests
             ParameterList(),
             null,
             BlockFunctionBody(
-                DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
+                DeclarationStatement(VarDeclaration("x", NameType("int32"))),
                 ExpressionStatement(BinaryExpression(NameExpression("x"), PlusAssign, LiteralExpression(42)))))));
 
         // Act
@@ -189,14 +189,14 @@ public sealed class DefiniteAssignmentTests
         // }
         var tree = SyntaxTree.Create(CompilationUnit(FunctionDeclaration(
             "foo",
-            ParameterList(NormalParameter("b", NameType("bool"))),
+            ParameterList(Parameter("b", NameType("bool"))),
             null,
             BlockFunctionBody(
                 ExpressionStatement(WhileExpression(
                     NameExpression("b"),
                     BlockExpression(
-                        DeclarationStatement(VariableDeclaration(true, "x", NameType("int32"))),
-                        DeclarationStatement(VariableDeclaration(true, "y", NameType("int32"), NameExpression("x"))),
+                        DeclarationStatement(VarDeclaration("x", NameType("int32"))),
+                        DeclarationStatement(VarDeclaration("y", NameType("int32"), NameExpression("x"))),
                         ExpressionStatement(BinaryExpression(NameExpression("x"), Assign, LiteralExpression(42))))))))));
 
         // Act
@@ -213,9 +213,9 @@ public sealed class DefiniteAssignmentTests
     public void GlobalImmutableInitialized()
     {
         // Arrange
-        // val x: int32 = 0;
+        // field val x: int32 = 0;
         var tree = SyntaxTree.Create(CompilationUnit(
-            ImmutableVariableDeclaration(true, "x", NameType("int32"), LiteralExpression(0))));
+            FieldValDeclaration("x", NameType("int32"), LiteralExpression(0))));
 
         // Act
         var compilation = CreateCompilation(tree);
@@ -230,9 +230,9 @@ public sealed class DefiniteAssignmentTests
     public void GlobalImmutableNotInitialized()
     {
         // Arrange
-        // val x: int32;
+        // field val x: int32;
         var tree = SyntaxTree.Create(CompilationUnit(
-            ImmutableVariableDeclaration(true, "x", NameType("int32"))));
+            FieldValDeclaration("x", NameType("int32"))));
 
         // Act
         var compilation = CreateCompilation(tree);

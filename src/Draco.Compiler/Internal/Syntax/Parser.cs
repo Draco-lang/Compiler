@@ -190,6 +190,7 @@ internal sealed class Parser(
     /// </summary>
     private static readonly TokenKind[] declarationStarters =
     [
+        TokenKind.KeywordClass,
         TokenKind.KeywordImport,
         TokenKind.KeywordField,
         TokenKind.KeywordFunc,

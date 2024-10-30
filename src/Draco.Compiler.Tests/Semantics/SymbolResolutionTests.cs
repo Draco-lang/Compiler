@@ -4079,4 +4079,26 @@ public sealed class SymbolResolutionTests
         Assert.Single(diags);
         AssertDiagnostics(diags, SymbolResolutionErrors.IllegalReturn);
     }
+
+    [Fact]
+    public void ThisExpressionInGlobalContextIsIllegal()
+    {
+        // val a = this;
+
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImmutableVariableDeclaration(
+                true,
+                "a",
+                value: ThisExpression())));
+
+        // Act
+
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        // Assert
+        Assert.Single(diags);
+        AssertDiagnostics(diags, SymbolResolutionErrors.IllegalThis);
+    }
 }

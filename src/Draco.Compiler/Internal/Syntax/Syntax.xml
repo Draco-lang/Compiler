@@ -435,6 +435,18 @@
     </Field>
   </Node>
 
+  <Node Name="UnexpectedClassBodySyntax" Base="ClassBodySyntax">
+    <Documentation>
+      Unexpected input in class body context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
   <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">
     <Documentation>
       A function declaration.

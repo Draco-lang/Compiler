@@ -238,7 +238,7 @@ internal sealed class Parser(
         TokenKind.Plus,
         TokenKind.Minus,
         TokenKind.Star,
-        TokenKind.KeywordThis
+        TokenKind.KeywordThis,
     ];
 
     /// <summary>
@@ -384,8 +384,7 @@ internal sealed class Parser(
 
         case TokenKind.KeywordValue:
         case TokenKind.KeywordClass:
-            // TODO: Attributes?
-            return this.ParseClassDeclaration(visibility);
+            return this.ParseClassDeclaration(attributes, visibility);
 
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration(attributes, visibility, context);
@@ -539,9 +538,10 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a class declaration.
     /// </summary>
+    /// <param name="attributes">Optional attributes on the class.</param>
     /// <param name="visibility">Optional visibility modifier token.</param>
     /// <returns>The parsed <see cref="ClassDeclarationSyntax"/>.</returns>
-    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxToken? visibility)
+    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxList<AttributeSyntax>? attributes, SyntaxToken? visibility)
     {
         this.Matches(TokenKind.KeywordValue, out var valueModifier);
 
@@ -568,42 +568,40 @@ internal sealed class Parser(
     /// Parses the body of a class.
     /// </summary>
     /// <returns>The parsed <see cref="ClassBodySyntax"/>.</returns>
-    private ClassBodySyntax ParseClassBody() => this.PeekKind() switch
+    private ClassBodySyntax ParseClassBody()
     {
-        TokenKind.Semicolon => this.ParseEmptyClassBody(),
-        TokenKind.CurlyOpen => this.ParseBlockClassBody(),
-        _ => throw new NotImplementedException()
-    };
-
-    /// <summary>
-    /// Parses an empty class body, which is just a semicolon.
-    /// </summary>
-    /// <returns>The parsed <see cref="EmptyClassBodySyntax"/>.</returns>
-    private EmptyClassBodySyntax ParseEmptyClassBody()
-    {
-        var semicolon = this.Expect(TokenKind.Semicolon);
-        return new EmptyClassBodySyntax(semicolon);
-    }
-
-    /// <summary>
-    /// Parses a block class body declared with curly braces.
-    /// </summary>
-    /// <returns>The parsed <see cref="BlockClassBodySyntax"/>.</returns>
-    private BlockClassBodySyntax ParseBlockClassBody()
-    {
-        var openBrace = this.Expect(TokenKind.CurlyOpen);
-        var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
-        while (true)
+        if (this.Matches(TokenKind.Semicolon, out var semicolon))
         {
-            // Break on the end of the block
-            if (this.PeekKind() is TokenKind.EndOfInput or TokenKind.CurlyClose) break;
-
-            // Parse a declaration
-            var decl = this.ParseDeclaration(DeclarationContext.Global);
-            decls.Add(decl);
+            return new EmptyClassBodySyntax(semicolon);
         }
-        var closeBrace = this.Expect(TokenKind.CurlyClose);
-        return new(openBrace, decls.ToSyntaxList(), closeBrace);
+        else if (this.Matches(TokenKind.CurlyOpen, out var openBrace))
+        {
+            var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
+            while (true)
+            {
+                // Break on the end of the block
+                if (this.PeekKind() is TokenKind.EndOfInput or TokenKind.CurlyClose) break;
+
+                // Parse a declaration
+                var decl = this.ParseDeclaration(DeclarationContext.Global);
+                decls.Add(decl);
+            }
+            var closeBrace = this.Expect(TokenKind.CurlyClose);
+            return new BlockClassBodySyntax(openBrace, decls.ToSyntaxList(), closeBrace);
+        }
+        else
+        {
+            var input = this.Synchronize(t => t.Kind switch
+            {
+                TokenKind.Semicolon or TokenKind.CurlyClose => false,
+                _ when this.IsDeclarationStarter(DeclarationContext.Global) => false,
+                _ => true,
+            });
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "class body");
+            var node = new UnexpectedClassBodySyntax(input);
+            this.AddDiagnostic(node, info);
+            return node;
+        }
     }
 
     /// <summary>
@@ -631,7 +629,7 @@ internal sealed class Parser(
 
         // Global modifier
         this.Matches(TokenKind.KeywordGlobal, out var globalModifier);
-        // TODO: Check where this is correct
+        // TODO: We need more info to check, if this is an error
 
         // Field modifier
         this.Matches(TokenKind.KeywordField, out var fieldModifier);
@@ -671,7 +669,6 @@ internal sealed class Parser(
             assignment,
             semicolon);
     }
-
 
     /// <summary>
     /// Parses a function declaration.
@@ -1664,8 +1661,6 @@ internal sealed class Parser(
     }
 
     private SyntaxToken? ParseVisibilityModifier() => IsVisibilityModifier(this.PeekKind()) ? this.Advance() : null;
-
-    private SyntaxToken? ParseGlobalModifier() => this.PeekKind() == TokenKind.KeywordGlobal ? this.Advance() : null;
 
     private bool CanBailOut(SyntaxNode node)
     {

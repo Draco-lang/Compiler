@@ -516,9 +516,9 @@
       The this parameter at the first place in a parameter list.
     </Documentation>
 
-    <Field Name="ThisToken" Type="SyntaxToken">
+    <Field Name="This" Type="SyntaxToken">
       <Documentation>
-        The this keyword, representing the type instance.
+        The 'this' keyword.
       </Documentation>
       <Token Kind="KeywordThis" />
     </Field>
@@ -687,9 +687,9 @@
       <Token Kind="KeywordPublic" />
     </Field>
 
-    <Field Name="GlobalKeyword" Type="SyntaxToken?">
+    <Field Name="GlobalModifier" Type="SyntaxToken?">
       <Documentation>
-        The optional global keyword that mark this variable as a global.
+        The optional global modifier that marks this variable as a global (static).
       </Documentation>
 
       <Token Kind="KeywordGlobal"/>
@@ -1384,13 +1384,13 @@
       The expression referencing the receiver of a member function.
     </Documentation>
 
-    <Field Name="Keyword" Type="SyntaxToken">
+    <Field Name="This" Type="SyntaxToken">
       <Documentation>
-        The this keyword.
+        The 'this' keyword.
       </Documentation>
+
       <Token Kind="KeywordThis"/>
     </Field>
-
   </Node>
 
   <Node Name="GroupingExpressionSyntax" Base="ExpressionSyntax">

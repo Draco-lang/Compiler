@@ -175,22 +175,13 @@ internal static class SyntaxErrors
         code: Code(18));
 
     /// <summary>
-    /// There is a field declaration in a function.
-    /// </summary>
-    public static readonly DiagnosticTemplate UnexpectedFieldDeclarationInFunction = DiagnosticTemplate.Create(
-        title: "unexpected field declaration",
-        severity: DiagnosticSeverity.Error,
-        format: "unexpected field declaration",
-        code: Code(19));
-
-    /// <summary>
     /// Empty generic lists are not allowed.
     /// </summary>
     public static readonly DiagnosticTemplate EmptyGenericList = DiagnosticTemplate.Create(
         title: "empty generic list",
         severity: DiagnosticSeverity.Error,
         format: "empty generic {0} lists are not allowed",
-        code: Code(20));
+        code: Code(19));
 
     /// <summary>
     /// There is a field modifier in a local context.
@@ -199,5 +190,5 @@ internal static class SyntaxErrors
         title: "unexpected field modifier",
         severity: DiagnosticSeverity.Error,
         format: "unexpected field modifier in a local context",
-        code: Code(21));
+        code: Code(20));
 }

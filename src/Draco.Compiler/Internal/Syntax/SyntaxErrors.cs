@@ -191,4 +191,13 @@ internal static class SyntaxErrors
         severity: DiagnosticSeverity.Error,
         format: "unexpected field modifier in a local context",
         code: Code(20));
+
+    /// <summary>
+    /// There is a global modifier in a global or local context.
+    /// </summary>
+    public static readonly DiagnosticTemplate UnexpectedGlobalModifier = DiagnosticTemplate.Create(
+        title: "unexpected global modifier",
+        severity: DiagnosticSeverity.Error,
+        format: "unexpected global modifier outside of class declaration",
+        code: Code(21));
 }

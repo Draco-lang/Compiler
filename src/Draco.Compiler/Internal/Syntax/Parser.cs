@@ -38,9 +38,14 @@ internal sealed class Parser(
     private enum DeclarationContext
     {
         /// <summary>
-        /// Global, like in a compilation unit, module, class, ...
+        /// Global, like in a compilation unit or module.
         /// </summary>
         Global,
+
+        /// <summary>
+        /// Inside a class declaration body.
+        /// </summary>
+        Class,
 
         /// <summary>
         /// Local to a function body/expression/code-block.
@@ -556,6 +561,7 @@ internal sealed class Parser(
         var body = this.ParseClassBody();
 
         return new ClassDeclarationSyntax(
+            attributes,
             visibility,
             valueModifier,
             classKeyword,
@@ -583,7 +589,7 @@ internal sealed class Parser(
                 if (this.PeekKind() is TokenKind.EndOfInput or TokenKind.CurlyClose) break;
 
                 // Parse a declaration
-                var decl = this.ParseDeclaration(DeclarationContext.Global);
+                var decl = this.ParseDeclaration(DeclarationContext.Class);
                 decls.Add(decl);
             }
             var closeBrace = this.Expect(TokenKind.CurlyClose);
@@ -594,7 +600,7 @@ internal sealed class Parser(
             var input = this.Synchronize(t => t.Kind switch
             {
                 TokenKind.Semicolon or TokenKind.CurlyClose => false,
-                _ when this.IsDeclarationStarter(DeclarationContext.Global) => false,
+                _ when this.IsDeclarationStarter(DeclarationContext.Class) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "class body");
@@ -629,7 +635,11 @@ internal sealed class Parser(
 
         // Global modifier
         this.Matches(TokenKind.KeywordGlobal, out var globalModifier);
-        // TODO: We need more info to check, if this is an error
+        if (context != DeclarationContext.Class && globalModifier is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedGlobalModifier);
+            this.AddDiagnostic(globalModifier, info);
+        }
 
         // Field modifier
         this.Matches(TokenKind.KeywordField, out var fieldModifier);
@@ -708,7 +718,7 @@ internal sealed class Parser(
         TypeSpecifierSyntax? returnType = null;
         if (this.PeekKind() == TokenKind.Colon) returnType = this.ParseTypeSpecifier();
 
-        var body = this.ParseFunctionBody();
+        var body = this.ParseFunctionBody(context);
 
         return new FunctionDeclarationSyntax(
             attributes,
@@ -882,8 +892,9 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a function body.
     /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
     /// <returns>The parsed <see cref="FunctionBodySyntax"/>.</returns>
-    private FunctionBodySyntax ParseFunctionBody()
+    private FunctionBodySyntax ParseFunctionBody(DeclarationContext ctx)
     {
         if (this.Matches(TokenKind.Assign, out var assign))
         {
@@ -906,7 +917,7 @@ internal sealed class Parser(
             var input = this.Synchronize(t => t.Kind switch
             {
                 TokenKind.Semicolon or TokenKind.CurlyClose => false,
-                _ when this.IsDeclarationStarter(DeclarationContext.Global) => false,
+                _ when this.IsDeclarationStarter(ctx) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "function body");

@@ -341,6 +341,12 @@
       A class declaration.
     </Documentation>
 
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The attributes of this class.
+      </Documentation>
+    </Field>
+
     <Field Name="VisibilityModifier" Type="SyntaxToken?">
       <Documentation>
         The visibility modifier keyword possibly starting the declaration.

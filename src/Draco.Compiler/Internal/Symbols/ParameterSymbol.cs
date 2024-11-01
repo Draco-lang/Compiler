@@ -18,6 +18,8 @@ internal abstract partial class ParameterSymbol : LocalSymbol
     public virtual bool IsVariadic => false;
 
     public override bool IsMutable => false;
+
+    public virtual bool IsThis => false;
     // NOTE: Override for covariant return type
     public override ParameterSymbol? GenericDefinition => null;
     public override SymbolKind Kind => SymbolKind.Parameter;

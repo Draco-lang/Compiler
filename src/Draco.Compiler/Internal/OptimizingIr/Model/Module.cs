@@ -19,7 +19,7 @@ internal sealed class Module : IModule
     IReadOnlyDictionary<ModuleSymbol, IModule> IModule.Submodules => this.submodules;
 
     public IDictionary<TypeSymbol, IClass> Types => this.types;
-    IReadOnlyDictionary<TypeSymbol, IClass> IModule.Types => this.types;
+    IReadOnlyDictionary<TypeSymbol, IClass> IModule.Classes => this.types;
 
     public IReadOnlySet<FieldSymbol> Fields => this.fields;
     public IReadOnlySet<PropertySymbol> Properties => this.properties;

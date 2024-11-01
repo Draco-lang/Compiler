@@ -522,7 +522,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         ++procIndex;
 
         // We encode every class
-        foreach (var @class in module.Types.Values)
+        foreach (var @class in module.Classes.Values)
         {
             this.EncodeClass(@class, parent: createdModule, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
         }

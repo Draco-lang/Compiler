@@ -49,9 +49,9 @@ internal interface IModule
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }
 
     /// <summary>
-    /// The compiled types within this module.
+    /// The compiled classes within this module.
     /// </summary>
-    public IReadOnlyDictionary<TypeSymbol, IClass> Types { get; }
+    public IReadOnlyDictionary<TypeSymbol, IClass> Classes { get; }
 
     /// <summary>
     /// The procedure performing global initialization.

@@ -50,11 +50,10 @@ internal sealed class Procedure : IProcedure
 
     public int GetParameterIndex(ParameterSymbol symbol)
     {
-        if (symbol is SourceThisParameterSymbol) return 0;
-        var isStaticMethod = symbol.ContainingSymbol.IsStatic;
+        if (symbol.IsThis) return 0;
         var idx = this.Symbol.Parameters.IndexOf(symbol);
         if (idx == -1) throw new System.ArgumentOutOfRangeException(nameof(symbol));
-        return isStaticMethod ? idx : idx + 1;
+        return symbol.ContainingSymbol.IsStatic ? idx : idx + 1;
     }
 
     public BasicBlock DefineBasicBlock(LabelSymbol symbol)

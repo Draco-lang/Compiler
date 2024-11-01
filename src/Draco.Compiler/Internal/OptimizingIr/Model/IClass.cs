@@ -3,6 +3,9 @@ using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
+/// <summary>
+/// Read-only interface if a <see cref="Class"/>
+/// </summary>
 internal interface IClass
 {
     /// <summary>

@@ -9,6 +9,7 @@ internal sealed class SourceThisParameterSymbol(FunctionSymbol containingSymbol,
     public override string Name => "this";
     public override FunctionSymbol ContainingSymbol { get; } = containingSymbol;
     public override bool IsVariadic => false;
+    public override bool IsThis => true;
     public override ThisParameterSyntax DeclaringSyntax { get; } = syntax;
 
     public override ImmutableArray<AttributeInstance> Attributes => [];

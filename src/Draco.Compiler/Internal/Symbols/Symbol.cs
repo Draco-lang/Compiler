@@ -8,6 +8,7 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
@@ -332,15 +333,26 @@ internal abstract partial class Symbol
     };
 
     /// <summary>
-    /// Retrieves additional symbols for the given <paramref name="typeSymbol"/>.
+    /// Retrieves additional symbols for the given symbol that should live in the same scope as the symbol itself.
+    /// This returns the constructor functions for types for example.
     /// </summary>
     /// <param name="symbol">The symbol to get additional symbols for.</param>
     /// <returns>The additional symbols for the given <paramref name="symbol"/>.</returns>
     public static IEnumerable<Symbol> GetAdditionalSymbols(Symbol symbol)
     {
-        if (symbol is not TypeSymbol typeSymbol) return [];
-        if (typeSymbol.IsAbstract) return [];
-        // For other types we provide constructor functions
-        return typeSymbol.Constructors.Select(ctor => new ConstructorFunctionSymbol(ctor));
+        switch (symbol)
+        {
+        case TypeSymbol typeSymbol:
+            if (typeSymbol.IsAbstract) yield break;
+            // For non-abstract types we provide constructor functions
+            foreach (var ctor in typeSymbol.Constructors) yield return new ConstructorFunctionSymbol(ctor);
+            break;
+        case SourceAutoPropertySymbol autoProp:
+            // For auto-properties we provide the backing field and the accessors in the same scope
+            if (autoProp.Getter is not null) yield return autoProp.Getter;
+            if (autoProp.Setter is not null) yield return autoProp.Setter;
+            yield return autoProp.BackingField;
+            break;
+        }
     }
 }

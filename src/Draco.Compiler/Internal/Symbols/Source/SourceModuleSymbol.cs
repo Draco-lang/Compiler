@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Diagnostics;
+using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
@@ -72,16 +73,11 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
         var result = ImmutableArray.CreateBuilder<Symbol>();
 
         // A declaration can yield multiple members, like an auto-property a getter and setter
-        foreach (var member in this.declaration.Children.SelectMany(this.BuildMember))
+        foreach (var member in this.declaration.Children.Select(this.BuildMember))
         {
             var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
             result.Add(member);
-
-            if (member is TypeSymbol typeSymbol)
-            {
-                result.AddRange(GetAdditionalSymbols(typeSymbol));
-            }
-
+            result.AddRange(GetAdditionalSymbols(member));
 
             // We check for illegal shadowing
             if (earlierMember is null) continue;
@@ -106,32 +102,15 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
         return result.ToImmutable();
     }
 
-    private IEnumerable<Symbol> BuildMember(Declaration declaration) => declaration switch
+    private Symbol BuildMember(Declaration declaration) => declaration switch
     {
-        FunctionDeclaration f => [this.BuildFunction(f)],
-        MergedModuleDeclaration m => [this.BuildModule(m)],
-        GlobalDeclaration g when g.Syntax.FieldModifier is not null => [this.BuildGlobalField(g)],
-        GlobalDeclaration g when g.Syntax.FieldModifier is null => this.BuildGlobalProperty(g),
-        ClassDeclaration c => [this.BuildClass(c)],
+        FunctionDeclaration f => new SourceFunctionSymbol(this, f),
+        MergedModuleDeclaration m => new SourceModuleSymbol(this.DeclaringCompilation, this, m),
+        GlobalDeclaration g when g.Syntax.FieldModifier is not null => new SourceFieldSymbol(this, g),
+        GlobalDeclaration g when g.Syntax.FieldModifier is null => new SourceAutoPropertySymbol(this, g),
+        ClassDeclaration c => new SourceClassSymbol(this, c),
         _ => throw new ArgumentOutOfRangeException(nameof(declaration)),
     };
 
-    private SourceFunctionSymbol BuildFunction(FunctionDeclaration declaration) => new(this, declaration);
-    private SourceFieldSymbol BuildGlobalField(GlobalDeclaration declaration) => new(this, declaration);
-
-    private IEnumerable<Symbol> BuildGlobalProperty(GlobalDeclaration declaration)
-    {
-        // Auto-property, need to add getter, setter and backing field
-        var prop = new SourceAutoPropertySymbol(this, declaration);
-        yield return prop;
-        if (prop.Getter is not null) yield return prop.Getter;
-        if (prop.Setter is not null) yield return prop.Setter;
-        yield return prop.BackingField;
-    }
-
-    private SourceModuleSymbol BuildModule(MergedModuleDeclaration declaration) => new(this.DeclaringCompilation, this, declaration);
-    private SourceClassSymbol BuildClass(ClassDeclaration declaration) => new(this, declaration);
-
-    private SymbolDocumentation BuildDocumentation() =>
-        MarkdownDocumentationExtractor.Extract(this);
+    private SymbolDocumentation BuildDocumentation() => MarkdownDocumentationExtractor.Extract(this);
 }

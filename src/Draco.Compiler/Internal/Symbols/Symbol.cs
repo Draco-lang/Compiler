@@ -333,28 +333,10 @@ internal abstract partial class Symbol
         _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
     };
 
-    // TODO: We could have this as a base member for symbols
     /// <summary>
-    /// Retrieves additional symbols for the given symbol that should live in the same scope as the symbol itself.
+    /// Retrieves additional symbols for this symbol that should live in the same scope as this symbol itself.
     /// This returns the constructor functions for types for example.
     /// </summary>
-    /// <param name="symbol">The symbol to get additional symbols for.</param>
-    /// <returns>The additional symbols for the given <paramref name="symbol"/>.</returns>
-    public static IEnumerable<Symbol> GetAdditionalSymbols(Symbol symbol)
-    {
-        switch (symbol)
-        {
-        case TypeSymbol typeSymbol:
-            if (typeSymbol.IsAbstract) yield break;
-            // For non-abstract types we provide constructor functions
-            foreach (var ctor in typeSymbol.Constructors) yield return new ConstructorFunctionSymbol(ctor);
-            break;
-        case SyntaxAutoPropertySymbol autoProp:
-            // For auto-properties we provide the backing field and the accessors in the same scope
-            if (autoProp.Getter is not null) yield return autoProp.Getter;
-            if (autoProp.Setter is not null) yield return autoProp.Setter;
-            yield return autoProp.BackingField;
-            break;
-        }
-    }
+    /// <returns>The additional symbols for this symbol.</returns>
+    protected internal virtual IEnumerable<Symbol> GetAdditionalSymbols() => [];
 }

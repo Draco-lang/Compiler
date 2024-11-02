@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Draco.Compiler.Api.Semantics;
 using Draco.Compiler.Internal.Symbols.Generic;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -213,4 +214,11 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     public override TResult Accept<TResult>(SymbolVisitor<TResult> visitor) => visitor.VisitType(this);
 
     public override abstract string ToString();
+
+    protected internal override sealed IEnumerable<Symbol> GetAdditionalSymbols()
+    {
+        if (this.IsAbstract) yield break;
+        // For non-abstract types we provide constructor functions
+        foreach (var ctor in this.Constructors) yield return new ConstructorFunctionSymbol(ctor);
+    }
 }

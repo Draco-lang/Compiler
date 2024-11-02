@@ -85,11 +85,6 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
             // Overloading is legal
             if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
 
-            // NOTE: An illegal shadowing can be caused by a property, which introduces additional synthetized symbols
-            // like the backing field
-            // We check for these synthetized symbols and if they are special-named, we ignore them
-            if (member.IsSpecialName) continue;
-
             // Illegal
             var syntax = member.DeclaringSyntax;
             Debug.Assert(syntax is not null);

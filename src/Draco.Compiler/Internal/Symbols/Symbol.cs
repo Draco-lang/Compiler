@@ -9,6 +9,7 @@ using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
@@ -332,6 +333,7 @@ internal abstract partial class Symbol
         _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
     };
 
+    // TODO: We could have this as a base member for symbols
     /// <summary>
     /// Retrieves additional symbols for the given symbol that should live in the same scope as the symbol itself.
     /// This returns the constructor functions for types for example.
@@ -347,7 +349,7 @@ internal abstract partial class Symbol
             // For non-abstract types we provide constructor functions
             foreach (var ctor in typeSymbol.Constructors) yield return new ConstructorFunctionSymbol(ctor);
             break;
-        case SourceAutoPropertySymbol autoProp:
+        case SyntaxAutoPropertySymbol autoProp:
             // For auto-properties we provide the backing field and the accessors in the same scope
             if (autoProp.Getter is not null) yield return autoProp.Getter;
             if (autoProp.Setter is not null) yield return autoProp.Setter;

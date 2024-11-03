@@ -17,7 +17,6 @@ internal sealed class ClassBinder(Binder parent, TypeSymbol symbol) : Binder(par
     private readonly TypeSymbol symbol = symbol;
 
     public override IEnumerable<Symbol> DeclaredSymbols => this.symbol.Members
-        .Cast<Symbol>()
         .Concat(this.symbol.GenericParameters);
 
     internal override void LookupLocal(LookupResult result, string name, ref LookupFlags flags, Predicate<Symbol> allowSymbol, SyntaxNode? currentReference)

@@ -195,11 +195,12 @@ public sealed partial class SemanticModel : IBinderProvider
         }
         case SourceClassSymbol classSymbol:
         {
+            // Could be the class itself
             if (classSymbol.DeclaringSyntax == syntax) return containingSymbol;
 
+            // Search for the corresponding syntax
             var symbol = classSymbol.Members
                 .SingleOrDefault(sym => sym.DeclaringSyntax == syntax);
-
             return symbol;
         }
         default:

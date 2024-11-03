@@ -1,12 +1,14 @@
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// An error this parameter symbol.
+/// An 'this' parameter symbol where it's invalid.
 /// </summary>
-/// <param name="type"></param>
-/// <param name="containingSymbol"></param>
-internal sealed class ErrorThisParameterSymbol(TypeSymbol type, FunctionSymbol containingSymbol) : ParameterSymbol
+internal sealed class ErrorThisParameterSymbol(
+    TypeSymbol type,
+    FunctionSymbol containingSymbol) : ParameterSymbol
 {
     public override TypeSymbol Type { get; } = type;
     public override FunctionSymbol ContainingSymbol { get; } = containingSymbol;
+
+    public override bool IsError => true;
 }

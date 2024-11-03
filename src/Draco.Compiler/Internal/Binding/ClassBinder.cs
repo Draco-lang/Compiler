@@ -6,6 +6,9 @@ using Draco.Compiler.Internal.Symbols;
 
 namespace Draco.Compiler.Internal.Binding;
 
+/// <summary>
+/// Binds an in-source defined class.
+/// </summary>
 internal sealed class ClassBinder(Binder parent, TypeSymbol symbol) : Binder(parent)
 {
     public override TypeSymbol ContainingSymbol => this.symbol;
@@ -32,7 +35,7 @@ internal sealed class ClassBinder(Binder parent, TypeSymbol symbol) : Binder(par
             if (member.Name != name) continue;
             if (!allowSymbol(member)) continue;
             result.Add(member);
-            break;
+            // NOTE: We don't break here, because there are potentially multiple overloads
         }
     }
 }

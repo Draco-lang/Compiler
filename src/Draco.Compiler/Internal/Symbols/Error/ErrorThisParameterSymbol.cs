@@ -11,4 +11,5 @@ internal sealed class ErrorThisParameterSymbol(
     public override FunctionSymbol ContainingSymbol { get; } = containingSymbol;
 
     public override bool IsError => true;
+    public override bool IsThis => true;
 }

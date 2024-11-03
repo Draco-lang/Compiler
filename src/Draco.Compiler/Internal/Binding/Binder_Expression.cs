@@ -711,40 +711,50 @@ internal partial class Binder
             // Array getter
             return new BoundArrayAccessExpression(syntax, receiver, await BindingTask.WhenAll(argsTask));
         }
-        return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask));
+        else
+        {
+            // Any other indexer
+            return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask));
+        }
     }
 
     private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
     {
-        if (this.ContainingSymbol is not SyntaxFunctionSymbol function || this.ContainingSymbol == null)
+        // Check, if we are in a function
+        if (this.ContainingSymbol is not SyntaxFunctionSymbol function)
         {
+            // No, report error
             diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.IllegalThis,
-                location: syntax.Location
-            ));
+                location: syntax.Location));
             return BindingTask.FromResult<BoundExpression>(
                 new BoundParameterExpression(
                     syntax,
                     new ErrorThisParameterSymbol(WellKnownTypes.ErrorType, new ErrorFunctionSymbol(0))));
         }
 
+        // Check, if the function has a this argument
         var thisArg = function.ThisArgument;
-        if (thisArg is not null)
+        if (thisArg is null)
         {
-            var boundThis = new BoundParameterExpression(syntax, thisArg);
-            return BindingTask.FromResult<BoundExpression>(boundThis);
-        }
-
-        diagnostics.Add(Diagnostic.Create(
+            // No, report error
+            diagnostics.Add(Diagnostic.Create(
                 template: SymbolResolutionErrors.NoThisInStaticMethod,
                 location: syntax.Location,
                 formatArgs: [this.ContainingSymbol!.Name]));
-        var type = function.ContainingSymbol as TypeSymbol ?? WellKnownTypes.ErrorType;
 
-        return BindingTask.FromResult<BoundExpression>(
-            new BoundParameterExpression(
-                syntax,
-                new ErrorThisParameterSymbol(type, function)));
+            // We can approximate the type of the this argument by checking the containing type
+            var type = function.ContainingSymbol as TypeSymbol
+                    ?? WellKnownTypes.ErrorType;
+            return BindingTask.FromResult<BoundExpression>(
+                new BoundParameterExpression(
+                    syntax,
+                    new ErrorThisParameterSymbol(type, function)));
+        }
+
+        // All ok
+        var boundThis = new BoundParameterExpression(syntax, thisArg);
+        return BindingTask.FromResult<BoundExpression>(boundThis);
     }
 
     private async BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
@@ -877,13 +887,16 @@ internal partial class Binder
                 return BindingTask.FromResult<BoundExpression>(
                     new BoundDelegateCreationExpression(syntax, receiver, functions[0], delegateCtor));
             }
-            // TODO: We should construct some constraints to resolve which one
-            // For now we report an error to not crash tools
-            diagnostics.Add(Diagnostic.Create(
-                template: TypeCheckingErrors.IllegalExpression,
-                location: syntax.Location));
-            return BindingTask.FromResult<BoundExpression>(
-                new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType));
+            else
+            {
+                // TODO: We should construct some constraints to resolve which one
+                // For now we report an error to not crash tools
+                diagnostics.Add(Diagnostic.Create(
+                    template: TypeCheckingErrors.IllegalExpression,
+                    location: syntax.Location));
+                return BindingTask.FromResult<BoundExpression>(
+                    new BoundReferenceErrorExpression(syntax, WellKnownTypes.ErrorType));
+            }
         }
     }
 

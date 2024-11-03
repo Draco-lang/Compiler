@@ -19,26 +19,27 @@ internal sealed class SourceClassSymbol(
     Symbol containingSymbol,
     ClassDeclarationSyntax syntax) : TypeSymbol, ISourceSymbol
 {
-    public override ImmutableArray<TypeParameterSymbol> GenericParameters => this.BindGenericParametersIfNeeded(this.DeclaringCompilation!);
-    private ImmutableArray<TypeParameterSymbol> genericParameters;
-
-    public override IEnumerable<Symbol> DefinedMembers => this.BindMembersIfNeeded(this.DeclaringCompilation!);
-    private ImmutableArray<Symbol> definedMembers;
-
-    public SourceClassSymbol(Symbol containingSymbol, ClassDeclaration declaration) : this(containingSymbol, declaration.Syntax)
-    {
-    }
-
     public override Symbol ContainingSymbol { get; } = containingSymbol;
+    public override ClassDeclarationSyntax DeclaringSyntax { get; } = syntax;
     public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override ClassDeclarationSyntax DeclaringSyntax => syntax;
+    public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
+        this.BindGenericParametersIfNeeded(this.DeclaringCompilation!);
+    private ImmutableArray<TypeParameterSymbol> genericParameters;
+
+    public override IEnumerable<Symbol> DefinedMembers =>
+        this.BindMembersIfNeeded(this.DeclaringCompilation!);
+    private ImmutableArray<Symbol> definedMembers;
+
+    public SourceClassSymbol(Symbol containingSymbol, ClassDeclaration declaration)
+        : this(containingSymbol, declaration.Syntax)
+    {
+    }
 
     public void Bind(IBinderProvider binderProvider)
     {
         this.BindGenericParametersIfNeeded(binderProvider);
         this.BindMembersIfNeeded(binderProvider);
-
     }
 
     private ImmutableArray<TypeParameterSymbol> BindGenericParametersIfNeeded(IBinderProvider binderProvider) =>
@@ -73,36 +74,51 @@ internal sealed class SourceClassSymbol(
     private ImmutableArray<Symbol> BindMembersIfNeeded(IBinderProvider binderProvider) =>
         InterlockedUtils.InitializeDefault(ref this.definedMembers, () => this.BindMembers(binderProvider));
 
-    private ImmutableArray<Symbol> BindMembers(IBinderProvider binder)
+    // TODO: This shadowing check logic is duplicated a few places
+    // Along with member construction, maybe factor it out
+    private ImmutableArray<Symbol> BindMembers(IBinderProvider binderProvider)
     {
+        // If there is no body, we only have a default constructor
         if (this.DeclaringSyntax.Body is EmptyClassBodySyntax) return [new DefaultConstructorSymbol(this)];
 
-        var bodyClass = this.DeclaringSyntax.Body as BlockClassBodySyntax;
-        Debug.Assert(bodyClass is not null);
-        var declarationsSyntaxes = bodyClass.Declarations.ToList();
-        var members = ImmutableArray.CreateBuilder<Symbol>(declarationsSyntaxes.Count + 1);
-        members.Add(new DefaultConstructorSymbol(this));
-        foreach (var declarationSyntax in declarationsSyntaxes)
+        if (this.DeclaringSyntax.Body is BlockClassBodySyntax blockBody)
         {
-            var member = this.BindDeclaration(binder, declarationSyntax);
-            members.Add(member);
+            var result = ImmutableArray.CreateBuilder<Symbol>();
+            // NOTE: For now we always add a default constructor
+            result.Add(new DefaultConstructorSymbol(this));
+            foreach (var member in blockBody.Declarations.Select(this.BuildMember))
+            {
+                var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
+                result.Add(member);
+                result.AddRange(member.GetAdditionalSymbols());
+
+                // We check for illegal shadowing
+                if (earlierMember is null) continue;
+
+                // Overloading is legal
+                if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
+
+                // Illegal
+                var syntax = member.DeclaringSyntax;
+                Debug.Assert(syntax is not null);
+                binderProvider.DiagnosticBag.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.IllegalShadowing,
+                    location: syntax.Location,
+                    formatArgs: member.Name));
+            }
+            return result.ToImmutable();
         }
-        return members.ToImmutable();
+
+        return [];
     }
 
-    private Symbol BindDeclaration(IBinderProvider binder, DeclarationSyntax declarationSyntax)
+    private Symbol BuildMember(DeclarationSyntax syntax) => syntax switch
     {
-        switch (declarationSyntax)
-        {
-        case FunctionDeclarationSyntax functionSyntax:
-            return new SourceFunctionSymbol(this, functionSyntax);
-        case VariableDeclarationSyntax fieldSyntax:
-            if (fieldSyntax.FieldModifier is null) throw new NotImplementedException();
-            return new SourceFieldSymbol(this, fieldSyntax);
-        default:
-            throw new NotImplementedException(); // TODO implement this
-        }
-    }
+        FunctionDeclarationSyntax functionSyntax => new SourceFunctionSymbol(this, functionSyntax),
+        VariableDeclarationSyntax varSyntax when varSyntax.FieldModifier is null => new SourceAutoPropertySymbol(this, varSyntax),
+        VariableDeclarationSyntax varSyntax when varSyntax.FieldModifier is not null => new SourceFieldSymbol(this, varSyntax),
+        _ => throw new NotImplementedException(), // TODO implement this
+    };
 
     public override string ToString() => $"{this.Name}{this.GenericsToString()}";
 }

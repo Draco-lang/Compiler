@@ -99,7 +99,8 @@ internal sealed class BinderCache(Compilation compilation)
     {
         Debug.Assert(syntax.Parent is not null);
         var binder = this.GetBinder(syntax.Parent);
-
+        // Search for the function in the parents container
+        // For that we unwrap from the injected import layer(s)
         var parent = UnwrapFromImportBinder(binder);
         var classSymbol = parent.DeclaredSymbols
             .OfType<SourceClassSymbol>()

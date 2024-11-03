@@ -1,7 +1,7 @@
 namespace Draco.Compiler.Internal.Symbols.Error;
 
 /// <summary>
-/// An 'this' parameter symbol where it's invalid.
+/// A 'this' parameter symbol where it's invalid.
 /// </summary>
 internal sealed class ErrorThisParameterSymbol(
     TypeSymbol type,

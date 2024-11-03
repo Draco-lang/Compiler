@@ -245,7 +245,11 @@ public static partial class SyntaxFactory
             attributes: [],
             visibility: visibility,
             isGlobal: false,
-            false, true, name, type, value);
+            isField: false,
+            isMutable: true,
+            name: name,
+            type: type,
+            value: value);
 
     public static VariableDeclarationSyntax FieldValDeclaration(
         Visibility? visibility,

@@ -734,7 +734,7 @@ internal partial class Binder
         }
 
         // Check, if the function has a this argument
-        var thisArg = function.ThisArgument;
+        var thisArg = function.ThisParameter;
         if (thisArg is null)
         {
             // No, report error

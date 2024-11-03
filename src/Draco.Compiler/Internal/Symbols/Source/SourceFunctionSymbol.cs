@@ -27,12 +27,11 @@ internal sealed class SourceFunctionSymbol(
     {
     }
 
-    public override bool IsStatic => this.ThisArgument == null;
-
     public override void Bind(IBinderProvider binderProvider)
     {
         this.BindAttributesIfNeeded(binderProvider);
         this.BindGenericParametersIfNeeded(binderProvider);
+        this.BindThisParameterIfNeeded(binderProvider);
         this.BindParametersIfNeeded(binderProvider);
         // Force binding of parameters, as the type is lazy too
         foreach (var param in this.Parameters.Cast<SourceParameterSymbol>()) param.Bind(binderProvider);

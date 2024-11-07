@@ -24,22 +24,6 @@ internal interface IProcedure
     public string Name { get; }
 
     /// <summary>
-    /// The type this procedure is defined in.
-    /// When <see langword="null"/>, this procedure is a free function.
-    /// </summary>
-    public IClass? DeclaringType { get; }
-
-    /// <summary>
-    /// The module this procedure is defined in.
-    /// </summary>
-    public IModule DeclaringModule { get; }
-
-    /// <summary>
-    /// The assembly this procedure is defined in.
-    /// </summary>
-    public IAssembly Assembly { get; }
-
-    /// <summary>
     /// The entry basic block of this procedure.
     /// </summary>
     public IBasicBlock Entry { get; }

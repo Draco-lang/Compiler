@@ -19,16 +19,6 @@ internal interface IModule
     public string Name { get; }
 
     /// <summary>
-    /// The assembly this module is defined in.
-    /// </summary>
-    public IAssembly Assembly { get; }
-
-    /// <summary>
-    /// The parent module of this module.
-    /// </summary>
-    public IModule? Parent { get; }
-
-    /// <summary>
     /// The submodules of this module.
     /// </summary>
     public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules { get; }

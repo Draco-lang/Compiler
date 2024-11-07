@@ -6,16 +6,11 @@ using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
-internal sealed class Class(Module declaringModule, TypeSymbol symbol) : IClass
+internal sealed class Class(TypeSymbol symbol) : IClass
 {
 
     public TypeSymbol Symbol { get; } = symbol;
     public string Name => this.Symbol.Name;
-
-    public Module DeclaringModule { get; } = declaringModule;
-    IModule IClass.DeclaringModule => this.DeclaringModule;
-    public Assembly Assembly => this.DeclaringModule.Assembly;
-    IAssembly IClass.Assembly => this.Assembly;
 
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Methods => this.methods;
@@ -30,7 +25,7 @@ internal sealed class Class(Module declaringModule, TypeSymbol symbol) : IClass
     {
         if (!this.methods.TryGetValue(functionSymbol, out var result))
         {
-            result = new Procedure(this.DeclaringModule, this, functionSymbol);
+            result = new Procedure(functionSymbol);
             this.methods.Add(functionSymbol, result);
         }
         return (Procedure)result;

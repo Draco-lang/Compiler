@@ -30,27 +30,19 @@ internal sealed class Module : IModule
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
     IReadOnlyDictionary<FunctionSymbol, IProcedure> IModule.Procedures => this.procedures;
 
-    public Assembly Assembly { get; }
-    IAssembly IModule.Assembly => this.Assembly;
-
-    public Module? Parent { get; }
-    IModule? IModule.Parent => this.Parent;
-
     private readonly HashSet<FieldSymbol> fields = [];
     private readonly HashSet<PropertySymbol> properties = [];
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = [];
     private readonly Dictionary<ModuleSymbol, IModule> submodules = [];
     private readonly Dictionary<TypeSymbol, IClass> types = [];
 
-    public Module(ModuleSymbol symbol, Assembly assembly, Module? Parent)
+    public Module(ModuleSymbol symbol)
     {
         this.Symbol = symbol;
         this.GlobalInitializer = this.DefineProcedure(new IntrinsicFunctionSymbol(
             name: "<global initializer>",
             paramTypes: [],
             returnType: WellKnownTypes.Unit));
-        this.Assembly = assembly;
-        this.Parent = Parent;
     }
 
     public ImmutableArray<IProcedure> GetProcedures()
@@ -71,7 +63,7 @@ internal sealed class Module : IModule
     {
         if (!this.procedures.TryGetValue(functionSymbol, out var result))
         {
-            result = new Procedure(this, null, functionSymbol);
+            result = new Procedure(functionSymbol);
             this.procedures.Add(functionSymbol, result);
         }
         return (Procedure)result;
@@ -81,7 +73,7 @@ internal sealed class Module : IModule
     {
         if (!this.submodules.TryGetValue(moduleSymbol, out var result))
         {
-            result = new Module(moduleSymbol, this.Assembly, this);
+            result = new Module(moduleSymbol);
             this.submodules.Add(moduleSymbol, result);
         }
         return (Module)result;
@@ -91,7 +83,7 @@ internal sealed class Module : IModule
     {
         if (!this.types.TryGetValue(typeSymbol, out var result))
         {
-            result = new Class(this, typeSymbol);
+            result = new Class(typeSymbol);
             this.types.Add(typeSymbol, result);
         }
         return (Class)result;

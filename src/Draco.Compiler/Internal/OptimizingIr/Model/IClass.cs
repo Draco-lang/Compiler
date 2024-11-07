@@ -19,16 +19,6 @@ internal interface IClass
     public string Name { get; }
 
     /// <summary>
-    /// The module this type is defined in.
-    /// </summary>
-    public IModule DeclaringModule { get; }
-
-    /// <summary>
-    /// The assembly this type is defined in.
-    /// </summary>
-    public IAssembly Assembly { get; }
-
-    /// <summary>
     /// The generic parameters on this type.
     /// </summary>
     public IReadOnlyList<TypeParameterSymbol> Generics { get; }

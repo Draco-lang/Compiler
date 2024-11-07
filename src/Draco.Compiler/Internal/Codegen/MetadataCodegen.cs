@@ -95,8 +95,6 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
-    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = [];
-    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = [];
     private readonly AssemblyReferenceHandle systemRuntimeReference;
     private readonly TypeReferenceHandle systemObjectReference;
     private readonly TypeReferenceHandle systemValueTypeReference;
@@ -154,30 +152,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             methodList: MetadataTokens.MethodDefinitionHandle(1));
     }
 
-    public TypeReferenceHandle GetModuleReferenceHandle(IModule module)
-    {
-        if (!this.moduleReferenceHandles.TryGetValue(module, out var handle))
-        {
-            var resolutionScope = module.Parent is null
-                // Root module, we take the module definition containing it
-                ? (EntityHandle)this.ModuleDefinitionHandle
-                // We take its parent module
-                : this.GetModuleReferenceHandle(module.Parent);
-            var name = string.IsNullOrEmpty(module.Name)
-                ? CompilerConstants.DefaultModuleName
-                : module.Name;
-            handle = this.GetOrAddTypeReference(
-                parent: resolutionScope,
-                @namespace: null,
-                name: name);
-            this.moduleReferenceHandles.Add(module, handle);
-        }
-        return handle;
-    }
-
     public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
-
-    public MemberReferenceHandle GetIntrinsicReferenceHandle(Symbol symbol) => this.intrinsicReferenceHandles[symbol];
 
     // TODO: This can be cached by symbol to avoid double reference instertion
     public EntityHandle GetEntityHandle(Symbol symbol)
@@ -279,7 +254,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 // Probably not, let's shove them somewhere known once we can make up our minds
                 // This is the case for synthetized ctor functions for example
                 parent: func.ContainingSymbol is null
-                    ? this.GetModuleReferenceHandle(this.assembly.RootModule)
+                    ? (EntityHandle)this.ModuleDefinitionHandle
                     : this.GetEntityHandle(GetContainingSymbol()),
                 name: func.NestedName,
                 signature: this.EncodeBlob(e =>
@@ -302,15 +277,25 @@ internal sealed class MetadataCodegen : MetadataWriter
         case SourceModuleSymbol:
         case ScriptModuleSymbol:
         {
-            if (this.RedirectHandlesToCompileTimeRoot)
-            {
-                var root = this.Compilation.CompileTimeExecutor.RootModule;
-                return this.GetModuleReferenceHandle(root);
-            }
+            var moduleSymbol = this.RedirectHandlesToCompileTimeRoot
+                ? this.Compilation.RootModule
+                : (ModuleSymbol)symbol;
+            var parent = moduleSymbol.AncestorChain
+                .Skip(1)
+                .FirstOrDefault(s => s is TypeSymbol or ModuleSymbol);
 
-            var module = (ModuleSymbol)symbol;
-            var irModule = this.assembly.Lookup(module);
-            return this.GetModuleReferenceHandle(irModule);
+            var resolutionScope = parent is null
+                // Root module, we take the module definition containing it
+                ? (EntityHandle)this.ModuleDefinitionHandle
+                // We take its parent module
+                : this.GetEntityHandle(parent);
+            var name = string.IsNullOrEmpty(moduleSymbol.Name)
+                ? CompilerConstants.DefaultModuleName
+                : moduleSymbol.Name;
+            return this.GetOrAddTypeReference(
+                parent: resolutionScope,
+                @namespace: null,
+                name: name);
         }
 
         case FieldSymbol field:

@@ -18,8 +18,8 @@ internal sealed class Module : IModule
     public IDictionary<ModuleSymbol, IModule> Submodules => this.submodules;
     IReadOnlyDictionary<ModuleSymbol, IModule> IModule.Submodules => this.submodules;
 
-    public IDictionary<TypeSymbol, IClass> Types => this.types;
-    IReadOnlyDictionary<TypeSymbol, IClass> IModule.Classes => this.types;
+    public IDictionary<TypeSymbol, IClass> Classes => this.classes;
+    IReadOnlyDictionary<TypeSymbol, IClass> IModule.Classes => this.classes;
 
     public IReadOnlySet<FieldSymbol> Fields => this.fields;
     public IReadOnlySet<PropertySymbol> Properties => this.properties;
@@ -34,7 +34,7 @@ internal sealed class Module : IModule
     private readonly HashSet<PropertySymbol> properties = [];
     private readonly Dictionary<FunctionSymbol, IProcedure> procedures = [];
     private readonly Dictionary<ModuleSymbol, IModule> submodules = [];
-    private readonly Dictionary<TypeSymbol, IClass> types = [];
+    private readonly Dictionary<TypeSymbol, IClass> classes = [];
 
     public Module(ModuleSymbol symbol)
     {
@@ -81,10 +81,10 @@ internal sealed class Module : IModule
 
     public Class DefineType(TypeSymbol typeSymbol)
     {
-        if (!this.types.TryGetValue(typeSymbol, out var result))
+        if (!this.classes.TryGetValue(typeSymbol, out var result))
         {
             result = new Class(typeSymbol);
-            this.types.Add(typeSymbol, result);
+            this.classes.Add(typeSymbol, result);
         }
         return (Class)result;
     }

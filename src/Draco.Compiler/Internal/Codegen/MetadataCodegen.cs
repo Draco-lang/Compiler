@@ -658,16 +658,9 @@ internal sealed class MetadataCodegen : MetadataWriter
         var startFieldIndex = fieldIndex;
         var startProcIndex = procIndex;
 
-        var visibility = (@class.Symbol.Visibility, parent) switch
-        {
-            (Api.Semantics.Visibility.Public, not null) => TypeAttributes.NestedPublic,
-            (Api.Semantics.Visibility.Public, null) => TypeAttributes.Public,
-            (_, not null) => TypeAttributes.NestedAssembly,
-            (_, null) => TypeAttributes.NotPublic,
-        };
-
-        var attributes = visibility | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
-
+        var visibility = GetClassVisibility(@class.Symbol.Visibility, parent is not null);
+        var attributes = visibility
+                       | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
         if (@class.Symbol.IsValueType) attributes |= TypeAttributes.SequentialLayout; // AutoLayout = 0.
 
         var createdClass = this.AddTypeDefinition(
@@ -909,6 +902,14 @@ internal sealed class MetadataCodegen : MetadataWriter
         var contentId = peBuilder.Serialize(peBlob);
         peBlob.WriteContentTo(peStream);
     }
+
+    private static TypeAttributes GetClassVisibility(Api.Semantics.Visibility visibility, bool isNested) => (visibility, isNested) switch
+    {
+        (Api.Semantics.Visibility.Public, true) => TypeAttributes.NestedPublic,
+        (Api.Semantics.Visibility.Public, false) => TypeAttributes.Public,
+        (_, true) => TypeAttributes.NestedAssembly,
+        (_, false) => TypeAttributes.NotPublic,
+    };
 
     private static FieldAttributes GetFieldVisibility(Api.Semantics.Visibility visibility) => visibility switch
     {

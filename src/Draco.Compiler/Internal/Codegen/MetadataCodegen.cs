@@ -226,12 +226,9 @@ internal sealed class MetadataCodegen : MetadataWriter
                 {
                     // We can't have nested functions represented in metadata directly, so we'll climb up the parent chain
                     // To find the first non-function container
-                    var current = func.ContainingSymbol;
-                    while (current is FunctionSymbol func)
-                    {
-                        current = func.ContainingSymbol;
-                    }
-                    return current!;
+                    return func.AncestorChain
+                        .Skip(1)
+                        .First(s => s is not FunctionSymbol);
                 }
 
                 if (func.ContainingSymbol is not TypeSymbol type) return func.ContainingSymbol!;

@@ -14,7 +14,6 @@ internal sealed class Procedure : IProcedure
 {
     public FunctionSymbol Symbol { get; }
     public string Name => this.Symbol.NestedName;
-    public TypeSymbol? TypeSymbol => this.Symbol.Type;
     public Module DeclaringModule { get; }
     IModule IProcedure.DeclaringModule => this.DeclaringModule;
     public Class? DeclaringType { get; }

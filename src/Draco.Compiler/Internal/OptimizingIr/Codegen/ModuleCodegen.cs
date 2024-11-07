@@ -72,7 +72,7 @@ internal sealed class ModuleCodegen : SymbolVisitor
     {
         if (typeSymbol is not SourceClassSymbol sourceClass) return;
 
-        var type = this.module.DefineType(typeSymbol);
+        var type = this.module.DefineClass(typeSymbol);
         var typeCodegen = new ClassCodegen(this, type);
         sourceClass.Accept(typeCodegen);
     }

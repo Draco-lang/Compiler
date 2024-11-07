@@ -79,7 +79,7 @@ internal sealed class Module : IModule
         return (Module)result;
     }
 
-    public Class DefineType(TypeSymbol typeSymbol)
+    public Class DefineClass(TypeSymbol typeSymbol)
     {
         if (!this.classes.TryGetValue(typeSymbol, out var result))
         {

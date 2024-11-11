@@ -673,7 +673,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         );
 
         // Procedures
-        foreach (var proc in @class.Methods.Values)
+        foreach (var proc in @class.Procedures.Values)
         {
             if (proc.Symbol is DefaultConstructorSymbol ctor)
             {

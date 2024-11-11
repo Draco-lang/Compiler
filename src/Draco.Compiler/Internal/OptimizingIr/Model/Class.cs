@@ -8,25 +8,24 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 
 internal sealed class Class(TypeSymbol symbol) : IClass
 {
-
     public TypeSymbol Symbol { get; } = symbol;
     public string Name => this.Symbol.Name;
 
     public IReadOnlyList<TypeParameterSymbol> Generics => this.Symbol.GenericParameters;
-    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Methods => this.methods;
+    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures => this.procedures;
     public IReadOnlyList<FieldSymbol> Fields => InterlockedUtils.InitializeDefault(
         ref this.fields,
         () => this.Symbol.DefinedMembers.OfType<FieldSymbol>().ToImmutableArray());
     private ImmutableArray<FieldSymbol> fields;
 
-    private readonly Dictionary<FunctionSymbol, IProcedure> methods = [];
+    private readonly Dictionary<FunctionSymbol, IProcedure> procedures = [];
 
-    public Procedure DefineMethod(FunctionSymbol functionSymbol)
+    public Procedure DefineProcedure(FunctionSymbol functionSymbol)
     {
-        if (!this.methods.TryGetValue(functionSymbol, out var result))
+        if (!this.procedures.TryGetValue(functionSymbol, out var result))
         {
             result = new Procedure(functionSymbol);
-            this.methods.Add(functionSymbol, result);
+            this.procedures.Add(functionSymbol, result);
         }
         return (Procedure)result;
     }

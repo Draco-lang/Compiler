@@ -24,12 +24,12 @@ internal interface IClass
     public IReadOnlyList<TypeParameterSymbol> Generics { get; }
 
     /// <summary>
-    /// The methods on this type.
-    /// </summary>
-    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Methods { get; }
-
-    /// <summary>
     /// The fields on this type.
     /// </summary>
     public IReadOnlyList<FieldSymbol> Fields { get; }
+
+    /// <summary>
+    /// The procedures on this type.
+    /// </summary>
+    public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }
 }

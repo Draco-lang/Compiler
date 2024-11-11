@@ -20,7 +20,7 @@ internal sealed class ClassCodegen(ModuleCodegen moduleCodegen, Class @class) : 
         if (functionSymbol.Body is null) return;
 
         // Add procedure
-        var procedure = @class.DefineMethod(functionSymbol);
+        var procedure = @class.DefineProcedure(functionSymbol);
 
         // Create the body
         var body = this.RewriteBody(functionSymbol.Body);

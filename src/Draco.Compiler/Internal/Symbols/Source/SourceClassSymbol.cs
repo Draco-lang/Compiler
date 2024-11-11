@@ -88,6 +88,8 @@ internal sealed class SourceClassSymbol(
             result.Add(new DefaultConstructorSymbol(this));
             foreach (var member in blockBody.Declarations.Select(this.BuildMember))
             {
+                if (member is null) continue;
+
                 var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
                 result.Add(member);
                 result.AddRange(member.GetAdditionalSymbols());
@@ -112,12 +114,13 @@ internal sealed class SourceClassSymbol(
         return [];
     }
 
-    private Symbol BuildMember(DeclarationSyntax syntax) => syntax switch
+    private Symbol? BuildMember(DeclarationSyntax syntax) => syntax switch
     {
         FunctionDeclarationSyntax functionSyntax => new SourceFunctionSymbol(this, functionSyntax),
         VariableDeclarationSyntax varSyntax when varSyntax.FieldModifier is null => new SourceAutoPropertySymbol(this, varSyntax),
         VariableDeclarationSyntax varSyntax when varSyntax.FieldModifier is not null => new SourceFieldSymbol(this, varSyntax),
-        _ => throw new NotImplementedException(), // TODO implement this
+        UnexpectedDeclarationSyntax => null,
+        _ => throw new NotImplementedException(),
     };
 
     public override string ToString() => $"{this.Name}{this.GenericsToString()}";

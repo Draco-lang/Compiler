@@ -185,23 +185,23 @@ internal static class SymbolResolutionErrors
         format: "the {0} {1} is inaccessible due to its visibility",
         code: Code(19));
 
+    /// <summary>
+    /// The this parameter is not first in the parameter list.
+    /// </summary>
     public static readonly DiagnosticTemplate ThisParameterNotFirst = DiagnosticTemplate.Create(
         title: "this parameter not first",
         severity: DiagnosticSeverity.Error,
         format: "the this parameter must be the first parameter",
         code: Code(20));
 
-    public static readonly DiagnosticTemplate NoTypeInstanceToReference = DiagnosticTemplate.Create(
-        title: "no type instance to reference",
+    /// <summary>
+    /// This was referenced outside of a type.
+    /// </summary>
+    public static readonly DiagnosticTemplate ThisReferencedInStaticMethod = DiagnosticTemplate.Create(
+        title: "this reference in static method",
         severity: DiagnosticSeverity.Error,
-        format: "there is no type instance to reference.",
+        format: "this reference can not be referenced in the static method {0}",
         code: Code(21));
-
-    public static readonly DiagnosticTemplate NoThisInStaticMethod = DiagnosticTemplate.Create(
-        title: "instance reference in static method",
-        severity: DiagnosticSeverity.Error,
-        format: "cannot reference the type instance in static method {0}",
-        code: Code(22));
 
     /// <summary>
     /// The return expression is illegal in the current context.
@@ -210,11 +210,14 @@ internal static class SymbolResolutionErrors
         title: "illegal return",
         severity: DiagnosticSeverity.Error,
         format: "illegal return expression outside of function definition",
-        code: Code(23));
+        code: Code(22));
 
+    /// <summary>
+    /// The this expression is illegal in the current context.
+    /// </summary>
     public static readonly DiagnosticTemplate IllegalThis = DiagnosticTemplate.Create(
         title: "ilegal this",
         severity: DiagnosticSeverity.Error,
         format: "illegal this expression outside of a function definition",
-        code: Code(24));
+        code: Code(23));
 }

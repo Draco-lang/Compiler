@@ -739,7 +739,7 @@ internal partial class Binder
         {
             // No, report error
             diagnostics.Add(Diagnostic.Create(
-                template: SymbolResolutionErrors.NoThisInStaticMethod,
+                template: SymbolResolutionErrors.ThisReferencedInStaticMethod,
                 location: syntax.Location,
                 formatArgs: [this.ContainingSymbol!.Name]));
 

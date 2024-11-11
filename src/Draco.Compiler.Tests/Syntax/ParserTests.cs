@@ -1916,39 +1916,6 @@ public sealed class ParserTests
     }
 
     [Fact]
-    public void TestClassDeclaration()
-    {
-        this.ParseDeclaration("""
-            class Foo {
-            }
-            """);
-
-        this.N<ClassDeclarationSyntax>();
-        {
-            this.T(TokenKind.KeywordClass);
-            this.T(TokenKind.Identifier, "Foo");
-            this.N<BlockClassBodySyntax>();
-        }
-    }
-
-    [Fact]
-    public void TestValueClassDeclaration()
-    {
-        this.ParseDeclaration("""
-            value class Foo {
-            }
-            """);
-
-        this.N<ClassDeclarationSyntax>();
-        {
-            this.T(TokenKind.KeywordValue);
-            this.T(TokenKind.KeywordClass);
-            this.T(TokenKind.Identifier, "Foo");
-            this.N<BlockClassBodySyntax>();
-        }
-    }
-
-    [Fact]
     public void TestFunctionAndParameterWithAttribute()
     {
         this.ParseDeclaration("""
@@ -2144,6 +2111,39 @@ public sealed class ParserTests
                 this.N<SyntaxList<StatementSyntax>>();
                 this.T(TokenKind.CurlyClose);
             }
+        }
+    }
+
+    [Fact]
+    public void TestClassDeclaration()
+    {
+        this.ParseDeclaration("""
+            class Foo {
+            }
+            """);
+
+        this.N<ClassDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordClass);
+            this.T(TokenKind.Identifier, "Foo");
+            this.N<BlockClassBodySyntax>();
+        }
+    }
+
+    [Fact]
+    public void TestValueClassDeclaration()
+    {
+        this.ParseDeclaration("""
+            value class Foo {
+            }
+            """);
+
+        this.N<ClassDeclarationSyntax>();
+        {
+            this.T(TokenKind.KeywordValue);
+            this.T(TokenKind.KeywordClass);
+            this.T(TokenKind.Identifier, "Foo");
+            this.N<BlockClassBodySyntax>();
         }
     }
 }

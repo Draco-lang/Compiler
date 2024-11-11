@@ -1025,7 +1025,7 @@ public sealed class CompilingCodeTests
         var assembly = CompileToAssembly("""
             import System.Console;
 
-            func main(): int32 {
+            func bar(): int32 {
                 var foo = Foo();
                 foo.increment();
                 return foo.get();
@@ -1033,6 +1033,7 @@ public sealed class CompilingCodeTests
 
             class Foo {
                 field var i: int32;
+
                 public func increment(this) {
                     this.i += 1;
                 }
@@ -1043,8 +1044,7 @@ public sealed class CompilingCodeTests
             }
             """);
 
-        var stringWriter = new StringWriter();
-        var value = Invoke<int>(assembly: assembly, stdout: stringWriter);
+        var value = Invoke<int>(assembly: assembly, methodName: "bar");
         Assert.Equal(1, value);
     }
 }

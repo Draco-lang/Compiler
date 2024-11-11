@@ -191,6 +191,14 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddTypeSpecification(blob);
         }
 
+        case SourceClassSymbol sourceClass:
+        {
+            return this.GetOrAddTypeReference(
+                parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
+                @namespace: null,
+                name: sourceClass.MetadataName);
+        }
+
         case TypeSymbol typeSymbol:
         {
             var blob = this.EncodeBlob(e =>
@@ -663,27 +671,32 @@ internal sealed class MetadataCodegen : MetadataWriter
                        | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
         if (@class.Symbol.IsValueType) attributes |= TypeAttributes.SequentialLayout; // AutoLayout = 0.
 
-        var createdClass = this.AddTypeDefinition(
+        var definitionHandle = this.AddTypeDefinition(
             attributes,
             null,
             @class.Name,
             @class.Symbol.IsValueType ? this.systemValueTypeReference : this.systemObjectReference,
             fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
-            methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex)
-        );
+            methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));
+
+        // Add generic type parameters
+        var genericIndex = 0;
+        foreach (var typeParam in @class.Generics)
+        {
+            this.MetadataBuilder.AddGenericParameter(
+                parent: definitionHandle,
+                attributes: GenericParameterAttributes.None,
+                name: this.GetOrAddString(typeParam.Name),
+                index: genericIndex++);
+        }
 
         // Procedures
         foreach (var proc in @class.Procedures.Values)
         {
-            if (proc.Symbol is DefaultConstructorSymbol ctor)
-            {
-                var handle = this.EncodeProcedure(proc, ".ctor");
-            }
-            else
-            {
-                var handle = this.EncodeProcedure(proc);
-
-            }
+            var specialName = proc.Symbol is DefaultConstructorSymbol
+                ? ".ctor"
+                : null;
+            this.EncodeProcedure(proc, specialName: specialName);
             ++procIndex;
 
             // Todo: properties
@@ -700,15 +713,15 @@ internal sealed class MetadataCodegen : MetadataWriter
         if (@class.Symbol.IsValueType && @class.Fields.Count == 0)
         {
             this.MetadataBuilder.AddTypeLayout(
-                type: createdClass,
+                type: definitionHandle,
                 packingSize: 0,
                 size: 1);
         }
 
         // If this isn't top level module, we specify nested relationship
-        if (parent is not null) this.MetadataBuilder.AddNestedType(createdClass, parent.Value);
+        if (parent is not null) this.MetadataBuilder.AddNestedType(definitionHandle, parent.Value);
 
-        return createdClass;
+        return definitionHandle;
     }
 
     private IEnumerable<TypeSymbol> ScalarConstantTypes => [

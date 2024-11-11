@@ -674,7 +674,8 @@ internal sealed class MetadataCodegen : MetadataWriter
         var definitionHandle = this.AddTypeDefinition(
             attributes,
             null,
-            @class.Name,
+            // TODO: Maybe expose metadata name instead then instead of regular name?
+            @class.Symbol.MetadataName,
             @class.Symbol.IsValueType ? this.systemValueTypeReference : this.systemObjectReference,
             fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
             methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));

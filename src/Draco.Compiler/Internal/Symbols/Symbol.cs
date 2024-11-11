@@ -88,7 +88,9 @@ internal abstract partial class Symbol
     /// <summary>
     /// The metadata name of this symbol.
     /// </summary>
-    public virtual string MetadataName => this.Name;
+    public virtual string MetadataName => this.IsGenericDefinition
+        ? $"{this.Name}`{this.GenericParameters.Length}"
+        : this.Name;
 
     /// <summary>
     /// The name of this symbol.

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -41,10 +42,10 @@ internal sealed class Procedure : IProcedure
 
     public int GetParameterIndex(ParameterSymbol symbol)
     {
-        if (symbol.IsThis) return 0;
+        if (symbol.IsThis) throw new ArgumentOutOfRangeException(nameof(symbol), "this parameter is treated special");
         var idx = this.Symbol.Parameters.IndexOf(symbol);
-        if (idx == -1) throw new System.ArgumentOutOfRangeException(nameof(symbol));
-        return symbol.ContainingSymbol.IsStatic ? idx : idx + 1;
+        if (idx == -1) throw new ArgumentOutOfRangeException(nameof(symbol));
+        return idx;
     }
 
     public BasicBlock DefineBasicBlock(LabelSymbol symbol)

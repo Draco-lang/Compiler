@@ -9,27 +9,33 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal interface IClass
 {
     /// <summary>
-    /// The symbol of this type.
+    /// The symbol of this class.
     /// </summary>
     public TypeSymbol Symbol { get; }
 
     /// <summary>
-    /// The name of this type.
+    /// The name of this class.
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    /// The generic parameters on this type.
+    /// The generic parameters on this class.
     /// </summary>
     public IReadOnlyList<TypeParameterSymbol> Generics { get; }
 
+    // TODO: Fields and props should be order-dependent for classes and modules too
     /// <summary>
-    /// The fields on this type.
+    /// The fields on this class.
     /// </summary>
-    public IReadOnlyList<FieldSymbol> Fields { get; }
+    public IReadOnlySet<FieldSymbol> Fields { get; }
 
     /// <summary>
-    /// The procedures on this type.
+    /// The properties within this class.
+    /// </summary>
+    public IReadOnlySet<PropertySymbol> Properties { get; }
+
+    /// <summary>
+    /// The procedures on this class.
     /// </summary>
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }
 }

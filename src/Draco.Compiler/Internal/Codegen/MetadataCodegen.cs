@@ -526,11 +526,12 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private FieldDefinitionHandle EncodeField(FieldSymbol field)
     {
-        var visibility = GetFieldVisibility(field.Visibility);
+        var attributes = GetFieldVisibility(field.Visibility);
+        if (field.IsStatic) attributes |= FieldAttributes.Static;
 
         // Definition
         return this.AddFieldDefinition(
-            attributes: visibility | FieldAttributes.Static,
+            attributes: attributes,
             name: field.Name,
             signature: this.EncodeFieldSignature(field));
     }
@@ -691,16 +692,37 @@ internal sealed class MetadataCodegen : MetadataWriter
                 index: genericIndex++);
         }
 
+        // Properties
+        // TODO: Copypasta
+        var firstProperty = null as PropertyDefinitionHandle?;
+        var propertyHandleMap = new Dictionary<Symbol, PropertyDefinitionHandle>();
+        foreach (var prop in @class.Properties)
+        {
+            var propHandle = this.EncodeProperty(definitionHandle, prop);
+            firstProperty ??= propHandle;
+            propertyHandleMap.Add(prop, propHandle);
+        }
+        if (firstProperty is not null) this.MetadataBuilder.AddPropertyMap(definitionHandle, firstProperty.Value);
+
         // Procedures
         foreach (var proc in @class.Procedures.Values)
         {
             var specialName = proc.Symbol is DefaultConstructorSymbol
                 ? ".ctor"
                 : null;
-            this.EncodeProcedure(proc, specialName: specialName);
+            var handle = this.EncodeProcedure(proc, specialName: specialName);
             ++procIndex;
 
-            // Todo: properties
+            // TODO: Copypasta
+            if (proc.Symbol is IPropertyAccessorSymbol propAccessor)
+            {
+                // This is an accessor
+                var isGetter = propAccessor.Property.Getter == propAccessor;
+                this.MetadataBuilder.AddMethodSemantics(
+                    association: propertyHandleMap[propAccessor.Property],
+                    semantics: isGetter ? MethodSemanticsAttributes.Getter : MethodSemanticsAttributes.Setter,
+                    methodDefinition: handle);
+            }
         }
 
         // Fields

@@ -3,6 +3,9 @@ using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Lowering;
 using Draco.Compiler.Internal.OptimizingIr.Model;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
+using Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Codegen;
 
@@ -36,7 +39,20 @@ internal sealed class ClassCodegen(ModuleCodegen moduleCodegen, Class @class) : 
 
     public override void VisitField(FieldSymbol fieldSymbol)
     {
-        // No-op, the Class model reads it up from the symbol
+        if (fieldSymbol is not SyntaxFieldSymbol and not AutoPropertyBackingFieldSymbol) return;
+
+        // TODO: Initializer value
+        @class.DefineField(fieldSymbol);
+    }
+
+    public override void VisitProperty(PropertySymbol propertySymbol)
+    {
+        // TODO: Not flexible, won't work for non-auto props
+        if (propertySymbol is not SyntaxAutoPropertySymbol) return;
+
+        @class.DefineProperty(propertySymbol);
+
+        // TODO: Initializer value
     }
 
     private BoundNode RewriteBody(BoundNode body)

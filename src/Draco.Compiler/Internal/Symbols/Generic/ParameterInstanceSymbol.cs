@@ -1,4 +1,5 @@
 using System.Threading;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -16,6 +17,7 @@ internal sealed class ParameterInstanceSymbol(
 
     public override bool IsVariadic => this.GenericDefinition.IsVariadic;
     public override string Name => this.GenericDefinition.Name;
+    public override SyntaxNode? DeclaringSyntax => this.GenericDefinition.DeclaringSyntax;
 
     public override FunctionSymbol ContainingSymbol { get; } = containingSymbol;
     public override ParameterSymbol GenericDefinition { get; } = genericDefinition;

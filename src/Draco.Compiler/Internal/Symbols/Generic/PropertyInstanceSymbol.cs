@@ -1,4 +1,5 @@
 using System.Threading;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
@@ -26,6 +27,7 @@ internal sealed class PropertyInstanceSymbol(
     public override bool IsStatic => this.GenericDefinition.IsStatic;
     public override bool IsExplicitImplementation => this.GenericDefinition.IsExplicitImplementation;
     public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
+    public override SyntaxNode? DeclaringSyntax => this.GenericDefinition.DeclaringSyntax;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override PropertySymbol GenericDefinition { get; } = genericDefinition;

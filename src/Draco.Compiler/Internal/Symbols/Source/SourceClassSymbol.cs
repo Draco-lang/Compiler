@@ -7,6 +7,8 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Declarations;
+using Draco.Compiler.Internal.Solver.Constraints;
+using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
@@ -92,7 +94,6 @@ internal sealed class SourceClassSymbol(
 
                 var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
                 result.Add(member);
-                result.AddRange(member.GetAdditionalSymbols());
 
                 // We check for illegal shadowing
                 if (earlierMember is null) continue;
@@ -108,6 +109,25 @@ internal sealed class SourceClassSymbol(
                     location: syntax.Location,
                     formatArgs: member.Name));
             }
+
+            // If this is a generic definition, we generic instantiate the members
+            if (this.IsGenericDefinition)
+            {
+                var genericContext = new GenericContext(this.GenericParameters.ToImmutableDictionary(t => t, t => t as TypeSymbol));
+                for (var i = 0; i < result.Count; ++i)
+                {
+                    result[i] = result[i].GenericInstantiate(this, genericContext);
+                }
+            }
+
+            // Add additional symbols for each
+            var origCount = result.Count;
+            for (var i = 0; i < origCount; ++i)
+            {
+                var member = result[i];
+                result.AddRange(member.GetAdditionalSymbols());
+            }
+
             return result.ToImmutable();
         }
 

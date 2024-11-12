@@ -1,4 +1,5 @@
 using System.Threading;
+using Draco.Compiler.Api.Syntax;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
@@ -18,6 +19,7 @@ internal sealed class FieldInstanceSymbol(
     public override bool IsMutable => this.GenericDefinition.IsMutable;
     public override bool IsStatic => this.GenericDefinition.IsStatic;
     public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
+    public override SyntaxNode? DeclaringSyntax => this.GenericDefinition.DeclaringSyntax;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override FieldSymbol GenericDefinition { get; } = genericDefinition;

@@ -39,17 +39,13 @@ internal sealed class ClassCodegen(ModuleCodegen moduleCodegen, Class @class) : 
 
     public override void VisitField(FieldSymbol fieldSymbol)
     {
-        if (fieldSymbol is not SyntaxFieldSymbol and not AutoPropertyBackingFieldSymbol) return;
+        @class.DefineField(fieldSymbol);
 
         // TODO: Initializer value
-        @class.DefineField(fieldSymbol);
     }
 
     public override void VisitProperty(PropertySymbol propertySymbol)
     {
-        // TODO: Not flexible, won't work for non-auto props
-        if (propertySymbol is not SyntaxAutoPropertySymbol) return;
-
         @class.DefineProperty(propertySymbol);
 
         // TODO: Initializer value

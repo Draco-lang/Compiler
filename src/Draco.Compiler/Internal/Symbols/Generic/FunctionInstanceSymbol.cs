@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Utilities;
 
@@ -59,6 +60,7 @@ internal class FunctionInstanceSymbol(
     public override BoundStatement? Body => this.GenericDefinition.Body;
     public override CodegenDelegate? Codegen => this.GenericDefinition.Codegen;
     public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
+    public override SyntaxNode? DeclaringSyntax => this.GenericDefinition.DeclaringSyntax;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
     public override FunctionSymbol GenericDefinition { get; } = genericDefinition;

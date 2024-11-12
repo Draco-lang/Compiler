@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols.Generic;
@@ -63,6 +64,7 @@ internal sealed class TypeInstanceSymbol(
     public override bool IsSealed => this.GenericDefinition.IsSealed;
     public override string Name => this.GenericDefinition.Name;
     public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
+    public override SyntaxNode? DeclaringSyntax => this.GenericDefinition.DeclaringSyntax;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
 

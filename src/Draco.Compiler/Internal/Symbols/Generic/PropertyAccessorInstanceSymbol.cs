@@ -1,3 +1,5 @@
+using Draco.Compiler.Api.Syntax;
+
 namespace Draco.Compiler.Internal.Symbols.Generic;
 
 /// <summary>
@@ -14,4 +16,5 @@ internal sealed class PropertyAccessorInstanceSymbol(
 {
     public PropertySymbol Property { get; } = property;
     public override Api.Semantics.Visibility Visibility => this.GenericDefinition.Visibility;
+    public override SyntaxNode? DeclaringSyntax => this.GenericDefinition.DeclaringSyntax;
 }

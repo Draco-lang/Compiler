@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using Draco.Compiler.Api;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Syntax;
@@ -73,7 +74,7 @@ internal sealed class BinderCache(Compilation compilation)
         // For that we unwrap from the injected import layer(s)
         var parent = UnwrapFromImportBinder(binder);
         var moduleSymbol = parent.DeclaredSymbols
-            .OfType<SourceModuleSymbol>()
+            .OfType<ModuleSymbol>()
             .FirstOrDefault(member => member.Name == syntax.Name.Text);
         Debug.Assert(moduleSymbol is not null);
         binder = WrapInImportBinder(binder, syntax);
@@ -88,7 +89,7 @@ internal sealed class BinderCache(Compilation compilation)
         // For that we unwrap from the injected import layer(s)
         var parent = UnwrapFromImportBinder(binder);
         var functionSymbol = parent.DeclaredSymbols
-            .OfType<SyntaxFunctionSymbol>()
+            .OfType<FunctionSymbol>()
             .FirstOrDefault(member => member.DeclaringSyntax == syntax);
         Debug.Assert(functionSymbol is not null);
         // NOTE: We are not using the unwrapped parent, we need the injected import layers
@@ -103,7 +104,7 @@ internal sealed class BinderCache(Compilation compilation)
         // For that we unwrap from the injected import layer(s)
         var parent = UnwrapFromImportBinder(binder);
         var classSymbol = parent.DeclaredSymbols
-            .OfType<SourceClassSymbol>()
+            .OfType<TypeSymbol>()
             .First(member => member.DeclaringSyntax == syntax); // should we shove that in a helper ?
         return new ClassBinder(binder, classSymbol);
     }

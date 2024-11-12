@@ -46,8 +46,6 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     public override void VisitField(FieldSymbol fieldSymbol)
     {
-        if (fieldSymbol is not SyntaxFieldSymbol and not AutoPropertyBackingFieldSymbol) return;
-
         this.module.DefineField(fieldSymbol);
 
         if (fieldSymbol is not SourceFieldSymbol sourceGlobal) return;
@@ -79,9 +77,6 @@ internal sealed class ModuleCodegen : SymbolVisitor
 
     public override void VisitProperty(PropertySymbol propertySymbol)
     {
-        // TODO: Not flexible, won't work for non-auto props
-        if (propertySymbol is not SyntaxAutoPropertySymbol) return;
-
         this.module.DefineProperty(propertySymbol);
 
         if (propertySymbol is not SourceAutoPropertySymbol sourceAutoProp) return;

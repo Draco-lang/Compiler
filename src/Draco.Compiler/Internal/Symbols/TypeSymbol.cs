@@ -215,7 +215,7 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
 
     public override abstract string ToString();
 
-    protected internal override sealed IEnumerable<Symbol> GetAdditionalSymbols()
+    protected internal override IEnumerable<Symbol> GetAdditionalSymbols()
     {
         if (this.IsAbstract) yield break;
         // For non-abstract types we provide constructor functions

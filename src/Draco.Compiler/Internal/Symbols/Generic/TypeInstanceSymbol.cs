@@ -141,4 +141,8 @@ internal sealed class TypeInstanceSymbol(
     private ImmutableArray<Symbol> BuildDefinedMembers() => this.GenericDefinition.DefinedMembers
         .Select(m => m.GenericInstantiate(this, this.Context))
         .ToImmutableArray();
+
+    protected internal override IEnumerable<Symbol> GetAdditionalSymbols() => this.GenericDefinition
+        .GetAdditionalSymbols()
+        .Select(s => s.GenericInstantiate(this, this.Context));
 }

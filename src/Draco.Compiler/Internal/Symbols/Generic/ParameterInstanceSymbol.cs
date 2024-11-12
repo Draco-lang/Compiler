@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api.Syntax;
 
@@ -26,4 +28,8 @@ internal sealed class ParameterInstanceSymbol(
 
     private TypeSymbol BuildType() =>
         this.GenericDefinition.Type.GenericInstantiate(this.GenericDefinition.Type.ContainingSymbol, this.Context);
+
+    protected internal override IEnumerable<Symbol> GetAdditionalSymbols() => this.GenericDefinition
+        .GetAdditionalSymbols()
+        .Select(s => s.GenericInstantiate(this, this.Context));
 }

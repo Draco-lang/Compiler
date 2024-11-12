@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Utilities;
@@ -44,4 +46,8 @@ internal sealed class PropertyInstanceSymbol(
     private FunctionSymbol? BuildSetter() => this.GenericDefinition.Setter is not null
         ? new PropertyAccessorInstanceSymbol(this.ContainingSymbol, this.GenericDefinition.Setter, this.Context, this)
         : null;
+
+    protected internal override IEnumerable<Symbol> GetAdditionalSymbols() => this.GenericDefinition
+        .GetAdditionalSymbols()
+        .Select(s => s.GenericInstantiate(this, this.Context));
 }

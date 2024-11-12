@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -137,4 +138,8 @@ internal class FunctionInstanceSymbol(
 
     private TypeSymbol BuildReturnType() =>
         this.GenericDefinition.ReturnType.GenericInstantiate(this.GenericDefinition.ReturnType.ContainingSymbol, this.Context);
+
+    protected internal override IEnumerable<Symbol> GetAdditionalSymbols() => this.GenericDefinition
+        .GetAdditionalSymbols()
+        .Select(s => s.GenericInstantiate(this, this.Context));
 }

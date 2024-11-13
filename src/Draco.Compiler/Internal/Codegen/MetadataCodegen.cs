@@ -305,6 +305,35 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         case FieldSymbol field:
         {
+            // TODO: Hack, is there some more general way to deal with this?
+            // Problem is that we need to generic instantiate the parent of the field reference...
+            // Otherwise the field ref will look Package::Type::field instead of Package::Type<!T>::field
+            if (field.ContainingSymbol is SourceClassSymbol { IsGenericDefinition: true } sourceClass)
+            {
+                var parentGeneric = this.GetEntityHandle(sourceClass);
+                var parentInstance = this.EncodeBlob(e =>
+                {
+                    var argsEncoder = e
+                        .TypeSpecificationSignature()
+                        .GenericInstantiation(
+                            genericType: parentGeneric,
+                            genericArgumentCount: sourceClass.GenericParameters.Length,
+                            isValueType: sourceClass.IsValueType);
+                    foreach (var param in sourceClass.GenericParameters)
+                    {
+                        this.EncodeSignatureType(argsEncoder.AddArgument(), param);
+                    }
+                });
+                return this.AddMemberReference(
+                    parent: this.MetadataBuilder.AddTypeSpecification(parentInstance),
+                    name: field.Name,
+                    signature: this.EncodeBlob(e =>
+                    {
+                        var encoder = e.Field();
+                        this.EncodeSignatureType(encoder.Type(), field.Type);
+                    }));
+            }
+
             return this.AddMemberReference(
                 parent: this.GetEntityHandle(field.ContainingSymbol
                                           ?? throw new InvalidOperationException()),

@@ -17,6 +17,7 @@ using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Symbols.Synthetized.Array;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -178,6 +179,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             var blob = this.EncodeBlob(e =>
             {
                 var encoder = e.TypeSpecificationSignature();
+                // TODO: Fix this callsite for source classes
                 var typeRef = this.GetEntityHandle(typeSymbol.GenericDefinition);
                 var argsEncoder = encoder.GenericInstantiation(
                     genericType: typeRef,
@@ -191,12 +193,28 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddTypeSpecification(blob);
         }
 
-        case SourceClassSymbol sourceClass:
+        case SourceClassSymbol sourceClass when sourceClass.IsGenericDefinition:
         {
-            return this.GetOrAddTypeReference(
+            // TODO: Hack... Needed for fields for example, as...
+            // Problem is that we need to generic instantiate the parent of the field reference...
+            // Otherwise the field ref will look Package::Type::field instead of Package::Type<!T>::field
+            // TODO: This is also horribly incorrect
+            var genericHandle = this.GetOrAddTypeReference(
                 parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
                 @namespace: null,
                 name: sourceClass.MetadataName);
+            var genericInstance = this.EncodeBlob(e =>
+            {
+                var argsEncoder = e.TypeSpecificationSignature().GenericInstantiation(
+                    genericType: genericHandle,
+                    genericArgumentCount: sourceClass.GenericParameters.Length,
+                    isValueType: sourceClass.IsValueType);
+                foreach (var param in sourceClass.GenericParameters)
+                {
+                    this.EncodeSignatureType(argsEncoder.AddArgument(), param);
+                }
+            });
+            return this.MetadataBuilder.AddTypeSpecification(genericInstance);
         }
 
         case TypeSymbol typeSymbol:
@@ -241,15 +259,6 @@ internal sealed class MetadataCodegen : MetadataWriter
                 }
 
                 if (func.ContainingSymbol is not TypeSymbol type) return func.ContainingSymbol!;
-
-                if (type is SourceClassSymbol { IsGenericDefinition: true } sourceClass)
-                {
-                    // TODO: Same hack as for FieldSymbol
-                    var generics = sourceClass.GenericParameters
-                        .Cast<TypeSymbol>()
-                        .ToImmutableArray();
-                    return sourceClass.GenericInstantiate(sourceClass.ContainingSymbol, generics);
-                }
 
                 if (!type.IsArrayType) return type;
                 // NOTE: This hack is present because of Arrays spit out stuff from their base types
@@ -316,35 +325,6 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         case FieldSymbol field:
         {
-            // TODO: Hack, is there some more general way to deal with this?
-            // Problem is that we need to generic instantiate the parent of the field reference...
-            // Otherwise the field ref will look Package::Type::field instead of Package::Type<!T>::field
-            if (field.ContainingSymbol is SourceClassSymbol { IsGenericDefinition: true } sourceClass)
-            {
-                var parentGeneric = this.GetEntityHandle(sourceClass);
-                var parentInstance = this.EncodeBlob(e =>
-                {
-                    var argsEncoder = e
-                        .TypeSpecificationSignature()
-                        .GenericInstantiation(
-                            genericType: parentGeneric,
-                            genericArgumentCount: sourceClass.GenericParameters.Length,
-                            isValueType: sourceClass.IsValueType);
-                    foreach (var param in sourceClass.GenericParameters)
-                    {
-                        this.EncodeSignatureType(argsEncoder.AddArgument(), param);
-                    }
-                });
-                return this.AddMemberReference(
-                    parent: this.MetadataBuilder.AddTypeSpecification(parentInstance),
-                    name: field.Name,
-                    signature: this.EncodeBlob(e =>
-                    {
-                        var encoder = e.Field();
-                        this.EncodeSignatureType(encoder.Type(), field.Type);
-                    }));
-            }
-
             return this.AddMemberReference(
                 parent: this.GetEntityHandle(field.ContainingSymbol
                                           ?? throw new InvalidOperationException()),

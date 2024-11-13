@@ -232,6 +232,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             {
                 if (func.IsNested)
                 {
+                    // TODO: This can be fixed by moving this structural responsibility to the IR
                     // We can't have nested functions represented in metadata directly, so we'll climb up the parent chain
                     // To find the first non-function container
                     return func.AncestorChain

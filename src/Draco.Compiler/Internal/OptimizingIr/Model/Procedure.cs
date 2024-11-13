@@ -43,9 +43,13 @@ internal sealed class Procedure : IProcedure
     public int GetParameterIndex(ParameterSymbol symbol)
     {
         if (symbol.IsThis) throw new ArgumentOutOfRangeException(nameof(symbol), "this parameter is treated special");
-        var idx = this.Symbol.Parameters.IndexOf(symbol);
-        if (idx == -1) throw new ArgumentOutOfRangeException(nameof(symbol));
-        return idx;
+        for (var i = 0; i < this.Parameters.Count; ++i)
+        {
+            var param = this.Parameters[i];
+            // TODO: A little janky...
+            if (param == symbol || param.GenericDefinition == symbol) return i;
+        }
+        throw new ArgumentOutOfRangeException(nameof(symbol));
     }
 
     public BasicBlock DefineBasicBlock(LabelSymbol symbol)

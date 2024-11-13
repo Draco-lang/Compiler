@@ -240,6 +240,16 @@ internal sealed class MetadataCodegen : MetadataWriter
                 }
 
                 if (func.ContainingSymbol is not TypeSymbol type) return func.ContainingSymbol!;
+
+                if (type is SourceClassSymbol { IsGenericDefinition: true } sourceClass)
+                {
+                    // TODO: Same hack as for FieldSymbol
+                    var generics = sourceClass.GenericParameters
+                        .Cast<TypeSymbol>()
+                        .ToImmutableArray();
+                    return sourceClass.GenericInstantiate(sourceClass.ContainingSymbol, generics);
+                }
+
                 if (!type.IsArrayType) return type;
                 // NOTE: This hack is present because of Arrays spit out stuff from their base types
                 // to take priority

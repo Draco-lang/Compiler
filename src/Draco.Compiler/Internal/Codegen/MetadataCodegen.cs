@@ -179,21 +179,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             var blob = this.EncodeBlob(e =>
             {
                 var encoder = e.TypeSpecificationSignature();
-                EntityHandle typeRef;
-                // TODO: Hack for source-class generics
-                if (typeSymbol.GenericDefinition is SourceClassSymbol sourceClass)
-                {
-                    // TODO: Copypasta
-                    // TODO: This is also horribly incorrect
-                    typeRef = this.GetOrAddTypeReference(
-                        parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
-                        @namespace: null,
-                        name: sourceClass.MetadataName);
-                }
-                else
-                {
-                    typeRef = this.GetEntityHandle(typeSymbol.GenericDefinition);
-                }
+                var typeRef = this.GetEntityHandle(typeSymbol.GenericDefinition);
                 var argsEncoder = encoder.GenericInstantiation(
                     genericType: typeRef,
                     genericArgumentCount: typeSymbol.GenericArguments.Length,
@@ -206,28 +192,13 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddTypeSpecification(blob);
         }
 
-        case SourceClassSymbol sourceClass when sourceClass.IsGenericDefinition:
+        case SourceClassSymbol sourceClass:
         {
-            // TODO: Hack... Needed for fields for example, as...
-            // Problem is that we need to generic instantiate the parent of the field reference...
-            // Otherwise the field ref will look Package::Type::field instead of Package::Type<!T>::field
-            // TODO: This is also horribly incorrect
-            var genericHandle = this.GetOrAddTypeReference(
+            // TODO: Possibly very incorrect
+            return this.GetOrAddTypeReference(
                 parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
                 @namespace: null,
                 name: sourceClass.MetadataName);
-            var genericInstance = this.EncodeBlob(e =>
-            {
-                var argsEncoder = e.TypeSpecificationSignature().GenericInstantiation(
-                    genericType: genericHandle,
-                    genericArgumentCount: sourceClass.GenericParameters.Length,
-                    isValueType: sourceClass.IsValueType);
-                foreach (var param in sourceClass.GenericParameters)
-                {
-                    this.EncodeSignatureType(argsEncoder.AddArgument(), param);
-                }
-            });
-            return this.MetadataBuilder.AddTypeSpecification(genericInstance);
         }
 
         case TypeSymbol typeSymbol:
@@ -822,52 +793,12 @@ internal sealed class MetadataCodegen : MetadataWriter
             foreach (var local in locals)
             {
                 var typeEncoder = localsEncoder.AddVariable().Type();
-                if (local.Symbol.Type is SourceClassSymbol { IsGenericDefinition: true } sourceClass)
-                {
-                    // TODO: That _DAMN_ ugly hack again...
-                    // Copypasta...
-                    var genericDef = this.GetOrAddTypeReference(
-                        parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
-                        @namespace: null,
-                        name: sourceClass.MetadataName);
-                    var argsEncoder = typeEncoder.GenericInstantiation(
-                        genericType: genericDef,
-                        genericArgumentCount: sourceClass.GenericParameters.Length,
-                        isValueType: sourceClass.IsValueType);
-                    foreach (var param in sourceClass.GenericParameters)
-                    {
-                        this.EncodeSignatureType(argsEncoder.AddArgument(), param);
-                    }
-                }
-                else
-                {
-                    this.EncodeSignatureType(typeEncoder, local.Symbol.Type);
-                }
+                this.EncodeSignatureType(typeEncoder, local.Symbol.Type);
             }
             foreach (var register in registers)
             {
                 var typeEncoder = localsEncoder.AddVariable().Type();
-                if (register.Type is SourceClassSymbol { IsGenericDefinition: true } sourceClass)
-                {
-                    // TODO: That _DAMN_ ugly hack again...
-                    // Copypasta...
-                    var genericDef = this.GetOrAddTypeReference(
-                        parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
-                        @namespace: null,
-                        name: sourceClass.MetadataName);
-                    var argsEncoder = typeEncoder.GenericInstantiation(
-                        genericType: genericDef,
-                        genericArgumentCount: sourceClass.GenericParameters.Length,
-                        isValueType: sourceClass.IsValueType);
-                    foreach (var param in sourceClass.GenericParameters)
-                    {
-                        this.EncodeSignatureType(argsEncoder.AddArgument(), param);
-                    }
-                }
-                else
-                {
-                    this.EncodeSignatureType(typeEncoder, register.Type);
-                }
+                this.EncodeSignatureType(typeEncoder, register.Type);
             }
         }));
     }
@@ -935,21 +866,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
             // Generic instantiation
             Debug.Assert(type.GenericDefinition is not null);
-            // TODO: That ugly hack again...
-            EntityHandle typeRef;
-            if (type.GenericDefinition is SourceClassSymbol sourceClass2)
-            {
-                // TODO: Copypasta
-                // TODO: This is also horribly incorrect
-                typeRef = this.GetOrAddTypeReference(
-                    parent: this.GetEntityHandle(sourceClass2.ContainingSymbol),
-                    @namespace: null,
-                    name: sourceClass2.MetadataName);
-            }
-            else
-            {
-                typeRef = this.GetEntityHandle(type.GenericDefinition);
-            }
+            var typeRef = this.GetEntityHandle(type.GenericDefinition);
             var genericsEncoder = encoder.GenericInstantiation(
                 genericType: typeRef,
                 genericArgumentCount: type.GenericArguments.Length,

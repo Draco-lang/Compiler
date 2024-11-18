@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 
@@ -18,7 +19,9 @@ internal sealed class SourceThisParameterSymbol : ParameterSymbol, ISourceSymbol
     public override ThisParameterSyntax DeclaringSyntax { get; }
 
     public override ImmutableArray<AttributeInstance> Attributes => [];
-    public override TypeSymbol Type { get; }
+
+    public override TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);
+    private TypeSymbol? type;
 
     public SourceThisParameterSymbol(FunctionSymbol containingSymbol, ThisParameterSyntax syntax)
     {
@@ -29,8 +32,19 @@ internal sealed class SourceThisParameterSymbol : ParameterSymbol, ISourceSymbol
 
         this.ContainingSymbol = containingSymbol;
         this.DeclaringSyntax = syntax;
-        this.Type = containingType;
     }
 
     public void Bind(IBinderProvider binderProvider) { }
+
+    private TypeSymbol BuildType()
+    {
+        var containingType = this.ContainingSymbol.AncestorChain
+            .OfType<TypeSymbol>()
+            .First();
+
+        if (!containingType.IsGenericDefinition) return containingType;
+
+        var genericArgs = containingType.GenericParameters.Cast<TypeSymbol>().ToImmutableArray();
+        return containingType.GenericInstantiate(containingType.ContainingSymbol, genericArgs);
+    }
 }

@@ -309,9 +309,25 @@ internal sealed class MetadataCodegen : MetadataWriter
 
         case FieldSymbol field:
         {
+            var parentHandle = this.GetEntityHandle(field.ContainingSymbol ?? throw new InvalidOperationException());
+            // NOTE: Hack for field definitions for generics
+            if (field.ContainingSymbol is SourceClassSymbol { IsGenericDefinition: true } sourceClass)
+            {
+                var genericInstance = this.EncodeBlob(e =>
+                {
+                    var argsEncoder = e.TypeSpecificationSignature().GenericInstantiation(
+                        genericType: parentHandle,
+                        genericArgumentCount: sourceClass.GenericParameters.Length,
+                        isValueType: sourceClass.IsValueType);
+                    foreach (var param in sourceClass.GenericParameters)
+                    {
+                        this.EncodeSignatureType(argsEncoder.AddArgument(), param);
+                    }
+                });
+                parentHandle = this.MetadataBuilder.AddTypeSpecification(genericInstance);
+            }
             return this.AddMemberReference(
-                parent: this.GetEntityHandle(field.ContainingSymbol
-                                          ?? throw new InvalidOperationException()),
+                parent: parentHandle,
                 name: field.Name,
                 signature: this.EncodeBlob(e =>
                 {

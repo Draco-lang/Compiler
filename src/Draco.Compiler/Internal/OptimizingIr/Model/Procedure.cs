@@ -14,7 +14,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal sealed class Procedure : IProcedure
 {
     public FunctionSymbol Symbol { get; }
-    public string Name => this.Symbol.NestedName;
+    public string Name => this.Symbol.Name;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
     public IReadOnlyList<AttributeInstance> Attributes => this.Symbol.Attributes;

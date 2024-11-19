@@ -265,7 +265,7 @@ internal sealed class MetadataCodegen : MetadataWriter
                 parent: func.ContainingSymbol is null
                     ? (EntityHandle)this.ModuleDefinitionHandle
                     : this.GetEntityHandle(GetContainingSymbol()),
-                name: func.NestedName,
+                name: func.MetadataName,
                 signature: this.EncodeBlob(e =>
                 {
                     // In generic instances we still need to reference the generic types
@@ -298,9 +298,9 @@ internal sealed class MetadataCodegen : MetadataWriter
                 ? (EntityHandle)this.ModuleDefinitionHandle
                 // We take its parent module
                 : this.GetEntityHandle(parent);
-            var name = string.IsNullOrEmpty(moduleSymbol.Name)
+            var name = string.IsNullOrEmpty(moduleSymbol.MetadataName)
                 ? CompilerConstants.DefaultModuleName
-                : moduleSymbol.Name;
+                : moduleSymbol.MetadataName;
             return this.GetOrAddTypeReference(
                 parent: resolutionScope,
                 @namespace: null,
@@ -328,7 +328,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             }
             return this.AddMemberReference(
                 parent: parentHandle,
-                name: field.Name,
+                name: field.MetadataName,
                 signature: this.EncodeBlob(e =>
                 {
                     var encoder = e.Field();
@@ -410,7 +410,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private AssemblyReferenceHandle AddAssemblyReference(MetadataAssemblySymbol module) =>
         this.GetOrAddAssemblyReference(
-            name: module.Name,
+            name: module.MetadataName,
             version: module.Version);
 
     private static string? GetNamespaceForSymbol(Symbol? symbol) => symbol switch
@@ -552,7 +552,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         // Definition
         return this.AddFieldDefinition(
             attributes: attributes,
-            name: field.Name,
+            name: field.MetadataName,
             signature: this.EncodeFieldSignature(field));
     }
 
@@ -592,7 +592,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             var paramHandle = this.AddParameterDefinition(
                 attributes: ParameterAttributes.None,
-                name: param.Name,
+                name: param.MetadataName,
                 index: procedure.GetParameterIndex(param));
 
             // Add attributes
@@ -619,7 +619,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             this.MetadataBuilder.AddGenericParameter(
                 parent: definitionHandle,
                 attributes: GenericParameterAttributes.None,
-                name: this.GetOrAddString(typeParam.Name),
+                name: this.GetOrAddString(typeParam.MetadataName),
                 index: genericIndex++);
         }
 
@@ -633,7 +633,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         TypeDefinitionHandle declaringType,
         PropertySymbol prop) => this.MetadataBuilder.AddProperty(
         attributes: PropertyAttributes.None,
-        name: this.GetOrAddString(prop.Name),
+        name: this.GetOrAddString(prop.MetadataName),
         signature: this.EncodeBlob(e =>
         {
             e
@@ -709,7 +709,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             this.MetadataBuilder.AddGenericParameter(
                 parent: definitionHandle,
                 attributes: GenericParameterAttributes.None,
-                name: this.GetOrAddString(typeParam.Name),
+                name: this.GetOrAddString(typeParam.MetadataName),
                 index: genericIndex++);
         }
 

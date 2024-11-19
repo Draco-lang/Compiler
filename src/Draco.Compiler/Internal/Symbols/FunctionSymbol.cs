@@ -110,6 +110,10 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     public override bool IsSpecialName => this.IsConstructor;
 
+    // TODO: Apart from exposing the metadata name here, we need to take care of nested names for local methods for example
+    // The name should include the parent functions too, like func foo() { func bar() { ... } }
+    // the inner method should be called foo.bar in metadata
+
     // NOTE: It seems like the backtick is only for types
     // TODO: In that case, maybe move this logic out from Symbol and make MetadataName abstract or default to this instead?
     public override string MetadataName => this.Name;
@@ -136,15 +140,6 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
     /// This is the case for certain synthesized functions.
     /// </summary>
     public virtual CodegenDelegate? Codegen => null;
-
-    /// <summary>
-    /// Retrieves the nested name of this function, which prepends the containing function names.
-    /// </summary>
-    public string NestedName => this.ContainingSymbol switch
-    {
-        FunctionSymbol f => $"{f.NestedName}.{this.Name}",
-        _ => this.Name,
-    };
 
     public override string ToString()
     {

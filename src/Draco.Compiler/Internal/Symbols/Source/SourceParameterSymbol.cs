@@ -12,7 +12,7 @@ namespace Draco.Compiler.Internal.Symbols.Source;
 /// </summary>
 internal sealed class SourceParameterSymbol(
     FunctionSymbol containingSymbol,
-    ParameterSyntax syntax) : ParameterSymbol, ISourceSymbol
+    NormalParameterSyntax syntax) : ParameterSymbol, ISourceSymbol
 {
     public override ImmutableArray<AttributeInstance> Attributes => this.BindAttributesIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<AttributeInstance> attributes;
@@ -24,7 +24,7 @@ internal sealed class SourceParameterSymbol(
     public override bool IsVariadic => this.DeclaringSyntax.Variadic is not null;
     public override string Name => this.DeclaringSyntax.Name.Text;
 
-    public override ParameterSyntax DeclaringSyntax { get; } = syntax;
+    public override NormalParameterSyntax DeclaringSyntax { get; } = syntax;
 
     public void Bind(IBinderProvider binderProvider)
     {

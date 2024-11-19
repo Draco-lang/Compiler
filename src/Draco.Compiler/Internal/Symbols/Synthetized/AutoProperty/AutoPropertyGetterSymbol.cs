@@ -1,6 +1,7 @@
 using Draco.Compiler.Internal.BoundTree;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Syntax;
+using Draco.Compiler.Internal.Utilities;
 using System;
 using System.Collections.Immutable;
 using System.Threading;
@@ -28,6 +29,12 @@ internal sealed class AutoPropertyGetterSymbol(
     public override BoundStatement Body => LazyInitializer.EnsureInitialized(ref this.body, this.BuildBody);
     private BoundStatement? body;
 
+    /// <summary>
+    /// An optional this parameter, if the getter is an instance method.
+    /// </summary>
+    public ParameterSymbol? ThisParameter => InterlockedUtils.InitializeMaybeNull(ref this.thisParameter, this.BuildThisParameter);
+    private ParameterSymbol? thisParameter;
+
     PropertySymbol IPropertyAccessorSymbol.Property => this.Property;
     public SyntaxAutoPropertySymbol Property { get; } = property;
 
@@ -36,7 +43,14 @@ internal sealed class AutoPropertyGetterSymbol(
         statements: [ExpressionStatement(ReturnExpression(FieldExpression(
             receiver: this.IsStatic
                 ? null
-                : throw new NotImplementedException("TODO: for classes"),
+                : ParameterExpression(this.ThisParameter!),
             field: this.Property.BackingField)))],
         value: BoundUnitExpression.Default));
+
+    private ParameterSymbol? BuildThisParameter()
+    {
+        if (this.IsStatic) return null;
+
+        return new SynthetizedThisParameterSymbol(this);
+    }
 }

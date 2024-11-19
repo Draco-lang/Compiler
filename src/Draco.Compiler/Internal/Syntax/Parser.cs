@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -39,9 +38,14 @@ internal sealed class Parser(
     private enum DeclarationContext
     {
         /// <summary>
-        /// Global, like in a compilation unit, module, class, ...
+        /// Global, like in a compilation unit or module.
         /// </summary>
         Global,
+
+        /// <summary>
+        /// Inside a class declaration body.
+        /// </summary>
+        Class,
 
         /// <summary>
         /// Local to a function body/expression/code-block.
@@ -191,12 +195,15 @@ internal sealed class Parser(
     /// </summary>
     private static readonly TokenKind[] declarationStarters =
     [
+        TokenKind.KeywordClass,
         TokenKind.KeywordImport,
         TokenKind.KeywordField,
         TokenKind.KeywordFunc,
+        TokenKind.KeywordGlobal,
         TokenKind.KeywordModule,
         TokenKind.KeywordVar,
         TokenKind.KeywordVal,
+        TokenKind.KeywordValue,
     ];
 
     /// <summary>
@@ -236,6 +243,7 @@ internal sealed class Parser(
         TokenKind.Plus,
         TokenKind.Minus,
         TokenKind.Star,
+        TokenKind.KeywordThis,
     ];
 
     /// <summary>
@@ -379,15 +387,19 @@ internal sealed class Parser(
         case TokenKind.KeywordImport:
             return this.ParseImportDeclaration(attributes, visibility);
 
+        case TokenKind.KeywordValue:
+        case TokenKind.KeywordClass:
+            return this.ParseClassDeclaration(attributes, visibility);
+
         case TokenKind.KeywordFunc:
             return this.ParseFunctionDeclaration(attributes, visibility, context);
 
         case TokenKind.KeywordModule:
             return this.ParseModuleDeclaration(attributes, visibility, context);
-
         case TokenKind.KeywordVar:
         case TokenKind.KeywordVal:
         case TokenKind.KeywordField:
+        case TokenKind.KeywordGlobal:
             return this.ParseVariableDeclaration(attributes, visibility, context);
 
         case TokenKind.Identifier when this.PeekKind(1) == TokenKind.Colon:
@@ -529,10 +541,80 @@ internal sealed class Parser(
     }
 
     /// <summary>
+    /// Parses a class declaration.
+    /// </summary>
+    /// <param name="attributes">Optional attributes on the class.</param>
+    /// <param name="visibility">Optional visibility modifier token.</param>
+    /// <returns>The parsed <see cref="ClassDeclarationSyntax"/>.</returns>
+    private ClassDeclarationSyntax ParseClassDeclaration(SyntaxList<AttributeSyntax>? attributes, SyntaxToken? visibility)
+    {
+        this.Matches(TokenKind.KeywordValue, out var valueModifier);
+
+        // Class keyword and name of the class
+        var classKeyword = this.Expect(TokenKind.KeywordClass);
+        var name = this.Expect(TokenKind.Identifier);
+
+        // Optional generics
+        var generics = null as GenericParameterListSyntax;
+        if (this.PeekKind() == TokenKind.LessThan) generics = this.ParseGenericParameterList();
+
+        var body = this.ParseClassBody();
+
+        return new ClassDeclarationSyntax(
+            attributes,
+            visibility,
+            valueModifier,
+            classKeyword,
+            name,
+            generics,
+            body);
+    }
+
+    /// <summary>
+    /// Parses the body of a class.
+    /// </summary>
+    /// <returns>The parsed <see cref="ClassBodySyntax"/>.</returns>
+    private ClassBodySyntax ParseClassBody()
+    {
+        if (this.Matches(TokenKind.Semicolon, out var semicolon))
+        {
+            return new EmptyClassBodySyntax(semicolon);
+        }
+        else if (this.Matches(TokenKind.CurlyOpen, out var openBrace))
+        {
+            var decls = SyntaxList.CreateBuilder<DeclarationSyntax>();
+            while (true)
+            {
+                // Break on the end of the block
+                if (this.PeekKind() is TokenKind.EndOfInput or TokenKind.CurlyClose) break;
+
+                // Parse a declaration
+                var decl = this.ParseDeclaration(DeclarationContext.Class);
+                decls.Add(decl);
+            }
+            var closeBrace = this.Expect(TokenKind.CurlyClose);
+            return new BlockClassBodySyntax(openBrace, decls.ToSyntaxList(), closeBrace);
+        }
+        else
+        {
+            var input = this.Synchronize(t => t.Kind switch
+            {
+                TokenKind.Semicolon or TokenKind.CurlyClose => false,
+                _ when this.IsDeclarationStarter(DeclarationContext.Class) => false,
+                _ => true,
+            });
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "class body");
+            var node = new UnexpectedClassBodySyntax(input);
+            this.AddDiagnostic(node, info);
+            return node;
+        }
+    }
+
+    /// <summary>
     /// Parses a <see cref="VariableDeclarationSyntax"/>.
     /// </summary>
-    /// <param name="attributes">The attributes on the import.</param>
-    /// <param name="visibility">The visibility modifier on the import.</param>
+    /// <param name="attributes">The attributes on the variable.</param>
+    /// <param name="visibility">The visibility modifier on the variable.</param>
     /// <param name="context">The current declaration context.</param>
     /// <returns>The parsed <see cref="VariableDeclarationSyntax"/>.</returns>
     private VariableDeclarationSyntax ParseVariableDeclaration(
@@ -551,9 +633,16 @@ internal sealed class Parser(
             this.AddDiagnostic(visibility, info);
         }
 
+        // Global modifier
+        this.Matches(TokenKind.KeywordGlobal, out var globalModifier);
+        if (context != DeclarationContext.Class && globalModifier is not null)
+        {
+            var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedGlobalModifier);
+            this.AddDiagnostic(globalModifier, info);
+        }
+
         // Field modifier
-        var fieldModifier = null as SyntaxToken;
-        this.Matches(TokenKind.KeywordField, out fieldModifier);
+        this.Matches(TokenKind.KeywordField, out var fieldModifier);
         if (context == DeclarationContext.Local && fieldModifier is not null)
         {
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedFieldModifier);
@@ -579,7 +668,16 @@ internal sealed class Parser(
 
         // Eat semicolon at the end of declaration
         var semicolon = this.Expect(TokenKind.Semicolon);
-        return new VariableDeclarationSyntax(attributes, visibility, fieldModifier, keyword, identifier, type, assignment, semicolon);
+        return new VariableDeclarationSyntax(
+            attributes,
+            visibility,
+            globalModifier,
+            fieldModifier,
+            keyword,
+            identifier,
+            type,
+            assignment,
+            semicolon);
     }
 
     /// <summary>
@@ -620,7 +718,7 @@ internal sealed class Parser(
         TypeSpecifierSyntax? returnType = null;
         if (this.PeekKind() == TokenKind.Colon) returnType = this.ParseTypeSpecifier();
 
-        var body = this.ParseFunctionBody();
+        var body = this.ParseFunctionBody(context);
 
         return new FunctionDeclarationSyntax(
             attributes,
@@ -739,15 +837,24 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a function parameter.
     /// </summary>
-    /// <returns>The parsed <see cref="ParameterSyntax"/>.</returns>
+    /// <returns>The parsed <see cref="NormalParameterSyntax"/>.</returns>
     private ParameterSyntax ParseParameter()
     {
         var attributes = this.ParseAttributeList();
+        if (this.Matches(TokenKind.KeywordThis, out var thisKeyWord))
+        {
+            if (attributes is not null)
+            {
+                var diag = DiagnosticInfo.Create(SyntaxErrors.UnexpectedAttributeList, formatArgs: "this parameter");
+                this.AddDiagnostic(attributes, diag);
+            }
+            return new ThisParameterSyntax(thisKeyWord);
+        }
         this.Matches(TokenKind.Ellipsis, out var variadic);
         var name = this.Expect(TokenKind.Identifier);
         var colon = this.Expect(TokenKind.Colon);
         var type = this.ParseType();
-        return new(attributes, variadic, name, colon, type);
+        return new NormalParameterSyntax(attributes, variadic, name, colon, type);
     }
 
     /// <summary>
@@ -785,8 +892,9 @@ internal sealed class Parser(
     /// <summary>
     /// Parses a function body.
     /// </summary>
+    /// <param name="ctx">The current context we are in.</param>
     /// <returns>The parsed <see cref="FunctionBodySyntax"/>.</returns>
-    private FunctionBodySyntax ParseFunctionBody()
+    private FunctionBodySyntax ParseFunctionBody(DeclarationContext ctx)
     {
         if (this.Matches(TokenKind.Assign, out var assign))
         {
@@ -809,7 +917,7 @@ internal sealed class Parser(
             var input = this.Synchronize(t => t.Kind switch
             {
                 TokenKind.Semicolon or TokenKind.CurlyClose => false,
-                _ when this.IsDeclarationStarter(DeclarationContext.Global) => false,
+                _ when this.IsDeclarationStarter(ctx) => false,
                 _ => true,
             });
             var info = DiagnosticInfo.Create(SyntaxErrors.UnexpectedInput, formatArgs: "function body");
@@ -1242,6 +1350,11 @@ internal sealed class Parser(
         {
             var value = this.Advance();
             return new LiteralExpressionSyntax(value);
+        }
+        case TokenKind.KeywordThis:
+        {
+            var keyword = this.Advance();
+            return new ThisExpressionSyntax(keyword);
         }
         case TokenKind.LineStringStart:
             return this.ParseLineString();

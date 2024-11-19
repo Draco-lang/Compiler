@@ -157,7 +157,7 @@ public static partial class SyntaxFacts
             ModuleDeclarationSyntax md => !IsMissing(md.CloseBrace),
             ImportDeclarationSyntax id => !IsMissing(id.Semicolon),
             FunctionDeclarationSyntax fd => IsCompleteEntry(fd.Body),
-            ParameterSyntax p => IsCompleteEntry(p.Type),
+            NormalParameterSyntax p => IsCompleteEntry(p.Type),
             BlockFunctionBodySyntax bfb => !IsMissing(bfb.CloseBrace),
             InlineFunctionBodySyntax ifb => !IsMissing(ifb.Semicolon),
             LabelDeclarationSyntax ld => !IsMissing(ld.Colon),

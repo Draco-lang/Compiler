@@ -68,6 +68,15 @@ internal sealed class ModuleCodegen : SymbolVisitor
         }
     }
 
+    public override void VisitType(TypeSymbol typeSymbol)
+    {
+        if (typeSymbol is not SourceClassSymbol sourceClass) return;
+
+        var type = this.module.DefineClass(typeSymbol);
+        var typeCodegen = new ClassCodegen(this, type);
+        sourceClass.Accept(typeCodegen);
+    }
+
     public override void VisitProperty(PropertySymbol propertySymbol)
     {
         // TODO: Not flexible, won't work for non-auto props

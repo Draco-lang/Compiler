@@ -19,6 +19,7 @@ internal sealed class ConstructorFunctionSymbol(FunctionSymbol ctorDefinition) :
         ctorDefinition.Visibility < this.ReturnType.Visibility ? ctorDefinition.Visibility : this.ReturnType.Visibility;
     public override SymbolDocumentation Documentation => ctorDefinition.Documentation;
     internal override string RawDocumentation => ctorDefinition.RawDocumentation;
+    public override Symbol? ContainingSymbol => ctorDefinition.ContainingSymbol;
 
     public override ImmutableArray<TypeParameterSymbol> GenericParameters =>
         InterlockedUtils.InitializeDefault(ref this.genericParameters, this.BuildGenericParameters);

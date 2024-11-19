@@ -8,6 +8,7 @@ using System;
 using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Utilities;
 using Draco.Compiler.Internal.Symbols.Synthetized.AutoProperty;
+using System.Collections.Generic;
 
 namespace Draco.Compiler.Internal.Symbols.Syntax;
 
@@ -63,4 +64,12 @@ internal abstract class SyntaxAutoPropertySymbol : PropertySymbol, ISourceSymbol
     private FunctionSymbol BuildGetter() => new AutoPropertyGetterSymbol(this.ContainingSymbol, this);
     private FunctionSymbol? BuildSetter() => new AutoPropertySetterSymbol(this.ContainingSymbol, this);
     private FieldSymbol BuildBackingField() => new AutoPropertyBackingFieldSymbol(this.ContainingSymbol, this);
+
+    protected internal override sealed IEnumerable<Symbol> GetAdditionalSymbols()
+    {
+        // For auto-properties we provide the backing field and the accessors in the same scope
+        if (this.Getter is not null) yield return this.Getter;
+        if (this.Setter is not null) yield return this.Setter;
+        yield return this.BackingField;
+    }
 }

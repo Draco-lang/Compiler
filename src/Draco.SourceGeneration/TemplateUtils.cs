@@ -28,7 +28,8 @@ internal static class TemplateUtils
         "operator",
         "object",
         "bool",
-        "string"
+        "string",
+        "this",
     ];
 
     /// <summary>

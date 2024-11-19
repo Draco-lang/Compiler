@@ -219,7 +219,7 @@ internal sealed partial class DracoDebugAdapter(IDebugClient client) : IDebugAda
             return Task.FromResult(new SetBreakpointsResponse()
             {
                 Breakpoints = args.Breakpoints?
-                    .Select(bp => new Dap.Model.Breakpoint()
+                    .Select(bp => new Breakpoint()
                     {
                         Verified = false,
                         Id = this.translator.AllocateId(bp),
@@ -235,11 +235,11 @@ internal sealed partial class DracoDebugAdapter(IDebugClient client) : IDebugAda
         });
     }
 
-    private List<Dap.Model.Breakpoint> SetBreakpointsImpl(SetBreakpointsArguments args)
+    private List<Breakpoint> SetBreakpointsImpl(SetBreakpointsArguments args)
     {
         if (this.debugger is null) throw new InvalidOperationException("cannot set up breakpoints without a running debugger");
 
-        var result = new List<Dap.Model.Breakpoint>();
+        var result = new List<Breakpoint>();
         var source = this.debugger.MainModule.SourceFiles
             .FirstOrDefault(s => PathEqualityComparer.Instance.Equals(s.Uri.AbsolutePath, args.Source.Path));
         if (args.Breakpoints is not null && source is not null)

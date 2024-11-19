@@ -15,7 +15,9 @@ using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
 using Draco.Compiler.Internal.Symbols.Script;
 using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Symbols.Synthetized.Array;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace Draco.Compiler.Internal.Codegen;
 
@@ -94,10 +96,9 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private readonly IAssembly assembly;
     private readonly BlobBuilder ilBuilder = new();
-    private readonly Dictionary<IModule, TypeReferenceHandle> moduleReferenceHandles = [];
-    private readonly Dictionary<Symbol, MemberReferenceHandle> intrinsicReferenceHandles = [];
     private readonly AssemblyReferenceHandle systemRuntimeReference;
     private readonly TypeReferenceHandle systemObjectReference;
+    private readonly TypeReferenceHandle systemValueTypeReference;
 
     private MetadataCodegen(Compilation compilation, IAssembly assembly, CodegenFlags flags)
     {
@@ -120,6 +121,11 @@ internal sealed class MetadataCodegen : MetadataWriter
           assembly: this.systemRuntimeReference,
           @namespace: "System",
           name: "Object");
+
+        this.systemValueTypeReference = this.GetOrAddTypeReference(
+            assembly: this.systemRuntimeReference,
+            @namespace: "System",
+            name: "ValueType");
     }
 
     private void WriteModuleAndAssemblyDefinition()
@@ -147,30 +153,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             methodList: MetadataTokens.MethodDefinitionHandle(1));
     }
 
-    public TypeReferenceHandle GetModuleReferenceHandle(IModule module)
-    {
-        if (!this.moduleReferenceHandles.TryGetValue(module, out var handle))
-        {
-            var resolutionScope = module.Parent is null
-                // Root module, we take the module definition containing it
-                ? (EntityHandle)this.ModuleDefinitionHandle
-                // We take its parent module
-                : this.GetModuleReferenceHandle(module.Parent);
-            var name = string.IsNullOrEmpty(module.Name)
-                ? CompilerConstants.DefaultModuleName
-                : module.Name;
-            handle = this.GetOrAddTypeReference(
-                parent: resolutionScope,
-                @namespace: null,
-                name: name);
-            this.moduleReferenceHandles.Add(module, handle);
-        }
-        return handle;
-    }
-
     public UserStringHandle GetStringLiteralHandle(string text) => this.MetadataBuilder.GetOrAddUserString(text);
-
-    public MemberReferenceHandle GetIntrinsicReferenceHandle(Symbol symbol) => this.intrinsicReferenceHandles[symbol];
 
     // TODO: This can be cached by symbol to avoid double reference instertion
     public EntityHandle GetEntityHandle(Symbol symbol)
@@ -209,6 +192,15 @@ internal sealed class MetadataCodegen : MetadataWriter
             return this.MetadataBuilder.AddTypeSpecification(blob);
         }
 
+        case SourceClassSymbol sourceClass:
+        {
+            // TODO: Possibly very incorrect
+            return this.GetOrAddTypeReference(
+                parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
+                @namespace: null,
+                name: sourceClass.MetadataName);
+        }
+
         case TypeSymbol typeSymbol:
         {
             var blob = this.EncodeBlob(e =>
@@ -242,17 +234,16 @@ internal sealed class MetadataCodegen : MetadataWriter
             {
                 if (func.IsNested)
                 {
+                    // TODO: This can be fixed by moving this structural responsibility to the IR
                     // We can't have nested functions represented in metadata directly, so we'll climb up the parent chain
                     // To find the first non-function container
-                    var current = func.ContainingSymbol;
-                    while (current is FunctionSymbol func)
-                    {
-                        current = func.ContainingSymbol;
-                    }
-                    return current!;
+                    return func.AncestorChain
+                        .Skip(1)
+                        .First(s => s is not FunctionSymbol);
                 }
 
                 if (func.ContainingSymbol is not TypeSymbol type) return func.ContainingSymbol!;
+
                 if (!type.IsArrayType) return type;
                 // NOTE: This hack is present because of Arrays spit out stuff from their base types
                 // to take priority
@@ -272,9 +263,9 @@ internal sealed class MetadataCodegen : MetadataWriter
                 // Probably not, let's shove them somewhere known once we can make up our minds
                 // This is the case for synthetized ctor functions for example
                 parent: func.ContainingSymbol is null
-                    ? this.GetModuleReferenceHandle(this.assembly.RootModule)
+                    ? (EntityHandle)this.ModuleDefinitionHandle
                     : this.GetEntityHandle(GetContainingSymbol()),
-                name: func.NestedName,
+                name: func.MetadataName,
                 signature: this.EncodeBlob(e =>
                 {
                     // In generic instances we still need to reference the generic types
@@ -295,23 +286,49 @@ internal sealed class MetadataCodegen : MetadataWriter
         case SourceModuleSymbol:
         case ScriptModuleSymbol:
         {
-            if (this.RedirectHandlesToCompileTimeRoot)
-            {
-                var root = this.Compilation.CompileTimeExecutor.RootModule;
-                return this.GetModuleReferenceHandle(root);
-            }
+            var moduleSymbol = this.RedirectHandlesToCompileTimeRoot
+                ? this.Compilation.RootModule
+                : (ModuleSymbol)symbol;
+            var parent = moduleSymbol.AncestorChain
+                .Skip(1)
+                .FirstOrDefault(s => s is TypeSymbol or ModuleSymbol);
 
-            var module = (ModuleSymbol)symbol;
-            var irModule = this.assembly.Lookup(module);
-            return this.GetModuleReferenceHandle(irModule);
+            var resolutionScope = parent is null
+                // Root module, we take the module definition containing it
+                ? (EntityHandle)this.ModuleDefinitionHandle
+                // We take its parent module
+                : this.GetEntityHandle(parent);
+            var name = string.IsNullOrEmpty(moduleSymbol.MetadataName)
+                ? CompilerConstants.DefaultModuleName
+                : moduleSymbol.MetadataName;
+            return this.GetOrAddTypeReference(
+                parent: resolutionScope,
+                @namespace: null,
+                name: name);
         }
 
         case FieldSymbol field:
         {
+            var parentHandle = this.GetEntityHandle(field.ContainingSymbol ?? throw new InvalidOperationException());
+            // NOTE: Hack for field definitions for generics
+            if (field.ContainingSymbol is SourceClassSymbol { IsGenericDefinition: true } sourceClass)
+            {
+                var genericInstance = this.EncodeBlob(e =>
+                {
+                    var argsEncoder = e.TypeSpecificationSignature().GenericInstantiation(
+                        genericType: parentHandle,
+                        genericArgumentCount: sourceClass.GenericParameters.Length,
+                        isValueType: sourceClass.IsValueType);
+                    foreach (var param in sourceClass.GenericParameters)
+                    {
+                        this.EncodeSignatureType(argsEncoder.AddArgument(), param);
+                    }
+                });
+                parentHandle = this.MetadataBuilder.AddTypeSpecification(genericInstance);
+            }
             return this.AddMemberReference(
-                parent: this.GetEntityHandle(field.ContainingSymbol
-                                          ?? throw new InvalidOperationException()),
-                name: field.Name,
+                parent: parentHandle,
+                name: field.MetadataName,
                 signature: this.EncodeBlob(e =>
                 {
                     var encoder = e.Field();
@@ -393,7 +410,7 @@ internal sealed class MetadataCodegen : MetadataWriter
 
     private AssemblyReferenceHandle AddAssemblyReference(MetadataAssemblySymbol module) =>
         this.GetOrAddAssemblyReference(
-            name: module.Name,
+            name: module.MetadataName,
             version: module.Version);
 
     private static string? GetNamespaceForSymbol(Symbol? symbol) => symbol switch
@@ -514,21 +531,28 @@ internal sealed class MetadataCodegen : MetadataWriter
         this.EncodeProcedure(module.GlobalInitializer, specialName: ".cctor");
         ++procIndex;
 
+        // We encode every class
+        foreach (var @class in module.Classes.Values)
+        {
+            this.EncodeClass(@class, parent: createdModule, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
+        }
+
         // We encode every submodule
         foreach (var subModule in module.Submodules.Values)
         {
-            this.EncodeModule(subModule, createdModule, ref fieldIndex, ref procIndex);
+            this.EncodeModule(subModule, createdModule, fieldIndex: ref fieldIndex, procIndex: ref procIndex);
         }
     }
 
     private FieldDefinitionHandle EncodeField(FieldSymbol field)
     {
-        var visibility = GetFieldVisibility(field.Visibility);
+        var attributes = GetFieldVisibility(field.Visibility);
+        if (field.IsStatic) attributes |= FieldAttributes.Static;
 
         // Definition
         return this.AddFieldDefinition(
-            attributes: visibility | FieldAttributes.Static,
-            name: field.Name,
+            attributes: attributes,
+            name: field.MetadataName,
             signature: this.EncodeFieldSignature(field));
     }
 
@@ -558,10 +582,9 @@ internal sealed class MetadataCodegen : MetadataWriter
             hasDynamicStackAllocation: false);
 
         // Determine attributes
-        var attributes = MethodAttributes.Static | MethodAttributes.HideBySig;
-        attributes |= specialName is null
-            ? visibility
-            : MethodAttributes.Private | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
+        var attributes = MethodAttributes.HideBySig | visibility;
+        if (procedure.Symbol.IsStatic) attributes |= MethodAttributes.Static;
+        if (specialName != null) attributes |= MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
 
         // Parameters
         var parameterList = this.NextParameterHandle;
@@ -569,7 +592,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         {
             var paramHandle = this.AddParameterDefinition(
                 attributes: ParameterAttributes.None,
-                name: param.Name,
+                name: param.MetadataName,
                 index: procedure.GetParameterIndex(param));
 
             // Add attributes
@@ -580,7 +603,8 @@ internal sealed class MetadataCodegen : MetadataWriter
         var definitionHandle = this.MetadataBuilder.AddMethodDefinition(
             attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
-            name: this.GetOrAddString(specialName ?? procedure.Name),
+            // TODO: Maybe expose metadata name directly?
+            name: this.GetOrAddString(specialName ?? procedure.Symbol.MetadataName),
             signature: this.EncodeProcedureSignature(procedure),
             bodyOffset: methodBodyOffset,
             parameterList: parameterList);
@@ -595,7 +619,7 @@ internal sealed class MetadataCodegen : MetadataWriter
             this.MetadataBuilder.AddGenericParameter(
                 parent: definitionHandle,
                 attributes: GenericParameterAttributes.None,
-                name: this.GetOrAddString(typeParam.Name),
+                name: this.GetOrAddString(typeParam.MetadataName),
                 index: genericIndex++);
         }
 
@@ -609,7 +633,7 @@ internal sealed class MetadataCodegen : MetadataWriter
         TypeDefinitionHandle declaringType,
         PropertySymbol prop) => this.MetadataBuilder.AddProperty(
         attributes: PropertyAttributes.None,
-        name: this.GetOrAddString(prop.Name),
+        name: this.GetOrAddString(prop.MetadataName),
         signature: this.EncodeBlob(e =>
         {
             e
@@ -624,7 +648,7 @@ internal sealed class MetadataCodegen : MetadataWriter
     private BlobHandle EncodeProcedureSignature(IProcedure procedure) => this.EncodeBlob(e =>
     {
         e
-            .MethodSignature(genericParameterCount: procedure.Generics.Count)
+            .MethodSignature(genericParameterCount: procedure.Generics.Count, isInstanceMethod: !procedure.IsStatic)
             .Parameters(procedure.Parameters.Count, out var retEncoder, out var paramsEncoder);
         this.EncodeReturnType(retEncoder, procedure.ReturnType);
         foreach (var param in procedure.Parameters)
@@ -657,6 +681,91 @@ internal sealed class MetadataCodegen : MetadataWriter
                 throw new NotImplementedException();
             }
         });
+    }
+
+    private TypeDefinitionHandle EncodeClass(IClass @class, TypeDefinitionHandle? parent, ref int fieldIndex, ref int procIndex)
+    {
+        var startFieldIndex = fieldIndex;
+        var startProcIndex = procIndex;
+
+        var visibility = GetClassVisibility(@class.Symbol.Visibility, parent is not null);
+        var attributes = visibility
+                       | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
+        if (@class.Symbol.IsValueType) attributes |= TypeAttributes.SequentialLayout; // AutoLayout = 0.
+
+        var definitionHandle = this.AddTypeDefinition(
+            attributes,
+            null,
+            // TODO: Maybe expose metadata name instead then instead of regular name?
+            @class.Symbol.MetadataName,
+            @class.Symbol.IsValueType ? this.systemValueTypeReference : this.systemObjectReference,
+            fieldList: MetadataTokens.FieldDefinitionHandle(startFieldIndex),
+            methodList: MetadataTokens.MethodDefinitionHandle(startProcIndex));
+
+        // Add generic type parameters
+        var genericIndex = 0;
+        foreach (var typeParam in @class.Generics)
+        {
+            this.MetadataBuilder.AddGenericParameter(
+                parent: definitionHandle,
+                attributes: GenericParameterAttributes.None,
+                name: this.GetOrAddString(typeParam.MetadataName),
+                index: genericIndex++);
+        }
+
+        // Properties
+        // TODO: Copypasta
+        var firstProperty = null as PropertyDefinitionHandle?;
+        var propertyHandleMap = new Dictionary<Symbol, PropertyDefinitionHandle>();
+        foreach (var prop in @class.Properties)
+        {
+            var propHandle = this.EncodeProperty(definitionHandle, prop);
+            firstProperty ??= propHandle;
+            propertyHandleMap.Add(prop, propHandle);
+        }
+        if (firstProperty is not null) this.MetadataBuilder.AddPropertyMap(definitionHandle, firstProperty.Value);
+
+        // Procedures
+        foreach (var proc in @class.Procedures.Values)
+        {
+            var specialName = proc.Symbol is DefaultConstructorSymbol
+                ? ".ctor"
+                : null;
+            var handle = this.EncodeProcedure(proc, specialName: specialName);
+            ++procIndex;
+
+            // TODO: Copypasta
+            if (proc.Symbol is IPropertyAccessorSymbol propAccessor)
+            {
+                // This is an accessor
+                var isGetter = propAccessor.Property.Getter == propAccessor;
+                this.MetadataBuilder.AddMethodSemantics(
+                    association: propertyHandleMap[propAccessor.Property],
+                    semantics: isGetter ? MethodSemanticsAttributes.Getter : MethodSemanticsAttributes.Setter,
+                    methodDefinition: handle);
+            }
+        }
+
+        // Fields
+        foreach (var field in @class.Fields)
+        {
+            this.EncodeField(field);
+            ++fieldIndex;
+        }
+
+        // If this is a valuetype without fields, we add .pack 0 and .size 1
+        if (@class.Symbol.IsValueType && @class.Fields.Count == 0)
+        {
+            this.MetadataBuilder.AddTypeLayout(
+                type: definitionHandle,
+                packingSize: 0,
+                size: 1);
+        }
+
+        // If this isn't top level module, we specify nested relationship
+        if (parent is not null) this.MetadataBuilder.AddNestedType(definitionHandle, parent.Value);
+
+        return definitionHandle;
     }
 
     private IEnumerable<TypeSymbol> ScalarConstantTypes => [
@@ -774,8 +883,9 @@ internal sealed class MetadataCodegen : MetadataWriter
 
             // Generic instantiation
             Debug.Assert(type.GenericDefinition is not null);
+            var typeRef = this.GetEntityHandle(type.GenericDefinition);
             var genericsEncoder = encoder.GenericInstantiation(
-                genericType: this.GetEntityHandle(type.GenericDefinition),
+                genericType: typeRef,
                 genericArgumentCount: type.GenericArguments.Length,
                 isValueType: type.IsValueType);
             foreach (var arg in type.GenericArguments)
@@ -816,6 +926,17 @@ internal sealed class MetadataCodegen : MetadataWriter
             return;
         }
 
+        if (type is SourceClassSymbol sourceClass)
+        {
+            encoder.Type(
+                type: this.GetOrAddTypeReference(
+                    parent: this.GetEntityHandle(sourceClass.ContainingSymbol),
+                    @namespace: null,
+                    name: sourceClass.MetadataName),
+                isValueType: sourceClass.IsValueType);
+            return;
+        }
+
         // TODO
         throw new NotImplementedException();
     }
@@ -839,6 +960,14 @@ internal sealed class MetadataCodegen : MetadataWriter
         var contentId = peBuilder.Serialize(peBlob);
         peBlob.WriteContentTo(peStream);
     }
+
+    private static TypeAttributes GetClassVisibility(Api.Semantics.Visibility visibility, bool isNested) => (visibility, isNested) switch
+    {
+        (Api.Semantics.Visibility.Public, true) => TypeAttributes.NestedPublic,
+        (Api.Semantics.Visibility.Public, false) => TypeAttributes.Public,
+        (_, true) => TypeAttributes.NestedAssembly,
+        (_, false) => TypeAttributes.NotPublic,
+    };
 
     private static FieldAttributes GetFieldVisibility(Api.Semantics.Visibility visibility) => visibility switch
     {

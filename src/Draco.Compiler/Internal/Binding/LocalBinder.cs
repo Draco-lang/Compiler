@@ -168,7 +168,7 @@ internal sealed class LocalBinder : Binder
     private Symbol? BuildSymbol(SyntaxNode syntax, int localCount) => syntax switch
     {
         FunctionDeclarationSyntax function => new SourceFunctionSymbol(this.ContainingSymbol, function),
-        ParameterSyntax parameter => new SourceParameterSymbol((FunctionSymbol)this.ContainingSymbol, parameter),
+        NormalParameterSyntax parameter => new SourceParameterSymbol((FunctionSymbol)this.ContainingSymbol, parameter),
         VariableDeclarationSyntax variable => new SourceLocalSymbol(this.ContainingSymbol, new TypeVariable(localCount), variable),
         LabelDeclarationSyntax label => new SourceLabelSymbol(this.ContainingSymbol, label),
         _ => null,

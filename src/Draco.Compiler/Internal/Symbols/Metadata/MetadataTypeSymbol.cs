@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -157,7 +156,7 @@ internal sealed class MetadataTypeSymbol(
             var symbol = MetadataSymbol.ToSymbol(this, typeDef);
             result.Add(symbol);
             // Add additional symbols
-            result.AddRange(MetadataSymbol.GetAdditionalSymbols(symbol));
+            result.AddRange(symbol.GetAdditionalSymbols());
         }
 
         // Methods

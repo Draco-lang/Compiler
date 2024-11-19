@@ -38,13 +38,13 @@ public sealed class CodeCompletionTests
     {
         // TODO: Can we get rid of all this filtering by filtering in the completion service?
         var completions = GetCompletionWords("""
-            val global = 5;
+            val globalVar = 5;
             func main(){
                 var local = gl|
             }
             """);
 
-        AssertCompletions(completions, "global");
+        AssertCompletions(completions, "globalVar");
     }
 
     [Fact]
@@ -78,11 +78,11 @@ public sealed class CodeCompletionTests
     public void TestGlobalCompletionGlobalVariable()
     {
         var completions = GetCompletionWords("""
-            val global = 5;
+            val globalVar = 5;
             val x = gl|
             """);
 
-        AssertCompletions(completions, "global");
+        AssertCompletions(completions, "globalVar");
     }
 
     [Fact]

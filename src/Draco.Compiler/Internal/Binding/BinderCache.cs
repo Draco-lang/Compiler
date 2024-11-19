@@ -36,7 +36,8 @@ internal sealed class BinderCache(Compilation compilation)
         CompilationUnitSyntax cu => this.BuildCompilationUnitBinder(cu),
         ScriptEntrySyntax entry => this.BuildScriptEntryBinder(entry),
         ModuleDeclarationSyntax mo => this.BuildModuleBinder(mo),
-        FunctionDeclarationSyntax decl => this.BuildFunctionDeclarationBinder(decl),
+        FunctionDeclarationSyntax funcDecl => this.BuildFunctionDeclarationBinder(funcDecl),
+        ClassDeclarationSyntax classDecl => this.BuildClassDeclarationBinder(classDecl),
         FunctionBodySyntax body => this.BuildFunctionBodyBinder(body),
         BlockExpressionSyntax block => this.BuildLocalBinder(block),
         WhileExpressionSyntax loop => this.BuildLoopBinder(loop),
@@ -92,6 +93,19 @@ internal sealed class BinderCache(Compilation compilation)
         Debug.Assert(functionSymbol is not null);
         // NOTE: We are not using the unwrapped parent, we need the injected import layers
         return new FunctionBinder(binder, functionSymbol);
+    }
+
+    private ClassBinder BuildClassDeclarationBinder(ClassDeclarationSyntax syntax)
+    {
+        Debug.Assert(syntax.Parent is not null);
+        var binder = this.GetBinder(syntax.Parent);
+        // Search for the function in the parents container
+        // For that we unwrap from the injected import layer(s)
+        var parent = UnwrapFromImportBinder(binder);
+        var classSymbol = parent.DeclaredSymbols
+            .OfType<SourceClassSymbol>()
+            .First(member => member.DeclaringSyntax == syntax); // should we shove that in a helper ?
+        return new ClassBinder(binder, classSymbol);
     }
 
     private Binder BuildFunctionBodyBinder(FunctionBodySyntax syntax)

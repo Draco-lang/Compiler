@@ -15,6 +15,7 @@ internal abstract class SymbolVisitor
 
     public virtual void VisitType(TypeSymbol typeSymbol)
     {
+        foreach (var genericParam in typeSymbol.GenericParameters) genericParam.Accept(this);
         foreach (var member in typeSymbol.Members) member.Accept(this);
     }
 

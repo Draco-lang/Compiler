@@ -19,16 +19,6 @@ internal interface IModule
     public string Name { get; }
 
     /// <summary>
-    /// The assembly this module is defined in.
-    /// </summary>
-    public IAssembly Assembly { get; }
-
-    /// <summary>
-    /// The parent module of this module.
-    /// </summary>
-    public IModule? Parent { get; }
-
-    /// <summary>
     /// The submodules of this module.
     /// </summary>
     public IReadOnlyDictionary<ModuleSymbol, IModule> Submodules { get; }
@@ -47,6 +37,11 @@ internal interface IModule
     /// The compiled procedures within this module.
     /// </summary>
     public IReadOnlyDictionary<FunctionSymbol, IProcedure> Procedures { get; }
+
+    /// <summary>
+    /// The compiled classes within this module.
+    /// </summary>
+    public IReadOnlyDictionary<TypeSymbol, IClass> Classes { get; }
 
     /// <summary>
     /// The procedure performing global initialization.

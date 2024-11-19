@@ -12,7 +12,9 @@ using Draco.Compiler.Internal.Solver;
 using Draco.Compiler.Internal.Solver.Tasks;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
+using Draco.Compiler.Internal.Symbols.Syntax;
 using Draco.Compiler.Internal.Symbols.Synthetized;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -65,9 +67,10 @@ internal partial class Binder
         UnaryExpressionSyntax ury => this.BindUnaryExpression(ury, constraints, diagnostics),
         BinaryExpressionSyntax bin => this.BindBinaryExpression(bin, constraints, diagnostics),
         RelationalExpressionSyntax rel => this.BindRelationalExpression(rel, constraints, diagnostics),
-        MemberExpressionSyntax maccess => this.BindMemberExpression(maccess, constraints, diagnostics),
+        MemberExpressionSyntax mem => this.BindMemberExpression(mem, constraints, diagnostics),
         GenericExpressionSyntax gen => this.BindGenericExpression(gen, constraints, diagnostics),
         IndexExpressionSyntax index => this.BindIndexExpression(index, constraints, diagnostics),
+        ThisExpressionSyntax @this => this.BindThisExpression(@this, constraints, diagnostics),
         _ => throw new ArgumentOutOfRangeException(nameof(syntax)),
     };
 
@@ -710,8 +713,48 @@ internal partial class Binder
         }
         else
         {
+            // Any other indexer
             return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask));
         }
+    }
+
+    private BindingTask<BoundExpression> BindThisExpression(ThisExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)
+    {
+        // Check, if we are in a function
+        if (this.ContainingSymbol is not SyntaxFunctionSymbol function)
+        {
+            // No, report error
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalThis,
+                location: syntax.Location));
+            return BindingTask.FromResult<BoundExpression>(
+                new BoundParameterExpression(
+                    syntax,
+                    new ErrorThisParameterSymbol(WellKnownTypes.ErrorType, new ErrorFunctionSymbol(0))));
+        }
+
+        // Check, if the function has a this argument
+        var thisArg = function.ThisParameter;
+        if (thisArg is null)
+        {
+            // No, report error
+            diagnostics.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.ThisReferencedInStaticMethod,
+                location: syntax.Location,
+                formatArgs: [this.ContainingSymbol!.Name]));
+
+            // We can approximate the type of the this argument by checking the containing type
+            var type = function.ContainingSymbol as TypeSymbol
+                    ?? WellKnownTypes.ErrorType;
+            return BindingTask.FromResult<BoundExpression>(
+                new BoundParameterExpression(
+                    syntax,
+                    new ErrorThisParameterSymbol(type, function)));
+        }
+
+        // All ok
+        var boundThis = new BoundParameterExpression(syntax, thisArg);
+        return BindingTask.FromResult<BoundExpression>(boundThis);
     }
 
     private async BindingTask<BoundExpression> BindGenericExpression(GenericExpressionSyntax syntax, ConstraintSolver constraints, DiagnosticBag diagnostics)

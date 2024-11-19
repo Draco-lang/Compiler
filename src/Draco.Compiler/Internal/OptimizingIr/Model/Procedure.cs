@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Draco.Compiler.Internal.Symbols;
+using Draco.Compiler.Internal.Symbols.Source;
 using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.OptimizingIr.Model;
@@ -12,12 +14,7 @@ namespace Draco.Compiler.Internal.OptimizingIr.Model;
 internal sealed class Procedure : IProcedure
 {
     public FunctionSymbol Symbol { get; }
-    public string Name => this.Symbol.NestedName;
-    public TypeSymbol? Type => this.Symbol.Type;
-    public Module DeclaringModule { get; }
-    IModule IProcedure.DeclaringModule => this.DeclaringModule;
-    public Assembly Assembly => this.DeclaringModule.Assembly;
-    IAssembly IProcedure.Assembly => this.Assembly;
+    public string Name => this.Symbol.Name;
     public BasicBlock Entry { get; }
     IBasicBlock IProcedure.Entry => this.Entry;
     public IReadOnlyList<AttributeInstance> Attributes => this.Symbol.Attributes;
@@ -31,21 +28,23 @@ internal sealed class Procedure : IProcedure
     public IReadOnlyList<LocalSymbol> Locals => this.locals;
     public IReadOnlyList<Register> Registers => this.registers;
 
+    public bool IsStatic => this.Symbol.IsStatic;
+
     private readonly Dictionary<LabelSymbol, IBasicBlock> basicBlocks = [];
     private readonly List<LocalSymbol> locals = [];
     private readonly List<Register> registers = [];
 
-    public Procedure(Module declaringModule, FunctionSymbol symbol)
+    public Procedure(FunctionSymbol symbol)
     {
-        this.DeclaringModule = declaringModule;
         this.Symbol = symbol;
         this.Entry = this.DefineBasicBlock(new SynthetizedLabelSymbol("begin"));
     }
 
     public int GetParameterIndex(ParameterSymbol symbol)
     {
+        if (symbol.IsThis) throw new ArgumentOutOfRangeException(nameof(symbol), "this parameter is treated special");
         var idx = this.Symbol.Parameters.IndexOf(symbol);
-        if (idx == -1) throw new System.ArgumentOutOfRangeException(nameof(symbol));
+        if (idx == -1) throw new ArgumentOutOfRangeException(nameof(symbol));
         return idx;
     }
 

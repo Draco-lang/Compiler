@@ -186,11 +186,38 @@ internal static class SymbolResolutionErrors
         code: Code(19));
 
     /// <summary>
+    /// The this parameter is not first in the parameter list.
+    /// </summary>
+    public static readonly DiagnosticTemplate ThisParameterNotFirst = DiagnosticTemplate.Create(
+        title: "this parameter not first",
+        severity: DiagnosticSeverity.Error,
+        format: "the this parameter must be the first parameter",
+        code: Code(20));
+
+    /// <summary>
+    /// This was referenced outside of a type.
+    /// </summary>
+    public static readonly DiagnosticTemplate ThisReferencedInStaticMethod = DiagnosticTemplate.Create(
+        title: "this reference in static method",
+        severity: DiagnosticSeverity.Error,
+        format: "this reference can not be referenced in the static method {0}",
+        code: Code(21));
+
+    /// <summary>
     /// The return expression is illegal in the current context.
     /// </summary>
     public static readonly DiagnosticTemplate IllegalReturn = DiagnosticTemplate.Create(
         title: "illegal return",
         severity: DiagnosticSeverity.Error,
         format: "illegal return expression outside of function definition",
-        code: Code(20));
+        code: Code(22));
+
+    /// <summary>
+    /// The this expression is illegal in the current context.
+    /// </summary>
+    public static readonly DiagnosticTemplate IllegalThis = DiagnosticTemplate.Create(
+        title: "ilegal this",
+        severity: DiagnosticSeverity.Error,
+        format: "illegal this expression outside of a function definition",
+        code: Code(23));
 }

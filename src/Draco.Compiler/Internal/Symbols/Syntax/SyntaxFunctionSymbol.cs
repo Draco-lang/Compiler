@@ -22,6 +22,7 @@ internal abstract class SyntaxFunctionSymbol(
     public override Symbol ContainingSymbol => containingSymbol;
     public override FunctionDeclarationSyntax DeclaringSyntax => syntax;
     public override string Name => this.DeclaringSyntax.Name.Text;
+    public override bool IsStatic => this.ThisParameter is null;
 
     public override Api.Semantics.Visibility Visibility =>
         GetVisibilityFromTokenKind(this.DeclaringSyntax.VisibilityModifier?.Kind);
@@ -34,6 +35,12 @@ internal abstract class SyntaxFunctionSymbol(
 
     public override ImmutableArray<ParameterSymbol> Parameters => this.BindParametersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<ParameterSymbol> parameters;
+
+    /// <summary>
+    /// An optional this parameter, if the function is an instance method.
+    /// </summary>
+    public ParameterSymbol? ThisParameter => this.BindThisParameterIfNeeded(this.DeclaringCompilation!);
+    private ParameterSymbol? thisParameter;
 
     public override TypeSymbol ReturnType => this.BindReturnTypeIfNeeded(this.DeclaringCompilation!);
     private TypeSymbol? returnType;
@@ -91,6 +98,16 @@ internal abstract class SyntaxFunctionSymbol(
         return genericParams.ToImmutable();
     }
 
+    protected ParameterSymbol? BindThisParameterIfNeeded(IBinderProvider binderProvider) =>
+        InterlockedUtils.InitializeMaybeNull(ref this.thisParameter, () => this.BindThisParameter(binderProvider));
+
+    private ParameterSymbol? BindThisParameter(IBinderProvider binderProvider)
+    {
+        if (this.DeclaringSyntax.ParameterList.Values.FirstOrDefault() is not ThisParameterSyntax thisSyntax) return null;
+
+        return new SourceThisParameterSymbol(this, thisSyntax);
+    }
+
     protected ImmutableArray<ParameterSymbol> BindParametersIfNeeded(IBinderProvider binderProvider) =>
         InterlockedUtils.InitializeDefault(ref this.parameters, () => this.BindParameters(binderProvider));
 
@@ -99,9 +116,25 @@ internal abstract class SyntaxFunctionSymbol(
         var parameterSyntaxes = this.DeclaringSyntax.ParameterList.Values.ToList();
         var parameters = ImmutableArray.CreateBuilder<ParameterSymbol>();
 
-        for (var i = 0; i < parameterSyntaxes.Count; ++i)
+        // NOTE: If the first parameter is 'this', we skip it
+        var start = parameterSyntaxes.FirstOrDefault() is ThisParameterSyntax ? 1 : 0;
+        for (var i = start; i < parameterSyntaxes.Count; ++i)
         {
-            var parameterSyntax = parameterSyntaxes[i];
+            var syntax = parameterSyntaxes[i];
+            if (syntax is ThisParameterSyntax thisSyntax)
+            {
+                // NOTE: Do we want to construct an error here, or regular symbol is fine?
+                // Error, 'this' at an illegal place
+                var thisSymbol = new SourceThisParameterSymbol(this, thisSyntax);
+                parameters.Add(thisSymbol);
+                binderProvider.DiagnosticBag.Add(Diagnostic.Create(
+                    template: SymbolResolutionErrors.ThisParameterNotFirst,
+                    location: thisSyntax.Location));
+                continue;
+            }
+
+            // We assume it's a regular parameter
+            var parameterSyntax = (NormalParameterSyntax)syntax;
             var parameterName = parameterSyntax.Name.Text;
 
             var usedBefore = parameters.Any(p => p.Name == parameterName);
@@ -110,7 +143,7 @@ internal abstract class SyntaxFunctionSymbol(
                 // NOTE: We only report later duplicates, no need to report the first instance
                 binderProvider.DiagnosticBag.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.IllegalShadowing,
-                    location: parameterSyntax.Location,
+                    location: syntax.Location,
                     formatArgs: parameterName));
             }
 
@@ -118,7 +151,7 @@ internal abstract class SyntaxFunctionSymbol(
             {
                 binderProvider.DiagnosticBag.Add(Diagnostic.Create(
                     template: SymbolResolutionErrors.VariadicParameterNotLast,
-                    location: parameterSyntax.Location,
+                    location: syntax.Location,
                     formatArgs: parameterName));
             }
 

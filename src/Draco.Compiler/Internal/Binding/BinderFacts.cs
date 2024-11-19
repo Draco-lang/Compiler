@@ -122,7 +122,8 @@ internal static class BinderFacts
         or FunctionBodySyntax
         or BlockExpressionSyntax
         or WhileExpressionSyntax
-        or ForExpressionSyntax;
+        or ForExpressionSyntax
+        or ClassDeclarationSyntax;
 
     /// <summary>
     /// Checks, if a given syntax node defines a symbol.
@@ -132,8 +133,9 @@ internal static class BinderFacts
     public static bool DefinesSymbol(SyntaxNode node) => node
         is FunctionDeclarationSyntax
         or VariableDeclarationSyntax
-        or ParameterSyntax
-        or LabelDeclarationSyntax;
+        or NormalParameterSyntax
+        or LabelDeclarationSyntax
+        or ClassDeclarationSyntax;
 
     /// <summary>
     /// Checks, if a given syntax node references a symbol.

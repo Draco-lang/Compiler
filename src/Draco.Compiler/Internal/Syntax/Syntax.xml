@@ -21,11 +21,13 @@
   <Token Kind="InterpolationStart" Documentation="The start of string interpolation." />
   <Token Kind="InterpolationEnd" Text="}" Documentation="The end of string interpolation." />
   <Token Kind="KeywordAnd" Text="and" Documentation="The keyword 'and'." />
+  <Token Kind="KeywordClass" Text="class" Documentation="The keyword 'class'."/>
   <Token Kind="KeywordElse" Text="else" Documentation="The keyword 'else'." />
   <Token Kind="KeywordFalse" Text="false" Value="false" Documentation="The keyword 'false'." />
   <Token Kind="KeywordField" Text="field" Documentation="The keyword 'field'." />
   <Token Kind="KeywordFor" Text="for" Documentation="The keyword 'for'." />
   <Token Kind="KeywordFunc" Text="func" Documentation="The keyword 'func'." />
+  <Token Kind="KeywordGlobal" Text="global" Documentation="The keyword 'global'."/>
   <Token Kind="KeywordGoto" Text="goto" Documentation="The keyword 'goto'." />
   <Token Kind="KeywordIf" Text="if" Documentation="The keyword 'if'." />
   <Token Kind="KeywordImport" Text="import" Documentation="The keyword 'import'." />
@@ -38,8 +40,10 @@
   <Token Kind="KeywordPublic" Text="public" Documentation="The keyword 'public'." />
   <Token Kind="KeywordRem" Text="rem" Documentation="The keyword 'rem'." />
   <Token Kind="KeywordReturn" Text="return" Documentation="The keyword 'return'." />
+  <Token Kind="KeywordThis" Text="this" Documentation="The keyword 'this'."/>
   <Token Kind="KeywordTrue" Text="true" Value="true" Documentation="The keyword 'true'." />
   <Token Kind="KeywordVal" Text="val" Documentation="The keyword 'val'." />
+  <Token Kind="KeywordValue" Text="value" Documentation="The keyword 'value'."/>
   <Token Kind="KeywordVar" Text="var" Documentation="The keyword 'var'." />
   <Token Kind="KeywordWhile" Text="while" Documentation="The keyword 'while'" />
   <Token Kind="ParenOpen" Text="(" Documentation="'('." />
@@ -332,6 +336,123 @@
     </Field>
   </Node>
 
+  <Node Name="ClassDeclarationSyntax" Base="DeclarationSyntax">
+    <Documentation>
+      A class declaration.
+    </Documentation>
+
+    <Field Name="Attributes" Type="SyntaxList&lt;AttributeSyntax&gt;?">
+      <Documentation>
+        The attributes of this class.
+      </Documentation>
+    </Field>
+
+    <Field Name="VisibilityModifier" Type="SyntaxToken?">
+      <Documentation>
+        The visibility modifier keyword possibly starting the declaration.
+      </Documentation>
+
+      <Token Kind="KeywordInternal" />
+      <Token Kind="KeywordPublic" />
+    </Field>
+
+    <Field Name="ValueModifier" Type="SyntaxToken?">
+      <Documentation>
+        A modifier for making a class a value-type.
+      </Documentation>
+
+      <Token Kind="KeywordValue" />
+    </Field>
+
+    <Field Name="ClassKeyword" Type="SyntaxToken">
+      <Documentation>
+        The 'class' keyword starting the delcaration.
+      </Documentation>
+
+      <Token Kind="KeywordClass" />
+    </Field>
+
+    <Field Name="Name" Type="SyntaxToken">
+      <Documentation>
+        The name of the declared class.
+      </Documentation>
+
+      <Token Kind="Identifier" />
+    </Field>
+
+    <Field Name="Generics" Type="GenericParameterListSyntax?">
+      <Documentation>
+        The list of generic parameters, in case the class introduces generics.
+      </Documentation>
+    </Field>
+
+    <Field Name="Body" Type="ClassBodySyntax">
+      <Documentation>
+        The body of the class.
+      </Documentation>
+    </Field>
+  </Node>
+
+  <AbstractNode Name="ClassBodySyntax" Base="SyntaxNode">
+    <Documentation>
+      A class declaration body.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="EmptyClassBodySyntax" Base="ClassBodySyntax">
+    <Documentation>
+      A semicolon-terminated empty class body.
+    </Documentation>
+
+    <Field Name="Semicolon" Type="SyntaxToken">
+      <Documentation>
+        The semicolon terminating the class body.
+      </Documentation>
+
+      <Token Kind="Semicolon" />
+    </Field>
+  </Node>
+
+  <Node Name="BlockClassBodySyntax" Base="ClassBodySyntax">
+    <Documentation>
+      A block class body with multiple declarations within braces.
+    </Documentation>
+
+    <Field Name="OpenBrace" Type="SyntaxToken">
+      <Documentation>
+        The opening brace token.
+      </Documentation>
+
+      <Token Kind="CurlyOpen" />
+    </Field>
+
+    <Field Name="Declarations" Type="SyntaxList&lt;DeclarationSyntax&gt;">
+      <Documentation>
+        All declaration syntaxes within the class.
+      </Documentation>
+    </Field>
+
+    <Field Name="CloseBrace" Type="SyntaxToken">
+      <Documentation>
+        The closing brace token.
+      </Documentation>
+
+      <Token Kind="CurlyClose" />
+    </Field>
+  </Node>
+
+  <Node Name="UnexpectedClassBodySyntax" Base="ClassBodySyntax">
+    <Documentation>
+      Unexpected input in class body context.
+    </Documentation>
+
+    <Field Name="Nodes" Type="SyntaxList&lt;SyntaxNode&gt;">
+      <Documentation>
+        The unexpected syntax nodes.
+      </Documentation>
+    </Field>
+  </Node>
+
   <Node Name="FunctionDeclarationSyntax" Base="DeclarationSyntax">
     <Documentation>
       A function declaration.
@@ -402,7 +523,26 @@
     </Field>
   </Node>
 
-  <Node Name="ParameterSyntax" Base="SyntaxNode">
+  <AbstractNode Name="ParameterSyntax" Base="SyntaxNode">
+    <Documentation>
+      A single parameter in a function parameter list.
+    </Documentation>
+  </AbstractNode>
+
+  <Node Name="ThisParameterSyntax" Base="ParameterSyntax">
+    <Documentation>
+      The this parameter at the first place in a parameter list.
+    </Documentation>
+
+    <Field Name="This" Type="SyntaxToken">
+      <Documentation>
+        The 'this' keyword.
+      </Documentation>
+      <Token Kind="KeywordThis" />
+    </Field>
+  </Node>
+
+  <Node Name="NormalParameterSyntax" Base="ParameterSyntax">
     <Documentation>
       A single parameter in a function parameter list.
     </Documentation>
@@ -412,6 +552,7 @@
         The attributes of this parameter.
       </Documentation>
     </Field>
+
     <Field Name="Variadic" Type="SyntaxToken?">
       <Documentation>
         The ellipsis token, in case it's variadic.
@@ -562,6 +703,14 @@
 
       <Token Kind="KeywordInternal" />
       <Token Kind="KeywordPublic" />
+    </Field>
+
+    <Field Name="GlobalModifier" Type="SyntaxToken?">
+      <Documentation>
+        The optional global modifier that marks this variable as a global (static).
+      </Documentation>
+
+      <Token Kind="KeywordGlobal"/>
     </Field>
 
     <Field Name="FieldModifier" Type="SyntaxToken?">
@@ -1245,6 +1394,20 @@
       <Documentation>
         The list of comparisons.
       </Documentation>
+    </Field>
+  </Node>
+
+  <Node Name="ThisExpressionSyntax" Base="ExpressionSyntax">
+    <Documentation>
+      The expression referencing the receiver of a member function.
+    </Documentation>
+
+    <Field Name="This" Type="SyntaxToken">
+      <Documentation>
+        The 'this' keyword.
+      </Documentation>
+
+      <Token Kind="KeywordThis"/>
     </Field>
   </Node>
 

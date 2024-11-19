@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
@@ -161,29 +160,26 @@ internal sealed class Lexer
     /// <summary>
     /// Lexes tokens that can be found in regular code.
     /// </summary>
-    /// <returns>The lexed <see cref="SyntaxToken"/>.</returns>
-    private Unit LexNormal()
+    private void LexNormal()
     {
-        Unit TakeBasic(TokenKind tokenKind, int length)
+        void TakeBasic(TokenKind tokenKind, int length)
         {
             this.Advance(length);
             this.tokenBuilder.SetKind(tokenKind);
-            return default;
         }
 
-        Unit TakeWithText(TokenKind tokenKind, int length)
+        void TakeWithText(TokenKind tokenKind, int length)
         {
             this.tokenBuilder
                 .SetKind(tokenKind)
                 .SetText(this.AdvanceWithText(length));
-            return default;
         }
 
         // First check for end of source here
         if (this.SourceReader.IsEnd)
         {
             this.tokenBuilder.SetKind(TokenKind.EndOfInput);
-            return default;
+            return;
         }
 
         var mode = this.CurrentMode;
@@ -192,60 +188,136 @@ internal sealed class Lexer
         // Punctuation
         switch (ch)
         {
-        case '(': return TakeBasic(TokenKind.ParenOpen, 1);
-        case ')': return TakeBasic(TokenKind.ParenClose, 1);
+        case '(':
+            TakeBasic(TokenKind.ParenOpen, 1);
+            return;
+        case ')':
+            TakeBasic(TokenKind.ParenClose, 1);
+            return;
         case '{':
             if (mode.IsInterpolation) this.PushMode(mode.Kind, 0);
-            return TakeBasic(TokenKind.CurlyOpen, 1);
+            TakeBasic(TokenKind.CurlyOpen, 1);
+            return;
         case '}':
             if (mode.IsInterpolation)
             {
                 this.PopMode();
                 // If we are not in interpolation anymore, this is an interpolation end token
-                if (!this.CurrentMode.IsInterpolation) return TakeBasic(TokenKind.InterpolationEnd, 1);
+                if (!this.CurrentMode.IsInterpolation)
+                {
+                    TakeBasic(TokenKind.InterpolationEnd, 1);
+                    return;
+                }
             }
-            return TakeBasic(TokenKind.CurlyClose, 1);
-        case '[': return TakeBasic(TokenKind.BracketOpen, 1);
-        case ']': return TakeBasic(TokenKind.BracketClose, 1);
-
+            TakeBasic(TokenKind.CurlyClose, 1);
+            return;
+        case '[':
+            TakeBasic(TokenKind.BracketOpen, 1);
+            return;
+        case ']':
+            TakeBasic(TokenKind.BracketClose, 1);
+            return;
         case '.':
-            if (this.Peek(1) == '.' && this.Peek(2) == '.') return TakeBasic(TokenKind.Ellipsis, 3);
-            return TakeBasic(TokenKind.Dot, 1);
-        case ',': return TakeBasic(TokenKind.Comma, 1);
-        case ':': return TakeBasic(TokenKind.Colon, 1);
-        case ';': return TakeBasic(TokenKind.Semicolon, 1);
+            if (this.Peek(1) == '.' && this.Peek(2) == '.')
+            {
+                TakeBasic(TokenKind.Ellipsis, 3);
+                return;
+            }
+            TakeBasic(TokenKind.Dot, 1);
+            return;
+        case ',':
+            TakeBasic(TokenKind.Comma, 1);
+            return;
+        case ':':
+            TakeBasic(TokenKind.Colon, 1);
+            return;
+        case ';':
+            TakeBasic(TokenKind.Semicolon, 1);
+            return;
         case '+':
-            if (this.Peek(1) == '=') return TakeBasic(TokenKind.PlusAssign, 2);
-            return TakeBasic(TokenKind.Plus, 1);
+            if (this.Peek(1) == '=')
+            {
+                TakeBasic(TokenKind.PlusAssign, 2);
+                return;
+            }
+            TakeBasic(TokenKind.Plus, 1);
+            return;
         case '-':
-            if (this.Peek(1) == '=') return TakeBasic(TokenKind.MinusAssign, 2);
-            return TakeBasic(TokenKind.Minus, 1);
+            if (this.Peek(1) == '=')
+            {
+                TakeBasic(TokenKind.MinusAssign, 2);
+                return;
+            }
+            TakeBasic(TokenKind.Minus, 1);
+            return;
         case '*':
-            if (this.Peek(1) == '=') return TakeBasic(TokenKind.StarAssign, 2);
-            return TakeBasic(TokenKind.Star, 1);
+            if (this.Peek(1) == '=')
+            {
+                TakeBasic(TokenKind.StarAssign, 2);
+                return;
+            }
+            TakeBasic(TokenKind.Star, 1);
+            return;
         case '/':
-            if (this.Peek(1) == '=') return TakeBasic(TokenKind.SlashAssign, 2);
-            return TakeBasic(TokenKind.Slash, 1);
+            if (this.Peek(1) == '=')
+            {
+                TakeBasic(TokenKind.SlashAssign, 2);
+                return;
+            }
+            TakeBasic(TokenKind.Slash, 1);
+            return;
         case '<':
-            if (this.Peek(1) == '=') return TakeBasic(TokenKind.LessEqual, 2);
-            return TakeBasic(TokenKind.LessThan, 1);
+            if (this.Peek(1) == '=')
+            {
+                TakeBasic(TokenKind.LessEqual, 2);
+                return;
+            }
+            TakeBasic(TokenKind.LessThan, 1);
+            return;
         case '>':
-            if (this.Peek(1) == '=') return TakeBasic(TokenKind.GreaterEqual, 2);
-            return TakeBasic(TokenKind.GreaterThan, 1);
+            if (this.Peek(1) == '=')
+            {
+                TakeBasic(TokenKind.GreaterEqual, 2);
+                return;
+            }
+            TakeBasic(TokenKind.GreaterThan, 1);
+            return;
         case '=':
-            if (this.Peek(1) == '=') return TakeBasic(TokenKind.Equal, 2);
-            return TakeBasic(TokenKind.Assign, 1);
+            if (this.Peek(1) == '=')
+            {
+                TakeBasic(TokenKind.Equal, 2);
+                return;
+            }
+            TakeBasic(TokenKind.Assign, 1);
+            return;
         case '!':
-            if (this.Peek(1) == '=') return TakeBasic(TokenKind.NotEqual, 2);
-            return TakeBasic(TokenKind.CNot, 1);
-        case '%': return TakeBasic(TokenKind.CMod, 1);
+            if (this.Peek(1) == '=')
+            {
+                TakeBasic(TokenKind.NotEqual, 2);
+                return;
+            }
+            TakeBasic(TokenKind.CNot, 1);
+            return;
+        case '%':
+            TakeBasic(TokenKind.CMod, 1);
+            return;
         case '|':
-            if (this.Peek(1) == '|') return TakeBasic(TokenKind.COr, 2);
+            if (this.Peek(1) == '|')
+            {
+                TakeBasic(TokenKind.COr, 2);
+                return;
+            }
             break;
         case '&':
-            if (this.Peek(1) == '&') return TakeBasic(TokenKind.CAnd, 2);
+            if (this.Peek(1) == '&')
+            {
+                TakeBasic(TokenKind.CAnd, 2);
+                return;
+            }
             break;
-        case '@': return TakeBasic(TokenKind.AtSign, 1);
+        case '@':
+            TakeBasic(TokenKind.AtSign, 1);
+            return;
         }
 
         // Numeric literals
@@ -265,7 +337,7 @@ internal sealed class Lexer
                     .SetKind(TokenKind.LiteralInteger)
                     .SetText($"0{radix}{view}")
                     .SetValue(value);
-                return default;
+                return;
             }
             var offset = 1;
             var isFloat = false;
@@ -293,7 +365,7 @@ internal sealed class Lexer
                     this.tokenBuilder
                         .SetKind(TokenKind.LiteralFloat)
                         .SetText(this.Advance(offset).Span.ToString());
-                    return default;
+                    return;
                 }
                 while (IsDigit(this.Peek(offset))) ++offset;
             }
@@ -307,7 +379,7 @@ internal sealed class Lexer
                     .SetKind(TokenKind.LiteralFloat)
                     .SetText(floatView.ToString())
                     .SetValue(floatValue);
-                return default;
+                return;
             }
 
             // Regular integer
@@ -316,7 +388,7 @@ internal sealed class Lexer
                 .SetKind(TokenKind.LiteralInteger)
                 .SetText(decimalView)
                 .SetValue(decimalValue);
-            return default;
+            return;
         }
 
         // Identifier-like tokens
@@ -329,11 +401,13 @@ internal sealed class Lexer
             var tokenKind = ident.Span switch
             {
                 "and" => TokenKind.KeywordAnd,
+                "class" => TokenKind.KeywordClass,
                 "else" => TokenKind.KeywordElse,
                 "false" => TokenKind.KeywordFalse,
                 "field" => TokenKind.KeywordField,
                 "for" => TokenKind.KeywordFor,
                 "func" => TokenKind.KeywordFunc,
+                "global" => TokenKind.KeywordGlobal,
                 "goto" => TokenKind.KeywordGoto,
                 "if" => TokenKind.KeywordIf,
                 "import" => TokenKind.KeywordImport,
@@ -346,8 +420,10 @@ internal sealed class Lexer
                 "public" => TokenKind.KeywordPublic,
                 "rem" => TokenKind.KeywordRem,
                 "return" => TokenKind.KeywordReturn,
+                "this" => TokenKind.KeywordThis,
                 "true" => TokenKind.KeywordTrue,
                 "val" => TokenKind.KeywordVal,
+                "value" => TokenKind.KeywordValue,
                 "var" => TokenKind.KeywordVar,
                 "while" => TokenKind.KeywordWhile,
                 _ => TokenKind.Identifier,
@@ -363,7 +439,7 @@ internal sealed class Lexer
                     .SetKind(TokenKind.Identifier)
                     .SetText(identStr)
                     .SetValue(identStr);
-                return default;
+                return;
             }
             else
             {
@@ -371,7 +447,7 @@ internal sealed class Lexer
                 this.tokenBuilder.SetKind(tokenKind);
                 if (tokenKind == TokenKind.KeywordTrue) this.tokenBuilder.SetValue(true);
                 if (tokenKind == TokenKind.KeywordFalse) this.tokenBuilder.SetValue(false);
-                return default;
+                return;
             }
         }
 
@@ -391,7 +467,7 @@ internal sealed class Lexer
                     .SetKind(TokenKind.LiteralCharacter)
                     .SetText(errText)
                     .SetValue(new Rune(' '));
-                return default;
+                return;
             }
             var resultChar = default(Rune);
             if (ch2 == '\\')
@@ -449,7 +525,7 @@ internal sealed class Lexer
                 .SetKind(TokenKind.LiteralCharacter)
                 .SetText(text)
                 .SetValue(resultChar);
-            return default;
+            return;
         }
 
         // String literal starts
@@ -463,23 +539,26 @@ internal sealed class Lexer
                 {
                     // Mutli-line string opening quotes
                     this.PushMode(ModeKind.MultiLineString, extendedDelims);
-                    return TakeWithText(TokenKind.MultiLineStringStart, offset + 3);
+                    TakeWithText(TokenKind.MultiLineStringStart, offset + 3);
+                    return;
                 }
                 // Single-line string opening quote
                 this.PushMode(ModeKind.LineString, extendedDelims);
-                return TakeWithText(TokenKind.LineStringStart, offset + 1);
+                TakeWithText(TokenKind.LineStringStart, offset + 1);
+                return;
             }
         }
 
         // Unknown
-        return TakeWithText(TokenKind.Unknown, 1);
+        TakeWithText(TokenKind.Unknown, 1);
+        return;
     }
 
     /// <summary>
     /// Lexes a token that can be part of a string.
     /// </summary>
     /// <returns>The lexed string <see cref="SyntaxToken"/>.</returns>
-    private Unit LexString()
+    private void LexString()
     {
         // Get the largest continuous sequence without linebreaks or interpolation
         var mode = this.CurrentMode;
@@ -490,7 +569,7 @@ internal sealed class Lexer
         if (this.SourceReader.IsEnd)
         {
             this.tokenBuilder.SetKind(TokenKind.EndOfInput);
-            return default;
+            return;
         }
 
         // NOTE: We are checking end of input differently here, because SourceReader.IsEnd is based on its
@@ -503,7 +582,7 @@ internal sealed class Lexer
                 .SetKind(TokenKind.StringContent)
                 .SetText(this.AdvanceWithText(offset))
                 .SetValue(this.valueBuilder.ToString());
-            return default;
+            return;
         }
 
         // Check for closing quotes
@@ -553,7 +632,7 @@ internal sealed class Lexer
                 this.tokenBuilder
                     .SetKind(tokenKind)
                     .SetText(this.AdvanceWithText(endLength));
-                return default;
+                return;
             }
             else
             {
@@ -563,7 +642,7 @@ internal sealed class Lexer
                     .SetKind(TokenKind.StringContent)
                     .SetText(this.AdvanceWithText(offset))
                     .SetValue(this.valueBuilder.ToString());
-                return default;
+                return;
             }
         }
 
@@ -587,7 +666,7 @@ internal sealed class Lexer
                     .SetKind(TokenKind.StringContent)
                     .SetText(this.AdvanceWithText(offset))
                     .SetValue(this.valueBuilder.ToString());
-                return default;
+                return;
             }
 
             // Interpolation
@@ -603,7 +682,7 @@ internal sealed class Lexer
                     this.tokenBuilder
                         .SetKind(TokenKind.InterpolationStart)
                         .SetText(this.AdvanceWithText(mode.ExtendedDelims + 2));
-                    return default;
+                    return;
                 }
                 else
                 {
@@ -613,7 +692,7 @@ internal sealed class Lexer
                         .SetKind(TokenKind.StringContent)
                         .SetText(this.AdvanceWithText(offset))
                         .SetValue(this.valueBuilder.ToString());
-                    return default;
+                    return;
                 }
             }
 
@@ -634,7 +713,7 @@ internal sealed class Lexer
                             .SetKind(TokenKind.StringNewline)
                             .SetText(this.AdvanceWithText(mode.ExtendedDelims + 1 + whiteCharOffset + length))
                             .SetValue(string.Empty);
-                        return default;
+                        return;
                     }
                     else
                     {
@@ -643,7 +722,7 @@ internal sealed class Lexer
                             .SetKind(TokenKind.StringContent)
                             .SetText(this.AdvanceWithText(offset))
                             .SetValue(this.valueBuilder.ToString());
-                        return default;
+                        return;
                     }
                 }
             }
@@ -656,7 +735,7 @@ internal sealed class Lexer
                 .SetKind(TokenKind.EscapeSequence)
                 .SetText(this.AdvanceWithText(offset))
                 .SetValue(escaped);
-            return default;
+            return;
         }
 
     not_escape_sequence:
@@ -676,7 +755,7 @@ internal sealed class Lexer
                     .SetKind(TokenKind.StringContent)
                     .SetText(this.AdvanceWithText(offset))
                     .SetValue(this.valueBuilder.ToString());
-                return default;
+                return;
             }
             else
             {
@@ -705,7 +784,7 @@ internal sealed class Lexer
                             .SetKind(TokenKind.MultiLineStringEnd)
                             .SetText(this.AdvanceWithText(3 + mode.ExtendedDelims));
                         this.ParseTrailingTriviaList();
-                        return default;
+                        return;
                     }
                 not_string_end2:
                     // Just a regular newline, more content to follow
@@ -714,7 +793,7 @@ internal sealed class Lexer
                         .SetKind(TokenKind.StringNewline)
                         .SetText(stringNewlineText)
                         .SetValue(stringNewlineText);
-                    return default;
+                    return;
                 }
                 else
                 {
@@ -723,7 +802,7 @@ internal sealed class Lexer
                         .SetKind(TokenKind.StringContent)
                         .SetText(this.AdvanceWithText(offset))
                         .SetValue(this.valueBuilder.ToString());
-                    return default;
+                    return;
                 }
             }
         }

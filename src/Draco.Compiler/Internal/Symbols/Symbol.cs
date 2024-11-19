@@ -8,6 +8,9 @@ using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Documentation;
 using Draco.Compiler.Internal.Symbols.Generic;
 using Draco.Compiler.Internal.Symbols.Metadata;
+using Draco.Compiler.Internal.Symbols.Source;
+using Draco.Compiler.Internal.Symbols.Syntax;
+using Draco.Compiler.Internal.Symbols.Synthetized;
 using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Symbols;
@@ -85,7 +88,9 @@ internal abstract partial class Symbol
     /// <summary>
     /// The metadata name of this symbol.
     /// </summary>
-    public virtual string MetadataName => this.Name;
+    public virtual string MetadataName => this.IsGenericDefinition
+        ? $"{this.Name}`{this.GenericParameters.Length}"
+        : this.Name;
 
     /// <summary>
     /// The name of this symbol.
@@ -157,7 +162,7 @@ internal abstract partial class Symbol
     /// <summary>
     /// The visibility of this symbol.
     /// </summary>
-    public virtual Api.Semantics.Visibility Visibility => Api.Semantics.Visibility.Internal;
+    public virtual Visibility Visibility => Visibility.Internal;
 
     /// <summary>
     /// The syntax declaring this symbol.
@@ -322,11 +327,18 @@ internal abstract partial class Symbol
         return string.Empty;
     }
 
-    private protected static Api.Semantics.Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
+    private protected static Visibility GetVisibilityFromTokenKind(TokenKind? kind) => kind switch
     {
-        null => Api.Semantics.Visibility.Private,
-        TokenKind.KeywordInternal => Api.Semantics.Visibility.Internal,
-        TokenKind.KeywordPublic => Api.Semantics.Visibility.Public,
+        null => Visibility.Private,
+        TokenKind.KeywordInternal => Visibility.Internal,
+        TokenKind.KeywordPublic => Visibility.Public,
         _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
     };
+
+    /// <summary>
+    /// Retrieves additional symbols for this symbol that should live in the same scope as this symbol itself.
+    /// This returns the constructor functions for types for example.
+    /// </summary>
+    /// <returns>The additional symbols for this symbol.</returns>
+    protected internal virtual IEnumerable<Symbol> GetAdditionalSymbols() => [];
 }

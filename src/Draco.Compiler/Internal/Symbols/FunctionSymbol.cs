@@ -110,6 +110,10 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     public override bool IsSpecialName => this.IsConstructor;
 
+    // NOTE: It seems like the backtick is only for types
+    // TODO: In that case, maybe move this logic out from Symbol and make MetadataName abstract or default to this instead?
+    public override string MetadataName => this.Name;
+
     // NOTE: We override for covariant return type
     public override FunctionSymbol? GenericDefinition => null;
     public override IEnumerable<Symbol> Members => this.Parameters;

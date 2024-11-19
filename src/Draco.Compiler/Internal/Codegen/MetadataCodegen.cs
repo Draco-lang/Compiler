@@ -603,7 +603,8 @@ internal sealed class MetadataCodegen : MetadataWriter
         var definitionHandle = this.MetadataBuilder.AddMethodDefinition(
             attributes: attributes,
             implAttributes: MethodImplAttributes.IL,
-            name: this.GetOrAddString(specialName ?? procedure.Name),
+            // TODO: Maybe expose metadata name directly?
+            name: this.GetOrAddString(specialName ?? procedure.Symbol.MetadataName),
             signature: this.EncodeProcedureSignature(procedure),
             bodyOffset: methodBodyOffset,
             parameterList: parameterList);

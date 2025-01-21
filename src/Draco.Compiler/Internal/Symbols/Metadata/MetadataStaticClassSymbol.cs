@@ -24,7 +24,7 @@ internal sealed class MetadataStaticClassSymbol(
     public override ImmutableArray<AttributeInstance> Attributes => InterlockedUtils.InitializeDefault(ref this.attributes, this.BuildAttributes);
     private ImmutableArray<AttributeInstance> attributes;
 
-    public override IEnumerable<Symbol> Members =>
+    public override IEnumerable<Symbol> AllMembers =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 

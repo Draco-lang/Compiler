@@ -4,7 +4,7 @@ internal abstract class SymbolVisitor
 {
     public virtual void VisitModule(ModuleSymbol moduleSymbol)
     {
-        foreach (var member in moduleSymbol.Members) member.Accept(this);
+        foreach (var member in moduleSymbol.AllMembers) member.Accept(this);
     }
 
     public virtual void VisitFunction(FunctionSymbol functionSymbol)
@@ -15,7 +15,7 @@ internal abstract class SymbolVisitor
 
     public virtual void VisitType(TypeSymbol typeSymbol)
     {
-        foreach (var member in typeSymbol.Members) member.Accept(this);
+        foreach (var member in typeSymbol.AllMembers) member.Accept(this);
     }
 
     public virtual void VisitAlias(AliasSymbol aliasSymbol)
@@ -52,7 +52,7 @@ internal abstract class SymbolVisitor<TResult>
 {
     public virtual TResult VisitModule(ModuleSymbol moduleSymbol)
     {
-        foreach (var member in moduleSymbol.Members) member.Accept(this);
+        foreach (var member in moduleSymbol.AllMembers) member.Accept(this);
         return default!;
     }
 
@@ -65,7 +65,7 @@ internal abstract class SymbolVisitor<TResult>
 
     public virtual TResult VisitType(TypeSymbol typeSymbol)
     {
-        foreach (var member in typeSymbol.Members) member.Accept(this);
+        foreach (var member in typeSymbol.AllMembers) member.Accept(this);
         return default!;
     }
 

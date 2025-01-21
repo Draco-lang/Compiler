@@ -111,9 +111,9 @@ internal abstract partial class TypeSymbol : Symbol, IMemberSymbol
     /// <summary>
     /// All members within this type that are not special members.
     /// </summary>
-    public IEnumerable<Symbol> NonSpecialMembers => this.Members.Where(m => !m.IsSpecialName);
+    public IEnumerable<Symbol> NonSpecialMembers => this.AllMembers.Where(m => !m.IsSpecialName);
 
-    public override sealed IEnumerable<Symbol> Members =>
+    public override sealed IEnumerable<Symbol> AllMembers =>
         InterlockedUtils.InitializeDefault(ref this.members, this.BuildMembers);
     private ImmutableArray<Symbol> members;
 

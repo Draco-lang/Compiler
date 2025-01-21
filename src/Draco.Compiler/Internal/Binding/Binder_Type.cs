@@ -86,7 +86,7 @@ internal partial class Binder
         else
         {
             // Module or type member access
-            var members = left.Members
+            var members = left.AllMembers
                 .Where(m => m.Name == memberName)
                 .Where(BinderFacts.IsTypeSymbol)
                 .ToImmutableArray();

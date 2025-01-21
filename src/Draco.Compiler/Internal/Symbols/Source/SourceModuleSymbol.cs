@@ -22,7 +22,7 @@ internal sealed class SourceModuleSymbol : ModuleSymbol, ISourceSymbol
 {
     public override Compilation DeclaringCompilation { get; }
 
-    public override IEnumerable<Symbol> Members => this.BindMembersIfNeeded(this.DeclaringCompilation!);
+    public override IEnumerable<Symbol> AllMembers => this.BindMembersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<Symbol> members;
 
     public override Symbol? ContainingSymbol { get; }

@@ -24,7 +24,7 @@ internal sealed class ScriptModuleSymbol(
     public override Compilation DeclaringCompilation => compilation;
     public override ScriptEntrySyntax DeclaringSyntax => syntax;
 
-    public override IEnumerable<Symbol> Members => this.BindMembersIfNeeded(this.DeclaringCompilation!);
+    public override IEnumerable<Symbol> AllMembers => this.BindMembersIfNeeded(this.DeclaringCompilation!);
     private ImmutableArray<Symbol> members;
 
     public override Symbol? ContainingSymbol { get; } = containingSymbol;
@@ -41,7 +41,7 @@ internal sealed class ScriptModuleSymbol(
     /// <summary>
     /// The evaluation function of the script.
     /// </summary>
-    public ScriptEvalFunctionSymbol EvalFunction => this.Members.OfType<ScriptEvalFunctionSymbol>().Single();
+    public ScriptEvalFunctionSymbol EvalFunction => this.AllMembers.OfType<ScriptEvalFunctionSymbol>().Single();
 
     /// <summary>
     /// The imports of the script.
@@ -54,7 +54,7 @@ internal sealed class ScriptModuleSymbol(
     /// <summary>
     /// The public symbol aliases of the script that can be used to import them for a future context.
     /// </summary>
-    public IEnumerable<(string Name, string FullPath)> PublicSymbolAliases => this.Members
+    public IEnumerable<(string Name, string FullPath)> PublicSymbolAliases => this.AllMembers
         .Where(m => !m.IsSpecialName)
         .Select(m => (Name: m.Name, FullPath: m.MetadataFullName));
 

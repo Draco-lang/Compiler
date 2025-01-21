@@ -112,7 +112,7 @@ internal abstract partial class FunctionSymbol : Symbol, ITypedSymbol, IMemberSy
 
     // NOTE: We override for covariant return type
     public override FunctionSymbol? GenericDefinition => null;
-    public override IEnumerable<Symbol> Members => this.Parameters;
+    public override IEnumerable<Symbol> AllMembers => this.Parameters;
     public override SymbolKind Kind => SymbolKind.Function;
 
     public TypeSymbol Type => LazyInitializer.EnsureInitialized(ref this.type, this.BuildType);

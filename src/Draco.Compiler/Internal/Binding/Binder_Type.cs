@@ -60,7 +60,7 @@ internal partial class Binder
     internal virtual Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedTypeSyntax => new ErrorTypeSymbol("<error>"),
+        UnexpectedTypeSyntax => WellKnownTypes.ErrorType,
         NameTypeSyntax name => this.BindNameType(name, diagnostics),
         MemberTypeSyntax member => this.BindMemberType(member, diagnostics),
         GenericTypeSyntax generic => this.BindGenericType(generic, diagnostics),

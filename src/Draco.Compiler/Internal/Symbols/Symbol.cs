@@ -334,4 +334,11 @@ internal abstract partial class Symbol
         TokenKind.KeywordPublic => Visibility.Public,
         _ => throw new InvalidOperationException($"illegal visibility modifier token {kind}"),
     };
+
+    /// <summary>
+    /// Retrieves additional symbols for this symbol that should live in the same scope as this symbol itself.
+    /// This returns the constructor functions for types for example.
+    /// </summary>
+    /// <returns>The additional symbols for this symbol.</returns>
+    protected internal virtual IEnumerable<Symbol> GetAdditionalSymbols() => [];
 }

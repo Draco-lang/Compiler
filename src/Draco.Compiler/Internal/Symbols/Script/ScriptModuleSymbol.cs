@@ -84,30 +84,26 @@ internal sealed class ScriptModuleSymbol(
             // Non-declaration statements are compiled into an initializer method
             if (statement is not DeclarationStatementSyntax decl) continue;
 
-            // Build the symbol(s)
-            foreach (var member in this.BuildMember(decl.Declaration))
-            {
-                var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
-                result.Add(member);
+            var member = this.BuildMember(decl.Declaration);
+            if (member is null) continue;
 
-                // We check for illegal shadowing
-                if (earlierMember is null) continue;
+            var earlierMember = result.FirstOrDefault(s => s.Name == member.Name);
+            result.Add(member);
+            result.AddRange(member.GetAdditionalSymbols());
 
-                // Overloading is legal
-                if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
+            // We check for illegal shadowing
+            if (earlierMember is null) continue;
 
-                // If the illegal member is special name, it was cascaded from a declaration with multiple symbols,
-                // like an autoprop, skip it
-                if (member.IsSpecialName) continue;
+            // Overloading is legal
+            if (member is FunctionSymbol && earlierMember is FunctionSymbol) continue;
 
-                // Illegal
-                var syntax = member.DeclaringSyntax;
-                Debug.Assert(syntax is not null);
-                binderProvider.DiagnosticBag.Add(Diagnostic.Create(
-                    template: SymbolResolutionErrors.IllegalShadowing,
-                    location: syntax.Location,
-                    formatArgs: member.Name));
-            }
+            // Illegal
+            var syntax = member.DeclaringSyntax;
+            Debug.Assert(syntax is not null);
+            binderProvider.DiagnosticBag.Add(Diagnostic.Create(
+                template: SymbolResolutionErrors.IllegalShadowing,
+                location: syntax.Location,
+                formatArgs: member.Name));
         }
 
         // We add a function to evaluate the script
@@ -137,27 +133,16 @@ internal sealed class ScriptModuleSymbol(
         return binder.BindScript(this, binderProvider.DiagnosticBag);
     }
 
-    private IEnumerable<Symbol> BuildMember(DeclarationSyntax decl) => decl switch
+    private Symbol? BuildMember(DeclarationSyntax decl) => decl switch
     {
         ImportDeclarationSyntax
-     or UnexpectedDeclarationSyntax => [],
-        FunctionDeclarationSyntax f => [this.BuildFunction(f)],
-        VariableDeclarationSyntax v when v.FieldModifier is not null => [this.BuildField(v)],
-        VariableDeclarationSyntax v when v.FieldModifier is null => this.BuildAutoProperty(v),
-        ModuleDeclarationSyntax m => [this.BuildModule(m)],
+     or UnexpectedDeclarationSyntax => null,
+        FunctionDeclarationSyntax f => new ScriptFunctionSymbol(this, f),
+        VariableDeclarationSyntax v when v.FieldModifier is not null => new ScriptFieldSymbol(this, v),
+        VariableDeclarationSyntax v when v.FieldModifier is null => new ScriptAutoPropertySymbol(this, v),
+        ModuleDeclarationSyntax m => this.BuildModule(m),
         _ => throw new ArgumentOutOfRangeException(nameof(decl)),
     };
-
-    private ScriptFunctionSymbol BuildFunction(FunctionDeclarationSyntax syntax) => new(this, syntax);
-    private ScriptFieldSymbol BuildField(VariableDeclarationSyntax syntax) => new(this, syntax);
-    private IEnumerable<Symbol> BuildAutoProperty(VariableDeclarationSyntax syntax)
-    {
-        var property = new ScriptAutoPropertySymbol(this, syntax);
-        yield return property;
-        if (property.Getter is not null) yield return property.Getter;
-        if (property.Setter is not null) yield return property.Setter;
-        yield return property.BackingField;
-    }
 
     private SourceModuleSymbol BuildModule(ModuleDeclarationSyntax syntax)
     {

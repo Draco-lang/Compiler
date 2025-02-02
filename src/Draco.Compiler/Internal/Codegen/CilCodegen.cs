@@ -223,7 +223,7 @@ internal sealed class CilCodegen
             }
             case FieldSymbol field:
             {
-                this.InstructionEncoder.OpCode(field.IsSpecialName ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
+                this.InstructionEncoder.OpCode(field.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
                 this.EncodeToken(field);
                 break;
             }

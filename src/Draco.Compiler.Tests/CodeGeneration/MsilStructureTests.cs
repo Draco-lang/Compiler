@@ -21,9 +21,11 @@ public sealed class MsilStructureTests
     private readonly Stack<Type> typeStack = new();
     private readonly Stack<string> namespaceStack = new();
 
-    private void Compile(string source)
+    private void Compile(string source, string? rootModulePath = null)
     {
-        this.assembly = TestUtilities.CompileToAssembly(source);
+        this.assembly = TestUtilities.CompileToAssembly(
+            sourceCode: source,
+            rootModulePath: rootModulePath);
     }
 
     private RelayDisposable Ns(string name)
@@ -72,6 +74,30 @@ public sealed class MsilStructureTests
         using (this.StaticC(CompilerConstants.DefaultModuleName, t => !t.IsPublic))
         {
             this.M("main", m => !m.IsPublic && m.IsStatic);
+        }
+    }
+
+    [Fact]
+    public void HelloWorldInModule()
+    {
+        this.Compile("""
+            import System.Console;
+
+            func main() {
+                WriteLine("Hello, World!");
+            }
+            """,
+            rootModulePath: "foo/bar");
+
+        using (this.Ns("foo"))
+        {
+            using (this.StaticC("bar", t => !t.IsPublic))
+            {
+                using (this.StaticC(CompilerConstants.DefaultModuleName, t => !t.IsPublic))
+                {
+                    this.M("main", m => !m.IsPublic && m.IsStatic);
+                }
+            }
         }
     }
 }

@@ -5,7 +5,6 @@ using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Symbols.Error;
 
 namespace Draco.Compiler.Internal.Binding;
 
@@ -60,7 +59,7 @@ internal partial class Binder
     internal virtual Symbol BindType(TypeSyntax syntax, DiagnosticBag diagnostics) => syntax switch
     {
         // NOTE: The syntax error is already reported
-        UnexpectedTypeSyntax => new ErrorTypeSymbol("<error>"),
+        UnexpectedTypeSyntax => WellKnownTypes.ErrorType,
         NameTypeSyntax name => this.BindNameType(name, diagnostics),
         MemberTypeSyntax member => this.BindMemberType(member, diagnostics),
         GenericTypeSyntax generic => this.BindGenericType(generic, diagnostics),
@@ -86,7 +85,7 @@ internal partial class Binder
         else
         {
             // Module or type member access
-            var members = left.Members
+            var members = left.AllMembers
                 .Where(m => m.Name == memberName)
                 .Where(BinderFacts.IsTypeSymbol)
                 .ToImmutableArray();

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Draco.Compiler.Internal.Symbols;
-using Draco.Compiler.Internal.Utilities;
 
 namespace Draco.Compiler.Internal.Solver.OverloadResolution;
 
@@ -13,8 +12,8 @@ internal static class CallCandidate
     public static CallCandidate<FunctionSymbol> Create(FunctionSymbol function) =>
         CallCandidate<FunctionSymbol>.Create(function);
 
-    public static CallCandidate<Unit> Create(FunctionTypeSymbol functionType) =>
-        CallCandidate<Unit>.Create(functionType);
+    public static CallCandidate<object?> Create(FunctionTypeSymbol functionType) =>
+        CallCandidate<object?>.Create(functionType);
 }
 
 /// <summary>
@@ -27,7 +26,7 @@ internal readonly struct CallCandidate<TData>
         new(function.Parameters, function.IsVariadic, function);
 
     // TODO: Can a function type be variadic? This is probably something we should specify...
-    public static CallCandidate<Unit> Create(FunctionTypeSymbol functionType) =>
+    public static CallCandidate<object?> Create(FunctionTypeSymbol functionType) =>
         new(functionType.Parameters, false, default);
 
     /// <summary>

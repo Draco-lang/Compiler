@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
-using Draco.Compiler.Internal.Symbols.Synthetized;
 
 namespace Draco.Compiler.Internal.Symbols.Metadata;
 
@@ -37,20 +35,6 @@ internal static class MetadataSymbol
             // Non-static classes
             return new MetadataTypeSymbol(containingSymbol, typeDefinition);
         }
-    }
-
-    // TODO: This isn't dependent on metadata types anymore, we could move it out
-    /// <summary>
-    /// Retrieves additional symbols for the given <paramref name="typeSymbol"/>.
-    /// </summary>
-    /// <param name="symbol">The symbol to get additional symbols for.</param>
-    /// <returns>The additional symbols for the given <paramref name="symbol"/>.</returns>
-    public static IEnumerable<Symbol> GetAdditionalSymbols(Symbol symbol)
-    {
-        if (symbol is not TypeSymbol typeSymbol) return [];
-        if (typeSymbol.IsAbstract) return [];
-        // For other types we provide constructor functions
-        return typeSymbol.Constructors.Select(ctor => new ConstructorFunctionSymbol(ctor));
     }
 
     /// <summary>

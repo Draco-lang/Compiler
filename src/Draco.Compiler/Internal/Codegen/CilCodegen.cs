@@ -221,10 +221,10 @@ internal sealed class CilCodegen
                 this.LoadLocal(local);
                 break;
             }
-            case FieldSymbol { IsStatic: true } global:
+            case FieldSymbol field:
             {
-                this.InstructionEncoder.OpCode(ILOpCode.Ldsfld);
-                this.EncodeToken(global);
+                this.InstructionEncoder.OpCode(field.IsStatic ? ILOpCode.Ldsfld : ILOpCode.Ldfld);
+                this.EncodeToken(field);
                 break;
             }
             default:
@@ -277,10 +277,10 @@ internal sealed class CilCodegen
                 this.EncodePush(NextOperand());
                 this.StoreLocal(local);
                 break;
-            case FieldSymbol { IsStatic: true } global:
+            case FieldSymbol field:
                 this.EncodePush(NextOperand());
-                this.InstructionEncoder.OpCode(ILOpCode.Stsfld);
-                this.EncodeToken(global);
+                this.InstructionEncoder.OpCode(field.IsStatic ? ILOpCode.Stsfld : ILOpCode.Stfld);
+                this.EncodeToken(field);
                 break;
             default:
                 throw new InvalidOperationException();

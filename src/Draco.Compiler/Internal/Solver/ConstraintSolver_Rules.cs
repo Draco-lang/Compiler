@@ -54,26 +54,6 @@ internal sealed partial class ConstraintSolver
             })
             .Named("assignable"),
 
-        // If all types are ground-types, common-type constraints are trivial
-        Simplification(typeof(CommonAncestor))
-            .Guard((CommonAncestor common) => common.AlternativeTypes.All(t => t.IsGroundType))
-            .Body((ConstraintStore store, CommonAncestor common) =>
-            {
-                foreach (var type in common.AlternativeTypes)
-                {
-                    if (!common.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t))) continue;
-                    // Found a good common type
-                    this.Assignable(common.CommonType, type, ConstraintLocator.Constraint(common));
-                    return;
-                }
-                // No common type found
-                common.ReportDiagnostic(diagnostics, builder => builder
-                    .WithFormatArgs(string.Join(", ", common.AlternativeTypes)));
-                // Stop cascading uninferred type
-                UnifyWithError(common.CommonType);
-            })
-            .Named("common_ancestor"),
-
         // Member constraints are trivial, if the receiver is a ground-type
         Simplification(typeof(Member))
             .Guard((Member member) => !member.Receiver.Substitution.IsTypeVariable)
@@ -370,6 +350,36 @@ internal sealed partial class ConstraintSolver
             })
             .Named("overload"),
 
+        // This is basically an accumulation case of merged assignables (see below)
+        // Once we merged two, we'll have an additional common-ancestor constraint we'll need to maintain,
+        // if more assignables are merged. This is basically that.
+        // Example:
+        //
+        // var x = Derived1();
+        // x = Derived2();
+        // x = Base();
+        Simplification(typeof(Assignable), typeof(Assignable), typeof(CommonAncestor))
+            .Guard((Assignable a1, Assignable a2, CommonAncestor comm) =>
+                SymbolEqualityComparer.AllowTypeVariables.Equals(a1.TargetType, a2.TargetType)
+             && (  SymbolEqualityComparer.AllowTypeVariables.Equals(a1.AssignedType, comm.CommonType)
+                || SymbolEqualityComparer.AllowTypeVariables.Equals(a2.AssignedType, comm.CommonType)))
+            .Body((ConstraintStore store, Assignable a1, Assignable a2, CommonAncestor comm) =>
+            {
+                var targetType = a1.TargetType;
+                var alternative = SymbolEqualityComparer.AllowTypeVariables.Equals(a1.AssignedType, comm.CommonType)
+                    ? a2.AssignedType
+                    : a1.AssignedType;
+                store.Add(new CommonAncestor(
+                    locator: ConstraintLocator.Constraint(a2),
+                    commonType: comm.CommonType,
+                    alternativeTypes: [alternative, ..comm.AlternativeTypes]));
+                store.Add(new Assignable(
+                    locator: ConstraintLocator.Constraint(a2),
+                    targetType: targetType,
+                    assignedType: comm.CommonType));
+            })
+            .Named("merge_assignables_accumulate"),
+
         // As a last resort, we try to drive forward the solver by trying to merge assignable constraints with the same target
         // This is a common situation for things like this:
         //
@@ -394,6 +404,26 @@ internal sealed partial class ConstraintSolver
                     assignedType: commonType));
             })
             .Named("merge_assignables"),
+
+        // If all types are ground-types, common-type constraints are trivial
+        Simplification(typeof(CommonAncestor))
+            .Guard((CommonAncestor common) => common.AlternativeTypes.All(t => t.IsGroundType))
+            .Body((ConstraintStore store, CommonAncestor common) =>
+            {
+                foreach (var type in common.AlternativeTypes)
+                {
+                    if (!common.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t))) continue;
+                    // Found a good common type
+                    this.Assignable(common.CommonType, type, ConstraintLocator.Constraint(common));
+                    return;
+                }
+                // No common type found
+                common.ReportDiagnostic(diagnostics, builder => builder
+                    .WithFormatArgs(string.Join(", ", common.AlternativeTypes)));
+                // Stop cascading uninferred type
+                UnifyWithError(common.CommonType);
+            })
+            .Named("common_ancestor"),
 
         // As a last-last effort, we assume that a singular assignment means exact matching types
         Simplification(typeof(Assignable))

@@ -12,7 +12,6 @@ using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Draco.Chr.Rules.RuleFactory;
 using IChrSolver = Draco.Chr.Solve.ISolver;
 
@@ -53,32 +52,7 @@ internal sealed partial class ConstraintSolver
                 assignable.ReportDiagnostic(diagnostics, diag => diag
                     .WithFormatArgs(targetType, assignedType));
             })
-        .Named("assignable"),
-
-        // We try to drive forward the solver by trying to merge assignable constraints with the same target
-        // This is a common situation for things like this:
-        //
-        // var x = Derived();
-        // x = Base();
-        //
-        // In this case we try to search for the common type of Derived and Base, then assign that
-        Simplification(typeof(Assignable), typeof(Assignable))
-            .Guard((Assignable a1, Assignable a2) =>
-                SymbolEqualityComparer.AllowTypeVariables.Equals(a1.TargetType, a2.TargetType))
-            .Body((ConstraintStore store, Assignable a1, Assignable a2) =>
-            {
-                var targetType = a1.TargetType;
-                var commonType = this.AllocateTypeVariable();
-                store.Add(new CommonAncestor(
-                    locator: ConstraintLocator.Constraint(a2),
-                    commonType: commonType,
-                    alternativeTypes: [a1.AssignedType, a2.AssignedType]));
-                store.Add(new Assignable(
-                    locator: ConstraintLocator.Constraint(a2),
-                    targetType: targetType,
-                    assignedType: commonType));
-            })
-            .Named("merge_assignables"),
+            .Named("assignable"),
 
         // If all types are ground-types, common-type constraints are trivial
         Simplification(typeof(CommonAncestor))
@@ -395,6 +369,31 @@ internal sealed partial class ConstraintSolver
                 overload.CompletionSource.SetResult(chosen);
             })
             .Named("overload"),
+
+        // As a last resort, we try to drive forward the solver by trying to merge assignable constraints with the same target
+        // This is a common situation for things like this:
+        //
+        // var x = Derived();
+        // x = Base();
+        //
+        // In this case we try to search for the common type of Derived and Base, then assign that
+        Simplification(typeof(Assignable), typeof(Assignable))
+            .Guard((Assignable a1, Assignable a2) =>
+                SymbolEqualityComparer.AllowTypeVariables.Equals(a1.TargetType, a2.TargetType))
+            .Body((ConstraintStore store, Assignable a1, Assignable a2) =>
+            {
+                var targetType = a1.TargetType;
+                var commonType = this.AllocateTypeVariable();
+                store.Add(new CommonAncestor(
+                    locator: ConstraintLocator.Constraint(a2),
+                    commonType: commonType,
+                    alternativeTypes: [a1.AssignedType, a2.AssignedType]));
+                store.Add(new Assignable(
+                    locator: ConstraintLocator.Constraint(a2),
+                    targetType: targetType,
+                    assignedType: commonType));
+            })
+            .Named("merge_assignables"),
 
         // As a last-last effort, we assume that a singular assignment means exact matching types
         Simplification(typeof(Assignable))

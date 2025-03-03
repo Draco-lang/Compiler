@@ -2566,6 +2566,9 @@ public sealed class TypeCheckingTests
         Assert.Empty(workingDiags);
         Assert.Empty(flippedDiags);
 
-        Assert.True(SymbolEqualityComparer.Default.Equals(workingListVariable.Type, flippedListVariable.Type));
+        // NOTE: This is a janky way to compare the types, but currently SymbolEqualityComparer
+        // can't compare types between different compilation instances
+        Assert.Equal("List<Exception>", workingListVariable.Type.ToString());
+        Assert.Equal("List<Exception>", flippedListVariable.Type.ToString());
     }
 }

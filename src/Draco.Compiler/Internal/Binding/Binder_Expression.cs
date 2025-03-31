@@ -473,7 +473,8 @@ internal partial class Binder
                     indexSet.Receiver,
                     indexSet.Setter,
                     indexSet.Indices,
-                    await rightTask);
+                    await rightTask,
+                    indexSet.Type);
             }
             else
             {
@@ -553,8 +554,10 @@ internal partial class Binder
                             syntax,
                             indexSet.Receiver,
                             getter,
-                            indexSet.Indices),
-                        await rightTask));
+                            indexSet.Indices,
+                            indexSet.Type),
+                        await rightTask),
+                    indexSet.Type);
             }
             else
             {
@@ -706,11 +709,11 @@ internal partial class Binder
         if (receiver.TypeRequired.IsArrayType)
         {
             // Array getter
-            return new BoundArrayAccessExpression(syntax, receiver, await BindingTask.WhenAll(argsTask));
+            return new BoundArrayAccessExpression(syntax, receiver, await BindingTask.WhenAll(argsTask), elementType);
         }
         else
         {
-            return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask));
+            return new BoundIndexGetExpression(syntax, receiver, indexer, await BindingTask.WhenAll(argsTask), elementType);
         }
     }
 

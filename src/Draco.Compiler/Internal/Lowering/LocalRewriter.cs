@@ -123,7 +123,8 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             .Select((n, i) => ExpressionStatement(AssignmentExpression(
                 left: ArrayAccessLvalue(
                     array: LocalExpression(varArgs),
-                    indices: [this.LiteralExpression(i)]),
+                    indices: [this.LiteralExpression(i)],
+                    type: elementType),
                 right: n)) as BoundStatement);
 
         return BlockExpression(
@@ -528,7 +529,8 @@ internal partial class LocalRewriter(Compilation compilation) : BoundTreeRewrite
             arrayAssignmentBuilder.Add(ExpressionStatement(AssignmentExpression(
                 left: ArrayAccessLvalue(
                     array: LocalExpression(arrayLocal),
-                    indices: [this.LiteralExpression(i)]),
+                    indices: [this.LiteralExpression(i)],
+                    type: this.WellKnownTypes.SystemObject),
                 right: args[i])));
         }
 

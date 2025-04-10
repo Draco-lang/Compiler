@@ -1,3 +1,4 @@
+using System;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
@@ -2497,5 +2498,77 @@ public sealed class TypeCheckingTests
         // Assert
         Assert.Equal(2, diags.Length);
         AssertDiagnostics(diags, TypeCheckingErrors.InferenceIncomplete, TypeCheckingErrors.TypeMismatch);
+    }
+
+    [Fact]
+    public void OrderIndependenceInTypeInference()
+    {
+        // Bug https://github.com/Draco-lang/Compiler/issues/515
+
+        // Working code:
+        //   import System;
+        //   import System.Collections.Generic;
+        //   
+        //   func main() {
+        //       val l = List();
+        //       l.Add(ArgumentException());
+        //       l.Add(Exception());
+        //       l.Add(InvalidOperationException());
+        //   }
+        var workingSyntax = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(ValDeclaration("l", null, CallExpression(NameExpression("List")))),
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("l"), "Add"), CallExpression(NameExpression("ArgumentException")))),
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("l"), "Add"), CallExpression(NameExpression("Exception")))),
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("l"), "Add"), CallExpression(NameExpression("InvalidOperationException"))))))));
+
+        // Flipped code:
+        //   import System;
+        //   import System.Collections.Generic;
+        //   
+        //   func main() {
+        //       val l = List();
+        //       l.Add(ArgumentException());
+        //       l.Add(InvalidOperationException());
+        //       l.Add(Exception());
+        //   }
+        var flippedSyntax = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System"),
+            ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(ValDeclaration("l", null, CallExpression(NameExpression("List")))),
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("l"), "Add"), CallExpression(NameExpression("ArgumentException")))),
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("l"), "Add"), CallExpression(NameExpression("InvalidOperationException")))),
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("l"), "Add"), CallExpression(NameExpression("Exception"))))))));
+
+        // Act
+        var workingCompilation = CreateCompilation(workingSyntax);
+        var workingSemanticModel = workingCompilation.GetSemanticModel(workingSyntax);
+        var workingDiags = workingSemanticModel.Diagnostics;
+        var workingListVariable = GetInternalSymbol<LocalSymbol>(workingSemanticModel.GetDeclaredSymbol(workingSyntax.GetNode<VariableDeclarationSyntax>()));
+
+        var flippedCompilation = CreateCompilation(flippedSyntax);
+        var flippedSemanticModel = flippedCompilation.GetSemanticModel(flippedSyntax);
+        var flippedDiags = flippedSemanticModel.Diagnostics;
+        var flippedListVariable = GetInternalSymbol<LocalSymbol>(flippedSemanticModel.GetDeclaredSymbol(flippedSyntax.GetNode<VariableDeclarationSyntax>()));
+
+        // Assert
+        Assert.Empty(workingDiags);
+        Assert.Empty(flippedDiags);
+
+        // NOTE: This is a janky way to compare the types, but currently SymbolEqualityComparer
+        // can't compare types between different compilation instances
+        Assert.Equal("List<Exception>", workingListVariable.Type.ToString());
+        Assert.Equal("List<Exception>", flippedListVariable.Type.ToString());
     }
 }

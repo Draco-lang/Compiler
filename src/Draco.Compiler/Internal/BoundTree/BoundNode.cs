@@ -101,16 +101,6 @@ internal partial class BoundPropertySetExpression
     public override TypeSymbol? Type => this.Value.Type;
 }
 
-internal partial class BoundIndexGetExpression
-{
-    public override TypeSymbol? Type => this.Getter.ReturnType;
-}
-
-internal partial class BoundIndexSetExpression
-{
-    public override TypeSymbol? Type => this.Value.Type;
-}
-
 internal partial class BoundLocalExpression
 {
     public override TypeSymbol Type => this.Local.Type;
@@ -144,12 +134,6 @@ internal partial class BoundObjectCreationExpression
 internal partial class BoundDelegateCreationExpression
 {
     public override TypeSymbol Type => (TypeSymbol)this.DelegateConstructor.ContainingSymbol!;
-}
-
-internal partial class BoundArrayAccessExpression
-{
-    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments.FirstOrDefault()
-                                    ?? WellKnownTypes.ErrorType;
 }
 
 internal partial class BoundCallExpression
@@ -194,17 +178,7 @@ internal partial class BoundFieldLvalue
     public override TypeSymbol Type => this.Field.Type;
 }
 
-internal partial class BoundArrayAccessLvalue
-{
-    public override TypeSymbol Type => this.Array.TypeRequired.GenericArguments[0];
-}
-
 internal partial class BoundPropertySetLvalue
-{
-    public override TypeSymbol Type => ((IPropertyAccessorSymbol)this.Setter).Property.Type;
-}
-
-internal partial class BoundIndexSetLvalue
 {
     public override TypeSymbol Type => ((IPropertyAccessorSymbol)this.Setter).Property.Type;
 }

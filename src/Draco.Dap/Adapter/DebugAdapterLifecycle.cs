@@ -14,7 +14,9 @@ namespace Draco.Dap.Adapter;
 /// </summary>
 internal sealed class DebugAdapterLifecycle(
     IDebugAdapter adapter,
+#pragma warning disable CS9113 // Parameter is unread.
     IJsonRpcConnection connection) : IDebugAdapterLifecycle
+#pragma warning restore CS9113 // Parameter is unread.
 {
     public async Task<Model.Capabilities> InitializeAsync(InitializeRequestArguments args)
     {

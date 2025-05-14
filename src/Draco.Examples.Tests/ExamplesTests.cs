@@ -42,17 +42,20 @@ public sealed class ExamplesTests
     public async Task RunExample(string projectFile, string verifiedFile)
     {
         // Invoke 'dotnet run' on the project
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "dotnet",
+            ArgumentList = { "run", "--project", projectFile },
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        // Skip first-time message
+        startInfo.EnvironmentVariables["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1";
         var process = new Process
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                ArgumentList = { "run", "--project", projectFile },
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            },
+            StartInfo = startInfo,
         };
         process.Start();
 

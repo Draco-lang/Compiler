@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using Draco.Chr.Constraints;
-using Draco.Chr.Rules;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Diagnostics;
 using Draco.Compiler.Internal.Solver.Constraints;
@@ -12,8 +10,6 @@ using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Error;
 using Draco.Compiler.Internal.Symbols.Synthetized;
-using static Draco.Chr.Rules.RuleFactory;
-using IChrSolver = Draco.Chr.Solve.ISolver;
 
 namespace Draco.Compiler.Internal.Solver;
 

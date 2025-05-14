@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Linq;
-using Draco.Chr.Constraints;
 using Draco.Compiler.Internal.Solver.OverloadResolution;
 using Draco.Compiler.Internal.Symbols;
 using Draco.Compiler.Internal.Symbols.Synthetized;

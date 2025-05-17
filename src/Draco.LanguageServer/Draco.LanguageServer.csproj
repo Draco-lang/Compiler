@@ -17,12 +17,16 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     
-    <PackageReference Include="NuGet.Frameworks" Version="6.11.0" ExcludeAssets="runtime" />
-    <PackageReference Include="NuGet.Protocol" Version="6.11.0" ExlcudeAssets="runtime" />
-    <PackageReference Include="NuGet.Packaging" Version="6.11.0" ExcludeAssets="runtime" />
-    <PackageReference Include="NuGet.Common" Version="6.11.0" ExcludeAssets="runtime" />
-    <PackageReference Include="NuGet.Versioning" Version="6.11.0" ExcludeAssets="runtime" />
-    <PackageReference Include="NuGet.Configuration" Version="6.11.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.14.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Protocol" Version="6.14.0" ExlcudeAssets="runtime" />
+    <PackageReference Include="NuGet.Packaging" Version="6.14.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Common" Version="6.14.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Versioning" Version="6.14.0" ExcludeAssets="runtime" />
+    <PackageReference Include="NuGet.Configuration" Version="6.14.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="DotNet.ReproducibleBuilds" Version="1.2.25" />
   </ItemGroup>
 
 </Project>

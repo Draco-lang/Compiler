@@ -10,7 +10,7 @@ on:
     - 'src/**'
 
 env:
-  DOTNET_VERSION: '8.0.x'   # The .NET SDK version to use
+  DOTNET_VERSION: '9.0.x'   # The .NET SDK version to use
   CONFIGURATION: 'Release'  # The configuration to use
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -39,6 +39,7 @@ jobs:
     - name: Build and test
       shell: pwsh
       run: |
+        $ErrorActionPreference = "Stop"
         ./scripts/install_toolchain.ps1 ./examples
         dotnet restore ./src
         dotnet build ./src --configuration ${{ env.CONFIGURATION }} --no-restore

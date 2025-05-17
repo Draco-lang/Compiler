@@ -1,43 +1,31 @@
 using System.Diagnostics;
 using System.Text;
 using DiffEngine;
+using Draco.ProjectSystem;
 
 namespace Draco.Examples.Tests;
 
+// NOTE: Unnfortunately the tooling seemms to have a race condition if we attempt a design-time build here
+// So we order to first run the examples, and then the design-time build
+[TestCaseOrderer("Draco.Examples.Tests.PriorityOrderer", "Draco.Examples.Tests")]
 public sealed class ExamplesTests
 {
-    public static IEnumerable<object[]> TestData
-    {
-        get
+    // Each directory contains a projectfile, and a verification file, return each pair
+    public static IEnumerable<object[]> TestData => TestUtils.ExampleDirectories
+        .Select(directory => new object[]
         {
-            // Get all example projects
-            // We exclude the "Toolchain" folder, in case the user has installed it in the examples directory
-            var exampleProjectDirectories = Directory
-                .GetDirectories("examples", "*", SearchOption.TopDirectoryOnly)
-                .Where(d => Path.GetFileName(d) != "Toolchain");
-            // Each directory contains a projectfile, and a verification file, return each pair
-            return exampleProjectDirectories
-                .Select(directory => new object[]
-                {
-                    // Search for the dracoproj file
-                    Directory.GetFiles(directory, "*.dracoproj").Single(),
-                    // The verification file is always named "verify.txt"
-                    Path.Combine(directory, "verify.txt"),
-                });
-        }
-    }
-
-    private const string DescriptionForNotInstalledToolchain = """
-        Note, that you need to have the toolchain installed in the examples directory, in order to run these tests.
-        You can do that by running the install_toolchain.ps1 script in the scripts directory and passing in the path to the examples directory.
-        """;
+            // Search for the dracoproj file
+            Directory.GetFiles(directory, "*.dracoproj").Single(),
+            // The verification file is always named "verify.txt"
+            Path.Combine(directory, "verify.txt"),
+        });
 
     public ExamplesTests()
     {
         DiffTools.UseOrder(DiffTool.VisualStudioCode, DiffTool.VisualStudio, DiffTool.Rider);
     }
 
-    [Theory]
+    [Theory, TestPriority(1)]
     [MemberData(nameof(TestData))]
     public async Task RunExample(string projectFile, string verifiedFile)
     {
@@ -67,13 +55,22 @@ public sealed class ExamplesTests
         }
         var gotOutput = standardOutput.ToString();
 
+        var standardError = new StringBuilder();
+        while (!process.StandardError.EndOfStream)
+        {
+            var line = process.StandardError.ReadLine();
+            standardError.AppendLine(line);
+        }
+        var gotError = standardError.ToString();
+
         // Wait for the process to exit
         process.WaitForExit();
 
         // Verify that the process exited successfully
         Assert.True(process.ExitCode == 0, $"""
             The process exited with a non-zero exit code ({process.ExitCode}).
-            {DescriptionForNotInstalledToolchain}
+            Message: {gotError}
+            {TestUtils.DescriptionForNotInstalledToolchain}
             """);
 
         // Configure verifier
@@ -83,5 +80,23 @@ public sealed class ExamplesTests
 
         // Compare output to the verified file
         await Verify(gotOutput, settings);
+    }
+
+    [Fact, TestPriority(2)]
+    public void DesignTimeBuild()
+    {
+        // Iniitialize the workspace
+        var workspace = Workspace.Initialize(TestUtils.ExamplesDirectory);
+
+        // Assert we have projects in there
+        var projects = workspace.Projects.ToList();
+        Assert.NotEmpty(projects);
+
+        // Run the design time build for each
+        foreach (var project in projects)
+        {
+            var buildResult = project.BuildDesignTime();
+            Assert.True(buildResult.Success, buildResult.Log);
+        }
     }
 }

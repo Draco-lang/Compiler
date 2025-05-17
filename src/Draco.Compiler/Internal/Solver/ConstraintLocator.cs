@@ -1,6 +1,6 @@
-using System.Data;
 using Draco.Compiler.Api.Diagnostics;
 using Draco.Compiler.Api.Syntax;
+using Draco.Compiler.Internal.Solver.Constraints;
 
 namespace Draco.Compiler.Internal.Solver;
 

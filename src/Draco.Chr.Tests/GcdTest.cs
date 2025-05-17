@@ -28,7 +28,7 @@ public sealed class GcdTest
         Assert.Equal(expected, got);
     }
 
-    [InlineData(3, 5, 1, 9999)]
+    [InlineData(3, 5, 1, 1)]
     [InlineData(6, 9, 3, 3)]
     [InlineData(9, 6, 3, 3)]
     [InlineData(12, 15, 3, 3)]

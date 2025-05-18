@@ -193,7 +193,7 @@ internal sealed partial class ConstraintSolver
             else
             {
                 // Setter
-                // We allocate a type var for the return type, but we don't care about it
+                // We allocate a type var for the return type, but we don't care about it as it's generally just void
                 var returnType = this.AllocateTypeVariable();
                 this.constraintStore.Add(new Overload(
                     locator: ConstraintLocator.Constraint(indexer),

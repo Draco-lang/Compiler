@@ -1,3 +1,4 @@
+using System;
 using Draco.Compiler.Api.Syntax;
 using Draco.Compiler.Internal.Binding;
 using Draco.Compiler.Internal.Symbols;
@@ -2569,5 +2570,44 @@ public sealed class TypeCheckingTests
         // can't compare types between different compilation instances
         Assert.Equal("List<Exception>", workingListVariable.Type.ToString());
         Assert.Equal("List<Exception>", flippedListVariable.Type.ToString());
+    }
+
+    [Fact]
+    public void InferListElementTypeFromMultipleAddsAndUsingIndexerCompoundOperator()
+    {
+        // import System.Collections.Generic;
+        // func main() {
+        //    var list = List();
+        //    list.Add(0);
+        //    list.Add(1);
+        //    list[0] *= 2;
+        // }
+        var main = SyntaxTree.Create(CompilationUnit(
+            ImportDeclaration("System", "Collections", "Generic"),
+            FunctionDeclaration(
+                "main",
+                ParameterList(),
+                null,
+                BlockFunctionBody(
+                    DeclarationStatement(VarDeclaration("list", null, CallExpression(NameExpression("List")))),
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("list"), "Add"), LiteralExpression(0))),
+                    ExpressionStatement(CallExpression(MemberExpression(NameExpression("list"), "Add"), LiteralExpression(1))),
+                    ExpressionStatement(BinaryExpression(
+                        IndexExpression(NameExpression("list"), LiteralExpression(0)),
+                        StarAssign,
+                        LiteralExpression(2)))))));
+
+        // Act
+        var compilation = CreateCompilation(main);
+        var semanticModel = compilation.GetSemanticModel(main);
+        var diags = semanticModel.Diagnostics;
+
+        var listDecl = main.GetNode<VariableDeclarationSyntax>(0);
+        var listSym = GetInternalSymbol<LocalSymbol>(semanticModel.GetDeclaredSymbol(listDecl));
+
+        // Assert
+        Assert.Empty(diags);
+        Assert.False(listSym.IsError);
+        Assert.Equal("List<int32>", listSym.Type.ToString());
     }
 }

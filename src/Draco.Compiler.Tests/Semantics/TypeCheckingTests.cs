@@ -1930,7 +1930,7 @@ public sealed class TypeCheckingTests
 
         // Assert
         Assert.Single(diags);
-        AssertDiagnostics(diags, TypeCheckingErrors.NoMatchingOverload);
+        AssertDiagnostics(diags, TypeCheckingErrors.TypeMismatch);
     }
 
     [Fact]

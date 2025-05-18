@@ -110,7 +110,7 @@ internal sealed partial class ConstraintSolver(
             location: InferDiagnosticTargetSyntax(this.Context.DeclaringSyntax)?.Location,
             formatArgs: this.ContextName));
 
-        this.FailRemainingRules();
+        this.FailRemainingRules(diagnostics);
     }
 
     /// <summary>

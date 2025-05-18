@@ -454,7 +454,8 @@ internal sealed partial class ConstraintSolver
     /// <summary>
     /// Fails all remaining rules in the solver.
     /// </summary>
-    private void FailRemainingRules()
+    /// <param name="diagnostics">Diagnostics to report to.</param>
+    private void FailRemainingRules(DiagnosticBag diagnostics)
     {
         var previousStoreSize = this.constraintStore.Count;
         while (true)
@@ -478,7 +479,7 @@ internal sealed partial class ConstraintSolver
             this.constraintStore.RemoveAll(constraintsToRemove);
 
             // Assume this solves everything
-            this.SolveUntilFixpoint(DiagnosticBag.Empty);
+            this.SolveUntilFixpoint(diagnostics);
 
             // Check for exit condition
             if (previousStoreSize == this.constraintStore.Count) break;

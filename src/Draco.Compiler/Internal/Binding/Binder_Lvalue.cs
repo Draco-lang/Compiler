@@ -157,7 +157,8 @@ internal partial class Binder
             return new BoundArrayAccessLvalue(
                 syntax,
                 receiver,
-                await BindingTask.WhenAll(argsTask));
+                await BindingTask.WhenAll(argsTask),
+                elementType);
         }
         else
         {
@@ -165,7 +166,8 @@ internal partial class Binder
                 syntax,
                 receiver,
                 indexer,
-                await BindingTask.WhenAll(argsTask));
+                await BindingTask.WhenAll(argsTask),
+                elementType);
         }
     }
 

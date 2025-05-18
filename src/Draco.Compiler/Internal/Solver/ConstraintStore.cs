@@ -104,6 +104,19 @@ internal sealed class ConstraintStore
     /// <summary>
     /// Removes all constraints in the given sequence.
     /// </summary>
+    /// <param name="constraints">The constraints to remove.</param>
+    public void RemoveAll(IEnumerable<Constraint> constraints)
+    {
+        foreach (var constraint in constraints)
+        {
+            if (!this.constraints.TryGetValue(constraint.GetType(), out var list)) ThrowConstraintNotFound(constraint);
+            if (!list.Remove(constraint)) ThrowConstraintNotFound(constraint);
+        }
+    }
+
+    /// <summary>
+    /// Removes all constraints in the given sequence.
+    /// </summary>
     /// <typeparam name="TConstraint">The type of the constraint to remove.</typeparam>
     /// <param name="constraints">The constraints to remove.</param>
     public void RemoveAll<TConstraint>(IEnumerable<TConstraint> constraints)
@@ -112,7 +125,7 @@ internal sealed class ConstraintStore
         var list = this.GetConstraintList(typeof(TConstraint));
         foreach (var constraint in constraints)
         {
-            if (!list.Remove(constraint)) throw new InvalidOperationException($"Constraint {constraint} not found in the store.");
+            if (!list.Remove(constraint)) ThrowConstraintNotFound(constraint);
         }
     }
 
@@ -125,4 +138,8 @@ internal sealed class ConstraintStore
         }
         return list;
     }
+
+    [DoesNotReturn]
+    private static void ThrowConstraintNotFound(Constraint constraint) =>
+        throw new InvalidOperationException($"Constraint {constraint} not found in the store.");
 }

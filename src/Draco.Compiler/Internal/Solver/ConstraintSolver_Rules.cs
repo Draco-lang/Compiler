@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
@@ -455,7 +456,38 @@ internal sealed partial class ConstraintSolver
     /// </summary>
     private void FailRemainingRules()
     {
-        // TODO
-        throw new NotImplementedException();
+        var previousStoreSize = this.constraintStore.Count;
+        while (true)
+        {
+            // We unify type variables with the error type
+            foreach (var typeVar in this.typeVariables)
+            {
+                var unwrapped = typeVar.Substitution;
+                if (unwrapped is TypeVariable unwrappedTv) UnifyAsserted(unwrappedTv, WellKnownTypes.UninferredType);
+            }
+
+            var constraintsToRemove = new List<Constraint>();
+
+            // We can also solve all overload constraints by failing them instantly
+            foreach (var overload in this.constraintStore.Query<Overload>())
+            {
+                FailOverload(overload);
+                constraintsToRemove.Add(overload);
+            }
+
+            this.constraintStore.RemoveAll(constraintsToRemove);
+
+            // Assume this solves everything
+            this.SolveUntilFixpoint(DiagnosticBag.Empty);
+
+            // Check for exit condition
+            if (previousStoreSize == this.constraintStore.Count) break;
+            previousStoreSize = this.constraintStore.Count;
+        }
+
+        if (this.constraintStore.Count > 0)
+        {
+            throw new InvalidOperationException("fallback operation could not solve all constraints");
+        }
     }
 }

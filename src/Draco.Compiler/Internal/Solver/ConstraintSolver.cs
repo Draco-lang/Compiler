@@ -68,13 +68,18 @@ internal sealed partial class ConstraintSolver(
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
-        while (this.ApplyRulesOnce(diagnostics)) { }
+        this.SolveUntilFixpoint(diagnostics);
 
         // Check for uninferred locals
         this.CheckForUninferredLocals(diagnostics);
 
         // And for failed inference
         this.CheckForIncompleteInference(diagnostics);
+    }
+
+    private void SolveUntilFixpoint(DiagnosticBag diagnostics)
+    {
+        while (this.ApplyRulesOnce(diagnostics)) { }
     }
 
     private void CheckForUninferredLocals(DiagnosticBag diagnostics)

@@ -171,7 +171,7 @@ internal sealed partial class ConstraintSolver
             }
 
             // If there is a single indexer, we check visibility
-            // This is because in this case overload resolution will skip hecking visibility
+            // This is because in this case overload resolution will skip checking visibility
             if (indexers.Length == 1)
             {
                 this.Context.CheckVisibility(indexer.Locator, indexers[0], "indexer", diagnostics);

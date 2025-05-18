@@ -68,14 +68,13 @@ internal sealed partial class ConstraintSolver(
     /// <param name="diagnostics">The bag to report diagnostics to.</param>
     public void Solve(DiagnosticBag diagnostics)
     {
-        var solver = new DefinitionOrderSolver(this.ConstructRules(diagnostics));
-        solver.Solve(this.constraintStore);
+        while (this.ApplyRulesOnce()) { }
 
         // Check for uninferred locals
         this.CheckForUninferredLocals(diagnostics);
 
         // And for failed inference
-        this.CheckForIncompleteInference(diagnostics, solver);
+        this.CheckForIncompleteInference(diagnostics);
     }
 
     private void CheckForUninferredLocals(DiagnosticBag diagnostics)
@@ -94,7 +93,7 @@ internal sealed partial class ConstraintSolver(
         }
     }
 
-    private void CheckForIncompleteInference(DiagnosticBag diagnostics, IChrSolver solver)
+    private void CheckForIncompleteInference(DiagnosticBag diagnostics)
     {
         var inferenceFailed = this.constraintStore.Count > 0
                            || this.typeVariables.Select(t => t.Substitution).Any(t => t.IsTypeVariable);
@@ -106,7 +105,7 @@ internal sealed partial class ConstraintSolver(
             location: InferDiagnosticTargetSyntax(this.Context.DeclaringSyntax)?.Location,
             formatArgs: this.ContextName));
 
-        this.FailRemainingRules(solver);
+        this.FailRemainingRules();
     }
 
     /// <summary>

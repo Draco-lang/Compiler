@@ -34,8 +34,8 @@ internal sealed partial class ConstraintSolver
         return instantiated;
     }
 
-    private static void AssignParameterToArgument(
-        ConstraintStore store, TypeSymbol paramType, Argument argument) => store.Add(new Constraints.Assignable(
+    private void AssignParameterToArgument(
+        TypeSymbol paramType, Argument argument) => this.constraintStore.Add(new Constraints.Assignable(
             locator: ConstraintLocator.Syntax(argument.Syntax),
             targetType: paramType,
             assignedType: argument.Type));

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Draco.Compiler.Internal.Solver;
 /// <summary>
 /// A data-type to efficiently store and query constraints.
 /// </summary>
-internal sealed class ConstraintStore
+internal sealed class ConstraintStore : IEnumerable<Constraint>
 {
     /// <summary>
     /// The number of constraints in the store.
@@ -17,6 +18,9 @@ internal sealed class ConstraintStore
     public int Count => this.constraints.Values.Sum(list => list.Count);
 
     private readonly Dictionary<Type, List<Constraint>> constraints = [];
+
+    public IEnumerator<Constraint> GetEnumerator() => this.constraints.Values.SelectMany(x => x).GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
     /// <summary>
     /// Adds a constraint to the store.
@@ -141,5 +145,5 @@ internal sealed class ConstraintStore
 
     [DoesNotReturn]
     private static void ThrowConstraintNotFound(Constraint constraint) =>
-        throw new InvalidOperationException($"Constraint {constraint} not found in the store.");
+        throw new InvalidOperationException($"constraint {constraint} not found in the store");
 }

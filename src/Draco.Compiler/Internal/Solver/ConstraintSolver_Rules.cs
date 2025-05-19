@@ -23,9 +23,24 @@ internal sealed partial class ConstraintSolver
     /// <returns>True, if a change was made, false otherwise.</returns>
     private bool ApplyRulesOnce(DiagnosticBag diagnostics)
     {
+        if (Same()) return true;
+        if (Assignable()) return true;
+        if (CommonAncestor()) return true;
+        if (Member()) return true;
+        if (Indexer()) return true;
+        if (Callable()) return true;
+        if (OverloadRefine()) return true;
+        if (Overload()) return true;
+        if (MergeAssignables()) return true;
+        if (SingleAssignable()) return true;
+        if (CommonAncestorSingleNonTypeVar()) return true;
+        if (CommonAncestorIsGround()) return true;
+        return false;
+
         // Trivial same-type constraint, unify all
-        if (this.constraintStore.TryRemove<Same>(out var same))
+        bool Same()
         {
+            if (!this.constraintStore.TryRemove<Same>(out var same)) return false;
             for (var i = 1; i < same.Types.Length; ++i)
             {
                 if (Unify(same.Types[0], same.Types[i])) continue;
@@ -38,9 +53,13 @@ internal sealed partial class ConstraintSolver
         }
 
         // Assignable can be resolved directly, if both types are ground-types
-        if (this.constraintStore.TryRemove<Assignable>(out var assignable, assignable => assignable.TargetType.IsGroundType
-                                                                                      && assignable.AssignedType.IsGroundType))
+        bool Assignable()
         {
+            if (!this.constraintStore.TryRemove<Assignable>(out var assignable, assignable => assignable.TargetType.IsGroundType
+                                                                                           && assignable.AssignedType.IsGroundType))
+            {
+                return false;
+            }
             var targetType = assignable.TargetType;
             var assignedType = assignable.AssignedType;
             if (!SymbolEqualityComparer.Default.IsBaseOf(targetType, assignedType))
@@ -53,34 +72,35 @@ internal sealed partial class ConstraintSolver
         }
 
         // If all types are ground-types, common-type constraints are trivial
-        if (this.constraintStore.TryRemove<CommonAncestor>(out var common, common => common.AlternativeTypes.All(t => t.IsGroundType)))
+        bool CommonAncestor()
         {
+            if (!this.constraintStore.TryRemove<CommonAncestor>(out var common, common => common.AlternativeTypes.All(t => t.IsGroundType))) return false;
             foreach (var type in common.AlternativeTypes)
             {
                 if (!common.AlternativeTypes.All(t => SymbolEqualityComparer.Default.IsBaseOf(type, t))) continue;
                 // Found a good common type
                 this.Assignable(common.CommonType, type, ConstraintLocator.Constraint(common));
-                goto common_end;
+                return true;
             }
             // No common type found
             common.ReportDiagnostic(diagnostics, builder => builder
                 .WithFormatArgs(string.Join(", ", common.AlternativeTypes)));
             // Stop cascading uninferred type
             UnifyWithError(common.CommonType);
-        common_end:
             return true;
         }
 
-        // Member constraints are trivial, if the receiver is not a type-varriable
-        if (this.constraintStore.TryRemove<Member>(out var member, member => !member.Receiver.Substitution.IsTypeVariable))
+        // Member constraints are trivial, if the receiver is not a type-variable
+        bool Member()
         {
+            if (!this.constraintStore.TryRemove<Member>(out var member, member => !member.Receiver.Substitution.IsTypeVariable)) return false;
             var accessed = member.Receiver.Substitution;
             // Don't propagate type errors
             if (accessed.IsError)
             {
                 UnifyWithError(member.MemberType);
                 member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
-                goto member_end;
+                return true;
             }
 
             // Not a type variable, we can look into members
@@ -101,7 +121,7 @@ internal sealed partial class ConstraintSolver
                 // We still provide a single error symbol
                 UnifyWithError(member.MemberType);
                 member.CompletionSource.SetResult(ErrorMemberSymbol.Instance);
-                goto member_end;
+                return true;
             }
             if (membersWithName.Length == 1)
             {
@@ -114,7 +134,7 @@ internal sealed partial class ConstraintSolver
                 // And just provide the member type as is
                 UnifyAsserted(member.MemberType, memberType);
                 member.CompletionSource.SetResult(membersWithName[0]);
-                goto member_end;
+                return true;
             }
             // More than one, the member constraint is fine with multiple members but we don't know the member type
             {
@@ -125,14 +145,14 @@ internal sealed partial class ConstraintSolver
                 UnifyWithError(member.MemberType);
                 var overloadSym = new FunctionGroupSymbol(membersWithName.Cast<FunctionSymbol>().ToImmutableArray());
                 member.CompletionSource.SetResult(overloadSym);
+                return true;
             }
-        member_end:
-            return true;
         }
 
         // Indexer constraints are trivial, if the receiver is not a type-variable
-        if (this.constraintStore.TryRemove<Indexer>(out var indexer, indexer => !indexer.Receiver.Substitution.IsTypeVariable))
+        bool Indexer()
         {
+            if (!this.constraintStore.TryRemove<Indexer>(out var indexer, indexer => !indexer.Receiver.Substitution.IsTypeVariable)) return false;
             var accessed = indexer.Receiver.Substitution;
             // Don't propagate type errors
             if (accessed.IsError)
@@ -143,7 +163,7 @@ internal sealed partial class ConstraintSolver
                     ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
                     : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
                 indexer.CompletionSource.SetResult(errorSymbol);
-                goto indexer_end;
+                return true;
             }
 
             // Not a type variable, we can look into members
@@ -167,7 +187,7 @@ internal sealed partial class ConstraintSolver
                     ? ErrorPropertySymbol.CreateIndexerGet(indexer.Indices.Length)
                     : ErrorPropertySymbol.CreateIndexerSet(indexer.Indices.Length);
                 indexer.CompletionSource.SetResult(errorSymbol);
-                goto indexer_end;
+                return true;
             }
 
             // If there is a single indexer, we check visibility
@@ -208,19 +228,19 @@ internal sealed partial class ConstraintSolver
                     CompletionSource = indexer.CompletionSource,
                 });
             }
-        indexer_end:
             return true;
         }
 
         // A callable can be resolved directly, if the called type is not a type-variable
-        if (this.constraintStore.TryRemove<Callable>(out var callable, callable => !callable.CalledType.Substitution.IsTypeVariable))
+        bool Callable()
         {
+            if (!this.constraintStore.TryRemove<Callable>(out var callable, callable => !callable.CalledType.Substitution.IsTypeVariable)) return false;
             var called = callable.CalledType.Substitution;
             if (called.IsError)
             {
                 // Don't propagate errors
                 UnifyWithError(callable.ReturnType);
-                goto callable_end;
+                return true;
             }
 
             // We can now check if it's a function
@@ -234,7 +254,7 @@ internal sealed partial class ConstraintSolver
                 callable.ReportDiagnostic(diagnostics, diag => diag
                     .WithTemplate(TypeCheckingErrors.CallNonFunction)
                     .WithFormatArgs(called));
-                goto callable_end;
+                return true;
             }
 
             // It's a function
@@ -253,7 +273,7 @@ internal sealed partial class ConstraintSolver
                     .WithFormatArgs(
                         functionType,
                         this.MakeMismatchedFunctionType(callable.Arguments, functionType.ReturnType)));
-                goto callable_end;
+                return true;
             }
 
             // Start scoring args
@@ -268,7 +288,7 @@ internal sealed partial class ConstraintSolver
                     .WithFormatArgs(
                         functionType,
                         this.MakeMismatchedFunctionType(callable.Arguments, functionType.ReturnType)));
-                goto callable_end;
+                return true;
             }
 
             // We are done
@@ -276,19 +296,17 @@ internal sealed partial class ConstraintSolver
             {
                 this.AssignParameterToArgument(param.Type, arg);
             }
-        callable_end:
             return true;
         }
 
         // If an overload constraint can be advanced, do that
-        if (this.constraintStore.TryGet<Overload>(out _, overload => !overload.Candidates.IsWellDefined && overload.Candidates.Refine()))
-        {
-            return true;
-        }
+        bool OverloadRefine() =>
+            this.constraintStore.TryGet<Overload>(out _, overload => !overload.Candidates.IsWellDefined && overload.Candidates.Refine());
 
         // If overload constraints are unambiguous, we can resolve them directly
-        if (this.constraintStore.TryRemove<Overload>(out var overload, overload => overload.Candidates.IsWellDefined))
+        bool Overload()
         {
+            if (!this.constraintStore.TryRemove<Overload>(out var overload, overload => overload.Candidates.IsWellDefined)) return false;
             // Call for safety
             overload.Candidates.Refine();
 
@@ -304,7 +322,7 @@ internal sealed partial class ConstraintSolver
                         .WithTemplate(TypeCheckingErrors.NoMatchingOverload)
                         .WithFormatArgs(overload.FunctionName));
                 }
-                goto overload_end;
+                return true;
             }
 
             if (candidates.Length > 1)
@@ -318,7 +336,7 @@ internal sealed partial class ConstraintSolver
                         .WithTemplate(TypeCheckingErrors.AmbiguousOverloadedCall)
                         .WithFormatArgs(overload.FunctionName, string.Join(", ", overload.Candidates)));
                 }
-                goto overload_end;
+                return true;
             }
 
             // Resolved fine, choose the symbol, which might generic-instantiate it
@@ -359,7 +377,6 @@ internal sealed partial class ConstraintSolver
             UnifyAsserted(overload.ReturnType, chosen.ReturnType);
             // Resolve promise
             overload.CompletionSource.SetResult(chosen);
-        overload_end:
             return true;
         }
 
@@ -370,6 +387,7 @@ internal sealed partial class ConstraintSolver
         // x = Base();
         //
         // In this case we try to search for the common type of Derived and Base, then assign that
+        bool MergeAssignables()
         {
             // First probe, if there are at least 2 such assignables
             var assignablesWithSharedTarget = this.constraintStore
@@ -377,11 +395,8 @@ internal sealed partial class ConstraintSolver
                 .GroupBy(a => a.TargetType, SymbolEqualityComparer.AllowTypeVariables)
                 .Where(g => g.Count() > 1)
                 .FirstOrDefault();
-            if (assignablesWithSharedTarget is null)
-            {
-                // No such assignables, we are done
-                goto after_assignable_merge;
-            }
+            // No such assignables, we are done
+            if (assignablesWithSharedTarget is null) return false;
             // We have at least 2 assignables with the same target, merge them all
             var targetType = assignablesWithSharedTarget.Key;
             var commonType = this.AllocateTypeVariable();
@@ -398,11 +413,14 @@ internal sealed partial class ConstraintSolver
                 assignedType: commonType));
             return true;
         }
-    after_assignable_merge:
 
         // As a last-last effort, we assume that a singular assignment means exact matching types
-        if (this.constraintStore.TryRemove<Assignable>(out assignable, assignable => CanAssign(assignable.TargetType, assignable.AssignedType)))
+        bool SingleAssignable()
         {
+            if (!this.constraintStore.TryRemove<Assignable>(out var assignable, assignable => CanAssign(assignable.TargetType, assignable.AssignedType)))
+            {
+                return false;
+            }
             AssignAsserted(assignable.TargetType, assignable.AssignedType);
             return true;
         }
@@ -410,34 +428,40 @@ internal sealed partial class ConstraintSolver
         // As a last-effort, if we see a common ancestor constraint with a single non-type-var, we
         // assume that the common type is the non-type-var
         // We also substitute all the type-vars with the common type
-        if (this.constraintStore.TryRemove<CommonAncestor>(out common, common =>
+        bool CommonAncestorSingleNonTypeVar()
         {
-            if (common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) != 1) return false;
-            if (common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) != common.AlternativeTypes.Length - 1) return false;
-            if (common.AlternativeTypes.Any(alt => !CanUnify(alt, common.CommonType))) return false;
-            var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
-            var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
-            if (!CanUnify(common.CommonType, nonTypeVar)) return false;
-            return typeVars.All(t => CanUnify(t, nonTypeVar));
-        }))
-        {
-            var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
-            var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
-            foreach (var typeVar in typeVars) UnifyAsserted(typeVar, nonTypeVar);
-            UnifyAsserted(common.CommonType, nonTypeVar);
-            return true;
+            if (this.constraintStore.TryRemove<CommonAncestor>(out var common, common =>
+            {
+                if (common.AlternativeTypes.Count(t => !t.Substitution.IsTypeVariable) != 1) return false;
+                if (common.AlternativeTypes.Count(t => t.Substitution.IsTypeVariable) != common.AlternativeTypes.Length - 1) return false;
+                if (common.AlternativeTypes.Any(alt => !CanUnify(alt, common.CommonType))) return false;
+                var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
+                var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
+                if (!CanUnify(common.CommonType, nonTypeVar)) return false;
+                return typeVars.All(t => CanUnify(t, nonTypeVar));
+            }))
+            {
+                var nonTypeVar = common.AlternativeTypes.First(t => !t.Substitution.IsTypeVariable);
+                var typeVars = common.AlternativeTypes.Where(t => t.Substitution.IsTypeVariable);
+                foreach (var typeVar in typeVars) UnifyAsserted(typeVar, nonTypeVar);
+                UnifyAsserted(common.CommonType, nonTypeVar);
+                return true;
+            }
+            return false;
         }
 
         // If the target type of common ancestor is a concrete type, we can try to unify all non-concrete types
-        if (this.constraintStore.TryRemove<CommonAncestor>(out common, common => common.CommonType.Substitution.IsGroundType
-                                                                              && common.AlternativeTypes.All(alt => CanUnify(alt, common.CommonType))))
+        bool CommonAncestorIsGround()
         {
+            if (!this.constraintStore.TryRemove<CommonAncestor>(out var common, common => common.CommonType.Substitution.IsGroundType
+                                                                                       && common.AlternativeTypes.All(alt => CanUnify(alt, common.CommonType))))
+            {
+                return false;
+            }
             var concreteType = common.CommonType.Substitution;
             foreach (var type in common.AlternativeTypes) UnifyAsserted(type, concreteType);
             return true;
         }
-
-        return false;
     }
 
     /// <summary>
